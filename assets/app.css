@@ -333,3 +333,6 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 @media (max-width: 600px) { .pw-row { flex-direction: column; align-items: center; } .pw-key { width: 72px; } }
 .siegel-anbieter { display: flex; align-items: center; gap: .55rem; margin-top: .5rem; }
 .siegel-iso { width: 38px; height: 38px; flex: none; border-radius: 6px; }
+/* Passwort-ändern: Felder einspaltig (klar neben dem Schlüssel), Knopf mit Abstand. */
+.pw-form .form-grid { grid-template-columns: 1fr; max-width: 340px; }
+.pw-form .btn-row { margin-top: .8rem; }
