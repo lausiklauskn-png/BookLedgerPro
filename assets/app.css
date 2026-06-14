@@ -46,12 +46,15 @@ code { font-family: var(--mono); }
 
 /* ---- Sperrbildschirm / Onboarding ---------------------------------------- */
 .lock-screen {
+  position: relative; overflow: hidden;
   min-height: 100dvh; display: grid; place-items: center; padding: 1.25rem;
   background:
     radial-gradient(1200px 600px at 80% -10%, var(--accent-soft) 0%, transparent 55%),
     var(--bg);
 }
+.mycel-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .lock-card {
+  position: relative; z-index: 1;
   width: 100%; max-width: 420px; background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius-lg);
   box-shadow: var(--shadow); padding: 1.75rem;
@@ -206,6 +209,29 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .btn-danger { border-color: var(--critical-border); color: var(--critical-text); }
 .btn-danger:hover { background: var(--critical-bg); border-color: var(--error); }
 .legal-card p { margin: .25rem 0; }
+
+/* ---- Dashboard-KPIs ------------------------------------------------------- */
+.dash-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .8rem; }
+.kpi {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1rem; box-shadow: var(--shadow-sm);
+}
+.kpi-value { font-size: 1.4rem; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.kpi-label { color: var(--text-muted); font-size: .82rem; margin-top: .15rem; }
+.kpi-pos .kpi-value { color: var(--accent-strong); }
+.kpi-neg .kpi-value { color: var(--error); }
+.small-kpi .kpi-value { font-size: 1.15rem; }
+.small-kpi .kpi { padding: .7rem .9rem; }
+
+/* ---- Barrierefreiheit ----------------------------------------------------- */
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 100;
+  background: var(--accent); color: #fff; padding: .5rem .9rem; border-radius: var(--radius-sm);
+}
+.skip-link:focus { left: .5rem; top: .5rem; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.btn:focus-visible, .nav-item:focus-visible, .seg:focus-visible { outline-offset: 2px; }
 
 .fatal { padding: 2rem; text-align: center; color: var(--error); }
 

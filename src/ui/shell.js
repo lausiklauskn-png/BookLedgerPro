@@ -21,6 +21,7 @@ import { mountOrders } from './views/orders.js';
 import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
+import { mountDashboard } from './views/dashboard.js';
 import { getAiConfig, saveAiConfig, AI_MODELS } from '../ai/provider.js';
 
 const NAV = [
@@ -51,9 +52,10 @@ export function renderShell(container, { onLock } = {}) {
 function paint() {
   const s = getSettings();
   const frame = el('div', { class: 'app', 'data-mode': s.mode }, [
+    el('a', { class: 'skip-link', href: '#content' }, t('a11y.skip')),
     header(s),
     el('div', { class: 'durability-slot', id: 'durability-slot' }),
-    el('div', { class: 'app-body' }, [nav(), el('main', { class: 'content', id: 'content' })]),
+    el('div', { class: 'app-body' }, [nav(), el('main', { class: 'content', id: 'content', role: 'main', tabindex: '-1' })]),
   ]);
   mount(_container, frame);
   renderRoute();
@@ -79,10 +81,11 @@ function header(s) {
 
 function nav() {
   const route = getRoute();
-  return el('nav', { class: 'app-nav' },
+  return el('nav', { class: 'app-nav', 'aria-label': t('a11y.nav') },
     NAV.map(([key, label]) => el('button', {
       class: 'nav-item' + (route === key ? ' active' : ''),
       text: t(label),
+      'aria-current': route === key ? 'page' : null,
       onClick: () => navigate(key),
     }))
   );
@@ -92,7 +95,7 @@ function renderRoute() {
   const content = document.getElementById('content');
   if (!content) return;
   const route = getRoute();
-  if (route === 'dashboard') return mount(content, viewDashboard());
+  if (route === 'dashboard') return void mountDashboard(content);
   if (route === 'settings') return mount(content, viewSettings());
   if (route === 'accounts') return void mountAccounts(content);
   if (route === 'journal') return void mountJournal(content);
@@ -121,7 +124,7 @@ async function refreshDurability() {
   if (st.issues.includes('no-backup')) msgs.push(t('durability.noBackup'));
   else if (st.issues.includes('backup-stale')) msgs.push(t('durability.backupStale'));
 
-  slot.appendChild(el('div', { class: `banner banner-${st.level === 'critical' ? 'critical' : 'warn'}`, role: 'status' }, [
+  slot.appendChild(el('div', { class: `banner banner-${st.level === 'critical' ? 'critical' : 'warn'}`, role: 'status', 'aria-live': 'polite' }, [
     el('span', { class: 'banner-text', text: msgs.join(' ') }),
     el('button', { class: 'btn btn-sm', text: t('durability.backupNow'), onClick: doBackup }),
   ]));
@@ -151,18 +154,6 @@ async function doRestore() {
 }
 
 // ---- Views ------------------------------------------------------------------
-
-function viewDashboard() {
-  const s = getSettings();
-  return el('section', { class: 'view' }, [
-    el('h1', { text: t('dashboard.welcome') }),
-    el('p', { class: 'muted', text: t('app.tagline') }),
-    el('div', { class: 'card' }, [
-      el('p', { text: t('dashboard.phase0') }),
-      el('p', { class: 'muted small', text: `${t('settings.mode')}: ${t('settings.mode.' + s.mode)}` }),
-    ]),
-  ]);
-}
 
 function viewSettings() {
   const s = getSettings();

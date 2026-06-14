@@ -26,12 +26,13 @@ src/
   core/        crypto · shamir · db · durability · files · vault · backup
   domain/      money · accounts · journal · audit · taxes · store · documents
                orders · invoicing · employees · costcenters · encstore · crm-store
-               export (Phase 4)
+               export · summary
   ai/          extract · categorize · suggest · provider · taxAssist
                (Phase 2.x: ocr lokal, embeddings)
   sbkim/       spore · identity · domainvector · signal  (Phase 5, byte-kompat. §11)
-  ui/views/    accounts · journal · reports · documents · customers · orders · employees
-               legal · network
+  ui/          dom · i18n · theme · mycel · mycelCanvas · lock · shell
+  ui/views/    dashboard · accounts · journal · reports · documents · customers · orders
+               employees · legal · network
   tools/       verify_remote_spore.mjs (headless SBKIM-Verifizierer, node:crypto)
   sbkim/ (Repo) README · SIGNAL.template.json · AUSTAUSCH-template.md (+ spore.json nach Deploy)
   docs/legal/  Verfahrensdokumentation (GoBD) · Datenschutz (DSGVO)

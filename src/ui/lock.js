@@ -8,6 +8,7 @@ import { t } from './i18n.js';
 import { setupVault, unlockVault, vaultExists } from '../core/vault.js';
 import { exportBackupFile } from '../core/backup.js';
 import { MycelMark } from './mycel.js';
+import { createMycelBackground } from './mycelCanvas.js';
 
 /**
  * Rendert Lock/Onboarding in `container`.
@@ -23,6 +24,7 @@ export async function showLockScreen(container) {
 
 function shell(children) {
   return el('div', { class: 'lock-screen' }, [
+    createMycelBackground(),
     el('div', { class: 'lock-card' }, [
       el('div', { class: 'brand' }, [MycelMark(40), el('span', { class: 'brand-name', text: t('app.name') })]),
       ...children,
