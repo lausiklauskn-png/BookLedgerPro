@@ -112,7 +112,7 @@ function renderOnboarding(container, resolve) {
       el('p', { class: 'muted', text: t('onboard.shamirIntro') }),
       list,
       next,
-    ]));
+    ], './assets/img/onboard-shamir.png'));
   }
 
   function stepBackup() {
