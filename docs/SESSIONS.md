@@ -5,6 +5,21 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — Rechtsregel-Set erweitert (mehr §-Grundlagen für KI-Berater)
+
+**Was getan**
+- `src/domain/rechtsregeln.js`: +7 kuratierte Regeln — Arbeitszimmer/Homeoffice (§4(5) 6b/6c),
+  Fortbildung (§4(4)), Anlagevermögen/AfA >800 € (§7), Betriebsveranstaltung 110 € (§19(1)1a),
+  nicht abziehbar: Bußgelder/privat (§4(5)8 / §12), Kleinbetragsrechnung ≤250 € (§33 UStDV,
+  betragsbasiert). Bessere Grounding-Abdeckung für `begruendeBuchung`.
+- `tests/run.mjs`: +5 (Fortbildung, Arbeitszimmer, Bußgeld, Kleinbetrag-Grenze). **196/196 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 196/0; `node --check`.
+**Hinweis:** UI reicht aktuell `betragCent` nicht an `begruendeBuchung` → Kleinbetragsregel greift
+nur, wenn der Betrag mitgegeben wird (Logik vorhanden, optionale UI-Verdrahtung später).
+
+---
+
 ## 2026-06-14 — Rechnungsdokument mit §14-UStG-Pflichtangaben (ausstellbare Rechnung)
 
 **Was getan** (wichtige Produkt-Lücke: bisher nur Buchung, kein Rechnungsdokument)
