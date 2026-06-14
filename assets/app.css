@@ -327,3 +327,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   .siegel { flex-direction: column; align-items: center; text-align: center; }
 }
 .deckblatt-cover { display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto .8rem; border-radius: var(--radius, 12px); box-shadow: var(--shadow); }
+.pw-row { display: flex; gap: 1rem; align-items: flex-start; }
+.pw-key { flex: none; width: 96px; height: auto; align-self: center; }
+.pw-form { flex: 1; min-width: 0; }
+@media (max-width: 600px) { .pw-row { flex-direction: column; align-items: center; } .pw-key { width: 72px; } }
