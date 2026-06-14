@@ -10,6 +10,7 @@ import { buildLedgerCsv, buildDatevCsv, buildUstVa, ustVaToCsv, eurToCsv } from 
 import { downloadText } from '../../core/files.js';
 import { isConfigured } from '../../ai/provider.js';
 import { erklaereSteuer } from '../../ai/taxAssist.js';
+import { emptyState } from '../empty.js';
 
 let _host = null;
 const periode = { von: '', bis: '' };
@@ -23,6 +24,15 @@ async function repaint() {
   const [konten, buchungen] = await Promise.all([loadAccounts(), listBuchungen()]);
   const idx = {};
   for (const k of konten) idx[k.nummer] = k;
+
+  if (!buchungen.some((b) => b.seq != null)) {
+    mount(_host, el('section', { class: 'view' }, [
+      el('h1', { text: t('reports.title') }),
+      emptyState('empty-reports.png', t('reports.empty')),
+    ]));
+    return;
+  }
+
   const p = (periode.von || periode.bis) ? { von: periode.von || undefined, bis: periode.bis || undefined } : undefined;
 
   const ust = computeUStVoranmeldung(buchungen, idx, p);
