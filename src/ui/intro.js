@@ -59,6 +59,7 @@ function kiDatenblatt() {
 export function aboutContent() {
   return el('div', { class: 'deckblatt' }, [
     el('div', { class: 'deckblatt-hero' }, [
+      el('img', { class: 'deckblatt-cover', src: './assets/img/cover.png', alt: '', loading: 'eager' }),
       MycelMark(56),
       el('h1', { class: 'deckblatt-title', text: t('app.name') }),
       el('p', { class: 'deckblatt-tagline', text: 'Buchhaltung & Steuer — offline, verschlüsselt, EU-KI-gestützt.' }),

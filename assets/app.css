@@ -326,3 +326,4 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   .datenblatt-grid { grid-template-columns: 1fr; }
   .siegel { flex-direction: column; align-items: center; text-align: center; }
 }
+.deckblatt-cover { display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto .8rem; border-radius: var(--radius, 12px); box-shadow: var(--shadow); }
