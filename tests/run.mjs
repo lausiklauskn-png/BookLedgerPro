@@ -4,7 +4,8 @@
 
 import {
   encryptWithPassword, decryptWithPassword, bytesToB64u, b64uToBytes, randomBytes,
-  deriveAesKey, exportRawAesKey,
+  deriveAesKey, exportRawAesKey, importRawAesKey,
+  encryptBytesWithKey, decryptBytesWithKey, encryptWithKey, decryptWithKey,
 } from '../src/core/crypto.js';
 import { splitSecret, combineShares, encodeShare, decodeShare } from '../src/core/shamir.js';
 import { parseEuroToCents, formatCents } from '../src/domain/money.js';
@@ -75,6 +76,43 @@ await section('Krypto: Key-Export deterministisch', async () => {
   const r2 = await exportRawAesKey(k2);
   ok('gleicher Key bei gleichem Salt+PW', Buffer.compare(Buffer.from(r1), Buffer.from(r2)) === 0);
   ok('Key ist 32 Byte', r1.length === 32);
+});
+
+await section('Tresor-Envelope: DEK wrap/unwrap + Passwortwechsel', async () => {
+  const b64 = (u) => bytesToB64u(u);
+  const rawDek = randomBytes(32);
+  // Daten unter dem DEK verschlüsseln (bleibt über den PW-Wechsel hinweg gültig).
+  const dek = await importRawAesKey(rawDek, true);
+  const ctData = await encryptWithKey(dek, 'geheime-buchung');
+
+  // Passwort 1: DEK einwickeln.
+  const salt1 = randomBytes(16);
+  const kek1 = await deriveAesKey('passwort-eins', salt1, false);
+  const wrapped1 = await encryptBytesWithKey(kek1, rawDek);
+  const unwrapped1 = await decryptBytesWithKey(kek1, wrapped1);
+  ok('Unwrap mit richtigem PW = DEK', b64(unwrapped1) === b64(rawDek));
+
+  // Falsches Passwort -> Unwrap wirft (GCM-Auth).
+  let threw = false;
+  try { await decryptBytesWithKey(await deriveAesKey('falsch', salt1, false), wrapped1); } catch { threw = true; }
+  ok('Unwrap mit falschem PW wirft', threw);
+
+  // Passwortwechsel: DEK mit neuem PW (neuem Salt) neu einwickeln.
+  const salt2 = randomBytes(16);
+  const kek2 = await deriveAesKey('passwort-zwei', salt2, false);
+  const wrapped2 = await encryptBytesWithKey(kek2, unwrapped1);
+  const unwrapped2 = await decryptBytesWithKey(kek2, wrapped2);
+  ok('DEK nach PW-Wechsel unverändert', b64(unwrapped2) === b64(rawDek));
+  ok('Mandant-ID (DEK-Präfix) stabil', b64(unwrapped2.slice(0, 6)) === b64(rawDek.slice(0, 6)));
+
+  // Mit dem neuen PW entschlüsseln die ALTEN Daten weiterhin (kein Re-Encrypt nötig).
+  const dek2 = await importRawAesKey(unwrapped2, true);
+  ok('Alte Daten nach PW-Wechsel lesbar', (await decryptWithKey(dek2, ctData)) === 'geheime-buchung');
+
+  // Altes Passwort öffnet den neuen Umschlag NICHT mehr.
+  let threw2 = false;
+  try { await decryptBytesWithKey(await deriveAesKey('passwort-eins', salt2, false), wrapped2); } catch { threw2 = true; }
+  ok('Altes PW öffnet neuen Umschlag nicht', threw2);
 });
 
 await section('Shamir GF(256): split/combine', () => {

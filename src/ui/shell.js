@@ -8,7 +8,7 @@ import { t, setLang, LANGS } from './i18n.js';
 import { applyTheme } from './theme.js';
 import { MycelMark } from './mycel.js';
 import { getSettings, updateSettings, navigate, getRoute, subscribe, MODES, AI_LEVELS } from '../state.js';
-import { getMandantId, lockVault } from '../core/vault.js';
+import { getMandantId, lockVault, changePassword } from '../core/vault.js';
 import { durabilityStatus } from '../core/durability.js';
 import { exportBackupFile, readBackup, importSnapshot } from '../core/backup.js';
 import { pickFile, readFileText } from '../core/files.js';
@@ -203,6 +203,8 @@ function viewSettings() {
 
     firmaSection(s),
 
+    passwortSection(),
+
     el('div', { class: 'setting' }, [
       el('div', { class: 'setting-label', text: 'Backup' }),
       el('div', { class: 'btn-row' }, [
@@ -216,6 +218,45 @@ function viewSettings() {
 // Merkt sich kurz, dass das Firmenprofil gespeichert wurde (überlebt das Re-Render
 // nach updateSettings, das sonst die „Gespeichert ✓"-Meldung sofort verwerfen würde).
 let _firmaSaved = false;
+
+// Passwort ändern (Envelope: wickelt nur den Daten-Schlüssel neu ein).
+function passwortSection() {
+  const alt = el('input', { type: 'password', placeholder: t('pw.current'), autocomplete: 'current-password' });
+  const neu = el('input', { type: 'password', placeholder: t('pw.new'), autocomplete: 'new-password' });
+  const neu2 = el('input', { type: 'password', placeholder: t('pw.repeat'), autocomplete: 'new-password' });
+  const status = el('p', { class: 'muted small' });
+  const field = (label, input) => el('label', { class: 'field' }, [el('span', { text: label }), input]);
+  return el('div', { class: 'setting' }, [
+    el('div', { class: 'setting-label', text: t('pw.title') }),
+    el('div', { class: 'pw-row' }, [
+      el('img', { class: 'pw-key', src: './assets/img/onboard-key.png', alt: '', loading: 'lazy' }),
+      el('div', { class: 'pw-form' }, [
+        el('p', { class: 'muted small', text: t('pw.hint') }),
+        el('div', { class: 'form-grid' }, [
+          field(t('pw.current'), alt),
+          field(t('pw.new'), neu),
+          field(t('pw.repeat'), neu2),
+        ]),
+        el('div', { class: 'btn-row' }, [
+          el('button', {
+            class: 'btn btn-sm btn-primary', text: t('pw.change'),
+            onClick: async () => {
+              status.classList.remove('form-error');
+              if (neu.value !== neu2.value) { status.textContent = t('onboard.mismatch'); status.classList.add('form-error'); return; }
+              if (neu.value.length < 8) { status.textContent = t('onboard.tooShort'); status.classList.add('form-error'); return; }
+              try {
+                await changePassword(alt.value, neu.value);
+                alt.value = neu.value = neu2.value = '';
+                status.textContent = t('pw.done');
+              } catch (e) { status.textContent = String(e.message || e); status.classList.add('form-error'); }
+            },
+          }),
+          status,
+        ]),
+      ]),
+    ]),
+  ]);
+}
 
 // Firmenprofil (Rechnungssteller-Stammdaten, §14 UStG) — verschlüsselt in Settings.
 function firmaSection(s) {
