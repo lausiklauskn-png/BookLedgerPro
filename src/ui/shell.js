@@ -248,7 +248,10 @@ function aiConfigSection() {
     host.replaceChildren(
       el('div', { class: 'setting-label', text: t('settings.aiExternal') }),
       fieldWithLink(t('settings.aiVisionKey'), visionKey, 'https://console.cloud.google.com/apis/credentials'),
-      el('p', { class: 'muted small', text: t('settings.aiVisionHint') }),
+      el('p', { class: 'muted small' }, [
+        el('span', { text: t('settings.aiVisionHint') + ' ' }),
+        el('a', { class: 'provider-link', href: 'https://console.cloud.google.com/apis/library/vision.googleapis.com', target: '_blank', rel: 'noopener', text: t('settings.aiVisionEnable') }),
+      ]),
       fieldWithLink(t('settings.aiMistralKey'), mistralKey, 'https://console.mistral.ai/api-keys'),
       el('p', { class: 'muted small', text: t('settings.aiMistralHint') }),
       el('label', { class: 'field' }, [el('span', { text: t('settings.aiModel') }), model]),
