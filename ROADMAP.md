@@ -14,12 +14,18 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 - [x] Node-Smoke-Test (Krypto + Shamir), CI-Workflow
 - [x] Docs: README, ARCHITECTURE, ROADMAP, CLAUDE/AGENTS, SESSIONS, SAGE_BROWSER_LEHREN
 
-## Phase 1 — Buchhaltungs-Kern
-- [ ] Kontenplan (SKR03/04-light), Konten-Typen, Salden
-- [ ] Buchungssätze (doppelte Buchführung, Soll/Haben, USt-Satz, Kostenstelle)
-- [ ] Journal-/Konten-Ansichten, EÜR- + USt-Berechnung
-- [ ] **GoBD**: Festschreibung, Storno statt Löschen, Audit-Hash-Kette (`core/audit.js`),
-      lückenlose Nummernkreise
+## ✅ Phase 1 — Buchhaltungs-Kern
+- [x] Kontenplan (SKR03-Auswahl), Konten-Typen, Salden (`domain/accounts.js`)
+- [x] Buchungssätze (doppelte Buchführung, mehrzeilig, Soll/Haben, autom. USt-Aufteilung)
+      (`domain/journal.js`, `domain/money.js` cent-genau)
+- [x] Journal-/Konten-Ansichten + Auswertung (EÜR + USt-Voranmeldung, Periodenfilter)
+      (`ui/views/*`, `domain/taxes.js`)
+- [x] **GoBD**: Festschreibung, Storno statt Löschen, Audit-Hash-Kette (`domain/audit.js`),
+      lückenloser Nummernkreis; Buchungen verschlüsselt gespeichert (`domain/store.js`)
+- [x] 45/45 Node-Tests grün (Kernlogik). ⚠️ Browser-UI nicht headless E2E-getestet.
+
+> Offen/Teil-Phase-4: strenge Zufluss-/Abfluss-EÜR (§4 Abs.3 EStG); Kostenstellen-Feld
+> ist im Modell vorgesehen, UI-Zuordnung folgt mit Phase 3.
 
 ## Phase 2 — Belege & Erkennung
 - [ ] Verschlüsselter Beleg-Store (Foto/PDF)

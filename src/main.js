@@ -8,6 +8,7 @@ import { renderShell } from './ui/shell.js';
 import { applyTheme } from './ui/theme.js';
 import { setLang } from './ui/i18n.js';
 import { hydrateSettings } from './state.js';
+import { ensureAccountsSeeded } from './domain/store.js';
 
 const root = document.getElementById('app-root');
 
@@ -34,6 +35,9 @@ async function boot() {
   const settings = await hydrateSettings();
   setLang(settings.lang);
   applyTheme(settings.theme);
+
+  // Kontenplan einmalig anlegen (SKR03-Auswahl).
+  await ensureAccountsSeeded();
 
   renderShell(root, { onLock: () => location.reload() });
 }

@@ -24,6 +24,33 @@ Familie: Mein-Tresor (Krypto), Mein-WorkFloh (Shell/Domäne), Sage-Protokol (SBK
 7. **Design additiv.** Visuelle Effekte nie via `cursor: none` (DeX/Android ignoriert das).
 8. **Neueste Claude-Modelle** für KI-Funktionen (Opus 4.8 / Sonnet 4.6 / Haiku 4.5), BYOK.
 
+## Arbeitsvertrag — lückenlos & ehrlich (verbindlich)
+
+Diese Regeln sichern, dass über Sitzungsgrenzen hinweg **nahtlos** weitergearbeitet werden
+kann und nichts beschönigt wird.
+
+**Ehrlichkeit (keine Tricks, keine sinnlosen Abkürzungen):**
+- Was als „fertig/implementiert" gemeldet wird, **ist** real implementiert — keine Stubs,
+  keine Fake-Logik, kein vorgetäuschtes Grün. Platzhalter werden ausdrücklich als solche
+  benannt (`Phase X`, „coming soon").
+- Tests müssen **wirklich laufen** (`node tests/run.mjs`); Ergebnisse werden wahrheitsgemäß
+  berichtet (auch Fehlschläge). Nicht im Browser verifizierte Teile (DOM/IndexedDB) werden
+  **klar gekennzeichnet** — nicht als „getestet" ausgegeben.
+- Abkürzungen nur, wenn sie die Sache nicht entwerten. Im Zweifel den ehrlichen, etwas
+  längeren Weg gehen.
+
+**Definition of Done je Phase (alle Punkte):**
+1. Funktion real implementiert (kein Fake), Kernlogik per Node-Test abgedeckt wo möglich.
+2. `node tests/run.mjs` grün; CI grün.
+3. `ROADMAP.md`-Checkliste der Phase abgehakt.
+4. `docs/SESSIONS.md` fortgeschrieben: **Was getan · Stand · konkretes Nächstes · offene
+   Grenzen/ungetestete Teile**.
+5. PR mit ehrlicher Verifikations-Sektion (inkl. was NICHT geprüft wurde).
+
+**Lückenloses Weiterarbeiten:** Eine neue Sitzung muss allein aus `CLAUDE.md` + `ROADMAP.md`
++ `docs/SESSIONS.md` (oberster Eintrag) genau wissen, wo es weitergeht. Diese drei immer
+aktuell halten.
+
 ## Arbeitsweise
 - Branch: `claude/general-discussion-x9xyk9` (bzw. der für die Sitzung vorgegebene).
 - Pro Phase ein PR. **Freibrief für dieses Repo: mergen, wenn sinnvoll & nutzerfreundlich**

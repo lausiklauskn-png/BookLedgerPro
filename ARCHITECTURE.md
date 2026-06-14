@@ -23,8 +23,9 @@ index.html · manifest.webmanifest · sw.js · status.json (Phase 5)
           <gegenseite>_inbox.json, <gegenseite>_inbox.verify.md}
 assets/        tokens.css · app.css · icon.svg · (Phase 6: Bilder)
 src/
-  core/        crypto · shamir · db · durability · files · vault · backup · (Phase 1: audit)
-  domain/      (Phase 1+) accounts · journal · costcenters · taxes
+  core/        crypto · shamir · db · durability · files · vault · backup
+  domain/      money · accounts · journal · audit · taxes · store  (Phase 1, real)
+               (Phase 3+: costcenters)
   modules/     (Phase 2+) documents · orders · customers · employees
   ai/          (Phase 2+) embeddings · ocr · provider · extract · taxAssist
   sbkim/       (Phase 5) identity · spore · anastomose · membrane · siegel
