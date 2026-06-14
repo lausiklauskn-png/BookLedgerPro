@@ -1,18 +1,19 @@
-// src/ui/views/documents.js — Belege: Upload (verschlüsselt), Schnellerfassung
-// aus Text, optionale Claude-Vision-Extraktion. Respektiert den KI-Autonomie-Schalter.
+// src/ui/views/documents.js — Belege: Upload/Foto/Scanner/PDF (verschlüsselt),
+// Texterkennung über Google Vision (EU), Kontierung über Mistral (EU, mit
+// On-Device-Heuristik-Fallback). Respektiert den KI-Autonomie-Schalter.
 
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
-import { pickFile } from '../../core/files.js';
+import { pickFile, formatBytes } from '../../core/files.js';
 import { loadAccounts, saveEntwurf } from '../../domain/store.js';
 import { extractFromText } from '../../ai/extract.js';
-import { categorize } from '../../ai/categorize.js';
+import { categorize as categorizeAI } from '../../ai/mistral.js';
+import { ocr } from '../../ai/vision.js';
+import { isVisionConfigured } from '../../ai/aiConfig.js';
 import { buildVorschlag } from '../../ai/suggest.js';
-import { isConfigured, extractFromImage } from '../../ai/provider.js';
 import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, bytesToBase64, linkBeleg } from '../../domain/documents.js';
 import { getSettings } from '../../state.js';
-import { formatBytes } from '../../core/files.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
@@ -27,13 +28,13 @@ export async function mountDocuments(host) {
 }
 
 async function repaint(extra) {
-  const [belege, claudeBereit] = await Promise.all([listBelege(), isConfigured().catch(() => false)]);
+  const [belege, visionBereit] = await Promise.all([listBelege(), isVisionConfigured().catch(() => false)]);
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('docs.title') }),
     schnellerfassung(),
     extra || null,
-    uploadKarte(claudeBereit),
-    belegListe(belege, claudeBereit),
+    uploadKarte(),
+    belegListe(belege, visionBereit),
   ]));
 }
 
@@ -47,7 +48,7 @@ function schnellerfassung() {
     onClick: async () => {
       out.replaceChildren();
       const ex = extractFromText(ta.value);
-      const kat = categorize(ta.value);
+      const kat = await categorizeAI(ta.value, _idx);
       const res = buildVorschlag(ex, kat, _idx);
       if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
       out.appendChild(await vorschlagKarte(res.vorschlag, null));
@@ -91,7 +92,6 @@ async function vorschlagKarte(vorschlag, belegId) {
       el('button', { class: 'btn btn-primary btn-sm', text: t('docs.accept'), onClick: async (e) => { e.target.setAttribute('disabled', ''); await uebernehmen(); } }),
     ]));
   } else {
-    // draft + auto: automatisch Entwurf anlegen. (auto schreibt NICHT automatisch fest — GoBD.)
     await uebernehmen();
     status.textContent = autonomy === 'auto' ? t('docs.autoDraft') : t('docs.draftCreated');
   }
@@ -100,26 +100,26 @@ async function vorschlagKarte(vorschlag, belegId) {
   return card;
 }
 
-// ---- Upload + Beleg-Liste --------------------------------------------------
+// ---- Upload (Datei / Foto / PDF) + Beleg-Liste -----------------------------
 
 function uploadKarte() {
-  const btn = el('button', {
-    class: 'btn', text: t('docs.upload'),
-    onClick: async () => {
-      const file = await pickFile('image/*,application/pdf');
-      if (!file) return;
-      try { await saveBeleg(file); await repaint(); }
-      catch (e) { alert(String(e.message || e)); }
-    },
-  });
+  const add = async (accept, capture) => {
+    const file = await pickFile(accept, capture);
+    if (!file) return;
+    try { await saveBeleg(file); await repaint(); }
+    catch (e) { alert(String(e.message || e)); }
+  };
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('docs.archive') }),
     el('p', { class: 'muted small', text: t('docs.archiveHint') }),
-    el('div', { class: 'btn-row' }, [btn]),
+    el('div', { class: 'btn-row' }, [
+      el('button', { class: 'btn', text: t('docs.camera'), onClick: () => add('image/*', 'environment') }),
+      el('button', { class: 'btn', text: t('docs.upload'), onClick: () => add('image/*,application/pdf', null) }),
+    ]),
   ]);
 }
 
-function belegListe(belege, claudeBereit) {
+function belegListe(belege, visionBereit) {
   if (!belege.length) return emptyState('empty-documents.png', t('docs.empty'));
   const rows = belege.map((b) => el('tr', {}, [
     el('td', { text: b.name }),
@@ -127,7 +127,7 @@ function belegListe(belege, claudeBereit) {
     el('td', { class: 'num muted small', text: formatBytes(b.size) }),
     el('td', { class: 'muted small mono', text: (b.createdAt || '').slice(0, 10) }),
     el('td', { text: b.buchungId ? '🔗' : '' }),
-    el('td', { class: 'actions' }, [belegAktionen(b, claudeBereit)]),
+    el('td', { class: 'actions' }, [belegAktionen(b, visionBereit)]),
   ]));
   return el('div', { class: 'card no-pad' }, [
     el('table', { class: 'table' }, [
@@ -141,12 +141,12 @@ function belegListe(belege, claudeBereit) {
   ]);
 }
 
-function belegAktionen(b, claudeBereit) {
+function belegAktionen(b, visionBereit) {
   const wrap = el('div', { class: 'btn-row' });
-  if (claudeBereit && /^image\//.test(b.mediaType)) {
+  if (visionBereit && /^(image\/|application\/pdf)/.test(b.mediaType)) {
     wrap.appendChild(el('button', {
-      class: 'btn btn-sm', text: t('docs.aiExtract'),
-      onClick: () => claudeExtraktion(b),
+      class: 'btn btn-sm', text: t('docs.ocr'),
+      onClick: () => visionExtraktion(b),
     }));
   }
   wrap.appendChild(el('button', {
@@ -156,16 +156,18 @@ function belegAktionen(b, claudeBereit) {
   return wrap;
 }
 
-async function claudeExtraktion(b) {
-  if (!confirm(t('docs.confirmAi'))) return; // Daten verlassen das Gerät
+async function visionExtraktion(b) {
+  if (!confirm(t('docs.confirmOcr'))) return; // Daten gehen an Google Vision (EU)
   try {
     const bytes = await getBelegBytes(b.id);
-    const felder = await extractFromImage({ base64: bytesToBase64(bytes), mediaType: b.mediaType });
-    const kat = categorize(felder.vendor || '');
-    const res = buildVorschlag(felder, kat, _idx);
+    const text = await ocr({ base64: bytesToBase64(bytes), mimeType: b.mediaType });
+    if (!text) { alert(t('docs.ocrNoText')); return; }
+    const ex = extractFromText(text);
+    const kat = await categorizeAI(text, _idx);   // Mistral EU, sonst Heuristik
+    const res = buildVorschlag(ex, kat, _idx);
     if (!res.ok) { alert(res.fehler); return; }
     await repaint(await vorschlagKarte(res.vorschlag, b.id));
   } catch (e) {
-    alert(t('docs.aiError') + ' ' + String(e.message || e));
+    alert(t('docs.ocrError') + ' ' + String(e.message || e));
   }
 }

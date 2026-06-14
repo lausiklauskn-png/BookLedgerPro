@@ -27,6 +27,8 @@ import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
 import { buildSignal } from '../src/sbkim/signal.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
+import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
+import { buildClassifyMessages, parseClassify } from '../src/ai/mistral.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -459,6 +461,35 @@ await section('Dashboard-Kennzahlen (Jahresfilter)', () => {
   ok('2 festgeschrieben in 2026', k.festgeschrieben === 2);
   ok('1 Entwurf', k.entwuerfe === 1);
   ok('jahrPeriode korrekt', jahrPeriode(2026).von === '2026-01-01' && jahrPeriode(2026).bis === '2026-12-31');
+});
+
+// ===== EU-KI: Google Vision (OCR) + Mistral (Kontierung) =====
+
+await section('Vision EU: Request-Aufbau & Antwort-Parser', () => {
+  const img = buildVisionRequest('AAAA', 'image/jpeg');
+  ok('Bild -> images:annotate', img.endpoint === 'images:annotate');
+  ok('Bild: content gesetzt', img.body.requests[0].image.content === 'AAAA');
+  ok('Feature DOCUMENT_TEXT_DETECTION', img.body.requests[0].features[0].type === 'DOCUMENT_TEXT_DETECTION');
+
+  const pdf = buildVisionRequest('BBBB', 'application/pdf');
+  ok('PDF -> files:annotate', pdf.endpoint === 'files:annotate');
+  ok('PDF: inputConfig mimeType', pdf.body.requests[0].inputConfig.mimeType === 'application/pdf');
+
+  ok('Bild-Antwort geparst', parseVisionText({ responses: [{ fullTextAnnotation: { text: 'Rechnung 119,00' } }] }) === 'Rechnung 119,00');
+  ok('PDF-Antwort (mehrseitig) geparst', parseVisionText({ responses: [{ responses: [{ fullTextAnnotation: { text: 'A' } }, { fullTextAnnotation: { text: 'B' } }] }] }) === 'A\nB');
+  let threw = false; try { parseVisionText({ responses: [{ error: { message: 'BAD_KEY' } }] }); } catch { threw = true; }
+  ok('Vision-Fehler wirft', threw);
+});
+
+await section('Mistral EU: Kontierungs-Prompt & Parser', () => {
+  const konten = seedAccounts();
+  const msgs = buildClassifyMessages('Miete Büro', konten);
+  ok('System + User Message', msgs.length === 2 && msgs[0].role === 'system');
+  ok('nur Erfolgskonten gelistet (4210 ja, 1200 nein)', msgs[1].content.includes('4210') && !msgs[1].content.includes('1200 Bank'));
+
+  ok('JSON geparst', JSON.stringify(parseClassify('{"konto":"4930","richtung":"ausgabe"}')) === '{"konto":"4930","richtung":"ausgabe"}');
+  ok('JSON aus Text extrahiert', parseClassify('Antwort: {"konto":"8400","richtung":"einnahme"} ok').konto === '8400');
+  ok('kein JSON -> null', parseClassify('keine Ahnung') === null);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

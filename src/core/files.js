@@ -43,12 +43,14 @@ export function downloadJson(filename, obj) {
   downloadText(filename, JSON.stringify(obj, null, 2), 'application/json');
 }
 
-/** Öffnet einen Datei-Auswahldialog und liefert die gewählte Datei. */
-export function pickFile(accept = '') {
+/** Öffnet einen Datei-Auswahldialog und liefert die gewählte Datei.
+ *  `capture` = 'environment'|'user' öffnet direkt die Kamera (mobil). */
+export function pickFile(accept = '', capture = null) {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
     if (accept) input.accept = accept;
+    if (capture) input.capture = capture;
     input.onchange = () => resolve(input.files && input.files[0] ? input.files[0] : null);
     input.click();
   });

@@ -8,7 +8,7 @@ import { computeUStVoranmeldung, computeEUR } from '../../domain/taxes.js';
 import { kostenstellenAuswertung } from '../../domain/costcenters.js';
 import { buildLedgerCsv, buildDatevCsv, buildUstVa, ustVaToCsv, eurToCsv } from '../../domain/export.js';
 import { downloadText } from '../../core/files.js';
-import { isConfigured } from '../../ai/provider.js';
+import { isMistralConfigured } from '../../ai/aiConfig.js';
 import { erklaereSteuer } from '../../ai/taxAssist.js';
 import { emptyState } from '../empty.js';
 
@@ -40,7 +40,7 @@ async function repaint() {
   const va = buildUstVa(buchungen, idx, p);
   const ks = kostenstellenAuswertung(buchungen, idx, p);
   const audit = await verifyAuditChain();
-  const claudeBereit = await isConfigured().catch(() => false);
+  const claudeBereit = await isMistralConfigured().catch(() => false);
 
   mount(_host, el('section', { class: 'view', id: 'report-view' }, [
     el('h1', { text: t('reports.title') }),
