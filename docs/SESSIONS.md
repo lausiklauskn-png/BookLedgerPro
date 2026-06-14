@@ -5,6 +5,32 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — USt-Verprobung + Kleinunternehmer-Schalter (Berater-Substanz)
+
+**Was getan** (Folge-Batch zur Profi-Härtung, gleiche PR-Branch)
+- **USt-Verprobung** (`src/domain/taxes.js` → `verprobeUSt`): reiner Berater-Check, der die
+  GEBUCHTE Vor-/Umsatzsteuer mit der aus Netto×Satz ERWARTETEN vergleicht (pro Buchung/Satz
+  gerundet → keine Rundungs-Fehlalarme). Deckt vergessene/falsch gerechnete USt auf. In den
+  Auswertungen als grün/rot-Karte (`verprobungCard`) mit „gebucht / erwartet (Abweichung)".
+- **Kleinunternehmer-Schalter (§19 UStG)**: `kleinunternehmer` in den Einstellungen
+  (Ja/Nein-Segment), `state.js`-Default `false`. Wird an `pruefeBuchung`/`buildVorschlag`
+  durchgereicht → unterdrückt die USt-„vergessen"-Hinweise für §19-Nutzer.
+- **Audit-Kette war bereits sichtbar** (Dashboard-Badge + Reports `auditCard` via
+  `verifyAuditChain`) — nichts dupliziert.
+- i18n de/en (reports.verprobung*, settings.kleinunternehmer, common.yes/no). SW-Cache `v26→v27`.
+- `tests/run.mjs`: +6 `verprobeUSt`. **Gesamt 162/162 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 162/0; `node --check` aller geänderten Dateien.
+**Nicht verifiziert (ehrlich):** neue UI (Verprobungs-Karte, Kleinunternehmer-Segment) nicht
+headless-E2E geklickt. **EÜR §4(3)/DATEV** und **KI-Berater mit Rechts-Grundlage** sind als
+eigene Folge-PRs geplant (zu groß für diesen Batch — Ehrlichkeits-Vertrag).
+
+**Offen / Nächstes:** KI-Berater (Begründung/Notiz-Feld + kuratiertes Regel-Set
+`rechtsregeln.js` + Prompt + UI); EÜR §4(3) Zufluss/Abfluss; DATEV-EXTF zertifiziert.
+**Details: `docs/PULS.md`.**
+
+---
+
 ## 2026-06-14 — Profi-Härtung mit Spielraum: Kontoart-Richtung + Plausibilitäts-Hinweise
 
 **Was getan**

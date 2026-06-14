@@ -9,6 +9,7 @@ import { pruefeBuchung } from '../../domain/pruefung.js';
 import { KONTOART } from '../../domain/accounts.js';
 import { UST_SAETZE } from '../../domain/taxes.js';
 import { listKostenstellen, ensureKostenstellenSeeded } from '../../domain/crm-store.js';
+import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
@@ -106,7 +107,7 @@ function buchungForm(konten, idx) {
         // Spielraum: Entwurf wird IMMER gespeichert. Hinweise blockieren nicht;
         // streng wird erst beim Festschreiben geprüft.
         await saveEntwurf(buchung);
-        const { warnungen } = pruefeBuchung(buchung, idx, { letztesFestDatum: _letztesFestDatum });
+        const { warnungen } = pruefeBuchung(buchung, idx, { letztesFestDatum: _letztesFestDatum, kleinunternehmer: getSettings().kleinunternehmer });
         _hinweise = warnungen;
         await repaint();
       } catch (ex) {
@@ -186,7 +187,7 @@ function aktion(b) {
       onClick: async () => {
         // Hinweise zeigen, aber den Profi entscheiden lassen (nicht-blockierend).
         const frisch = await getBuchung(b.id);
-        const { warnungen } = pruefeBuchung(frisch, _idx, { letztesFestDatum: _letztesFestDatum });
+        const { warnungen } = pruefeBuchung(frisch, _idx, { letztesFestDatum: _letztesFestDatum, kleinunternehmer: getSettings().kleinunternehmer });
         let frage = t('journal.confirmPost');
         if (warnungen.length) frage = t('journal.hints') + ':\n– ' + warnungen.join('\n– ') + '\n\n' + frage;
         if (!confirm(frage)) return;

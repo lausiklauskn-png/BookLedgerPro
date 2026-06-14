@@ -11,7 +11,7 @@ import { parseEuroToCents, formatCents } from '../src/domain/money.js';
 import { saldo, KONTOART, mehrungsSeite } from '../src/domain/accounts.js';
 import { baueBuchungZeilen, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen } from '../src/domain/journal.js';
 import { hashBuchung, verifyChain, GENESIS, canonicalize } from '../src/domain/audit.js';
-import { computeEUR, computeUStVoranmeldung, saldenliste } from '../src/domain/taxes.js';
+import { computeEUR, computeUStVoranmeldung, saldenliste, verprobeUSt } from '../src/domain/taxes.js';
 import { seedAccounts } from '../src/domain/accounts.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
@@ -355,6 +355,37 @@ await section('Plausibilitäts-Prüfung: Hinweise wie ein Berater (nicht-blockie
   ] }, idx, { heute });
   ok('unausgeglichen → harter Fehler', p.fehler.length > 0);
   ok('unausgeglichen → nicht festschreibbar', istFestschreibbar(p) === false);
+});
+
+await section('USt-Verprobung: gebucht vs. erwartet (Netto × Satz)', () => {
+  const idx = indexFromSeed();
+  const ausgabe = { seq: 1, datum: '2026-06-02', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 },
+    { konto: '1576', seite: 'S', betrag: 1900 },
+    { konto: '1200', seite: 'H', betrag: 11900 },
+  ] };
+  const einnahme = { seq: 2, datum: '2026-06-03', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 11900 },
+    { konto: '8400', seite: 'H', betrag: 10000 },
+    { konto: '1776', seite: 'H', betrag: 1900 },
+  ] };
+  let v = verprobeUSt([ausgabe, einnahme], idx);
+  ok('korrekt gebucht → ok', v.ok === true);
+  ok('Vorsteuer erwartet=gebucht=1900', v.vorsteuer.erwartet === 1900 && v.vorsteuer.gebucht === 1900 && v.vorsteuer.diff === 0);
+  ok('Umsatzsteuer erwartet=gebucht=1900', v.umsatzsteuer.erwartet === 1900 && v.umsatzsteuer.gebucht === 1900);
+
+  // Vergessene USt auf Erlös → Abweichung.
+  const vergessen = { seq: 3, datum: '2026-06-04', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 11900 },
+    { konto: '8400', seite: 'H', betrag: 11900 },
+  ] };
+  v = verprobeUSt([vergessen], idx);
+  ok('vergessene USt → nicht ok', v.ok === false);
+  ok('USt-Abweichung negativ (gebucht < erwartet)', v.umsatzsteuer.diff < 0 && v.umsatzsteuer.gebucht === 0);
+
+  // Entwürfe (seq == null) zählen nicht mit.
+  v = verprobeUSt([{ seq: null, datum: '2026-06-05', zeilen: vergessen.zeilen }], idx);
+  ok('Entwurf wird ignoriert', v.ok === true && v.umsatzsteuer.erwartet === 0);
 });
 
 // ===== Phase 3: Aufträge, Rechnung, Zeit, Kostenstellen =====

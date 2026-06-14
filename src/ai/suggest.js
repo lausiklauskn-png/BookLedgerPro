@@ -59,6 +59,7 @@ export function buildVorschlag(extracted, kategorie, accountIndex, opts = {}) {
   // erst beim Festschreiben (store.festschreiben), nicht beim Erfassen.
   const { fehler, warnungen } = pruefeBuchung(
     { datum, beschreibung, zeilen: built.zeilen }, accountIndex,
+    { kleinunternehmer: opts.kleinunternehmer },
   );
 
   return {

@@ -49,7 +49,7 @@ function schnellerfassung() {
       out.replaceChildren();
       const ex = extractFromText(ta.value);
       const kat = await categorizeAI(ta.value, _idx);
-      const res = buildVorschlag(ex, kat, _idx);
+      const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
       if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
       out.appendChild(await vorschlagKarte(res.vorschlag, null));
     },
