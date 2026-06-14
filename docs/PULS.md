@@ -6,8 +6,8 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 **Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/bookledgerpro-status-jeo3qz`
-· **main-Stand:** `e59133c` · **Tests:** `node tests/run.mjs` → **203/203 grün**
-· **SW-Cache:** `v32` · **57 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **main-Stand:** `e59133c` · **Tests:** `node tests/run.mjs` → **208/208 grün**
+· **SW-Cache:** `v33` · **57 JS-Module** · **12 Bild- + 5 Icon-Assets**
 
 ---
 
@@ -80,7 +80,7 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
   - 5d: Symbiose-Import (Belege aus **Mein-Tresor**, Aufträge aus **WorkFloh** → Buchungen).
   - Briefkasten-Ritual (§11.6, `docs/SAGE_SYNC_BRIEFKASTEN.md`) wird **erst aktiv**, wenn
     BookLedgerPro ein deployter Sage-Knoten ist.
-- **Steuer-Recht-Resterledigung:** strenge Zufluss-/Abfluss-EÜR (§4 Abs.3 EStG);
+- **Steuer-Recht-Resterledigung:** EÜR Zufluss/Abfluss (§4 Abs.3) ✅ (vereinfachtes Ist-Modell);
   DATEV-EXTF: Envelope + Konto/Gegenkonto + Standard-Steuerschlüssel ✅ (NICHT zertifiziert/116-Spalten); **keine** ELSTER/ERiC-Einreichung
   (nur Datenpaket). Rechnungsdokument mit §14-Pflichtangaben ✅ (druckbar via Browser-Print → PDF).
 - **Performance/Lighthouse** nicht gemessen (kein Headless-Browser).

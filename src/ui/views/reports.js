@@ -4,7 +4,7 @@ import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
-import { computeUStVoranmeldung, computeEUR, verprobeUSt } from '../../domain/taxes.js';
+import { computeUStVoranmeldung, computeEUR, computeEURIst, verprobeUSt } from '../../domain/taxes.js';
 import { kostenstellenAuswertung } from '../../domain/costcenters.js';
 import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv } from '../../domain/export.js';
 import { downloadText } from '../../core/files.js';
@@ -38,6 +38,7 @@ async function repaint() {
   const ust = computeUStVoranmeldung(buchungen, idx, p);
   const verprobung = verprobeUSt(buchungen, idx, p);
   const eur = computeEUR(buchungen, idx, p);
+  const eurIst = computeEURIst(buchungen, idx, p);
   const va = buildUstVa(buchungen, idx, p);
   const ks = kostenstellenAuswertung(buchungen, idx, p);
   const audit = await verifyAuditChain();
@@ -51,6 +52,7 @@ async function repaint() {
       ustCard(ust),
       eurCard(eur),
     ]),
+    eurIstCard(eurIst),
     vaCard(va),
     verprobungCard(verprobung),
     claudeBereit ? assistentCard(va, eur, p) : null,
@@ -194,6 +196,17 @@ function verprobungCard(v) {
     block(t('reports.ust'), v.umsatzsteuer),
     block(t('reports.vorsteuer'), v.vorsteuer),
     el('p', { class: 'muted small', text: t('reports.verprobungNote') }),
+  ]);
+}
+
+function eurIstCard(eur) {
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.eurIst') }),
+    zeile(t('reports.income'), eur.einnahmen),
+    zeile(t('reports.expense'), eur.ausgaben),
+    el('div', { class: 'mycel-divider' }),
+    zeile(t('reports.surplus'), eur.ueberschuss, { strong: true }),
+    el('p', { class: 'muted small', text: t('reports.eurIstNote') }),
   ]);
 }
 
