@@ -150,6 +150,11 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .hinweis-liste { margin: .35rem 0 0; padding-left: 1.1rem; }
 .hinweis-liste li { margin: .15rem 0; }
 
+/* Rechnungs-Dokument (druckbar). */
+.rechnung-doc .rech-kopf { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.rech-adr div { line-height: 1.4; }
+.rech-summen { margin-top: .8rem; max-width: 22rem; margin-left: auto; }
+
 /* ---- Tabellen ------------------------------------------------------------- */
 .card.no-pad { padding: 0; overflow: hidden; }
 .pad { padding: 1.1rem; }

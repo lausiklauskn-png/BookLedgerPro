@@ -17,6 +17,7 @@ import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
 import { pruefeBuchung, istFestschreibbar } from '../src/domain/pruefung.js';
+import { baueRechnung, pflichtangaben, formatRechnungsnummer } from '../src/domain/rechnung.js';
 import { findeRechtsregeln, onDeviceBegruendung } from '../src/domain/rechtsregeln.js';
 import { buildBegruendungMessages, parseBegruendung, begruendeBuchung } from '../src/ai/berater.js';
 import { auftragSummen, darfWechseln, validateAuftrag } from '../src/domain/orders.js';
@@ -417,6 +418,35 @@ await section('USt-Verprobung: gebucht vs. erwartet (Netto × Satz)', () => {
   // Entwürfe (seq == null) zählen nicht mit.
   v = verprobeUSt([{ seq: null, datum: '2026-06-05', zeilen: vergessen.zeilen }], idx);
   ok('Entwurf wird ignoriert', v.ok === true && v.umsatzsteuer.erwartet === 0);
+});
+
+await section('Rechnungs-Dokument: Aufbau + §14-Pflichtangaben', () => {
+  const auftrag = { titel: 'Projekt X', positionen: [
+    { beschreibung: 'Beratung', menge: 2, einzelpreisCent: 5000, ustSatz: 19 },
+    { beschreibung: 'Material', menge: 1, einzelpreisCent: 10000, ustSatz: 7 },
+  ] };
+  const firma = { name: 'Muster GmbH', anschrift: 'Weg 1, Berlin', steuernummer: '12/345/67890', ustId: '', iban: 'DE..' };
+  const kunde = { name: 'Kunde AG', adresse: 'Platz 2, Köln' };
+  const r = baueRechnung({ auftrag, kunde, firma, nummer: '2026-0001', datum: '2026-06-14', leistungsdatum: '2026-06-10' });
+  ok('Netto 20000', r.netto === 20000);
+  ok('USt 2600 (1900+700)', r.ust === 2600);
+  ok('Brutto 22600', r.brutto === 22600);
+  ok('Steuerzeilen: höchster Satz zuerst', r.steuerzeilen[0].satz === 19 && r.steuerzeilen[1].satz === 7);
+  ok('Positionen mit Netto', r.positionen[0].netto === 10000);
+  ok('vollständige Rechnung: keine fehlenden Pflichtangaben', pflichtangaben(r).length === 0);
+
+  // Unvollständig: ohne Firma/Nummer → Pflichtangaben fehlen.
+  const leer = baueRechnung({ auftrag, kunde: {}, firma: {}, nummer: '', datum: '', leistungsdatum: '' });
+  const fehlt = pflichtangaben(leer);
+  ok('fehlende Pflichtangaben erkannt', fehlt.length >= 5);
+  ok('nennt Rechnungsnummer', fehlt.some((m) => /Rechnungsnummer/.test(m)));
+
+  // Kleinunternehmer: keine USt, Hinweis-Pflicht erfüllt (kein USt-Mangel).
+  const ku = baueRechnung({ auftrag, kunde, firma, nummer: '2026-0002', datum: '2026-06-14', leistungsdatum: '2026-06-14', kleinunternehmer: true });
+  ok('Kleinunternehmer: USt 0', ku.ust === 0 && ku.brutto === ku.netto);
+  ok('Kleinunternehmer: kein USt-Pflichtmangel', !pflichtangaben(ku).some((m) => /Steuersatz/.test(m)));
+
+  ok('Rechnungsnummer-Format', formatRechnungsnummer(7, 2026) === '2026-0007');
 });
 
 await section('Rechtsregeln (Grounding) + KI-Berater (Begründung mit §-Bezug)', () => {
