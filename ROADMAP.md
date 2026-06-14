@@ -27,11 +27,21 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 > Offen/Teil-Phase-4: strenge Zufluss-/Abfluss-EÜR (§4 Abs.3 EStG); Kostenstellen-Feld
 > ist im Modell vorgesehen, UI-Zuordnung folgt mit Phase 3.
 
-## Phase 2 — Belege & Erkennung
-- [ ] Verschlüsselter Beleg-Store (Foto/PDF)
-- [ ] OCR lokal (`ai/ocr.js`), Extraktion → Buchungsvorschlag (`ai/extract.js`, opt-in Vision)
-- [ ] On-Device-Auto-Kategorisierung (`ai/embeddings.js`)
-- [ ] KI-Autonomie-Schalter wirksam (Vorschlag / Auto-Entwurf+Review / Autonom)
+## ✅ Phase 2 — Belege & Erkennung (Kern)
+- [x] Verschlüsselter Beleg-Store (Foto/PDF), `domain/documents.js` (AES-GCM)
+- [x] Heuristische Extraktion Text→Felder (`ai/extract.js`) + Kategorisierung
+      (`ai/categorize.js`) + Buchungsvorschlag (`ai/suggest.js`) — rein & getestet
+- [x] Externe KI **opt-in BYOK Claude-Vision** (`ai/provider.js`, neueste Modelle),
+      Daten verlassen Gerät nur nach Bestätigung
+- [x] **KI-Autonomie-Schalter wirksam**: Vorschlag (nur anzeigen) / Auto-Entwurf+Review /
+      Autonom (still Entwurf) — Festschreiben bleibt bewusst manuell (GoBD)
+- [x] UI: Belege-Ansicht (Upload, Schnellerfassung, KI-Extraktion); KI-Settings (BYOK)
+- [x] 65/65 Node-Tests grün (Extraktion/Kategorisierung/Vorschlag)
+
+> **Ehrlich offen (Phase 2.x):** lokales OCR (Tesseract.js) ist NICHT eingebunden —
+> Bild→Text läuft derzeit über Claude-Vision (BYOK) oder eingefügten Text. Semantische
+> On-Device-Embeddings (Transformers.js) stehen aus; bis dahin Schlüsselwort-Heuristik.
+> Claude-API-Pfad ist korrekt implementiert, aber **nicht live getestet**. Siehe `docs/AI.md`.
 
 ## Phase 3 — Aufträge, Kunden, Mitarbeiter, Kostenstellen
 - [ ] WorkFloh-Domänenmodell (Kunden/Aufträge/Status), Rechnung → automatische Buchung

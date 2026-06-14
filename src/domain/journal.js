@@ -48,14 +48,14 @@ export function validateBuchung(buchung, kontoIndex) {
  * passende Vorsteuer-/Umsatzsteuer-Konto.
  *
  * @param opts.sollKonto, opts.habenKonto - Kontonummern
- * @param opts.brutto - Eingabe (String/Number), Bruttobetrag
+ * @param opts.brutto - Euro-Eingabe (String/Number); ODER opts.bruttoCents (Integer Cent)
  * @param opts.ustSatz - 0|7|19
  * @param opts.steuerKonto - Konto für die USt-Zeile (Vorsteuer bei Aufwand, USt bei Ertrag)
  * @param opts.steuerSeite - 'S' (Vorsteuer) oder 'H' (Umsatzsteuer)
  * @returns {{zeilen:Array, netto:number, steuer:number, brutto:number}}
  */
 export function baueBuchungZeilen(opts) {
-  const brutto = parseEuroToCents(opts.brutto);
+  const brutto = Number.isInteger(opts.bruttoCents) ? opts.bruttoCents : parseEuroToCents(opts.brutto);
   if (!Number.isInteger(brutto) || brutto <= 0) throw new Error('Ungültiger Betrag');
   const satz = Number(opts.ustSatz) || 0;
 

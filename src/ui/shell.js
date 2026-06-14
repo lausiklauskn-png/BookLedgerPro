@@ -15,6 +15,8 @@ import { pickFile, readFileText } from '../core/files.js';
 import { mountAccounts } from './views/accounts.js';
 import { mountJournal } from './views/journal.js';
 import { mountReports } from './views/reports.js';
+import { mountDocuments } from './views/documents.js';
+import { getAiConfig, saveAiConfig, AI_MODELS } from '../ai/provider.js';
 
 const NAV = [
   ['dashboard', 'nav.dashboard'],
@@ -85,6 +87,7 @@ function renderRoute() {
   if (route === 'accounts') return void mountAccounts(content);
   if (route === 'journal') return void mountJournal(content);
   if (route === 'reports') return void mountReports(content);
+  if (route === 'documents') return void mountDocuments(content);
   return mount(content, viewPlaceholder(route));
 }
 
@@ -180,6 +183,8 @@ function viewSettings() {
       LANGS.map((l) => [l, l.toUpperCase()]), s.lang,
       async (v) => { setLang(v); await updateSettings({ lang: v }); paint(); }),
 
+    aiConfigSection(),
+
     el('div', { class: 'setting' }, [
       el('div', { class: 'setting-label', text: 'Backup' }),
       el('div', { class: 'btn-row' }, [
@@ -188,6 +193,36 @@ function viewSettings() {
       ]),
     ]),
   ]);
+}
+
+// BYOK-Claude-Konfiguration. Lädt die (verschlüsselte) Config asynchron nach.
+function aiConfigSection() {
+  const host = el('div', { class: 'setting' });
+  (async () => {
+    const cfg = await getAiConfig().catch(() => ({ enabled: false, model: 'claude-sonnet-4-6', apiKey: '' }));
+    const enable = el('input', { type: 'checkbox' });
+    if (cfg.enabled) enable.setAttribute('checked', '');
+    const model = el('select', {}, AI_MODELS.map((m) => el('option', { value: m.id }, m.label)));
+    model.value = cfg.model;
+    const apiKey = el('input', { type: 'password', autocomplete: 'off', placeholder: 'sk-ant-…', value: cfg.apiKey || '' });
+    const status = el('p', { class: 'muted small' });
+    const save = el('button', {
+      class: 'btn', text: t('settings.aiSave'),
+      onClick: async () => {
+        await saveAiConfig({ enabled: enable.checked, model: model.value, apiKey: apiKey.value.trim() });
+        status.textContent = t('settings.aiSaved');
+      },
+    });
+    host.replaceChildren(
+      el('div', { class: 'setting-label', text: t('settings.aiExternal') }),
+      el('label', { class: 'checkbox-row' }, [enable, el('span', { text: t('settings.aiEnable') })]),
+      el('label', { class: 'field' }, [el('span', { text: t('settings.aiModel') }), model]),
+      el('label', { class: 'field' }, [el('span', { text: t('settings.aiKey') }), apiKey]),
+      el('p', { class: 'muted small', text: t('settings.aiPrivacy') }),
+      el('div', { class: 'btn-row' }, [save]), status,
+    );
+  })();
+  return host;
 }
 
 function viewPlaceholder(route) {

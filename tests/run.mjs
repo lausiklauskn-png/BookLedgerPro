@@ -12,6 +12,17 @@ import { saldo, KONTOART, mehrungsSeite } from '../src/domain/accounts.js';
 import { baueBuchungZeilen, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen } from '../src/domain/journal.js';
 import { hashBuchung, verifyChain, GENESIS, canonicalize } from '../src/domain/audit.js';
 import { computeEUR, computeUStVoranmeldung, saldenliste } from '../src/domain/taxes.js';
+import { seedAccounts } from '../src/domain/accounts.js';
+import { extractFromText } from '../src/ai/extract.js';
+import { categorize } from '../src/ai/categorize.js';
+import { buildVorschlag } from '../src/ai/suggest.js';
+
+function indexFromSeed() {
+  const idx = {};
+  for (const k of seedAccounts()) idx[k.nummer] = k;
+  return idx;
+}
+function zeile(zeilen, konto, seite) { return zeilen.find((z) => z.konto === konto && z.seite === seite); }
 
 let passed = 0, failed = 0;
 function ok(name, cond) {
@@ -208,6 +219,68 @@ await section('Integration: Festschreiben + Storno + Kette (spiegelt store.js)',
   const miete = sl2.find((r) => r.nummer === '4210');
   ok('Bank-Saldo = -50000 (nur Miete wirkt)', bank.saldo === -50000);
   ok('Miete-Saldo = 50000', miete.saldo === 50000);
+});
+
+// ===== Phase 2: Beleg-Extraktion → Buchungsvorschlag =====
+
+await section('Extraktion: Ausgabe-Beleg (Bürobedarf, 19% USt)', () => {
+  const text = [
+    'Bürobedarf Schmidt GmbH',
+    'Musterstraße 1, 12345 Berlin',
+    'Rechnung Nr. 2026-042',
+    'Rechnungsdatum: 14.06.2026',
+    'Toner und Papier',
+    'Zwischensumme: 100,00',
+    'zzgl. 19 % MwSt: 19,00',
+    'Gesamtbetrag: 119,00 EUR',
+  ].join('\n');
+  const ex = extractFromText(text);
+  ok('Brutto 11900 (aus Summen-Zeile)', ex.betragBrutto === 11900);
+  ok('Datum 2026-06-14', ex.datum === '2026-06-14');
+  ok('USt-Satz 19', ex.ustSatz === 19);
+  ok('Vendor erkannt', /Schmidt/.test(ex.vendor || ''));
+
+  const kat = categorize(text);
+  ok('kategorisiert als Bürobedarf 4930', kat.konto === '4930' && kat.richtung === 'ausgabe');
+
+  const res = buildVorschlag(ex, kat, indexFromSeed());
+  ok('Vorschlag ok', res.ok);
+  const z = res.vorschlag.zeilen;
+  ok('Soll Aufwand 4930 = 10000', zeile(z, '4930', 'S')?.betrag === 10000);
+  ok('Soll Vorsteuer 1576 = 1900', zeile(z, '1576', 'S')?.betrag === 1900);
+  ok('Haben Bank 1200 = 11900', zeile(z, '1200', 'H')?.betrag === 11900);
+  ok('Vorschlag ausgeglichen', istAusgeglichen(z));
+});
+
+await section('Extraktion: Einnahme-Beleg (Honorar, 19% USt)', () => {
+  const text = [
+    'Honorar für Beratung',
+    'Rechnungsdatum 01.06.2026',
+    'Unsere Leistung: 1.000,00',
+    '19 % USt: 190,00',
+    'Gesamt: 1.190,00 EUR',
+  ].join('\n');
+  const ex = extractFromText(text);
+  ok('Brutto 119000', ex.betragBrutto === 119000);
+  ok('Datum 2026-06-01', ex.datum === '2026-06-01');
+
+  const kat = categorize(text);
+  ok('kategorisiert als Einnahme 8400', kat.konto === '8400' && kat.richtung === 'einnahme');
+
+  const res = buildVorschlag(ex, kat, indexFromSeed());
+  const z = res.vorschlag.zeilen;
+  ok('Soll Bank 1200 = 119000', zeile(z, '1200', 'S')?.betrag === 119000);
+  ok('Haben Erlöse 8400 = 100000', zeile(z, '8400', 'H')?.betrag === 100000);
+  ok('Haben Umsatzsteuer 1776 = 19000', zeile(z, '1776', 'H')?.betrag === 19000);
+  ok('Vorschlag ausgeglichen', istAusgeglichen(z));
+});
+
+await section('Extraktion: leerer/unklarer Text', () => {
+  const ex = extractFromText('Hallo, dies ist kein Beleg.');
+  ok('kein Betrag → null', ex.betragBrutto === null);
+  ok('niedrige Confidence', ex.confidence < 0.3);
+  const res = buildVorschlag(ex, categorize('x'), indexFromSeed());
+  ok('ohne Betrag kein Vorschlag', res.ok === false);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

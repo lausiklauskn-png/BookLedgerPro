@@ -24,10 +24,11 @@ index.html · manifest.webmanifest · sw.js · status.json (Phase 5)
 assets/        tokens.css · app.css · icon.svg · (Phase 6: Bilder)
 src/
   core/        crypto · shamir · db · durability · files · vault · backup
-  domain/      money · accounts · journal · audit · taxes · store  (Phase 1, real)
+  domain/      money · accounts · journal · audit · taxes · store · documents
                (Phase 3+: costcenters)
-  modules/     (Phase 2+) documents · orders · customers · employees
-  ai/          (Phase 2+) embeddings · ocr · provider · extract · taxAssist
+  ai/          extract · categorize · suggest · provider  (Phase 2, real)
+               (Phase 2.x: ocr lokal, embeddings; Phase 4: taxAssist)
+  modules/     (Phase 3+) orders · customers · employees
   sbkim/       (Phase 5) identity · spore · anastomose · membrane · siegel
   ui/          dom · i18n · theme · mycel · lock · shell · (Phase 1+: views/)
   state.js · main.js
