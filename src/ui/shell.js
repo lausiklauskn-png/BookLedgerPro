@@ -23,6 +23,8 @@ import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
 import { mountDashboard } from './views/dashboard.js';
 import { getAiConfig, saveAiConfig, MISTRAL_MODELS } from '../ai/aiConfig.js';
+import { testVision } from '../ai/vision.js';
+import { testMistral } from '../ai/mistral.js';
 
 const NAV = [
   ['dashboard', 'nav.dashboard'],
@@ -211,20 +213,43 @@ function aiConfigSection() {
     const model = el('select', {}, MISTRAL_MODELS.map((m) => el('option', { value: m.id }, m.label)));
     model.value = cfg.mistralModel;
     const status = el('p', { class: 'muted small' });
+
     const save = el('button', {
       class: 'btn', text: t('settings.aiSave'),
       onClick: async () => {
         await saveAiConfig({ visionKey: visionKey.value.trim(), mistralKey: mistralKey.value.trim(), mistralModel: model.value });
-        status.textContent = t('settings.aiSaved');
+        status.textContent = t('settings.aiSaved') + ' ' + t('settings.aiPersistHint');
       },
     });
+
+    // Test-Knopf: speichert erst, dann ruft die Live-API minimal an.
+    const testRow = (label, runTest, getVal) => {
+      const out = el('span', { class: 'test-status muted small' });
+      const btn = el('button', {
+        class: 'btn btn-sm', text: t('settings.aiTest'),
+        onClick: async () => {
+          await saveAiConfig({ visionKey: visionKey.value.trim(), mistralKey: mistralKey.value.trim(), mistralModel: model.value });
+          if (!getVal()) { out.textContent = '—'; return; }
+          out.textContent = '…';
+          const r = await runTest();
+          out.className = 'test-status small ' + (r.ok ? 'ok' : 'fail');
+          out.textContent = r.ok ? t('settings.aiTestOk') : (t('settings.aiTestFail') + ' ' + r.message);
+        },
+      });
+      return el('div', { class: 'test-row' }, [el('span', { class: 'muted small', text: label }), btn, out]);
+    };
+
     host.replaceChildren(
       el('div', { class: 'setting-label', text: t('settings.aiExternal') }),
       el('label', { class: 'field' }, [el('span', { text: t('settings.aiVisionKey') }), visionKey]),
       el('label', { class: 'field' }, [el('span', { text: t('settings.aiMistralKey') }), mistralKey]),
       el('label', { class: 'field' }, [el('span', { text: t('settings.aiModel') }), model]),
+      el('div', { class: 'btn-row' }, [save]),
+      testRow('Google Vision', testVision, () => visionKey.value.trim()),
+      testRow('Mistral', testMistral, () => mistralKey.value.trim()),
       el('p', { class: 'muted small', text: t('settings.aiPrivacy') }),
-      el('div', { class: 'btn-row' }, [save]), status,
+      el('p', { class: 'muted small', text: t('settings.aiPersistHint') }),
+      status,
     );
   })();
   return host;
