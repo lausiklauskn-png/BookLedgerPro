@@ -266,6 +266,8 @@ function aktion(b, idx) {
     return el('div', { class: 'btn-row' }, [post, edit, del]);
   }
   if (b.status === BUCHUNG_STATUS.FESTGESCHRIEBEN) {
+    // Eine Storno-Gegenbuchung wird NICHT erneut storniert (sonst Endlos-Kaskade).
+    if (b.stornoVon) return el('span', { class: 'muted small', text: t('journal.istStorno') });
     return el('button', {
       class: 'btn btn-sm', text: t('journal.storno'),
       onClick: async () => {
