@@ -84,6 +84,21 @@ export async function categorize(text, kontoIndex) {
   return { ...heuristicCategorize(text), quelle: 'heuristik' };
 }
 
+/** Minimaler Verbindungstest. @returns {Promise<{ok:boolean, message:string}>} */
+export async function testMistral() {
+  const cfg = await getAiConfig();
+  if (!cfg.mistralKey) return { ok: false, message: 'Kein Schlüssel' };
+  try {
+    const res = await fetch(`${MISTRAL_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.mistralKey },
+      body: JSON.stringify({ model: cfg.mistralModel || 'mistral-small-latest', messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 }),
+    });
+    if (!res.ok) { const t = await res.text().catch(() => ''); return { ok: false, message: `${res.status} ${t.slice(0, 120)}` }; }
+    return { ok: true, message: 'OK' };
+  } catch (e) { return { ok: false, message: String(e.message || e) }; }
+}
+
 // ---- Steuer-Assistent (EU) -------------------------------------------------
 
 const TAX_SYSTEM =

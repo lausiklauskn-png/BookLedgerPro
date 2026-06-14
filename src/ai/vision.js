@@ -12,6 +12,9 @@ import { getAiConfig } from './aiConfig.js';
 
 export const VISION_BASE = 'https://eu-vision.googleapis.com/v1';
 
+// 1×1-PNG für einen minimalen Verbindungstest.
+const TEST_PIXEL = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
 /** Baut Endpoint + Request-Body je nach Inhaltstyp (Bild oder PDF). */
 export function buildVisionRequest(base64, mimeType) {
   const isPdf = /pdf$/i.test(mimeType || '');
@@ -61,4 +64,18 @@ export async function ocr(input) {
     throw new Error(`Vision-API ${res.status}: ${txt.slice(0, 200)}`);
   }
   return parseVisionText(await res.json());
+}
+
+/** Minimaler Verbindungstest (1×1-Bild). @returns {Promise<{ok:boolean, message:string}>} */
+export async function testVision() {
+  const cfg = await getAiConfig();
+  if (!cfg.visionKey) return { ok: false, message: 'Kein Schlüssel' };
+  try {
+    const { endpoint, body } = buildVisionRequest(TEST_PIXEL, 'image/png');
+    const res = await fetch(`${VISION_BASE}/${endpoint}?key=${encodeURIComponent(cfg.visionKey)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    if (!res.ok) { const t = await res.text().catch(() => ''); return { ok: false, message: `${res.status} ${t.slice(0, 120)}` }; }
+    return { ok: true, message: 'OK' };
+  } catch (e) { return { ok: false, message: String(e.message || e) }; }
 }
