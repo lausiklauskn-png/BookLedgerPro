@@ -52,17 +52,24 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
   in Einstellungen mit **„Verbindung testen"**-Knöpfen, Direktlinks zur Schlüssel-Erstellung
   und Fehler-Klartext (`visionFehlerHinweis`). Vorbild: **Mein-WorkFloh** (gleiche Endpoints).
 
-## 5. ✅ Live vom Nutzer verifiziert (Sichttest 2026-06-14)
+## 5. ✅ Live vom Nutzer verifiziert (Sichttests 2026-06-14)
 - **Vision (EU): „aktiv ✓"** und **Mistral (EU): „aktiv ✓"** — beide EU-Dienste real verbunden.
-- Stolperstein gelöst: ein **Vertex/Agent-Express-Key** funktioniert NICHT für Vision
-  (401 „API keys are not supported…") → es braucht einen **Standard-Cloud-Vision-API-Key**
-  mit aktivierter Cloud Vision API. (App-seitig korrekt; reine Google-Key-Konfig.)
+  (Stolperstein: Vertex/Agent-Express-Key taugt NICHT für Vision → Standard-Cloud-Vision-Key.)
+- **Geführter Browser-Sichttest (DeX/Chrome) — bestätigt:**
+  - **Beleg→Buchung-Pipeline end-to-end** ✅: Schnellerfassung-Text → Erkennung (Betrag/Datum/USt/
+    Vendor) → Kontierung **4930 + 1576 + 1200**, Konfidenz 90 % → Auto-Entwurf (Autonomie autonom).
+  - **Plausibilität/Spielraum** ✅ (USt-vergessen-Hinweis, Entwurf trotzdem gespeichert).
+  - **Entwurf-Lebenszyklus** ✅ (speichern · bearbeiten mit korrekter USt-Rückrechnung · löschen ·
+    festschreiben mit Warn-Dialog · Storno → „Storno-Buchung").
+  - **KI-Begründung (Mistral EU) mit §-Bezug** ✅ (z. B. „§ 4 Abs. 4 EStG" für Büromaterial).
+  - **Rechnung §14** ✅ (Firmenprofil + Kunde → fortlaufende Nr. 2026-0001 → druckbar/PDF, alle
+    Pflichtangaben).
+  - **Auswertungen** ✅ (USt-Verprobung erkennt vergessene USt; EÜR vereinfacht + **EÜR Ist §4(3)**;
+    USt-VA-Kennzahlen; GoBD-Audit; DATEV-EXTF-Export). **Zeiterfassung** ✅ (Std-Summe + Kosten).
+  - Im Test gefunden & sofort gefixt (gemergt): Storno-Kaskade, KI-Kontoname, Firmenprofil-„✓",
+    Position entfernen + Etikett-Umbruch, Steuer-Assistent „Claude"→**Mistral (EU)** (PRs #23–#27).
 
 ## 6. ⚠️ Ehrlich offen / ungetestet (nicht beschönigen)
-- **Beleg→Buchung-Pipeline end-to-end im Browser** noch nicht vom Nutzer bestätigt
-  (Vision+Mistral einzeln ✓, der durchgehende OCR→Vorschlag-Klickpfad steht als nächstes an).
-  Glue-Logik node-getestet; die Mistral-Kontierung leitet die Buchungs-Richtung jetzt
-  verbindlich aus der Kontoart ab (kein Fehlbuchen bei falscher Modell-Richtung).
 - **NEU Plausibilitäts-Ebene mit Spielraum** (`src/domain/pruefung.js`): trennt harte Fehler
   (nur festschreibe-relevant) von nicht-blockierenden Hinweisen (USt vergessen, Zukunftsdatum,
   zeitgerecht, Buchungstext, Soll=Haben). Entwürfe immer speicherbar, Festschreiben bleibt streng.

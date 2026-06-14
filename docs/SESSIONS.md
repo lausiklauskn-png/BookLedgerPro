@@ -43,6 +43,31 @@ Berater/DATEV verifizieren**.
 
 ---
 
+## 2026-06-14 — Geführter Browser-Sichttest (DeX/Chrome) + 5 Live-Fixes
+
+**Was getan:** Kompletter, gemeinsam mit dem Nutzer durchgeführter Sichttest der neuen Features
+auf der deployten PWA. **Bestätigt:** Beleg→Buchung-Pipeline end-to-end (Erkennung→Kontierung
+4930/1576/1200, Konf. 90 %, Auto-Entwurf), Plausibilität/Spielraum, Entwurf-Lebenszyklus
+(speichern/bearbeiten/löschen/festschreiben/storno), KI-Begründung mit §-Bezug (Mistral EU),
+§14-Rechnung druckbar (Nr. 2026-0001), USt-Verprobung/EÜR-Ist/USt-VA/Audit/DATEV-EXTF,
+Zeiterfassung (Std-Summe + Kosten korrekt).
+
+**Im Test gefunden & sofort behoben (gemergt #23–#27):**
+1. Storno-Endlos-Kaskade → Storno-Gegenbuchung nicht erneut stornierbar (#23).
+2. KI-Begründung nannte Konto-Namen falsch → echte Kontierung mit Namen an Mistral (#24).
+3. Firmenprofil „Gespeichert ✓" erschien nicht (Re-Render) → Flag überlebt Re-Render (#25).
+4. Auftrag: Position entfernen fehlte + Status-Etikett umgebrochen (#26).
+5. „Steuer-Assistent (Claude)/Anthropic" veraltet → **Mistral (EU)**; tote Claude-Keys raus (#27).
+
+**Erkenntnis (kein Bug):** „0 h/0 €" beim Mitarbeiter war ein **Duplikat** „Klaus Nitzsche";
+der korrekte zeigt 41h 40m / 1.250 € — Summen/Kosten rechnen korrekt.
+
+**Verifiziert:** alles live im Browser bestätigt; `node tests/run.mjs` → 210/210; SW `v38`.
+**Offen:** EXTF/EÜR-Ist sind vereinfacht (nicht zertifiziert); ELSTER-Einreichung weiterhin nur
+Datenpaket; Sage 5b–d. Optional: Kleinbetrag-`betragCent` an KI-Begründung der UI verdrahten.
+
+---
+
 ## 2026-06-14 — Rechtsregel-Set erweitert (mehr §-Grundlagen für KI-Berater)
 
 **Was getan**
