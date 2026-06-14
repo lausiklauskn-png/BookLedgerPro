@@ -13,6 +13,7 @@ import { isConfigured, extractFromImage } from '../../ai/provider.js';
 import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, bytesToBase64, linkBeleg } from '../../domain/documents.js';
 import { getSettings } from '../../state.js';
 import { formatBytes } from '../../core/files.js';
+import { emptyState } from '../empty.js';
 
 let _host = null;
 let _idx = {};
@@ -119,7 +120,7 @@ function uploadKarte() {
 }
 
 function belegListe(belege, claudeBereit) {
-  if (!belege.length) return el('p', { class: 'muted', text: t('docs.empty') });
+  if (!belege.length) return emptyState('empty-documents.png', t('docs.empty'));
   const rows = belege.map((b) => el('tr', {}, [
     el('td', { text: b.name }),
     el('td', { class: 'muted small', text: b.mediaType }),
