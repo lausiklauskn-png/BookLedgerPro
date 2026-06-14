@@ -5,6 +5,36 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — KI-Berater mit Rechts-Grundlage (Begründung/Notiz mit §-Bezug)
+
+**Was getan** (eigener PR nach Merge von #15)
+- **Grounding statt Halluzination:** NEU `src/domain/rechtsregeln.js` — kuratiertes lokales
+  Regel-Set (Bewirtung §4(5)2, Geschenke §4(5)1, GWG §6(2), Kfz-Privatnutzung §6(1)4,
+  Telekommunikation, Reisekosten, Kleinunternehmer §19) mit Paragraph + Kurzregel +
+  Doku-Hinweis. `findeRechtsregeln(kontext)` + `onDeviceBegruendung(kontext)`.
+- **KI-Berater:** NEU `src/ai/berater.js` — `begruendeBuchung(kontext)` schlägt eine kurze
+  Begründung MIT §-Bezug vor (Eigenbeleg/Notiz, „parat fürs Finanzamt"). Über Mistral (EU,
+  BYOK) wird nur FORMULIERT, gegroundet auf die Regeln; ohne Mistral On-Device-Fallback aus
+  den Regeln. `buildBegruendungMessages`/`parseBegruendung` rein & node-getestet. Disclaimer
+  „keine Steuerberatung". Nutzer entscheidet/editiert.
+- **Datenmodell:** `begruendung`-Feld an der Buchung (`store.js saveEntwurf`); in die GoBD-
+  Hash-Kette aufgenommen, aber **rückwärtskompatibel** (nur gehasht wenn vorhanden →
+  Altbestände behalten ihren Hash). `audit.js hashedFields` entsprechend angepasst.
+- **UI Journal:** Begründungs-Textfeld + Knopf „KI-Begründung vorschlagen" (zeigt Quelle
+  Mistral/on-device), Anzeige 📝 in der Tabelle. i18n de/en. SW-Cache `v27→v28`,
+  `rechtsregeln.js`+`berater.js` in CORE_ASSETS, 56 JS-Module.
+- `tests/run.mjs`: +12 (Rechtsregeln, Prompt/Parser, On-Device-Fallback). **174/174 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 174/0; `node --check` aller geänderten Dateien.
+**Nicht verifiziert (ehrlich):** Live-Mistral-Begründung im Browser; das neue Journal-UI
+(Begründungsfeld/KI-Knopf) nicht headless-E2E geklickt. Regel-Set ist bewusst kompakt
+(erweiterbar), KEINE abschließende Rechtsberatung/Aktualitätsgarantie.
+
+**Offen / Nächstes:** Regel-Set erweitern; Begründung auch im Beleg-Vorschlag (documents);
+EÜR §4(3) Zufluss/Abfluss + zertifiziertes DATEV-EXTF. **Details: `docs/PULS.md`.**
+
+---
+
 ## 2026-06-14 — USt-Verprobung + Kleinunternehmer-Schalter (Berater-Substanz)
 
 **Was getan** (Folge-Batch zur Profi-Härtung, gleiche PR-Branch)

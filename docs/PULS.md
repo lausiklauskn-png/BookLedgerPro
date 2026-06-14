@@ -6,8 +6,8 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 **Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/bookledgerpro-status-jeo3qz`
-· **main-Stand:** `4ba49c8` · **Tests:** `node tests/run.mjs` → **162/162 grün**
-· **SW-Cache:** `v27` · **54 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **main-Stand:** `e59133c` · **Tests:** `node tests/run.mjs` → **174/174 grün**
+· **SW-Cache:** `v28` · **56 JS-Module** · **12 Bild- + 5 Icon-Assets**
 
 ---
 
@@ -88,12 +88,11 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 - **Git-Nebensache:** Abzweig `claude/eu-ki-vision-mistral` zeigt remote noch auf denselben
   Commit; der Git-Proxy erlaubt kein Branch-Löschen → bei Gelegenheit serverseitig entfernen.
 
-## 6b. Geplante Folge-PRs (vom Nutzer bestätigt 2026-06-14)
-- **KI-Berater mit Rechts-Grundlage** (technisch machbar, eigener PR): Feld `begruendung`/`notiz`
-  an der Buchung (verschlüsselt); KI schlägt bei unklaren Fällen eine kurze Begründung MIT
-  §-Bezug vor (Eigenbeleg/Notiz „parat fürs Finanzamt"); Nutzer entscheidet/editiert. Grounding
-  über kuratiertes lokales Regel-Set (`src/domain/rechtsregeln.js`), NICHT freie Modell-„Rechts-
-  kenntnis"; Disclaimer „keine Steuerberatung". Mistral EU, BYOK, opt-in.
+## 6b. Folge-PRs
+- ✅ **KI-Berater mit Rechts-Grundlage** umgesetzt: `begruendung`-Feld an der Buchung (in der
+  Hash-Kette, rückwärtskompatibel); `domain/rechtsregeln.js` (kuratiertes §-Set) groundet
+  `ai/berater.js` → Mistral formuliert, On-Device-Fallback; UI im Journal. „Keine Steuerberatung".
+  Offen: Regel-Set erweitern; Begründung auch im Beleg-Vorschlag (documents.js).
 - **EÜR §4(3) (Zufluss/Abfluss, Ist-Prinzip)** + **zertifiziertes DATEV-EXTF** — größer, eigener PR.
 
 ## 7. Nächste konkrete Schritte (Priorität)
@@ -110,7 +109,7 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 
 ## 8. Architektur-Landkarte (wo was liegt)
 - `src/core/` crypto · shamir · db · durability · files · vault · backup
-- `src/domain/` money · accounts · journal · pruefung · audit · taxes · store · documents · orders ·
+- `src/domain/` money · accounts · journal · pruefung · rechtsregeln · audit · taxes · store · documents · orders ·
   invoicing · employees · costcenters · encstore · crm-store · export · summary
 - `src/ai/` extract · categorize · suggest · **aiConfig · vision · mistral** · taxAssist
 - `src/sbkim/` spore · identity · domainvector · signal  (+ `tools/verify_remote_spore.mjs`)

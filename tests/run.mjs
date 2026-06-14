@@ -17,6 +17,8 @@ import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
 import { pruefeBuchung, istFestschreibbar } from '../src/domain/pruefung.js';
+import { findeRechtsregeln, onDeviceBegruendung } from '../src/domain/rechtsregeln.js';
+import { buildBegruendungMessages, parseBegruendung, begruendeBuchung } from '../src/ai/berater.js';
 import { auftragSummen, darfWechseln, validateAuftrag } from '../src/domain/orders.js';
 import { rechnungZeilen } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
@@ -386,6 +388,31 @@ await section('USt-Verprobung: gebucht vs. erwartet (Netto × Satz)', () => {
   // Entwürfe (seq == null) zählen nicht mit.
   v = verprobeUSt([{ seq: null, datum: '2026-06-05', zeilen: vergessen.zeilen }], idx);
   ok('Entwurf wird ignoriert', v.ok === true && v.umsatzsteuer.erwartet === 0);
+});
+
+await section('Rechtsregeln (Grounding) + KI-Berater (Begründung mit §-Bezug)', () => {
+  const bewirtung = findeRechtsregeln({ text: 'Geschäftsessen mit Kunde im Restaurant' });
+  ok('Bewirtung erkannt', bewirtung.some((r) => r.id === 'bewirtung' && /§ 4 Abs\. 5 S\. 1 Nr\. 2/.test(r.paragraph)));
+  ok('Geschenke erkannt', findeRechtsregeln({ text: 'Geschenk an Geschäftsfreund' }).some((r) => r.id === 'geschenke'));
+  ok('Kleinunternehmer aus Flag', findeRechtsregeln({ kleinunternehmer: true }).some((r) => r.id === 'kleinunternehmer'));
+  ok('kein Treffer bei neutralem Text', findeRechtsregeln({ text: 'allgemeine Lieferung' }).length === 0);
+
+  const od = onDeviceBegruendung({ text: 'Bewirtung Restaurant' });
+  ok('on-device Begründung nennt § und Quote', /§ 4 Abs\. 5/.test(od) && /70 %/.test(od));
+  ok('on-device leer ohne Treffer', onDeviceBegruendung({ text: 'xyz' }) === '');
+
+  const msgs = buildBegruendungMessages({ beschreibung: 'Geschäftsessen', text: 'Bewirtung Restaurant' });
+  ok('Prompt: System + User', msgs.length === 2 && msgs[0].role === 'system');
+  ok('Prompt enthält Rechtsregeln-Grundlage', /Rechtsregeln \(Grundlage\)/.test(msgs[1].content) && /§ 4 Abs\. 5/.test(msgs[1].content));
+
+  ok('parseBegruendung säubert', parseBegruendung('```\nMüll\n```  Text   mit  Leerzeichen ') === 'Text mit Leerzeichen');
+});
+
+await section('KI-Berater: On-Device-Fallback ohne Mistral', async () => {
+  const r = await begruendeBuchung({ beschreibung: 'Geschäftsessen', text: 'Bewirtung im Restaurant', konto: '4980' });
+  ok('Fallback liefert Text', typeof r.text === 'string' && r.text.length > 0);
+  ok('Quelle on-device (keine KI konfiguriert)', r.quelle === 'on-device');
+  ok('Regeln-Liste nennt Bewirtungs-§', r.regeln.some((p) => /§ 4 Abs\. 5 S\. 1 Nr\. 2/.test(p)));
 });
 
 // ===== Phase 3: Aufträge, Rechnung, Zeit, Kostenstellen =====
