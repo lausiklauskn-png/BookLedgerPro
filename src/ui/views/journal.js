@@ -3,8 +3,8 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
-import { loadAccounts, listBuchungen, saveEntwurf, festschreiben, storno, getBuchung } from '../../domain/store.js';
-import { baueBuchungZeilen, summeSeiten, BUCHUNG_STATUS } from '../../domain/journal.js';
+import { loadAccounts, listBuchungen, saveEntwurf, festschreiben, storno, getBuchung, deleteEntwurf } from '../../domain/store.js';
+import { baueBuchungZeilen, summeSeiten, BUCHUNG_STATUS, formularAusBuchung } from '../../domain/journal.js';
 import { pruefeBuchung } from '../../domain/pruefung.js';
 import { begruendeBuchung } from '../../ai/berater.js';
 import { KONTOART } from '../../domain/accounts.js';
@@ -18,6 +18,10 @@ let _kostenstellen = [];
 let _idx = {};
 let _letztesFestDatum = null;
 let _hinweise = null; // Warnungen der zuletzt gespeicherten Buchung (nicht-blockierend)
+let _editId = null;    // wird ein Entwurf bearbeitet?
+let _editVorlage = null; // vorbefüllte Formularwerte (aus formularAusBuchung)
+
+function centsZuEingabe(c) { return (Number(c || 0) / 100).toFixed(2).replace('.', ','); }
 
 export async function mountJournal(host) {
   _host = host;
@@ -84,9 +88,22 @@ function buchungForm(konten, idx) {
   const fKs = el('select', {}, [el('option', { value: '' }, t('journal.noKostenstelle')),
     ..._kostenstellen.map((k) => el('option', { value: k.nummer }, `${k.nummer} · ${k.name}`))]);
   fHaben.selectedIndex = Math.min(1, konten.length - 1);
+
+  // Bearbeiten: Formular aus dem Entwurf vorbefüllen.
+  if (_editVorlage) {
+    const v = _editVorlage;
+    if (v.datum) fDatum.value = v.datum;
+    fText.value = v.beschreibung;
+    if (v.sollKonto) fSoll.value = v.sollKonto;
+    if (v.habenKonto) fHaben.value = v.habenKonto;
+    if (v.bruttoCent) fBetrag.value = centsZuEingabe(v.bruttoCent);
+    fUst.value = String(v.ustSatz || 0);
+    if (v.kostenstelle) fKs.value = v.kostenstelle;
+  }
   const err = el('p', { class: 'form-error', role: 'alert' });
 
   const fBegruendung = el('textarea', { class: 'beleg-text', rows: '2', placeholder: t('journal.begruendungPlaceholder') });
+  if (_editVorlage && _editVorlage.begruendung) fBegruendung.value = _editVorlage.begruendung;
   const beraterStatus = el('span', { class: 'muted small' });
   const beraterBtn = el('button', {
     class: 'btn btn-sm', type: 'button', text: t('journal.aiReason'),
@@ -104,8 +121,12 @@ function buchungForm(konten, idx) {
   });
 
   const submit = el('button', {
-    class: 'btn btn-primary', type: 'submit', text: t('journal.saveDraft'),
+    class: 'btn btn-primary', type: 'submit', text: _editId ? t('journal.saveEdit') : t('journal.saveDraft'),
   });
+  const cancelBtn = _editId ? el('button', {
+    class: 'btn btn-sm', type: 'button', text: t('common.cancel'),
+    onClick: async () => { _editId = null; _editVorlage = null; await repaint(); },
+  }) : null;
 
   const form = el('form', {
     class: 'buchung-form card',
@@ -121,10 +142,11 @@ function buchungForm(konten, idx) {
           steuerKonto: steuer ? steuer.steuerKonto : null,
           steuerSeite: steuer ? steuer.steuerSeite : null,
         });
-        const buchung = { datum: fDatum.value, beschreibung: fText.value, begruendung: fBegruendung.value.trim(), zeilen: built.zeilen, kostenstelle: fKs.value || null };
+        const buchung = { id: _editId || undefined, datum: fDatum.value, beschreibung: fText.value, begruendung: fBegruendung.value.trim(), zeilen: built.zeilen, kostenstelle: fKs.value || null };
         // Spielraum: Entwurf wird IMMER gespeichert. Hinweise blockieren nicht;
         // streng wird erst beim Festschreiben geprüft.
         await saveEntwurf(buchung);
+        _editId = null; _editVorlage = null;
         const { warnungen } = pruefeBuchung(buchung, idx, { letztesFestDatum: _letztesFestDatum, kleinunternehmer: getSettings().kleinunternehmer });
         _hinweise = warnungen;
         await repaint();
@@ -135,7 +157,7 @@ function buchungForm(konten, idx) {
       }
     },
   }, [
-    el('h2', { class: 'form-title', text: t('journal.new') }),
+    el('h2', { class: 'form-title', text: _editId ? t('journal.editTitle') : t('journal.new') }),
     el('div', { class: 'form-grid' }, [
       field(t('journal.date'), fDatum),
       field(t('journal.desc'), fText),
@@ -152,7 +174,7 @@ function buchungForm(konten, idx) {
     el('div', { class: 'btn-row' }, [beraterBtn, beraterStatus]),
     el('p', { class: 'muted small', text: t('journal.aiReasonNote') }),
     err,
-    el('div', { class: 'btn-row' }, [submit]),
+    el('div', { class: 'btn-row' }, cancelBtn ? [submit, cancelBtn] : [submit]),
   ]);
   return form;
 }
@@ -189,7 +211,7 @@ function buchungTabelle(buchungen, idx) {
       ]),
       el('td', { class: 'num', text: formatEuro(betrag) }),
       el('td', {}, [statusBadge(b.status)]),
-      el('td', { class: 'actions' }, [aktion(b)]),
+      el('td', { class: 'actions' }, [aktion(b, idx)]),
     ]));
   }
   return el('table', { class: 'table' }, [
@@ -205,9 +227,9 @@ function buchungTabelle(buchungen, idx) {
   ]);
 }
 
-function aktion(b) {
+function aktion(b, idx) {
   if (b.status === BUCHUNG_STATUS.ENTWURF) {
-    return el('button', {
+    const post = el('button', {
       class: 'btn btn-sm btn-primary', text: t('journal.post'),
       onClick: async () => {
         // Hinweise zeigen, aber den Profi entscheiden lassen (nicht-blockierend).
@@ -220,6 +242,28 @@ function aktion(b) {
         catch (e) { alert(String(e.message || e)); }
       },
     });
+    const edit = el('button', {
+      class: 'btn btn-sm', text: t('journal.edit'),
+      onClick: async () => {
+        _editId = b.id;
+        _editVorlage = formularAusBuchung(b, idx || _idx);
+        _hinweise = null;
+        await repaint();
+        _host.scrollIntoView ? _host.scrollIntoView({ behavior: 'smooth', block: 'start' }) : null;
+      },
+    });
+    const del = el('button', {
+      class: 'btn btn-sm btn-danger', text: t('common.delete'),
+      onClick: async () => {
+        if (!confirm(t('journal.confirmDeleteDraft'))) return;
+        try {
+          await deleteEntwurf(b.id);
+          if (_editId === b.id) { _editId = null; _editVorlage = null; }
+          await repaint();
+        } catch (e) { alert(String(e.message || e)); }
+      },
+    });
+    return el('div', { class: 'btn-row' }, [post, edit, del]);
   }
   if (b.status === BUCHUNG_STATUS.FESTGESCHRIEBEN) {
     return el('button', {

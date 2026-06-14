@@ -5,6 +5,28 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — Entwurf bearbeiten & löschen (geschlossene Lücke im Bedien-Lebenszyklus)
+
+**Was getan** (Feinschliff: wichtige Bedien-Lücke)
+- Entwürfe konnten angelegt, aber weder **gelöscht** noch **bearbeitet** werden (durch die
+  „immer speicherbar"-Änderung verschärft). Jetzt:
+  - `store.deleteEntwurf(id)` — löscht nur Entwürfe (festgeschrieben → nur Storno).
+  - `journal.formularAusBuchung(buchung, idx)` — **reine, node-getestete** Rekonstruktion der
+    Formularfelder (Soll/Haben/Brutto/USt) aus den Zeilen, inkl. USt-Split-Erkennung.
+  - Journal-Tabelle: pro Entwurf Knöpfe **Bearbeiten** (Formular vorbefüllen, speichert per id
+    in-place) und **Löschen**; Formular-Titel/Button passen sich an; **Abbrechen** im Edit-Modus.
+- i18n de/en; SW-Cache `v29→v30`.
+- `tests/run.mjs`: +6 `formularAusBuchung` (Ausgabe/Einnahme mit USt, ohne USt, Notizfelder).
+  **Gesamt 180/180 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 180/0; `node --check` aller geänderten Dateien.
+**Nicht verifiziert:** Journal-UI (Edit/Delete-Knöpfe) nicht headless-E2E geklickt; `deleteEntwurf`
+nutzt IndexedDB (nicht node-getestet) — Logik ist aber minimal und analog zu bestehenden Pfaden.
+
+**Offen / Nächstes:** EÜR §4(3) + DATEV-EXTF; Regel-Set erweitern. **Details: `docs/PULS.md`.**
+
+---
+
 ## 2026-06-14 — KI-Berater im Beleg-Vorschlag (documents.js) konsistent
 
 **Was getan** (Abrundung des KI-Berater-Features)

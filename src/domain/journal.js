@@ -88,6 +88,51 @@ export function baueBuchungZeilen(opts) {
   return { brutto, netto, steuer, zeilen };
 }
 
+/**
+ * Rekonstruiert die einfachen Formular-Felder (Soll/Haben/Brutto/USt-Satz) aus den
+ * Zeilen einer gespeicherten Buchung — für das Bearbeiten eines Entwurfs. Erkennt
+ * die optionale USt-Zeile (Vor-/Umsatzsteuer) und leitet Richtung/Brutto korrekt ab.
+ * Rein & testbar.
+ * @returns {{datum, beschreibung, begruendung, kostenstelle, sollKonto, habenKonto, bruttoCent, ustSatz}}
+ */
+export function formularAusBuchung(buchung, kontoIndex) {
+  const z = (buchung && buchung.zeilen) || [];
+  const out = {
+    datum: buchung.datum || '',
+    beschreibung: buchung.beschreibung || '',
+    begruendung: buchung.begruendung || '',
+    kostenstelle: buchung.kostenstelle || '',
+    sollKonto: '', habenKonto: '', bruttoCent: 0, ustSatz: 0,
+  };
+  const istSteuer = (konto) => {
+    const k = kontoIndex && kontoIndex[konto];
+    return !!(k && (k.rolle === 'vorsteuer' || k.rolle === 'umsatzsteuer'));
+  };
+  const steuer = z.find((x) => istSteuer(x.konto));
+  if (!steuer) {
+    const s = z.find((x) => x.seite === 'S');
+    const h = z.find((x) => x.seite === 'H');
+    if (s) { out.sollKonto = s.konto; out.bruttoCent = s.betrag; }
+    if (h) { out.habenKonto = h.konto; out.bruttoCent = Math.max(out.bruttoCent, h.betrag); }
+    return out;
+  }
+  out.ustSatz = Number((kontoIndex[steuer.konto] || {}).ust) || 0;
+  if (steuer.seite === 'S') {                       // Vorsteuer → Ausgabe
+    const soll = z.find((x) => x.seite === 'S' && !istSteuer(x.konto));
+    const haben = z.find((x) => x.seite === 'H');
+    out.sollKonto = soll ? soll.konto : '';
+    out.habenKonto = haben ? haben.konto : '';
+    out.bruttoCent = haben ? haben.betrag : 0;
+  } else {                                          // Umsatzsteuer → Einnahme
+    const haben = z.find((x) => x.seite === 'H' && !istSteuer(x.konto));
+    const soll = z.find((x) => x.seite === 'S');
+    out.habenKonto = haben ? haben.konto : '';
+    out.sollKonto = soll ? soll.konto : '';
+    out.bruttoCent = soll ? soll.betrag : 0;
+  }
+  return out;
+}
+
 /** Erzeugt die Storno-Zeilen (Soll↔Haben getauscht). */
 export function stornoZeilen(zeilen) {
   return zeilen.map((z) => ({ konto: z.konto, seite: z.seite === 'S' ? 'H' : 'S', betrag: z.betrag }));
