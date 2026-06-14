@@ -201,6 +201,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .test-row { display: flex; align-items: center; gap: .6rem; margin-top: .4rem; flex-wrap: wrap; }
 .test-status.ok { color: var(--accent-strong); font-weight: 600; }
 .test-status.fail { color: var(--error); }
+.provider-link { color: var(--accent-strong); text-decoration: none; }
+.provider-link:hover { text-decoration: underline; }
 
 /* ---- Auftrags-Positionen -------------------------------------------------- */
 .pos-head, .pos-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: .5rem; align-items: center; }

@@ -239,10 +239,18 @@ function aiConfigSection() {
       return el('div', { class: 'test-row' }, [el('span', { class: 'muted small', text: label }), btn, out]);
     };
 
+    const keyLink = (href) => el('a', { class: 'provider-link small', href, target: '_blank', rel: 'noopener', text: t('settings.aiGetKey') });
+    const fieldWithLink = (label, input, href) => el('label', { class: 'field' }, [
+      el('span', {}, [el('span', { text: label }), el('span', { text: ' · ' }), keyLink(href)]),
+      input,
+    ]);
+
     host.replaceChildren(
       el('div', { class: 'setting-label', text: t('settings.aiExternal') }),
-      el('label', { class: 'field' }, [el('span', { text: t('settings.aiVisionKey') }), visionKey]),
-      el('label', { class: 'field' }, [el('span', { text: t('settings.aiMistralKey') }), mistralKey]),
+      fieldWithLink(t('settings.aiVisionKey'), visionKey, 'https://console.cloud.google.com/apis/credentials'),
+      el('p', { class: 'muted small', text: t('settings.aiVisionHint') }),
+      fieldWithLink(t('settings.aiMistralKey'), mistralKey, 'https://console.mistral.ai/api-keys'),
+      el('p', { class: 'muted small', text: t('settings.aiMistralHint') }),
       el('label', { class: 'field' }, [el('span', { text: t('settings.aiModel') }), model]),
       el('div', { class: 'btn-row' }, [save]),
       testRow('Google Vision', testVision, () => visionKey.value.trim()),
