@@ -12,6 +12,8 @@ import { categorize as categorizeAI } from '../../ai/mistral.js';
 import { ocr } from '../../ai/vision.js';
 import { isVisionConfigured } from '../../ai/aiConfig.js';
 import { buildVorschlag } from '../../ai/suggest.js';
+import { begruendeBuchung } from '../../ai/berater.js';
+import { onDeviceBegruendung } from '../../domain/rechtsregeln.js';
 import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, bytesToBase64, linkBeleg } from '../../domain/documents.js';
 import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
@@ -51,7 +53,7 @@ function schnellerfassung() {
       const kat = await categorizeAI(ta.value, _idx);
       const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
       if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
-      out.appendChild(await vorschlagKarte(res.vorschlag, null));
+      out.appendChild(await vorschlagKarte(res.vorschlag, null, ta.value));
     },
   });
   return el('div', { class: 'card' }, [
@@ -65,8 +67,10 @@ function schnellerfassung() {
 
 // ---- Vorschlag-Karte (respektiert Autonomie) -------------------------------
 
-async function vorschlagKarte(vorschlag, belegId) {
+async function vorschlagKarte(vorschlag, belegId, quelltext) {
   const autonomy = getSettings().aiAutonomy; // suggest | draft | auto
+  const kleinunternehmer = getSettings().kleinunternehmer;
+  const beraterKontext = { beschreibung: vorschlag.beschreibung, konto: vorschlag.sachkonto, text: quelltext || '', kleinunternehmer };
   const zeilenTxt = vorschlag.zeilen.map((z) =>
     el('div', { class: 'mono small', text: `${z.seite}  ${z.konto}  ${formatEuro(z.betrag)}` }));
 
@@ -88,9 +92,28 @@ async function vorschlagKarte(vorschlag, belegId) {
     ]));
   }
 
+  // Begründung/Notiz mit §-Bezug: on-device vorbefüllt (rein, kein Netz), per
+  // Knopf über die KI (Mistral EU, opt-in) verfeinerbar. Wird mit dem Entwurf gespeichert.
+  const fBegruendung = el('textarea', { class: 'beleg-text', rows: '2', placeholder: t('journal.begruendungPlaceholder') });
+  fBegruendung.value = onDeviceBegruendung(beraterKontext);
+  const beraterStatus = el('span', { class: 'muted small' });
+  const beraterBtn = el('button', {
+    class: 'btn btn-sm', type: 'button', text: t('journal.aiReason'),
+    onClick: async () => {
+      beraterStatus.textContent = '…';
+      try {
+        const r = await begruendeBuchung(beraterKontext);
+        fBegruendung.value = r.text;
+        beraterStatus.textContent = r.quelle === 'mistral' ? t('journal.aiReasonMistral') : t('journal.aiReasonLocal');
+      } catch (e) { beraterStatus.textContent = String(e.message || e); }
+    },
+  });
+  card.appendChild(el('label', { class: 'field' }, [el('span', { text: t('journal.begruendung') }), fBegruendung]));
+  card.appendChild(el('div', { class: 'btn-row' }, [beraterBtn, beraterStatus]));
+
   const status = el('p', { class: 'muted small' });
   async function uebernehmen() {
-    const entwurf = await saveEntwurf({ datum: vorschlag.datum, beschreibung: vorschlag.beschreibung, zeilen: vorschlag.zeilen });
+    const entwurf = await saveEntwurf({ datum: vorschlag.datum, beschreibung: vorschlag.beschreibung, begruendung: fBegruendung.value.trim(), zeilen: vorschlag.zeilen });
     if (belegId) await linkBeleg(belegId, entwurf.id);
     status.textContent = t('docs.draftCreated');
     return entwurf;
@@ -175,7 +198,7 @@ async function visionExtraktion(b) {
     const kat = await categorizeAI(text, _idx);   // Mistral EU, sonst Heuristik
     const res = buildVorschlag(ex, kat, _idx);
     if (!res.ok) { alert(res.fehler); return; }
-    await repaint(await vorschlagKarte(res.vorschlag, b.id));
+    await repaint(await vorschlagKarte(res.vorschlag, b.id, text));
   } catch (e) {
     alert(t('docs.ocrError') + ' ' + String(e.message || e));
   }
