@@ -25,10 +25,12 @@ assets/        tokens.css · app.css · icon.svg · (Phase 6: Bilder)
 src/
   core/        crypto · shamir · db · durability · files · vault · backup
   domain/      money · accounts · journal · audit · taxes · store · documents
-               orders · invoicing · employees · costcenters · encstore · crm-store (Phase 3)
-  ai/          extract · categorize · suggest · provider  (Phase 2, real)
-               (Phase 2.x: ocr lokal, embeddings; Phase 4: taxAssist)
-  ui/views/    accounts · journal · reports · documents · customers · orders · employees
+               orders · invoicing · employees · costcenters · encstore · crm-store
+               export (Phase 4)
+  ai/          extract · categorize · suggest · provider · taxAssist
+               (Phase 2.x: ocr lokal, embeddings)
+  ui/views/    accounts · journal · reports · documents · customers · orders · employees · legal
+  docs/legal/  Verfahrensdokumentation (GoBD) · Datenschutz (DSGVO)
   sbkim/       (Phase 5) identity · spore · anastomose · membrane · siegel
   ui/          dom · i18n · theme · mycel · lock · shell · (Phase 1+: views/)
   state.js · main.js

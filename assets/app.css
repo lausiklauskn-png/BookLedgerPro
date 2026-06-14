@@ -201,7 +201,22 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text); width: 100%;
 }
 
+/* ---- Export / Recht ------------------------------------------------------- */
+.export-bar { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.btn-danger { border-color: var(--critical-border); color: var(--critical-text); }
+.btn-danger:hover { background: var(--critical-bg); border-color: var(--error); }
+.legal-card p { margin: .25rem 0; }
+
 .fatal { padding: 2rem; text-align: center; color: var(--error); }
+
+/* ---- Druck (PDF über Drucken) --------------------------------------------- */
+@media print {
+  .app-header, .app-nav, .durability-slot, .no-print, .period-bar { display: none !important; }
+  .app-body { display: block; max-width: none; }
+  .content { padding: 0; }
+  .card { box-shadow: none; border-color: #ccc; break-inside: avoid; }
+  body { background: #fff; }
+}
 
 /* ---- Responsiv ------------------------------------------------------------ */
 @media (max-width: 640px) {

@@ -55,10 +55,18 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 > Personenbezogene Daten (Kunden/Mitarbeiter/Zeiten) werden **verschlüsselt** gespeichert
 > (DSGVO). Festschreiben der Rechnungsbuchung bleibt manuell (GoBD).
 
-## Phase 4 — Steuer & Export
-- [ ] Steuer-Assistent (`ai/taxAssist.js`, opt-in), USt-Voranmeldung/EÜR-Aufbereitung
-- [ ] Export (PDF/CSV, DATEV-CSV, ELSTER/ERiC-Datenpakete)
-- [ ] DSGVO/GoBD-Doku in-app + `docs/legal`
+## ✅ Phase 4 — Steuer & Export
+- [x] USt-Voranmeldung-Kennzahlen (Kz 81/86/66/83) + EÜR-Aufbereitung (`domain/export.js`)
+- [x] Export: Journal-CSV, DATEV-orientierte CSV, USt-VA-CSV, EÜR-CSV; Drucken→PDF
+- [x] Steuer-Assistent (`ai/taxAssist.js`, opt-in Claude, nur aggregierte Kennzahlen)
+- [x] DSGVO/GoBD-Doku in-app (Ansicht „Recht & Doku") + `docs/legal/*` +
+      Betroffenenrechte (Export / vollständiges Löschen)
+- [x] 98/98 Node-Tests grün
+
+> **Ehrlich offen:** DATEV-Export ist DATEV-*orientiert* (kein zertifiziertes EXTF +
+> Steuerschlüssel-Mapping); **keine** ELSTER/ERiC-Einreichung (nur Datenpaket); „PDF"
+> über Browser-Druck (keine PDF-Lib); Claude-Pfade nicht live getestet;
+> Browser-UI nicht headless E2E-getestet.
 
 ## Phase 5 — Sage-Mycel-Symbiose
 - [ ] SBKIM-Client + `sbkim-sw.js` (Modul-09-Pfad), Ed25519-Identität, `domainVector`
