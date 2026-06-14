@@ -145,6 +145,11 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .banner-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
 .banner-critical { background: var(--critical-bg); border-color: var(--critical-border); color: var(--critical-text); }
 
+/* Nicht-blockierende Plausibilitäts-Hinweise (Spielraum, kein Haken). */
+.hinweis { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); border-radius: var(--radius-sm, 8px); padding: .6rem .8rem; margin-top: .7rem; }
+.hinweis-liste { margin: .35rem 0 0; padding-left: 1.1rem; }
+.hinweis-liste li { margin: .15rem 0; }
+
 /* ---- Tabellen ------------------------------------------------------------- */
 .card.no-pad { padding: 0; overflow: hidden; }
 .pad { padding: 1.1rem; }

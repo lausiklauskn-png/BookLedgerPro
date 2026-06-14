@@ -79,6 +79,15 @@ async function vorschlagKarte(vorschlag, belegId) {
     el('div', { class: 'vorschlag-zeilen' }, zeilenTxt),
   ]);
 
+  // Nicht-blockierende Hinweise (USt vergessen, Zukunftsdatum …) — Spielraum.
+  const warnungen = vorschlag.warnungen || [];
+  if (warnungen.length) {
+    card.appendChild(el('div', { class: 'hinweis' }, [
+      el('strong', { class: 'small', text: t('docs.hints') }),
+      el('ul', { class: 'hinweis-liste' }, warnungen.map((w) => el('li', { class: 'small', text: w }))),
+    ]));
+  }
+
   const status = el('p', { class: 'muted small' });
   async function uebernehmen() {
     const entwurf = await saveEntwurf({ datum: vorschlag.datum, beschreibung: vorschlag.beschreibung, zeilen: vorschlag.zeilen });

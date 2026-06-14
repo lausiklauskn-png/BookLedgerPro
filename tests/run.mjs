@@ -16,6 +16,7 @@ import { seedAccounts } from '../src/domain/accounts.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
+import { pruefeBuchung, istFestschreibbar } from '../src/domain/pruefung.js';
 import { auftragSummen, darfWechseln, validateAuftrag } from '../src/domain/orders.js';
 import { rechnungZeilen } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
@@ -296,16 +297,64 @@ await section('Extraktion: leerer/unklarer Text', () => {
   ok('ohne Betrag kein Vorschlag', res.ok === false);
 });
 
-await section('Vorschlag-Sicherheitsnetz: nur buchbare Vorschläge', () => {
+await section('Vorschlag: Spielraum statt Haken (Warnung statt Blockade)', () => {
   const ex = extractFromText('Bürobedarf\nGesamtbetrag: 119,00 EUR\n19 % MwSt');
   const kat = categorize('Bürobedarf Toner');
-  // Unbekanntes Gegenkonto → Vorschlag muss abgelehnt werden (kein kaputter Entwurf).
-  const bad = buildVorschlag(ex, kat, indexFromSeed(), { gegenkonto: '9999' });
-  ok('unbekanntes Gegenkonto → ok:false', bad.ok === false);
-  ok('Fehlertext nennt Unbuchbarkeit', /nicht buchbar/i.test(bad.fehler || ''));
-  // Gültiger Fall bleibt buchbar und ausgeglichen.
+  // Unbekanntes Gegenkonto → Vorschlag entsteht trotzdem (Spielraum), trägt aber
+  // den harten Fehler mit; blockiert würde erst beim Festschreiben.
+  const grenz = buildVorschlag(ex, kat, indexFromSeed(), { gegenkonto: '9999' });
+  ok('Vorschlag entsteht trotzdem (ok:true)', grenz.ok === true);
+  ok('harter Fehler wird mitgeliefert', grenz.vorschlag.fehler.some((f) => /9999/.test(f)));
+  // Gültiger Fall: keine harten Fehler, ausgeglichen.
   const good = buildVorschlag(ex, kat, indexFromSeed());
-  ok('gültiger Vorschlag ok', good.ok === true && istAusgeglichen(good.vorschlag.zeilen));
+  ok('gültiger Vorschlag ok & ausgeglichen', good.ok === true && istAusgeglichen(good.vorschlag.zeilen));
+  ok('gültiger Vorschlag ohne harte Fehler', good.vorschlag.fehler.length === 0);
+});
+
+await section('Plausibilitäts-Prüfung: Hinweise wie ein Berater (nicht-blockierend)', () => {
+  const idx = indexFromSeed();
+  const heute = '2026-06-14';
+  const sauber = { datum: heute, beschreibung: 'Bürobedarf', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 },
+    { konto: '1576', seite: 'S', betrag: 1900 },
+    { konto: '1200', seite: 'H', betrag: 11900 },
+  ] };
+  let p = pruefeBuchung(sauber, idx, { heute });
+  ok('saubere Buchung: keine Fehler', p.fehler.length === 0);
+  ok('saubere Buchung: keine Warnungen', p.warnungen.length === 0);
+  ok('saubere Buchung festschreibbar', istFestschreibbar(p));
+
+  // Erlöskonto USt-pflichtig, aber ohne Umsatzsteuer gebucht → Warnung (kein Fehler).
+  const ohneUst = { datum: heute, beschreibung: 'Verkauf', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 11900 },
+    { konto: '8400', seite: 'H', betrag: 11900 },
+  ] };
+  p = pruefeBuchung(ohneUst, idx, { heute });
+  ok('USt-vergessen → Warnung', p.warnungen.some((w) => /Umsatzsteuer/i.test(w)));
+  ok('USt-vergessen → kein harter Fehler', p.fehler.length === 0);
+  ok('Kleinunternehmer unterdrückt USt-Warnung',
+    pruefeBuchung(ohneUst, idx, { heute, kleinunternehmer: true }).warnungen.length === 0);
+
+  // Zukunftsdatum, fehlende Beschreibung, identische Konten.
+  p = pruefeBuchung({ datum: '2026-12-31', beschreibung: '', zeilen: [
+    { konto: '4980', seite: 'S', betrag: 5000 },
+    { konto: '4980', seite: 'H', betrag: 5000 },
+  ] }, idx, { heute });
+  ok('Zukunftsdatum → Warnung', p.warnungen.some((w) => /Zukunft/i.test(w)));
+  ok('fehlender Buchungstext → Warnung', p.warnungen.some((w) => /Buchungstext/i.test(w)));
+  ok('Soll=Haben-Konto → Warnung', p.warnungen.some((w) => /identisch/i.test(w)));
+
+  // Zeitnähe: Datum vor zuletzt festgeschriebener Buchung.
+  p = pruefeBuchung(sauber, idx, { heute, letztesFestDatum: '2026-06-30' });
+  ok('Datum vor letzter Festschreibung → Warnung', p.warnungen.some((w) => /zeitgerecht/i.test(w)));
+
+  // Harter Fehler (unausgeglichen) blockiert Festschreiben, Warnungen trotzdem berechnet.
+  p = pruefeBuchung({ datum: heute, beschreibung: 'x', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 },
+    { konto: '1200', seite: 'H', betrag: 9000 },
+  ] }, idx, { heute });
+  ok('unausgeglichen → harter Fehler', p.fehler.length > 0);
+  ok('unausgeglichen → nicht festschreibbar', istFestschreibbar(p) === false);
 });
 
 // ===== Phase 3: Aufträge, Rechnung, Zeit, Kostenstellen =====

@@ -6,8 +6,8 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 **Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/bookledgerpro-status-jeo3qz`
-· **main-Stand:** `4ba49c8` · **Tests:** `node tests/run.mjs` → **143/143 grün**
-· **SW-Cache:** `v25` · **53 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **main-Stand:** `4ba49c8` · **Tests:** `node tests/run.mjs` → **156/156 grün**
+· **SW-Cache:** `v26` · **54 JS-Module** · **12 Bild- + 5 Icon-Assets**
 
 ---
 
@@ -62,8 +62,13 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 - **Beleg→Buchung-Pipeline end-to-end im Browser** noch nicht vom Nutzer bestätigt
   (Vision+Mistral einzeln ✓, der durchgehende OCR→Vorschlag-Klickpfad steht als nächstes an).
   Glue-Logik node-getestet; die Mistral-Kontierung leitet die Buchungs-Richtung jetzt
-  verbindlich aus der Kontoart ab (kein Fehlbuchen bei falscher Modell-Richtung), und
-  `buildVorschlag` gibt nur noch gegen `validateBuchung` geprüfte, buchbare Vorschläge zurück.
+  verbindlich aus der Kontoart ab (kein Fehlbuchen bei falscher Modell-Richtung).
+- **NEU Plausibilitäts-Ebene mit Spielraum** (`src/domain/pruefung.js`): trennt harte Fehler
+  (nur festschreibe-relevant) von nicht-blockierenden Hinweisen (USt vergessen, Zukunftsdatum,
+  zeitgerecht, Buchungstext, Soll=Haben). Entwürfe immer speicherbar, Festschreiben bleibt streng.
+  **Die neuen UI-Hinweise (Journal-Karte, Festschreib-Dialog, Beleg-Karte) sind nicht
+  headless-E2E geklickt** — nur Logik node-getestet. Kein Kleinunternehmer-Schalter in den
+  Einstellungen (opts vorhanden, UI-Toggle offen).
 - **Browser-UI generell nicht headless E2E-getestet** (kein Headless-Browser in der
   Build-Umgebung) — Kernlogik ist node-getestet (134/134), DOM-Pfade statisch geprüft.
 - **Sage Phase 5b/c/d offen** (menschlich vermittelt, fremde Repos):
@@ -97,7 +102,7 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 
 ## 8. Architektur-Landkarte (wo was liegt)
 - `src/core/` crypto · shamir · db · durability · files · vault · backup
-- `src/domain/` money · accounts · journal · audit · taxes · store · documents · orders ·
+- `src/domain/` money · accounts · journal · pruefung · audit · taxes · store · documents · orders ·
   invoicing · employees · costcenters · encstore · crm-store · export · summary
 - `src/ai/` extract · categorize · suggest · **aiConfig · vision · mistral** · taxAssist
 - `src/sbkim/` spore · identity · domainvector · signal  (+ `tools/verify_remote_spore.mjs`)

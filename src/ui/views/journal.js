@@ -3,8 +3,9 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
-import { loadAccounts, listBuchungen, saveEntwurf, festschreiben, storno } from '../../domain/store.js';
-import { baueBuchungZeilen, summeSeiten, validateBuchung, BUCHUNG_STATUS } from '../../domain/journal.js';
+import { loadAccounts, listBuchungen, saveEntwurf, festschreiben, storno, getBuchung } from '../../domain/store.js';
+import { baueBuchungZeilen, summeSeiten, BUCHUNG_STATUS } from '../../domain/journal.js';
+import { pruefeBuchung } from '../../domain/pruefung.js';
 import { KONTOART } from '../../domain/accounts.js';
 import { UST_SAETZE } from '../../domain/taxes.js';
 import { listKostenstellen, ensureKostenstellenSeeded } from '../../domain/crm-store.js';
@@ -12,6 +13,9 @@ import { emptyState } from '../empty.js';
 
 let _host = null;
 let _kostenstellen = [];
+let _idx = {};
+let _letztesFestDatum = null;
+let _hinweise = null; // Warnungen der zuletzt gespeicherten Buchung (nicht-blockierend)
 
 export async function mountJournal(host) {
   _host = host;
@@ -24,13 +28,28 @@ async function repaint() {
   _kostenstellen = kostenstellen;
   const idx = {};
   for (const k of konten) idx[k.nummer] = k;
+  _idx = idx;
+  // Datum der zuletzt festgeschriebenen Buchung (für die Zeitnähe-Prüfung).
+  _letztesFestDatum = buchungen
+    .filter((b) => b.seq != null)
+    .reduce((acc, b) => (acc && acc > b.datum ? acc : b.datum), null);
 
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('journal.title') }),
     buchungForm(konten, idx),
+    _hinweise && _hinweise.length ? hinweisKarte(_hinweise) : null,
     el('p', { class: 'muted small', text: t('journal.postedHint') }),
     el('div', { class: 'card no-pad' }, [buchungTabelle(buchungen, idx)]),
   ]));
+}
+
+/** Nicht-blockierende Hinweis-Karte (gelb) zur zuletzt gespeicherten Buchung. */
+function hinweisKarte(warnungen) {
+  return el('div', { class: 'card hinweis' }, [
+    el('strong', { text: t('journal.hints') }),
+    el('ul', { class: 'hinweis-liste' }, warnungen.map((w) => el('li', { class: 'small', text: w }))),
+    el('p', { class: 'muted small', text: t('journal.hintsNote') }),
+  ]);
 }
 
 function kontoOptions(konten) {
@@ -84,11 +103,15 @@ function buchungForm(konten, idx) {
           steuerSeite: steuer ? steuer.steuerSeite : null,
         });
         const buchung = { datum: fDatum.value, beschreibung: fText.value, zeilen: built.zeilen, kostenstelle: fKs.value || null };
-        const fehler = validateBuchung(buchung, idx);
-        if (fehler.length) { err.textContent = fehler.join(' '); return; }
+        // Spielraum: Entwurf wird IMMER gespeichert. Hinweise blockieren nicht;
+        // streng wird erst beim Festschreiben geprüft.
         await saveEntwurf(buchung);
+        const { warnungen } = pruefeBuchung(buchung, idx, { letztesFestDatum: _letztesFestDatum });
+        _hinweise = warnungen;
         await repaint();
       } catch (ex) {
+        // Echter Erfassungs-Stopper bleibt nur „kein/ungültiger Betrag" (dann gibt es
+        // keine Buchungszeilen) — alles andere ist ein nicht-blockierender Hinweis.
         err.textContent = String(ex.message || ex);
       }
     },
@@ -161,8 +184,13 @@ function aktion(b) {
     return el('button', {
       class: 'btn btn-sm btn-primary', text: t('journal.post'),
       onClick: async () => {
-        if (!confirm(t('journal.confirmPost'))) return;
-        try { await festschreiben(b.id); await repaint(); }
+        // Hinweise zeigen, aber den Profi entscheiden lassen (nicht-blockierend).
+        const frisch = await getBuchung(b.id);
+        const { warnungen } = pruefeBuchung(frisch, _idx, { letztesFestDatum: _letztesFestDatum });
+        let frage = t('journal.confirmPost');
+        if (warnungen.length) frage = t('journal.hints') + ':\n– ' + warnungen.join('\n– ') + '\n\n' + frage;
+        if (!confirm(frage)) return;
+        try { _hinweise = null; await festschreiben(b.id); await repaint(); }
         catch (e) { alert(String(e.message || e)); }
       },
     });

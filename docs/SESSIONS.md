@@ -5,7 +5,7 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
-## 2026-06-14 — Pipeline-Härtung: Kontoart-Richtung + Vorschlag-Sicherheitsnetz
+## 2026-06-14 — Profi-Härtung mit Spielraum: Kontoart-Richtung + Plausibilitäts-Hinweise
 
 **Was getan**
 - `src/ai/mistral.js`: neue reine, node-testbare Funktion **`resolveKategorie(parsed, kontoIndex)`**.
@@ -14,20 +14,31 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
   Folge: ein vom Modell falsch gelabeltes Erlöskonto („ausgabe") kann **keine falsche
   Soll/Haben-Buchung** mehr erzeugen. Nicht-Erfolgskonten (z.B. Bank 1200) werden
   abgelehnt → On-Device-Heuristik greift. `categorize()` nutzt jetzt diese Funktion.
-- `src/ai/suggest.js`: **Sicherheitsnetz** — `buildVorschlag()` validiert die gebaute Buchung
-  jetzt gegen `validateBuchung()` (bekannte Konten, ausgeglichen, gültiges Datum) und gibt nur
-  einen **buchbaren** Vorschlag zurück; sonst `{ok:false, fehler:'Vorschlag nicht buchbar: …'}`.
-  Verhindert, dass ein kaputter Vorschlag stillschweigend zum Entwurf wird (GoBD).
-- `tests/run.mjs`: +6 Tests für `resolveKategorie` (Richtungs-Korrektur, Nicht-Erfolgskonto→null,
-  unbekannt→null, null→null) + 3 Tests fürs Vorschlag-Sicherheitsnetz. **Gesamt 143/143 grün**
-  (vorher 134).
+- **Profi-Substanz mit Spielraum** (Leitlinie des Nutzers: „hart wie Diamant, aber
+  bedienerfreundlich, mit Spielraum — keine Haken beim Eintragen, trotzdem Berater-tauglich"):
+  - NEU `src/domain/pruefung.js` — reine `pruefeBuchung(buchung, idx, opts)` trennt **harte
+    Fehler** (validateBuchung, nur festschreibe-relevant) von **nicht-blockierenden Hinweisen**:
+    USt vergessen (nur Erlös/Output-VAT, low-noise), Zukunftsdatum, Datum vor letzter
+    Festschreibung (zeitgerecht), fehlender Buchungstext, Soll=Haben-Konto;
+    `opts.kleinunternehmer` unterdrückt USt-Hinweise. Plus `istFestschreibbar()`.
+  - **Haken entfernt:** Journal-Formular speichert Entwürfe jetzt IMMER (vorher blockierte
+    `validateBuchung` das Speichern); `buildVorschlag()` liefert IMMER einen Vorschlag (mit
+    `fehler`/`warnungen` als Metadaten) statt `ok:false`. Streng bleibt nur `festschreiben()`.
+  - **Hinweise sichtbar, Profi entscheidet:** Journal zeigt gelbe Hinweis-Karte nach dem
+    Speichern; Festschreiben fragt bei Warnungen nach („… Trotzdem festschreiben?"); Beleg-
+    Vorschlagskarte zeigt Hinweise. i18n (de/en) + `.hinweis`-Style. SW-Cache `v25 → v26`,
+    `pruefung.js` in CORE_ASSETS, 54 JS-Module.
+- `tests/run.mjs`: +6 `resolveKategorie`, +4 Vorschlag-Spielraum, +13 `pruefeBuchung`/
+  Plausibilität. **Gesamt 156/156 grün** (vorher 134).
 
-**Verifiziert:** `node tests/run.mjs` → 143 bestanden, 0 fehlgeschlagen.
-**Nicht verifiziert:** Live-Mistral-Antwort im Browser (reine Glue-/Parser-Logik node-getestet;
-Netzwerkpfad unverändert). Beleg→Buchung weiterhin nicht headless-E2E im Browser bestätigt.
+**Verifiziert:** `node tests/run.mjs` → 156 bestanden, 0 fehlgeschlagen; `node --check` für alle
+geänderten UI-Dateien.
+**Nicht verifiziert (ehrlich):** Live-Mistral im Browser; die neuen UI-Hinweise (Journal-Karte,
+Festschreib-Dialog, Beleg-Karte) sind **nicht headless-E2E** geklickt — nur Logik node-getestet.
+Kein Kleinunternehmer-Schalter in den Einstellungen (opts vorhanden, UI-Toggle offen).
 
-**Offen / Nächstes:** Browser-Sichttest der Pipeline (Foto/PDF → Vision → Vorschlag → Journal →
-Festschreiben); Sage 5b. **Details: `docs/PULS.md`.**
+**Offen / Nächstes:** Browser-Sichttest der Pipeline + neuer Hinweise; optional Kleinunternehmer-
+Schalter in Einstellungen; Sage 5b. **Details: `docs/PULS.md`.**
 
 ---
 
