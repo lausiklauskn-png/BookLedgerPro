@@ -7,7 +7,7 @@
 
 **Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/bookledgerpro-status-jeo3qz`
 · **main-Stand:** `e59133c` · **Tests:** `node tests/run.mjs` → **174/174 grün**
-· **SW-Cache:** `v28` · **56 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **SW-Cache:** `v29` · **56 JS-Module** · **12 Bild- + 5 Icon-Assets**
 
 ---
 
@@ -92,7 +92,7 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 - ✅ **KI-Berater mit Rechts-Grundlage** umgesetzt: `begruendung`-Feld an der Buchung (in der
   Hash-Kette, rückwärtskompatibel); `domain/rechtsregeln.js` (kuratiertes §-Set) groundet
   `ai/berater.js` → Mistral formuliert, On-Device-Fallback; UI im Journal. „Keine Steuerberatung".
-  Offen: Regel-Set erweitern; Begründung auch im Beleg-Vorschlag (documents.js).
+  ✅ auch im Beleg-Vorschlag (documents.js) integriert. Offen: Regel-Set erweitern.
 - **EÜR §4(3) (Zufluss/Abfluss, Ist-Prinzip)** + **zertifiziertes DATEV-EXTF** — größer, eigener PR.
 
 ## 7. Nächste konkrete Schritte (Priorität)
