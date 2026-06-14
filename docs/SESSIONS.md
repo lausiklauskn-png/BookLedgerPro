@@ -5,7 +5,7 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
-## 2026-06-14 — Pipeline-Härtung: Mistral-Kontierung folgt verbindlich der Kontoart
+## 2026-06-14 — Pipeline-Härtung: Kontoart-Richtung + Vorschlag-Sicherheitsnetz
 
 **Was getan**
 - `src/ai/mistral.js`: neue reine, node-testbare Funktion **`resolveKategorie(parsed, kontoIndex)`**.
@@ -14,10 +14,15 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
   Folge: ein vom Modell falsch gelabeltes Erlöskonto („ausgabe") kann **keine falsche
   Soll/Haben-Buchung** mehr erzeugen. Nicht-Erfolgskonten (z.B. Bank 1200) werden
   abgelehnt → On-Device-Heuristik greift. `categorize()` nutzt jetzt diese Funktion.
+- `src/ai/suggest.js`: **Sicherheitsnetz** — `buildVorschlag()` validiert die gebaute Buchung
+  jetzt gegen `validateBuchung()` (bekannte Konten, ausgeglichen, gültiges Datum) und gibt nur
+  einen **buchbaren** Vorschlag zurück; sonst `{ok:false, fehler:'Vorschlag nicht buchbar: …'}`.
+  Verhindert, dass ein kaputter Vorschlag stillschweigend zum Entwurf wird (GoBD).
 - `tests/run.mjs`: +6 Tests für `resolveKategorie` (Richtungs-Korrektur, Nicht-Erfolgskonto→null,
-  unbekannt→null, null→null). **Gesamt 140/140 grün** (vorher 134).
+  unbekannt→null, null→null) + 3 Tests fürs Vorschlag-Sicherheitsnetz. **Gesamt 143/143 grün**
+  (vorher 134).
 
-**Verifiziert:** `node tests/run.mjs` → 140 bestanden, 0 fehlgeschlagen.
+**Verifiziert:** `node tests/run.mjs` → 143 bestanden, 0 fehlgeschlagen.
 **Nicht verifiziert:** Live-Mistral-Antwort im Browser (reine Glue-/Parser-Logik node-getestet;
 Netzwerkpfad unverändert). Beleg→Buchung weiterhin nicht headless-E2E im Browser bestätigt.
 

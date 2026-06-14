@@ -296,6 +296,18 @@ await section('Extraktion: leerer/unklarer Text', () => {
   ok('ohne Betrag kein Vorschlag', res.ok === false);
 });
 
+await section('Vorschlag-Sicherheitsnetz: nur buchbare Vorschläge', () => {
+  const ex = extractFromText('Bürobedarf\nGesamtbetrag: 119,00 EUR\n19 % MwSt');
+  const kat = categorize('Bürobedarf Toner');
+  // Unbekanntes Gegenkonto → Vorschlag muss abgelehnt werden (kein kaputter Entwurf).
+  const bad = buildVorschlag(ex, kat, indexFromSeed(), { gegenkonto: '9999' });
+  ok('unbekanntes Gegenkonto → ok:false', bad.ok === false);
+  ok('Fehlertext nennt Unbuchbarkeit', /nicht buchbar/i.test(bad.fehler || ''));
+  // Gültiger Fall bleibt buchbar und ausgeglichen.
+  const good = buildVorschlag(ex, kat, indexFromSeed());
+  ok('gültiger Vorschlag ok', good.ok === true && istAusgeglichen(good.vorschlag.zeilen));
+});
+
 // ===== Phase 3: Aufträge, Rechnung, Zeit, Kostenstellen =====
 
 await section('Aufträge: Summen über mehrere USt-Sätze', () => {

@@ -3,7 +3,7 @@
 // fertigen Buchungsvorschlag zusammen (rein, testbar). Kennt die Kontenrichtung
 // und baut korrekte Soll/Haben-Zeilen samt USt-Aufteilung.
 
-import { baueBuchungZeilen } from '../domain/journal.js';
+import { baueBuchungZeilen, validateBuchung } from '../domain/journal.js';
 
 /** Findet ein Steuer-Konto (Rolle vorsteuer/umsatzsteuer) zum Satz. */
 function findeSteuerKonto(accountIndex, rolle, satz) {
@@ -49,10 +49,20 @@ export function buildVorschlag(extracted, kategorie, accountIndex, opts = {}) {
     steuerKonto, steuerSeite,
   });
 
+  const datum = extracted.datum || new Date().toISOString().slice(0, 10);
+
+  // Sicherheitsnetz (GoBD): nur einen Vorschlag zurückgeben, der als Buchung
+  // wirklich gültig ist (bekannte Konten, ausgeglichen, gültiges Datum). So kann
+  // kein kaputter Vorschlag stillschweigend zum Entwurf werden.
+  const fehlerListe = validateBuchung({ datum, zeilen: built.zeilen }, accountIndex);
+  if (fehlerListe.length) {
+    return { ok: false, fehler: 'Vorschlag nicht buchbar: ' + fehlerListe.join(' ') };
+  }
+
   return {
     ok: true,
     vorschlag: {
-      datum: extracted.datum || new Date().toISOString().slice(0, 10),
+      datum,
       beschreibung: extracted.vendor || kategorie.label,
       zeilen: built.zeilen,
       netto: built.netto, steuer: built.steuer, brutto: built.brutto,
