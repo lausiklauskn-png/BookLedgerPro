@@ -137,7 +137,7 @@ function renderOnboarding(container, resolve) {
       el('h1', { text: t('onboard.backupTitle') }),
       el('p', { class: 'muted', text: t('onboard.backupIntro') }),
       dl, status, finish,
-    ]));
+    ], './assets/img/onboard-backup.png'));
   }
 
   stepPassword();
