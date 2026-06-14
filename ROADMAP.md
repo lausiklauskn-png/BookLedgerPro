@@ -43,9 +43,17 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 > On-Device-Embeddings (Transformers.js) stehen aus; bis dahin Schlüsselwort-Heuristik.
 > Claude-API-Pfad ist korrekt implementiert, aber **nicht live getestet**. Siehe `docs/AI.md`.
 
-## Phase 3 — Aufträge, Kunden, Mitarbeiter, Kostenstellen
-- [ ] WorkFloh-Domänenmodell (Kunden/Aufträge/Status), Rechnung → automatische Buchung
-- [ ] Mitarbeiter + Zeiterfassung; Kostenstellen-Auswertung
+## ✅ Phase 3 — Aufträge, Kunden, Mitarbeiter, Kostenstellen
+- [x] Kunden (CRM) — verschlüsselt (`domain/encstore.js`, `crm-store.js`), Ansicht
+- [x] Aufträge mit Positionen + Status-Workflow (`domain/orders.js`), Ansicht
+- [x] **Rechnung → automatische Buchung** (`domain/invoicing.js`): Ausgangsrechnung
+      (Forderung an Erlöse + USt, mehrere Sätze) als Buchungs-Entwurf
+- [x] Mitarbeiter + Zeiterfassung (`domain/employees.js`), Summen/Kosten, Ansicht
+- [x] Kostenstellen: Seed + Zuordnung im Journal + **Auswertung** (`domain/costcenters.js`)
+- [x] 85/85 Node-Tests grün. ⚠️ Browser-UI nicht headless E2E-getestet.
+
+> Personenbezogene Daten (Kunden/Mitarbeiter/Zeiten) werden **verschlüsselt** gespeichert
+> (DSGVO). Festschreiben der Rechnungsbuchung bleibt manuell (GoBD).
 
 ## Phase 4 — Steuer & Export
 - [ ] Steuer-Assistent (`ai/taxAssist.js`, opt-in), USt-Voranmeldung/EÜR-Aufbereitung

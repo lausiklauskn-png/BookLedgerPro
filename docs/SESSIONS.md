@@ -5,6 +5,36 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — Phase 3: Aufträge, Kunden, Mitarbeiter, Kostenstellen
+
+**Was getan**
+- Domäne (rein, getestet): `orders.js` (Positionen, Summen über mehrere USt-Sätze,
+  Status-Flow), `invoicing.js` (Ausgangsrechnung → Buchungszeilen, mehrere Sätze),
+  `employees.js` (Zeit-Summen/Kosten), `costcenters.js` (Auswertung je Kostenstelle).
+- Verschlüsselter generischer Store `encstore.js` + `crm-store.js` (Kunden, Aufträge,
+  Mitarbeiter, Zeiten verschlüsselt = DSGVO; Kostenstellen als Klartext-Stammdaten).
+- Rechnung → automatische Buchung (`rechnungAusAuftrag` → Buchungs-Entwurf, Auftrag
+  „berechnet"); Festschreiben bleibt manuell (GoBD).
+- UI: Ansichten Kunden / Aufträge (Positionen-Editor, Status, Rechnung→Buchung) /
+  Mitarbeiter+Zeiterfassung; Kostenstelle-Auswahl im Journal; Kostenstellen-Auswertung
+  in der Auswertung. Nav erweitert.
+- Tests **85/85**; i18n-Vollständigkeit ok; SW-Cache `v4`.
+
+**Stand**
+- Voller Auftrags-/CRM-Kreis: Kunde → Auftrag → Rechnung → Buchung; Zeiterfassung;
+  Kostenstellen-Auswertung. Kernlogik echt getestet.
+
+**Offen / Grenzen (ehrlich)**
+- **Browser-UI nicht headless E2E-getestet** (kein Headless-Browser): alle Phase-1–3-
+  Ansichten sind statisch geprüft, aber nicht klickend verifiziert → einmal manuell
+  durchgehen.
+- Rechnung erzeugt bisher kein PDF-Dokument (nur Buchung); PDF-Rechnung später.
+
+**Nächstes (Phase 4)** — Steuer & Export: Steuer-Assistent (opt-in), USt-VA/EÜR-
+Aufbereitung, Export (PDF/CSV, DATEV-CSV, ELSTER/ERiC-Datenpakete), DSGVO/GoBD-Doku in-app.
+
+---
+
 ## 2026-06-14 — Phase 2: Belege & Erkennung (Kern)
 
 **Was getan**

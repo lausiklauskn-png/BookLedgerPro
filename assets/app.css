@@ -192,6 +192,15 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .checkbox-row { display: flex; align-items: center; gap: .5rem; }
 .checkbox-row input { width: auto; }
 
+/* ---- Auftrags-Positionen -------------------------------------------------- */
+.pos-head, .pos-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: .5rem; align-items: center; }
+.pos-head { font-size: .8rem; color: var(--text-muted); margin: .3rem 0 .1rem; }
+.pos-box { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .5rem; }
+.pos-row input, .pos-row select {
+  font: inherit; padding: .45rem .55rem; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text); width: 100%;
+}
+
 .fatal { padding: 2rem; text-align: center; color: var(--error); }
 
 /* ---- Responsiv ------------------------------------------------------------ */

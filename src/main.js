@@ -9,6 +9,7 @@ import { applyTheme } from './ui/theme.js';
 import { setLang } from './ui/i18n.js';
 import { hydrateSettings } from './state.js';
 import { ensureAccountsSeeded } from './domain/store.js';
+import { ensureKostenstellenSeeded } from './domain/crm-store.js';
 
 const root = document.getElementById('app-root');
 
@@ -36,8 +37,9 @@ async function boot() {
   setLang(settings.lang);
   applyTheme(settings.theme);
 
-  // Kontenplan einmalig anlegen (SKR03-Auswahl).
+  // Kontenplan + Kostenstellen einmalig anlegen.
   await ensureAccountsSeeded();
+  await ensureKostenstellenSeeded();
 
   renderShell(root, { onLock: () => location.reload() });
 }
