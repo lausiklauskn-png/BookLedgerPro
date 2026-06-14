@@ -210,16 +210,24 @@ function viewSettings() {
   ]);
 }
 
+// Merkt sich kurz, dass das Firmenprofil gespeichert wurde (überlebt das Re-Render
+// nach updateSettings, das sonst die „Gespeichert ✓"-Meldung sofort verwerfen würde).
+let _firmaSaved = false;
+
 // Firmenprofil (Rechnungssteller-Stammdaten, §14 UStG) — verschlüsselt in Settings.
 function firmaSection(s) {
   const f = s.firma || {};
-  const inp = (val, ph) => el('input', { type: 'text', value: val || '', placeholder: ph });
+  const inp = (val, ph) => {
+    const e = el('input', { type: 'text', value: val || '', placeholder: ph });
+    e.addEventListener('input', () => { _firmaSaved = false; status.textContent = ''; });
+    return e;
+  };
+  const status = el('span', { class: 'muted small', text: _firmaSaved ? t('settings.saved') : '' });
   const name = inp(f.name, t('settings.firma.name'));
   const anschrift = inp(f.anschrift, t('settings.firma.anschrift'));
   const steuernummer = inp(f.steuernummer, t('settings.firma.steuernummer'));
   const ustId = inp(f.ustId, t('settings.firma.ustId'));
   const iban = inp(f.iban, t('settings.firma.iban'));
-  const status = el('span', { class: 'muted small' });
   const field = (label, input) => el('label', { class: 'field' }, [el('span', { text: label }), input]);
   return el('div', { class: 'setting' }, [
     el('div', { class: 'setting-label', text: t('settings.firma') }),
@@ -239,7 +247,8 @@ function firmaSection(s) {
             name: name.value.trim(), anschrift: anschrift.value.trim(),
             steuernummer: steuernummer.value.trim(), ustId: ustId.value.trim(), iban: iban.value.trim(),
           } });
-          status.textContent = t('settings.saved');
+          _firmaSaved = true;     // überlebt das durch updateSettings ausgelöste Re-Render
+          paint();
         },
       }),
       status,
