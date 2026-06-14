@@ -224,7 +224,7 @@ function aiConfigSection() {
 
     // Test-Knopf: speichert erst, dann ruft die Live-API minimal an.
     const testRow = (label, runTest, getVal) => {
-      const out = el('span', { class: 'test-status muted small' });
+      const out = el('div', { class: 'test-status muted small' });
       const btn = el('button', {
         class: 'btn btn-sm', text: t('settings.aiTest'),
         onClick: async () => {
@@ -233,7 +233,8 @@ function aiConfigSection() {
           out.textContent = '…';
           const r = await runTest();
           out.className = 'test-status small ' + (r.ok ? 'ok' : 'fail');
-          out.textContent = r.ok ? t('settings.aiTestOk') : (t('settings.aiTestFail') + ' ' + r.message);
+          out.replaceChildren(el('span', { text: r.ok ? t('settings.aiTestOk') : (t('settings.aiTestFail') + ' ' + r.message) }));
+          if (!r.ok && r.hinweis) out.appendChild(el('div', { class: 'muted small', text: '→ ' + r.hinweis }));
         },
       });
       return el('div', { class: 'test-row' }, [el('span', { class: 'muted small', text: label }), btn, out]);
