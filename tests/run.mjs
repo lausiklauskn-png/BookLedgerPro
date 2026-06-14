@@ -24,7 +24,7 @@ import { auftragSummen, darfWechseln, validateAuftrag } from '../src/domain/orde
 import { rechnungZeilen } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
-import { buildLedgerCsv, buildDatevCsv, buildUstVa, centsToComma, ustVaToCsv } from '../src/domain/export.js';
+import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, buildUstVa, centsToComma, ustVaToCsv } from '../src/domain/export.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -564,6 +564,34 @@ await section('Export: CSV-Formatierung & USt-VA-Kennzahlen', () => {
 
   const datev = buildDatevCsv(buchungen, idx);
   ok('DATEV: 2-Zeilen-Buchung als Konto/Gegenkonto', datev.includes('50,00;S;1200;8200'));
+});
+
+await section('DATEV EXTF: Envelope + Konto/Gegenkonto-Brutto + Steuerschlüssel', () => {
+  const idx = indexFromSeed();
+  // Ausgabe mit Vorsteuer 19 % (USt-Split) → ein Brutto-Satz mit BU-Schlüssel.
+  const ausgabe = datevBuchungssatz({ datum: '2026-06-05', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 },
+  ] }, idx);
+  ok('Ausgabe: Konto=4930, Gegenkonto=1200', ausgabe.konto === '4930' && ausgabe.gegenkonto === '1200');
+  ok('Ausgabe: Brutto 11900, S, BU=9 (Vorsteuer 19%)', ausgabe.umsatz === 11900 && ausgabe.sh === 'S' && ausgabe.bu === '9');
+
+  // Einnahme mit USt 19 %.
+  const einnahme = datevBuchungssatz({ datum: '2026-06-10', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 },
+  ] }, idx);
+  ok('Einnahme: Konto=8400, Gegenkonto=1200, H, BU=3', einnahme.konto === '8400' && einnahme.gegenkonto === '1200' && einnahme.sh === 'H' && einnahme.bu === '3');
+
+  const buchungen = [
+    { seq: 1, datum: '2026-06-05', zeilen: [{ konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }] },
+    { seq: 2, datum: '2026-06-10', zeilen: [{ konto: '1200', seite: 'S', betrag: 5000 }, { konto: '8200', seite: 'H', betrag: 5000 }] },
+    { seq: null, datum: '2026-06-12', zeilen: [{ konto: '4980', seite: 'S', betrag: 1000 }, { konto: '1200', seite: 'H', betrag: 1000 }] },
+  ];
+  const extf = buildDatevExtf(buchungen, idx, { bezeichnung: 'Test' });
+  const zeilen = extf.split('\r\n');
+  ok('EXTF-Header beginnt korrekt', zeilen[0].startsWith('"EXTF";700;21;"Buchungsstapel";'));
+  ok('EXTF-Spaltenkopf enthält BU-Schlüssel', zeilen[1].includes('BU-Schlüssel') && zeilen[1].startsWith('Umsatz'));
+  ok('EXTF: nur festgeschriebene (2 Datenzeilen)', zeilen.length === 4); // header + spalten + 2
+  ok('EXTF: Belegdatum als TTMM', zeilen[2].includes(';0506;'));
 });
 
 await section('Steuer-Assistent: Kennzahlen-Text (Datenminimierung)', () => {

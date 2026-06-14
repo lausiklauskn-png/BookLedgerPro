@@ -273,7 +273,7 @@ const STRINGS = {
 
     'reports.export': 'Export',
     'reports.exportJournal': 'Journal-CSV',
-    'reports.exportDatev': 'DATEV-CSV',
+    'reports.exportDatev': 'DATEV (EXTF)',
     'reports.exportUstVa': 'USt-VA-CSV',
     'reports.exportEur': 'EÜR-CSV',
     'reports.print': 'Drucken / PDF',
@@ -567,7 +567,7 @@ const STRINGS = {
     'reports.ksSaldo': 'Balance',
     'reports.export': 'Export',
     'reports.exportJournal': 'Journal CSV',
-    'reports.exportDatev': 'DATEV CSV',
+    'reports.exportDatev': 'DATEV (EXTF)',
     'reports.exportUstVa': 'VAT-return CSV',
     'reports.exportEur': 'Income-surplus CSV',
     'reports.print': 'Print / PDF',

@@ -5,6 +5,24 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — DATEV-EXTF formkonform gehärtet (Konto/Gegenkonto + Steuerschlüssel)
+
+**Was getan**
+- `src/domain/export.js`: NEU `buildDatevExtf()` — **EXTF-Envelope** (Header `"EXTF";700;21;
+  "Buchungsstapel";…` + Spaltenüberschriften) + Datenzeilen im **Konto/Gegenkonto-Brutto-Modell**.
+  NEU `datevBuchungssatz()` (rein, testbar) verdichtet USt-Split-Buchungen zu EINEM Brutto-Satz
+  mit **BU-/Steuerschlüssel** (SKR03: Vorsteuer 9/8, Umsatzsteuer 3/2), Belegdatum als TTMM.
+- Reports-Export-Button nutzt jetzt EXTF (`EXTF_Buchungsstapel_*.csv`), Label „DATEV (EXTF)".
+  Altes `buildDatevCsv` bleibt erhalten.
+- SW-Cache `v31→v32`. `tests/run.mjs`: +7. **Gesamt 203/203 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 203/0; `node --check`.
+**EHRLICH (wichtig):** KEIN vollständig zertifiziertes 116-Spalten-EXTF. Steuerschlüssel-Mapping
+deckt Standardsätze (0/7/19 %) ab und ist Kontenrahmen-/Versionsabhängig — **vor Übergabe mit
+Berater/DATEV verifizieren**.
+
+---
+
 ## 2026-06-14 — Rechtsregel-Set erweitert (mehr §-Grundlagen für KI-Berater)
 
 **Was getan**
