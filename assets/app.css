@@ -138,6 +138,47 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .banner-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
 .banner-critical { background: var(--critical-bg); border-color: var(--critical-border); color: var(--critical-text); }
 
+/* ---- Tabellen ------------------------------------------------------------- */
+.card.no-pad { padding: 0; overflow: hidden; }
+.pad { padding: 1.1rem; }
+.table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.table th, .table td { text-align: left; padding: .6rem .8rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.table thead th { background: var(--surface-2); color: var(--text-muted); font-weight: 600; font-size: .8rem; position: sticky; top: 0; }
+.table tbody tr:last-child td { border-bottom: none; }
+.table .num, .table th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mono { font-family: var(--mono); font-size: .85em; }
+.actions { text-align: right; white-space: nowrap; }
+
+/* ---- Badges --------------------------------------------------------------- */
+.badge { display: inline-block; padding: .12rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; border: 1px solid var(--border); }
+.badge-entwurf { background: var(--surface-2); color: var(--text-muted); }
+.badge-ok { background: var(--accent-soft); color: var(--accent-strong); border-color: transparent; }
+.badge-storno { background: var(--warn-bg); color: var(--warn-text); border-color: var(--warn-border); }
+
+/* ---- Buchungs-Formular ---------------------------------------------------- */
+.buchung-form { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1rem; }
+.form-title, .card-title { margin: 0; font-size: 1.05rem; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .7rem; }
+.buchung-form select { font: inherit; padding: .6rem .7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text); }
+
+/* ---- Auswertung ----------------------------------------------------------- */
+.report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.report-line { display: flex; justify-content: space-between; gap: 1rem; padding: .3rem 0; }
+.report-line.strong { font-weight: 700; font-size: 1.05rem; }
+.report-line .num { font-variant-numeric: tabular-nums; }
+.period-bar { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.inline-field { display: inline-flex; align-items: center; gap: .35rem; }
+.inline-field input { width: 120px; }
+.inline-field > span { color: var(--text-muted); font-size: .85rem; }
+
+.audit { margin-top: 1rem; }
+.audit-status { display: flex; align-items: center; gap: .55rem; font-weight: 600; }
+.audit-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.audit-ok .audit-dot { background: var(--accent); }
+.audit-fail .audit-dot { background: var(--error); }
+.audit-fail { border-color: var(--critical-border); }
+.audit-errors { margin: .6rem 0 0; padding-left: 1.2rem; color: var(--critical-text); font-size: .9rem; }
+
 .fatal { padding: 2rem; text-align: center; color: var(--error); }
 
 /* ---- Responsiv ------------------------------------------------------------ */

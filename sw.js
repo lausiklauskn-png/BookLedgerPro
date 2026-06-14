@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `blpr-shell-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -38,6 +38,15 @@ const CORE_ASSETS = [
   './src/ui/mycel.js',
   './src/ui/lock.js',
   './src/ui/shell.js',
+  './src/ui/views/accounts.js',
+  './src/ui/views/journal.js',
+  './src/ui/views/reports.js',
+  './src/domain/money.js',
+  './src/domain/accounts.js',
+  './src/domain/audit.js',
+  './src/domain/journal.js',
+  './src/domain/taxes.js',
+  './src/domain/store.js',
 ];
 
 self.addEventListener('install', (event) => {

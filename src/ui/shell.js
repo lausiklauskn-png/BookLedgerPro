@@ -12,11 +12,15 @@ import { getMandantId, lockVault } from '../core/vault.js';
 import { durabilityStatus } from '../core/durability.js';
 import { exportBackupFile, readBackup, importSnapshot } from '../core/backup.js';
 import { pickFile, readFileText } from '../core/files.js';
+import { mountAccounts } from './views/accounts.js';
+import { mountJournal } from './views/journal.js';
+import { mountReports } from './views/reports.js';
 
 const NAV = [
   ['dashboard', 'nav.dashboard'],
   ['accounts', 'nav.accounts'],
   ['journal', 'nav.journal'],
+  ['reports', 'nav.reports'],
   ['documents', 'nav.documents'],
   ['settings', 'nav.settings'],
 ];
@@ -78,6 +82,9 @@ function renderRoute() {
   const route = getRoute();
   if (route === 'dashboard') return mount(content, viewDashboard());
   if (route === 'settings') return mount(content, viewSettings());
+  if (route === 'accounts') return void mountAccounts(content);
+  if (route === 'journal') return void mountJournal(content);
+  if (route === 'reports') return void mountReports(content);
   return mount(content, viewPlaceholder(route));
 }
 

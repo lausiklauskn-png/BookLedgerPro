@@ -5,6 +5,38 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — Phase 1: Buchhaltungs-Kern
+
+**Was getan**
+- Domänenlogik (rein, node-getestet): `domain/money.js` (Cent-genau, dt. Format),
+  `domain/accounts.js` (SKR03-Auswahl, Konto-Arten, Saldo-Logik), `domain/journal.js`
+  (doppelte Buchführung mehrzeilig, USt-Aufteilung brutto→netto+USt, Storno-Spiegelung),
+  `domain/audit.js` (kanonische Form wie Sage §11.1, Hash-Kette, `verifyChain`),
+  `domain/taxes.js` (Saldenliste, USt-Voranmeldung, EÜR vereinfacht, Periodenfilter).
+- Persistenz `domain/store.js`: Konten-Seed, **verschlüsselte** Buchungen (AES-GCM mit
+  Sitzungs-Key), **GoBD-Festschreibung** (lückenloser Nummernkreis + Hash-Kette),
+  unveränderlich, Korrektur nur per `storno()`.
+- UI: Ansichten Konten/Journal/Auswertung (`ui/views/*`), Neue-Buchung-Formular mit
+  autom. USt-Konto-Wahl, Festschreiben/Storno, Audit-Status. In Shell + Nav verdrahtet.
+- Tests erweitert auf **45/45** (inkl. Integration Festschreiben+Storno+Kette).
+- SW-Cache auf `v2` gebumpt + neue Module precached (Browser-Lehre 4).
+
+**Stand**
+- Voll funktionsfähiger Buchhaltungs-Kern (Konten, Buchen, USt/EÜR, GoBD-Audit), Kernlogik
+  echt getestet.
+
+**Offen / Grenzen (ehrlich)**
+- **Browser-UI nicht headless E2E-getestet** (kein Headless-Browser in der Umgebung):
+  DOM/IndexedDB/Verschlüsselungs-Pfad ist sorgfältig gebaut + statisch geprüft, aber nicht
+  klickend verifiziert. Erste reale Sitzung: Onboarding → Buchung → Festschreiben → Storno
+  → Auswertung manuell durchklicken.
+- Strenge §4-Abs.3-EStG-EÜR + Kostenstellen-UI später (Phase 3/4).
+
+**Nächstes (Phase 2)** — Belege & Erkennung (verschlüsselter Beleg-Store, OCR lokal,
+Extraktion → Buchungsvorschlag, KI-Autonomie-Schalter wirksam).
+
+---
+
 ## 2026-06-14 — Phase 0: Fundament
 
 **Was getan**
