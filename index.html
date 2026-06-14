@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="description" content="BookLedgerPro — offline-first, verschlüsselte Buchhaltung mit KI-Unterstützung." />
+  <title>BookLedgerPro</title>
+
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./assets/tokens.css" />
+  <link rel="stylesheet" href="./assets/app.css" />
+</head>
+<body>
+  <noscript>BookLedgerPro benötigt JavaScript (läuft vollständig lokal in Ihrem Browser).</noscript>
+
+  <div id="app-root">
+    <div class="lock-screen">
+      <div class="lock-card"><p class="muted">Lädt …</p></div>
+    </div>
+  </div>
+
+  <!-- Build-frei: native ES-Module, keine CDNs (offline-first). -->
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

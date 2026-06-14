@@ -1,0 +1,15 @@
+{
+  "name": "BookLedgerPro",
+  "short_name": "BookLedger",
+  "description": "Offline-first, verschlüsselte Buchhaltung mit KI-Unterstützung.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1120",
+  "theme_color": "#0f766e",
+  "icons": [
+    { "src": "./assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
