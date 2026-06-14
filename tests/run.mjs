@@ -9,7 +9,7 @@ import {
 import { splitSecret, combineShares, encodeShare, decodeShare } from '../src/core/shamir.js';
 import { parseEuroToCents, formatCents } from '../src/domain/money.js';
 import { saldo, KONTOART, mehrungsSeite } from '../src/domain/accounts.js';
-import { baueBuchungZeilen, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen } from '../src/domain/journal.js';
+import { baueBuchungZeilen, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen, formularAusBuchung } from '../src/domain/journal.js';
 import { hashBuchung, verifyChain, GENESIS, canonicalize } from '../src/domain/audit.js';
 import { computeEUR, computeUStVoranmeldung, saldenliste, verprobeUSt } from '../src/domain/taxes.js';
 import { seedAccounts } from '../src/domain/accounts.js';
@@ -297,6 +297,35 @@ await section('Extraktion: leerer/unklarer Text', () => {
   ok('niedrige Confidence', ex.confidence < 0.3);
   const res = buildVorschlag(ex, categorize('x'), indexFromSeed());
   ok('ohne Betrag kein Vorschlag', res.ok === false);
+});
+
+await section('Entwurf bearbeiten: Formular aus Buchung rekonstruieren', () => {
+  const idx = indexFromSeed();
+  const ausgabe = formularAusBuchung({
+    datum: '2026-06-02', beschreibung: 'Toner', begruendung: 'Notiz', kostenstelle: 'K1',
+    zeilen: [
+      { konto: '4930', seite: 'S', betrag: 10000 },
+      { konto: '1576', seite: 'S', betrag: 1900 },
+      { konto: '1200', seite: 'H', betrag: 11900 },
+    ],
+  }, idx);
+  ok('Ausgabe: Soll 4930 / Haben 1200', ausgabe.sollKonto === '4930' && ausgabe.habenKonto === '1200');
+  ok('Ausgabe: Brutto 11900, USt 19', ausgabe.bruttoCent === 11900 && ausgabe.ustSatz === 19);
+  ok('Ausgabe: Notizfelder erhalten', ausgabe.beschreibung === 'Toner' && ausgabe.begruendung === 'Notiz' && ausgabe.kostenstelle === 'K1');
+
+  const einnahme = formularAusBuchung({ datum: '2026-06-03', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 11900 },
+    { konto: '8400', seite: 'H', betrag: 10000 },
+    { konto: '1776', seite: 'H', betrag: 1900 },
+  ] }, idx);
+  ok('Einnahme: Soll 1200 / Haben 8400', einnahme.sollKonto === '1200' && einnahme.habenKonto === '8400');
+  ok('Einnahme: Brutto 11900, USt 19', einnahme.bruttoCent === 11900 && einnahme.ustSatz === 19);
+
+  const ohneUst = formularAusBuchung({ zeilen: [
+    { konto: '4980', seite: 'S', betrag: 5000 },
+    { konto: '1200', seite: 'H', betrag: 5000 },
+  ] }, idx);
+  ok('ohne USt: Soll 4980 / Haben 1200 / 0 %', ohneUst.sollKonto === '4980' && ohneUst.habenKonto === '1200' && ohneUst.ustSatz === 0 && ohneUst.bruttoCent === 5000);
 });
 
 await section('Vorschlag: Spielraum statt Haken (Warnung statt Blockade)', () => {
