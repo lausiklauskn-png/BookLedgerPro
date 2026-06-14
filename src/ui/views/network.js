@@ -36,6 +36,7 @@ function identityCard(ident) {
   if (!ident) {
     return el('div', { class: 'card' }, [
       el('h2', { class: 'card-title', text: t('net.identity') }),
+      el('img', { class: 'empty-illu', src: './assets/img/empty-network.png', alt: '', loading: 'lazy' }),
       el('p', { class: 'muted small', text: t('net.intro') }),
       el('div', { class: 'btn-row' }, [el('button', {
         class: 'btn btn-primary', text: t('net.create'),
