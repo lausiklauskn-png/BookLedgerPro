@@ -1,0 +1,40 @@
+# CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
+
+Dieses Repo wird über viele Sitzungen hinweg gebaut. Lies das hier zuerst.
+
+## Was BookLedgerPro ist
+Offline-first, verschlüsselte Buchhaltungs-PWA (Deutschland zuerst), KI-gestützt,
+ins Sage-Mycel eingebunden. Build-frei (native ES-Module), keine CDNs, GitHub Pages.
+Familie: Mein-Tresor (Krypto), Mein-WorkFloh (Shell/Domäne), Sage-Protokol (SBKIM).
+
+## Goldene Regeln
+1. **Build-frei bleiben.** Native ES-Module, keine Bundler/npm-Runtime-Deps, keine CDNs.
+   Alles muss von `file`-losem `http(s)://` (z.B. `python3 -m http.server`) laufen.
+2. **Datendurabilität ist Pflicht-Feature #1.** Niemals einen Pfad bauen, der Daten allein
+   IndexedDB anvertraut. `storage.persist()`, Backups, Shamir. Siehe
+   `docs/SAGE_BROWSER_LEHREN.md` — diese Lehren sind verbindlich.
+3. **DB-Suffix `bookledgerpro` nie ändern.** Gemeinsamer Origin auf GitHub Pages →
+   sonst Kollision mit Geschwister-Apps.
+4. **Krypto-Disziplin.** Sitzungs-Key nur im RAM; Klartext verlässt das Gerät nie ohne
+   ausdrückliche Nutzer-Bestätigung. Externe KI strikt opt-in (BYOK).
+5. **Recht ist Architektur.** GoBD-Festschreibung (Storno statt Löschen, Hash-Kette),
+   DSGVO, USt/EÜR — nicht nachträglich aufpfropfen.
+6. **Cache-Bust bei Shell-Änderungen.** `CACHE_VERSION` in `sw.js` erhöhen (oder Datei
+   umbenennen). Sonst liefert der SW veraltete Logik.
+7. **Design additiv.** Visuelle Effekte nie via `cursor: none` (DeX/Android ignoriert das).
+8. **Neueste Claude-Modelle** für KI-Funktionen (Opus 4.8 / Sonnet 4.6 / Haiku 4.5), BYOK.
+
+## Arbeitsweise
+- Branch: `claude/general-discussion-x9xyk9` (bzw. der für die Sitzung vorgegebene).
+- Pro Phase ein PR (Draft), Beschreibung mit Verifikation. Auto-Merge wenn grün.
+- `node tests/run.mjs` vor dem Push laufen lassen.
+- Nach jeder Sitzung `docs/SESSIONS.md` fortschreiben (was getan, was offen).
+
+## Wo was liegt
+Siehe `ARCHITECTURE.md`. Phasenstand in `ROADMAP.md`.
+
+## Sage-Andock (Phase 5) — vorzubereitende Werte
+`<ENDPOINT>` = `https://lausiklauskn-png.github.io/BookLedgerPro/`, `<DB_SUFFIX>` =
+`bookledgerpro`, Domänen-Stichworte (Buchhaltung, Beleg, Konto, Rechnung, USt, EÜR,
+Kostenstelle …), Peer-Spore eines Geschwister-Knotens für den ersten Handshake.
+SBKIM-Module werden aus dem Sage-Repo **kopiert, nicht modifiziert** (Modul 09).

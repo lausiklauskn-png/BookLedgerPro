@@ -1,0 +1,151 @@
+/* assets/app.css — Komponenten & Layout. */
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+h1 { font-size: 1.5rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
+p { margin: .35rem 0; }
+.muted { color: var(--text-muted); }
+.small { font-size: .85rem; }
+code { font-family: var(--mono); }
+
+/* ---- Marke ---------------------------------------------------------------- */
+.brand { display: flex; align-items: center; gap: .55rem; }
+.brand-name { font-weight: 700; letter-spacing: -.02em; }
+.mycel-mark { color: var(--text-muted); flex: none; }
+.mycel-divider {
+  height: 1px; margin: 1rem 0;
+  background: linear-gradient(90deg, transparent, var(--border) 20%, var(--border) 80%, transparent);
+}
+
+/* ---- Buttons -------------------------------------------------------------- */
+.btn {
+  font: inherit; cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text);
+  padding: .55rem .9rem; border-radius: var(--radius-sm);
+  transition: transform var(--motion), background var(--motion), border-color var(--motion);
+}
+.btn:hover { border-color: var(--accent); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+:root[data-theme="dark"] .btn-primary { color: #06231f; }
+.btn-primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: var(--surface-2); border-color: transparent; }
+.btn-sm { padding: .35rem .65rem; font-size: .85rem; }
+.btn-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+/* ---- Sperrbildschirm / Onboarding ---------------------------------------- */
+.lock-screen {
+  min-height: 100dvh; display: grid; place-items: center; padding: 1.25rem;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, var(--accent-soft) 0%, transparent 55%),
+    var(--bg);
+}
+.lock-card {
+  width: 100%; max-width: 420px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow); padding: 1.75rem;
+}
+.lock-card .brand { margin-bottom: 1.25rem; }
+.lock-form { display: flex; flex-direction: column; gap: .85rem; }
+.field { display: flex; flex-direction: column; gap: .3rem; }
+.field > span { font-size: .85rem; color: var(--text-muted); }
+input[type="password"], input[type="text"], input[type="number"], select {
+  font: inherit; padding: .6rem .7rem; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text);
+}
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.form-error { color: var(--error); min-height: 1.2em; margin: 0; font-size: .9rem; }
+
+.shares { display: flex; flex-direction: column; gap: .5rem; margin: 1rem 0; }
+.share {
+  display: flex; align-items: center; gap: .6rem; padding: .55rem .7rem;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+.share-no { font-weight: 700; color: var(--accent); flex: none; }
+.share-code { font-size: .72rem; word-break: break-all; color: var(--text-muted); }
+
+/* ---- App-Shell ------------------------------------------------------------ */
+.app { min-height: 100dvh; display: flex; flex-direction: column; }
+.app-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .7rem 1rem; border-bottom: 1px solid var(--border);
+  background: var(--surface); position: sticky; top: 0; z-index: 10;
+}
+.header-right { display: flex; align-items: center; gap: .6rem; }
+.mandant {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-family: var(--mono); font-size: .78rem; color: var(--text-muted);
+  background: var(--surface-2); border: 1px solid var(--border);
+  padding: .2rem .5rem; border-radius: 999px;
+}
+.mandant-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+
+.app-body { display: flex; flex: 1; max-width: var(--maxw); width: 100%; margin: 0 auto; }
+.app-nav {
+  display: flex; flex-direction: column; gap: .15rem; padding: 1rem .6rem;
+  border-right: 1px solid var(--border); min-width: 170px;
+}
+.nav-item {
+  text-align: left; font: inherit; cursor: pointer; border: none; background: transparent;
+  color: var(--text-muted); padding: .55rem .75rem; border-radius: var(--radius-sm);
+  transition: background var(--motion), color var(--motion);
+}
+.nav-item:hover { background: var(--surface-2); color: var(--text); }
+.nav-item.active { background: var(--accent-soft); color: var(--accent-strong); font-weight: 600; }
+:root[data-theme="dark"] .nav-item.active { color: var(--accent-strong); }
+
+.content { flex: 1; padding: 1.25rem 1.4rem; }
+.view { display: flex; flex-direction: column; gap: 1.1rem; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.1rem; box-shadow: var(--shadow-sm);
+}
+.placeholder { display: grid; place-items: center; min-height: 160px; }
+
+/* ---- Einstellungen -------------------------------------------------------- */
+.setting { display: flex; flex-direction: column; gap: .45rem; }
+.setting-label { font-weight: 600; }
+.segmented {
+  display: inline-flex; flex-wrap: wrap; gap: .25rem; padding: .25rem;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; width: fit-content;
+}
+.seg {
+  font: inherit; cursor: pointer; border: none; background: transparent; color: var(--text-muted);
+  padding: .4rem .85rem; border-radius: 999px; transition: background var(--motion), color var(--motion);
+}
+.seg:hover { color: var(--text); }
+.seg.active { background: var(--surface); color: var(--accent-strong); box-shadow: var(--shadow-sm); font-weight: 600; }
+
+/* ---- Banner (Durabilität) ------------------------------------------------- */
+.durability-slot:empty { display: none; }
+.banner {
+  display: flex; align-items: center; gap: .75rem; justify-content: space-between;
+  padding: .6rem 1rem; font-size: .9rem; border-bottom: 1px solid var(--border);
+}
+.banner-text { flex: 1; }
+.banner-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
+.banner-critical { background: var(--critical-bg); border-color: var(--critical-border); color: var(--critical-text); }
+
+.fatal { padding: 2rem; text-align: center; color: var(--error); }
+
+/* ---- Responsiv ------------------------------------------------------------ */
+@media (max-width: 640px) {
+  .app-body { flex-direction: column; }
+  .app-nav {
+    flex-direction: row; overflow-x: auto; min-width: 0; border-right: none;
+    border-bottom: 1px solid var(--border); padding: .5rem;
+  }
+  .nav-item { white-space: nowrap; }
+}
