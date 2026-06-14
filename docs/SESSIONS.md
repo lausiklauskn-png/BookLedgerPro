@@ -5,6 +5,37 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — Phase 2: Belege & Erkennung (Kern)
+
+**Was getan**
+- Verschlüsselter Beleg-Store `domain/documents.js` (AES-GCM, Bild/PDF, Metadaten +
+  Verknüpfung zu Buchungen).
+- On-Device-Pipeline (rein, getestet): `ai/extract.js` (Betrag/Datum/USt/Vendor aus Text),
+  `ai/categorize.js` (Schlüsselwort → SKR03-Konto + Richtung), `ai/suggest.js`
+  (ausgeglichener Buchungssatz inkl. USt-Aufteilung).
+- Externe KI `ai/provider.js`: Claude-Vision per BYOK (neueste Modelle), opt-in,
+  verschlüsselter Schlüssel, Bestätigung vor Versand.
+- UI `ui/views/documents.js`: Upload, Schnellerfassung aus Text, KI-Extraktion; **Autonomie-
+  Schalter wirksam** (Vorschlag/Entwurf/auto). KI-Settings (BYOK) in Shell.
+- Bugfix: doppelte Cent-Konvertierung in `baueBuchungZeilen` (nimmt jetzt `bruttoCents`).
+- Tests **65/65**; i18n-Vollständigkeit geprüft; SW-Cache `v3`.
+- `docs/AI.md` (KI-Konzept + ehrliche Grenzen).
+
+**Stand**
+- Beleg→Buchungsvorschlag funktioniert on-device (Text) und via Claude-Vision (BYOK).
+  Kernlogik echt getestet.
+
+**Offen / Grenzen (ehrlich)**
+- **Lokales OCR (Tesseract.js) NICHT eingebunden** — Bild→Text nur via Claude-Vision/Text.
+- **Embeddings (Transformers.js) ausstehend** — derzeit Schlüsselwort-Heuristik.
+- **Claude-API-Pfad nicht live getestet** (kein Schlüssel/Netz).
+- **Browser-UI nicht headless E2E-getestet.**
+
+**Nächstes (Phase 3)** — Aufträge/Kunden/Mitarbeiter/Kostenstellen (WorkFloh-Domänenmodell),
+Rechnung → automatische Buchung.
+
+---
+
 ## 2026-06-14 — Phase 1: Buchhaltungs-Kern
 
 **Was getan**
