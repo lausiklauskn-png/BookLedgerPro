@@ -7,7 +7,7 @@
 
 **Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/bookledgerpro-status-jeo3qz`
 · **main-Stand:** `e59133c` · **Tests:** `node tests/run.mjs` → **210/210 grün**
-· **SW-Cache:** `v35` · **57 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **SW-Cache:** `v36` · **57 JS-Module** · **12 Bild- + 5 Icon-Assets**
 
 ---
 
