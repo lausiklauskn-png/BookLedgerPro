@@ -125,3 +125,51 @@ export function computeEUR(buchungen, kontoIndex, periode) {
   }
   return { einnahmen, ausgaben, ueberschuss: einnahmen - ausgaben, einnahmenKonten, ausgabenKonten };
 }
+
+// SKR03-Standard: Geldkonten (Kasse/Bank) sowie Forderungen/Verbindlichkeiten.
+const GELDKONTEN_DEFAULT = ['1000', '1200'];
+const FORDERUNG_VERB_DEFAULT = ['1400', '1600'];
+
+/**
+ * EÜR nach dem Zufluss-/Abfluss-Prinzip (§ 4 Abs. 3 i. V. m. § 11 EStG, „Ist").
+ * Anders als die periodengerechte `computeEUR` werden Betriebseinnahmen/-ausgaben
+ * erst beim GELDFLUSS erfasst — also auch bei Zahlung einer früher gebuchten
+ * Rechnung (Forderung/Verbindlichkeit). Brutto-Prinzip (USt ist Teil des Zu-/Abflusses).
+ *
+ * Klassifikation je Buchung anhand der Nicht-Geld-Gegenseite:
+ *  - Geld-Zufluss + Gegenseite Ertrag/Forderung/USt → Betriebseinnahme
+ *  - Geld-Abfluss + Gegenseite Aufwand/Verbindlichkeit/Vor-/USt → Betriebsausgabe
+ *  - reine Geld-Umbuchungen und Privateinlagen/-entnahmen (Eigenkapital) zählen NICHT.
+ *
+ * EHRLICHER HINWEIS: vereinfachtes, nachvollziehbares Ist-Modell für die üblichen
+ * Buchungsstile dieser App. Sonderfälle (durchlaufende Posten, Anzahlungen,
+ * Entnahme von Wirtschaftsgütern) sind nicht abgebildet — im Zweifel Berater.
+ *
+ * @returns {{einnahmen:number, ausgaben:number, ueberschuss:number}}
+ */
+export function computeEURIst(buchungen, kontoIndex, periode, opts = {}) {
+  const geld = new Set(opts.geldkonten || GELDKONTEN_DEFAULT);
+  const fordVerb = new Set(opts.forderungVerbindlichkeit || FORDERUNG_VERB_DEFAULT);
+  let einnahmen = 0, ausgaben = 0;
+  for (const b of buchungen) {
+    if (b.seq == null) continue;                 // nur festgeschriebene
+    if (!inPeriode(b.datum, periode)) continue;
+    let netGeld = 0;
+    const andere = [];
+    for (const z of b.zeilen || []) {
+      if (geld.has(z.konto)) netGeld += (z.seite === 'S' ? z.betrag : -z.betrag);
+      else andere.push(z);
+    }
+    if (netGeld === 0) continue;                  // keine Geldbewegung / reine Umbuchung
+    const betrieblich = andere.some((z) => {
+      const k = kontoIndex[z.konto];
+      if (!k) return false;
+      return k.art === KONTOART.ERTRAG || k.art === KONTOART.AUFWAND
+        || k.rolle === 'vorsteuer' || k.rolle === 'umsatzsteuer'
+        || fordVerb.has(z.konto);
+    });
+    if (!betrieblich) continue;                   // z.B. Privateinlage (Eigenkapital) → kein BE/BA
+    if (netGeld > 0) einnahmen += netGeld; else ausgaben += -netGeld;
+  }
+  return { einnahmen, ausgaben, ueberschuss: einnahmen - ausgaben };
+}

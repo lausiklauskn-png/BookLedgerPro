@@ -11,7 +11,7 @@ import { parseEuroToCents, formatCents } from '../src/domain/money.js';
 import { saldo, KONTOART, mehrungsSeite } from '../src/domain/accounts.js';
 import { baueBuchungZeilen, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen, formularAusBuchung } from '../src/domain/journal.js';
 import { hashBuchung, verifyChain, GENESIS, canonicalize } from '../src/domain/audit.js';
-import { computeEUR, computeUStVoranmeldung, saldenliste, verprobeUSt } from '../src/domain/taxes.js';
+import { computeEUR, computeEURIst, computeUStVoranmeldung, saldenliste, verprobeUSt } from '../src/domain/taxes.js';
 import { seedAccounts } from '../src/domain/accounts.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
@@ -387,6 +387,34 @@ await section('Plausibilitäts-Prüfung: Hinweise wie ein Berater (nicht-blockie
   ] }, idx, { heute });
   ok('unausgeglichen → harter Fehler', p.fehler.length > 0);
   ok('unausgeglichen → nicht festschreibbar', istFestschreibbar(p) === false);
+});
+
+await section('EÜR Ist (§4 Abs.3, Zufluss/Abfluss)', () => {
+  const idx = indexFromSeed();
+  // Direkte Barausgabe (Aufwand+Vorsteuer an Bank) → Ausgabe brutto bei Abfluss.
+  const barAusgabe = { seq: 1, datum: '2026-03-01', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 },
+  ] };
+  // Rechnung (Forderung an Erlös+USt) → KEIN Geldfluss, zählt nicht.
+  const rechnung = { seq: 2, datum: '2026-03-02', zeilen: [
+    { konto: '1400', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 },
+  ] };
+  // Zahlung der Rechnung (Bank an Forderung) → Einnahme brutto bei Zufluss.
+  const zahlung = { seq: 3, datum: '2026-03-20', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 23800 }, { konto: '1400', seite: 'H', betrag: 23800 },
+  ] };
+  // Privateinlage (Bank an Eigenkapital) → kein BE/BA.
+  const einlage = { seq: 4, datum: '2026-03-05', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 50000 }, { konto: '0880', seite: 'H', betrag: 50000 },
+  ] };
+  const r = computeEURIst([barAusgabe, rechnung, zahlung, einlage], idx);
+  ok('Ist-Ausgaben 11900 (brutto, bei Abfluss)', r.ausgaben === 11900);
+  ok('Ist-Einnahmen 23800 (bei Zahlung, nicht bei Rechnung)', r.einnahmen === 23800);
+  ok('Überschuss 11900', r.ueberschuss === 11900);
+
+  // Entwurf (seq null) zählt nicht; Periode grenzt ab.
+  ok('Entwurf ignoriert', computeEURIst([{ seq: null, datum: '2026-03-01', zeilen: barAusgabe.zeilen }], idx).ausgaben === 0);
+  ok('Periode grenzt ab', computeEURIst([zahlung], idx, { von: '2026-04-01' }).einnahmen === 0);
 });
 
 await section('USt-Verprobung: gebucht vs. erwartet (Netto × Satz)', () => {
