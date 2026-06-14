@@ -6,8 +6,8 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 **Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/bookledgerpro-status-jeo3qz`
-· **main-Stand:** `e59133c` · **Tests:** `node tests/run.mjs` → **216/216 grün**
-· **SW-Cache:** `v46` · **58 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **main-Stand:** `e59133c` · **Tests:** `node tests/run.mjs` → **223/223 grün**
+· **SW-Cache:** `v47` · **59 JS-Module** · **12 Bild- + 5 Icon-Assets**
 
 ---
 

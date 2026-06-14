@@ -18,6 +18,7 @@ import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
 import { pruefeBuchung, istFestschreibbar } from '../src/domain/pruefung.js';
+import { parseImportText, normalizeImport } from '../src/domain/importworkfloh.js';
 import { baueRechnung, pflichtangaben, formatRechnungsnummer } from '../src/domain/rechnung.js';
 import { findeRechtsregeln, onDeviceBegruendung } from '../src/domain/rechtsregeln.js';
 import { buildBegruendungMessages, parseBegruendung, begruendeBuchung } from '../src/ai/berater.js';
@@ -513,6 +514,29 @@ await section('Rechnungs-Dokument: Aufbau + §14-Pflichtangaben', () => {
   ok('Kleinunternehmer: kein USt-Pflichtmangel', !pflichtangaben(ku).some((m) => /Steuersatz/.test(m)));
 
   ok('Rechnungsnummer-Format', formatRechnungsnummer(7, 2026) === '2026-0007');
+});
+
+await section('WorkFloh-Import: Normalisierung (Kunden, Aufträge, USt-Ergänzung)', () => {
+  const obj = parseImportText(JSON.stringify({
+    kunden: [
+      { externId: 'K-1', name: 'Kunde AG', adresse: 'Weg 1', ustId: 'DE1' },
+      { name: '' }, // ohne Name -> übersprungen
+    ],
+    auftraege: [
+      { externNummer: 'A-7', kundeExternId: 'K-1', titel: 'Projekt', positionen: [
+        { beschreibung: 'Beratung', menge: 2, einzelpreisCent: 5000, ustSatz: 19 },
+        { beschreibung: 'Material', menge: 1, einzelpreis: '100,00' }, // USt fehlt, Euro-Preis
+      ] },
+    ],
+  }));
+  const r = normalizeImport(obj, { defaultUstSatz: 19 });
+  ok('1 Kunde (leerer übersprungen)', r.kunden.length === 1 && r.kunden[0].externId === 'K-1');
+  ok('1 Auftrag mit externNummer', r.auftraege.length === 1 && r.auftraege[0].externNummer === 'A-7');
+  ok('Position 1: Cent übernommen', r.auftraege[0].positionen[0].einzelpreisCent === 5000);
+  ok('Position 2: Euro→Cent (10000)', r.auftraege[0].positionen[1].einzelpreisCent === 10000);
+  ok('Position 2: USt-Satz ergänzt (19)', r.auftraege[0].positionen[1].ustSatz === 19);
+  ok('Warnungen vorhanden (Name + USt)', r.warnungen.length >= 2);
+  ok('ungültiges JSON wirft', (() => { try { parseImportText('kein json'); return false; } catch { return true; } })());
 });
 
 await section('Rechtsregeln (Grounding) + KI-Berater (Begründung mit §-Bezug)', () => {

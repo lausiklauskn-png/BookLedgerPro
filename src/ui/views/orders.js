@@ -7,8 +7,10 @@ import { AUFTRAG_STATUS, STATUS_FLOW, auftragSummen, validateAuftrag } from '../
 import { UST_SAETZE } from '../../domain/taxes.js';
 import {
   listAuftraege, saveAuftrag, deleteAuftrag, setAuftragStatus, rechnungAusAuftrag,
-  listKunden, getKunde, listKostenstellen, ensureKostenstellenSeeded,
+  listKunden, getKunde, listKostenstellen, ensureKostenstellenSeeded, importWorkFloh,
 } from '../../domain/crm-store.js';
+import { parseImportText, normalizeImport } from '../../domain/importworkfloh.js';
+import { pickFile, readFileText } from '../../core/files.js';
 import { baueRechnung, pflichtangaben } from '../../domain/rechnung.js';
 import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
@@ -30,9 +32,39 @@ async function repaint(banner) {
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('orders.title') }),
     banner || null,
+    importKarte(),
     form(),
     liste(auftraege),
   ]));
+}
+
+// Import aus WorkFloh (JSON) — Kunden + Aufträge inkl. Auftragsnummern.
+function importKarte() {
+  const status = el('p', { class: 'muted small' });
+  const btn = el('button', {
+    class: 'btn btn-sm', type: 'button', text: t('import.button'),
+    onClick: async () => {
+      try {
+        const file = await pickFile('application/json,.json', null);
+        if (!file) return;
+        const text = await readFileText(file);
+        const parsed = normalizeImport(parseImportText(text));
+        const r = await importWorkFloh(parsed);
+        const teile = [
+          `${r.kundenNeu} ${t('import.customers')}`,
+          `${r.auftraegeNeu} ${t('import.orders')}`,
+        ];
+        if (r.auftraegeUebersprungen) teile.push(`${r.auftraegeUebersprungen} ${t('import.skipped')}`);
+        if (parsed.warnungen.length) teile.push(`${parsed.warnungen.length} ${t('import.notes')}`);
+        await repaint(el('div', { class: 'banner banner-warn', text: t('import.done') + ' ' + teile.join(' · ') }));
+      } catch (e) { status.textContent = t('import.error') + ' ' + String(e.message || e); }
+    },
+  });
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('import.title') }),
+    el('p', { class: 'muted small', text: t('import.hint') }),
+    el('div', { class: 'btn-row' }, [btn, status]),
+  ]);
 }
 
 const field = (label, input) => el('label', { class: 'field' }, [el('span', { text: label }), input]);
