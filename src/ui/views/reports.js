@@ -6,7 +6,7 @@ import { formatEuro } from '../../domain/money.js';
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
 import { computeUStVoranmeldung, computeEUR, verprobeUSt } from '../../domain/taxes.js';
 import { kostenstellenAuswertung } from '../../domain/costcenters.js';
-import { buildLedgerCsv, buildDatevCsv, buildUstVa, ustVaToCsv, eurToCsv } from '../../domain/export.js';
+import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv } from '../../domain/export.js';
 import { downloadText } from '../../core/files.js';
 import { isMistralConfigured } from '../../ai/aiConfig.js';
 import { erklaereSteuer } from '../../ai/taxAssist.js';
@@ -67,7 +67,7 @@ function exportBar(buchungen, idx, eur, va) {
   return el('div', { class: 'card export-bar no-print' }, [
     el('span', { class: 'muted small', text: t('reports.export') + ':' }),
     el('button', { class: 'btn btn-sm', text: t('reports.exportJournal'), onClick: () => dl(`journal-${stamp}.csv`, buildLedgerCsv(buchungen, idx)) }),
-    el('button', { class: 'btn btn-sm', text: t('reports.exportDatev'), onClick: () => dl(`datev-${stamp}.csv`, buildDatevCsv(buchungen, idx)) }),
+    el('button', { class: 'btn btn-sm', text: t('reports.exportDatev'), onClick: () => dl(`EXTF_Buchungsstapel_${stamp}.csv`, buildDatevExtf(buchungen, idx)) }),
     el('button', { class: 'btn btn-sm', text: t('reports.exportUstVa'), onClick: () => dl(`ust-va-${stamp}.csv`, ustVaToCsv(va)) }),
     el('button', { class: 'btn btn-sm', text: t('reports.exportEur'), onClick: () => dl(`euer-${stamp}.csv`, eurToCsv(eur)) }),
     el('button', { class: 'btn btn-sm', text: t('reports.print'), onClick: () => window.print() }),

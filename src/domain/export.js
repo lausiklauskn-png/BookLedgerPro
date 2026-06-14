@@ -67,6 +67,112 @@ export function buildDatevCsv(buchungen, kontoIndex) {
   return csv(rows);
 }
 
+// ---- DATEV EXTF (Buchungsstapel) -------------------------------------------
+//
+// EHRLICHER HINWEIS: Dies erzeugt eine EXTF-STRUKTUR (Header-Envelope + Konto/
+// Gegenkonto-Brutto-Modell + Standard-Steuerschlüssel SKR03). Es ist KEIN
+// vollständig zertifiziertes 116-Spalten-EXTF. Das Steuerschlüssel-Mapping deckt
+// die Standardsätze (0/7/19 %) ab und ist vor Übergabe mit dem Berater/DATEV zu
+// verifizieren (Kontenrahmen-/Versionsabhängig).
+
+// SKR03-Standard-Steuerschlüssel (BU-Schlüssel): Vorsteuer 9/8, Umsatzsteuer 3/2.
+const STEUERSCHLUESSEL = {
+  ausgabe: { 19: '9', 7: '8' },
+  einnahme: { 19: '3', 7: '2' },
+};
+
+/** 'YYYY-MM-DD' → 'TTMM' (Belegdatum im EXTF; Jahr stammt aus dem WJ im Header). */
+function ddmm(datum) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datum || '');
+  return m ? m[3] + m[2] : '';
+}
+
+/**
+ * Verdichtet eine Buchung (ggf. mit USt-Split) zum DATEV-Konto/Gegenkonto-Modell:
+ * EIN Satz mit Bruttobetrag + Steuerschlüssel (DATEV rechnet die Steuer heraus).
+ * Rein & testbar.
+ * @returns {{umsatz:number, sh:'S'|'H', konto:string, gegenkonto:string, bu:string, satz:number, richtung:?string}}
+ */
+export function datevBuchungssatz(buchung, kontoIndex) {
+  const z = buchung.zeilen || [];
+  const istSteuer = (konto) => {
+    const k = kontoIndex[konto];
+    return !!(k && (k.rolle === 'vorsteuer' || k.rolle === 'umsatzsteuer'));
+  };
+  const steuer = z.find((x) => istSteuer(x.konto));
+  let konto = '', gegenkonto = '', sh = 'S', satz = 0, richtung = null, umsatz = 0;
+  if (steuer) {
+    satz = Number((kontoIndex[steuer.konto] || {}).ust) || 0;
+    if (steuer.seite === 'S') {                       // Vorsteuer → Ausgabe
+      richtung = 'ausgabe';
+      const aufwand = z.find((x) => x.seite === 'S' && !istSteuer(x.konto));
+      const geld = z.find((x) => x.seite === 'H');
+      konto = aufwand ? aufwand.konto : '';
+      gegenkonto = geld ? geld.konto : '';
+      umsatz = geld ? geld.betrag : 0; sh = 'S';
+    } else {                                          // Umsatzsteuer → Einnahme
+      richtung = 'einnahme';
+      const erloes = z.find((x) => x.seite === 'H' && !istSteuer(x.konto));
+      const geld = z.find((x) => x.seite === 'S');
+      konto = erloes ? erloes.konto : '';
+      gegenkonto = geld ? geld.konto : '';
+      umsatz = geld ? geld.betrag : 0; sh = 'H';
+    }
+  } else {
+    const s = z.find((x) => x.seite === 'S');
+    const h = z.find((x) => x.seite === 'H');
+    konto = s ? s.konto : '';
+    gegenkonto = h ? h.konto : '';
+    umsatz = s ? s.betrag : (h ? h.betrag : 0); sh = 'S';
+    const ks = kontoIndex[konto];
+    if (ks && ks.art === KONTOART.AUFWAND) richtung = 'ausgabe';
+    else if (kontoIndex[gegenkonto] && kontoIndex[gegenkonto].art === KONTOART.ERTRAG) richtung = 'einnahme';
+  }
+  const bu = (richtung && STEUERSCHLUESSEL[richtung] && STEUERSCHLUESSEL[richtung][satz]) || '';
+  return { umsatz, sh, konto, gegenkonto, bu, satz, richtung };
+}
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+/** Baut die EXTF-Header-Zeile (Envelope) mit Pflicht-/Standardfeldern. */
+function extfHeaderZeile(opts, jahr) {
+  const d = new Date();
+  const ts = `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}000`;
+  const felder = [
+    '"EXTF"', '700', '21', '"Buchungsstapel"', '13', ts, '', '"RE"', '', '',
+    opts.berater || '', opts.mandant || '', `${jahr}0101`, '4',
+    opts.von || '', opts.bis || '', `"${opts.bezeichnung || 'BookLedgerPro Buchungsstapel'}"`, '', '1', '0',
+    String(opts.festschreibung ? 1 : 0), '"EUR"', '', '', '', '', '', '', '', '', '',
+  ];
+  return felder.join(';');
+}
+
+const EXTF_SPALTEN = [
+  'Umsatz (ohne Soll-/Haben-Kz)', 'Soll-/Haben-Kennzeichen', 'WKZ Umsatz', 'Kurs',
+  'Basis-Umsatz', 'WKZ Basis-Umsatz', 'Konto', 'Gegenkonto (ohne BU-Schlüssel)',
+  'BU-Schlüssel', 'Belegdatum', 'Belegfeld 1', 'Belegfeld 2', 'Skonto', 'Buchungstext', 'Kostenstelle',
+];
+
+/**
+ * DATEV-EXTF-Buchungsstapel (nur festgeschriebene Buchungen): Header-Envelope +
+ * Spaltenüberschriften + Datenzeilen im Konto/Gegenkonto-Brutto-Modell.
+ */
+export function buildDatevExtf(buchungen, kontoIndex, opts = {}) {
+  const fest = sortFest(buchungen).filter((b) => b.seq != null);
+  const jahr = opts.jahr || Number((fest[0] && fest[0].datum || '').slice(0, 4)) || new Date().getFullYear();
+  const zeilen = [extfHeaderZeile(opts, jahr), csvRow(EXTF_SPALTEN)];
+  for (const b of fest) {
+    const d = datevBuchungssatz(b, kontoIndex);
+    if (!d.konto || !d.gegenkonto) continue;
+    zeilen.push(csvRow([
+      centsToComma(d.umsatz), d.sh, 'EUR', '', '', '',
+      d.konto, d.gegenkonto, d.bu, ddmm(b.datum), b.seq, '', '',
+      b.beschreibung || '', b.kostenstelle || '',
+    ]));
+  }
+  return zeilen.join('\r\n');
+}
+
 /**
  * USt-Voranmeldung: amtliche Kennzahlen (Bemessungsgrundlagen + Steuer + Vorsteuer).
  * Kz 81 = Umsätze 19 %, Kz 86 = Umsätze 7 %, Kz 66 = Vorsteuer, Kz 83 = Zahllast.
