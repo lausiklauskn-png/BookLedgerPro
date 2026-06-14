@@ -8,6 +8,7 @@ import {
   listMitarbeiter, saveMitarbeiter, deleteMitarbeiter,
   listZeiten, saveZeit, deleteZeit, listAuftraege,
 } from '../../domain/crm-store.js';
+import { emptyState } from '../empty.js';
 
 let _host = null;
 let _mitarbeiter = [];
@@ -58,7 +59,7 @@ function mitarbeiterForm() {
 }
 
 function mitarbeiterListe(zeiten) {
-  if (!_mitarbeiter.length) return el('p', { class: 'muted', text: t('emp.empty') });
+  if (!_mitarbeiter.length) return emptyState('empty-employees.png', t('emp.empty'));
   const rows = _mitarbeiter.map((m) => {
     const eigene = zeiten.filter((z) => z.mitarbeiterId === m.id);
     const s = zeitSummen(eigene, m.stundenlohnCent);
