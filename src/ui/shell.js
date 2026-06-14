@@ -22,6 +22,7 @@ import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
 import { mountDashboard } from './views/dashboard.js';
+import { aboutContent } from './intro.js';
 import { getAiConfig, saveAiConfig, MISTRAL_MODELS } from '../ai/aiConfig.js';
 import { testVision } from '../ai/vision.js';
 import { testMistral } from '../ai/mistral.js';
@@ -37,6 +38,7 @@ const NAV = [
   ['reports', 'nav.reports'],
   ['network', 'nav.network'],
   ['legal', 'nav.legal'],
+  ['about', 'nav.about'],
   ['settings', 'nav.settings'],
 ];
 
@@ -107,6 +109,7 @@ function renderRoute() {
   if (route === 'customers') return void mountCustomers(content);
   if (route === 'employees') return void mountEmployees(content);
   if (route === 'legal') return void mountLegal(content);
+  if (route === 'about') return mount(content, el('section', { class: 'view' }, [aboutContent()]));
   if (route === 'network') return void mountNetwork(content);
   return mount(content, viewPlaceholder(route));
 }

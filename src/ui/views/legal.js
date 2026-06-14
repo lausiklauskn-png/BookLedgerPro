@@ -6,6 +6,7 @@ import { t } from '../i18n.js';
 import { exportBackupFile } from '../../core/backup.js';
 import { wipeAll } from '../../core/db.js';
 import { lockVault } from '../../core/vault.js';
+import { siegel } from '../intro.js';
 
 const GOBD = [
   'BookLedgerPro setzt die GoBD-Grundsätze technisch um:',
@@ -31,6 +32,7 @@ export function mountLegal(host) {
   _host = host;
   mount(_host, el('section', { class: 'view legal' }, [
     el('h1', { text: t('legal.title') }),
+    siegel(),
     textCard(t('legal.gobd'), GOBD),
     textCard(t('legal.dsgvo'), DSGVO),
     rightsCard(),
