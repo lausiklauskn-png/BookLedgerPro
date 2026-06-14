@@ -88,6 +88,7 @@ export async function saveEntwurf(buchung) {
     id: buchung.id || neueId(),
     datum: buchung.datum,
     beschreibung: buchung.beschreibung || '',
+    begruendung: buchung.begruendung || '',
     zeilen: buchung.zeilen || [],
     belegRef: buchung.belegRef || null,
     kostenstelle: buchung.kostenstelle || null,

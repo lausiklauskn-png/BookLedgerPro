@@ -6,6 +6,7 @@ import { formatEuro } from '../../domain/money.js';
 import { loadAccounts, listBuchungen, saveEntwurf, festschreiben, storno, getBuchung } from '../../domain/store.js';
 import { baueBuchungZeilen, summeSeiten, BUCHUNG_STATUS } from '../../domain/journal.js';
 import { pruefeBuchung } from '../../domain/pruefung.js';
+import { begruendeBuchung } from '../../ai/berater.js';
 import { KONTOART } from '../../domain/accounts.js';
 import { UST_SAETZE } from '../../domain/taxes.js';
 import { listKostenstellen, ensureKostenstellenSeeded } from '../../domain/crm-store.js';
@@ -85,6 +86,23 @@ function buchungForm(konten, idx) {
   fHaben.selectedIndex = Math.min(1, konten.length - 1);
   const err = el('p', { class: 'form-error', role: 'alert' });
 
+  const fBegruendung = el('textarea', { class: 'beleg-text', rows: '2', placeholder: t('journal.begruendungPlaceholder') });
+  const beraterStatus = el('span', { class: 'muted small' });
+  const beraterBtn = el('button', {
+    class: 'btn btn-sm', type: 'button', text: t('journal.aiReason'),
+    onClick: async () => {
+      beraterStatus.textContent = '…';
+      try {
+        const r = await begruendeBuchung({
+          beschreibung: fText.value, konto: fSoll.value, text: fText.value,
+          kleinunternehmer: getSettings().kleinunternehmer,
+        });
+        fBegruendung.value = r.text;
+        beraterStatus.textContent = r.quelle === 'mistral' ? t('journal.aiReasonMistral') : t('journal.aiReasonLocal');
+      } catch (e) { beraterStatus.textContent = String(e.message || e); }
+    },
+  });
+
   const submit = el('button', {
     class: 'btn btn-primary', type: 'submit', text: t('journal.saveDraft'),
   });
@@ -103,7 +121,7 @@ function buchungForm(konten, idx) {
           steuerKonto: steuer ? steuer.steuerKonto : null,
           steuerSeite: steuer ? steuer.steuerSeite : null,
         });
-        const buchung = { datum: fDatum.value, beschreibung: fText.value, zeilen: built.zeilen, kostenstelle: fKs.value || null };
+        const buchung = { datum: fDatum.value, beschreibung: fText.value, begruendung: fBegruendung.value.trim(), zeilen: built.zeilen, kostenstelle: fKs.value || null };
         // Spielraum: Entwurf wird IMMER gespeichert. Hinweise blockieren nicht;
         // streng wird erst beim Festschreiben geprüft.
         await saveEntwurf(buchung);
@@ -127,6 +145,12 @@ function buchungForm(konten, idx) {
       field(t('journal.ust'), fUst),
       field(t('journal.kostenstelle'), fKs),
     ]),
+    el('label', { class: 'field' }, [
+      el('span', { text: t('journal.begruendung') }),
+      fBegruendung,
+    ]),
+    el('div', { class: 'btn-row' }, [beraterBtn, beraterStatus]),
+    el('p', { class: 'muted small', text: t('journal.aiReasonNote') }),
     err,
     el('div', { class: 'btn-row' }, [submit]),
   ]);
@@ -161,6 +185,7 @@ function buchungTabelle(buchungen, idx) {
       el('td', {}, [
         el('div', { text: b.beschreibung || '—' }),
         el('div', { class: 'muted small mono', text: zeilenTxt }),
+        b.begruendung ? el('div', { class: 'muted small', text: '📝 ' + b.begruendung }) : null,
       ]),
       el('td', { class: 'num', text: formatEuro(betrag) }),
       el('td', {}, [statusBadge(b.status)]),
