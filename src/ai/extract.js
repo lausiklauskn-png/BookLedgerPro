@@ -1,7 +1,7 @@
 // src/ai/extract.js
 // Heuristische Extraktion von Buchungs-Feldern aus Beleg-TEXT (rein, testbar).
-// Quelle des Textes: eingefügt/abgetippt ODER aus Claude-Vision (ai/provider.js)
-// ODER später lokalem OCR. Dieses Modul kennt keine KI — nur robuste Regex-Heuristik.
+// Quelle des Textes: eingefügt/abgetippt ODER aus Google Vision EU (ai/vision.js).
+// Dieses Modul kennt keine KI — nur robuste Regex-Heuristik.
 
 import { parseEuroToCents } from '../domain/money.js';
 

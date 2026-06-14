@@ -22,7 +22,10 @@ Familie: Mein-Tresor (Krypto), Mein-WorkFloh (Shell/Domäne), Sage-Protokol (SBK
 6. **Cache-Bust bei Shell-Änderungen.** `CACHE_VERSION` in `sw.js` erhöhen (oder Datei
    umbenennen). Sonst liefert der SW veraltete Logik.
 7. **Design additiv.** Visuelle Effekte nie via `cursor: none` (DeX/Android ignoriert das).
-8. **Neueste Claude-Modelle** für KI-Funktionen (Opus 4.8 / Sonnet 4.6 / Haiku 4.5), BYOK.
+8. **EU-KI, BYOK, opt-in.** Beleg-Texterkennung (OCR) ausschließlich über **Google Cloud
+   Vision — EU-Endpoint** (`eu-vision.googleapis.com`); Textsortierung/Kontierung und
+   Steuer-Assistent über **Mistral (EU)**. On-Device-Heuristik als Fallback. Schlüssel
+   verschlüsselt lokal; Übertragung nur nach Bestätigung (Datenresidenz EU/DSGVO).
 
 ## Arbeitsvertrag — lückenlos & ehrlich (verbindlich)
 

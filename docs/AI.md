@@ -1,47 +1,47 @@
-# KI-Konzept — On-Device-first, extern strikt opt-in (ehrlich)
+# KI-Konzept — On-Device-first + EU-Cloud, strikt opt-in (ehrlich)
 
-BookLedgerPro nutzt KI, um aus Belegen Buchungsvorschläge zu machen — **ohne** den
-Datenschutz- und Offline-Anspruch zu brechen.
+BookLedgerPro nutzt KI, um aus Belegen Buchungsvorschläge zu machen — **datenschutz-
+freundlich, mit Datenresidenz in der EU** und ohne den Offline-Anspruch zu brechen.
 
-## Zwei Ebenen
+## Drei Ebenen
 
-1. **On-Device (Standard, immer verfügbar, kein Netz):**
-   - `ai/extract.js` — Regex-Heuristik: Bruttobetrag (bevorzugt Summen-Zeilen), Datum,
-     USt-Satz, Vendor aus Beleg-**Text**.
-   - `ai/categorize.js` — Schlüsselwort-Heuristik Vendor/Text → SKR03-Konto + Richtung
-     (Einnahme/Ausgabe).
-   - `ai/suggest.js` — setzt beides zu einem ausgeglichenen Buchungssatz zusammen
-     (korrekte Soll/Haben-Seiten + USt-Aufteilung).
-   - Alles rein, deterministisch, node-getestet.
+1. **On-Device (Standard, kein Netz):**
+   - `ai/extract.js` — Regex-Heuristik: Bruttobetrag, Datum, USt-Satz, Vendor aus Beleg-
+     **Text**.
+   - `ai/categorize.js` — Schlüsselwort-Heuristik Vendor/Text → SKR03-Konto + Richtung.
+     Dient zugleich als **Fallback**, wenn keine Cloud-KI konfiguriert ist.
+   - `ai/suggest.js` — setzt beides zu einem ausgeglichenen Buchungssatz zusammen.
 
-2. **Externe KI (opt-in, BYOK):**
-   - `ai/provider.js` — Claude (Anthropic) Vision per **eigenem API-Schlüssel**.
-     Wandelt ein Beleg-**Bild** in dieselben Felder, die dann durch `categorize`/`suggest`
-     laufen. Modelle: neueste Claude-Familie (Sonnet 4.6 Standard, Opus 4.8 für schwierige
-     Belege, Haiku 4.5 günstig).
+2. **Texterkennung (OCR) — Google Cloud Vision, EU-Endpoint** (`ai/vision.js`):
+   - Endpoint **`https://eu-vision.googleapis.com/v1`** (Verarbeitung in der EU).
+   - **Foto/Kamera/Scanner/Bild → `images:annotate`**, **PDF → `files:annotate`**,
+     Feature `DOCUMENT_TEXT_DETECTION`, Text aus `fullTextAnnotation.text`.
+   - Auth über eigenen API-Schlüssel (`?key=…`), BYOK. Vorgehen wie **Mein-WorkFloh**.
 
-## Datenschutz-Regeln (verbindlich)
-- Externe KI ist **standardmäßig aus**. Sie wird pro Mandant aktiviert.
-- Der API-Schlüssel wird **verschlüsselt** (Sitzungs-Key) lokal gespeichert, nie im
-  Klartext exportiert.
-- **Jeder** externe Aufruf sendet Beleg-Daten an Anthropic und erfordert eine
-  **ausdrückliche Bestätigung** in der UI („Beleg verlässt das Gerät").
-- On-Device-Pfad bleibt vollwertig nutzbar, falls externe KI nie aktiviert wird.
+3. **Textsortierung/Kontierung + Steuer-Assistent — Mistral, EU** (`ai/mistral.js`):
+   - **`https://api.mistral.ai/v1/chat/completions`** (OpenAI-kompatibel, Bearer-Key, EU).
+   - Modelle `mistral-small-latest` (Standard) / `mistral-large-latest`.
+   - Kontierung gibt nur ein erlaubtes SKR03-Konto + Richtung als JSON zurück; bei
+     Nichtkonfiguration/Fehler **Fallback auf die On-Device-Heuristik**.
 
-## KI-Autonomie-Schalter (Einstellungen → wirksam)
-- **Nur Vorschläge:** Vorschlag wird angezeigt, nichts gespeichert; Nutzer übernimmt.
-- **Auto-Entwurf + Review:** Vorschlag wird automatisch als **Entwurf** gespeichert,
-  sichtbar zur Prüfung.
-- **Autonom bei hoher Konfidenz:** Entwurf wird still angelegt.
-- **In KEINER Stufe** wird automatisch **festgeschrieben** — das bleibt ein bewusster,
-  menschlicher Schritt (GoBD-Unveränderbarkeit). Bewusste, ehrliche Grenze.
+## Daten- & Datenschutz-Regeln (verbindlich)
+- Cloud-KI ist **standardmäßig aus**. Schlüssel (Vision + Mistral) werden **verschlüsselt**
+  lokal gespeichert (Sitzungs-Key), nie im Klartext exportiert.
+- **Jede** Übertragung erfordert eine **ausdrückliche Bestätigung** (Beleg verlässt das
+  Gerät → Verarbeitung in der EU).
+- **Datenminimierung:** Der Steuer-Assistent sendet nur **aggregierte Kennzahlen**
+  (keine Einzelbelege/Personendaten). Die Texterkennung sendet das gewählte Beleg-Bild/PDF
+  nur auf Bestätigung.
+
+## Pipeline (Beleg → Buchung)
+`Foto/PDF` → **Google Vision EU** (OCR-Text) → `ai/extract` (Felder) →
+**Mistral EU** (Kontierung, sonst Heuristik) → `ai/suggest` (Buchungsvorschlag) →
+Entwurf (Festschreiben bleibt manuell, GoBD). Der **KI-Autonomie-Schalter** steuert, ob
+der Vorschlag nur angezeigt oder automatisch als Entwurf gespeichert wird.
 
 ## Ehrlich offen / geplant
-- **Lokales OCR (Tesseract.js)** ist NICHT eingebunden. Bild→Text geht derzeit nur über
-  Claude-Vision (BYOK) oder eingefügten/abgetippten Text. Vendoring der Bibliothek
-  (build-frei) ist ein Folgeschritt (Phase 2.x).
-- **Semantische On-Device-Embeddings (Transformers.js, `Xenova/multilingual-e5-small`,
-  384-dim — wie Sage)** sind geplant; bis dahin Schlüsselwort-Heuristik.
-- Der **Claude-API-Pfad ist korrekt implementiert, aber in der Bau-Umgebung nicht gegen
-  die Live-API getestet** (kein Schlüssel/Netz). Vor produktiver Nutzung einmal real
-  verifizieren.
+- **Vision-/Mistral-Pfade sind korrekt implementiert, aber in der Bau-Umgebung NICHT gegen
+  die Live-APIs getestet** (kein Schlüssel/Netz). Reine Request-/Parser-Logik ist
+  node-getestet; vor produktiver Nutzung einmal real verifizieren.
+- Lokales Offline-OCR (z.B. Tesseract.js) und semantische On-Device-Embeddings sind weiter
+  optionale Folgeschritte; der EU-Cloud-Pfad ist der primäre.

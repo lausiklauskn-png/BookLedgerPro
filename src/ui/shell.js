@@ -22,7 +22,7 @@ import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
 import { mountDashboard } from './views/dashboard.js';
-import { getAiConfig, saveAiConfig, AI_MODELS } from '../ai/provider.js';
+import { getAiConfig, saveAiConfig, MISTRAL_MODELS } from '../ai/aiConfig.js';
 
 const NAV = [
   ['dashboard', 'nav.dashboard'],
@@ -201,29 +201,28 @@ function viewSettings() {
   ]);
 }
 
-// BYOK-Claude-Konfiguration. Lädt die (verschlüsselte) Config asynchron nach.
+// BYOK-EU-KI-Konfiguration (Google Vision EU + Mistral EU). Lädt verschlüsselt nach.
 function aiConfigSection() {
   const host = el('div', { class: 'setting' });
   (async () => {
-    const cfg = await getAiConfig().catch(() => ({ enabled: false, model: 'claude-sonnet-4-6', apiKey: '' }));
-    const enable = el('input', { type: 'checkbox' });
-    if (cfg.enabled) enable.setAttribute('checked', '');
-    const model = el('select', {}, AI_MODELS.map((m) => el('option', { value: m.id }, m.label)));
-    model.value = cfg.model;
-    const apiKey = el('input', { type: 'password', autocomplete: 'off', placeholder: 'sk-ant-…', value: cfg.apiKey || '' });
+    const cfg = await getAiConfig().catch(() => ({ visionKey: '', mistralKey: '', mistralModel: 'mistral-small-latest' }));
+    const visionKey = el('input', { type: 'password', autocomplete: 'off', placeholder: 'AIza… (Google Vision EU)', value: cfg.visionKey || '' });
+    const mistralKey = el('input', { type: 'password', autocomplete: 'off', placeholder: 'Mistral API-Key (EU)', value: cfg.mistralKey || '' });
+    const model = el('select', {}, MISTRAL_MODELS.map((m) => el('option', { value: m.id }, m.label)));
+    model.value = cfg.mistralModel;
     const status = el('p', { class: 'muted small' });
     const save = el('button', {
       class: 'btn', text: t('settings.aiSave'),
       onClick: async () => {
-        await saveAiConfig({ enabled: enable.checked, model: model.value, apiKey: apiKey.value.trim() });
+        await saveAiConfig({ visionKey: visionKey.value.trim(), mistralKey: mistralKey.value.trim(), mistralModel: model.value });
         status.textContent = t('settings.aiSaved');
       },
     });
     host.replaceChildren(
       el('div', { class: 'setting-label', text: t('settings.aiExternal') }),
-      el('label', { class: 'checkbox-row' }, [enable, el('span', { text: t('settings.aiEnable') })]),
+      el('label', { class: 'field' }, [el('span', { text: t('settings.aiVisionKey') }), visionKey]),
+      el('label', { class: 'field' }, [el('span', { text: t('settings.aiMistralKey') }), mistralKey]),
       el('label', { class: 'field' }, [el('span', { text: t('settings.aiModel') }), model]),
-      el('label', { class: 'field' }, [el('span', { text: t('settings.aiKey') }), apiKey]),
       el('p', { class: 'muted small', text: t('settings.aiPrivacy') }),
       el('div', { class: 'btn-row' }, [save]), status,
     );

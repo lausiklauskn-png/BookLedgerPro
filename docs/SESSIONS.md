@@ -5,6 +5,27 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — EU-KI-Umstellung (Google Vision EU + Mistral EU)
+
+**Was getan (auf Nutzerwunsch, Vorbild Mein-WorkFloh)**
+- **Beleg-Texterkennung nur noch über Google Cloud Vision — EU-Endpoint** (`ai/vision.js`,
+  `eu-vision.googleapis.com`): Bild → `images:annotate`, PDF → `files:annotate`,
+  `DOCUMENT_TEXT_DETECTION`. **Kamera/Foto/Scanner/PDF** im Belege-Upload (`pickFile` mit
+  `capture`).
+- **Textsortierung/Kontierung + Steuer-Assistent über Mistral (EU)** (`ai/mistral.js`,
+  `api.mistral.ai/v1`, OpenAI-kompatibel), mit **On-Device-Heuristik-Fallback**.
+- Claude-Provider entfernt (`ai/provider.js` gelöscht); neue verschlüsselte Config
+  `ai/aiConfig.js` (Vision-Key + Mistral-Key + Modell). Settings, documents- und reports-
+  View angepasst. `taxAssist.js` nutzt jetzt Mistral.
+- Tests **134/134** (Vision-Request/Parser, Mistral-Prompt/Parser). SW-Cache `v21`.
+- CLAUDE.md Regel 8 + `docs/AI.md` auf EU-Stack umgestellt.
+
+**Offen / Grenzen (ehrlich)**
+- Vision-/Mistral-Pfade nicht gegen Live-APIs getestet (kein Schlüssel/Netz); reine
+  Logik node-getestet. CORS/Live erst im echten Browser mit Schlüssel prüfen.
+
+---
+
 ## 2026-06-14 — Phase 6.1: Bild-Assets / Branding
 
 **Was getan**
