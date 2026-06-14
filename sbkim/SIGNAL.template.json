@@ -1,0 +1,14 @@
+{
+  "node": "BookLedgerPro",
+  "lastBuild": "YYYY-MM-DD",
+  "seq": 1,
+  "headline": "<ein Satz: was wurde gebaut>",
+  "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
+  "nodeId": "<wird beim Erzeugen der Identität gesetzt>",
+  "mailboxes": {
+    "<Gegenseite>": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/AUSTAUSCH-<Gegenseite>.md"
+  },
+  "forNodes": ["*"],
+  "ack": {},
+  "_doc": "Maschinenlesbarer Briefkasten-Aushang (INTERFACES §11.6). seq steigt +1 pro gemeldetem Bau; Gegenseite liest bei Sitzungsstart, vergleicht mit ihrem ack und quittiert. Server-los: das Pushen dieser Datei IST das Signal. Diese Vorlage durch die in der App erzeugte SIGNAL.json ersetzen."
+}

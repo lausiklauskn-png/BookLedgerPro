@@ -22,6 +22,10 @@ import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
 import { buildLedgerCsv, buildDatevCsv, buildUstVa, centsToComma, ustVaToCsv } from '../src/domain/export.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
+import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
+import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
+import { buildSignal } from '../src/sbkim/signal.js';
+import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 
 function indexFromSeed() {
   const idx = {};
@@ -383,6 +387,56 @@ await section('Steuer-Assistent: Kennzahlen-Text (Datenminimierung)', () => {
   ok('Text enthält Zahllast', /Zahllast/.test(txt));
   ok('Text enthält Überschuss', /Überschuss/.test(txt));
   ok('Text enthält keine Kontonummern/Belege', !/4930|1576|Beleg/.test(txt));
+});
+
+// ===== Phase 5: SBKIM (Sage-Mycel) — Identität, Spore, Verifizierer =====
+
+await section('SBKIM: Demo-domainVector (§11.5)', () => {
+  const a = demoVector(['Buchhaltung', 'Beleg', 'Konto']);
+  ok('384 Dimensionen', a.vector.length === VECTOR_DIM);
+  ok('_demo markiert', a._demo === true);
+  ok('L2 ≈ 1', Math.abs(a.l2 - 1) < 1e-3);
+  const b = demoVector(['Buchhaltung', 'Beleg', 'Konto']);
+  ok('deterministisch (gleiche Stichworte → gleicher Vektor)', JSON.stringify(a.vector) === JSON.stringify(b.vector));
+  const c = demoVector(['Rezept', 'Kochen']);
+  ok('andere Stichworte → anderer Vektor', JSON.stringify(a.vector) !== JSON.stringify(c.vector));
+});
+
+await section('SBKIM: Spore bauen & verifizieren (§11.1/§11.2)', async () => {
+  const keys = await generateKeyPair();
+  const dv = demoVector(['Buchhaltung', 'Beleg', 'Konto', 'Rechnung', 'USt', 'EÜR']);
+  const spore = await buildSpore(keys, {
+    domain: 'BookLedgerPro-Buchhaltung',
+    domainDescription: 'Offline-Buchhaltung; Belege, Konten, USt/EÜR, GoBD.',
+    domainKeywords: ['Buchhaltung', 'Beleg', 'Konto', 'Rechnung', 'USt'],
+    endpoint: 'https://lausiklauskn-png.github.io/BookLedgerPro/',
+    nodeName: 'BookLedgerPro',
+    domainVector: dv,
+  });
+
+  ok('9 Pflichtfelder vorhanden', REQUIRED_FIELDS.every((f) => spore[f] != null));
+  ok('_demo-Markierung gesetzt', JSON.stringify(spore._demo) === '["domainVector"]');
+  ok('id == nodeId(pubkey)', spore.id === await nodeId(keys.publicKey));
+
+  const v = await verifySpore(spore);
+  ok('eigene Spore VALID (Browser-Verifizierer)', v.valid && v.checks.id && v.checks.signature && v.checks.tamper);
+
+  // Verifizierer-Paar: headless (node:crypto) muss dasselbe Urteil fällen.
+  const v2 = await verifySporeObject(spore);
+  ok('Verifizierer-Paar einig (headless VALID)', v2.valid === true);
+
+  // Manipulation fällt durch
+  const tampered = { ...spore, domain: spore.domain + '_x' };
+  const v3 = await verifySpore(tampered);
+  ok('manipulierte Spore UNGÜLTIG', v3.valid === false);
+});
+
+await section('SBKIM: SIGNAL.json (§11.6)', () => {
+  const sig = buildSignal({ nodeId: 'ABC', seq: 1, headline: 'Andock vorbereitet', forNodes: ['*'] });
+  ok('node = BookLedgerPro', sig.node === 'BookLedgerPro');
+  ok('seq vorhanden', sig.seq === 1);
+  ok('sporeUrl gesetzt', /BookLedgerPro\/main\/sbkim\/spore\.json$/.test(sig.sporeUrl));
+  ok('forNodes = *', JSON.stringify(sig.forNodes) === '["*"]');
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

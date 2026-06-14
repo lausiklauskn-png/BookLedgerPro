@@ -5,6 +5,39 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — Phase 5: Sage-Mycel-Symbiose (lokale Andock-Vorbereitung)
+
+**Was getan**
+- SBKIM-Protokoll `src/sbkim/`: `spore.js` (Ed25519-Keygen, Spore-Bau, Verifikation §11.2,
+  kanonische Form §11.1, `id==base64url(SHA256(pubkey))`), `identity.js` (verschlüsselte
+  Identität), `domainvector.js` (deterministischer `_demo`-Vektor 384-dim, §11.5),
+  `signal.js` (SIGNAL.json §11.6).
+- **Headless-Verifizierer** `tools/verify_remote_spore.mjs` (node:crypto, zero-dep).
+- Ansicht „Mycel-Netz": Identität erzeugen, spore.json/SIGNAL.json herunterladen, fremde
+  Spore prüfen. `sbkim/README.md` + Templates (SIGNAL, AUSTAUSCH).
+- Tests **113/113** inkl. Verifizierer-Paar-Einigkeit (Browser ↔ headless) und
+  Manipulationsprobe. SW-Cache `v6`.
+
+**Wichtig (extern, gegenkontrolliert):** Mein nodeId-Derivat und die §11.1-Signatur wurden
+gegen eine **echte Geschwister-Spore (Mein-Tresor)** geprüft → **VALID**. Format ist also
+byte-kompatibel zum Netz.
+
+**Stand**
+- Andock ist **lokal vorbereitet**; kein fremdes Repo verändert.
+
+**Offen / Grenzen (ehrlich)**
+- **Keine echte `spore.json` im Repo** — sie wird in-app mit dem privaten Schlüssel erzeugt
+  und vom Nutzer committet (kein erfundenes Signatur-File).
+- `domainVector` ist `_demo` → nur `verified-spore`, nicht `verified-match` (echtes
+  Embedding/Transformers.js = Phase 5c).
+- Hub-Registrierung + Handshake = menschlich vermittelter Schritt (Phase 5b, fremde Repos).
+- Symbiose-Import (Tresor/WorkFloh → Buchungen) = Phase 5d.
+- Browser-UI nicht headless E2E-getestet.
+
+**Nächstes** — Phase 5b/c/d (s.o.) bzw. Phase 6 (Design-Politur & Bilder).
+
+---
+
 ## 2026-06-14 — Phase 4: Steuer & Export
 
 **Was getan**

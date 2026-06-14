@@ -29,7 +29,11 @@ src/
                export (Phase 4)
   ai/          extract · categorize · suggest · provider · taxAssist
                (Phase 2.x: ocr lokal, embeddings)
-  ui/views/    accounts · journal · reports · documents · customers · orders · employees · legal
+  sbkim/       spore · identity · domainvector · signal  (Phase 5, byte-kompat. §11)
+  ui/views/    accounts · journal · reports · documents · customers · orders · employees
+               legal · network
+  tools/       verify_remote_spore.mjs (headless SBKIM-Verifizierer, node:crypto)
+  sbkim/ (Repo) README · SIGNAL.template.json · AUSTAUSCH-template.md (+ spore.json nach Deploy)
   docs/legal/  Verfahrensdokumentation (GoBD) · Datenschutz (DSGVO)
   sbkim/       (Phase 5) identity · spore · anastomose · membrane · siegel
   ui/          dom · i18n · theme · mycel · lock · shell · (Phase 1+: views/)

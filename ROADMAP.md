@@ -68,13 +68,23 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 > über Browser-Druck (keine PDF-Lib); Claude-Pfade nicht live getestet;
 > Browser-UI nicht headless E2E-getestet.
 
-## Phase 5 — Sage-Mycel-Symbiose
-- [ ] SBKIM-Client + `sbkim-sw.js` (Modul-09-Pfad), Ed25519-Identität, `domainVector`
-- [ ] `sbkim/spore.json` deployen, im Hub-`status.json` registrieren, erster Handshake
-- [ ] **Synchronisationsvereinbarung & Briefkasten** (`docs/SAGE_SYNC_BRIEFKASTEN.md`,
-      INTERFACES §11): `sbkim/SIGNAL.json` (seq/ack), `AUSTAUSCH-<Knoten>.md`-Postfächer,
-      `<gegenseite>_inbox.json`/`.verify.md`, headless-Verifizierer (`node:crypto`)
-- [ ] Symbiose: Belege aus Mein-Tresor, Aufträge aus WorkFloh → Buchungen
+## ◑ Phase 5 — Sage-Mycel-Symbiose (lokale Andock-Vorbereitung)
+- [x] SBKIM-Protokoll byte-kompatibel: Ed25519-Identität, Spore-Bau/-Verifikation
+      (kanonische Form §11.1, `id==SHA256(pubkey)`), gegen **echte Geschwister-Spore VALID**
+- [x] `src/sbkim/*` (spore, identity, domainvector `_demo`, signal) + Ansicht „Mycel-Netz"
+      (Identität erzeugen, spore.json/SIGNAL.json herunterladen, fremde Spore prüfen)
+- [x] **Headless-Verifizierer** `tools/verify_remote_spore.mjs` (node:crypto, zero-dep) —
+      Verifizierer-Paar (§11.2) im Test einig
+- [x] Briefkasten/Sync verankert: `sbkim/README.md`, `SIGNAL.template.json`,
+      `AUSTAUSCH-template.md` (+ `docs/SAGE_SYNC_BRIEFKASTEN.md`)
+- [ ] **Phase 5b (menschlich vermittelt, fremde Repos):** echte `spore.json` in-app erzeugen
+      & committen, im Hub-`status.json` registrieren, erster Handshake, `verified-spore`
+- [ ] **Phase 5c:** echter `domainVector` (Transformers.js) → `verified-match`
+- [ ] **Phase 5d:** Symbiose-Import (Belege aus Mein-Tresor, Aufträge aus WorkFloh → Buchungen)
+
+> Diese Phase bereitet den Andock **lokal** vor (kein fremdes Repo verändert). Der
+> Live-Schritt (Hub-Registrierung, Handshake) erfolgt menschlich vermittelt (Modul 09).
+> Der `domainVector` ist noch `_demo` → ermöglicht `verified-spore`, nicht `verified-match`.
 
 ## Phase 6 — Design-Politur & Bilder
 - [ ] Design verfeinern (Motion, Barrierefreiheit), promptgenerierte Bilder
