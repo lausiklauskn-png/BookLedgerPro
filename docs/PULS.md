@@ -5,8 +5,8 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/general-discussion-x9xyk9`
-· **main-Stand:** `4ba49c8` · **Tests:** `node tests/run.mjs` → **134/134 grün**
+**Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/bookledgerpro-status-jeo3qz`
+· **main-Stand:** `4ba49c8` · **Tests:** `node tests/run.mjs` → **140/140 grün**
 · **SW-Cache:** `v25` · **53 JS-Module** · **12 Bild- + 5 Icon-Assets**
 
 ---
@@ -61,6 +61,8 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 ## 6. ⚠️ Ehrlich offen / ungetestet (nicht beschönigen)
 - **Beleg→Buchung-Pipeline end-to-end im Browser** noch nicht vom Nutzer bestätigt
   (Vision+Mistral einzeln ✓, der durchgehende OCR→Vorschlag-Klickpfad steht als nächstes an).
+  Glue-Logik node-getestet; die Mistral-Kontierung leitet die Buchungs-Richtung jetzt
+  verbindlich aus der Kontoart ab (kein Fehlbuchen bei falscher Modell-Richtung).
 - **Browser-UI generell nicht headless E2E-getestet** (kein Headless-Browser in der
   Build-Umgebung) — Kernlogik ist node-getestet (134/134), DOM-Pfade statisch geprüft.
 - **Sage Phase 5b/c/d offen** (menschlich vermittelt, fremde Repos):

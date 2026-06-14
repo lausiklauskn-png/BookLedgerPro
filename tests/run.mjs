@@ -28,7 +28,7 @@ import { buildSignal } from '../src/sbkim/signal.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
-import { buildClassifyMessages, parseClassify } from '../src/ai/mistral.js';
+import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/ai/mistral.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -490,6 +490,23 @@ await section('Mistral EU: Kontierungs-Prompt & Parser', () => {
   ok('JSON geparst', JSON.stringify(parseClassify('{"konto":"4930","richtung":"ausgabe"}')) === '{"konto":"4930","richtung":"ausgabe"}');
   ok('JSON aus Text extrahiert', parseClassify('Antwort: {"konto":"8400","richtung":"einnahme"} ok').konto === '8400');
   ok('kein JSON -> null', parseClassify('keine Ahnung') === null);
+});
+
+await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
+  const idx = indexFromSeed();
+  const aufwand = resolveKategorie({ konto: '4930', richtung: 'ausgabe' }, idx);
+  ok('Aufwandskonto → ausgabe', aufwand && aufwand.richtung === 'ausgabe' && aufwand.quelle === 'mistral');
+  const ertrag = resolveKategorie({ konto: '8400', richtung: 'einnahme' }, idx);
+  ok('Ertragskonto → einnahme', ertrag && ertrag.richtung === 'einnahme');
+
+  // Falsche Modell-Richtung wird durch die Kontoart korrigiert (kein Fehlbuchen).
+  const korrigiert = resolveKategorie({ konto: '8400', richtung: 'ausgabe' }, idx);
+  ok('Erlöskonto bleibt einnahme trotz falscher Modell-Richtung', korrigiert && korrigiert.richtung === 'einnahme');
+
+  // Nicht-Erfolgskonten (z.B. Bank) dürfen nicht als Sachkonto durchrutschen → null.
+  ok('Bestandskonto 1200 → null (Heuristik greift)', resolveKategorie({ konto: '1200', richtung: 'ausgabe' }, idx) === null);
+  ok('unbekanntes Konto → null', resolveKategorie({ konto: '9999', richtung: 'ausgabe' }, idx) === null);
+  ok('null-Eingabe → null', resolveKategorie(null, idx) === null);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

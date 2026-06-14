@@ -5,6 +5,27 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — Pipeline-Härtung: Mistral-Kontierung folgt verbindlich der Kontoart
+
+**Was getan**
+- `src/ai/mistral.js`: neue reine, node-testbare Funktion **`resolveKategorie(parsed, kontoIndex)`**.
+  Die Buchungs-**Richtung** (einnahme/ausgabe) wird jetzt VERBINDLICH aus der Kontoart
+  abgeleitet (ERTRAG→einnahme, AUFWAND→ausgabe) statt der Modell-Antwort blind zu trauen.
+  Folge: ein vom Modell falsch gelabeltes Erlöskonto („ausgabe") kann **keine falsche
+  Soll/Haben-Buchung** mehr erzeugen. Nicht-Erfolgskonten (z.B. Bank 1200) werden
+  abgelehnt → On-Device-Heuristik greift. `categorize()` nutzt jetzt diese Funktion.
+- `tests/run.mjs`: +6 Tests für `resolveKategorie` (Richtungs-Korrektur, Nicht-Erfolgskonto→null,
+  unbekannt→null, null→null). **Gesamt 140/140 grün** (vorher 134).
+
+**Verifiziert:** `node tests/run.mjs` → 140 bestanden, 0 fehlgeschlagen.
+**Nicht verifiziert:** Live-Mistral-Antwort im Browser (reine Glue-/Parser-Logik node-getestet;
+Netzwerkpfad unverändert). Beleg→Buchung weiterhin nicht headless-E2E im Browser bestätigt.
+
+**Offen / Nächstes:** Browser-Sichttest der Pipeline (Foto/PDF → Vision → Vorschlag → Journal →
+Festschreiben); Sage 5b. **Details: `docs/PULS.md`.**
+
+---
+
 ## 2026-06-14 — KI-Setup-Politur + Nachfolge-Brief
 
 **Was getan**
