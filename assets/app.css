@@ -346,3 +346,4 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .guide-list li { margin: .2rem 0; }
 .copy-block { margin: .4rem 0 .2rem; }
 .copy-text { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm, 8px); padding: .6rem .7rem; white-space: pre-wrap; font-family: var(--mono); font-size: .82rem; margin: 0 0 .4rem; overflow-x: auto; }
+.guide-highlight { color: var(--accent-strong); font-weight: 700; }
