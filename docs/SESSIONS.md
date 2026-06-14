@@ -5,6 +5,30 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — Phase 6.1: Bild-Assets / Branding
+
+**Was getan**
+- Vom Nutzer generierte 3D-Render-Bilder eingebunden (Teal/Mint-Marke):
+  - **PWA-Icons**: `icon-192/512`, `maskable-512`, `apple-touch-icon`, `favicon-32`
+    (Manifest + `index.html` + SW-Cache).
+  - **Hero** `hero-lock.png` (transparent) am Sperrbildschirm; `shell()` nimmt jetzt ein
+    **kontextabhängiges** Hero-Bild → Onboarding zeigt `onboard-key/-shamir/-backup`.
+  - **7 Leerzustände** (`empty-*`) via neuer `emptyState`-Komponente in Journal/Belege/
+    Kunden/Aufträge/Mitarbeiter/Auswertung/Mycel-Netz.
+  - **`og-image.png`** (opak, Wortmarke als echter Text) + OG/Twitter-Meta-Tags.
+- Bild-Aufbereitung mit Pillow (Alpha-Erhalt, Flood-Fill/weiche Matte gegen weiße/
+  eingebackene Karo-Hintergründe). SW-Cache bis `v20`.
+
+**Stand**
+- Vollständiges, konsistentes Marken-Bildset; alle referenzierten Bilder vorhanden,
+  121/121 Tests grün, i18n vollständig.
+
+**Offen / Grenzen (ehrlich)**
+- Lighthouse/Performance ungemessen (kein Headless-Browser); Browser-UI nicht E2E-getestet
+  → **Sichttest** als nächster Schritt.
+
+---
+
 ## 2026-06-14 — Phase 6: Design-Politur & Bilder
 
 **Was getan**

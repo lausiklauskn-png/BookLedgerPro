@@ -94,8 +94,9 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
       `role=main`, reduced-motion
 - [x] Design-Token-Feinschliff (Fokus-Ring, KPI-/Elevation-Stile)
 - [x] 121/121 Node-Tests grün
-- [ ] **Offen (ehrlich):** echte **promptgenerierte Bilder** (KI-Bildgenerierung steht in
-      dieser Umgebung nicht zur Verfügung) — Hero/Illustrations-Assets als Folge-Schritt.
+- [x] **Bild-Assets (3D-Render, Marke):** PWA-Icons (192/512/maskable/apple/favicon),
+      Hero (Sperrbildschirm/Onboarding), 7 Leerzustände, kontextabhängige Onboarding-Bilder,
+      og-image (+ OG/Twitter-Meta) — vom Nutzer generiert, eingebunden (Phase 6.1)
 - [ ] **Offen:** Lighthouse/Performance-Messung (kein Headless-Browser hier) — manuell prüfen.
 
 > Design-Effekte sind bewusst **additiv** (Canvas), nie über `cursor:none` — auf DeX/Android
