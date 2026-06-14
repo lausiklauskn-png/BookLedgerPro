@@ -20,6 +20,8 @@ import { auftragSummen, darfWechseln, validateAuftrag } from '../src/domain/orde
 import { rechnungZeilen } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
+import { buildLedgerCsv, buildDatevCsv, buildUstVa, centsToComma, ustVaToCsv } from '../src/domain/export.js';
+import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -340,6 +342,47 @@ await section('Kostenstellen-Auswertung', () => {
   ok('KS1 Aufwand 50000', ks1.aufwand === 50000);
   ok('KS1 Ertrag 20000', ks1.ertrag === 20000);
   ok('KS1 Saldo -30000', ks1.saldo === -30000);
+});
+
+// ===== Phase 4: Steuer & Export =====
+
+await section('Export: CSV-Formatierung & USt-VA-Kennzahlen', () => {
+  ok('centsToComma 123456 -> 1234,56', centsToComma(123456) === '1234,56');
+  ok('centsToComma negativ', centsToComma(-1900) === '-19,00');
+
+  const idx = indexFromSeed();
+  const buchungen = [
+    { seq: 1, datum: '2026-06-05', status: 'festgeschrieben', beschreibung: 'Einkauf',
+      zeilen: [{ konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }] },
+    { seq: 2, datum: '2026-06-10', status: 'festgeschrieben', beschreibung: 'Verkauf',
+      zeilen: [{ konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+    { seq: 3, datum: '2026-06-11', status: 'festgeschrieben', beschreibung: 'Barerlös',
+      zeilen: [{ konto: '1200', seite: 'S', betrag: 5000 }, { konto: '8200', seite: 'H', betrag: 5000 }] },
+  ];
+
+  const va = buildUstVa(buchungen, idx);
+  ok('Kz81 (Umsätze 19%) = 20000', va.kz81 === 20000);
+  ok('Kz81 Steuer = 3800', va.kz81Steuer === 3800);
+  ok('Kz66 Vorsteuer = 1900', va.kz66 === 1900);
+  ok('Kz83 Zahllast = 1900', va.kz83 === 1900);
+  ok('USt-VA-CSV enthält Zahllast-Zeile', ustVaToCsv(va).includes('83;Verbleibende'));
+
+  const ledger = buildLedgerCsv(buchungen, idx);
+  const zeilenAnzahl = (buchungen[0].zeilen.length + buchungen[1].zeilen.length + buchungen[2].zeilen.length);
+  ok('Journal-CSV hat Header + alle Zeilen', ledger.split('\r\n').length === zeilenAnzahl + 1);
+  ok('Journal-CSV nennt Kontonamen', ledger.includes('Bürobedarf'));
+
+  const datev = buildDatevCsv(buchungen, idx);
+  ok('DATEV: 2-Zeilen-Buchung als Konto/Gegenkonto', datev.includes('50,00;S;1200;8200'));
+});
+
+await section('Steuer-Assistent: Kennzahlen-Text (Datenminimierung)', () => {
+  const va = { kz81: 20000, kz81Steuer: 3800, kz86: 0, kz86Steuer: 0, kz66: 1900, kz83: 1900 };
+  const eur = { einnahmen: 20000, ausgaben: 10000, ueberschuss: 10000 };
+  const txt = buildKennzahlenText(va, eur, { von: '2026-06-01', bis: '2026-06-30' });
+  ok('Text enthält Zahllast', /Zahllast/.test(txt));
+  ok('Text enthält Überschuss', /Überschuss/.test(txt));
+  ok('Text enthält keine Kontonummern/Belege', !/4930|1576|Beleg/.test(txt));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

@@ -5,6 +5,36 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — Phase 4: Steuer & Export
+
+**Was getan**
+- `domain/export.js` (rein, getestet): Journal-CSV, DATEV-orientierte CSV, USt-VA-Kennzahlen
+  (Kz 81/86/66/83), EÜR-CSV; CSV-Escaping + Cent→Komma.
+- `ai/taxAssist.js`: Steuer-Assistent (opt-in Claude), sendet nur aggregierte Kennzahlen
+  (Datenminimierung). Nicht live getestet.
+- UI `reports.js`: USt-VA-Kennzahlen-Karte, Export-Buttons (CSV/DATEV/USt-VA/EÜR),
+  Drucken→PDF (Print-CSS), Steuer-Assistent (wenn Claude konfiguriert).
+- `ui/views/legal.js` + Nav „Recht & Doku": GoBD-Verfahrensdokumentation + DSGVO in-app,
+  Betroffenenrechte (verschlüsselter Export, vollständiges Löschen).
+- `docs/legal/Verfahrensdokumentation.md` + `docs/legal/Datenschutz.md`.
+- Tests **98/98**; i18n-Vollständigkeit ok; SW-Cache `v5`.
+
+**Stand**
+- Steuerliche Aufbereitung (USt-VA-Kennzahlen, EÜR) + Exporte + Recht/Doku vorhanden.
+  Kernlogik echt getestet.
+
+**Offen / Grenzen (ehrlich)**
+- DATEV = orientiert, kein zertifiziertes EXTF; **keine** ELSTER-Einreichung (nur Datenpaket).
+- „PDF" = Browser-Druck (keine PDF-Bibliothek).
+- Claude-Pfade (Belegerkennung, Steuer-Assistent) nicht live getestet.
+- Browser-UI nicht headless E2E-getestet.
+
+**Nächstes (Phase 5)** — Sage-Mycel-Symbiose: SBKIM-Client (Modul 09 kopieren),
+Ed25519-Identität, `spore.json`, Synchronisationsvereinbarung/Briefkasten
+(`docs/SAGE_SYNC_BRIEFKASTEN.md`), Symbiose (Belege aus Tresor, Aufträge aus WorkFloh).
+
+---
+
 ## 2026-06-14 — Phase 3: Aufträge, Kunden, Mitarbeiter, Kostenstellen
 
 **Was getan**
