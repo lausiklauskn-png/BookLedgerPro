@@ -20,6 +20,7 @@ import { mountCustomers } from './views/customers.js';
 import { mountOrders } from './views/orders.js';
 import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
+import { mountNetwork } from './views/network.js';
 import { getAiConfig, saveAiConfig, AI_MODELS } from '../ai/provider.js';
 
 const NAV = [
@@ -31,6 +32,7 @@ const NAV = [
   ['customers', 'nav.customers'],
   ['employees', 'nav.employees'],
   ['reports', 'nav.reports'],
+  ['network', 'nav.network'],
   ['legal', 'nav.legal'],
   ['settings', 'nav.settings'],
 ];
@@ -100,6 +102,7 @@ function renderRoute() {
   if (route === 'customers') return void mountCustomers(content);
   if (route === 'employees') return void mountEmployees(content);
   if (route === 'legal') return void mountLegal(content);
+  if (route === 'network') return void mountNetwork(content);
   return mount(content, viewPlaceholder(route));
 }
 
