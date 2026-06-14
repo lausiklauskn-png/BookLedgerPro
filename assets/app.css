@@ -331,3 +331,5 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .pw-key { flex: none; width: 96px; height: auto; align-self: center; }
 .pw-form { flex: 1; min-width: 0; }
 @media (max-width: 600px) { .pw-row { flex-direction: column; align-items: center; } .pw-key { width: 72px; } }
+.siegel-anbieter { display: flex; align-items: center; gap: .55rem; margin-top: .5rem; }
+.siegel-iso { width: 38px; height: 38px; flex: none; border-radius: 6px; }
