@@ -21,7 +21,7 @@ const DSGVO = [
   'Verantwortlich für die Verarbeitung sind Sie als Nutzer/in dieser lokal laufenden Anwendung.',
   '• Datensparsamkeit & lokale Verarbeitung: Alle Daten werden ausschließlich auf Ihrem Gerät gespeichert und mit AES-GCM-256 verschlüsselt (Schlüssel aus Ihrem Passwort, PBKDF2). Es gibt keinen Server, kein Tracking, keine Cookies.',
   '• Personenbezogene Daten (Kunden, Mitarbeiter, Zeiten) werden verschlüsselt gespeichert.',
-  '• Externe KI (Claude/Anthropic) ist standardmäßig deaktiviert und nur mit eigenem API-Schlüssel nutzbar. Eine Übertragung erfolgt ausschließlich nach ausdrücklicher Bestätigung; es werden Datenminimierungs-Grundsätze angewendet (Steuer-Assistent sendet nur aggregierte Kennzahlen).',
+  '• Externe EU-KI (Google Cloud Vision — EU-Endpoint für Texterkennung; Mistral — EU für Kontierung/Steuer-Assistent) ist standardmäßig deaktiviert und nur mit eigenem API-Schlüssel nutzbar. Eine Übertragung erfolgt ausschließlich nach ausdrücklicher Bestätigung und innerhalb der EU (DSGVO); es werden Datenminimierungs-Grundsätze angewendet (Steuer-Assistent sendet nur aggregierte Kennzahlen).',
   '• Betroffenenrechte: Auskunft/Datenübertragbarkeit über den verschlüsselten Gesamt-Export; Löschung über „Alle Daten löschen".',
 ];
 
