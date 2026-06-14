@@ -9,6 +9,7 @@ import {
   listAuftraege, saveAuftrag, deleteAuftrag, setAuftragStatus, rechnungAusAuftrag,
   listKunden, listKostenstellen, ensureKostenstellenSeeded,
 } from '../../domain/crm-store.js';
+import { emptyState } from '../empty.js';
 
 let _host = null;
 let _kunden = [];
@@ -87,7 +88,7 @@ function statusBadge(status) {
 }
 
 function liste(auftraege) {
-  if (!auftraege.length) return el('p', { class: 'muted', text: t('orders.empty') });
+  if (!auftraege.length) return emptyState('empty-orders.png', t('orders.empty'));
   const kundeName = (id) => (_kunden.find((k) => k.id === id) || {}).name || '';
   const rows = auftraege.map((a) => {
     const s = auftragSummen(a.positionen);

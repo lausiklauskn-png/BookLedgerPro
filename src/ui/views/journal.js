@@ -8,6 +8,7 @@ import { baueBuchungZeilen, summeSeiten, validateBuchung, BUCHUNG_STATUS } from 
 import { KONTOART } from '../../domain/accounts.js';
 import { UST_SAETZE } from '../../domain/taxes.js';
 import { listKostenstellen, ensureKostenstellenSeeded } from '../../domain/crm-store.js';
+import { emptyState } from '../empty.js';
 
 let _host = null;
 let _kostenstellen = [];
@@ -124,7 +125,7 @@ function statusBadge(status) {
 
 function buchungTabelle(buchungen, idx) {
   if (!buchungen.length) {
-    return el('div', { class: 'pad' }, el('p', { class: 'muted', text: t('journal.empty') }));
+    return el('div', { class: 'pad' }, emptyState('empty-journal.png', t('journal.empty')));
   }
   const rows = [];
   for (const b of buchungen) {

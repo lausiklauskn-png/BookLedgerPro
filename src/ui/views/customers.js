@@ -3,6 +3,7 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { listKunden, saveKunde, deleteKunde } from '../../domain/crm-store.js';
+import { emptyState } from '../empty.js';
 
 let _host = null;
 
@@ -48,7 +49,7 @@ function form() {
 const field = (label, input) => el('label', { class: 'field' }, [el('span', { text: label }), input]);
 
 function liste(kunden) {
-  if (!kunden.length) return el('p', { class: 'muted', text: t('crm.customersEmpty') });
+  if (!kunden.length) return emptyState('empty-customers.png', t('crm.customersEmpty'));
   const rows = kunden.map((k) => el('tr', {}, [
     el('td', { text: k.name }),
     el('td', { class: 'muted small', text: k.email || '' }),

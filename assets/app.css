@@ -59,6 +59,10 @@ code { font-family: var(--mono); }
   border: 1px solid var(--border); border-radius: var(--radius-lg);
   box-shadow: var(--shadow); padding: 1.75rem;
 }
+.lock-hero {
+  display: block; width: 100%; max-width: 260px; height: auto;
+  margin: .25rem auto 1rem; pointer-events: none; user-select: none;
+}
 .lock-card .brand { margin-bottom: 1.25rem; }
 .lock-form { display: flex; flex-direction: column; gap: .85rem; }
 .field { display: flex; flex-direction: column; gap: .3rem; }
@@ -232,6 +236,10 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .skip-link:focus { left: .5rem; top: .5rem; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 .btn:focus-visible, .nav-item:focus-visible, .seg:focus-visible { outline-offset: 2px; }
+
+/* ---- Leerzustand ---------------------------------------------------------- */
+.empty-state { text-align: center; padding: 1.5rem 1rem; }
+.empty-illu { display: block; width: 100%; max-width: 220px; height: auto; margin: 0 auto .75rem; }
 
 .fatal { padding: 2rem; text-align: center; color: var(--error); }
 

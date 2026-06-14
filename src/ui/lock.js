@@ -22,11 +22,12 @@ export async function showLockScreen(container) {
   });
 }
 
-function shell(children) {
+function shell(children, hero = './assets/img/hero-lock.png') {
   return el('div', { class: 'lock-screen' }, [
     createMycelBackground(),
     el('div', { class: 'lock-card' }, [
       el('div', { class: 'brand' }, [MycelMark(40), el('span', { class: 'brand-name', text: t('app.name') })]),
+      el('img', { class: 'lock-hero', src: hero, alt: '', loading: 'eager' }),
       ...children,
     ]),
   ]);
@@ -94,7 +95,7 @@ function renderOnboarding(container, resolve) {
       el('label', { class: 'field' }, [el('span', { text: t('onboard.passwordRepeat') }), p2]),
       err, btn,
     ]);
-    mount(container, shell([form]));
+    mount(container, shell([form], './assets/img/onboard-key.png'));
     p1.focus();
   }
 
@@ -111,7 +112,7 @@ function renderOnboarding(container, resolve) {
       el('p', { class: 'muted', text: t('onboard.shamirIntro') }),
       list,
       next,
-    ]));
+    ], './assets/img/onboard-shamir.png'));
   }
 
   function stepBackup() {
@@ -136,7 +137,7 @@ function renderOnboarding(container, resolve) {
       el('h1', { text: t('onboard.backupTitle') }),
       el('p', { class: 'muted', text: t('onboard.backupIntro') }),
       dl, status, finish,
-    ]));
+    ], './assets/img/onboard-backup.png'));
   }
 
   stepPassword();

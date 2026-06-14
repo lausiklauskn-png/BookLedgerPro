@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v20';
 const CACHE_NAME = `blpr-shell-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -23,6 +23,22 @@ const CORE_ASSETS = [
   './assets/tokens.css',
   './assets/app.css',
   './assets/icon.svg',
+  './assets/icons/icon-192.png',
+  './assets/icons/icon-512.png',
+  './assets/icons/maskable-512.png',
+  './assets/icons/apple-touch-icon.png',
+  './assets/icons/favicon-32.png',
+  './assets/img/hero-lock.png',
+  './assets/img/empty-journal.png',
+  './assets/img/empty-documents.png',
+  './assets/img/empty-customers.png',
+  './assets/img/empty-orders.png',
+  './assets/img/empty-employees.png',
+  './assets/img/empty-reports.png',
+  './assets/img/empty-network.png',
+  './assets/img/onboard-key.png',
+  './assets/img/onboard-shamir.png',
+  './assets/img/onboard-backup.png',
   './src/main.js',
   './src/state.js',
   './src/core/crypto.js',
@@ -37,6 +53,7 @@ const CORE_ASSETS = [
   './src/ui/theme.js',
   './src/ui/mycel.js',
   './src/ui/mycelCanvas.js',
+  './src/ui/empty.js',
   './src/ui/lock.js',
   './src/ui/shell.js',
   './src/domain/summary.js',
