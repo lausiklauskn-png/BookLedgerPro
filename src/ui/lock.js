@@ -27,6 +27,7 @@ function shell(children) {
     createMycelBackground(),
     el('div', { class: 'lock-card' }, [
       el('div', { class: 'brand' }, [MycelMark(40), el('span', { class: 'brand-name', text: t('app.name') })]),
+      el('img', { class: 'lock-hero', src: './assets/img/hero-lock.png', alt: '', loading: 'eager' }),
       ...children,
     ]),
   ]);

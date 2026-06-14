@@ -59,6 +59,10 @@ code { font-family: var(--mono); }
   border: 1px solid var(--border); border-radius: var(--radius-lg);
   box-shadow: var(--shadow); padding: 1.75rem;
 }
+.lock-hero {
+  display: block; width: 100%; max-width: 260px; height: auto;
+  margin: .25rem auto 1rem; pointer-events: none; user-select: none;
+}
 .lock-card .brand { margin-bottom: 1.25rem; }
 .lock-form { display: flex; flex-direction: column; gap: .85rem; }
 .field { display: flex; flex-direction: column; gap: .3rem; }
