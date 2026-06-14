@@ -24,7 +24,10 @@ const SYSTEM =
 function kontextText(kontext) {
   const teile = [];
   if (kontext.beschreibung) teile.push(`Beschreibung: ${kontext.beschreibung}`);
-  if (kontext.konto) teile.push(`Konto: ${kontext.konto}`);
+  // Bevorzugt die vollständige Kontierung (mit Kontonamen), damit das Modell den
+  // Kontonamen NICHT raten muss; sonst zumindest Nummer (+ Name, falls vorhanden).
+  if (kontext.kontierung) teile.push(`Kontierung: ${kontext.kontierung}`);
+  else if (kontext.konto) teile.push(`Konto: ${kontext.konto}${kontext.kontoName ? ' ' + kontext.kontoName : ''}`);
   if (kontext.text) teile.push(`Belegtext: ${String(kontext.text).slice(0, 800)}`);
   if (kontext.kleinunternehmer) teile.push('Hinweis: Nutzer ist Kleinunternehmer (§19 UStG).');
   return teile.join('\n');
