@@ -5,6 +5,33 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — Phase 6: Design-Politur & Bilder
+
+**Was getan**
+- `domain/summary.js` (rein, getestet): Dashboard-Jahres-Kennzahlen (Ertrag/Aufwand/
+  Überschuss/USt-Zahllast/festgeschrieben/Entwürfe).
+- `ui/views/dashboard.js`: KPI-Karten + Zähler (Belege/Kunden/Aufträge) + Audit-Status +
+  Schnellaktionen. Ersetzt das statische Dashboard.
+- `ui/mycelCanvas.js`: dezente, animierte Mycel-Fäden am Sperrbildschirm — **additiv**
+  (Browser-Lehre 8), `prefers-reduced-motion`-bewusst, beendet sich beim Entfernen aus DOM.
+- Barrierefreiheit: Skip-Link, `:focus-visible`, `aria-current`/`aria-live`, `role=main`,
+  Fokus-Ring-Token.
+- Tests **121/121**; i18n-Vollständigkeit ok; SW-Cache `v7`.
+
+**Stand**
+- Visuell deutlich aufgewertet; Dashboard zeigt echte Zahlen; A11y-Grundlagen vorhanden.
+
+**Offen / Grenzen (ehrlich)**
+- **Echte promptgenerierte Bilder** (KI-Bildgenerierung) sind in dieser Umgebung nicht
+  möglich → Hero/Illustrations-Assets bleiben offen (Phase 6.x).
+- **Lighthouse/Performance** nicht gemessen (kein Headless-Browser).
+- **Mycel-Canvas + alle UI** nicht headless E2E-getestet — nur statisch geprüft.
+
+**Nächstes** — offene Sage-Schritte (5b/c/d, menschlich vermittelt) und/oder
+Bild-Assets/Performance (6.x); ein manueller Browser-Durchlauf bleibt empfohlen.
+
+---
+
 ## 2026-06-14 — Phase 5: Sage-Mycel-Symbiose (lokale Andock-Vorbereitung)
 
 **Was getan**

@@ -26,6 +26,7 @@ import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } fro
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
 import { buildSignal } from '../src/sbkim/signal.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
+import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -437,6 +438,27 @@ await section('SBKIM: SIGNAL.json (§11.6)', () => {
   ok('seq vorhanden', sig.seq === 1);
   ok('sporeUrl gesetzt', /BookLedgerPro\/main\/sbkim\/spore\.json$/.test(sig.sporeUrl));
   ok('forNodes = *', JSON.stringify(sig.forNodes) === '["*"]');
+});
+
+// ===== Phase 6: Dashboard-Kennzahlen =====
+
+await section('Dashboard-Kennzahlen (Jahresfilter)', () => {
+  const idx = indexFromSeed();
+  const buchungen = [
+    { seq: 1, datum: '2026-03-01', zeilen: [{ konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+    { seq: 2, datum: '2026-04-01', zeilen: [{ konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }] },
+    { seq: 3, datum: '2025-12-31', zeilen: [{ konto: '4210', seite: 'S', betrag: 50000 }, { konto: '1200', seite: 'H', betrag: 50000 }] },
+    { seq: null, datum: '2026-05-01', zeilen: [{ konto: '1200', seite: 'S', betrag: 100 }, { konto: '8200', seite: 'H', betrag: 100 }] },
+  ];
+  const k = dashboardKennzahlen(buchungen, idx, 2026);
+  ok('Jahr 2026', k.jahr === 2026);
+  ok('Ertrag netto 20000', k.ertrag === 20000);
+  ok('Aufwand netto 10000 (nur 2026)', k.aufwand === 10000);
+  ok('Überschuss 10000', k.ueberschuss === 10000);
+  ok('USt-Zahllast 1900', k.ustZahllast === 1900);
+  ok('2 festgeschrieben in 2026', k.festgeschrieben === 2);
+  ok('1 Entwurf', k.entwuerfe === 1);
+  ok('jahrPeriode korrekt', jahrPeriode(2026).von === '2026-01-01' && jahrPeriode(2026).bis === '2026-12-31');
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

@@ -86,6 +86,17 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 > Live-Schritt (Hub-Registrierung, Handshake) erfolgt menschlich vermittelt (Modul 09).
 > Der `domainVector` ist noch `_demo` → ermöglicht `verified-spore`, nicht `verified-match`.
 
-## Phase 6 — Design-Politur & Bilder
-- [ ] Design verfeinern (Motion, Barrierefreiheit), promptgenerierte Bilder
-- [ ] Dezente Mycel-Effekte (Canvas-additiv, DeX-sicher), Lighthouse/Performance
+## ◑ Phase 6 — Design-Politur & Bilder
+- [x] Dashboard mit echten Jahres-Kennzahlen (`domain/summary.js`, getestet) + KPI-Karten
+- [x] Dezente **Mycel-Canvas**-Animation am Sperrbildschirm (additiv, **DeX-sicher**,
+      `prefers-reduced-motion`-bewusst, self-stopping) — Browser-Lehre 8 beachtet
+- [x] Barrierefreiheit: Skip-Link, `:focus-visible`, `aria-current`/`aria-live`,
+      `role=main`, reduced-motion
+- [x] Design-Token-Feinschliff (Fokus-Ring, KPI-/Elevation-Stile)
+- [x] 121/121 Node-Tests grün
+- [ ] **Offen (ehrlich):** echte **promptgenerierte Bilder** (KI-Bildgenerierung steht in
+      dieser Umgebung nicht zur Verfügung) — Hero/Illustrations-Assets als Folge-Schritt.
+- [ ] **Offen:** Lighthouse/Performance-Messung (kein Headless-Browser hier) — manuell prüfen.
+
+> Design-Effekte sind bewusst **additiv** (Canvas), nie über `cursor:none` — auf DeX/Android
+> würde das ignoriert (siehe `docs/SAGE_BROWSER_LEHREN.md`, Lehre 8).
