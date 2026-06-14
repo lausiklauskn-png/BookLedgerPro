@@ -11,11 +11,12 @@ import { parseEuroToCents, formatCents } from '../src/domain/money.js';
 import { saldo, KONTOART, mehrungsSeite } from '../src/domain/accounts.js';
 import { baueBuchungZeilen, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen } from '../src/domain/journal.js';
 import { hashBuchung, verifyChain, GENESIS, canonicalize } from '../src/domain/audit.js';
-import { computeEUR, computeUStVoranmeldung, saldenliste } from '../src/domain/taxes.js';
+import { computeEUR, computeUStVoranmeldung, saldenliste, verprobeUSt } from '../src/domain/taxes.js';
 import { seedAccounts } from '../src/domain/accounts.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
+import { pruefeBuchung, istFestschreibbar } from '../src/domain/pruefung.js';
 import { auftragSummen, darfWechseln, validateAuftrag } from '../src/domain/orders.js';
 import { rechnungZeilen } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
@@ -28,7 +29,7 @@ import { buildSignal } from '../src/sbkim/signal.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
-import { buildClassifyMessages, parseClassify } from '../src/ai/mistral.js';
+import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/ai/mistral.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -296,6 +297,97 @@ await section('Extraktion: leerer/unklarer Text', () => {
   ok('ohne Betrag kein Vorschlag', res.ok === false);
 });
 
+await section('Vorschlag: Spielraum statt Haken (Warnung statt Blockade)', () => {
+  const ex = extractFromText('Bürobedarf\nGesamtbetrag: 119,00 EUR\n19 % MwSt');
+  const kat = categorize('Bürobedarf Toner');
+  // Unbekanntes Gegenkonto → Vorschlag entsteht trotzdem (Spielraum), trägt aber
+  // den harten Fehler mit; blockiert würde erst beim Festschreiben.
+  const grenz = buildVorschlag(ex, kat, indexFromSeed(), { gegenkonto: '9999' });
+  ok('Vorschlag entsteht trotzdem (ok:true)', grenz.ok === true);
+  ok('harter Fehler wird mitgeliefert', grenz.vorschlag.fehler.some((f) => /9999/.test(f)));
+  // Gültiger Fall: keine harten Fehler, ausgeglichen.
+  const good = buildVorschlag(ex, kat, indexFromSeed());
+  ok('gültiger Vorschlag ok & ausgeglichen', good.ok === true && istAusgeglichen(good.vorschlag.zeilen));
+  ok('gültiger Vorschlag ohne harte Fehler', good.vorschlag.fehler.length === 0);
+});
+
+await section('Plausibilitäts-Prüfung: Hinweise wie ein Berater (nicht-blockierend)', () => {
+  const idx = indexFromSeed();
+  const heute = '2026-06-14';
+  const sauber = { datum: heute, beschreibung: 'Bürobedarf', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 },
+    { konto: '1576', seite: 'S', betrag: 1900 },
+    { konto: '1200', seite: 'H', betrag: 11900 },
+  ] };
+  let p = pruefeBuchung(sauber, idx, { heute });
+  ok('saubere Buchung: keine Fehler', p.fehler.length === 0);
+  ok('saubere Buchung: keine Warnungen', p.warnungen.length === 0);
+  ok('saubere Buchung festschreibbar', istFestschreibbar(p));
+
+  // Erlöskonto USt-pflichtig, aber ohne Umsatzsteuer gebucht → Warnung (kein Fehler).
+  const ohneUst = { datum: heute, beschreibung: 'Verkauf', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 11900 },
+    { konto: '8400', seite: 'H', betrag: 11900 },
+  ] };
+  p = pruefeBuchung(ohneUst, idx, { heute });
+  ok('USt-vergessen → Warnung', p.warnungen.some((w) => /Umsatzsteuer/i.test(w)));
+  ok('USt-vergessen → kein harter Fehler', p.fehler.length === 0);
+  ok('Kleinunternehmer unterdrückt USt-Warnung',
+    pruefeBuchung(ohneUst, idx, { heute, kleinunternehmer: true }).warnungen.length === 0);
+
+  // Zukunftsdatum, fehlende Beschreibung, identische Konten.
+  p = pruefeBuchung({ datum: '2026-12-31', beschreibung: '', zeilen: [
+    { konto: '4980', seite: 'S', betrag: 5000 },
+    { konto: '4980', seite: 'H', betrag: 5000 },
+  ] }, idx, { heute });
+  ok('Zukunftsdatum → Warnung', p.warnungen.some((w) => /Zukunft/i.test(w)));
+  ok('fehlender Buchungstext → Warnung', p.warnungen.some((w) => /Buchungstext/i.test(w)));
+  ok('Soll=Haben-Konto → Warnung', p.warnungen.some((w) => /identisch/i.test(w)));
+
+  // Zeitnähe: Datum vor zuletzt festgeschriebener Buchung.
+  p = pruefeBuchung(sauber, idx, { heute, letztesFestDatum: '2026-06-30' });
+  ok('Datum vor letzter Festschreibung → Warnung', p.warnungen.some((w) => /zeitgerecht/i.test(w)));
+
+  // Harter Fehler (unausgeglichen) blockiert Festschreiben, Warnungen trotzdem berechnet.
+  p = pruefeBuchung({ datum: heute, beschreibung: 'x', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 },
+    { konto: '1200', seite: 'H', betrag: 9000 },
+  ] }, idx, { heute });
+  ok('unausgeglichen → harter Fehler', p.fehler.length > 0);
+  ok('unausgeglichen → nicht festschreibbar', istFestschreibbar(p) === false);
+});
+
+await section('USt-Verprobung: gebucht vs. erwartet (Netto × Satz)', () => {
+  const idx = indexFromSeed();
+  const ausgabe = { seq: 1, datum: '2026-06-02', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 },
+    { konto: '1576', seite: 'S', betrag: 1900 },
+    { konto: '1200', seite: 'H', betrag: 11900 },
+  ] };
+  const einnahme = { seq: 2, datum: '2026-06-03', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 11900 },
+    { konto: '8400', seite: 'H', betrag: 10000 },
+    { konto: '1776', seite: 'H', betrag: 1900 },
+  ] };
+  let v = verprobeUSt([ausgabe, einnahme], idx);
+  ok('korrekt gebucht → ok', v.ok === true);
+  ok('Vorsteuer erwartet=gebucht=1900', v.vorsteuer.erwartet === 1900 && v.vorsteuer.gebucht === 1900 && v.vorsteuer.diff === 0);
+  ok('Umsatzsteuer erwartet=gebucht=1900', v.umsatzsteuer.erwartet === 1900 && v.umsatzsteuer.gebucht === 1900);
+
+  // Vergessene USt auf Erlös → Abweichung.
+  const vergessen = { seq: 3, datum: '2026-06-04', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 11900 },
+    { konto: '8400', seite: 'H', betrag: 11900 },
+  ] };
+  v = verprobeUSt([vergessen], idx);
+  ok('vergessene USt → nicht ok', v.ok === false);
+  ok('USt-Abweichung negativ (gebucht < erwartet)', v.umsatzsteuer.diff < 0 && v.umsatzsteuer.gebucht === 0);
+
+  // Entwürfe (seq == null) zählen nicht mit.
+  v = verprobeUSt([{ seq: null, datum: '2026-06-05', zeilen: vergessen.zeilen }], idx);
+  ok('Entwurf wird ignoriert', v.ok === true && v.umsatzsteuer.erwartet === 0);
+});
+
 // ===== Phase 3: Aufträge, Rechnung, Zeit, Kostenstellen =====
 
 await section('Aufträge: Summen über mehrere USt-Sätze', () => {
@@ -490,6 +582,23 @@ await section('Mistral EU: Kontierungs-Prompt & Parser', () => {
   ok('JSON geparst', JSON.stringify(parseClassify('{"konto":"4930","richtung":"ausgabe"}')) === '{"konto":"4930","richtung":"ausgabe"}');
   ok('JSON aus Text extrahiert', parseClassify('Antwort: {"konto":"8400","richtung":"einnahme"} ok').konto === '8400');
   ok('kein JSON -> null', parseClassify('keine Ahnung') === null);
+});
+
+await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
+  const idx = indexFromSeed();
+  const aufwand = resolveKategorie({ konto: '4930', richtung: 'ausgabe' }, idx);
+  ok('Aufwandskonto → ausgabe', aufwand && aufwand.richtung === 'ausgabe' && aufwand.quelle === 'mistral');
+  const ertrag = resolveKategorie({ konto: '8400', richtung: 'einnahme' }, idx);
+  ok('Ertragskonto → einnahme', ertrag && ertrag.richtung === 'einnahme');
+
+  // Falsche Modell-Richtung wird durch die Kontoart korrigiert (kein Fehlbuchen).
+  const korrigiert = resolveKategorie({ konto: '8400', richtung: 'ausgabe' }, idx);
+  ok('Erlöskonto bleibt einnahme trotz falscher Modell-Richtung', korrigiert && korrigiert.richtung === 'einnahme');
+
+  // Nicht-Erfolgskonten (z.B. Bank) dürfen nicht als Sachkonto durchrutschen → null.
+  ok('Bestandskonto 1200 → null (Heuristik greift)', resolveKategorie({ konto: '1200', richtung: 'ausgabe' }, idx) === null);
+  ok('unbekanntes Konto → null', resolveKategorie({ konto: '9999', richtung: 'ausgabe' }, idx) === null);
+  ok('null-Eingabe → null', resolveKategorie(null, idx) === null);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

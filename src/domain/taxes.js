@@ -67,6 +67,44 @@ export function computeUStVoranmeldung(buchungen, kontoIndex, periode) {
   return { umsatzsteuer, vorsteuer, zahllast: umsatzsteuer - vorsteuer, perKonto };
 }
 
+/**
+ * USt-Verprobung: vergleicht die GEBUCHTE Vor-/Umsatzsteuer mit der aus den
+ * Netto-Beträgen der Erfolgskonten ERWARTETEN Steuer (Netto × Satz). Reine
+ * Funktion über festgeschriebenen Buchungen — ein klassischer Berater-Check, der
+ * vergessene oder falsch gerechnete USt aufdeckt. Nicht-blockierend (Hinweis).
+ *
+ * Die Erwartung wird je Buchung und Satz gerundet (wie beim Buchen), damit normale
+ * Rundung KEINE Fehlalarme erzeugt; eine Abweichung ≠ 0 ist ein echtes Signal.
+ * @returns {{umsatzsteuer:{erwartet,gebucht,diff}, vorsteuer:{erwartet,gebucht,diff}, ok:boolean}}
+ */
+export function verprobeUSt(buchungen, kontoIndex, periode) {
+  let ustErwartet = 0, ustGebucht = 0, vstErwartet = 0, vstGebucht = 0;
+  for (const b of buchungen) {
+    if (b.seq == null) continue;                 // nur festgeschriebene
+    if (!inPeriode(b.datum, periode)) continue;
+    const netErtrag = {}, netAufwand = {};       // Satz → Netto (Cent)
+    for (const z of b.zeilen || []) {
+      const k = kontoIndex[z.konto];
+      if (!k) continue;
+      if (isUmsatzsteuerKonto(k)) { ustGebucht += (z.seite === 'H' ? z.betrag : -z.betrag); continue; }
+      if (isVorsteuerKonto(k)) { vstGebucht += (z.seite === 'S' ? z.betrag : -z.betrag); continue; }
+      const satz = Number(k.ust) || 0;
+      if (satz <= 0) continue;
+      if (k.art === KONTOART.ERTRAG) netErtrag[satz] = (netErtrag[satz] || 0) + (z.seite === 'H' ? z.betrag : -z.betrag);
+      else if (k.art === KONTOART.AUFWAND) netAufwand[satz] = (netAufwand[satz] || 0) + (z.seite === 'S' ? z.betrag : -z.betrag);
+    }
+    for (const [satz, net] of Object.entries(netErtrag)) ustErwartet += Math.round((net * Number(satz)) / 100);
+    for (const [satz, net] of Object.entries(netAufwand)) vstErwartet += Math.round((net * Number(satz)) / 100);
+  }
+  const ustDiff = ustGebucht - ustErwartet;
+  const vstDiff = vstGebucht - vstErwartet;
+  return {
+    umsatzsteuer: { erwartet: ustErwartet, gebucht: ustGebucht, diff: ustDiff },
+    vorsteuer: { erwartet: vstErwartet, gebucht: vstGebucht, diff: vstDiff },
+    ok: ustDiff === 0 && vstDiff === 0,
+  };
+}
+
 /** EÜR (vereinfacht): Einnahmen (Ertrag) − Ausgaben (Aufwand) = Überschuss. */
 export function computeEUR(buchungen, kontoIndex, periode) {
   const bew = kontoBewegungen(buchungen, periode);

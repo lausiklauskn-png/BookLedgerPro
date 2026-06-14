@@ -4,7 +4,7 @@ import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
-import { computeUStVoranmeldung, computeEUR } from '../../domain/taxes.js';
+import { computeUStVoranmeldung, computeEUR, verprobeUSt } from '../../domain/taxes.js';
 import { kostenstellenAuswertung } from '../../domain/costcenters.js';
 import { buildLedgerCsv, buildDatevCsv, buildUstVa, ustVaToCsv, eurToCsv } from '../../domain/export.js';
 import { downloadText } from '../../core/files.js';
@@ -36,6 +36,7 @@ async function repaint() {
   const p = (periode.von || periode.bis) ? { von: periode.von || undefined, bis: periode.bis || undefined } : undefined;
 
   const ust = computeUStVoranmeldung(buchungen, idx, p);
+  const verprobung = verprobeUSt(buchungen, idx, p);
   const eur = computeEUR(buchungen, idx, p);
   const va = buildUstVa(buchungen, idx, p);
   const ks = kostenstellenAuswertung(buchungen, idx, p);
@@ -51,6 +52,7 @@ async function repaint() {
       eurCard(eur),
     ]),
     vaCard(va),
+    verprobungCard(verprobung),
     claudeBereit ? assistentCard(va, eur, p) : null,
     ks.length ? kostenstellenCard(ks) : null,
     auditCard(audit),
@@ -170,6 +172,28 @@ function eurCard(eur) {
     el('div', { class: 'mycel-divider' }),
     zeile(t('reports.surplus'), eur.ueberschuss, { strong: true }),
     el('p', { class: 'muted small', text: t('reports.eurNote') }),
+  ]);
+}
+
+function verprobungCard(v) {
+  const block = (label, teil) => {
+    const abw = teil.diff !== 0;
+    return el('div', { class: 'report-line' + (abw ? ' strong' : '') }, [
+      el('span', { text: label }),
+      el('span', { class: 'num', text: `${formatEuro(teil.gebucht)} / ${formatEuro(teil.erwartet)}`
+        + (abw ? ` (${teil.diff > 0 ? '+' : ''}${formatEuro(teil.diff)})` : '') }),
+    ]);
+  };
+  return el('div', { class: `card audit ${v.ok ? 'audit-ok' : 'audit-fail'}` }, [
+    el('h2', { class: 'card-title', text: t('reports.verprobung') }),
+    el('div', { class: 'audit-status' }, [
+      el('span', { class: 'audit-dot' }),
+      el('span', { text: v.ok ? t('reports.verprobungOk') : t('reports.verprobungAbw') }),
+    ]),
+    el('p', { class: 'muted small', text: t('reports.verprobungSpalten') }),
+    block(t('reports.ust'), v.umsatzsteuer),
+    block(t('reports.vorsteuer'), v.vorsteuer),
+    el('p', { class: 'muted small', text: t('reports.verprobungNote') }),
   ]);
 }
 

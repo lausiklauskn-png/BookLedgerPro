@@ -4,6 +4,7 @@
 // und baut korrekte Soll/Haben-Zeilen samt USt-Aufteilung.
 
 import { baueBuchungZeilen } from '../domain/journal.js';
+import { pruefeBuchung } from '../domain/pruefung.js';
 
 /** Findet ein Steuer-Konto (Rolle vorsteuer/umsatzsteuer) zum Satz. */
 function findeSteuerKonto(accountIndex, rolle, satz) {
@@ -49,16 +50,30 @@ export function buildVorschlag(extracted, kategorie, accountIndex, opts = {}) {
     steuerKonto, steuerSeite,
   });
 
+  const datum = extracted.datum || new Date().toISOString().slice(0, 10);
+  const beschreibung = extracted.vendor || kategorie.label;
+
+  // Spielraum-Prinzip: der Vorschlag wird IMMER zurückgegeben (sofern ein Betrag
+  // da ist), damit der Nutzer ihn als Entwurf sehen und anpassen kann. Harte
+  // Mängel (fehler) und Hinweise (warnungen) werden mitgeliefert — blockiert wird
+  // erst beim Festschreiben (store.festschreiben), nicht beim Erfassen.
+  const { fehler, warnungen } = pruefeBuchung(
+    { datum, beschreibung, zeilen: built.zeilen }, accountIndex,
+    { kleinunternehmer: opts.kleinunternehmer },
+  );
+
   return {
     ok: true,
+    fehler, warnungen,
     vorschlag: {
-      datum: extracted.datum || new Date().toISOString().slice(0, 10),
-      beschreibung: extracted.vendor || kategorie.label,
+      datum,
+      beschreibung,
       zeilen: built.zeilen,
       netto: built.netto, steuer: built.steuer, brutto: built.brutto,
       ustSatz: steuerKonto ? satz : 0,
       richtung: kategorie.richtung,
       gegenkonto, sachkonto,
+      fehler, warnungen,
       confidence: Math.round(((extracted.confidence + kategorie.confidence) / 2) * 100) / 100,
     },
   };

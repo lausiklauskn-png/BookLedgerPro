@@ -5,6 +5,69 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — USt-Verprobung + Kleinunternehmer-Schalter (Berater-Substanz)
+
+**Was getan** (Folge-Batch zur Profi-Härtung, gleiche PR-Branch)
+- **USt-Verprobung** (`src/domain/taxes.js` → `verprobeUSt`): reiner Berater-Check, der die
+  GEBUCHTE Vor-/Umsatzsteuer mit der aus Netto×Satz ERWARTETEN vergleicht (pro Buchung/Satz
+  gerundet → keine Rundungs-Fehlalarme). Deckt vergessene/falsch gerechnete USt auf. In den
+  Auswertungen als grün/rot-Karte (`verprobungCard`) mit „gebucht / erwartet (Abweichung)".
+- **Kleinunternehmer-Schalter (§19 UStG)**: `kleinunternehmer` in den Einstellungen
+  (Ja/Nein-Segment), `state.js`-Default `false`. Wird an `pruefeBuchung`/`buildVorschlag`
+  durchgereicht → unterdrückt die USt-„vergessen"-Hinweise für §19-Nutzer.
+- **Audit-Kette war bereits sichtbar** (Dashboard-Badge + Reports `auditCard` via
+  `verifyAuditChain`) — nichts dupliziert.
+- i18n de/en (reports.verprobung*, settings.kleinunternehmer, common.yes/no). SW-Cache `v26→v27`.
+- `tests/run.mjs`: +6 `verprobeUSt`. **Gesamt 162/162 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 162/0; `node --check` aller geänderten Dateien.
+**Nicht verifiziert (ehrlich):** neue UI (Verprobungs-Karte, Kleinunternehmer-Segment) nicht
+headless-E2E geklickt. **EÜR §4(3)/DATEV** und **KI-Berater mit Rechts-Grundlage** sind als
+eigene Folge-PRs geplant (zu groß für diesen Batch — Ehrlichkeits-Vertrag).
+
+**Offen / Nächstes:** KI-Berater (Begründung/Notiz-Feld + kuratiertes Regel-Set
+`rechtsregeln.js` + Prompt + UI); EÜR §4(3) Zufluss/Abfluss; DATEV-EXTF zertifiziert.
+**Details: `docs/PULS.md`.**
+
+---
+
+## 2026-06-14 — Profi-Härtung mit Spielraum: Kontoart-Richtung + Plausibilitäts-Hinweise
+
+**Was getan**
+- `src/ai/mistral.js`: neue reine, node-testbare Funktion **`resolveKategorie(parsed, kontoIndex)`**.
+  Die Buchungs-**Richtung** (einnahme/ausgabe) wird jetzt VERBINDLICH aus der Kontoart
+  abgeleitet (ERTRAG→einnahme, AUFWAND→ausgabe) statt der Modell-Antwort blind zu trauen.
+  Folge: ein vom Modell falsch gelabeltes Erlöskonto („ausgabe") kann **keine falsche
+  Soll/Haben-Buchung** mehr erzeugen. Nicht-Erfolgskonten (z.B. Bank 1200) werden
+  abgelehnt → On-Device-Heuristik greift. `categorize()` nutzt jetzt diese Funktion.
+- **Profi-Substanz mit Spielraum** (Leitlinie des Nutzers: „hart wie Diamant, aber
+  bedienerfreundlich, mit Spielraum — keine Haken beim Eintragen, trotzdem Berater-tauglich"):
+  - NEU `src/domain/pruefung.js` — reine `pruefeBuchung(buchung, idx, opts)` trennt **harte
+    Fehler** (validateBuchung, nur festschreibe-relevant) von **nicht-blockierenden Hinweisen**:
+    USt vergessen (nur Erlös/Output-VAT, low-noise), Zukunftsdatum, Datum vor letzter
+    Festschreibung (zeitgerecht), fehlender Buchungstext, Soll=Haben-Konto;
+    `opts.kleinunternehmer` unterdrückt USt-Hinweise. Plus `istFestschreibbar()`.
+  - **Haken entfernt:** Journal-Formular speichert Entwürfe jetzt IMMER (vorher blockierte
+    `validateBuchung` das Speichern); `buildVorschlag()` liefert IMMER einen Vorschlag (mit
+    `fehler`/`warnungen` als Metadaten) statt `ok:false`. Streng bleibt nur `festschreiben()`.
+  - **Hinweise sichtbar, Profi entscheidet:** Journal zeigt gelbe Hinweis-Karte nach dem
+    Speichern; Festschreiben fragt bei Warnungen nach („… Trotzdem festschreiben?"); Beleg-
+    Vorschlagskarte zeigt Hinweise. i18n (de/en) + `.hinweis`-Style. SW-Cache `v25 → v26`,
+    `pruefung.js` in CORE_ASSETS, 54 JS-Module.
+- `tests/run.mjs`: +6 `resolveKategorie`, +4 Vorschlag-Spielraum, +13 `pruefeBuchung`/
+  Plausibilität. **Gesamt 156/156 grün** (vorher 134).
+
+**Verifiziert:** `node tests/run.mjs` → 156 bestanden, 0 fehlgeschlagen; `node --check` für alle
+geänderten UI-Dateien.
+**Nicht verifiziert (ehrlich):** Live-Mistral im Browser; die neuen UI-Hinweise (Journal-Karte,
+Festschreib-Dialog, Beleg-Karte) sind **nicht headless-E2E** geklickt — nur Logik node-getestet.
+Kein Kleinunternehmer-Schalter in den Einstellungen (opts vorhanden, UI-Toggle offen).
+
+**Offen / Nächstes:** Browser-Sichttest der Pipeline + neuer Hinweise; optional Kleinunternehmer-
+Schalter in Einstellungen; Sage 5b. **Details: `docs/PULS.md`.**
+
+---
+
 ## 2026-06-14 — KI-Setup-Politur + Nachfolge-Brief
 
 **Was getan**

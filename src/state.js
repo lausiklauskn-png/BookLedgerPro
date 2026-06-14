@@ -13,6 +13,7 @@ const DEFAULTS = Object.freeze({
   lang: 'de',
   aiAutonomy: 'suggest', // suggest / draft / auto
   taxProfile: 'DE',     // Deutschland zuerst
+  kleinunternehmer: false, // §19 UStG — unterdrückt USt-Hinweise
 });
 
 const _state = { settings: { ...DEFAULTS }, route: 'dashboard' };

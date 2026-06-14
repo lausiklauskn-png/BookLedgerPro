@@ -183,6 +183,11 @@ function viewSettings() {
       AI_LEVELS.map((a) => [a, t('settings.ai.' + a)]), s.aiAutonomy,
       (v) => updateSettings({ aiAutonomy: v }), t('settings.ai.hint')),
 
+    seg(t('settings.kleinunternehmer'), 'kleinunternehmer',
+      [['nein', t('common.no')], ['ja', t('common.yes')]], s.kleinunternehmer ? 'ja' : 'nein',
+      async (v) => { await updateSettings({ kleinunternehmer: v === 'ja' }); paint(); },
+      t('settings.kleinunternehmer.hint')),
+
     seg(t('settings.theme'), 'theme',
       [['system', t('settings.theme.system')], ['light', t('settings.theme.light')], ['dark', t('settings.theme.dark')]],
       s.theme, async (v) => { applyTheme(v); await updateSettings({ theme: v }); }),

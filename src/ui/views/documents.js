@@ -49,7 +49,7 @@ function schnellerfassung() {
       out.replaceChildren();
       const ex = extractFromText(ta.value);
       const kat = await categorizeAI(ta.value, _idx);
-      const res = buildVorschlag(ex, kat, _idx);
+      const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
       if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
       out.appendChild(await vorschlagKarte(res.vorschlag, null));
     },
@@ -78,6 +78,15 @@ async function vorschlagKarte(vorschlag, belegId) {
     el('div', { class: 'muted small', text: `${vorschlag.datum} · ${vorschlag.beschreibung}` }),
     el('div', { class: 'vorschlag-zeilen' }, zeilenTxt),
   ]);
+
+  // Nicht-blockierende Hinweise (USt vergessen, Zukunftsdatum …) — Spielraum.
+  const warnungen = vorschlag.warnungen || [];
+  if (warnungen.length) {
+    card.appendChild(el('div', { class: 'hinweis' }, [
+      el('strong', { class: 'small', text: t('docs.hints') }),
+      el('ul', { class: 'hinweis-liste' }, warnungen.map((w) => el('li', { class: 'small', text: w }))),
+    ]));
+  }
 
   const status = el('p', { class: 'muted small' });
   async function uebernehmen() {
