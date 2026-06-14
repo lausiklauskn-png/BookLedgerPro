@@ -16,6 +16,10 @@ import { seedAccounts } from '../src/domain/accounts.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
+import { auftragSummen, darfWechseln, validateAuftrag } from '../src/domain/orders.js';
+import { rechnungZeilen } from '../src/domain/invoicing.js';
+import { zeitSummen, formatDauer } from '../src/domain/employees.js';
+import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -281,6 +285,61 @@ await section('Extraktion: leerer/unklarer Text', () => {
   ok('niedrige Confidence', ex.confidence < 0.3);
   const res = buildVorschlag(ex, categorize('x'), indexFromSeed());
   ok('ohne Betrag kein Vorschlag', res.ok === false);
+});
+
+// ===== Phase 3: Aufträge, Rechnung, Zeit, Kostenstellen =====
+
+await section('Aufträge: Summen über mehrere USt-Sätze', () => {
+  const positionen = [
+    { menge: 2, einzelpreisCent: 5000, ustSatz: 19 },  // 100,00 @19
+    { menge: 1, einzelpreisCent: 10000, ustSatz: 7 },  // 100,00 @7
+  ];
+  const s = auftragSummen(positionen);
+  ok('Netto 20000', s.netto === 20000);
+  ok('USt 2600 (1900+700)', s.ust === 2600);
+  ok('Brutto 22600', s.brutto === 22600);
+  ok('Status-Flow angelegt->in_arbeit erlaubt', darfWechseln('angelegt', 'in_arbeit'));
+  ok('Status-Flow berechnet->x gesperrt', !darfWechseln('berechnet', 'angelegt'));
+  ok('Auftrag ohne Position ungültig', validateAuftrag({ titel: 'x', positionen: [] }).length > 0);
+});
+
+await section('Rechnung → Buchung (Ausgangsrechnung, mehrere Sätze)', () => {
+  const auftrag = { titel: 'Projekt', positionen: [
+    { menge: 2, einzelpreisCent: 5000, ustSatz: 19 },
+    { menge: 1, einzelpreisCent: 10000, ustSatz: 7 },
+  ] };
+  const { zeilen } = rechnungZeilen(auftrag);
+  ok('Soll Forderung 1400 = 22600', zeile(zeilen, '1400', 'S')?.betrag === 22600);
+  ok('Haben Erlöse 8400 = 10000', zeile(zeilen, '8400', 'H')?.betrag === 10000);
+  ok('Haben USt 1776 = 1900', zeile(zeilen, '1776', 'H')?.betrag === 1900);
+  ok('Haben Erlöse 8300 = 10000', zeile(zeilen, '8300', 'H')?.betrag === 10000);
+  ok('Haben USt 1771 = 700', zeile(zeilen, '1771', 'H')?.betrag === 700);
+  ok('Rechnungsbuchung ausgeglichen', istAusgeglichen(zeilen));
+});
+
+await section('Zeiterfassung: Summen & Kosten', () => {
+  const s = zeitSummen([{ dauerMin: 90 }, { dauerMin: 30 }], 5000);
+  ok('120 Minuten', s.minuten === 120);
+  ok('2 Stunden', s.stunden === 2);
+  ok('Kosten 10000 (2h × 50,00)', s.kostenCent === 10000);
+  ok('ohne Lohn kein Kostenwert', zeitSummen([{ dauerMin: 60 }]).kostenCent === null);
+  ok('formatDauer 90 → 1h 30m', formatDauer(90) === '1h 30m');
+});
+
+await section('Kostenstellen-Auswertung', () => {
+  const idx = {
+    '4210': { art: KONTOART.AUFWAND }, '1200': { art: KONTOART.AKTIV },
+    '8400': { art: KONTOART.ERTRAG }, '1776': { art: KONTOART.PASSIV },
+  };
+  const buchungen = [
+    { seq: 1, datum: '2026-06-01', kostenstelle: 'KS1', zeilen: [{ konto: '4210', seite: 'S', betrag: 50000 }, { konto: '1200', seite: 'H', betrag: 50000 }] },
+    { seq: 2, datum: '2026-06-02', kostenstelle: 'KS1', zeilen: [{ konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+  ];
+  const res = kostenstellenAuswertung(buchungen, idx);
+  const ks1 = res.find((r) => r.kostenstelle === 'KS1');
+  ok('KS1 Aufwand 50000', ks1.aufwand === 50000);
+  ok('KS1 Ertrag 20000', ks1.ertrag === 20000);
+  ok('KS1 Saldo -30000', ks1.saldo === -30000);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

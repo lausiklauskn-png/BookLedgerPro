@@ -16,14 +16,20 @@ import { mountAccounts } from './views/accounts.js';
 import { mountJournal } from './views/journal.js';
 import { mountReports } from './views/reports.js';
 import { mountDocuments } from './views/documents.js';
+import { mountCustomers } from './views/customers.js';
+import { mountOrders } from './views/orders.js';
+import { mountEmployees } from './views/employees.js';
 import { getAiConfig, saveAiConfig, AI_MODELS } from '../ai/provider.js';
 
 const NAV = [
   ['dashboard', 'nav.dashboard'],
-  ['accounts', 'nav.accounts'],
   ['journal', 'nav.journal'],
-  ['reports', 'nav.reports'],
+  ['accounts', 'nav.accounts'],
   ['documents', 'nav.documents'],
+  ['orders', 'nav.orders'],
+  ['customers', 'nav.customers'],
+  ['employees', 'nav.employees'],
+  ['reports', 'nav.reports'],
   ['settings', 'nav.settings'],
 ];
 
@@ -88,6 +94,9 @@ function renderRoute() {
   if (route === 'journal') return void mountJournal(content);
   if (route === 'reports') return void mountReports(content);
   if (route === 'documents') return void mountDocuments(content);
+  if (route === 'orders') return void mountOrders(content);
+  if (route === 'customers') return void mountCustomers(content);
+  if (route === 'employees') return void mountEmployees(content);
   return mount(content, viewPlaceholder(route));
 }
 

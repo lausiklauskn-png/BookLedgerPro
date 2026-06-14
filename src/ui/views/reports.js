@@ -5,6 +5,7 @@ import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
 import { computeUStVoranmeldung, computeEUR } from '../../domain/taxes.js';
+import { kostenstellenAuswertung } from '../../domain/costcenters.js';
 
 let _host = null;
 const periode = { von: '', bis: '' };
@@ -22,6 +23,7 @@ async function repaint() {
 
   const ust = computeUStVoranmeldung(buchungen, idx, p);
   const eur = computeEUR(buchungen, idx, p);
+  const ks = kostenstellenAuswertung(buchungen, idx, p);
   const audit = await verifyAuditChain();
 
   mount(_host, el('section', { class: 'view' }, [
@@ -31,8 +33,30 @@ async function repaint() {
       ustCard(ust),
       eurCard(eur),
     ]),
+    ks.length ? kostenstellenCard(ks) : null,
     auditCard(audit),
   ]));
+}
+
+function kostenstellenCard(ks) {
+  const rows = ks.map((k) => el('tr', {}, [
+    el('td', { class: 'mono', text: k.kostenstelle }),
+    el('td', { class: 'num', text: formatEuro(k.aufwand) }),
+    el('td', { class: 'num', text: formatEuro(k.ertrag) }),
+    el('td', { class: 'num', text: formatEuro(k.saldo) }),
+  ]));
+  return el('div', { class: 'card no-pad' }, [
+    el('div', { class: 'pad' }, el('h2', { class: 'card-title', text: t('reports.costcenters') })),
+    el('table', { class: 'table' }, [
+      el('thead', {}, el('tr', {}, [
+        el('th', { text: t('reports.costcenters') }),
+        el('th', { class: 'num', text: t('reports.aufwand') }),
+        el('th', { class: 'num', text: t('reports.ertrag') }),
+        el('th', { class: 'num', text: t('reports.ksSaldo') }),
+      ])),
+      el('tbody', {}, rows),
+    ]),
+  ]);
 }
 
 function periodeControls() {
