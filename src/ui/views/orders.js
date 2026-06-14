@@ -42,7 +42,11 @@ function positionsRow() {
   const menge = el('input', { type: 'text', value: '1' });
   const preis = el('input', { type: 'text', placeholder: '0,00' });
   const ust = el('select', {}, UST_SAETZE.map((s) => el('option', { value: String(s) }, `${s} %`)));
-  const row = el('div', { class: 'pos-row' }, [desc, menge, preis, ust]);
+  const remove = el('button', {
+    class: 'btn btn-sm btn-danger pos-remove', type: 'button', text: '✕', title: t('orders.removePos'),
+    onClick: () => { const box = row.parentElement; if (box && box.querySelectorAll('.pos-row').length > 1) row.remove(); },
+  });
+  const row = el('div', { class: 'pos-row' }, [desc, menge, preis, ust, remove]);
   row._read = () => ({
     beschreibung: desc.value,
     menge: Number(String(menge.value).replace(',', '.')) || 0,
@@ -77,7 +81,7 @@ function form() {
   }, [
     el('h2', { class: 'card-title', text: t('orders.new') }),
     el('div', { class: 'form-grid' }, [field(t('orders.titel'), titel), field(t('orders.customer'), kunde), field(t('orders.kostenstelle'), ks)]),
-    el('div', { class: 'pos-head' }, [el('span', { text: t('orders.posDesc') }), el('span', { text: t('orders.qty') }), el('span', { text: t('orders.price') }), el('span', { text: t('orders.vat') })]),
+    el('div', { class: 'pos-head' }, [el('span', { text: t('orders.posDesc') }), el('span', { text: t('orders.qty') }), el('span', { text: t('orders.price') }), el('span', { text: t('orders.vat') }), el('span', {})]),
     posBox,
     el('div', { class: 'btn-row' }, [addPos]),
     err,

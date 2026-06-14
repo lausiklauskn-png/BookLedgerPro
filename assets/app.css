@@ -215,7 +215,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .provider-link:hover { text-decoration: underline; }
 
 /* ---- Auftrags-Positionen -------------------------------------------------- */
-.pos-head, .pos-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: .5rem; align-items: center; }
+.pos-head, .pos-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: .5rem; align-items: center; }
+.pos-remove { padding: .2rem .5rem; line-height: 1; }
 .pos-head { font-size: .8rem; color: var(--text-muted); margin: .3rem 0 .1rem; }
 .pos-box { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .5rem; }
 .pos-row input, .pos-row select {
