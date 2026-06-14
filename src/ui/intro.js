@@ -27,8 +27,12 @@ export function siegel() {
         el('li', { text: 'DSGVO-konform gestaltet: Privacy by Design, externe KI nur opt-in mit deinem eigenen Schlüssel (BYOK), Datenminimierung.' }),
         el('li', { text: 'GoBD-Architektur: Festschreibung mit Hash-Kette, Storno statt Löschen, lückenlose Nummern.' }),
       ]),
+      el('div', { class: 'siegel-anbieter' }, [
+        el('img', { class: 'siegel-iso', src: './assets/img/iso-iec.jpg', alt: 'ISO/IEC', loading: 'lazy' }),
+        el('span', { class: 'small', text: 'Anbieter-Zertifizierung: ISO/IEC 27001 / 27701 — Google Cloud (Vision) & Mistral (EU). Gilt für die genutzten EU-Dienste, nicht als Eigen-Zertifikat von BookLedgerPro.' }),
+      ]),
       el('div', { class: 'siegel-links' }, [
-        el('span', { class: 'muted small', text: 'Belege der Anbieter-Compliance: ' }),
+        el('span', { class: 'muted small', text: 'Belege: ' }),
         el('a', { href: 'https://cloud.google.com/security/compliance', target: '_blank', rel: 'noopener', text: 'Google Cloud (ISO 27001/27701, C5/BSI, EU Cloud CoC)' }),
         el('span', { text: ' · ' }),
         el('a', { href: 'https://mistral.ai/terms', target: '_blank', rel: 'noopener', text: 'Mistral AI (EU)' }),
