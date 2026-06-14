@@ -5,6 +5,24 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — KI-Setup-Politur + Nachfolge-Brief
+
+**Was getan**
+- KI-Einstellungen: **„Verbindung testen"**-Knöpfe (Vision/Mistral), Direktlinks zur
+  Schlüssel-Erstellung, Schritt-Anleitung + „Vision-API aktivieren"-Link, Persistenz-Hinweis,
+  **Klartext-Fehlerhinweise** (`visionFehlerHinweis`: Vertex/Agent-Key, Referrer, API nicht
+  aktiv, Abrechnung, Key ungültig). SW bis `v25`.
+- **`docs/PULS.md` angelegt** — zentraler Nachfolge-Brief/Stand-Schnappschuss; in `CLAUDE.md`
+  als Pflicht-Andockpunkt verankert.
+
+**Live verifiziert (Nutzer-Sichttest):** Vision (EU) **aktiv ✓** + Mistral (EU) **aktiv ✓**.
+Gelöst: Vertex/Agent-Express-Key taugt nicht für Vision → Standard-Cloud-Vision-Key nötig.
+
+**Offen / Nächstes:** Beleg→Buchung-Pipeline im Browser durchklicken; Sage 5b (Spore in-app
+erzeugen + Hub-Registrierung). **Details: `docs/PULS.md`.**
+
+---
+
 ## 2026-06-14 — EU-KI-Umstellung (Google Vision EU + Mistral EU)
 
 **Was getan (auf Nutzerwunsch, Vorbild Mein-WorkFloh)**

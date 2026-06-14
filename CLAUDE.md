@@ -51,8 +51,9 @@ kann und nichts beschönigt wird.
 5. PR mit ehrlicher Verifikations-Sektion (inkl. was NICHT geprüft wurde).
 
 **Lückenloses Weiterarbeiten:** Eine neue Sitzung muss allein aus `CLAUDE.md` + `ROADMAP.md`
-+ `docs/SESSIONS.md` (oberster Eintrag) genau wissen, wo es weitergeht. Diese drei immer
-aktuell halten.
++ `docs/PULS.md` (Nachfolge-Brief/Stand-Schnappschuss) + `docs/SESSIONS.md` (oberster Eintrag)
+genau wissen, wo es weitergeht. Diese vier immer aktuell halten — **`docs/PULS.md` ist der
+zentrale Andockpunkt** (oben „Letzter Stand" + „Nächste konkrete Schritte" pflegen).
 
 ## Arbeitsweise
 - Branch: `claude/general-discussion-x9xyk9` (bzw. der für die Sitzung vorgegebene).
