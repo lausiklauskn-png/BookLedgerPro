@@ -198,12 +198,51 @@ function viewSettings() {
 
     aiConfigSection(),
 
+    firmaSection(s),
+
     el('div', { class: 'setting' }, [
       el('div', { class: 'setting-label', text: 'Backup' }),
       el('div', { class: 'btn-row' }, [
         el('button', { class: 'btn', text: t('settings.backup'), onClick: doBackup }),
         el('button', { class: 'btn', text: t('settings.restore'), onClick: doRestore }),
       ]),
+    ]),
+  ]);
+}
+
+// Firmenprofil (Rechnungssteller-Stammdaten, §14 UStG) — verschlüsselt in Settings.
+function firmaSection(s) {
+  const f = s.firma || {};
+  const inp = (val, ph) => el('input', { type: 'text', value: val || '', placeholder: ph });
+  const name = inp(f.name, t('settings.firma.name'));
+  const anschrift = inp(f.anschrift, t('settings.firma.anschrift'));
+  const steuernummer = inp(f.steuernummer, t('settings.firma.steuernummer'));
+  const ustId = inp(f.ustId, t('settings.firma.ustId'));
+  const iban = inp(f.iban, t('settings.firma.iban'));
+  const status = el('span', { class: 'muted small' });
+  const field = (label, input) => el('label', { class: 'field' }, [el('span', { text: label }), input]);
+  return el('div', { class: 'setting' }, [
+    el('div', { class: 'setting-label', text: t('settings.firma') }),
+    el('p', { class: 'muted small', text: t('settings.firma.hint') }),
+    el('div', { class: 'form-grid' }, [
+      field(t('settings.firma.name'), name),
+      field(t('settings.firma.anschrift'), anschrift),
+      field(t('settings.firma.steuernummer'), steuernummer),
+      field(t('settings.firma.ustId'), ustId),
+      field(t('settings.firma.iban'), iban),
+    ]),
+    el('div', { class: 'btn-row' }, [
+      el('button', {
+        class: 'btn btn-sm btn-primary', text: t('settings.save'),
+        onClick: async () => {
+          await updateSettings({ firma: {
+            name: name.value.trim(), anschrift: anschrift.value.trim(),
+            steuernummer: steuernummer.value.trim(), ustId: ustId.value.trim(), iban: iban.value.trim(),
+          } });
+          status.textContent = t('settings.saved');
+        },
+      }),
+      status,
     ]),
   ]);
 }

@@ -3,10 +3,20 @@
 // Personenbezogene Daten verschlüsselt (encstore). Rechnung → Buchungs-Entwurf.
 
 import { encPut, encGet, encList, encDel, neueId } from './encstore.js';
-import { recAll, recPut, recDel } from '../core/db.js';
+import { recAll, recPut, recDel, kvGet, kvSet } from '../core/db.js';
 import { AUFTRAG_STATUS } from './orders.js';
 import { rechnungZeilen } from './invoicing.js';
+import { formatRechnungsnummer } from './rechnung.js';
 import { saveEntwurf } from './store.js';
+
+const RECHNUNG_SEQ_KEY = 'rechnungSeq';
+
+/** Vergibt die nächste fortlaufende Rechnungsnummer (§14(4) Nr.4) — Format JAHR-NNNN. */
+export async function naechsteRechnungsnummer() {
+  const seq = (Number(await kvGet(RECHNUNG_SEQ_KEY)) || 0) + 1;
+  await kvSet(RECHNUNG_SEQ_KEY, seq);
+  return formatRechnungsnummer(seq, new Date().getFullYear());
+}
 
 // ---- Kunden ----------------------------------------------------------------
 
@@ -28,6 +38,8 @@ export async function saveAuftrag(a) {
     status: a.status || AUFTRAG_STATUS.ANGELEGT,
     positionen: a.positionen || [], kostenstelle: a.kostenstelle || null,
     rechnungBuchungId: a.rechnungBuchungId || null,
+    rechnungNummer: a.rechnungNummer || null,
+    rechnungDatum: a.rechnungDatum || null,
     createdAt: a.createdAt || new Date().toISOString(),
   };
   return encPut(auftrag);
@@ -52,13 +64,17 @@ export async function rechnungAusAuftrag(id) {
   if (!a) throw new Error('Auftrag nicht gefunden');
   if (a.rechnungBuchungId) throw new Error('Auftrag wurde bereits berechnet');
   const { zeilen } = rechnungZeilen(a);
+  const datum = new Date().toISOString().slice(0, 10);
+  const nummer = await naechsteRechnungsnummer();
   const entwurf = await saveEntwurf({
-    datum: new Date().toISOString().slice(0, 10),
-    beschreibung: `Rechnung: ${a.titel}`,
+    datum,
+    beschreibung: `Rechnung ${nummer}: ${a.titel}`,
     zeilen,
     kostenstelle: a.kostenstelle || null,
   });
   a.rechnungBuchungId = entwurf.id;
+  a.rechnungNummer = nummer;
+  a.rechnungDatum = datum;
   a.status = AUFTRAG_STATUS.BERECHNET;
   await encPut(a);
   return entwurf;

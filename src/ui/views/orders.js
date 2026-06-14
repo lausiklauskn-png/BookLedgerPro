@@ -7,8 +7,10 @@ import { AUFTRAG_STATUS, STATUS_FLOW, auftragSummen, validateAuftrag } from '../
 import { UST_SAETZE } from '../../domain/taxes.js';
 import {
   listAuftraege, saveAuftrag, deleteAuftrag, setAuftragStatus, rechnungAusAuftrag,
-  listKunden, listKostenstellen, ensureKostenstellenSeeded,
+  listKunden, getKunde, listKostenstellen, ensureKostenstellenSeeded,
 } from '../../domain/crm-store.js';
+import { baueRechnung, pflichtangaben } from '../../domain/rechnung.js';
+import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
@@ -109,6 +111,75 @@ function liste(auftraege) {
   ])]);
 }
 
+// ---- Rechnungs-Dokument (druckbar, § 14 UStG) ------------------------------
+
+async function rechnungAnzeigen(a) {
+  const s = getSettings();
+  const kunde = a.kundeId ? (await getKunde(a.kundeId)) || {} : {};
+  const rechnung = baueRechnung({
+    auftrag: a, kunde, firma: s.firma || {},
+    nummer: a.rechnungNummer, datum: a.rechnungDatum, leistungsdatum: a.rechnungDatum,
+    kleinunternehmer: s.kleinunternehmer,
+  });
+  mount(_host, rechnungView(rechnung));
+}
+
+function adrBlock(titel, zeilen) {
+  return el('div', { class: 'rech-adr' }, [
+    el('div', { class: 'muted small', text: titel }),
+    ...zeilen.filter(Boolean).map((z) => el('div', { text: z })),
+  ]);
+}
+
+function rechnungView(r) {
+  const fehlt = pflichtangaben(r);
+  const posRows = r.positionen.map((p) => el('tr', {}, [
+    el('td', { text: p.beschreibung || '—' }),
+    el('td', { class: 'num', text: String(p.menge) }),
+    el('td', { class: 'num', text: formatEuro(p.einzelpreisCent) }),
+    el('td', { class: 'num', text: `${p.ustSatz} %` }),
+    el('td', { class: 'num', text: formatEuro(p.netto) }),
+  ]));
+  const sumRows = [
+    el('div', { class: 'report-line' }, [el('span', { text: t('reports.income') + ' (netto)' }), el('span', { class: 'num', text: formatEuro(r.netto) })]),
+    ...r.steuerzeilen.filter((z) => z.satz > 0 && !r.kleinunternehmer).map((z) =>
+      el('div', { class: 'report-line' }, [el('span', { text: `USt ${z.satz} %` }), el('span', { class: 'num', text: formatEuro(z.ust) })])),
+    el('div', { class: 'report-line strong' }, [el('span', { text: t('orders.gross') }), el('span', { class: 'num', text: formatEuro(r.brutto) })]),
+  ];
+  return el('section', { class: 'view' }, [
+    el('div', { class: 'btn-row no-print' }, [
+      el('button', { class: 'btn', text: t('common.back'), onClick: () => repaint() }),
+      el('button', { class: 'btn btn-primary', text: t('reports.print'), onClick: () => window.print() }),
+    ]),
+    fehlt.length ? el('div', { class: 'hinweis no-print' }, [
+      el('strong', { class: 'small', text: t('orders.invoiceMissing') }),
+      el('ul', { class: 'hinweis-liste' }, fehlt.map((m) => el('li', { class: 'small', text: m }))),
+    ]) : null,
+    el('div', { class: 'card rechnung-doc' }, [
+      el('div', { class: 'rech-kopf' }, [
+        adrBlock(t('orders.issuer'), [r.firma.name, r.firma.anschrift, r.firma.steuernummer ? `St.-Nr.: ${r.firma.steuernummer}` : '', r.firma.ustId ? `USt-IdNr.: ${r.firma.ustId}` : '']),
+        adrBlock(t('orders.recipient'), [r.kunde.name, r.kunde.adresse, r.kunde.ustId ? `USt-IdNr.: ${r.kunde.ustId}` : '']),
+      ]),
+      el('h2', { class: 'card-title', text: `${t('orders.invoiceTitle')} ${r.nummer || ''}` }),
+      el('div', { class: 'muted small' }, [
+        el('span', { text: `${t('journal.date')}: ${r.datum || '—'}` }),
+        el('span', { text: `   ·   ${t('orders.serviceDate')}: ${r.leistungsdatum || '—'}` }),
+      ]),
+      r.titel ? el('p', { text: r.titel }) : null,
+      el('table', { class: 'table' }, [
+        el('thead', {}, el('tr', {}, [
+          el('th', { text: t('orders.posDesc') }), el('th', { class: 'num', text: t('orders.qty') }),
+          el('th', { class: 'num', text: t('orders.price') }), el('th', { class: 'num', text: t('orders.vat') }),
+          el('th', { class: 'num', text: t('reports.income') }),
+        ])),
+        el('tbody', {}, posRows),
+      ]),
+      el('div', { class: 'rech-summen' }, sumRows),
+      r.kleinunternehmer ? el('p', { class: 'muted small', text: t('orders.kleinunternehmerHinweis') }) : null,
+    ]),
+  ]);
+}
+
 function aktionen(a) {
   const wrap = el('div', { class: 'btn-row' });
   for (const next of STATUS_FLOW[a.status] || []) {
@@ -125,6 +196,10 @@ function aktionen(a) {
         catch (e) { alert(String(e.message || e)); }
       },
     }));
+  }
+  if (a.rechnungNummer) {
+    wrap.appendChild(el('button', { class: 'btn btn-sm', text: t('orders.showInvoice'),
+      onClick: () => rechnungAnzeigen(a) }));
   }
   wrap.appendChild(el('button', { class: 'btn btn-sm', text: t('common.delete'),
     onClick: async () => { if (confirm(t('common.delete') + '?')) { await deleteAuftrag(a.id); await repaint(); } } }));

@@ -6,8 +6,8 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 **Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/bookledgerpro-status-jeo3qz`
-· **main-Stand:** `e59133c` · **Tests:** `node tests/run.mjs` → **180/180 grün**
-· **SW-Cache:** `v30` · **56 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **main-Stand:** `e59133c` · **Tests:** `node tests/run.mjs` → **191/191 grün**
+· **SW-Cache:** `v31` · **57 JS-Module** · **12 Bild- + 5 Icon-Assets**
 
 ---
 
@@ -82,7 +82,7 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
     BookLedgerPro ein deployter Sage-Knoten ist.
 - **Steuer-Recht-Resterledigung:** strenge Zufluss-/Abfluss-EÜR (§4 Abs.3 EStG);
   zertifiziertes DATEV-EXTF + Steuerschlüssel-Mapping; **keine** ELSTER/ERiC-Einreichung
-  (nur Datenpaket). PDF-Rechnung aus Auftrag fehlt (nur Buchung).
+  (nur Datenpaket). Rechnungsdokument mit §14-Pflichtangaben ✅ (druckbar via Browser-Print → PDF).
 - **Performance/Lighthouse** nicht gemessen (kein Headless-Browser).
 - **Lokales Offline-OCR** (Tesseract.js) nicht eingebunden — Vision EU ist der OCR-Pfad.
 - **Git-Nebensache:** Abzweig `claude/eu-ki-vision-mistral` zeigt remote noch auf denselben

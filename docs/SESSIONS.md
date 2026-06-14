@@ -5,6 +5,33 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-14 — Rechnungsdokument mit §14-UStG-Pflichtangaben (ausstellbare Rechnung)
+
+**Was getan** (wichtige Produkt-Lücke: bisher nur Buchung, kein Rechnungsdokument)
+- NEU `src/domain/rechnung.js` (rein, node-getestet): `baueRechnung({auftrag,kunde,firma,nummer,
+  datum,leistungsdatum,kleinunternehmer})` → strukturiertes Dokument (Positionen mit Netto,
+  Steuerzeilen je Satz, Summen, Kleinunternehmer-Variante ohne USt); `pflichtangaben(rechnung)`
+  prüft § 14 Abs. 4 UStG (Aussteller-Name/Anschrift, Steuernr./USt-IdNr., Empfänger, Datum,
+  fortlaufende Nummer, Leistungsbeschreibung, Leistungsdatum, Steuerausweis); `formatRechnungsnummer`.
+- `crm-store`: **fortlaufende Rechnungsnummer** (`naechsteRechnungsnummer`, kv `rechnungSeq`,
+  Format JAHR-NNNN) — bei `rechnungAusAuftrag` vergeben + `rechnungNummer`/`rechnungDatum` am Auftrag.
+- **Firmenprofil** (`settings.firma`: name, anschrift, steuernummer, ustId, iban) — Formular in
+  den Einstellungen (verschlüsselt gespeichert).
+- **Orders-UI:** Knopf „Rechnung anzeigen" → druckbares Rechnungs-Dokument (window.print),
+  §14-Lücken als Hinweis, Kleinunternehmer-Hinweis. Print-/Layout-CSS.
+- i18n de/en; SW-Cache `v30→v31`, `rechnung.js` in CORE_ASSETS.
+- `tests/run.mjs`: +11 (Aufbau, Summen mehrerer Sätze, Pflichtangaben vollständig/unvollständig,
+  Kleinunternehmer, Nummern-Format). **Gesamt 191/191 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 191/0; `node --check` aller geänderten Dateien.
+**Nicht verifiziert:** Rechnungs-UI/Druck nicht headless-E2E geklickt; `naechsteRechnungsnummer`/
+Firmenprofil-Persistenz nutzen IndexedDB/Vault (nicht node-getestet, Logik minimal).
+
+**Offen / Nächstes:** EÜR §4(3) Zufluss/Abfluss; DATEV-EXTF zertifizieren; Regel-Set erweitern.
+**Details: `docs/PULS.md`.**
+
+---
+
 ## 2026-06-14 — Entwurf bearbeiten & löschen (geschlossene Lücke im Bedien-Lebenszyklus)
 
 **Was getan** (Feinschliff: wichtige Bedien-Lücke)
