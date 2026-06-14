@@ -65,7 +65,7 @@ function installCard() {
 function schritteCard() {
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('guide.stepsTitle') }),
-    el('p', { class: 'muted small', text: t('guide.stepsHint') }),
+    el('p', { class: 'guide-highlight', text: t('guide.stepsHint') }),
 
     schritt(1, 'Beleg aus Text erfassen (Belege → Schnellerfassung)', [
       'Menü „Belege" → Feld „Schnellerfassung aus Text".',
