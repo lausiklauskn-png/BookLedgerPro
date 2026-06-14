@@ -336,3 +336,13 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 /* Passwort-ändern: Felder einspaltig (klar neben dem Schlüssel), Knopf mit Abstand. */
 .pw-form .form-grid { grid-template-columns: 1fr; max-width: 340px; }
 .pw-form .btn-row { margin-top: .8rem; }
+
+/* ---- Gebrauchsanleitung --------------------------------------------------- */
+.guide-step { padding: .6rem 0; border-top: 1px solid var(--border); }
+.guide-step:first-of-type { border-top: none; }
+.guide-step-head { display: flex; align-items: center; gap: .55rem; margin-bottom: .3rem; }
+.guide-num { flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: .85rem; }
+.guide-list { margin: .2rem 0 .4rem; padding-left: 1.2rem; }
+.guide-list li { margin: .2rem 0; }
+.copy-block { margin: .4rem 0 .2rem; }
+.copy-text { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm, 8px); padding: .6rem .7rem; white-space: pre-wrap; font-family: var(--mono); font-size: .82rem; margin: 0 0 .4rem; overflow-x: auto; }
