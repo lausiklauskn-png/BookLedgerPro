@@ -4,6 +4,7 @@
 
 import { requestPersistence } from './core/durability.js';
 import { showLockScreen } from './ui/lock.js';
+import { showIntro } from './ui/intro.js';
 import { renderShell } from './ui/shell.js';
 import { applyTheme } from './ui/theme.js';
 import { setLang } from './ui/i18n.js';
@@ -28,6 +29,9 @@ async function boot() {
   applyTheme('system');     // vorläufig, bis Settings geladen sind
   await requestPersistence(); // so früh wie möglich (Browser-Lehre 2)
   registerSW();
+
+  // Öffentliches Deckblatt/Datenblatt VOR der Anmeldung (zum Informieren).
+  await showIntro(root);
 
   // Sperrbildschirm/Onboarding bis entsperrt.
   await showLockScreen(root);

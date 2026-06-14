@@ -277,3 +277,52 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   }
   .nav-item { white-space: nowrap; }
 }
+
+/* ---- Deckblatt / Datenblatt (Intro + „Über") ----------------------------- */
+.intro-screen {
+  min-height: 100vh; display: flex; justify-content: center;
+  background:
+    radial-gradient(1100px 520px at 80% -10%, var(--accent-soft) 0%, transparent 55%),
+    var(--bg, #f6f8fa);
+  padding: 1.5rem 1rem; overflow-y: auto;
+}
+.intro-scroll { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 1rem; }
+.intro-skip { display: flex; gap: .5rem; align-items: flex-start; font-size: .85rem; color: var(--text-muted); }
+
+.deckblatt { display: flex; flex-direction: column; gap: 1rem; }
+.deckblatt-hero {
+  text-align: center; padding: 1.6rem 1rem; border-radius: var(--radius-lg, 18px);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+}
+.deckblatt-title { margin: .5rem 0 .2rem; font-size: 2rem; letter-spacing: .5px; }
+.deckblatt-tagline { margin: 0 0 .8rem; color: var(--text-muted); }
+.deckblatt-zielgruppen { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
+.pill {
+  padding: .25rem .8rem; border-radius: 999px; font-size: .8rem; font-weight: 600;
+  background: var(--accent-soft); color: var(--accent-strong); border: 1px solid transparent;
+}
+
+.siegel {
+  display: flex; gap: 1rem; align-items: flex-start; padding: 1rem;
+  border-radius: var(--radius, 12px); background: var(--surface);
+  border: 1px solid var(--accent); box-shadow: var(--shadow-sm);
+}
+.siegel-badge {
+  flex: none; width: 84px; height: 84px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff; text-align: center;
+  border: 3px solid var(--accent-strong);
+}
+.siegel-eu { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.siegel-badge-text { font-size: .6rem; font-weight: 700; margin-top: .15rem; }
+.siegel-body { flex: 1; min-width: 0; }
+.siegel-liste { margin: .4rem 0; padding-left: 1.1rem; font-size: .85rem; }
+.siegel-liste li { margin: .25rem 0; }
+.siegel-links { font-size: .8rem; margin-top: .3rem; }
+
+.datenblatt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.datenblatt-item { padding: .6rem .7rem; border-radius: var(--radius-sm, 8px); background: var(--surface-2); }
+@media (max-width: 600px) {
+  .datenblatt-grid { grid-template-columns: 1fr; }
+  .siegel { flex-direction: column; align-items: center; text-align: center; }
+}
