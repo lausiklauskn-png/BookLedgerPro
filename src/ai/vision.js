@@ -75,7 +75,21 @@ export async function testVision() {
     const res = await fetch(`${VISION_BASE}/${endpoint}?key=${encodeURIComponent(cfg.visionKey)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
-    if (!res.ok) { const t = await res.text().catch(() => ''); return { ok: false, message: `${res.status} ${t.slice(0, 120)}` }; }
+    if (!res.ok) { const t = await res.text().catch(() => ''); return { ok: false, message: `${res.status} ${t.slice(0, 120)}`, hinweis: visionFehlerHinweis(t) }; }
     return { ok: true, message: 'OK' };
   } catch (e) { return { ok: false, message: String(e.message || e) }; }
+}
+
+/** Übersetzt typische Google-Vision-Fehler in einen verständlichen Hinweis (oder ''). */
+export function visionFehlerHinweis(msg) {
+  const m = String(msg || '').toLowerCase();
+  if (m.includes('api keys are not supported') || m.includes('expected oauth2'))
+    return 'Kein normaler Cloud-Vision-Schlüssel (vermutlich ein Vertex-/Agent-Express-Schlüssel). Bitte Cloud Vision API aktivieren und einen STANDARD-API-Schlüssel erstellen.';
+  if (m.includes('referer') || m.includes('referrer') || m.includes('api_key_http_referrer'))
+    return 'Schlüssel ist auf eine andere Website beschränkt. Diese URL bei den HTTP-Verweis-URLs des Schlüssels freigeben.';
+  if (m.includes('has not been used') || m.includes('service_disabled') || m.includes('is disabled') || m.includes('not been enabled'))
+    return 'Cloud Vision API ist im Projekt nicht aktiviert — bitte aktivieren.';
+  if (m.includes('billing')) return 'Abrechnung für das Google-Cloud-Projekt aktivieren.';
+  if (m.includes('api key not valid') || m.includes('api_key_invalid')) return 'API-Schlüssel ungültig — bitte prüfen/neu erstellen.';
+  return '';
 }
