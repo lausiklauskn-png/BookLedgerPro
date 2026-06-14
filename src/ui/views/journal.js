@@ -110,8 +110,11 @@ function buchungForm(konten, idx) {
     onClick: async () => {
       beraterStatus.textContent = '…';
       try {
+        const sollK = idx[fSoll.value], habenK = idx[fHaben.value];
+        const kontierung = `Soll ${fSoll.value} ${sollK ? sollK.name : ''} an Haben ${fHaben.value} ${habenK ? habenK.name : ''}`.replace(/\s+/g, ' ').trim();
         const r = await begruendeBuchung({
-          beschreibung: fText.value, konto: fSoll.value, text: fText.value,
+          beschreibung: fText.value, konto: fSoll.value, kontoName: sollK ? sollK.name : '',
+          kontierung, text: fText.value,
           kleinunternehmer: getSettings().kleinunternehmer,
         });
         fBegruendung.value = r.text;

@@ -70,7 +70,9 @@ function schnellerfassung() {
 async function vorschlagKarte(vorschlag, belegId, quelltext) {
   const autonomy = getSettings().aiAutonomy; // suggest | draft | auto
   const kleinunternehmer = getSettings().kleinunternehmer;
-  const beraterKontext = { beschreibung: vorschlag.beschreibung, konto: vorschlag.sachkonto, text: quelltext || '', kleinunternehmer };
+  const sachK = _idx[vorschlag.sachkonto], gegenK = _idx[vorschlag.gegenkonto];
+  const kontierung = `${vorschlag.sachkonto} ${sachK ? sachK.name : ''} / Gegenkonto ${vorschlag.gegenkonto} ${gegenK ? gegenK.name : ''}`.replace(/\s+/g, ' ').trim();
+  const beraterKontext = { beschreibung: vorschlag.beschreibung, konto: vorschlag.sachkonto, kontoName: sachK ? sachK.name : '', kontierung, text: quelltext || '', kleinunternehmer };
   const zeilenTxt = vorschlag.zeilen.map((z) =>
     el('div', { class: 'mono small', text: `${z.seite}  ${z.konto}  ${formatEuro(z.betrag)}` }));
 
