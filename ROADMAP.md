@@ -39,6 +39,9 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 ## Phase 5 — Sage-Mycel-Symbiose
 - [ ] SBKIM-Client + `sbkim-sw.js` (Modul-09-Pfad), Ed25519-Identität, `domainVector`
 - [ ] `sbkim/spore.json` deployen, im Hub-`status.json` registrieren, erster Handshake
+- [ ] **Synchronisationsvereinbarung & Briefkasten** (`docs/SAGE_SYNC_BRIEFKASTEN.md`,
+      INTERFACES §11): `sbkim/SIGNAL.json` (seq/ack), `AUSTAUSCH-<Knoten>.md`-Postfächer,
+      `<gegenseite>_inbox.json`/`.verify.md`, headless-Verifizierer (`node:crypto`)
 - [ ] Symbiose: Belege aus Mein-Tresor, Aufträge aus WorkFloh → Buchungen
 
 ## Phase 6 — Design-Politur & Bilder

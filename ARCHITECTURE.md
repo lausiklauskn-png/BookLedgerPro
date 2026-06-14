@@ -18,7 +18,9 @@
 ## Verzeichnisbaum (Soll)
 
 ```
-index.html · manifest.webmanifest · sw.js · (Phase 5: sbkim-sw.js, sbkim/spore.json)
+index.html · manifest.webmanifest · sw.js · status.json (Phase 5)
+(Phase 5) sbkim-sw.js · sbkim/{spore.json, SIGNAL.json, AUSTAUSCH-<Knoten>.md,
+          <gegenseite>_inbox.json, <gegenseite>_inbox.verify.md}
 assets/        tokens.css · app.css · icon.svg · (Phase 6: Bilder)
 src/
   core/        crypto · shamir · db · durability · files · vault · backup · (Phase 1: audit)

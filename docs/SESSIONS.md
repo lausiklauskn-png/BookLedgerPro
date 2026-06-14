@@ -26,6 +26,12 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 - App bootet, Onboarding/Unlock/Settings funktionieren lokal. Buchhaltungs-Kern noch leer
   (Ansichten Konten/Journal/Belege sind Platzhalter).
 
+**Nachtrag (gleiche Sitzung)**
+- Sage-**Synchronisationsvereinbarung & Briefkasten** analysiert (INTERFACES §11) und als
+  `docs/SAGE_SYNC_BRIEFKASTEN.md` verankert (SIGNAL.json seq/ack, AUSTAUSCH-Postfächer,
+  Inbox-Konvention, Signier-Norm, Start-/End-Ritual). In CLAUDE/ROADMAP/ARCHITECTURE/README
+  verlinkt. Wird ab Phase 5 Pflicht.
+
 **Offen / Nächstes (Phase 1)**
 - Kontenplan + Buchungssätze (doppelte Buchführung), Journal, EÜR/USt.
 - GoBD: Festschreibung, Storno, Audit-Hash-Kette (`core/audit.js`), Nummernkreise.

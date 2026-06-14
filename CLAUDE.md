@@ -26,9 +26,19 @@ Familie: Mein-Tresor (Krypto), Mein-WorkFloh (Shell/Domäne), Sage-Protokol (SBK
 
 ## Arbeitsweise
 - Branch: `claude/general-discussion-x9xyk9` (bzw. der für die Sitzung vorgegebene).
-- Pro Phase ein PR (Draft), Beschreibung mit Verifikation. Auto-Merge wenn grün.
+- Pro Phase ein PR. **Freibrief für dieses Repo: mergen, wenn sinnvoll & nutzerfreundlich**
+  (CI grün, in sich abgeschlossen). Beschreibung mit Verifikation.
 - `node tests/run.mjs` vor dem Push laufen lassen.
 - Nach jeder Sitzung `docs/SESSIONS.md` fortschreiben (was getan, was offen).
+
+## Sage-Briefkasten-Ritual (ab Phase 5 Pflicht — netzweite Regel §11.6)
+Sobald BookLedgerPro ein Sage-Knoten ist, gilt die **Synchronisationsvereinbarung**
+(`docs/SAGE_SYNC_BRIEFKASTEN.md`):
+- **Sitzungsstart (mit Andock-Bezug):** eigenes `sbkim/SIGNAL.json` + das jeder
+  Gegenstelle (deren `raw/main`) lesen; bei `seq > ack[Gegenstelle]` deren `AUSTAUSCH`-Datei
+  + `status.json` lesen, handeln, **quittieren** (`ack` hochsetzen, Datum stempeln).
+- **Sitzungsende (wenn etwas gemeldet):** `seq` +1, `headline`/`lastBuild`/`forNodes`
+  setzen, Bau-Protokoll-Zeile ins Postfach, pushen — **das Pushen IST das Signal.**
 
 ## Wo was liegt
 Siehe `ARCHITECTURE.md`. Phasenstand in `ROADMAP.md`.

@@ -34,6 +34,8 @@ python3 -m http.server 8000
   Hintergrund: [`docs/SAGE_BROWSER_LEHREN.md`](docs/SAGE_BROWSER_LEHREN.md).
 - **Eine PWA = eine Identität**, origin-/instanzgebunden. DB-Suffix `bookledgerpro`
   verhindert Kollision mit den Geschwister-Apps (gemeinsamer Origin auf GitHub Pages).
+- **Sage-Symbiose (ab Phase 5)** folgt der netzweiten Synchronisationsvereinbarung &
+  dem Briefkasten-Ritual: [`docs/SAGE_SYNC_BRIEFKASTEN.md`](docs/SAGE_SYNC_BRIEFKASTEN.md).
 - **KI On-Device-first, externe KI strikt opt-in (BYOK).** Kein Klartext verlässt das
   Gerät ohne ausdrückliche Bestätigung.
 - **Recht ist Architektur:** GoBD-Festschreibung, DSGVO, USt/EÜR (Deutschland zuerst).
