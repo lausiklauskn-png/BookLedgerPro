@@ -5,6 +5,23 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Zahlungsabgleich: offene Posten + Matching + Ausgleichsbuchung
+
+**Was getan:** `src/domain/zahlungsabgleich.js` (neu, rein/getestet): `offenePosten(auftraege)`
+(offene Forderungen aus Aufträgen mit Status „berechnet"), `findeOffenePosten(umsatz, posten)`
+(konservativ: gleiche Richtung + exakter Betrag; Bewertung über Rechnungsnummer im Zweck +
+Kundenname + Datumsnähe), `zahlungsBuchungZeilen()` (Einnahme → Bank an Forderung; Ausgabe →
+Verbindlichkeit an Bank). Neuer Auftrags-Status **`bezahlt`** (orders.js + Flow). UI: Bank-Import
+zeigt je passendem Umsatz „✓ Zahlung auf Rechnung …" → bucht Ausgleich + markiert Auftrag bezahlt;
+sonst der normale Kategorisierungs-Vorschlag. SW `v54→v55`. **+10 Tests → 333/333 grün.**
+
+**Ehrlich offen:** Verbindlichkeiten-Posten (Eingangsrechnungen) noch nicht als Quelle erfasst
+(Logik ist richtungsneutral vorbereitet); **Teilzahlungen / unscharfes Matching** nicht abgedeckt
+(nur exakter Betrag); UI nicht headless-E2E. Damit ist die Ist-EÜR §4(3) praktisch nutzbar
+(Geldfluss ↔ offene Rechnungen), aber kein vollständiges OP-Management.
+
+---
+
 ## 2026-06-16 — Bankimport (Schritt 2): CAMT.053 + Format-Weiche
 
 **Was getan:** `src/domain/bankimport.js` um **CAMT.053** (ISO-20022-XML) erweitert: `parseCAMT()`

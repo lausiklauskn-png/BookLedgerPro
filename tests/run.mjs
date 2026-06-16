@@ -40,6 +40,7 @@ import { baueAnker } from '../src/ai/anker.js';
 import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
 import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat } from '../src/domain/bankimport.js';
+import { offenePosten, findeOffenePosten, zahlungsBuchungZeilen } from '../src/domain/zahlungsabgleich.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -1115,6 +1116,39 @@ await section('Bankimport: CAMT.053 (ISO 20022, XML) + Format-Weiche', () => {
   ok('parseBankauszug erkennt CAMT', parseBankauszug(camt).format === 'CAMT' && parseBankauszug(camt).umsaetze.length === 2);
   ok('parseBankauszug erkennt MT940', parseBankauszug(':25:DE12\n:61:2406030603D5,00NMSC\n:86:166?20Test').format === 'MT940');
   ok('parseBankauszug: unbekannt → leer', parseBankauszug('weder noch').format === null);
+});
+
+await section('Zahlungsabgleich: offene Posten + Matching + Ausgleichsbuchung', () => {
+  const auftraege = [
+    { id: 'a1', status: 'berechnet', rechnungNummer: '2026-0007', rechnungDatum: '2026-06-01', kundeId: 'k1',
+      positionen: [{ menge: 1, einzelpreisCent: 10000, ustSatz: 19 }] }, // brutto 11900
+    { id: 'a2', status: 'angelegt', kundeId: 'k2', positionen: [{ menge: 1, einzelpreisCent: 5000, ustSatz: 19 }] },
+    { id: 'a3', status: 'bezahlt', rechnungNummer: '2026-0006', kundeId: 'k1', positionen: [{ menge: 1, einzelpreisCent: 9999, ustSatz: 19 }] },
+  ];
+  const posten = offenePosten(auftraege, { nameById: { k1: 'Muster AG', k2: 'Zweite GmbH' } });
+  ok('nur „berechnet" ist offen', posten.length === 1 && posten[0].id === 'a1' && posten[0].betragCent === 11900);
+  ok('Posten trägt Referenz + Name', posten[0].referenz === '2026-0007' && posten[0].name === 'Muster AG');
+
+  // Treffer über Rechnungsnummer im Verwendungszweck.
+  const u = { richtung: 'einnahme', betragCent: 11900, valuta: '2026-06-05', zweck: 'Zahlung Rechnung 2026-0007', gegen: 'Muster AG' };
+  const m = findeOffenePosten(u, posten);
+  ok('Treffer gefunden', m && m.posten.id === 'a1');
+  ok('Score nutzt Nummer + Name', m.score >= 1 + 3 + 2);
+
+  // Falscher Betrag → kein Treffer.
+  ok('anderer Betrag → null', findeOffenePosten({ richtung: 'einnahme', betragCent: 9999 }, posten) === null);
+  // Falsche Richtung → kein Treffer.
+  ok('Ausgabe gegen Forderungsposten → null', findeOffenePosten({ richtung: 'ausgabe', betragCent: 11900 }, posten) === null);
+
+  // Ausgleichsbuchung Einnahme: Bank an Forderung, ausgeglichen.
+  const b = zahlungsBuchungZeilen(u, m.posten);
+  ok('Einnahme: Soll Bank 1200 / Haben Forderung 1400', b.zeilen[0].konto === '1200' && b.zeilen[0].seite === 'S' && b.zeilen[1].konto === '1400' && b.zeilen[1].seite === 'H');
+  ok('Beträge ausgeglichen 11900', b.zeilen[0].betrag === 11900 && b.zeilen[1].betrag === 11900);
+  ok('Beschreibung nennt Rechnung', /2026-0007/.test(b.beschreibung));
+
+  // Ausgleichsbuchung Ausgabe: Verbindlichkeit an Bank.
+  const ba = zahlungsBuchungZeilen({ richtung: 'ausgabe', betragCent: 5000, valuta: '2026-06-09' });
+  ok('Ausgabe: Soll Verbindlichkeit 1600 / Haben Bank 1200', ba.zeilen[0].konto === '1600' && ba.zeilen[1].konto === '1200' && ba.zeilen[1].seite === 'H');
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {

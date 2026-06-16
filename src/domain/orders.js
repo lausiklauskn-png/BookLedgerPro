@@ -7,6 +7,7 @@ export const AUFTRAG_STATUS = {
   IN_ARBEIT: 'in_arbeit',
   ERLEDIGT: 'erledigt',
   BERECHNET: 'berechnet',
+  BEZAHLT: 'bezahlt',
 };
 
 // Erlaubte Status-Übergänge (Workflow).
@@ -14,7 +15,8 @@ export const STATUS_FLOW = {
   angelegt: ['in_arbeit', 'erledigt'],
   in_arbeit: ['erledigt'],
   erledigt: ['berechnet'],
-  berechnet: [],
+  berechnet: ['bezahlt'],
+  bezahlt: [],
 };
 
 export function darfWechseln(von, nach) {
