@@ -5,6 +5,76 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
+---
+
+## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V2**)
+
+> **Lies das zuerst und vollständig. Danach kannst du ohne Rückfragen loslegen.**
+
+**Was „V2" bedeutet — WICHTIG, nicht missverstehen:**
+„V2" ist **KEINE** neue Programm-Version, **KEIN** Redesign, **KEIN** Major-Umbau. Falls dein
+Branch zufällig `claude/v2-…` heißt: **ignoriere den Branchnamen als Bedeutungsträger.**
+„V2" = **Punkt V2 aus dem Master-Fahrplan** in `docs/OFFENE_PUNKTE.md`, Abschnitt **„V. PROFI-
+READINESS"** → konkret: **„§13b/Reverse-Charge + EU/Ausland"** in der Umsatzsteuer. Mehr nicht.
+
+**Projektzustand (nichts davon neu bauen — ist fertig & gemergt):** reife Buchhaltungs-PWA,
+Phasen 0–6 ✅, EU-KI (Vision EU + Mistral EU) ✅. Diese Sitzung zuvor erledigt und in `main`:
+A2 Verbindlichkeiten, OP-Listen, A3 Zahlungsabgleich-Matching/Teilzahlungen, A1 Mahnwesen
+(B2B/Verbraucher + persistente Stufe), **Profi-Readiness-Fahrplan V1–V10**, **V1 Kontenrahmen**
+(57 Konten + Konto anlegen/bearbeiten/löschen). **Tests 444/444 grün, SW `v63`, `main`-Stand
+`607d2f2`.** → **Nicht** A1–A3 oder V1 wiederholen, **kein** Redesign, **keine** neue PULS-Datei.
+
+**Deine Aufgabe diese Sitzung = NUR V2.** Definition of Done unten. Danach V3 (AfA) usw. — aber
+immer **ein Fahrplan-Punkt pro Sitzung/PR**, nicht mehrere auf einmal.
+
+### V2 — was genau zu bauen ist (§13b/Reverse-Charge + EU/Ausland)
+Ziel: Die Firma bezieht selbst Leistungen mit **Steuerschuldumkehr** — z. B. **Google Cloud
+Vision / Mistral** (EU bzw. Ausland), Software-Abos, Drittland-Dienste. Heute kann die App das
+nicht korrekt buchen. Das ist ein **MUSS** für eine echte Firma.
+
+1. **Reverse-Charge §13b (Hauptfall, zuerst):** Eine Eingangsleistung ohne USt-Ausweis.
+   Buchung erzeugt **gleichzeitig**: Aufwand (Soll) · **abziehbare Vorsteuer §13b** (Soll, Konto
+   **1577**) · **Umsatzsteuer §13b geschuldet** (Haben, Konto **1787**) · Gegenkonto Bank/
+   Verbindlichkeit (Haben) über den **Netto**-Betrag. Netto an Lieferant; USt und VSt heben sich
+   i. d. R. auf (voller Vorsteuerabzug). Konten 1577/1787 ggf. via `addKonto` ergänzen bzw. in
+   `accounts.js` seedfähig machen (mit `rolle`-Markern für die USt-VA).
+2. **Innergem. Erwerb / Lieferung + Ausfuhr (danach):** ig Erwerb (Steuer + Vorsteuer), steuerfreie
+   ig Lieferung, steuerfreie Ausfuhr (Drittland).
+3. **USt-VA-Kennzahlen erweitern** (`export.js buildUstVa`, heute nur 81/86/66/83):
+   - §13b Leistungsempfänger: **Kz 46** (Bemessungsgrundlage) / **Kz 47** (Steuer);
+     abziehbare Vorsteuer §13b → **Kz 67**.
+   - ig Erwerb: **Kz 89** (BMG 19 %) / **Kz 93** (Steuer); Vorsteuer ig Erwerb → **Kz 61**.
+   - steuerfreie ig Lieferung **Kz 41**, steuerfreie Ausfuhr **Kz 43/Kz 21** (Formular prüfen).
+   - **EHRLICH/PFLICHT:** exakte Kennzahl-Zuordnung am **amtlichen ELSTER-USt-VA-Formular** bzw.
+     mit Berater verifizieren; im Zweifel konservativ + In-App-Hinweis „im Zweifel Berater".
+4. **UI:** im Beleg-/E-Rechnung-/Buchungs-Fluss eine Option „§13b/Reverse-Charge" bzw. Umsatzart
+   (Inland / §13b / ig Erwerb / ig Lieferung / Ausfuhr); Buchungsvorschlag entsprechend.
+
+### Arbeitsvertrag (verbindlich — so wie die letzten 8 PRs)
+- **Reine Logik ZUERST node-getestet** (`tests/run.mjs`): Buchungszeilen-Bau + VA-Kennzahlen.
+  Dann erst UI (UI ist nicht headless-E2E-testbar → klar als „statisch geprüft" kennzeichnen).
+- **`node tests/run.mjs` muss grün bleiben** (aktuell 444). **SW-Cache** `CACHE_VERSION` in `sw.js`
+  erhöhen (→ `v64`); neue Module ins Precache. **DB-Suffix `bookledgerpro` nie ändern.**
+- **1 PR für V2.** Branch z. B. `claude/v2-13b-reverse-charge-<kürzel>`. Draft-PR anlegen, CI
+  abwarten, **bei grün mergen** (Freibrief), danach lokal `git reset --hard origin/main`.
+- **Docs pflegen:** `OFFENE_PUNKTE.md` Abschnitt V → V2 abhaken; `PULS.md` (dieser Brief: oben
+  „Aktuell: V3" setzen) + Kopf-Status; obersten `SESSIONS.md`-Eintrag schreiben (Was getan/Stand/
+  Offen). PR-Beschreibung mit **ehrlicher Verifikation** (auch was NICHT geprüft wurde).
+- **Steuer-Disziplin:** nichts automatisch falsch buchen; §13b/EU ist heikel → konservativ,
+  Hinweise statt stiller Annahmen.
+
+### Schnellstart-Befehle
+```
+node tests/run.mjs                 # erwartet 444/444 grün (vor deinen Änderungen)
+git rev-parse --short HEAD         # sollte main = 607d2f2 (oder neuer) sein
+```
+Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
+`src/domain/journal.js` (Buchungszeilen-Bau), `src/domain/export.js` (`buildUstVa`),
+`src/domain/taxes.js` (USt-Berechnung), `src/ui/views/documents.js` + `journal.js` (UI),
+`src/ai/mistral.js`/`rechtsregeln.js` (Kontierungs-Hinweise). Tests: `tests/run.mjs`.
+
+---
+
 **Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v1-kontenrahmen-p84gtm`
 · **Tests:** `node tests/run.mjs` → **444/444 grün**
 · **SW-Cache:** `v63` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
