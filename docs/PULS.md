@@ -5,15 +5,17 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/verbindlichkeiten-eingangsrechnungen-p84gtm`
-· **Tests:** `node tests/run.mjs` → **393/393 grün**
-· **SW-Cache:** `v57` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
-· **Zahlungsabgleich** (Forderungen + **NEU Verbindlichkeiten**, Matching, Ausgleichsbuchung) ✓ ·
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/verbindlichkeiten-op-p84gtm`
+· **Tests:** `node tests/run.mjs` → **402/402 grün**
+· **SW-Cache:** `v58` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Zahlungsabgleich** (Forderungen + Verbindlichkeiten, Matching, Ausgleichsbuchung) ✓ ·
   **Bankimport** MT940+CAMT.053 ✓.
-· **NEU A2 — Verbindlichkeiten (Eingangsrechnungen):** `src/domain/payables.js` (+`payables-store.js`)
+· **A2 — Verbindlichkeiten (Eingangsrechnungen):** `src/domain/payables.js` (+`payables-store.js`)
   — `eingangsrechnungZeilen` (Aufwand+Vorsteuer an 1600), `offeneVerbindlichkeiten`
   (Posten-Quelle für den Zahlungsabgleich, `richtung:'ausgabe'`), Status/Zahlungen/Storno.
   UI: E-Rechnung „+ Als offene Verbindlichkeit erfassen" + Bankimport matcht Ausgangszahlungen.
+· **NEU OP-Liste:** Auswertungen-Karte **„Offene Verbindlichkeiten (Kreditoren)"** mit
+  Fälligkeit/Überfällig-Badge + CSV-Export (`anreichereVerbindlichkeiten`/`verbindlichkeitenSummen`).
 · **Mahnwesen (A1-Kern):** `src/domain/mahnwesen.js` — Fälligkeit/Überfälligkeit, Mahnstufen,
   Verzugszinsen §288 BGB, Mahnschreiben; Auswertungen-Karte „Offene Forderungen & Mahnwesen".
   **Offen (OFFENE_PUNKTE A1):** B2B/Verbraucher je Kunde, Mahnstufe persistent, Buchung der Zinsen/Gebühren.

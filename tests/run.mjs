@@ -44,8 +44,9 @@ import { offenePosten, findeOffenePosten, zahlungsBuchungZeilen } from '../src/d
 import {
   eingangsrechnungZeilen, eingangsrechnungSummen, bruttoVonPositionen, rechnungBrutto,
   offenerBetrag, rechnungStatus, offeneVerbindlichkeiten, summeOffeneVerbindlichkeiten,
-  validateEingangsrechnung,
+  validateEingangsrechnung, anreichereVerbindlichkeiten, verbindlichkeitenSummen,
 } from '../src/domain/payables.js';
+import { buildOffeneVerbindlichkeitenCsv } from '../src/domain/export.js';
 import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten } from '../src/domain/mahnwesen.js';
 
 function indexFromSeed() {
@@ -1251,6 +1252,31 @@ await section('Validierung Eingangsrechnung', () => {
   ok('gültige Rechnung ohne Fehler', validateEingangsrechnung({ kreditor: 'X', datum: '2026-06-01', positionen: [{ nettoCent: 100, ustSatz: 19 }] }).length === 0);
   ok('Brutto statt Positionen erlaubt', validateEingangsrechnung({ kreditor: 'X', datum: '2026-06-01', bruttoCent: 11900 }).length === 0);
   ok('weder Position noch Brutto → Fehler', validateEingangsrechnung({ kreditor: 'X', datum: '2026-06-01' }).length > 0);
+});
+
+await section('Verbindlichkeiten-OP-Liste: Fälligkeit/Überfälligkeit + Kennzahlen + CSV', () => {
+  const rechnungen = [
+    { id: 'er:1', kreditor: 'Alpha', rechnungsnr: 'A-1', datum: '2026-05-01', faelligAm: '2026-05-15', bruttoCent: 11900 }, // überfällig
+    { id: 'er:2', kreditor: 'Beta', rechnungsnr: 'B-2', datum: '2026-06-10', bruttoCent: 20000,
+      zahlungen: [{ datum: '2026-06-12', betragCent: 5000 }] },                                                            // im Ziel (datum+30)
+  ];
+  const posten = offeneVerbindlichkeiten(rechnungen);
+  const ang = anreichereVerbindlichkeiten(posten, { heute: '2026-06-16', zielTage: 30 });
+  const a1 = ang.find((p) => p.id === 'er:1');
+  const b2 = ang.find((p) => p.id === 'er:2');
+  ok('a1 nutzt eigene faelligAm 2026-05-15', a1.faelligAm === '2026-05-15');
+  ok('a1 überfällig 32 Tage', a1.ueberfaellig && a1.tageUeberfaellig === 32);
+  ok('b2 Fälligkeit = datum+30 (2026-07-10)', b2.faelligAm === '2026-07-10');
+  ok('b2 nicht überfällig', b2.ueberfaellig === false && b2.tageUeberfaellig === 0);
+
+  const sum = verbindlichkeitenSummen(ang);
+  ok('Summe offen 11900 + 15000 = 26900', sum.summeCent === 26900 && sum.anzahl === 2);
+  ok('überfällig: 1 Posten / 11900', sum.ueberfaelligAnzahl === 1 && sum.ueberfaelligCent === 11900);
+
+  const csvOut = buildOffeneVerbindlichkeitenCsv(ang);
+  ok('CSV Header nennt Überfällig-Spalte', csvOut.split('\r\n')[0].includes('Überfällig (Tage)'));
+  ok('CSV nennt Alpha + 119,00 + 32 Tage', csvOut.includes('Alpha') && csvOut.includes('119,00') && /;32$/m.test(csvOut.split('\r\n')[1]));
+  ok('CSV Summenzeile 269,00', csvOut.includes('Summe offen;269,00'));
 });
 
 await section('Mahnwesen: Fälligkeit, Überfälligkeit, Mahnstufe', () => {

@@ -66,9 +66,16 @@ Konkret nachzuarbeiten:
   Verbindlichkeiten zugeordnet und als „Verbindlichkeit an Bank" gebucht + Zahlung vermerkt.
 - 40 Node-Tests; `node tests/run.mjs` **393/393 grün**. SW-Cache `v57`.
 
-**Noch offen [SOLL]:** eigene **Verbindlichkeiten-/OP-Liste** (Ansicht) inkl. Fälligkeit/Skonto
-und Verzug der Gegenseite (Eingangsrechnungs-Mahnung); Teilzahlungs-Matching (siehe A3); Erfassung
-von Verbindlichkeiten auch aus Foto/PDF-Belegen (heute aus E-Rechnung-XML).
+**OP-Liste erledigt (2026-06-16):** Auswertungen-Karte **„Offene Verbindlichkeiten (Kreditoren)"**
+(`reports.js` + `payables.anreichereVerbindlichkeiten`/`verbindlichkeitenSummen`): offene Posten
+mit Fälligkeit (rechnungseigene `faelligAm`, sonst Datum + Zahlungsziel), **Überfällig-Badge**,
+Summe + überfällige Summe, **CSV-Export der OP-Liste** (`export.buildOffeneVerbindlichkeitenCsv`).
+Node-getestet; SW `v58`.
+
+**Noch offen [SOLL]:** **Skonto** (Zahlungsbedingungen je Rechnung), Verzug der Gegenseite
+(Eingangsrechnungs-Mahnung erhalten/prüfen); Teilzahlungs-Matching (siehe A3); Erfassung von
+Verbindlichkeiten auch aus **Foto/PDF-Belegen** (heute aus E-Rechnung-XML); eigene
+**Verbindlichkeiten-Ansicht** zum manuellen Anlegen/Bearbeiten (heute nur via E-Rechnung-Import).
 
 ### A3. Teilzahlungen & unscharfes Matching **[SOLL]**
 Zahlungsabgleich matcht aktuell nur **exakten Betrag**. Nötig: Teilzahlungen (Restforderung
