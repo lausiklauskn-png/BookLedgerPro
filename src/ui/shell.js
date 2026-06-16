@@ -17,6 +17,7 @@ import { mountAnlagen } from './views/anlagen.js';
 import { mountKassenbuch } from './views/kassenbuch.js';
 import { mountJournal } from './views/journal.js';
 import { mountReports } from './views/reports.js';
+import { mountBerichte } from './views/berichte.js';
 import { mountDocuments } from './views/documents.js';
 import { mountCustomers } from './views/customers.js';
 import { mountOrders } from './views/orders.js';
@@ -41,6 +42,7 @@ const NAV = [
   ['customers', 'nav.customers'],
   ['employees', 'nav.employees'],
   ['reports', 'nav.reports'],
+  ['berichte', 'nav.berichte'],
   ['network', 'nav.network'],
   ['legal', 'nav.legal'],
   ['anleitung', 'nav.anleitung'],
@@ -112,6 +114,7 @@ function renderRoute() {
   if (route === 'kassenbuch') return void mountKassenbuch(content);
   if (route === 'journal') return void mountJournal(content);
   if (route === 'reports') return void mountReports(content);
+  if (route === 'berichte') return void mountBerichte(content);
   if (route === 'documents') return void mountDocuments(content);
   if (route === 'orders') return void mountOrders(content);
   if (route === 'customers') return void mountCustomers(content);

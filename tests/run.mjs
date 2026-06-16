@@ -34,6 +34,8 @@ import {
 import { kassenbuchEintraege, kassenbericht, anfangsbestandZeilen, SALDENVORTRAG_KONTO } from '../src/domain/kassenbuch.js';
 import { buildKassenbuchCsv, buildElsterVaPaket } from '../src/domain/export.js';
 import { VA_ZEITRAUM, voranmeldungsperioden, periodeIndexFuer, sondervorauszahlung, jahresZahllast } from '../src/domain/umsatzsteuer.js';
+import { summenSaldenliste, kontenblatt, anlageEUR, eurGruppeFuer, EUR_GRUPPE } from '../src/domain/berichte.js';
+import { buildSusaCsv, buildKontenblattCsv, buildAnlageEURCsv } from '../src/domain/export.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -1677,6 +1679,48 @@ await section('V5: USt-VA Zeitraum + Sondervorauszahlung + ELSTER-Paket', () => 
   ok('ELSTER-Paket: Steuernummer enthalten', paket.includes('12/345/67890'));
   ok('ELSTER-Paket: Kz 83 enthalten', paket.includes('83;'));
   ok('ELSTER-Paket: Disclaimer (NICHT amtlich)', paket.includes('NICHT amtlich'));
+});
+
+await section('V6: SuSa + Kontenblatt + Anlage-EÜR-Gruppierung', () => {
+  const idx = indexFromSeed();
+  const buchungen = [
+    // Verkauf 238 (200 Erlös 8400 + 38 USt 1776), Geld auf Bank
+    { seq: 1, datum: '2026-02-10', beschreibung: 'Verkauf', zeilen: [{ konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+    // Miete 500 (4210) per Bank
+    { seq: 2, datum: '2026-02-15', beschreibung: 'Miete', zeilen: [{ konto: '4210', seite: 'S', betrag: 50000 }, { konto: '1200', seite: 'H', betrag: 50000 }] },
+    // Bürobedarf 119 (100 4930 + 19 VSt 1576) per Bank
+    { seq: 3, datum: '2026-02-20', beschreibung: 'Büro', zeilen: [{ konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }] },
+    { seq: null, datum: '2026-02-21', zeilen: [{ konto: '1200', seite: 'S', betrag: 1 }, { konto: '8200', seite: 'H', betrag: 1 }] }, // Entwurf zählt nicht
+  ];
+
+  // SuSa: Soll-Summe == Haben-Summe (doppelte Buchführung).
+  const susa = summenSaldenliste(buchungen, idx);
+  ok('SuSa: Soll-Summe == Haben-Summe', susa.summen.soll === susa.summen.haben && susa.summen.soll > 0);
+  const bank = susa.zeilen.find((z) => z.nummer === '1200');
+  ok('SuSa: Bank-Saldo 23800 - 50000 - 11900 = -38100', bank.saldo === -38100);
+  ok('SuSa-CSV enthält Summenzeile', buildSusaCsv(susa).includes('Summe'));
+
+  // Kontenblatt Bank: 3 Zeilen, Endsaldo == Bank-Saldo.
+  const blatt = kontenblatt(buchungen, '1200', idx);
+  ok('Kontenblatt Bank: 3 Bewegungen', blatt.eintraege.length === 3);
+  ok('Kontenblatt: chronologisch + laufender Saldo', blatt.eintraege[0].saldo === 23800 && blatt.endsaldo === -38100);
+  ok('Kontenblatt: Entwurf ausgeschlossen', !blatt.eintraege.some((e) => e.seq == null));
+  ok('Kontenblatt-CSV nennt Konto', buildKontenblattCsv(blatt).includes('1200'));
+
+  // Gruppen-Zuordnung.
+  ok('8400 → umsatzsteuerpflichtige Einnahmen', eurGruppeFuer(idx['8400']) === EUR_GRUPPE.EINN_UST);
+  ok('4210 → Raumkosten', eurGruppeFuer(idx['4210']) === EUR_GRUPPE.AUS_RAUM);
+  ok('4930 → Büro', eurGruppeFuer(idx['4930']) === EUR_GRUPPE.AUS_BUERO);
+  ok('Bank (Bestandskonto) → keine EÜR-Gruppe', eurGruppeFuer(idx['1200']) === null);
+
+  // Anlage-EÜR: Einnahmen 20000 (netto), Ausgaben 60000 (Miete 500 + Büro 100), Überschuss -40000.
+  const eur = anlageEUR(buchungen, idx);
+  ok('Anlage-EÜR: Summe Einnahmen 20000', eur.summeEinnahmen === 20000);
+  ok('Anlage-EÜR: Summe Ausgaben 60000', eur.summeAusgaben === 60000);
+  ok('Anlage-EÜR: Überschuss -40000', eur.ueberschuss === -40000);
+  ok('Anlage-EÜR: Raumkosten-Gruppe 50000', eur.ausgaben.find((a) => a.gruppe === EUR_GRUPPE.AUS_RAUM).wert === 50000);
+  ok('Anlage-EÜR: USt/VSt nicht als Erfolg gezählt', !eur.einnahmen.some((e) => (e.konten || []).includes('1776')));
+  ok('Anlage-EÜR-CSV: Überschusszeile', buildAnlageEURCsv(eur).includes('Überschuss'));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

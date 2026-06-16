@@ -320,6 +320,43 @@ export function buildKassenbuchCsv(bericht) {
   return csv(rows);
 }
 
+/** Summen- und Saldenliste (SuSa) als CSV. Erwartet berichte.summenSaldenliste(...). */
+export function buildSusaCsv(susa) {
+  const rows = [['Konto', 'Bezeichnung', 'Soll', 'Haben', 'Saldo']];
+  for (const z of susa.zeilen || []) {
+    rows.push([z.nummer, z.name, centsToComma(z.soll), centsToComma(z.haben), centsToComma(z.saldo)]);
+  }
+  rows.push(['', 'Summe', centsToComma(susa.summen.soll), centsToComma(susa.summen.haben), '']);
+  return csv(rows);
+}
+
+/** Kontenblatt (Kontoauszug) als CSV. Erwartet berichte.kontenblatt(...). */
+export function buildKontenblattCsv(blatt) {
+  const rows = [[`Konto ${blatt.nummer} · ${blatt.name}`], ['Datum', 'Nr', 'Buchungstext', 'Soll', 'Haben', 'Saldo']];
+  rows.push(['', '', 'Anfangssaldo', '', '', centsToComma(blatt.anfangssaldo)]);
+  for (const e of blatt.eintraege || []) {
+    rows.push([e.datum, e.seq ?? '', e.beschreibung || '',
+      e.soll ? centsToComma(e.soll) : '', e.haben ? centsToComma(e.haben) : '', centsToComma(e.saldo)]);
+  }
+  rows.push(['', '', 'Summe', centsToComma(blatt.summeSoll), centsToComma(blatt.summeHaben), '']);
+  rows.push(['', '', 'Endsaldo', '', '', centsToComma(blatt.endsaldo)]);
+  return csv(rows);
+}
+
+/**
+ * Anlage-EÜR-Gruppierung als CSV. Erwartet berichte.anlageEUR(...).
+ * EHRLICHER HINWEIS: an der Formularstruktur orientiert — Zeilennummern variieren jährlich.
+ */
+export function buildAnlageEURCsv(eur) {
+  const rows = [['Art', 'Gruppe (Anlage EÜR, orientierend)', 'Konten', 'Betrag']];
+  for (const e of eur.einnahmen || []) rows.push(['Betriebseinnahme', e.gruppe, (e.konten || []).join(' '), centsToComma(e.wert)]);
+  rows.push(['', 'Summe Betriebseinnahmen', '', centsToComma(eur.summeEinnahmen)]);
+  for (const a of eur.ausgaben || []) rows.push(['Betriebsausgabe', a.gruppe, (a.konten || []).join(' '), centsToComma(a.wert)]);
+  rows.push(['', 'Summe Betriebsausgaben', '', centsToComma(eur.summeAusgaben)]);
+  rows.push(['', 'Gewinn/Verlust (Überschuss)', '', centsToComma(eur.ueberschuss)]);
+  return csv(rows);
+}
+
 export function eurToCsv(eur) {
   const rows = [['Art', 'Konto', 'Bezeichnung', 'Betrag']];
   for (const e of eur.einnahmenKonten || []) rows.push(['Einnahme', e.nummer, e.name, centsToComma(e.wert)]);
