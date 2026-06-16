@@ -62,8 +62,9 @@ das **Bild** (separat bestätigt) — Bild-Pseudonymisierung ist NICHT Teil dies
 3. **Folgeschritte (offen):**
    - Steuer-Assistent (`taxAssist`/`mistral.erklaereSteuer`) sendet bereits nur
      **aggregierte Kennzahlen** (Datenminimierung) — Pseudonymisierung dort optional.
-   - Sichtbarkeits-/Vertrauens-UI: dem Nutzer den maskierten Text vor dem Senden
-     **anzeigen** (Transparenz), evtl. Zähler „N Identifikatoren ersetzt".
+   - ✅ Sichtbarkeits-/Vertrauens-UI: Vorschlagskarte zeigt bei aktivem Modus „🛡 N
+     Identifikatoren pseudonymisiert …" + aufklappbare Vorschau des gesendeten Textes
+     (`pseudonym.maskierungsBericht`, `documents.js`). Zähler ohne Klartext.
    - Bild-/OCR-Pfad (Vision) bleibt bewusst außen vor (Bild kann nicht
      anker-basiert maskiert werden); ggf. späterer Hinweis-/Schwärzungs-Workflow.
    - AVV-Hinweis im Datenblatt (Mistral/Google als Auftragsverarbeiter).

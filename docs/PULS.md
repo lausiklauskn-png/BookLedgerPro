@@ -5,12 +5,13 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/datenschutz-modi-schritt2-8vx628`
-· **main-Stand:** `40e5b83` · **Tests:** `node tests/run.mjs` → **264/264 grün**
-· **SW-Cache:** `v48` · **61 JS-Module** · **12 Bild- + 5 Icon-Assets**
-· **Neu:** Datenschutz-Modi vollständig (Bau-Schritt 1+2): `src/ai/pseudonym.js` (rein) +
-  `src/ai/anker.js` (Anker-Quelle) + Verdrahtung in `mistral`/`berater` + Settings-Schalter
-  `datenschutzModus`. Konzept: `docs/KONZEPT_DATENSCHUTZ_MODI.md`.
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/datenschutz-transparenz-8vx628`
+· **main-Stand:** `dc03fd4` · **Tests:** `node tests/run.mjs` → **269/269 grün**
+· **SW-Cache:** `v49` · **61 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Neu:** Datenschutz-Modi (Bau-Schritt 1+2+Transparenz): `src/ai/pseudonym.js` (rein, inkl.
+  `maskierungsBericht`) + `src/ai/anker.js` + Verdrahtung in `mistral`/`berater` + Settings-
+  Schalter `datenschutzModus` + **Transparenz-Vorschau** in Belegen. Konzept:
+  `docs/KONZEPT_DATENSCHUTZ_MODI.md`.
 
 ---
 
