@@ -37,6 +37,34 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-16 — V9: Korrektheit/Kleinfälle + Simulations-Testharness [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (Fahrplan-Punkt V9 + vom Nutzer gewünschte Testmöglichkeit, gleiche Sitzung)
+- **`domain/kleinfaelle.js`** (rein, node-getestet): `kleinbetragsrechnung` (§33 UStDV, ≤250 €
+  → reduzierte Pflichtangaben), `geschenkAbzug` (§4 Abs.5 Nr.1, 50 € netto → abzugsfähig/Konto/
+  VSt), **`bewirtungAufteilung`** (§4 Abs.5 Nr.2, **rechnender** 70/30-Split, Vorsteuer 100%).
+  Neue Konten 4654 (Bewirtung nicht abzugsf.) / 4635 (Geschenke nicht abzugsf.).
+- **Periodensperre:** `pruefung.istGesperrt` + harte Sperre in `store.festschreiben`
+  (kv `buchungssperreBis`) + Einstellung „Buchungssperre" (shell). `pruefeBuchung` liefert
+  Sperr-Fehler + **Kleinunternehmer-Konsistenz-Warnung** (§19: kein USt/VSt-Konto).
+- **Journal-UI:** Schnellbuchung **„Bewirtung 70/30"** (nutzt Betrag=netto/USt/Haben).
+- **Simulations-Testmöglichkeit (Nutzerwunsch):** `domain/demodaten.js` — deterministischer
+  Demo-Mandant **klein** (hand-geprüfte Sollwerte) **und groß** (Konsistenz im Maßstab);
+  `demoExportDateien` erzeugt alle Formate. Berichte-Karte **„Demo-/Test-Export"** → lädt ZIP
+  mit ECHTEN Dateien (DATEV-EXTF, ELSTER-USt-VA, EÜR/SuSa/Anlage-EÜR, Kassenbuch, Kontenblatt,
+  Anlagenverzeichnis, GDPdU) — **ohne** DATEV/ELSTER-Zugang, **ohne** Berührung echter Daten.
+  **`docs/TESTDATEN.md`** dokumentiert Buchungen + Vergleichswerte (USt-VA Kz83 159,00 €,
+  EÜR −350,00 €, AfA 400 €, …) zum späteren Abgleich mit echtem DATEV/ELSTER.
+- **Tests 592/592** (33 neu: Kleinfälle, Periodensperre, Kleinunternehmer-Warnung, Demo „klein"
+  Goldwerte, Demo „groß" Invarianten, Demo-Export-ZIP). SW-Cache `v70` (+2 Module).
+
+**Stand:** V9 vollständig; **alle MUSS-Punkte V2–V7 + V9 erledigt**. Logik node-getestet, UI
+statisch geprüft. **Offen (nur SOLL):** V8 (DATEV-EXTF berater-fest — echter DATEV-Testimport;
+teils via TESTDATEN.md simulierbar), V10 (Browser-E2E manuell). **Nutzer testet** privat in
+1–2 Wochen (Foto-OCR → App → Finanzamt).
+
+---
+
 ## 2026-06-16 — V7: GoBD-Betriebsprüfer-Export (GDPdU „Z3") [Branch `claude/v2-ox8bu7`]
 
 **Was getan** (Fahrplan-Punkt V7, gleiche Sitzung)

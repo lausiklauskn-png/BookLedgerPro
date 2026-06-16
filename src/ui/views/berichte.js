@@ -7,6 +7,7 @@ import { loadAccounts, listBuchungen } from '../../domain/store.js';
 import { summenSaldenliste, kontenblatt, anlageEUR } from '../../domain/berichte.js';
 import { buildSusaCsv, buildKontenblattCsv, buildAnlageEURCsv } from '../../domain/export.js';
 import { buildGdpduPaket } from '../../domain/gdpdu.js';
+import { demoMandant, demoExportDateien } from '../../domain/demodaten.js';
 import { zipFiles } from '../../core/zip.js';
 import { downloadText, downloadBlob } from '../../core/files.js';
 import { getSettings } from '../../state.js';
@@ -48,7 +49,23 @@ async function repaint() {
     susaCard(susa),
     kontenblattCard(konten, blatt),
     gdpduCard(buchungen, konten, idx, p),
+    demoCard(),
   ]));
+}
+
+function demoCard() {
+  const dl = (groesse) => {
+    const dateien = demoExportDateien(demoMandant(groesse));
+    downloadBlob(`BookLedgerPro-Demo-Exporte-${groesse}.zip`, zipFiles(dateien), 'application/zip');
+  };
+  return el('div', { class: 'card no-print' }, [
+    el('h2', { class: 'card-title', text: t('berichte.demoTitle') }),
+    el('p', { class: 'muted small', text: t('berichte.demoHint') }),
+    el('div', { class: 'btn-row' }, [
+      el('button', { class: 'btn btn-sm', text: t('berichte.demoSmall'), onClick: () => dl('klein') }),
+      el('button', { class: 'btn btn-sm', text: t('berichte.demoLarge'), onClick: () => dl('gross') }),
+    ]),
+  ]);
 }
 
 function gdpduCard(buchungen, konten, idx, p) {

@@ -7,18 +7,21 @@
 
 ---
 
-## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V8**)
+## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V8 oder V10**)
 
 > **Lies das zuerst und vollständig. Danach kannst du ohne Rückfragen loslegen.**
 
-**✅ V7 erledigt (GoBD-Betriebsprüfer-Export GDPdU „Z3") — diese Sitzung, in `claude/v2-ox8bu7`:**
-`core/zip.js` (zero-dep ZIP-Writer, store + CRC-32) + `domain/gdpdu.js` (rein, node-getestet):
-`buildGdpduIndexXml` (Beschreibungsstandard, DOCTYPE → DTD), `gdpduCsvBuchungen`/`gdpduCsvKonten`,
-`buildGdpduPaket`; Export-Karte in **„Berichte"** → ZIP-Datenpaket. **Tests 559/559, SW `v69`.**
-(Diese Sitzung zuvor gemergt: **V2** #64, **V3** #65, **V4** #66, **V5** #67, **V6** #68.)
-→ **Nächste Aufgabe = V8** (DATEV-EXTF berater-fest: Steuerschlüssel-Mapping + Header gegen
-echten DATEV-Testimport verifizieren, Doku „so importieren"), Details in `docs/OFFENE_PUNKTE.md`
-Abschnitt V. **Ein Punkt pro PR.** (V8 ist „SOLL" — alternativ V9 Korrektheit/Kleinfälle.)
+**✅ V9 erledigt (Korrektheit/Kleinfälle + Simulations-Testharness) — diese Sitzung, in `claude/v2-ox8bu7`:**
+`domain/kleinfaelle.js` (Kleinbetragsrechnung §33 UStDV, Geschenke §4 Abs.5 Nr.1, **Bewirtung 70/30
+rechnend**), **Periodensperre** (`pruefung.istGesperrt` + harte Sperre in `store.festschreiben` +
+Einstellung), Kleinunternehmer-Konsistenz-Warnung. **NEU Simulations-Testmöglichkeit**:
+`domain/demodaten.js` (deterministischer Demo-Mandant klein/groß) + `docs/TESTDATEN.md`
+(dokumentierte Vergleichswerte) + Berichte-Karte **„Demo-/Test-Export"** → echte Export-Dateien
+als ZIP (ohne DATEV/ELSTER-Zugang). **Tests 592/592, SW `v70`.** (Diese Sitzung gemergt:
+**V2** #64, **V3** #65, **V4** #66, **V5** #67, **V6** #68, **V7** #69.)
+→ **Alle MUSS-Punkte (V2–V7) erledigt.** Übrig nur „SOLL": **V8** (DATEV-EXTF berater-fest —
+braucht echten DATEV-Testimport; teils per `docs/TESTDATEN.md` simulierbar) und **V10**
+(Browser-E2E der Kernpfade — manuell, da kein Headless-Browser). Details in `OFFENE_PUNKTE.md`.
 
 **Was „Vx" bedeutet — WICHTIG, nicht missverstehen:**
 „Vx" ist **KEINE** neue Programm-Version, **KEIN** Redesign, **KEIN** Major-Umbau. Falls dein
@@ -30,8 +33,8 @@ READINESS"**. Mehr nicht.
 Phasen 0–6 ✅, EU-KI (Vision EU + Mistral EU) ✅, A1–A3 (Mahnwesen/Verbindlichkeiten/
 Zahlungsabgleich), **V1 Kontenrahmen** (57 Konten + CRUD), **V2 §13b/Reverse-Charge**,
 **V3 Anlagevermögen+AfA**, **V4 Kassenbuch/Anfangsbestände**, **V5 USt-VA komplett**,
-**V6 Berichte (SuSa/Kontenblatt/Anlage-EÜR)**, **V7 GoBD/GDPdU-Export** (s.o.).
-→ **Nicht** A1–A3 / V1–V7 wiederholen, **kein** Redesign.
+**V6 Berichte (SuSa/Kontenblatt/Anlage-EÜR)**, **V7 GoBD/GDPdU-Export**, **V9 Kleinfälle +
+Simulations-Testharness** (s.o.). → **Nicht** A1–A3 / V1–V9 wiederholen, **kein** Redesign.
 
 ### V2 — was genau zu bauen ist (§13b/Reverse-Charge + EU/Ausland)
 Ziel: Die Firma bezieht selbst Leistungen mit **Steuerschuldumkehr** — z. B. **Google Cloud
@@ -82,8 +85,8 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 ---
 
 **Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v2-ox8bu7`
-· **Tests:** `node tests/run.mjs` → **559/559 grün**
-· **SW-Cache:** `v69` · **79 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Tests:** `node tests/run.mjs` → **592/592 grün**
+· **SW-Cache:** `v70` · **81 JS-Module** · **12 Bild- + 5 Icon-Assets**
 · **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
 · **V3 ✅:** Anlagevermögen + AfA (GWG/Sammelposten/linear pro rata), Ansicht „Anlagen",
   Anlagenverzeichnis + AfA-Buchung-Entwurf + AVEÜR-CSV (`domain/anlagen.js`, `anlagen-store.js`).
@@ -97,6 +100,9 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
   `domain/berichte.js`, Ansicht „Berichte", je CSV-Export.
 · **V7 ✅:** GoBD-Betriebsprüfer-Export (GDPdU „Z3") — `core/zip.js` (zero-dep ZIP+CRC32),
   `domain/gdpdu.js` (index.xml-Beschreibungsstandard + CSV-Tabellen), ZIP-Paket-Button in „Berichte".
+· **V9 ✅:** Kleinfälle — Bewirtung 70/30 (rechnend), Geschenke-/Kleinbetragsgrenze, Periodensperre
+  (`store.festschreiben` + Einstellung), Kleinunternehmer-Warnung. **+ Simulations-Testharness**
+  (`domain/demodaten.js`, `docs/TESTDATEN.md`, Berichte „Demo-Export" → echte Dateien, dok. Sollwerte).
 · **Profi-Readiness (V-Fahrplan):** V1 ✅ Kontenrahmen 57 Konten + Konten anlegen/bearbeiten/löschen.
 · **Mahnwesen A1 erweitert:** persistente Mahnstufe (`mahnungen[]`, `vorschlagNaechsteStufe`) +
   manuelle/editierbare Zins-/Gebühren-Erfassung im Mahnschreiben (keine Auto-Steuerbuchung).

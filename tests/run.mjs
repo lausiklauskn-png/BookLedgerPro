@@ -38,6 +38,9 @@ import { summenSaldenliste, kontenblatt, anlageEUR, eurGruppeFuer, EUR_GRUPPE } 
 import { buildSusaCsv, buildKontenblattCsv, buildAnlageEURCsv } from '../src/domain/export.js';
 import { crc32, zipFiles } from '../src/core/zip.js';
 import { gdpduCsvBuchungen, gdpduCsvKonten, buildGdpduIndexXml, buildGdpduPaket } from '../src/domain/gdpdu.js';
+import { kleinbetragsrechnung, geschenkAbzug, bewirtungAufteilung, KLEINBETRAG_GRENZE_CENT, GESCHENK_GRENZE_CENT } from '../src/domain/kleinfaelle.js';
+import { istGesperrt } from '../src/domain/pruefung.js';
+import { demoMandant, demoExportDateien, DEMO_JAHR } from '../src/domain/demodaten.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -1763,6 +1766,92 @@ await section('V7: ZIP-Writer + GoBD/GDPdU-Export', () => {
   ok('Paket: 4 Dateien (index/buchungen/konten/info)', paket.length === 4 && paket.some((f) => f.name === 'index.xml'));
   const zip2 = zipFiles(paket);
   ok('Paket als ZIP baubar', zip2[0] === 0x50 && zip2.length > 100);
+});
+
+await section('V9: Kleinfälle (Bewirtung/Geschenke/Kleinbetrag) + Periodensperre', () => {
+  // Kleinbetragsrechnung (§33 UStDV): ≤ 250 € brutto reduzierte Pflichtangaben.
+  ok('250 € → Kleinbetrag', kleinbetragsrechnung(KLEINBETRAG_GRENZE_CENT).kleinbetrag === true);
+  ok('250,01 € → keine Kleinbetragsrechnung', kleinbetragsrechnung(KLEINBETRAG_GRENZE_CENT + 1).kleinbetrag === false);
+  ok('Kleinbetrag: weniger Pflichtangaben', kleinbetragsrechnung(10000).pflichtangaben.length < kleinbetragsrechnung(30000).pflichtangaben.length);
+
+  // Geschenkegrenze (§4 Abs.5 Nr.1): 50 € netto.
+  const g1 = geschenkAbzug(GESCHENK_GRENZE_CENT), g2 = geschenkAbzug(GESCHENK_GRENZE_CENT + 1);
+  ok('50 € Geschenk abzugsfähig + VSt', g1.abzugsfaehig && g1.vorsteuerAbzug && g1.kontoVorschlag === '4630');
+  ok('50,01 € nicht abzugsfähig, kein VSt, Konto 4635', !g2.abzugsfaehig && !g2.vorsteuerAbzug && g2.kontoVorschlag === '4635');
+
+  // Bewirtung 70/30: 100 € netto, 19% → 70/30-Split, Vorsteuer 100%.
+  const bw = bewirtungAufteilung({ nettoCents: 10000, ustSatz: 19, gegenKonto: '1200' });
+  ok('Bewirtung: 70% = 7000, 30% = 3000', bw.abzugsfaehig === 7000 && bw.nichtAbzugsfaehig === 3000);
+  ok('Bewirtung: Vorsteuer 100% = 1900', !!zeile(bw.zeilen, '1576', 'S') && zeile(bw.zeilen, '1576', 'S').betrag === 1900);
+  ok('Bewirtung: Brutto 11900 an Gegenkonto', zeile(bw.zeilen, '1200', 'H').betrag === 11900);
+  ok('Bewirtung: ausgeglichen', istAusgeglichen(bw.zeilen));
+
+  // Periodensperre.
+  ok('istGesperrt: Datum vor Sperre', istGesperrt('2026-03-31', '2026-03-31') === true);
+  ok('istGesperrt: Datum nach Sperre', istGesperrt('2026-04-01', '2026-03-31') === false);
+  ok('istGesperrt: ohne Sperre nie', istGesperrt('2026-01-01', '') === false);
+  const idxK = indexFromSeed();
+  const b = { datum: '2026-02-01', beschreibung: 'x', zeilen: [{ konto: '1200', seite: 'S', betrag: 100 }, { konto: '8200', seite: 'H', betrag: 100 }] };
+  ok('pruefeBuchung: gesperrte Periode → Fehler', pruefeBuchung(b, idxK, { gesperrtBis: '2026-03-31' }).fehler.some((f) => /gesperrt/i.test(f)));
+  ok('pruefeBuchung: offene Periode → kein Sperr-Fehler', !pruefeBuchung(b, idxK, { gesperrtBis: '2026-01-01' }).fehler.some((f) => /gesperrt/i.test(f)));
+  // Kleinunternehmer-Konsistenz: Steuerkonto trotz §19 → Warnung.
+  const bu = { datum: '2026-02-01', beschreibung: 'x', zeilen: [{ konto: '1200', seite: 'S', betrag: 11900 }, { konto: '8400', seite: 'H', betrag: 10000 }, { konto: '1776', seite: 'H', betrag: 1900 }] };
+  ok('Kleinunternehmer + USt-Konto → Warnung', pruefeBuchung(bu, idxK, { kleinunternehmer: true }).warnungen.some((w) => /§19/.test(w)));
+});
+
+await section('Simulation: Demo-Mandant „klein" gegen dokumentierte Vergleichswerte (TESTDATEN.md)', () => {
+  const m = demoMandant('klein');
+  const idx = {}; for (const k of m.konten) idx[k.nummer] = k;
+  const p = { von: `${DEMO_JAHR}-01-01`, bis: `${DEMO_JAHR}-12-31` };
+
+  const va = buildUstVa(m.buchungen, idx, p);
+  ok('klein USt-VA Kz81 = 100000', va.kz81 === 100000);
+  ok('klein USt-VA Kz81-Steuer = 19000', va.kz81Steuer === 19000);
+  ok('klein USt-VA Kz86 = 10000 / Steuer 700', va.kz86 === 10000 && va.kz86Steuer === 700);
+  ok('klein USt-VA Kz66 (Vorsteuer) = 3800', va.kz66 === 3800);
+  ok('klein USt-VA §13b Kz47/Kz67 = 1900', va.kz47 === 1900 && va.kz67 === 1900);
+  ok('klein USt-VA Kz83 (Zahllast) = 15900', va.kz83 === 15900);
+
+  const eur = computeEUR(m.buchungen, idx, p);
+  ok('klein EÜR Einnahmen 115000 / Ausgaben 150000', eur.einnahmen === 115000 && eur.ausgaben === 150000);
+  ok('klein EÜR Überschuss -35000', eur.ueberschuss === -35000);
+
+  const kb = kassenbericht(kassenbuchEintraege(m.buchungen, '1000', p), 0);
+  ok('klein Kassenbuch Endbestand 5000', kb.endbestand === 5000 && !kb.negativ);
+
+  const av = anlagenverzeichnis(m.anlagen, DEMO_JAHR);
+  ok('klein AfA 2026 = 40000, Restbuchwert 80000', av.summen.afaJahr === 40000 && av.summen.restbuchwert === 80000);
+
+  const gd = gdpduCsvBuchungen(m.buchungen, idx, p);
+  ok('klein GDPdU: 24 Zeilen (Header + 23)', gd.split('\r\n').length === 24);
+
+  const dateien = demoExportDateien(m);
+  ok('klein Demo-Export: alle Formate', dateien.length >= 9 && dateien.some((f) => f.name.startsWith('datev/')) && dateien.some((f) => f.name.startsWith('gdpdu/')));
+  const zip = zipFiles(dateien);
+  ok('klein Demo-Export als ZIP baubar', zip[0] === 0x50 && zip.length > 500);
+});
+
+await section('Simulation: Demo-Mandant „groß" — Konsistenz im Maßstab', () => {
+  const m = demoMandant('gross');
+  const idx = {}; for (const k of m.konten) idx[k.nummer] = k;
+  const p = { von: `${DEMO_JAHR}-01-01`, bis: `${DEMO_JAHR}-12-31` };
+
+  const susa = summenSaldenliste(m.buchungen, idx, p);
+  ok('groß SuSa: Soll == Haben (doppelte Buchführung)', susa.summen.soll === susa.summen.haben && susa.summen.soll > 0);
+
+  const eur = computeEUR(m.buchungen, idx, p);
+  const aeur = anlageEUR(m.buchungen, idx, p);
+  ok('groß: computeEUR == anlageEUR Überschuss', eur.ueberschuss === aeur.ueberschuss);
+
+  const va = buildUstVa(m.buchungen, idx, p);
+  ok('groß USt-VA Kz83 konsistent', va.kz83 === (va.kz81Steuer + va.kz86Steuer + va.kz47 + va.kz93 - va.kz66 - va.kz67 - va.kz61));
+
+  const anfang = (m.anfangsbestaende.find((a) => a.konto === '1200') || {}).betragCent || 0;
+  const kb = kassenbericht(kassenbuchEintraege(m.buchungen, '1200', p), anfang);
+  ok('groß Kassen-/Bankbericht: Endbestand = Anfang + Ein - Aus', kb.endbestand === anfang + kb.summeEinnahmen - kb.summeAusgaben);
+
+  const zip = zipFiles(demoExportDateien(m));
+  ok('groß Demo-Export als ZIP baubar', zip[0] === 0x50 && zip.length > 1000);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

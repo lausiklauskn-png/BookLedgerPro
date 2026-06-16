@@ -18,6 +18,7 @@ import { mountKassenbuch } from './views/kassenbuch.js';
 import { mountJournal } from './views/journal.js';
 import { mountReports } from './views/reports.js';
 import { mountBerichte } from './views/berichte.js';
+import { getBuchungssperre, setBuchungssperre } from '../domain/store.js';
 import { mountDocuments } from './views/documents.js';
 import { mountCustomers } from './views/customers.js';
 import { mountOrders } from './views/orders.js';
@@ -220,6 +221,8 @@ function viewSettings() {
 
     firmaSection(s),
 
+    buchungssperreSection(),
+
     passwortSection(),
 
     el('div', { class: 'setting' }, [
@@ -272,6 +275,23 @@ function passwortSection() {
         ]),
       ]),
     ]),
+  ]);
+}
+
+// Buchungssperre (Periodenabschluss): bis zu diesem Datum kann nicht mehr festgeschrieben werden.
+function buchungssperreSection() {
+  const input = el('input', { type: 'text', placeholder: 'YYYY-MM-DD' });
+  const status = el('span', { class: 'muted small' });
+  getBuchungssperre().then((d) => { input.value = d || ''; }).catch(() => {});
+  return el('div', { class: 'setting' }, [
+    el('div', { class: 'setting-label', text: t('settings.sperre') }),
+    el('div', { class: 'btn-row' }, [
+      input,
+      el('button', { class: 'btn btn-sm', text: t('common.save'), onClick: async () => { await setBuchungssperre(input.value.trim()); status.textContent = t('settings.saved'); } }),
+      el('button', { class: 'btn btn-sm', text: t('settings.sperreClear'), onClick: async () => { input.value = ''; await setBuchungssperre(''); status.textContent = t('settings.saved'); } }),
+      status,
+    ]),
+    el('p', { class: 'muted small', text: t('settings.sperreHint') }),
   ]);
 }
 
