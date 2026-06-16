@@ -8,6 +8,8 @@ import { formatEuro } from '../../domain/money.js';
 import { pickFile, formatBytes, readFileText } from '../../core/files.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
 import { parseBankauszug, umsatzExtraktion } from '../../domain/bankimport.js';
+import { offenePosten, findeOffenePosten, zahlungsBuchungZeilen } from '../../domain/zahlungsabgleich.js';
+import { listAuftraege, listKunden, setAuftragStatus } from '../../domain/crm-store.js';
 import { loadAccounts, saveEntwurf } from '../../domain/store.js';
 import { extractFromText } from '../../ai/extract.js';
 import { categorize as categorizeAI } from '../../ai/mistral.js';
@@ -213,8 +215,15 @@ function bankImportKarte() {
       try {
         const { format, konto, umsaetze } = parseBankauszug(await readFileText(file));
         if (!umsaetze.length) { out.appendChild(el('p', { class: 'form-error', text: t('docs.bankNone') })); return; }
+        // Offene Forderungs-Posten für den Zahlungsabgleich laden (aus Aufträgen).
+        let posten = [];
+        try {
+          const [auftraege, kunden] = await Promise.all([listAuftraege(), listKunden()]);
+          const nameById = {}; for (const k of kunden) nameById[k.id] = k.name;
+          posten = offenePosten(auftraege, { nameById });
+        } catch { posten = []; }
         out.appendChild(el('div', { class: 'muted small', text: `${format || '—'} · ${t('docs.bankAccount')}: ${konto || '—'} · ${umsaetze.length} ${t('docs.bankTxns')}` }));
-        for (const u of umsaetze) out.appendChild(umsatzRow(u));
+        for (const u of umsaetze) out.appendChild(umsatzRow(u, posten));
       } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
     },
   });
@@ -226,11 +235,33 @@ function bankImportKarte() {
   ]);
 }
 
-function umsatzRow(u) {
+function umsatzRow(u, posten = []) {
   const slot = el('div', {});
   const vz = (u.gegen || u.zweck || '').slice(0, 80);
   const info = el('span', { class: 'mono small', text: `${u.valuta} · ${u.richtung === 'einnahme' ? '+' : '−'}${formatEuro(u.betragCent)} · ${vz}` });
-  const mk = el('button', {
+  const knoepfe = [info];
+
+  // Zahlungsabgleich: passt der Umsatz exakt zu einem offenen Posten (Rechnung)?
+  const treffer = findeOffenePosten(u, posten);
+  if (treffer) {
+    const p = treffer.posten;
+    knoepfe.push(el('button', {
+      class: 'btn btn-sm btn-primary', type: 'button',
+      text: `${t('docs.bankMatch')} ${p.referenz || ''}`.trim(),
+      onClick: async () => {
+        slot.replaceChildren();
+        const bk = zahlungsBuchungZeilen(u, p);
+        try {
+          await saveEntwurf({ datum: bk.datum, beschreibung: bk.beschreibung, zeilen: bk.zeilen });
+          await setAuftragStatus(p.id, 'bezahlt');
+          slot.appendChild(el('p', { class: 'muted small', text: `${t('docs.bankMatchDone')} (${p.referenz || ''})` }));
+        } catch (e) { slot.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
+      },
+    }));
+  }
+
+  // Fallback / Alternative: normaler Buchungsvorschlag über Kategorisierung.
+  knoepfe.push(el('button', {
     class: 'btn btn-sm', type: 'button', text: t('docs.bankDraft'),
     onClick: async () => {
       slot.replaceChildren();
@@ -241,8 +272,9 @@ function umsatzRow(u) {
       if (!res.ok) { slot.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
       slot.appendChild(await vorschlagKarte(res.vorschlag, null, u.zweck || ''));
     },
-  });
-  return el('div', { class: 'bank-row' }, [el('div', { class: 'btn-row' }, [info, mk]), slot]);
+  }));
+
+  return el('div', { class: 'bank-row' }, [el('div', { class: 'btn-row' }, knoepfe), slot]);
 }
 
 // ---- Upload (Datei / Foto / PDF) + Beleg-Liste -----------------------------
