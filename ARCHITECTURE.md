@@ -10,8 +10,10 @@
    Gerät nie ohne ausdrückliche Bestätigung.
 3. **Recht ist Architektur, kein Feature.** GoBD-Festschreibung (Unveränderbarkeit,
    Storno statt Löschen, Hash-Kette), DSGVO, USt/EÜR — von Anfang an mitgedacht.
-4. **KI On-Device-first, extern opt-in (BYOK).** Embeddings/OCR lokal; hochwertige
-   Vision/Steuer-Assistenz über Claude-API mit eigenem Schlüssel, datenminimiert.
+4. **KI On-Device-first, extern opt-in (BYOK), EU-vorrangig.** Embeddings/OCR lokal;
+   hochwertige Vision/Steuer-Assistenz über **EU-Dienste** (Google Vision EU + Mistral EU)
+   mit eigenem Schlüssel, datenminimiert. **Claude/Nicht-EU ruht** (nicht gelöscht, nicht im
+   aktiven UI-Pfad). Maßgeblich: `docs/KONZEPT_DATENSCHUTZ_MODI.md`.
 5. **Symbiose statt Insel.** Anbindung an das Sage-Mycel (SBKIM) für P2P-Austausch mit
    den Geschwister-Apps.
 

@@ -5,6 +5,27 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Brainstorming Datenschutz-Strang P1–P13 + Privat-Modus + Transparenz-Doku
+
+**Was getan (Brainstorming + Doku, kein App-Code)**
+- **Master-Bauplan `docs/KONZEPT_DATENSCHUTZ_MODI.md`** angelegt: P1–P13, alle Entscheidungen.
+- **Transparenz-Doku** `docs/TRANSPARENZ_ZWISCHENSTAND.html` (druckbar, „Als PDF"-Knopf,
+  UTF-8/Umlaute, Druck-CSS) — Außenkommunikation „gläserne App"; P11–P13 + Privat-Modus ergänzt.
+- **`PULS.md`** Andock-Block 0 + **`ROADMAP`/`ARCHITECTURE`** Klarstellung Claude→EU (ruhend).
+- Geschwister-Analyse: Mein-Rezeptbuch (QR=Einzel, Datei=Masse, `shareTooBig`-Fallback;
+  localStorage-Schwäche) + Sage-Protokol Multi-Identität (Brief 04) als Vorbild für Persona/Firma.
+
+**Entscheidungen festgehalten**
+- EU-vorrangig, Claude ruhend. Briefkasten/Token-Tresor dreistufig (Mandant⊃Firma⊃Person),
+  gebucht gegen Firma, Token-Anker = exakter Identifikator, 1:n m. n:m-Tabelle, kein Schalter.
+- Import=Datei (CSV-Fallen `;`/Latin-1), QR=Einzel lokal. Privat-Modus = Anlagen-Profile,
+  Einfach-Modus ohne Soll/Haben. Kein 1-Klick-Finanzamt (ELSTER=P13); Mensch bestätigt.
+
+**Offen / Nächstes (Bau beginnt):** 1) Logik-Modul `tokenize/reidentify` (P5/P7-Kern, Node-Test);
+2) P7-Datenmodell; 3) Import; … (Reihenfolge in PULS §0 / KONZEPT §6). **Nicht** browser-E2E-getestet.
+
+---
+
 ## 2026-06-14 — KI-Setup-Politur + Nachfolge-Brief
 
 **Was getan**

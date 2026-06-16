@@ -5,9 +5,35 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/general-discussion-x9xyk9`
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/puls-docs-wzf5mr`
 · **main-Stand:** `4ba49c8` · **Tests:** `node tests/run.mjs` → **134/134 grün**
 · **SW-Cache:** `v25` · **53 JS-Module** · **12 Bild- + 5 Icon-Assets**
+
+---
+
+## 0. NEU (2026-06-16): Datenschutz-Strang P1–P13 + Privat-/Bürger-Modus — BAU STARTET
+
+**Master-Bauplan (verbindlich): [`docs/KONZEPT_DATENSCHUTZ_MODI.md`](KONZEPT_DATENSCHUTZ_MODI.md).**
+Außen-Doku (druckbar): [`docs/TRANSPARENZ_ZWISCHENSTAND.html`](TRANSPARENZ_ZWISCHENSTAND.html).
+
+**Kernentscheidungen (im Brainstorming festgelegt):**
+- **EU-vorrangig; Claude ruhend** (nicht gelöscht, nur nicht im aktiven UI-Pfad).
+- **Briefkasten/Token-Tresor (P7)** = deterministische **Pseudonymisierung** mit lokaler
+  Re-Identifikations-Tabelle; **dreistufig: Mandant ⊃ Firma ⊃ Person**. Gebucht wird gegen
+  die **Firma**, Person = Metadaten. Token-Anker = **exakter Identifikator** (E-Mail/Tel./
+  Kd-Nr./IBAN), nie der OCR-Name. Person = mehrere Kanäle; 1:n-Default, n:m-fähig ohne Schalter.
+- **Import = Datei** (CSV zuerst; deutsche `;`/Latin-1-Fallen abfangen); QR nur Einzel-Teilen.
+- **Zweite Zielgruppe: Privatbürger-Steuer** über **Lebenslagen-Profile = Anlagen**
+  (Vermieter→Anlage V, Pflege, Anlage N …). Einfach-Modus zeigt nie Soll/Haben/SKR03.
+- **Ehrlich:** kein „1-Klick ans Finanzamt" (braucht ELSTER/ERiC = P13); KI bereitet vor,
+  **Mensch bestätigt** vor Versand.
+
+**Nächste konkrete Bau-Schritte (Reihenfolge „B mit einem Fuß in A"):**
+1. **Erster Bau:** Reines Logik-Modul `tokenize/reidentify` (P5/P7-Kern) — deterministisch,
+   stabile Token, exakter-Schlüssel-Anker → **Node-Test** (kein Browser nötig).
+2. P7-Datenmodell dreistufig (verschlüsselt, Verknüpfungstabelle). 3. P6/P9 Import (CSV).
+4. P5 in KI-Pipeline (Sende-Vorschau). 5. P1–P4 Recht/Anbieterwahl. 6. P11/P12 Privat-Modus.
+7. P8 QR · P10 Besteller · P13 ELSTER (Fernziel).
 
 ---
 

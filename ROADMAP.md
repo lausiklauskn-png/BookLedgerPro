@@ -2,6 +2,11 @@
 
 Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 
+> **Klarstellung (2026-06-16):** Der **aktive KI-Pfad ist ausschließlich EU** (Google Vision
+> EU + Mistral EU); ältere Phasen-Texte unten nennen noch Claude-Vision — **Claude ist ruhend**
+> (nicht gelöscht, nicht im aktiven UI-Pfad). Neuer Datenschutz-/Modi-Strang **P1–P13**:
+> siehe `docs/KONZEPT_DATENSCHUTZ_MODI.md` (Master-Bauplan).
+
 ## ✅ Phase 0 — Fundament (aktuell)
 - [x] Build-freie ES-Modul-Shell, PWA-Manifest, App-Service-Worker (versionierter Cache)
 - [x] Krypto (`crypto.js`), Shamir (`shamir.js`), IndexedDB (`db.js`)
