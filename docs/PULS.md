@@ -27,12 +27,16 @@ zwingen zur Wahl „KI-Komfort ODER Datenschutz". BookLedgerPro löst das auf �
 **technischen Beleg**, nicht durch Reputation/Firmenname: „hier ist belegt, dass deine Daten
 das Gerät nicht im Klartext verlassen".
 - **Pseudonymisierung = Schlüssel-Enabler (Bau-Schritt 1)** — funktioniert sie gut, wird ALLES
-  andere einfacher: **freie KI-Anbieterwahl im Einfach-Modus**, **Privat-/Bürger-Modus**, Vertrauen.
+  andere einfacher: mehr Anbieter-Flexibilität, **Privat-/Bürger-Modus**, vor allem Vertrauen.
   → Status: **gebaut & gemergt** (#40–#43, anker-basiert, Transparenz-Vorschau, AVV).
-- **Priorisierungsregel:** Features, die diesen Kern-Vorteil stärken/erlebbar machen, haben
-  Vorrang. Dadurch freigeschaltete Nächstschritte: **P2 KI-Anbieterwahl je Modus**
-  (Einfach = freie Wahl mit Einwilligung; Berater = streng EU) + **Privat-/Bürger-Modus**.
-  ⚠️ P2 berührt die strenge EU-KI-Regel (CLAUDE.md §8) → Produktentscheidung des Nutzers nötig.
+- **WICHTIG / Klarstellung (Nutzer, 16.06.):** **Aktive Nutzung bleibt strikt EU**
+  (Vision EU + Mistral EU, CLAUDE.md §8 gilt unverändert). **Nicht-EU-Anbieter sind NICHT
+  zur Auswahl freigegeben** — sie waren nur als ruhende, strukturelle Option im Gerüst gedacht,
+  nicht als Nutzer-Auswahl. Eine etwaige Öffnung wäre eine ausdrückliche Produktentscheidung
+  des Nutzers; bis dahin: geschlossen/dormant.
+- **Priorisierungsregel:** Features, die den Kern-Vorteil (Komfort + Datenschutz, Vertrauen
+  durch Beleg) stärken/erlebbar machen, haben Vorrang — z. B. **Privat-/Bürger-Modus**,
+  Anbieterwahl **innerhalb der EU**. „P2" bezieht sich auf EU-interne Wahl; Nicht-EU bleibt dormant.
 
 ## 0. BRAINSTORMING — zuerst klären (Funktionalität, ohne Code)
 Am Sitzungsanfang mit dem Nutzer durchgehen; entscheidet über viele Bau-Wege:
