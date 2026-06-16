@@ -146,6 +146,9 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 - **EÜR §4(3) (Zufluss/Abfluss, Ist-Prinzip)** + **zertifiziertes DATEV-EXTF** — größer, eigener PR.
 
 ## 7. Nächste konkrete Schritte (Priorität)
+0. **→ `docs/OFFENE_PUNKTE.md`** ist die lebende Merkliste (unbedingt-beachten/nacharbeiten/
+   verbessern). **Hoch:** **Mahnwesen & überfällige Forderungen** (Fälligkeit, Überfällig-Badge,
+   Mahnstufen, Verzugszinsen §288 BGB, Mahnschreiben), Verbindlichkeiten als OP-Quelle, Teilzahlungen.
 1. **Brainstorming (Abschnitt 0) klären** — v. a. E-Rechnung, Bankimport, §19-Default, DATEV mit Berater.
 2. **WorkFloh-Anschluss vollenden:** WorkFloh-Export auf `docs/WORKFLOH_IMPORT.md` ausrichten
    (oder WorkFloh-Repo/Beispiel-JSON bereitstellen) → echten End-to-End-Import testen
@@ -170,7 +173,8 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
   employees · legal · network
 - `assets/` tokens.css · app.css · icon.svg · `icons/` (PWA) · `img/` (Hero/Leerzustände/OG/Onboarding)
 - `sbkim/` (Repo-Root) README · SIGNAL.template.json · AUSTAUSCH-template.md (+ spore.json nach Deploy)
-- `docs/` ARCHITECTURE · ROADMAP · PULS (diese Datei) · SESSIONS · AI · SAGE_BROWSER_LEHREN ·
+- `docs/` ARCHITECTURE · ROADMAP · PULS (diese Datei) · SESSIONS · **OFFENE_PUNKTE** (Backlog/
+  Merkliste) · KONZEPT_DATENSCHUTZ_MODI · TRANSPARENZ_ZWISCHENSTAND.html · AI · SAGE_BROWSER_LEHREN ·
   SAGE_SYNC_BRIEFKASTEN · `legal/` (Verfahrensdokumentation, Datenschutz)
 
 ## 9. Definition of Done (aus CLAUDE.md, verbindlich)
