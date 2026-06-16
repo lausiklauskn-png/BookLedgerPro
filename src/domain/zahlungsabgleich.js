@@ -78,6 +78,52 @@ export function findeOffenePosten(umsatz, posten = [], opts = {}) {
 }
 
 /**
+ * Findet die besten passenden offenen Posten zu einem Bank-Umsatz — inklusive
+ * Teilzahlungen und kleiner Rundungs-Toleranzen (A3). Konservativ: gleiche Richtung
+ * Pflicht; Überzahlungen (mehr als offen) werden NICHT zugeordnet.
+ * Art je Kandidat:
+ *  - 'exakt'      gezahlt == offen
+ *  - 'toleranz'   |offen − gezahlt| ≤ toleranzCent (Rundungs-Cent)
+ *  - 'skonto'     gezahlt < offen, Differenz ≤ skontoProzent (mögliches Skonto — Hinweis;
+ *                 USt/VSt-Korrektur §17 UStG bleibt manuell, daher KEIN Auto-Skonto-Buchen)
+ *  - 'teilzahlung' gezahlt < offen, Differenz > Skonto-Schwelle (Rest bleibt offen)
+ * @returns {{posten,score,art,gezahltCent,offenCent,restCent,skontoCent}[]} bis maxKandidaten, score-sortiert.
+ */
+export function findeKandidaten(umsatz, posten = [], opts = {}) {
+  const u = umsatz || {};
+  const toleranzCent = opts.toleranzCent != null ? opts.toleranzCent : 2;
+  const skontoProzent = opts.skontoProzent != null ? opts.skontoProzent : 3;
+  const max = opts.maxKandidaten || 3;
+  const zahlung = Math.abs(Math.round(Number(u.betragCent) || 0));
+  const zweck = String(u.zweck || '').toLowerCase();
+  const gegen = String(u.gegen || '').toLowerCase();
+  const out = [];
+  for (const p of posten) {
+    if (p.richtung !== u.richtung) continue;
+    const offen = p.betragCent || 0;
+    if (offen <= 0 || zahlung <= 0) continue;
+    const diff = offen - zahlung; // > 0: weniger gezahlt als offen
+    let art = null, skontoCent = 0, restCent = 0, basis;
+    if (diff === 0) { art = 'exakt'; basis = 100; }
+    else if (Math.abs(diff) <= toleranzCent) { art = 'toleranz'; basis = 80; }
+    else if (diff < 0) { continue; } // Überzahlung — konservativ überspringen
+    else if (diff <= Math.round(offen * skontoProzent / 100)) { art = 'skonto'; skontoCent = diff; basis = 60; }
+    else { art = 'teilzahlung'; restCent = diff; basis = 40; }
+    let score = basis;
+    const ref = String(p.referenz || '').toLowerCase();
+    const nm = String(p.name || '').toLowerCase();
+    if (ref && zweck.includes(ref)) score += 30;
+    if (nm && (gegen.includes(nm) || zweck.includes(nm))) score += 15;
+    const dd = tageDiff(p.datum, u.valuta);
+    if (dd != null) score += Math.max(0, 1 - dd / 60);
+    out.push({ posten: p, score, art, gezahltCent: zahlung, offenCent: offen, restCent, skontoCent });
+  }
+  out.sort((a, b) => (b.score - a.score)
+    || ((a.posten.faelligAm || a.posten.datum || '').localeCompare(b.posten.faelligAm || b.posten.datum || '')));
+  return out.slice(0, max);
+}
+
+/**
  * Baut die Ausgleichs-Buchungszeilen für einen Bank-Umsatz.
  *  - Einnahme (Kunde zahlt Rechnung): Soll Bank / Haben Forderung.
  *  - Ausgabe (wir zahlen Lieferant):   Soll Verbindlichkeit / Haben Bank.

@@ -40,7 +40,7 @@ import { baueAnker } from '../src/ai/anker.js';
 import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
 import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat } from '../src/domain/bankimport.js';
-import { offenePosten, findeOffenePosten, zahlungsBuchungZeilen } from '../src/domain/zahlungsabgleich.js';
+import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen } from '../src/domain/zahlungsabgleich.js';
 import {
   eingangsrechnungZeilen, eingangsrechnungSummen, bruttoVonPositionen, rechnungBrutto,
   offenerBetrag, rechnungStatus, offeneVerbindlichkeiten, summeOffeneVerbindlichkeiten,
@@ -1156,6 +1156,47 @@ await section('Zahlungsabgleich: offene Posten + Matching + Ausgleichsbuchung', 
   // Ausgleichsbuchung Ausgabe: Verbindlichkeit an Bank.
   const ba = zahlungsBuchungZeilen({ richtung: 'ausgabe', betragCent: 5000, valuta: '2026-06-09' });
   ok('Ausgabe: Soll Verbindlichkeit 1600 / Haben Bank 1200', ba.zeilen[0].konto === '1600' && ba.zeilen[1].konto === '1200' && ba.zeilen[1].seite === 'H');
+});
+
+await section('A3: Teilzahlung/Skonto/Toleranz-Matching (findeKandidaten)', () => {
+  // Offene Verbindlichkeiten (richtung 'ausgabe'), Betrag = offener Rest.
+  const posten = [
+    { id: 'v1', richtung: 'ausgabe', kind: 'verbindlichkeit', betragCent: 11900, referenz: 'RE-7', name: 'Alpha GmbH', datum: '2026-06-01' },
+    { id: 'v2', richtung: 'ausgabe', kind: 'verbindlichkeit', betragCent: 50000, referenz: 'RE-9', name: 'Beta AG', datum: '2026-06-02' },
+  ];
+  // Exakte Zahlung.
+  const exakt = findeKandidaten({ richtung: 'ausgabe', betragCent: 11900, zweck: 'RE-7' }, posten);
+  ok('exakt: bester Kandidat v1, art exakt', exakt[0].posten.id === 'v1' && exakt[0].art === 'exakt');
+
+  // Rundungs-Toleranz (1 Cent zu wenig).
+  const tol = findeKandidaten({ richtung: 'ausgabe', betragCent: 11899, zweck: 'RE-7' }, posten);
+  ok('toleranz: 1 Cent Differenz → art toleranz', tol[0].posten.id === 'v1' && tol[0].art === 'toleranz');
+
+  // Skonto: 3 % auf 50000 = 1500 → Zahlung 48500 (innerhalb skontoProzent=3).
+  const sk = findeKandidaten({ richtung: 'ausgabe', betragCent: 48500, zweck: 'RE-9' }, posten);
+  ok('skonto: art skonto, skontoCent 1500', sk[0].posten.id === 'v2' && sk[0].art === 'skonto' && sk[0].skontoCent === 1500);
+
+  // Teilzahlung: 20000 auf 50000 → Rest 30000.
+  const teil = findeKandidaten({ richtung: 'ausgabe', betragCent: 20000, zweck: 'RE-9' }, posten);
+  ok('teilzahlung: art teilzahlung, restCent 30000', teil[0].posten.id === 'v2' && teil[0].art === 'teilzahlung' && teil[0].restCent === 30000);
+
+  // Überzahlung (mehr als offen) wird konservativ NICHT zugeordnet.
+  ok('Überzahlung → kein Kandidat', findeKandidaten({ richtung: 'ausgabe', betragCent: 12500 }, [posten[0]]).length === 0);
+
+  // Richtung muss passen (Einnahme trifft Verbindlichkeit nicht).
+  ok('falsche Richtung → kein Kandidat', findeKandidaten({ richtung: 'einnahme', betragCent: 11900 }, posten).length === 0);
+
+  // Ranking bei Mehrdeutigkeit: zwei exakte Beträge, Referenz im Zweck gewinnt.
+  const zwei = [
+    { id: 'x1', richtung: 'ausgabe', betragCent: 10000, referenz: 'A-1', name: 'X', datum: '2026-06-01' },
+    { id: 'x2', richtung: 'ausgabe', betragCent: 10000, referenz: 'A-2', name: 'X', datum: '2026-06-02' },
+  ];
+  const rk = findeKandidaten({ richtung: 'ausgabe', betragCent: 10000, zweck: 'zahlung a-2' }, zwei);
+  ok('Ranking: Referenz A-2 gewinnt', rk[0].posten.id === 'x2' && rk[0].score > rk[1].score);
+
+  // Teilzahlung lässt sich direkt verbuchen (gezahlter Betrag, Rest bleibt offen).
+  const bk = zahlungsBuchungZeilen({ richtung: 'ausgabe', betragCent: 20000, valuta: '2026-06-10' }, teil[0].posten);
+  ok('Teilzahlung-Buchung: 1600 S / 1200 H über 20000', bk.zeilen[0].konto === '1600' && bk.zeilen[0].betrag === 20000 && bk.zeilen[1].konto === '1200');
 });
 
 // ===== A2: Eingangsrechnungen als offene Verbindlichkeiten (Kreditoren) =====
