@@ -90,13 +90,39 @@ Datumsnähe). **UI** (Bankimport): bei Verbindlichkeiten ohne exakten Treffer Kn
 **„◑ Teilzahlung verbuchen"** → bucht den gezahlten Betrag (Verbindlichkeit an Bank) + vermerkt
 die Teilzahlung; Skonto wird als Hinweis gezeigt. `findeOffenePosten` (exakt) bleibt unverändert.
 
+**Forderungs-Teilzahlung erledigt (2026-06-16):** Aufträge führen jetzt `zahlungen[]`;
+`orders.auftragOffen()`/`auftragGezahlt()` (rein, node-getestet) + `zahlungsabgleich.offenePosten`
+liefert den **offenen Rest** (statt Brutto). `crm-store.auftragZahlungHinzufuegen()` erfasst
+(Teil-)Zahlungen und markiert bei Ausgleich automatisch „bezahlt". **UI** (Bankimport): die
+„◑ Teilzahlung verbuchen"-Aktion gilt jetzt **auch für Forderungen** (Bank an Forderung, Rest
+bleibt offen); exakte Zahlungen werden ebenfalls als Zahlung erfasst (Zahlungshistorie).
+
 **Noch offen [SOLL]:**
-- **Teilzahlungen bei Forderungen** (Aufträge führen bisher nur Status, keinen Rest) — dafür
-  Restbetrags-Tracking je Auftrag/Forderung nötig.
 - **Skonto-Buchung mit USt-/Vorsteuer-Korrektur (§17 UStG)** — bewusst NICHT automatisiert
   (Korrektheit vor Bequemlichkeit); heute nur Hinweis, manuelle Buchung.
 - **Sammelzahlungen** (eine Zahlung auf mehrere Rechnungen), Score-Schwelle mit expliziter
   Mehrfach-Auswahl in der UI.
+
+### A4. App-Anbindung / WorkFloh-Integration **[SOLL] — spätere Sitzung, sauber als Option vorbereiten**
+**Vision (Nutzer):** Funktionierende Apps sollen sich an BookLedgerPro **anbinden** können bzw.
+BookLedgerPro bietet die Anbindung an. Konkretes Beispiel **Mein-WorkFloh**: Angebote → umgesetzte
+Arbeiten werden dort in eine **Rechnung** übergeführt; diese Rechnung wird dann **kombiniert in
+BookLedgerPro weiterverarbeitet** (Forderung/Buchung, Zahlungsabgleich, EÜR/USt). Soll **als Option**
+möglich sein, nicht erzwungen.
+**Heutiger Stand (Seam vorhanden):** `domain/importworkfloh.js` (Parser/Normalisierung) +
+`crm-store.importWorkFloh()` (Dedupe Kunden/Aufträge, Aufträge kommen als „angelegt" herein →
+Rechnung/USt-Buchung erfolgt in BLP). Damit ist der **Datei-Import** bereits der erste Andockpunkt.
+**Für die spätere Umsetzung sauber vorzubereiten:**
+- Stabiles **Austauschformat/Schema** (Angebot/Auftrag/Rechnung) versionieren; klare Feld-Map
+  WorkFloh→BLP (inkl. Kunde, Positionen, USt-Sätze, Rechnungsnummer, Datum, Fälligkeit).
+- **Anbindungs-Option** in der UI (Import-Knopf vorhanden) → ggf. „Verbindung/Quelle"-Einstellung;
+  Richtung BLP-als-Empfänger zuerst (Datei/JSON), später optional API/Push.
+- **Idempotenz/Dedupe** härten (externId/externNummer — teils vorhanden), Konflikt-/Update-Fälle.
+- **Rechnung statt nur Auftrag** importieren können (WorkFloh erzeugt bereits Rechnung) → direkter
+  Forderungs-Posten inkl. Zahlungsabgleich; GoBD-Festschreibung bleibt in BLP manuell.
+- Build-frei/offline-first + Krypto-Disziplin wahren; **opt-in**, kein Zwang.
+> Bewusst **noch nicht umgesetzt** — erst nach Freigabe/Bedarf (eigene Sitzung). Hier nur als
+> verbindlicher Andockpunkt festgehalten, damit die Richtung nicht verloren geht.
 
 ---
 

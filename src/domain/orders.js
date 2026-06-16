@@ -51,6 +51,18 @@ export function auftragSummen(positionen) {
   return { netto, ust, brutto: netto + ust, perSatz };
 }
 
+/** Summe der auf einen Auftrag geleisteten (Teil-)Zahlungen in Cent. */
+export function auftragGezahlt(auftrag) {
+  let s = 0;
+  for (const z of (auftrag && auftrag.zahlungen) || []) s += Math.round(Number(z.betragCent) || 0);
+  return s;
+}
+
+/** Offener Forderungsbetrag eines Auftrags in Cent: Brutto − geleistete (Teil-)Zahlungen. */
+export function auftragOffen(auftrag) {
+  return auftragSummen((auftrag || {}).positionen).brutto - auftragGezahlt(auftrag);
+}
+
 export function validateAuftrag(a) {
   const errors = [];
   if (!a.titel || !a.titel.trim()) errors.push('Titel fehlt.');
