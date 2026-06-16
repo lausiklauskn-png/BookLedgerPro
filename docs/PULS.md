@@ -5,13 +5,14 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/zahlungsabgleich-8vx628`
-· **main-Stand:** `116307a` · **Tests:** `node tests/run.mjs` → **333/333 grün**
-· **SW-Cache:** `v55` · **65 JS-Module** · **12 Bild- + 5 Icon-Assets**
-· **Bankimport komplett:** MT940 **und CAMT.053** (Auto-Erkennung). **Zahlungsabgleich:**
-  `src/domain/zahlungsabgleich.js` — offene Posten aus Aufträgen, Matching (Betrag+Nr.+Name),
-  Ausgleichsbuchung Bank↔Forderung/Verbindlichkeit; in Bank-Import-UI verdrahtet (Auftrag→bezahlt).
-  **Offen:** Verbindlichkeiten-Posten-Quelle (Eingangsrechnungen), Teilzahlungen/Partial-Matching.
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/mahnwesen-8vx628`
+· **main-Stand:** `6ba5c40` · **Tests:** `node tests/run.mjs` → **353/353 grün**
+· **SW-Cache:** `v56` · **66 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Zahlungsabgleich** (Forderungen, Matching, Ausgleichsbuchung) ✓ · **Bankimport** MT940+CAMT.053 ✓.
+· **NEU Mahnwesen (A1-Kern):** `src/domain/mahnwesen.js` — Fälligkeit/Überfälligkeit, Mahnstufen,
+  Verzugszinsen §288 BGB, Mahnschreiben; Auswertungen-Karte „Offene Forderungen & Mahnwesen" +
+  druckbares Mahnschreiben; Settings `zahlungszielTage`/`verzugBasiszinsProzent`.
+  **Offen (OFFENE_PUNKTE A1):** B2B/Verbraucher je Kunde, Mahnstufe persistent, Buchung der Zinsen/Gebühren.
 · **Datenschutz-Modi ABGESCHLOSSEN** (Schritt 1+2+Transparenz+AVV).
 · **E-Rechnung:** Erzeugung (`erechnung.js`, CII-XML + Download) + Empfang (`erechnungLesen.js`,
   CII+UBL → Vorschlag). Ehrlich: nicht KoSIT-validiert, ZUGFeRD-PDF nicht ausgepackt.

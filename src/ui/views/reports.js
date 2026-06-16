@@ -10,6 +10,10 @@ import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv } from
 import { downloadText } from '../../core/files.js';
 import { isMistralConfigured } from '../../ai/aiConfig.js';
 import { erklaereSteuer } from '../../ai/taxAssist.js';
+import { listAuftraege, listKunden } from '../../domain/crm-store.js';
+import { offenePosten } from '../../domain/zahlungsabgleich.js';
+import { anreicherePosten, ueberfaelligSummen, mahnschreibenDaten } from '../../domain/mahnwesen.js';
+import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
@@ -44,10 +48,20 @@ async function repaint() {
   const audit = await verifyAuditChain();
   const claudeBereit = await isMistralConfigured().catch(() => false);
 
+  // Offene Forderungen + Fälligkeit/Überfälligkeit für das Mahnwesen.
+  let offen = [];
+  try {
+    const [auftraege, kunden] = await Promise.all([listAuftraege(), listKunden()]);
+    const nameById = {}; for (const k of kunden) nameById[k.id] = k.name;
+    const s = getSettings();
+    offen = anreicherePosten(offenePosten(auftraege, { nameById }), { zielTage: s.zahlungszielTage });
+  } catch { offen = []; }
+
   mount(_host, el('section', { class: 'view', id: 'report-view' }, [
     el('h1', { text: t('reports.title') }),
     periodeControls(),
     exportBar(buchungen, idx, eur, va),
+    offen.length ? mahnungenCard(offen) : null,
     el('div', { class: 'report-grid' }, [
       ustCard(ust),
       eurCard(eur),
@@ -58,6 +72,77 @@ async function repaint() {
     claudeBereit ? assistentCard(va, eur, p) : null,
     ks.length ? kostenstellenCard(ks) : null,
     auditCard(audit),
+  ]));
+}
+
+// ---- Offene Forderungen & Mahnwesen ----------------------------------------
+
+function mahnungenCard(posten) {
+  const sum = ueberfaelligSummen(posten);
+  const reihen = [...posten].sort((a, b) => b.tageUeberfaellig - a.tageUeberfaellig).map((p) => {
+    const badge = p.ueberfaellig
+      ? el('span', { class: 'badge badge-warn', text: `${t('reports.mahnOverdue')} ${p.tageUeberfaellig} ${t('reports.mahnDays')}` })
+      : el('span', { class: 'muted small', text: t('reports.mahnOpen') });
+    const aktion = p.mahnstufe.mahnbar
+      ? el('button', { class: 'btn btn-sm', text: `${t('reports.mahnShow')} (${p.mahnstufe.label})`, onClick: () => zeigeMahnung(p) })
+      : null;
+    return el('tr', {}, [
+      el('td', { text: p.referenz || '—' }),
+      el('td', { text: p.name || '—' }),
+      el('td', { class: 'num', text: formatEuro(p.betragCent) }),
+      el('td', { class: 'mono small', text: p.faelligAm }),
+      el('td', {}, [badge]),
+      el('td', { class: 'actions no-print' }, [aktion].filter(Boolean)),
+    ]);
+  });
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.mahnTitle') }),
+    el('div', { class: 'report-line strong' }, [
+      el('span', { text: t('reports.mahnOverdueSum') }),
+      el('span', { class: 'num', text: `${formatEuro(sum.summeCent)} (${sum.anzahl})` }),
+    ]),
+    el('table', { class: 'table' }, [
+      el('thead', {}, [el('tr', {}, [
+        el('th', { text: t('reports.mahnInvoice') }), el('th', { text: t('reports.mahnCustomer') }),
+        el('th', { class: 'num', text: t('orders.gross') }), el('th', { text: t('reports.mahnDue') }),
+        el('th', { text: t('reports.mahnStatus') }), el('th', { class: 'no-print', text: '' }),
+      ])]),
+      el('tbody', {}, reihen),
+    ]),
+    el('p', { class: 'muted small', text: t('reports.mahnNote') }),
+  ]);
+}
+
+function zeigeMahnung(posten) {
+  const s = getSettings();
+  const d = mahnschreibenDaten(posten, {
+    zielTage: s.zahlungszielTage,
+    basiszinsProzent: s.verzugBasiszinsProzent,
+    b2b: true,
+  });
+  const firma = s.firma || {};
+  const zeile = (label, cents, strong) => el('div', { class: 'report-line' + (strong ? ' strong' : '') }, [
+    el('span', { text: label }), el('span', { class: 'num', text: formatEuro(cents) }),
+  ]);
+  mount(_host, el('section', { class: 'view' }, [
+    el('div', { class: 'btn-row no-print' }, [
+      el('button', { class: 'btn', text: t('common.back'), onClick: () => repaint() }),
+      el('button', { class: 'btn btn-primary', text: t('reports.print'), onClick: () => window.print() }),
+    ]),
+    el('div', { class: 'card rechnung-doc' }, [
+      el('div', { class: 'muted small', text: firma.name || '' }),
+      el('h2', { class: 'card-title', text: `${d.stufeLabel}${d.referenz ? ' — Rechnung ' + d.referenz : ''}` }),
+      el('div', { text: `${t('reports.mahnCustomer')}: ${d.name || '—'}` }),
+      el('p', { class: 'small', text: t('reports.mahnBody')
+        .replace('{ref}', d.referenz || '—').replace('{faellig}', d.faelligAm).replace('{tage}', String(d.tageUeberfaellig)) }),
+      zeile(t('reports.mahnClaim'), d.forderungCent),
+      d.zinsenCent ? zeile(t('reports.mahnInterest'), d.zinsenCent) : null,
+      d.pauschaleCent ? zeile(t('reports.mahnFee'), d.pauschaleCent) : null,
+      el('div', { class: 'mycel-divider' }),
+      zeile(t('reports.mahnTotal'), d.gesamtCent, true),
+      el('p', { class: 'small', text: t('reports.mahnDeadline').replace('{frist}', d.neueFrist) }),
+      el('p', { class: 'muted small', text: t('reports.mahnLegal') }),
+    ].filter(Boolean)),
   ]));
 }
 

@@ -16,6 +16,8 @@ const DEFAULTS = Object.freeze({
   taxProfile: 'DE',     // Deutschland zuerst
   kleinunternehmer: false, // §19 UStG — unterdrückt USt-Hinweise
   datenschutzModus: 'aus', // aus | pseudonym — ersetzt bekannte Identifikatoren vor KI-Versand
+  zahlungszielTage: 14,    // Standard-Zahlungsziel für Fälligkeit/Mahnwesen
+  verzugBasiszinsProzent: 3.37, // Basiszinssatz §247 BGB — REGELMÄSSIG AKTUALISIEREN
   firma: { name: '', anschrift: '', steuernummer: '', ustId: '', iban: '' }, // Aussteller-Stammdaten (Rechnung §14)
 });
 

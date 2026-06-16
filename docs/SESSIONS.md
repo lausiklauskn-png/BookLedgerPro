@@ -5,6 +5,22 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Mahnwesen (A1-Kern): Fälligkeit/Überfälligkeit + Verzugszinsen + Mahnschreiben
+
+**Was getan:** `src/domain/mahnwesen.js` (neu, rein/getestet): `faelligkeit`, `tageUeberfaellig`,
+`mahnstufe` (Erinnerung→1./2./3. Mahnung), `verzugszinsenCent` (§288 BGB: B2B +9, Verbraucher +5
+%-Punkte über Basiszins, zeitanteilig), `mahnpauschaleCent` (40 € B2B), `anreicherePosten`,
+`ueberfaelligSummen`, `mahnschreibenDaten` (Zinsen/Pauschale erst ab „1. Mahnung"). UI: Auswertungen-
+Karte **„Offene Forderungen & Mahnwesen"** (überfällig-Badge + Summe) mit **druckbarem
+Mahnschreiben**. Settings `zahlungszielTage` (14) + `verzugBasiszinsProzent` (§247 BGB). i18n de/en,
+`.badge-warn`-Style, SW `v55→v56`. **+20 Tests → 353/353 grün.**
+
+**Ehrlich offen (OFFENE_PUNKTE A1):** B2B/Verbraucher global (nicht je Kunde); Mahnstufe nur
+abgeleitet (nicht persistent); Buchung der Zinsen/Gebühren als Ertrag fehlt; Basiszinssatz muss
+manuell aktuell gehalten werden; UI nicht headless-E2E.
+
+---
+
 ## 2026-06-16 — Merkliste angelegt: docs/OFFENE_PUNKTE.md (inkl. Mahnwesen)
 
 **Was getan (Nutzerwunsch):** Lebende Backlog-/Merkliste `docs/OFFENE_PUNKTE.md` angelegt —
