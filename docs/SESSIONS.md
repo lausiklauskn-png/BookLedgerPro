@@ -5,6 +5,30 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — A3 (Kern): Teilzahlung/Skonto/Toleranz-Matching im Zahlungsabgleich
+
+**Was getan**
+- **Reine Logik** `src/domain/zahlungsabgleich.js`: `findeKandidaten(umsatz, posten, opts)` —
+  gerankte Kandidaten mit Art `exakt`/`toleranz` (Rundungs-Cent)/`skonto` (Zahlung knapp unter
+  offen, ≤ skontoProzent → **Hinweis**, kein Auto-Buchen)/`teilzahlung` (Rest bleibt offen).
+  Überzahlung wird konservativ nicht zugeordnet; Mehrdeutigkeit über Score (Referenz/Name/
+  Datumsnähe). `findeOffenePosten` (exakt) bleibt unverändert.
+- **UI** `src/ui/views/documents.js`: Bankimport bietet bei Verbindlichkeiten ohne exakten
+  Treffer **„◑ Teilzahlung verbuchen"** → bucht gezahlten Betrag (Verbindlichkeit an Bank) +
+  `zahlungHinzufuegen` (Rest bleibt offen, erscheint weiter in der OP-Liste); Skonto als Hinweis
+  inkl. „USt-Korrektur §17 manuell". i18n de/en.
+- **8 neue Node-Tests** → `node tests/run.mjs` **410/410 grün**. SW-Cache `v58 → v59`.
+  `OFFENE_PUNKTE.md` A3-Kern abgehakt.
+
+**Ehrlich offen / ungetestet:** UI nicht headless-E2E. **Teilzahlung bei Forderungen** fehlt
+(Aufträge führen nur Status, keinen Rest); **Skonto-Buchung mit USt/§17-Korrektur** bewusst nicht
+automatisiert; **Sammelzahlungen** (1 Zahlung → mehrere Rechnungen) offen.
+
+**Offen / Nächstes:** A3-Rest (Forderungs-Teilzahlung, Skonto-Buchung, Sammelzahlung); A1-Rest
+(Mahnwesen je Kunde/persistent/Buchung). **Details: `docs/OFFENE_PUNKTE.md`.**
+
+---
+
 ## 2026-06-16 — A2-Anschluss: OP-Liste „Offene Verbindlichkeiten" (Auswertungen)
 
 **Was getan**

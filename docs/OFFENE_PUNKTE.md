@@ -77,10 +77,22 @@ Node-getestet; SW `v58`.
 Verbindlichkeiten auch aus **Foto/PDF-Belegen** (heute aus E-Rechnung-XML); eigene
 **Verbindlichkeiten-Ansicht** zum manuellen Anlegen/Bearbeiten (heute nur via E-Rechnung-Import).
 
-### A3. Teilzahlungen & unscharfes Matching **[SOLL]**
-Zahlungsabgleich matcht aktuell nur **exakten Betrag**. Nötig: Teilzahlungen (Restforderung
-führen), Sammelzahlungen (mehrere Rechnungen), Toleranz/Skonto-Abzug, Score-Schwelle mit
-Nutzer-Bestätigung bei Mehrdeutigkeit.
+### A3. Teilzahlungen & unscharfes Matching — **Kern erledigt ✓ (Verbindlichkeiten), Rest offen**
+**Erledigt (2026-06-16):** `zahlungsabgleich.findeKandidaten()` (rein, node-getestet) liefert
+**gerankte** Kandidaten mit Art `exakt` / `toleranz` (Rundungs-Cent) / `skonto` (Zahlung knapp
+unter offen, ≤ skontoProzent — als **Hinweis**) / `teilzahlung` (Rest bleibt offen);
+Überzahlungen werden konservativ nicht zugeordnet, Mehrdeutigkeit über Score (Referenz/Name/
+Datumsnähe). **UI** (Bankimport): bei Verbindlichkeiten ohne exakten Treffer Knopf
+**„◑ Teilzahlung verbuchen"** → bucht den gezahlten Betrag (Verbindlichkeit an Bank) + vermerkt
+die Teilzahlung; Skonto wird als Hinweis gezeigt. `findeOffenePosten` (exakt) bleibt unverändert.
+
+**Noch offen [SOLL]:**
+- **Teilzahlungen bei Forderungen** (Aufträge führen bisher nur Status, keinen Rest) — dafür
+  Restbetrags-Tracking je Auftrag/Forderung nötig.
+- **Skonto-Buchung mit USt-/Vorsteuer-Korrektur (§17 UStG)** — bewusst NICHT automatisiert
+  (Korrektheit vor Bequemlichkeit); heute nur Hinweis, manuelle Buchung.
+- **Sammelzahlungen** (eine Zahlung auf mehrere Rechnungen), Score-Schwelle mit expliziter
+  Mehrfach-Auswahl in der UI.
 
 ---
 

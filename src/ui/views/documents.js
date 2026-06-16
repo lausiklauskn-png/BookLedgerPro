@@ -8,7 +8,7 @@ import { formatEuro } from '../../domain/money.js';
 import { pickFile, formatBytes, readFileText } from '../../core/files.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
 import { parseBankauszug, umsatzExtraktion } from '../../domain/bankimport.js';
-import { offenePosten, findeOffenePosten, zahlungsBuchungZeilen } from '../../domain/zahlungsabgleich.js';
+import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen } from '../../domain/zahlungsabgleich.js';
 import { offeneVerbindlichkeiten, eingangsrechnungZeilen } from '../../domain/payables.js';
 import { saveEingangsrechnung, listEingangsrechnungen, zahlungHinzufuegen } from '../../domain/payables-store.js';
 import { listAuftraege, listKunden, setAuftragStatus } from '../../domain/crm-store.js';
@@ -306,6 +306,28 @@ function umsatzRow(u, posten = []) {
         } catch (e) { slot.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
       },
     }));
+  } else {
+    // Kein exakter Treffer: Teilzahlung/Skonto auf eine offene VERBINDLICHKEIT anbieten
+    // (Teilzahlungen werden dort sauber als Rest geführt; Forderungen bleiben exakt).
+    const kand = findeKandidaten(u, posten).find(
+      (k) => k.posten.kind === 'verbindlichkeit' && (k.art === 'teilzahlung' || k.art === 'skonto'));
+    if (kand) {
+      const p = kand.posten;
+      knoepfe.push(el('button', {
+        class: 'btn btn-sm', type: 'button',
+        text: `${t(kand.art === 'skonto' ? 'docs.bankSkonto' : 'docs.bankPartial')} ${p.referenz || ''}`.trim(),
+        onClick: async () => {
+          slot.replaceChildren();
+          const bk = zahlungsBuchungZeilen(u, p);
+          try {
+            await saveEntwurf({ datum: bk.datum, beschreibung: bk.beschreibung, zeilen: bk.zeilen });
+            await zahlungHinzufuegen(p.id, { betragCent: u.betragCent, datum: bk.datum, ref: u.zweck || null });
+            slot.appendChild(el('p', { class: 'muted small', text: t('docs.bankPartialDone').replace('{rest}', formatEuro(kand.restCent || kand.skontoCent || 0)) }));
+            if (kand.art === 'skonto') slot.appendChild(el('p', { class: 'muted small', text: t('docs.bankSkontoHint').replace('{betrag}', formatEuro(kand.skontoCent)) }));
+          } catch (e) { slot.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
+        },
+      }));
+    }
   }
 
   // Fallback / Alternative: normaler Buchungsvorschlag über Kategorisierung.
