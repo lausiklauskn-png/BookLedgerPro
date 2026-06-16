@@ -47,11 +47,15 @@ export const SKR03_SEED = [
   { nummer: '1400', name: 'Forderungen aus Lieferungen und Leistungen', art: KONTOART.AKTIV },
   { nummer: '1571', name: 'Abziehbare Vorsteuer 7%', art: KONTOART.AKTIV, ust: 7, rolle: 'vorsteuer' },
   { nummer: '1576', name: 'Abziehbare Vorsteuer 19%', art: KONTOART.AKTIV, ust: 19, rolle: 'vorsteuer' },
+  { nummer: '1574', name: 'Abziehbare Vorsteuer innergem. Erwerb 19%', art: KONTOART.AKTIV, ust: 19, rolle: 'vorsteuer_ig' },
+  { nummer: '1577', name: 'Abziehbare Vorsteuer §13b (Leistungsempfänger)', art: KONTOART.AKTIV, ust: 19, rolle: 'vorsteuer_13b' },
   // ---- Verbindlichkeiten / Steuern (Klasse 1, Passiva) ----
   { nummer: '1600', name: 'Verbindlichkeiten aus Lieferungen und Leistungen', art: KONTOART.PASSIV },
   { nummer: '1700', name: 'Sonstige Verbindlichkeiten', art: KONTOART.PASSIV },
   { nummer: '1771', name: 'Umsatzsteuer 7%', art: KONTOART.PASSIV, ust: 7, rolle: 'umsatzsteuer' },
   { nummer: '1776', name: 'Umsatzsteuer 19%', art: KONTOART.PASSIV, ust: 19, rolle: 'umsatzsteuer' },
+  { nummer: '1772', name: 'Umsatzsteuer innergem. Erwerb 19%', art: KONTOART.PASSIV, ust: 19, rolle: 'umsatzsteuer_ig' },
+  { nummer: '1787', name: 'Umsatzsteuer §13b (Leistungsempfänger)', art: KONTOART.PASSIV, ust: 19, rolle: 'umsatzsteuer_13b' },
   { nummer: '1780', name: 'Umsatzsteuer-Vorauszahlungen', art: KONTOART.PASSIV },
   // ---- Neutrale Aufwendungen/Erträge (Klasse 2) ----
   { nummer: '2100', name: 'Zinsen und ähnliche Aufwendungen', art: KONTOART.AUFWAND },
@@ -91,6 +95,8 @@ export const SKR03_SEED = [
   { nummer: '4980', name: 'Sonstige betriebliche Aufwendungen', art: KONTOART.AUFWAND },
   // ---- Erlöse (Klasse 8) ----
   { nummer: '8100', name: 'Steuerfreie Umsätze §4 UStG', art: KONTOART.ERTRAG, ust: 0 },
+  { nummer: '8125', name: 'Steuerfreie innergem. Lieferungen (§4 Nr.1b)', art: KONTOART.ERTRAG, ust: 0, rolle: 'erloes_ig' },
+  { nummer: '8120', name: 'Steuerfreie Umsätze Ausfuhr/Drittland (§4 Nr.1a)', art: KONTOART.ERTRAG, ust: 0, rolle: 'erloes_ausfuhr' },
   { nummer: '8200', name: 'Erlöse', art: KONTOART.ERTRAG, ust: 0 },
   { nummer: '8300', name: 'Erlöse 7% USt', art: KONTOART.ERTRAG, ust: 7 },
   { nummer: '8400', name: 'Erlöse 19% USt', art: KONTOART.ERTRAG, ust: 19 },
@@ -103,6 +109,16 @@ export function seedAccounts() {
 
 export function isVorsteuerKonto(konto) { return konto && konto.rolle === 'vorsteuer'; }
 export function isUmsatzsteuerKonto(konto) { return konto && konto.rolle === 'umsatzsteuer'; }
+
+// Steuerschuldumkehr (Leistungsempfänger schuldet die USt): §13b UStG und
+// innergemeinschaftlicher Erwerb. Standard-Konten der SKR03-Auswahl. Bei beiden wird
+// Vorsteuer UND geschuldete USt gleichzeitig gebucht (heben sich bei vollem Abzug auf).
+export const REVERSE_CHARGE_KONTEN = {
+  '13b':      { vorsteuer: '1577', umsatzsteuer: '1787' },
+  ig_erwerb:  { vorsteuer: '1574', umsatzsteuer: '1772' },
+};
+// Standard-Erlöskonten für steuerfreie Ausgangsumsätze (kein USt-Ausweis).
+export const STEUERFREI_ERLOES_KONTEN = { ig_lieferung: '8125', ausfuhr: '8120' };
 
 /** Alle Kontoarten als Liste (für Auswahlfelder). */
 export const KONTOART_LISTE = [KONTOART.AKTIV, KONTOART.PASSIV, KONTOART.AUFWAND, KONTOART.ERTRAG];

@@ -178,13 +178,28 @@ export function buildDatevExtf(buchungen, kontoIndex, opts = {}) {
  * Kz 81 = Umsätze 19 %, Kz 86 = Umsätze 7 %, Kz 66 = Vorsteuer, Kz 83 = Zahllast.
  * Alle Werte in Cent.
  */
+// Kennzahlen über die Standard-Inlandssätze hinaus: §13b (Leistungsempfänger),
+// innergem. Erwerb, steuerfreie ig Lieferung / Ausfuhr. Reine Konto-Rollen-Zuordnung
+// (siehe accounts.js). EHRLICH/PFLICHT: Die exakte Zuordnung ist am amtlichen ELSTER-
+// USt-VA-Formular bzw. mit dem Berater zu verifizieren — bei §13b/EU im Zweifel Berater.
 export function buildUstVa(buchungen, kontoIndex, periode) {
   const bew = kontoBewegungen(buchungen, periode);
   let kz81 = 0, kz86 = 0, kz81Steuer = 0, kz86Steuer = 0, kz66 = 0;
+  let kz46 = 0, kz47 = 0, kz67 = 0;        // §13b Leistungsempfänger: BMG / Steuer / Vorsteuer
+  let kz89 = 0, kz93 = 0, kz61 = 0;        // innergem. Erwerb: BMG / Steuer / Vorsteuer
+  let kz41 = 0, kz43 = 0;                  // steuerfreie ig Lieferung / Ausfuhr (BMG)
+  const bmg = (steuer, satz) => (satz ? Math.round((steuer * 100) / Number(satz)) : 0);
   for (const [nr, m] of Object.entries(bew)) {
     const k = kontoIndex[nr];
     if (!k) continue;
-    if (k.art === KONTOART.ERTRAG) {
+    const rolle = k.rolle;
+    if (rolle === 'umsatzsteuer_13b') { const s = m.haben - m.soll; kz47 += s; kz46 += bmg(s, k.ust); }
+    else if (rolle === 'vorsteuer_13b') { kz67 += m.soll - m.haben; }
+    else if (rolle === 'umsatzsteuer_ig') { const s = m.haben - m.soll; kz93 += s; kz89 += bmg(s, k.ust); }
+    else if (rolle === 'vorsteuer_ig') { kz61 += m.soll - m.haben; }
+    else if (rolle === 'erloes_ig') { kz41 += m.haben - m.soll; }
+    else if (rolle === 'erloes_ausfuhr') { kz43 += m.haben - m.soll; }
+    else if (k.art === KONTOART.ERTRAG) {
       const netto = m.haben - m.soll;
       if (k.ust === 19) kz81 += netto;
       else if (k.ust === 7) kz86 += netto;
@@ -196,18 +211,28 @@ export function buildUstVa(buchungen, kontoIndex, periode) {
       kz66 += m.soll - m.haben;
     }
   }
-  const kz83 = kz81Steuer + kz86Steuer - kz66;
-  return { kz81, kz81Steuer, kz86, kz86Steuer, kz66, kz83 };
+  // Zahllast inkl. Steuerschuldumkehr: geschuldete USt (47/93) erhöht, abziehbare
+  // Vorsteuer (67/61) mindert; bei vollem Abzug heben sich 47/67 bzw. 93/61 auf.
+  const kz83 = kz81Steuer + kz86Steuer + kz47 + kz93 - kz66 - kz67 - kz61;
+  return { kz81, kz81Steuer, kz86, kz86Steuer, kz66, kz83, kz41, kz43, kz46, kz47, kz67, kz89, kz93, kz61 };
 }
 
 export function ustVaToCsv(va) {
   return csv([
     ['Kennzahl', 'Bezeichnung', 'Betrag'],
+    ['41', 'Steuerfreie innergem. Lieferungen (§4 Nr.1b UStG)', centsToComma(va.kz41 || 0)],
+    ['43', 'Weitere steuerfreie Umsätze mit Vorsteuerabzug (z.B. Ausfuhr)', centsToComma(va.kz43 || 0)],
     ['81', 'Bemessungsgrundlage Umsätze 19 %', centsToComma(va.kz81)],
     ['', 'darauf Umsatzsteuer 19 %', centsToComma(va.kz81Steuer)],
     ['86', 'Bemessungsgrundlage Umsätze 7 %', centsToComma(va.kz86)],
     ['', 'darauf Umsatzsteuer 7 %', centsToComma(va.kz86Steuer)],
-    ['66', 'Vorsteuerbeträge', centsToComma(va.kz66)],
+    ['89', 'Innergem. Erwerbe 19 % (Bemessungsgrundlage)', centsToComma(va.kz89 || 0)],
+    ['93', 'darauf Umsatzsteuer (innergem. Erwerb)', centsToComma(va.kz93 || 0)],
+    ['46', 'Leistungen §13b (Leistungsempfänger) — Bemessungsgrundlage', centsToComma(va.kz46 || 0)],
+    ['47', 'darauf Umsatzsteuer §13b', centsToComma(va.kz47 || 0)],
+    ['66', 'Vorsteuerbeträge (§15 Abs.1 Nr.1)', centsToComma(va.kz66)],
+    ['61', 'Vorsteuer aus innergem. Erwerb', centsToComma(va.kz61 || 0)],
+    ['67', 'Vorsteuer aus Leistungen §13b', centsToComma(va.kz67 || 0)],
     ['83', 'Verbleibende USt-Vorauszahlung (Zahllast)', centsToComma(va.kz83)],
   ]);
 }

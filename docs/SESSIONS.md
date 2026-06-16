@@ -5,6 +5,38 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — V2: §13b/Reverse-Charge + EU/Ausland (USt) [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (Fahrplan-Punkt V2, „weiter laut PULS")
+- **`baueReverseChargeZeilen` (journal.js)** + `UMSATZART`: Steuerschuldumkehr (§13b UStG /
+  innergem. Erwerb) bucht **gleichzeitig** abziehbare Vorsteuer (Soll) und geschuldete USt
+  (Haben); an den Lieferanten fließt nur der **Netto**-Betrag. Option „nicht abziehbar" →
+  USt wird Kostenbestandteil. Buchung ist immer ausgeglichen.
+- **Konten (accounts.js):** 1577/1787 (§13b VSt/USt), 1574/1772 (ig Erwerb VSt/USt),
+  8125/8120 (steuerfreie ig Lieferung / Ausfuhr) mit neuen `rolle`-Markern; Map
+  `REVERSE_CHARGE_KONTEN` + `STEUERFREI_ERLOES_KONTEN`. `store.ensureSeedKonten` zieht die
+  Konten in älteren Tresoren nach.
+- **USt-VA (export.js `buildUstVa`):** neue Kennzahlen **Kz 46/47/67** (§13b),
+  **Kz 89/93/61** (ig Erwerb), **Kz 41/43** (steuerfrei); BMG aus Steuer/Satz; Kz 83
+  inkl. RC (geschuldete USt erhöht, Vorsteuer mindert → hebt sich bei vollem Abzug auf).
+  `ustVaToCsv` + Auswertungs-Karte zeigen die Kennzahlen (nur wenn ≠ 0).
+- **UI:** Umsatzart-Auswahl (Inland / §13b / innergem. Erwerb) im Journal-Formular; bei
+  Reverse-Charge gilt der Betrag als Netto. i18n de/en. SW-Cache `v64`.
+- **Tests 472/472** (28 neu: Buchungszeilen, Ausgleich, USt-VA-Kennzahlen, Zahllast-
+  Neutralisierung, §13b-only → Kz83=0, CSV).
+
+**Stand:** V2 vollständig (Logik node-getestet, UI statisch geprüft — nicht headless-E2E).
+**Offen/Ehrlich:** §13b modelliert für 19 % (Hauptfall Cloud/Software); exakte Kennzahl-
+Zuordnung am amtlichen ELSTER-Formular/mit Berater zu verifizieren; E-Rechnungs-Empfang
+erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 (Anlagevermögen
++ AfA + Anlagenverzeichnis), `docs/OFFENE_PUNKTE.md` Abschnitt V.
+
+> Hinweis: Branch `claude/v2-ox8bu7` war zunächst auf veraltetem `main` (PR #63 Ist-EÜR);
+> Ist-EÜR existierte bereits in `main` → #63 geschlossen, Branch auf `main` zurückgesetzt,
+> V2 korrekt umgesetzt.
+
+---
+
 ## 2026-06-16 — Profi-Readiness-Fahrplan (V1–V10) + V1 Kontenrahmen
 
 **Was getan**

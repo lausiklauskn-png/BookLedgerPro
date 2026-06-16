@@ -9,8 +9,8 @@ import {
 } from '../src/core/crypto.js';
 import { splitSecret, combineShares, encodeShare, decodeShare } from '../src/core/shamir.js';
 import { parseEuroToCents, formatCents } from '../src/domain/money.js';
-import { saldo, KONTOART, mehrungsSeite, validateKonto, normalizeKonto, KONTOART_LISTE, SKR03_SEED } from '../src/domain/accounts.js';
-import { baueBuchungZeilen, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen, formularAusBuchung } from '../src/domain/journal.js';
+import { saldo, KONTOART, mehrungsSeite, validateKonto, normalizeKonto, KONTOART_LISTE, SKR03_SEED, REVERSE_CHARGE_KONTEN } from '../src/domain/accounts.js';
+import { baueBuchungZeilen, baueReverseChargeZeilen, UMSATZART, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen, formularAusBuchung } from '../src/domain/journal.js';
 import { hashBuchung, verifyChain, GENESIS, canonicalize } from '../src/domain/audit.js';
 import { computeEUR, computeEURIst, computeUStVoranmeldung, saldenliste, verprobeUSt } from '../src/domain/taxes.js';
 import { seedAccounts } from '../src/domain/accounts.js';
@@ -1462,6 +1462,80 @@ await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kont
   ok('Bestandskonto 1200 → null (Heuristik greift)', resolveKategorie({ konto: '1200', richtung: 'ausgabe' }, idx) === null);
   ok('unbekanntes Konto → null', resolveKategorie({ konto: '9999', richtung: 'ausgabe' }, idx) === null);
   ok('null-Eingabe → null', resolveKategorie(null, idx) === null);
+});
+
+await section('V2: Reverse-Charge §13b + innergem. Erwerb (Buchungszeilen)', () => {
+  const idx = indexFromSeed();
+  ok('Seed kennt §13b-Konten 1577/1787', !!idx['1577'] && !!idx['1787']);
+  ok('Seed kennt ig-Erwerb-Konten 1574/1772', !!idx['1574'] && !!idx['1772']);
+  ok('Seed kennt steuerfreie Erlöskonten 8120/8125', !!idx['8120'] && !!idx['8125']);
+  ok('REVERSE_CHARGE_KONTEN bildet §13b → 1577/1787 ab',
+    REVERSE_CHARGE_KONTEN['13b'].vorsteuer === '1577' && REVERSE_CHARGE_KONTEN['13b'].umsatzsteuer === '1787');
+
+  // §13b: 100€ netto, 19% → VSt 19€ (Soll) + USt 19€ (Haben); an Lieferant nur netto.
+  const rc = baueReverseChargeZeilen({
+    netto: '100,00', ustSatz: 19, aufwandKonto: '4950', gegenKonto: '1600',
+    vorsteuerKonto: '1577', umsatzsteuerKonto: '1787',
+  });
+  ok('§13b Netto 10000, Steuer 1900', rc.netto === 10000 && rc.steuer === 1900);
+  ok('§13b Buchung ausgeglichen', istAusgeglichen(rc.zeilen));
+  ok('§13b Soll=Haben=11900', summeSeiten(rc.zeilen).soll === 11900 && summeSeiten(rc.zeilen).haben === 11900);
+  ok('§13b USt 1787 auf Haben', !!zeile(rc.zeilen, '1787', 'H') && zeile(rc.zeilen, '1787', 'H').betrag === 1900);
+  ok('§13b VSt 1577 auf Soll', !!zeile(rc.zeilen, '1577', 'S') && zeile(rc.zeilen, '1577', 'S').betrag === 1900);
+  ok('§13b: Netto an Gegenkonto (Verbindlichkeit) 1600', zeile(rc.zeilen, '1600', 'H').betrag === 10000);
+  ok('§13b gegen Kontenliste gültig', validateBuchung({ datum: '2026-06-01', zeilen: rc.zeilen }, idx).length === 0);
+
+  // Nicht abziehbare Vorsteuer → USt wird Kostenbestandteil, keine VSt-Zeile.
+  const rcNa = baueReverseChargeZeilen({
+    nettoCents: 10000, ustSatz: 19, aufwandKonto: '4950', gegenKonto: '1600',
+    umsatzsteuerKonto: '1787', vorsteuerAbziehbar: false,
+  });
+  ok('§13b ohne VSt-Abzug: keine 1577-Zeile', !zeile(rcNa.zeilen, '1577', 'S'));
+  ok('§13b ohne VSt-Abzug: Aufwand inkl. Steuer (11900)', zeile(rcNa.zeilen, '4950', 'S').betrag === 11900);
+  ok('§13b ohne VSt-Abzug ausgeglichen', istAusgeglichen(rcNa.zeilen));
+
+  ok('UMSATZART kennt 13b & ig_erwerb', UMSATZART.REVERSE_CHARGE_13B === '13b' && UMSATZART.IG_ERWERB === 'ig_erwerb');
+});
+
+await section('V2: USt-VA-Kennzahlen §13b / innergem. Erwerb / steuerfrei', () => {
+  const idx = indexFromSeed();
+  const buchungen = [
+    // §13b Eingangsleistung 100€ netto (VSt+USt 19€)
+    { seq: 1, datum: '2026-06-01', zeilen: [
+      { konto: '4950', seite: 'S', betrag: 10000 }, { konto: '1200', seite: 'H', betrag: 10000 },
+      { konto: '1787', seite: 'H', betrag: 1900 }, { konto: '1577', seite: 'S', betrag: 1900 }] },
+    // innergem. Erwerb 200€ netto (Steuer+VSt 38€)
+    { seq: 2, datum: '2026-06-02', zeilen: [
+      { konto: '3400', seite: 'S', betrag: 20000 }, { konto: '1200', seite: 'H', betrag: 20000 },
+      { konto: '1772', seite: 'H', betrag: 3800 }, { konto: '1574', seite: 'S', betrag: 3800 }] },
+    // steuerfreie innergem. Lieferung 500€
+    { seq: 3, datum: '2026-06-03', zeilen: [{ konto: '1400', seite: 'S', betrag: 50000 }, { konto: '8125', seite: 'H', betrag: 50000 }] },
+    // steuerfreie Ausfuhr 300€
+    { seq: 4, datum: '2026-06-04', zeilen: [{ konto: '1200', seite: 'S', betrag: 30000 }, { konto: '8120', seite: 'H', betrag: 30000 }] },
+    // normaler Inlandsverkauf 200€ netto + 38€ USt
+    { seq: 5, datum: '2026-06-05', zeilen: [
+      { konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+  ];
+  const va = buildUstVa(buchungen, idx);
+  ok('§13b: Kz47 Steuer 1900', va.kz47 === 1900);
+  ok('§13b: Kz46 BMG 10000 (aus Steuer/Satz)', va.kz46 === 10000);
+  ok('§13b: Kz67 Vorsteuer 1900', va.kz67 === 1900);
+  ok('ig Erwerb: Kz93 Steuer 3800', va.kz93 === 3800);
+  ok('ig Erwerb: Kz89 BMG 20000', va.kz89 === 20000);
+  ok('ig Erwerb: Kz61 Vorsteuer 3800', va.kz61 === 3800);
+  ok('steuerfrei: Kz41 ig Lieferung 50000', va.kz41 === 50000);
+  ok('steuerfrei: Kz43 Ausfuhr 30000', va.kz43 === 30000);
+  ok('Inland weiterhin: Kz81 20000 / Steuer 3800', va.kz81 === 20000 && va.kz81Steuer === 3800);
+  // Zahllast: Reverse-Charge hebt sich auf → es bleibt nur die Inlands-USt (3800).
+  ok('Kz83 Zahllast = 3800 (RC neutralisiert sich)', va.kz83 === 3800);
+
+  // §13b-only Periode → Zahllast 0 (USt 47 und VSt 67 heben sich auf).
+  const vaNur13b = buildUstVa(buchungen, idx, { von: '2026-06-01', bis: '2026-06-01' });
+  ok('§13b allein → Kz83 = 0', vaNur13b.kz83 === 0 && vaNur13b.kz47 === 1900 && vaNur13b.kz67 === 1900);
+
+  const csv = ustVaToCsv(va);
+  ok('CSV enthält §13b-Zeile (47)', csv.includes('47;darauf Umsatzsteuer §13b'));
+  ok('CSV enthält Zahllast-Zeile', csv.includes('83;Verbleibende'));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
