@@ -194,6 +194,11 @@ function viewSettings() {
       async (v) => { await updateSettings({ kleinunternehmer: v === 'ja' }); paint(); },
       t('settings.kleinunternehmer.hint')),
 
+    seg(t('settings.datenschutz'), 'datenschutzModus',
+      [['aus', t('settings.datenschutz.aus')], ['pseudonym', t('settings.datenschutz.pseudonym')]],
+      s.datenschutzModus || 'aus',
+      (v) => updateSettings({ datenschutzModus: v }), t('settings.datenschutz.hint')),
+
     seg(t('settings.theme'), 'theme',
       [['system', t('settings.theme.system')], ['light', t('settings.theme.light')], ['dark', t('settings.theme.dark')]],
       s.theme, async (v) => { applyTheme(v); await updateSettings({ theme: v }); }),

@@ -24,10 +24,36 @@
 // Standard-Typ, wenn ein Anker ohne Typ als reine Zeichenkette übergeben wird.
 export const STANDARD_TYP = 'ID';
 
+// Gemeinsames Vokabular der Identifikator-Typen (für sprechende Token & die
+// Anker-Quelle in ai/anker.js). Frei erweiterbar; normTyp() normalisiert ohnehin.
+export const ANKER_TYP = Object.freeze({
+  PERSON: 'PERSON', FIRMA: 'FIRMA', EMAIL: 'EMAIL',
+  IBAN: 'IBAN', USTID: 'USTID', STEUERNR: 'STEUERNR', ADRESSE: 'ADRESSE',
+});
+
 // Form der erzeugten Token. Die schließende `]]` schützt vor Präfix-Kollisionen
 // (z.B. greift `[[ID_1]]` NICHT in `[[ID_11]]`, weil dort `1]]` statt `]]` folgt).
 function baueToken(typ, n) {
   return `[[${typ}_${n}]]`;
+}
+
+// Ein „Wortzeichen" für die optionale Wortgrenzen-Prüfung: Unicode-Buchstabe/Ziffer
+// oder Unterstrich (deckt ä/ö/ü/ß korrekt ab — anders als ASCII-`\b`).
+const WORTZEICHEN = /[\p{L}\p{N}_]/u;
+
+// Liegt der Treffer von `wert` ab Position `start` an einer Wortgrenze? Eine Grenze
+// gilt als verletzt nur, wenn an einer Anker-Kante BEIDE Seiten Wortzeichen sind
+// (z.B. „Anna" mitten in „Annahme"). Anker, die mit Satzzeichen beginnen/enden
+// (IBAN-Lücken, „(GmbH)"), passieren die jeweilige Kante immer. Entspricht der
+// `\b`-Semantik, beschränkt auf die alphanumerischen Anker-Ränder.
+function anWortgrenze(src, start, wert) {
+  const linksInnen = WORTZEICHEN.test(wert[0]);
+  const rechtsInnen = WORTZEICHEN.test(wert[wert.length - 1]);
+  const vor = src[start - 1];
+  const nach = src[start + wert.length];
+  const linksOk = !(linksInnen && vor !== undefined && WORTZEICHEN.test(vor));
+  const rechtsOk = !(rechtsInnen && nach !== undefined && WORTZEICHEN.test(nach));
+  return linksOk && rechtsOk;
 }
 
 // Normalisiert einen Typ-Namen zu einem schlanken Token-Segment (Großbuchstaben,
@@ -100,26 +126,44 @@ function tokenFuer(reg, anker) {
  * @param {Array<string|{wert?:string,value?:string,typ?:string,type?:string}>} anchors
  *        Exakte Identifikatoren. Token-Nummern werden in Reihenfolge des ersten
  *        Auftretens im Text vergeben (PERSON_1 = die erste genannte Person).
- * @param {{registry?:object}} [options]  optionales Register für aufrufsübergreifend
- *        stabile Token.
+ * @param {{registry?:object, wortgrenze?:boolean}} [options]
+ *        `registry`: optionales Register für aufrufsübergreifend stabile Token.
+ *        `wortgrenze` (Standard `false`): wenn `true`, greift ein Anker nur an einer
+ *        Wortgrenze — verhindert, dass ein kurzer Anker (z.B. „Anna") mitten in einem
+ *        längeren Wort („Annahme") ersetzt wird und so den an die KI gesendeten Text
+ *        verunreinigt. Standard ist exakte Ersetzung (datenschutz-sicherste Richtung:
+ *        eher zu viel maskieren als ein Vorkommen zu verfehlen).
  * @returns {{text:string, map:{token:string,wert:string,typ:string}[]}}
  *          `map` ist die Re-Identifizierungstabelle (Token → Originalwert).
  */
 export function tokenize(text, anchors, options = {}) {
   const src = String(text == null ? '' : text);
   const reg = options.registry || createRegistry();
+  const wortgrenze = options.wortgrenze === true;
 
   // Longest-Match zuerst, bei Gleichstand stabil nach Wert sortiert.
   const anker = normalizeAnchors(anchors).sort(
     (a, b) => b.wert.length - a.wert.length || (a.wert < b.wert ? -1 : a.wert > b.wert ? 1 : 0),
   );
+  // Index nach erstem Zeichen: an Position i kommen nur Anker mit gleichem Anfangs-
+  // zeichen als Treffer infrage (startsWith). Spart das Prüfen aller Anker je Position;
+  // die Longest-First-Reihenfolge bleibt je Eimer erhalten → identisches Ergebnis.
+  const nachErstem = new Map();
+  for (const a of anker) {
+    const c = a.wert[0];
+    if (!nachErstem.has(c)) nachErstem.set(c, []);
+    nachErstem.get(c).push(a);
+  }
 
   let out = '';
   let i = 0;
   while (i < src.length) {
     let treffer = null;
-    for (const a of anker) {
-      if (src.startsWith(a.wert, i)) { treffer = a; break; }
+    const kandidaten = nachErstem.get(src[i]);
+    if (kandidaten) {
+      for (const a of kandidaten) {
+        if (src.startsWith(a.wert, i) && (!wortgrenze || anWortgrenze(src, i, a.wert))) { treffer = a; break; }
+      }
     }
     if (treffer) {
       out += tokenFuer(reg, treffer);

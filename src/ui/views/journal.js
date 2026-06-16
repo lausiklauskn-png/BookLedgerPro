@@ -7,6 +7,7 @@ import { loadAccounts, listBuchungen, saveEntwurf, festschreiben, storno, getBuc
 import { baueBuchungZeilen, summeSeiten, BUCHUNG_STATUS, formularAusBuchung } from '../../domain/journal.js';
 import { pruefeBuchung } from '../../domain/pruefung.js';
 import { begruendeBuchung } from '../../ai/berater.js';
+import { ladeAnker } from '../../ai/anker.js';
 import { KONTOART } from '../../domain/accounts.js';
 import { UST_SAETZE } from '../../domain/taxes.js';
 import { listKostenstellen, ensureKostenstellenSeeded } from '../../domain/crm-store.js';
@@ -112,11 +113,12 @@ function buchungForm(konten, idx) {
       try {
         const sollK = idx[fSoll.value], habenK = idx[fHaben.value];
         const kontierung = `Soll ${fSoll.value} ${sollK ? sollK.name : ''} an Haben ${fHaben.value} ${habenK ? habenK.name : ''}`.replace(/\s+/g, ' ').trim();
+        const anker = getSettings().datenschutzModus === 'pseudonym' ? await ladeAnker() : null;
         const r = await begruendeBuchung({
           beschreibung: fText.value, konto: fSoll.value, kontoName: sollK ? sollK.name : '',
           kontierung, text: fText.value,
           kleinunternehmer: getSettings().kleinunternehmer,
-        });
+        }, { anker });
         fBegruendung.value = r.text;
         beraterStatus.textContent = r.quelle === 'mistral' ? t('journal.aiReasonMistral') : t('journal.aiReasonLocal');
       } catch (e) { beraterStatus.textContent = String(e.message || e); }

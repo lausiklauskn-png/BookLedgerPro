@@ -5,10 +5,12 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/pseudonym-logic-module-8vx628`
-· **main-Stand:** `6343357` · **Tests:** `node tests/run.mjs` → **246/246 grün**
-· **SW-Cache:** `v47` · **60 JS-Module** · **12 Bild- + 5 Icon-Assets**
-· **Neu:** `src/ai/pseudonym.js` (Datenschutz-Modi, Bau-Schritt 1 — tokenize/reidentify, rein/node-getestet).
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/datenschutz-modi-schritt2-8vx628`
+· **main-Stand:** `40e5b83` · **Tests:** `node tests/run.mjs` → **264/264 grün**
+· **SW-Cache:** `v48` · **61 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Neu:** Datenschutz-Modi vollständig (Bau-Schritt 1+2): `src/ai/pseudonym.js` (rein) +
+  `src/ai/anker.js` (Anker-Quelle) + Verdrahtung in `mistral`/`berater` + Settings-Schalter
+  `datenschutzModus`. Konzept: `docs/KONZEPT_DATENSCHUTZ_MODI.md`.
 
 ---
 

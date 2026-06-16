@@ -9,6 +9,7 @@ import { pickFile, formatBytes } from '../../core/files.js';
 import { loadAccounts, saveEntwurf } from '../../domain/store.js';
 import { extractFromText } from '../../ai/extract.js';
 import { categorize as categorizeAI } from '../../ai/mistral.js';
+import { ladeAnker } from '../../ai/anker.js';
 import { ocr } from '../../ai/vision.js';
 import { isVisionConfigured } from '../../ai/aiConfig.js';
 import { buildVorschlag } from '../../ai/suggest.js';
@@ -20,6 +21,12 @@ import { emptyState } from '../empty.js';
 
 let _host = null;
 let _idx = {};
+
+// Anker nur laden, wenn der Datenschutz-Modus „pseudonym" aktiv ist (sonst null →
+// KI-Module senden den Text unverändert). Browser/IndexedDB-Pfad.
+async function kiAnker() {
+  return getSettings().datenschutzModus === 'pseudonym' ? await ladeAnker() : null;
+}
 
 export async function mountDocuments(host) {
   _host = host;
@@ -50,7 +57,7 @@ function schnellerfassung() {
     onClick: async () => {
       out.replaceChildren();
       const ex = extractFromText(ta.value);
-      const kat = await categorizeAI(ta.value, _idx);
+      const kat = await categorizeAI(ta.value, _idx, { anker: await kiAnker() });
       const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
       if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
       out.appendChild(await vorschlagKarte(res.vorschlag, null, ta.value));
@@ -104,7 +111,7 @@ async function vorschlagKarte(vorschlag, belegId, quelltext) {
     onClick: async () => {
       beraterStatus.textContent = '…';
       try {
-        const r = await begruendeBuchung(beraterKontext);
+        const r = await begruendeBuchung(beraterKontext, { anker: await kiAnker() });
         fBegruendung.value = r.text;
         beraterStatus.textContent = r.quelle === 'mistral' ? t('journal.aiReasonMistral') : t('journal.aiReasonLocal');
       } catch (e) { beraterStatus.textContent = String(e.message || e); }
@@ -197,7 +204,7 @@ async function visionExtraktion(b) {
     const text = await ocr({ base64: bytesToBase64(bytes), mimeType: b.mediaType });
     if (!text) { alert(t('docs.ocrNoText')); return; }
     const ex = extractFromText(text);
-    const kat = await categorizeAI(text, _idx);   // Mistral EU, sonst Heuristik
+    const kat = await categorizeAI(text, _idx, { anker: await kiAnker() });   // Mistral EU, sonst Heuristik
     const res = buildVorschlag(ex, kat, _idx);
     if (!res.ok) { alert(res.fehler); return; }
     await repaint(await vorschlagKarte(res.vorschlag, b.id, text));
