@@ -35,7 +35,7 @@ import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
 import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/ai/mistral.js';
-import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, ANKER_TYP } from '../src/ai/pseudonym.js';
+import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, ANKER_TYP, maskierungsBericht } from '../src/ai/pseudonym.js';
 import { baueAnker } from '../src/ai/anker.js';
 
 function indexFromSeed() {
@@ -925,6 +925,19 @@ await section('Datenschutz-Modi: Belegtext-Pseudonymisierung für KI (Kompositio
   ok('Adresse maskiert', !pseudo.includes('Beispielweg 5, 10115 Berlin'));
   ok('Betrag/Datum/USt unberührt (KI braucht sie)', pseudo.includes('119,00') && pseudo.includes('14.06.2026') && pseudo.includes('19% USt'));
   ok('verlustfreie Re-Identifizierung der Antwort', reidentify(pseudo, map) === beleg);
+});
+
+await section('Datenschutz-Modi: Transparenz-Bericht (maskierungsBericht)', () => {
+  const { map } = tokenize('Max Mustermann, Firma X und nochmals Max Mustermann',
+    [{ wert: 'Max Mustermann', typ: ANKER_TYP.PERSON }, { wert: 'Firma X', typ: ANKER_TYP.FIRMA }]);
+  const b = maskierungsBericht(map);
+  ok('gesamt zählt eindeutige Anker (nicht Vorkommen)', b.gesamt === 2);
+  ok('proTyp aufgeschlüsselt', b.proTyp.PERSON === 1 && b.proTyp.FIRMA === 1);
+  ok('leere Map → 0', maskierungsBericht([]).gesamt === 0 && Object.keys(maskierungsBericht([]).proTyp).length === 0);
+  // Ohne typ-Feld wird der Typ aus der Token-Form abgeleitet.
+  ok('Typ aus Token-Form erkannt', maskierungsBericht([{ token: '[[IBAN_1]]', wert: 'DE..' }]).proTyp.IBAN === 1);
+  // Bericht enthält keine Klartextwerte (nur Zähler).
+  ok('Bericht ohne Klartext', !JSON.stringify(b).includes('Mustermann'));
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {

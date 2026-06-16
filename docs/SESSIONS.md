@@ -5,6 +5,25 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Datenschutz-Modi: Transparenz (§6.3) — Bericht + Vorschau
+
+**Was getan**
+- **`pseudonym.maskierungsBericht(map)`** (rein, getestet): fasst zusammen, wie viele
+  Identifikatoren ersetzt wurden, aufgeschlüsselt nach Typ — **ohne Klartextwerte** (nur
+  Zähler; Typ notfalls aus der Token-Form `[[TYP_N]]` abgeleitet).
+- **Transparenz-Vorschau in Belegen** (`documents.js`): bei aktivem Datenschutz-Modus zeigt
+  die Vorschlagskarte ein aufklappbares „🛡 N Identifikatoren pseudonymisiert an die EU-KI
+  gesendet (2× Person, 1× Firma …)" samt **Vorschau des tatsächlich gesendeten Textes**
+  (deterministisch dieselbe Maskierung wie der Versand). i18n de/en, CSS, SW `v48→v49`.
+- **+5 Tests** → **269/269 grün**.
+
+**Ehrlich offen / NICHT geprüft:** `maskierungsBericht` node-getestet; die UI-Vorschau
+(documents.js) ist **nicht headless-E2E** geklickt. Vorschau gilt für den Kontierungs-
+Belegtext (Hauptversand); die Berater-Begründung maskiert separat (kein eigener Badge).
+Folgeschritte (KONZEPT §6.3): AVV-Hinweis im Datenblatt; Vision/Bild-Pfad bleibt außen vor.
+
+---
+
 ## 2026-06-16 — Datenschutz-Modi, Bau-Schritt 2: Pipeline-Verdrahtung + Modus
 
 **Was getan**

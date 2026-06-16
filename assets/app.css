@@ -149,6 +149,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .hinweis { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); border-radius: var(--radius-sm, 8px); padding: .6rem .8rem; margin-top: .7rem; }
 .hinweis-liste { margin: .35rem 0 0; padding-left: 1.1rem; }
 .hinweis-liste li { margin: .15rem 0; }
+.pseudonym-info summary { cursor: pointer; }
+.pseudonym-preview { white-space: pre-wrap; word-break: break-word; max-height: 12rem; overflow: auto; margin: .4rem 0 0; padding: .5rem .6rem; background: var(--surface-2); border-radius: var(--radius-sm, 8px); }
 
 /* Rechnungs-Dokument (druckbar). */
 .rechnung-doc .rech-kopf { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }

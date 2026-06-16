@@ -10,6 +10,7 @@ import { loadAccounts, saveEntwurf } from '../../domain/store.js';
 import { extractFromText } from '../../ai/extract.js';
 import { categorize as categorizeAI } from '../../ai/mistral.js';
 import { ladeAnker } from '../../ai/anker.js';
+import { tokenize, maskierungsBericht } from '../../ai/pseudonym.js';
 import { ocr } from '../../ai/vision.js';
 import { isVisionConfigured } from '../../ai/aiConfig.js';
 import { buildVorschlag } from '../../ai/suggest.js';
@@ -26,6 +27,24 @@ let _idx = {};
 // KI-Module senden den Text unverändert). Browser/IndexedDB-Pfad.
 async function kiAnker() {
   return getSettings().datenschutzModus === 'pseudonym' ? await ladeAnker() : null;
+}
+
+// Transparenz-Bauteil: zeigt bei aktivem Datenschutz-Modus, was an die KI ging.
+// Liefert null, wenn der Modus aus ist oder nichts maskiert wurde. Browser-UI.
+async function pseudonymBadge(quelltext) {
+  if (!quelltext) return null;
+  const anker = await kiAnker();
+  if (!anker || !anker.length) return null;
+  const { text: pseudo, map } = tokenize(quelltext, anker, { wortgrenze: true });
+  const bericht = maskierungsBericht(map);
+  if (!bericht.gesamt) return null;
+  const proTyp = Object.entries(bericht.proTyp)
+    .map(([typ, n]) => `${n}× ${t('pseudonym.typ.' + typ) || typ}`).join(', ');
+  return el('details', { class: 'hinweis pseudonym-info' }, [
+    el('summary', { class: 'small', text: `🛡 ${t('pseudonym.badge').replace('{n}', String(bericht.gesamt))} (${proTyp})` }),
+    el('p', { class: 'muted small', text: t('pseudonym.previewHint') }),
+    el('pre', { class: 'mono small pseudonym-preview', text: pseudo }),
+  ]);
 }
 
 export async function mountDocuments(host) {
@@ -100,6 +119,12 @@ async function vorschlagKarte(vorschlag, belegId, quelltext) {
       el('ul', { class: 'hinweis-liste' }, warnungen.map((w) => el('li', { class: 'small', text: w }))),
     ]));
   }
+
+  // Transparenz: zeigt, welche/wie viele Identifikatoren bei aktivem Datenschutz-Modus
+  // an die EU-KI maskiert gesendet wurden (deterministisch dieselbe Maskierung wie der
+  // tatsächliche Versand in mistral.categorize). Klartext nur lokal in der Vorschau.
+  const transparenz = await pseudonymBadge(quelltext);
+  if (transparenz) card.appendChild(transparenz);
 
   // Begründung/Notiz mit §-Bezug: on-device vorbefüllt (rein, kein Netz), per
   // Knopf über die KI (Mistral EU, opt-in) verfeinerbar. Wird mit dem Entwurf gespeichert.

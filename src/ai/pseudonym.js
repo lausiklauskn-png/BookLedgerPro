@@ -199,3 +199,23 @@ export function reidentify(text, map) {
   }
   return out;
 }
+
+/**
+ * Fasst eine Maskierungs-Tabelle (map aus tokenize()) für die TRANSPARENZ-Anzeige
+ * zusammen: wie viele Identifikatoren wurden ersetzt, aufgeschlüsselt nach Typ.
+ * Enthält bewusst KEINE Klartextwerte — nur Zähler, damit der Bericht selbst gefahrlos
+ * angezeigt/protokolliert werden kann.
+ * @param {{token:string,wert:string,typ?:string}[]} map
+ * @returns {{gesamt:number, proTyp:Record<string,number>}}
+ */
+export function maskierungsBericht(map) {
+  const eintraege = Array.isArray(map) ? map : [];
+  const proTyp = {};
+  for (const e of eintraege) {
+    const typ = e.typ
+      || (String(e.token || '').match(/^\[\[([A-Z0-9_]+)_\d+\]\]$/) || [])[1]
+      || STANDARD_TYP;
+    proTyp[typ] = (proTyp[typ] || 0) + 1;
+  }
+  return { gesamt: eintraege.length, proTyp };
+}
