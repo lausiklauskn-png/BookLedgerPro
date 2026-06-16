@@ -5,9 +5,10 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/mahnstufe-persistent-p84gtm`
-· **Tests:** `node tests/run.mjs` → **430/430 grün**
-· **SW-Cache:** `v62` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v1-kontenrahmen-p84gtm`
+· **Tests:** `node tests/run.mjs` → **444/444 grün**
+· **SW-Cache:** `v63` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Profi-Readiness (V-Fahrplan):** V1 ✅ Kontenrahmen 57 Konten + Konten anlegen/bearbeiten/löschen.
 · **Mahnwesen A1 erweitert:** persistente Mahnstufe (`mahnungen[]`, `vorschlagNaechsteStufe`) +
   manuelle/editierbare Zins-/Gebühren-Erfassung im Mahnschreiben (keine Auto-Steuerbuchung).
 · **Zahlungsabgleich** (Forderungen + Verbindlichkeiten, Matching, Ausgleichsbuchung,
@@ -165,7 +166,8 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
    fehlender Pflicht-Bausteine ablehnt. Reihenfolge **V1→V10** (V1 Kontenrahmen+anlegen, V2 §13b/
    Reverse-Charge, V3 AfA/Anlagenverzeichnis, V4 Anfangsbestände/Kassenbuch, V5 USt-VA komplett,
    V6 Anlage-EÜR/Kontenblätter, V7 GoBD-Prüfer-Export, V8 DATEV berater-fest, V9 Validierung, V10 E2E).
-   **Aktuell: V1 als Nächstes.**
+   **V1 erledigt** (Kontenrahmen 57 Konten + Konto anlegen/bearbeiten/löschen). **Aktuell: V2** (§13b/
+   Reverse-Charge + EU/Ausland) als Nächstes.
 0b. **Erledigt (A1–A3):** Mahnwesen (Fälligkeit/Mahnstufen/§288/persistente Stufe), Verbindlichkeiten
    als OP-Quelle + OP-Liste, Teilzahlungen (Debitor+Kreditor), Skonto/Toleranz-Matching.
 1. **Brainstorming (Abschnitt 0) klären** — v. a. E-Rechnung, Bankimport, §19-Default, DATEV mit Berater.

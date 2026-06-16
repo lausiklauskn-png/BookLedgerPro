@@ -7,7 +7,7 @@
 import { recAll, recGet, recPut, recDel, kvGet, kvSet } from '../core/db.js';
 import { encryptWithKey, decryptWithKey } from '../core/crypto.js';
 import { getSessionKey } from '../core/vault.js';
-import { seedAccounts } from './accounts.js';
+import { seedAccounts, validateKonto, normalizeKonto } from './accounts.js';
 import { validateBuchung, istAusgeglichen, stornoZeilen, BUCHUNG_STATUS } from './journal.js';
 import { hashBuchung, verifyChain, GENESIS } from './audit.js';
 
@@ -40,6 +40,41 @@ export async function accountIndex() {
   const idx = {};
   for (const k of a) idx[k.nummer] = k;
   return idx;
+}
+
+/** Legt ein neues Konto an (validiert, Nummer eindeutig). Konten sind Klartext-Records. */
+export async function addKonto(konto) {
+  const vorhanden = (await recAll('konto')).map((k) => k.nummer);
+  const fehler = validateKonto(konto, vorhanden);
+  if (fehler.length) throw new Error('Konto ungültig: ' + fehler.join(' '));
+  const k = normalizeKonto(konto);
+  const rec = { id: `konto:${k.nummer}`, type: 'konto', ...k };
+  await recPut(rec);
+  return rec;
+}
+
+/** Ändert Bezeichnung/Art/USt eines Kontos. Die Kontonummer bleibt unveränderlich. */
+export async function updateKonto(nummer, patch) {
+  const rec = await recGet(`konto:${nummer}`);
+  if (!rec) throw new Error('Konto nicht gefunden');
+  const zusammen = { nummer: rec.nummer, name: patch.name != null ? patch.name : rec.name,
+    art: patch.art != null ? patch.art : rec.art,
+    ust: patch.ust != null ? patch.ust : rec.ust };
+  const fehler = validateKonto(zusammen, []); // Nummer unverändert → keine Eindeutigkeitsprüfung
+  if (fehler.length) throw new Error('Konto ungültig: ' + fehler.join(' '));
+  const k = normalizeKonto(zusammen);
+  const neu = { ...rec, ...k, rolle: rec.rolle };
+  if (rec.rolle) neu.rolle = rec.rolle; else delete neu.rolle;
+  await recPut(neu);
+  return neu;
+}
+
+/** Löscht ein Konto — nur wenn es in KEINER Buchung verwendet wird (sonst Fehler). */
+export async function deleteKonto(nummer) {
+  const buchungen = await listBuchungen();
+  const benutzt = buchungen.some((b) => (b.zeilen || []).some((z) => z.konto === nummer));
+  if (benutzt) throw new Error('Konto wird in Buchungen verwendet und kann nicht gelöscht werden.');
+  await recDel(`konto:${nummer}`);
 }
 
 // ---- Buchungen (verschlüsselt) ---------------------------------------------
