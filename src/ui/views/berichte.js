@@ -6,7 +6,10 @@ import { formatEuro } from '../../domain/money.js';
 import { loadAccounts, listBuchungen } from '../../domain/store.js';
 import { summenSaldenliste, kontenblatt, anlageEUR } from '../../domain/berichte.js';
 import { buildSusaCsv, buildKontenblattCsv, buildAnlageEURCsv } from '../../domain/export.js';
-import { downloadText } from '../../core/files.js';
+import { buildGdpduPaket } from '../../domain/gdpdu.js';
+import { zipFiles } from '../../core/zip.js';
+import { downloadText, downloadBlob } from '../../core/files.js';
+import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
 
 const BOM = '﻿';
@@ -44,7 +47,27 @@ async function repaint() {
     anlageEURCard(eur),
     susaCard(susa),
     kontenblattCard(konten, blatt),
+    gdpduCard(buchungen, konten, idx, p),
   ]));
+}
+
+function gdpduCard(buchungen, konten, idx, p) {
+  const f = getSettings().firma || {};
+  const jahr = (p && p.bis ? p.bis.slice(0, 4) : (p && p.von ? p.von.slice(0, 4) : new Date().getFullYear()));
+  return el('div', { class: 'card no-print' }, [
+    el('h2', { class: 'card-title', text: t('berichte.gdpduTitle') }),
+    el('p', { class: 'muted small', text: t('berichte.gdpduHint') }),
+    el('div', { class: 'btn-row' }, [
+      el('button', {
+        class: 'btn btn-sm', text: t('berichte.gdpduExport'),
+        onClick: () => {
+          const meta = { jahr, firma: f.name || 'BookLedgerPro', steuernummer: f.steuernummer || '', periode: p };
+          const dateien = buildGdpduPaket(buchungen, konten, idx, meta);
+          downloadBlob(`GoBD-GDPdU-Export-${jahr}.zip`, zipFiles(dateien), 'application/zip');
+        },
+      }),
+    ]),
+  ]);
 }
 
 function dl(name, text) { downloadText(name, BOM + text, 'text/csv'); }
