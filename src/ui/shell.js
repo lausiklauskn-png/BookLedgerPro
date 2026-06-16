@@ -14,6 +14,7 @@ import { exportBackupFile, readBackup, importSnapshot } from '../core/backup.js'
 import { pickFile, readFileText } from '../core/files.js';
 import { mountAccounts } from './views/accounts.js';
 import { mountAnlagen } from './views/anlagen.js';
+import { mountKassenbuch } from './views/kassenbuch.js';
 import { mountJournal } from './views/journal.js';
 import { mountReports } from './views/reports.js';
 import { mountDocuments } from './views/documents.js';
@@ -32,6 +33,7 @@ import { testMistral } from '../ai/mistral.js';
 const NAV = [
   ['dashboard', 'nav.dashboard'],
   ['journal', 'nav.journal'],
+  ['kassenbuch', 'nav.kassenbuch'],
   ['accounts', 'nav.accounts'],
   ['anlagen', 'nav.anlagen'],
   ['documents', 'nav.documents'],
@@ -107,6 +109,7 @@ function renderRoute() {
   if (route === 'settings') return mount(content, viewSettings());
   if (route === 'accounts') return void mountAccounts(content);
   if (route === 'anlagen') return void mountAnlagen(content);
+  if (route === 'kassenbuch') return void mountKassenbuch(content);
   if (route === 'journal') return void mountJournal(content);
   if (route === 'reports') return void mountReports(content);
   if (route === 'documents') return void mountDocuments(content);

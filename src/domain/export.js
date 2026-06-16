@@ -278,6 +278,23 @@ export function buildAnlagenverzeichnisCsv(verzeichnis) {
   return csv(rows);
 }
 
+/**
+ * Kassenbuch-CSV (chronologisch, mit laufendem Bestand). Erwartet das Ergebnis von
+ * kassenbuch.kassenbericht(...). GoBD-orientiert; vor Übergabe an den Berater prüfen.
+ */
+export function buildKassenbuchCsv(bericht) {
+  const rows = [['Datum', 'Nr', 'Buchungstext', 'Einnahme', 'Ausgabe', 'Bestand']];
+  rows.push(['', '', 'Anfangsbestand', '', '', centsToComma(bericht.anfangsbestand)]);
+  for (const z of bericht.zeilen || []) {
+    rows.push([z.datum, z.seq ?? '', z.beschreibung || '',
+      z.einnahme ? centsToComma(z.einnahme) : '', z.ausgabe ? centsToComma(z.ausgabe) : '',
+      centsToComma(z.bestand)]);
+  }
+  rows.push(['', '', 'Summe', centsToComma(bericht.summeEinnahmen), centsToComma(bericht.summeAusgaben), '']);
+  rows.push(['', '', 'Endbestand', '', '', centsToComma(bericht.endbestand)]);
+  return csv(rows);
+}
+
 export function eurToCsv(eur) {
   const rows = [['Art', 'Konto', 'Bezeichnung', 'Betrag']];
   for (const e of eur.einnahmenKonten || []) rows.push(['Einnahme', e.nummer, e.name, centsToComma(e.wert)]);

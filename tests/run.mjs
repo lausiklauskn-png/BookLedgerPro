@@ -31,6 +31,8 @@ import {
   AFA_METHODE, klassifiziere, sammelpostenZulaessig, afaPlanGwg, afaPlanLinear, afaPlanSammelposten,
   afaPlan, anlageStatus, anlagenverzeichnis, afaBuchungZeilen, normalizeAnlage, validateAnlage,
 } from '../src/domain/anlagen.js';
+import { kassenbuchEintraege, kassenbericht, anfangsbestandZeilen, SALDENVORTRAG_KONTO } from '../src/domain/kassenbuch.js';
+import { buildKassenbuchCsv } from '../src/domain/export.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -1596,6 +1598,44 @@ await section('V3: Anlagevermögen + AfA (Klassifikation & Pläne)', () => {
   ok('validateAnlage: linear ohne Nutzungsdauer → Fehler', validateAnlage({ ...norm, nutzungsdauerJahre: 0 }).length > 0);
   ok('validateAnlage: Sammelposten außerhalb 250–1.000 → Fehler',
     validateAnlage({ ...norm, methode: AFA_METHODE.SAMMELPOSTEN, akNettoCents: 120000 }).length > 0);
+});
+
+await section('V4: Kassenbuch + Anfangsbestände (GoBD)', () => {
+  // Anfangsbestand-Buchung: Soll Kasse an Haben Saldenvortrag 9000.
+  const ab = anfangsbestandZeilen('1000', 50000);
+  ok('Anfangsbestand: Soll 1000 50000', zeile(ab.zeilen, '1000', 'S').betrag === 50000);
+  ok('Anfangsbestand: Haben 9000 (Saldenvortrag)', zeile(ab.zeilen, SALDENVORTRAG_KONTO, 'H').betrag === 50000);
+  ok('Anfangsbestand ausgeglichen', istAusgeglichen(ab.zeilen));
+  let warf = false; try { anfangsbestandZeilen('1000', 0); } catch { warf = true; }
+  ok('Anfangsbestand 0 wirft', warf);
+
+  const buchungen = [
+    // Barerlös 200 (Kasse Soll) — Einnahme
+    { seq: 2, datum: '2026-03-05', beschreibung: 'Barerlös', zeilen: [{ konto: '1000', seite: 'S', betrag: 20000 }, { konto: '8200', seite: 'H', betrag: 20000 }] },
+    // Bareinkauf 50 (Kasse Haben) — Ausgabe
+    { seq: 1, datum: '2026-03-01', beschreibung: 'Büromaterial bar', zeilen: [{ konto: '4930', seite: 'S', betrag: 5000 }, { konto: '1000', seite: 'H', betrag: 5000 }] },
+    // Banküberweisung — berührt Kasse NICHT
+    { seq: 3, datum: '2026-03-10', beschreibung: 'Miete', zeilen: [{ konto: '4210', seite: 'S', betrag: 80000 }, { konto: '1200', seite: 'H', betrag: 80000 }] },
+    // Entwurf zählt nicht (seq null)
+    { seq: null, datum: '2026-03-11', zeilen: [{ konto: '1000', seite: 'S', betrag: 999 }, { konto: '8200', seite: 'H', betrag: 999 }] },
+  ];
+  const eintraege = kassenbuchEintraege(buchungen, '1000', { von: '2026-01-01', bis: '2026-12-31' });
+  ok('nur Kassen-Buchungen, chronologisch sortiert', eintraege.length === 2 && eintraege[0].seq === 1 && eintraege[1].seq === 2);
+  ok('Bankbuchung nicht im Kassenbuch', !eintraege.some((e) => e.beschreibung === 'Miete'));
+
+  const b = kassenbericht(eintraege, 10000); // Anfangsbestand 100 €
+  ok('Summe Einnahmen 20000', b.summeEinnahmen === 20000);
+  ok('Summe Ausgaben 5000', b.summeAusgaben === 5000);
+  ok('Endbestand 100 − 50 + 200 = 250 €', b.endbestand === 25000);
+  ok('laufender Bestand nach erster Zeile 50 €', b.zeilen[0].bestand === 5000);
+  ok('nicht negativ', b.negativ === false);
+
+  // GoBD: negativer Kassenbestand wird erkannt.
+  const bNeg = kassenbericht(eintraege, 0); // ohne Anfangsbestand: erst -50 €
+  ok('negativ erkannt (ohne Anfangsbestand)', bNeg.negativ === true && bNeg.ersteNegative.seq === 1);
+
+  const csv = buildKassenbuchCsv(b);
+  ok('Kassenbuch-CSV: Anfangs-/Endbestand', csv.includes('Anfangsbestand') && csv.includes('Endbestand'));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

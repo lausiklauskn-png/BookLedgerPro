@@ -56,9 +56,14 @@ verschlüsselt (`state.js firma`).
       Wirtschaftsjahr, **AfA-Buchung als Entwurf**, **Anlagenverzeichnis/AVEÜR-CSV**). 25 Tests.
       **Offen/ehrlich:** AVEÜR-CSV ist AVEÜR-*orientiert* (kein amtliches Formular); GWG-Aufzeichnungs-
       untergrenze (250 €), degressive AfA, Sonderabschreibungen, Abgang/Verkauf nicht modelliert.
-- [ ] **V4 — Eröffnungs-/Anfangsbestände + Kassenbuch [MUSS].** Anfangsbestände Bank/Kasse
-      (Jahresumbruch/Erststart) und **GoBD-konforme Kassenführung** (chronologisch, fortlaufend,
-      Kassenbericht) fehlen. → Anfangsbestand-Buchung + Kassenbuch-Ansicht/-Auswertung.
+- [x] **V4 — Eröffnungs-/Anfangsbestände + Kassenbuch [MUSS].** ✅ Umgesetzt: `domain/kassenbuch.js`
+      (rein, node-getestet) — `kassenbuchEintraege` (chronologisch aus festgeschriebenen Buchungen),
+      `kassenbericht` (Anfangsbestand + Einnahmen − Ausgaben = Endbestand, **laufender Bestand**,
+      **GoBD-Prüfung „nie negativ"**), `anfangsbestandZeilen` (Soll Geldkonto an Saldenvortrag 9000;
+      neues Konto 9000). `anfangsbestand-store.js` (je Konto/Jahr), Ansicht **„Kassenbuch"**
+      (Konto-/Jahr-Wahl, Anfangsbestand speichern + als Buchungsentwurf, Kassenbericht,
+      Negativ-Warnung, Kassenbuch-CSV). 13 Tests. **Offen/ehrlich:** offenes Kassenbuch — KEINE
+      zertifizierte TSE/Kassensicherungsverordnung (elektronische Registrierkasse).
 - [ ] **V5 — USt-VA komplett: Periodentyp + Dauerfristverlängerung + ELSTER-Datenpaket [MUSS].**
       Monatlich/Quartal/jährlich, Sondervorauszahlung; amtliche Kennzahlen-Vollständigkeit;
       Export als ELSTER-konformes Datenpaket (kein ERiC-Direktversand — bewusst).

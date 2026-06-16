@@ -40,6 +40,7 @@ export const SKR03_SEED = [
   { nummer: '0880', name: 'Eigenkapital', art: KONTOART.PASSIV },
   { nummer: '1800', name: 'Privatentnahmen allgemein', art: KONTOART.PASSIV },
   { nummer: '1890', name: 'Privateinlagen', art: KONTOART.PASSIV },
+  { nummer: '9000', name: 'Saldenvorträge / Anfangsbestände', art: KONTOART.PASSIV, rolle: 'saldenvortrag' },
   // ---- Umlaufvermögen / Geld (Klasse 1, Aktiva) ----
   { nummer: '1000', name: 'Kasse', art: KONTOART.AKTIV },
   { nummer: '1200', name: 'Bank', art: KONTOART.AKTIV },
