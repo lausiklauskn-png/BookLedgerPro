@@ -22,8 +22,8 @@ export async function naechsteRechnungsnummer() {
 
 export async function saveKunde(k) {
   const kunde = { id: k.id || neueId('kunde'), type: 'kunde', name: k.name || '', email: k.email || '',
-    adresse: k.adresse || '', ustId: k.ustId || '', externId: k.externId || null,
-    createdAt: k.createdAt || new Date().toISOString() };
+    adresse: k.adresse || '', ustId: k.ustId || '', istVerbraucher: !!k.istVerbraucher,
+    externId: k.externId || null, createdAt: k.createdAt || new Date().toISOString() };
   return encPut(kunde);
 }
 export const listKunden = () => encList('kunde');

@@ -73,6 +73,15 @@ export function mahnpauschaleCent(b2b = true, betragPauschaleCent = 4000) {
 }
 
 /**
+ * Ist der Kunde ein Unternehmer (B2B)? Entscheidet über den Verzugszins-Aufschlag
+ * (B2B +9, Verbraucher +5 %-Punkte) und die 40-€-Pauschale (nur B2B). Default B2B,
+ * wenn kein Kunde/keine Angabe vorliegt (konservativ — kein versehentliches Verbraucher-Privileg).
+ */
+export function kundeIstB2B(kunde) {
+  return kunde ? !kunde.istVerbraucher : true;
+}
+
+/**
  * Reichert offene Posten (aus zahlungsabgleich.offenePosten) um Fälligkeit/Überfälligkeit/
  * Mahnstufe an. `datum` der Posten = Rechnungsdatum.
  * @param posten Array von {id, betragCent, datum, referenz, name, …}

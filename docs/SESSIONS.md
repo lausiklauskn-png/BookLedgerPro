@@ -5,6 +5,27 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — A1-Rest: B2B/Verbraucher je Kunde (korrekte Verzugszinsen)
+
+**Was getan**
+- **Kundenmodell** `crm-store.js`: Flag `istVerbraucher` (Default false = Unternehmer/B2B).
+- **Reine Logik** `mahnwesen.kundeIstB2B(kunde)` (node-getestet; Default konservativ B2B).
+- **UI** `customers.js`: Checkbox „Verbraucher (Privatperson)" im Kundenformular + Spalte „Art"
+  in der Liste. `reports.js`: Mahnschreiben nutzt jetzt den Aufschlag **je Kunde** (Unternehmer
+  +9, Verbraucher +5 %-Punkte über Basiszins) und die **40-€-Pauschale nur bei Unternehmern**.
+  i18n de/en.
+- **5 neue Node-Tests** → `node tests/run.mjs` **415/415 grün**. SW-Cache `v59 → v60`.
+  `OFFENE_PUNKTE.md` A1-Teil „B2B/Verbraucher je Kunde" abgehakt.
+
+**Ehrlich offen / ungetestet:** UI nicht headless-E2E. A1-Rest weiterhin offen: **Mahnstufe
+persistent** je Forderung, **Buchung** von Zinsen/Gebühren (Konto-Mapping + USt), Zahlungsziel je
+Rechnung, Eingangsrechnungs-Verzug (Gegenseite).
+
+**Offen / Nächstes:** A1-Rest (persistente Mahnstufe, Zins-/Gebührenbuchung); A3-Rest
+(Forderungs-Teilzahlung, Skonto-Buchung §17, Sammelzahlungen). **Details: `docs/OFFENE_PUNKTE.md`.**
+
+---
+
 ## 2026-06-16 — A3 (Kern): Teilzahlung/Skonto/Toleranz-Matching im Zahlungsabgleich
 
 **Was getan**

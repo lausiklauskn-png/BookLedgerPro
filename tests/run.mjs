@@ -47,7 +47,7 @@ import {
   validateEingangsrechnung, anreichereVerbindlichkeiten, verbindlichkeitenSummen,
 } from '../src/domain/payables.js';
 import { buildOffeneVerbindlichkeitenCsv } from '../src/domain/export.js';
-import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten } from '../src/domain/mahnwesen.js';
+import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B } from '../src/domain/mahnwesen.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -1361,6 +1361,20 @@ await section('Mahnwesen: Posten anreichern + Mahnschreiben-Daten', () => {
   // Bei bloßer Zahlungserinnerung (Stufe 1) keine Zinsen/Pauschale.
   const m2 = mahnschreibenDaten(ang[1], { heute, basiszinsProzent: 0, b2b: true });
   ok('Erinnerung ohne Zinsen/Pauschale', m2.zinsenCent === 0 && m2.pauschaleCent === 0);
+});
+
+await section('Mahnwesen: B2B/Verbraucher je Kunde (§288 BGB)', () => {
+  ok('kein Kunde → B2B (konservativ)', kundeIstB2B(null) === true);
+  ok('Unternehmer (Default) → B2B', kundeIstB2B({ name: 'X' }) === true);
+  ok('istVerbraucher → kein B2B', kundeIstB2B({ name: 'Y', istVerbraucher: true }) === false);
+
+  // Gleiche überfällige Forderung: B2B vs. Verbraucher → 9 % vs. 5 % + Pauschale nur B2B.
+  const posten = anreicherePosten([{ id: 'a1', betragCent: 119000, datum: '2026-05-01', referenz: 'R-1', name: 'Z' }],
+    { heute: '2026-06-30', zielTage: 14 })[0];
+  const b2b = mahnschreibenDaten(posten, { heute: '2026-06-30', basiszinsProzent: 0, b2b: true });
+  const vb = mahnschreibenDaten(posten, { heute: '2026-06-30', basiszinsProzent: 0, b2b: false });
+  ok('B2B Pauschale 40 €, Verbraucher 0', b2b.pauschaleCent === 4000 && vb.pauschaleCent === 0);
+  ok('B2B-Zinsen (9 %) > Verbraucher-Zinsen (5 %)', b2b.zinsenCent > vb.zinsenCent && vb.zinsenCent > 0);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
