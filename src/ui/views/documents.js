@@ -7,7 +7,7 @@ import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
 import { pickFile, formatBytes, readFileText } from '../../core/files.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
-import { parseMT940, umsatzExtraktion } from '../../domain/bankimport.js';
+import { parseBankauszug, umsatzExtraktion } from '../../domain/bankimport.js';
 import { loadAccounts, saveEntwurf } from '../../domain/store.js';
 import { extractFromText } from '../../ai/extract.js';
 import { categorize as categorizeAI } from '../../ai/mistral.js';
@@ -208,12 +208,12 @@ function bankImportKarte() {
     class: 'btn', text: t('docs.bankImport'),
     onClick: async () => {
       out.replaceChildren();
-      const file = await pickFile('text/plain,.sta,.940,.txt,.mt940', null);
+      const file = await pickFile('text/plain,application/xml,text/xml,.sta,.940,.txt,.mt940,.xml', null);
       if (!file) return;
       try {
-        const { konto, umsaetze } = parseMT940(await readFileText(file));
+        const { format, konto, umsaetze } = parseBankauszug(await readFileText(file));
         if (!umsaetze.length) { out.appendChild(el('p', { class: 'form-error', text: t('docs.bankNone') })); return; }
-        out.appendChild(el('div', { class: 'muted small', text: `${t('docs.bankAccount')}: ${konto || '—'} · ${umsaetze.length} ${t('docs.bankTxns')}` }));
+        out.appendChild(el('div', { class: 'muted small', text: `${format || '—'} · ${t('docs.bankAccount')}: ${konto || '—'} · ${umsaetze.length} ${t('docs.bankTxns')}` }));
         for (const u of umsaetze) out.appendChild(umsatzRow(u));
       } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
     },

@@ -39,7 +39,7 @@ import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, A
 import { baueAnker } from '../src/ai/anker.js';
 import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
-import { parseMT940, umsatzExtraktion } from '../src/domain/bankimport.js';
+import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat } from '../src/domain/bankimport.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -1088,6 +1088,33 @@ await section('Bankimport: MT940 mehrzeiliger :86:-Block + Extraktion', () => {
   ok('Extraktion: Betrag/Datum/Richtung', ex.betragBrutto === 5000 && ex.datum === '2024-06-10' && ex.richtung === 'ausgabe');
   ok('Extraktion: USt-Satz offen (null)', ex.ustSatz === null);
   ok('leerer Auszug → keine Umsätze', parseMT940('').umsaetze.length === 0);
+});
+
+await section('Bankimport: CAMT.053 (ISO 20022, XML) + Format-Weiche', () => {
+  const camt = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt><Stmt>',
+    '<Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct>',
+    '<Ntry><Amt Ccy="EUR">119.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><ValDt><Dt>2026-06-03</Dt></ValDt>',
+    '<NtryDtls><TxDtls><RltdPties><Cdtr><Nm>Buero Schmidt GmbH</Nm></Cdtr></RltdPties>',
+    '<RmtInf><Ustrd>Rechnung 2026-042</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>',
+    '<Ntry><Amt Ccy="EUR">238.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><ValDt><Dt>2026-06-05</Dt></ValDt>',
+    '<NtryDtls><TxDtls><RltdPties><Dbtr><Nm>Kunde Muster AG</Nm></Dbtr></RltdPties>',
+    '<RmtInf><Ustrd>Honorar Beratung</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>',
+    '</Stmt></BkToCstmrStmt></Document>',
+  ].join('\n');
+  ok('Format als CAMT erkannt', erkenneBankformat(camt) === 'CAMT');
+  const { konto, umsaetze } = parseCAMT(camt);
+  ok('IBAN gelesen', konto === 'DE89370400440532013000');
+  ok('zwei Umsätze', umsaetze.length === 2);
+  ok('DBIT → ausgabe 11900', umsaetze[0].richtung === 'ausgabe' && umsaetze[0].betragCent === 11900 && umsaetze[0].valuta === '2026-06-03');
+  ok('DBIT Gegenpartei = Cdtr', umsaetze[0].gegen === 'Buero Schmidt GmbH' && /Rechnung 2026-042/.test(umsaetze[0].zweck));
+  ok('CRDT → einnahme 23800, Gegenpartei = Dbtr', umsaetze[1].richtung === 'einnahme' && umsaetze[1].betragCent === 23800 && umsaetze[1].gegen === 'Kunde Muster AG');
+
+  // Einheitlicher Einstieg erkennt beide Formate.
+  ok('parseBankauszug erkennt CAMT', parseBankauszug(camt).format === 'CAMT' && parseBankauszug(camt).umsaetze.length === 2);
+  ok('parseBankauszug erkennt MT940', parseBankauszug(':25:DE12\n:61:2406030603D5,00NMSC\n:86:166?20Test').format === 'MT940');
+  ok('parseBankauszug: unbekannt → leer', parseBankauszug('weder noch').format === null);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
