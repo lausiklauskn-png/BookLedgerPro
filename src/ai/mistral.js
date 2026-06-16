@@ -10,6 +10,7 @@
 import { getAiConfig } from './aiConfig.js';
 import { KONTOART } from '../domain/accounts.js';
 import { categorize as heuristicCategorize } from './categorize.js';
+import { tokenize } from './pseudonym.js';
 
 export const MISTRAL_BASE = 'https://api.mistral.ai/v1';
 
@@ -83,16 +84,24 @@ export async function chat(messages, { maxTokens = 400, temperature = 0 } = {}) 
 /**
  * Kategorisiert einen Belegtext über Mistral EU; fällt bei Nichtkonfiguration oder
  * Fehler auf die On-Device-Heuristik zurück.
+ *
+ * Datenschutz-Modus: ist `opts.anker` gesetzt (Datenschutz-Modus „pseudonym"), wird
+ * der an Mistral GESENDETE Text vorher pseudonymisiert — die lokale Extraktion und
+ * der Buchungsvorschlag laufen weiterhin auf dem ECHTEN Text des Aufrufers. Da die
+ * Antwort nur `{konto,richtung}` ist (keine Personendaten), ist hier kein
+ * reidentify nötig.
  * @returns {{konto, art, label, richtung, confidence, quelle:'mistral'|'heuristik'}}
  */
-export async function categorize(text, kontoIndex) {
+export async function categorize(text, kontoIndex, opts = {}) {
   let useMistral = false;
   try { const { isMistralConfigured } = await import('./aiConfig.js'); useMistral = await isMistralConfigured(); }
   catch { useMistral = false; }
   if (useMistral) {
     try {
       const konten = Object.values(kontoIndex);
-      const content = await chat(buildClassifyMessages(text, konten), { maxTokens: 60 });
+      const sendeText = (opts.anker && opts.anker.length)
+        ? tokenize(text, opts.anker, { wortgrenze: true }).text : text;
+      const content = await chat(buildClassifyMessages(sendeText, konten), { maxTokens: 60 });
       const kat = resolveKategorie(parseClassify(content), kontoIndex);
       if (kat) return kat;
     } catch { /* Fallback unten */ }

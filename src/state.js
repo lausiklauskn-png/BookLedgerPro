@@ -6,6 +6,7 @@ import { saveSettings, loadSettings } from './core/vault.js';
 
 export const MODES = ['einfach', 'profi', 'berater'];
 export const AI_LEVELS = ['suggest', 'draft', 'auto'];
+export const DATENSCHUTZ_MODI = ['aus', 'pseudonym']; // KI-Datensparsamkeit
 
 const DEFAULTS = Object.freeze({
   mode: 'profi',        // Einfach / Profi / Berater
@@ -14,6 +15,7 @@ const DEFAULTS = Object.freeze({
   aiAutonomy: 'suggest', // suggest / draft / auto
   taxProfile: 'DE',     // Deutschland zuerst
   kleinunternehmer: false, // §19 UStG — unterdrückt USt-Hinweise
+  datenschutzModus: 'aus', // aus | pseudonym — ersetzt bekannte Identifikatoren vor KI-Versand
   firma: { name: '', anschrift: '', steuernummer: '', ustId: '', iban: '' }, // Aussteller-Stammdaten (Rechnung §14)
 });
 

@@ -11,6 +11,7 @@
 import { chat } from './mistral.js';
 import { isMistralConfigured } from './aiConfig.js';
 import { findeRechtsregeln, onDeviceBegruendung } from '../domain/rechtsregeln.js';
+import { tokenize, reidentify, createRegistry } from './pseudonym.js';
 
 const SYSTEM =
   'Du bist ein nüchterner Buchhaltungs-Erklärer für Kleinunternehmen in Deutschland. ' +
@@ -56,18 +57,37 @@ export function parseBegruendung(content) {
 /**
  * Schlägt eine Begründung mit §-Bezug vor. Mit Mistral (EU) formuliert, sonst
  * On-Device aus den Regeln. Wirft nie wegen fehlender KI — fällt sauber zurück.
+ *
+ * Datenschutz-Modus: ist `opts.anker` gesetzt, werden die personenbezogenen Felder
+ * des Kontexts (Beschreibung, Belegtext) vor dem Senden pseudonymisiert und die
+ * formulierte Antwort wieder re-identifiziert (die Antwort kann den Belegtext
+ * zitieren) — die §-Grundlage bleibt unberührt.
  * @param {{beschreibung?:string, konto?:string, text?:string, betragCent?:number, kleinunternehmer?:boolean}} kontext
+ * @param {{anker?:Array}} [opts]
  * @returns {Promise<{text:string, quelle:'mistral'|'on-device', regeln:string[]}>}
  */
-export async function begruendeBuchung(kontext) {
+export async function begruendeBuchung(kontext, opts = {}) {
   const k = kontext || {};
   const regeln = findeRechtsregeln(k).map((r) => r.paragraph);
   let useMistral = false;
   try { useMistral = await isMistralConfigured(); } catch { useMistral = false; }
   if (useMistral) {
     try {
-      const content = await chat(buildBegruendungMessages(k), { maxTokens: 220, temperature: 0.2 });
-      const text = parseBegruendung(content);
+      // Pseudonymisierung der personenbezogenen Kontextfelder (stabile Token über
+      // ein gemeinsames Register, damit reidentify die Antwort verlustfrei umkehrt).
+      let kSend = k, map = null;
+      if (opts.anker && opts.anker.length) {
+        const reg = createRegistry();
+        const o = { registry: reg, wortgrenze: true };
+        kSend = {
+          ...k,
+          beschreibung: k.beschreibung ? tokenize(k.beschreibung, opts.anker, o).text : k.beschreibung,
+          text: k.text ? tokenize(k.text, opts.anker, o).text : k.text,
+        };
+        map = reg.entries;
+      }
+      const content = await chat(buildBegruendungMessages(kSend), { maxTokens: 220, temperature: 0.2 });
+      const text = map ? reidentify(parseBegruendung(content), map) : parseBegruendung(content);
       if (text) return { text, quelle: 'mistral', regeln };
     } catch { /* Fallback unten */ }
   }

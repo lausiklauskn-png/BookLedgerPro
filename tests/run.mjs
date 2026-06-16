@@ -35,7 +35,8 @@ import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
 import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/ai/mistral.js';
-import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP } from '../src/ai/pseudonym.js';
+import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, ANKER_TYP } from '../src/ai/pseudonym.js';
+import { baueAnker } from '../src/ai/anker.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -865,6 +866,65 @@ await section('Pseudonym: Register für aufrufsübergreifend stabile Token', () 
 await section('Pseudonym: reidentify akzeptiert auch Objekt-Map', () => {
   const out = reidentify('Hallo [[PERSON_1]], Ihre [[IBAN_2]].', { '[[PERSON_1]]': 'Eva', '[[IBAN_2]]': 'DE00' });
   ok('Objekt-Map re-identifiziert', out === 'Hallo Eva, Ihre DE00.');
+});
+
+await section('Pseudonym: Wortgrenzen-Modus (opt-in) gegen Teilwort-Treffer', () => {
+  // Standard (exakt): kurzer Anker greift auch mitten im Wort — Round-Trip bleibt verlustfrei.
+  const exakt = tokenize('Annahme von Anna', [{ wert: 'Anna', typ: 'PERSON' }]);
+  ok('Standard ersetzt auch in „Annahme"', exakt.text === '[[PERSON_1]]hme von [[PERSON_1]]');
+  ok('Standard Round-Trip dennoch verlustfrei', reidentify(exakt.text, exakt.map) === 'Annahme von Anna');
+
+  // Wortgrenze: „Anna" in „Annahme" wird NICHT ersetzt, das echte „Anna" schon.
+  const wg = tokenize('Annahme von Anna.', [{ wert: 'Anna', typ: 'PERSON' }], { wortgrenze: true });
+  ok('Wortgrenze schützt „Annahme"', wg.text === 'Annahme von [[PERSON_1]].');
+  ok('Wortgrenze Round-Trip', reidentify(wg.text, wg.map) === 'Annahme von Anna.');
+
+  // Satzzeichen-berandete Anker passieren die Kante trotz Wortgrenze (ä/ö/ü korrekt).
+  const wg2 = tokenize('Zahlung an Müller, danke.', ['Müller'], { wortgrenze: true });
+  ok('Umlaut-Name an Komma erkannt', wg2.text === 'Zahlung an [[ID_1]], danke.');
+  const wg3 = tokenize('XMüllerei', ['Müller'], { wortgrenze: true });
+  ok('„Müller" in „XMüllerei" nicht ersetzt', wg3.text === 'XMüllerei' && wg3.map.length === 0);
+
+  // Longest-Match + Wortgrenze: „Annabel" bleibt ganz, „Anna" je eigener Treffer.
+  const multi = tokenize('Anna, Anna und Annabel', [{ wert: 'Anna', typ: 'P' }, { wert: 'Annabel', typ: 'P' }], { wortgrenze: true });
+  ok('Longest-Match + Wortgrenze korrekt', multi.text === '[[P_1]], [[P_1]] und [[P_2]]');
+});
+
+await section('Datenschutz-Modi: Anker-Quelle aus Stammdaten (baueAnker)', () => {
+  const anker = baueAnker({
+    kunden: [
+      { name: 'Erika Musterfrau', email: 'erika@example.de', ustId: 'DE123456789', adresse: 'Beispielweg 5, 10115 Berlin' },
+      { name: 'AG', email: '' }, // zu kurz / leer → verworfen
+      { name: 'Erika Musterfrau' }, // Dublette → einmal
+    ],
+    mitarbeiter: [{ name: 'Klaus Nitzsche' }],
+    firma: { name: 'Meine Firma GmbH', anschrift: 'Hauptstr. 1, 50667 Köln', iban: 'DE89370400440532013000', ustId: 'DE999', steuernummer: '12/345/67890' },
+  });
+  const werte = anker.map((a) => a.wert);
+  ok('Firma + Kunde + Mitarbeiter erfasst', werte.includes('Meine Firma GmbH') && werte.includes('Erika Musterfrau') && werte.includes('Klaus Nitzsche'));
+  ok('IBAN/USt-IdNr./Steuernr. als Anker', werte.includes('DE89370400440532013000') && werte.includes('DE123456789') && werte.includes('12/345/67890'));
+  ok('Typisierung korrekt (PERSON/FIRMA/IBAN)',
+    anker.find((a) => a.wert === 'Klaus Nitzsche').typ === ANKER_TYP.PERSON &&
+    anker.find((a) => a.wert === 'Meine Firma GmbH').typ === ANKER_TYP.FIRMA &&
+    anker.find((a) => a.wert === 'DE89370400440532013000').typ === ANKER_TYP.IBAN);
+  ok('zu kurze/leere Werte verworfen', !werte.includes('AG') && !werte.includes(''));
+  ok('Dubletten entfernt', werte.filter((w) => w === 'Erika Musterfrau').length === 1);
+  ok('leere Quellen → leere Liste', baueAnker().length === 0 && baueAnker({}).length === 0);
+});
+
+await section('Datenschutz-Modi: Belegtext-Pseudonymisierung für KI (Komposition)', () => {
+  // Spiegelt den Versandpfad: Stammdaten → Anker → tokenize(Belegtext, {wortgrenze}).
+  const anker = baueAnker({
+    kunden: [{ name: 'Erika Musterfrau', adresse: 'Beispielweg 5, 10115 Berlin' }],
+    firma: { name: 'Meine Firma GmbH' },
+  });
+  const beleg = 'Rechnung von Meine Firma GmbH an Erika Musterfrau, Beispielweg 5, 10115 Berlin. Betrag 119,00 EUR, 19% USt am 14.06.2026.';
+  const { text: pseudo, map } = tokenize(beleg, anker, { wortgrenze: true });
+  ok('Kundenname maskiert', !pseudo.includes('Erika Musterfrau') && /\[\[PERSON_\d+\]\]/.test(pseudo));
+  ok('Firma maskiert', !pseudo.includes('Meine Firma GmbH') && /\[\[FIRMA_\d+\]\]/.test(pseudo));
+  ok('Adresse maskiert', !pseudo.includes('Beispielweg 5, 10115 Berlin'));
+  ok('Betrag/Datum/USt unberührt (KI braucht sie)', pseudo.includes('119,00') && pseudo.includes('14.06.2026') && pseudo.includes('19% USt'));
+  ok('verlustfreie Re-Identifizierung der Antwort', reidentify(pseudo, map) === beleg);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
