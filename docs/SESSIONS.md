@@ -5,6 +5,18 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Merkliste angelegt: docs/OFFENE_PUNKTE.md (inkl. Mahnwesen)
+
+**Was getan (Nutzerwunsch):** Lebende Backlog-/Merkliste `docs/OFFENE_PUNKTE.md` angelegt —
+unbedingt-beachten/nacharbeiten/verbessern, priorisiert (MUSS/SOLL/KANN). **Hochprioritär &
+ausführlich: Mahnwesen / überfällige Forderungen** — Fälligkeit je Rechnung, automatische
+Überfällig-Markierung (Dashboard/OP-Liste), Mahnstufen, Verzugszinsen (§288 BGB), Mahngebühren,
+Mahnschreiben (druckbar), Buchung; zuerst reine node-testbare Kernlogik. Plus: Verbindlichkeiten
+als OP-Quelle, Teilzahlungen, KoSIT-Validierung, ZUGFeRD, Format-Härtung, NER, E2E u. a.
+Aus PULS verlinkt (§7.0 + Doku-Map). Reine Doku.
+
+---
+
 ## 2026-06-16 — Klarstellung: Nicht-EU-KI ist dormant, nicht auswählbar
 
 **Was getan (Nutzer-Korrektur):** Die Strategie-Formulierung in `docs/PULS.md` §0★ und
