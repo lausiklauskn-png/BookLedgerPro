@@ -7,18 +7,19 @@
 
 ---
 
-## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V4**)
+## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V5**)
 
 > **Lies das zuerst und vollständig. Danach kannst du ohne Rückfragen loslegen.**
 
-**✅ V3 erledigt (Anlagevermögen + AfA + Anlagenverzeichnis) — diese Sitzung, in `claude/v2-ox8bu7`:**
-`domain/anlagen.js` (rein, node-getestet): GWG-Sofortabschreibung (§6 Abs.2), Sammelposten
-(§6 Abs.2a, 5 J.), lineare AfA (§7 Abs.1, pro rata temporis monatsgenau); `anlagen-store.js`;
-Ansicht **„Anlagen"** (Erfassen, Anlagenverzeichnis je Jahr, **AfA-Buchung als Entwurf**,
-AVEÜR-CSV). **Tests 497/497, SW `v65`.** (Davor in dieser Sitzung bereits **V2** §13b/Reverse-
-Charge gemergt, PR #64.)
-→ **Nächste Aufgabe = V4** (Eröffnungs-/Anfangsbestände + GoBD-Kassenbuch), Details in
-`docs/OFFENE_PUNKTE.md` Abschnitt V. **Ein Fahrplan-Punkt pro Sitzung/PR.**
+**✅ V4 erledigt (Eröffnungs-/Anfangsbestände + GoBD-Kassenbuch) — diese Sitzung, in `claude/v2-ox8bu7`:**
+`domain/kassenbuch.js` (rein, node-getestet): `kassenbuchEintraege` (chronologisch),
+`kassenbericht` (laufender Bestand, **GoBD „nie negativ"**), `anfangsbestandZeilen` (an
+Saldenvortrag 9000); `anfangsbestand-store.js`; Ansicht **„Kassenbuch"** (Konto/Jahr,
+Anfangsbestand speichern + als Buchungsentwurf, Kassenbericht, Negativ-Warnung, CSV).
+**Tests 510/510, SW `v66`.** (Diese Sitzung zuvor gemergt: **V2** §13b/Reverse-Charge #64,
+**V3** Anlagevermögen+AfA #65.)
+→ **Nächste Aufgabe = V5** (USt-VA komplett: Periodentyp + Dauerfristverlängerung +
+ELSTER-Datenpaket), Details in `docs/OFFENE_PUNKTE.md` Abschnitt V. **Ein Fahrplan-Punkt pro PR.**
 
 **Was „Vx" bedeutet — WICHTIG, nicht missverstehen:**
 „Vx" ist **KEINE** neue Programm-Version, **KEIN** Redesign, **KEIN** Major-Umbau. Falls dein
@@ -29,7 +30,8 @@ READINESS"**. Mehr nicht.
 **Projektzustand (nichts davon neu bauen — ist fertig & gemergt):** reife Buchhaltungs-PWA,
 Phasen 0–6 ✅, EU-KI (Vision EU + Mistral EU) ✅, A1–A3 (Mahnwesen/Verbindlichkeiten/
 Zahlungsabgleich), **V1 Kontenrahmen** (57 Konten + CRUD), **V2 §13b/Reverse-Charge**,
-**V3 Anlagevermögen+AfA** (s.o.). → **Nicht** A1–A3 / V1–V3 wiederholen, **kein** Redesign.
+**V3 Anlagevermögen+AfA**, **V4 Kassenbuch/Anfangsbestände** (s.o.). → **Nicht** A1–A3 / V1–V4
+wiederholen, **kein** Redesign.
 
 ### V2 — was genau zu bauen ist (§13b/Reverse-Charge + EU/Ausland)
 Ziel: Die Firma bezieht selbst Leistungen mit **Steuerschuldumkehr** — z. B. **Google Cloud
@@ -80,11 +82,14 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 ---
 
 **Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v2-ox8bu7`
-· **Tests:** `node tests/run.mjs` → **497/497 grün**
-· **SW-Cache:** `v65` · **71 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Tests:** `node tests/run.mjs` → **510/510 grün**
+· **SW-Cache:** `v66` · **74 JS-Module** · **12 Bild- + 5 Icon-Assets**
 · **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
 · **V3 ✅:** Anlagevermögen + AfA (GWG/Sammelposten/linear pro rata), Ansicht „Anlagen",
   Anlagenverzeichnis + AfA-Buchung-Entwurf + AVEÜR-CSV (`domain/anlagen.js`, `anlagen-store.js`).
+· **V4 ✅:** GoBD-Kassenbuch + Anfangsbestände (laufender Bestand, „nie negativ"-Prüfung,
+  Anfangsbestand-Buchung an 9000, CSV) — `domain/kassenbuch.js`, `anfangsbestand-store.js`,
+  Ansicht „Kassenbuch".
 · **Profi-Readiness (V-Fahrplan):** V1 ✅ Kontenrahmen 57 Konten + Konten anlegen/bearbeiten/löschen.
 · **Mahnwesen A1 erweitert:** persistente Mahnstufe (`mahnungen[]`, `vorschlagNaechsteStufe`) +
   manuelle/editierbare Zins-/Gebühren-Erfassung im Mahnschreiben (keine Auto-Steuerbuchung).

@@ -37,6 +37,30 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-16 — V4: Eröffnungs-/Anfangsbestände + GoBD-Kassenbuch [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (Fahrplan-Punkt V4, gleiche Sitzung)
+- **`domain/kassenbuch.js`** (rein, node-getestet): `kassenbuchEintraege` (chronologische
+  Kassenbewegungen aus festgeschriebenen Buchungen, sortiert nach Datum/seq), `kassenbericht`
+  (Anfangsbestand + Σ Einnahmen − Σ Ausgaben = Endbestand, **laufender Bestand je Zeile**,
+  **GoBD-Prüfung „Kasse nie negativ"** mit erster Verstoß-Stelle), `anfangsbestandZeilen`
+  (Soll Geldkonto an Haben Saldenvortrag **9000**).
+- **`domain/accounts.js`**: neues Konto **9000** Saldenvorträge/Anfangsbestände (rolle
+  'saldenvortrag', erfolgs-/USt-neutral). **`anfangsbestand-store.js`**: Bestand je Konto+Jahr.
+- **`domain/export.js`**: `buildKassenbuchCsv` (chronologisch, Anfangs-/Endbestand).
+- **Ansicht „Kassenbuch"** (`ui/views/kassenbuch.js`, neuer Nav-Eintrag/Route): Geldkonto-/
+  Jahr-Wahl, Anfangsbestand speichern + **als Buchungsentwurf**, Kassenbericht-Karte,
+  Negativ-Warnung (GoBD), Bewegungstabelle mit laufendem Bestand, Kassenbuch-CSV. i18n de/en.
+  SW-Cache `v66` (+4 Module precached).
+- **Tests 510/510** (13 neu: Anfangsbestand-Zeilen, chronologische Filterung, Bank ≠ Kasse,
+  Bericht-Summen/Endbestand, laufender Bestand, Negativ-Erkennung, CSV).
+
+**Stand:** V4 vollständig (Logik node-getestet, UI statisch geprüft). **Offen/Ehrlich:**
+offenes Kassenbuch — **KEINE** zertifizierte TSE/Kassensicherungsverordnung. **Nächstes:**
+V5 (USt-VA komplett: Periodentyp + Dauerfristverlängerung + ELSTER-Datenpaket).
+
+---
+
 ## 2026-06-16 — V3: Anlagevermögen + AfA + Anlagenverzeichnis [Branch `claude/v2-ox8bu7`]
 
 **Was getan** (Fahrplan-Punkt V3, gleiche Sitzung wie V2)
