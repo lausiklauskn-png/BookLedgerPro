@@ -1,13 +1,13 @@
 // src/domain/bankimport.js
-// Bankimport: liest einen Kontoauszug im MT940-Format (SWIFT, von vielen deutschen
-// Banken exportierbar) und liefert normalisierte Umsätze. Daraus lässt sich je Umsatz
-// ein Buchungs-ENTWURF vorschlagen (über ai/suggest, wie Beleg/E-Rechnung). Reine,
-// testbare Funktionen — kein Netz, kein DOM.
+// Bankimport: liest einen Kontoauszug — MT940 (SWIFT) ODER CAMT.053 (ISO-20022-XML,
+// moderner SEPA-Standard) — und liefert ein einheitliches Umsatz-Modell. Daraus lässt
+// sich je Umsatz ein Buchungs-ENTWURF vorschlagen (über ai/suggest, wie Beleg/E-Rechnung).
+// Reine, testbare Funktionen — kein Netz, kein DOM.
 //
-// EHRLICHER HINWEIS: deckt die in der Praxis üblichen MT940-Felder ab (:25: Konto,
-// :61: Umsatzzeile, :86: Verwendungszweck). KEINE vollständige SWIFT-Validierung;
-// exotische Banken-Spezialformate können abweichen. CAMT.053 (XML) ist ein
-// Folgeschritt. Der Zahlungsabgleich (Matching auf offene Posten) folgt separat.
+// EHRLICHER HINWEIS: deckt die in der Praxis üblichen Felder ab (MT940: :25:/:61:/:86:;
+// CAMT.053: <Ntry> mit Betrag/Soll-Haben/Datum/Verwendungszweck/Gegenpartei). KEINE
+// vollständige SWIFT-/ISO-20022-Validierung; exotische Bank-Dialekte können abweichen.
+// Der Zahlungsabgleich (Matching auf offene Posten) folgt separat.
 
 import { parseEuroToCents } from './money.js';
 
@@ -102,4 +102,70 @@ export function umsatzExtraktion(umsatz) {
     richtung: u.richtung || 'ausgabe',
     confidence: u.betragCent != null && u.valuta ? 0.6 : 0.2,
   };
+}
+
+// ---- CAMT.053 (ISO 20022, XML) ---------------------------------------------
+
+// Inneres des ERSTEN Elements mit lokalem Namen (Namespace-Präfix egal).
+function camtBlock(xml, local) {
+  const m = String(xml).match(new RegExp(`<(?:[\\w.-]+:)?${local}\\b[^>]*>([\\s\\S]*?)</(?:[\\w.-]+:)?${local}>`));
+  return m ? m[1] : '';
+}
+// ALLE Elemente mit lokalem Namen (für die Umsatz-Einträge <Ntry>).
+function camtAlle(xml, local) {
+  const re = new RegExp(`<(?:[\\w.-]+:)?${local}\\b[^>]*>([\\s\\S]*?)</(?:[\\w.-]+:)?${local}>`, 'g');
+  const out = []; let m;
+  while ((m = re.exec(String(xml)))) out.push(m[1]);
+  return out;
+}
+function camtText(xml, local) {
+  const m = String(xml).match(new RegExp(`<(?:[\\w.-]+:)?${local}\\b[^>]*>([\\s\\S]*?)</(?:[\\w.-]+:)?${local}>`));
+  return m ? m[1].replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim() : '';
+}
+
+/** Erkennt das Auszugsformat. @returns {'MT940'|'CAMT'|null} */
+export function erkenneBankformat(text) {
+  const s = String(text || '');
+  if (/camt\.05[0-9]/i.test(s) || /<(?:[\w.-]+:)?Ntry\b/.test(s)) return 'CAMT';
+  if (/(^|\n):2[05][A-Z]?:/.test(s) || /(^|\n):61:/.test(s)) return 'MT940';
+  return null;
+}
+
+/** Parst einen CAMT.053-Auszug → gleiches Umsatz-Modell wie parseMT940. */
+export function parseCAMT(xml) {
+  const stmt = camtBlock(xml, 'Stmt') || String(xml);
+  const acct = camtBlock(stmt, 'Acct');
+  const konto = camtText(acct, 'IBAN') || camtText(camtBlock(acct, 'Othr'), 'Id');
+  const umsaetze = [];
+  for (const ntry of camtAlle(stmt, 'Ntry')) {
+    const cd = camtText(ntry, 'CdtDbtInd').toUpperCase();
+    const einnahme = cd === 'CRDT';
+    const details = camtBlock(ntry, 'NtryDtls');
+    // Datum: bevorzugt Valuta (ValDt), sonst Buchungsdatum (BookgDt).
+    const valuta = camtText(camtBlock(ntry, 'ValDt'), 'Dt') || camtText(camtBlock(ntry, 'BookgDt'), 'Dt');
+    const zweck = camtText(details || ntry, 'Ustrd');
+    // Gegenpartei: bei Gutschrift der Zahler (Dbtr), bei Lastschrift der Empfänger (Cdtr).
+    const parteien = camtBlock(details || ntry, 'RltdPties');
+    const gegen = camtText(camtBlock(parteien, einnahme ? 'Dbtr' : 'Cdtr'), 'Nm')
+      || camtText(camtBlock(parteien, 'Cdtr'), 'Nm') || camtText(camtBlock(parteien, 'Dbtr'), 'Nm');
+    umsaetze.push({
+      valuta: (valuta || '').slice(0, 10),
+      betragCent: parseEuroToCents(camtText(ntry, 'Amt')),
+      richtung: einnahme ? 'einnahme' : 'ausgabe',
+      zweck: zweck || '',
+      gegen: gegen || '',
+    });
+  }
+  return { konto, umsaetze };
+}
+
+/**
+ * Einheitlicher Einstieg: erkennt MT940 oder CAMT.053 und parst entsprechend.
+ * @returns {{format:'MT940'|'CAMT'|null, konto:string, umsaetze:Array}}
+ */
+export function parseBankauszug(text) {
+  const format = erkenneBankformat(text);
+  if (format === 'CAMT') return { format, ...parseCAMT(text) };
+  if (format === 'MT940') return { format, ...parseMT940(text) };
+  return { format: null, konto: '', umsaetze: [] };
 }

@@ -5,6 +5,21 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Bankimport (Schritt 2): CAMT.053 + Format-Weiche
+
+**Was getan:** `src/domain/bankimport.js` um **CAMT.053** (ISO-20022-XML) erweitert: `parseCAMT()`
+(namespace-tolerant, `<Ntry>` → Betrag/Soll-Haben/Valuta/Verwendungszweck/Gegenpartei — Cdtr bei
+Lastschrift, Dbtr bei Gutschrift) liefert dasselbe Umsatz-Modell wie `parseMT940`. Neu
+`erkenneBankformat()` + `parseBankauszug()` (Auto-Erkennung MT940/CAMT). UI (`documents.js`) nutzt
+jetzt den einheitlichen Einstieg + akzeptiert `.xml`; i18n de/en; SW `v53→v54`. **+9 Tests →
+323/323 grün** (CAMT-Parsing inkl. Richtung/Gegenpartei, Format-Weiche).
+
+**Ehrlich offen:** keine vollständige ISO-20022-Validierung; **echter Zahlungsabgleich** (Matching
+auf offene Forderungen/Verbindlichkeiten → Bank-gegen-Forderung-Buchung statt Erlös/Aufwand) ist
+der direkt nächste Schritt und macht die Ist-EÜR §4(3) + offene Posten komplett.
+
+---
+
 ## 2026-06-16 — Strategie verankert: Pseudonymisierung als Schlüssel-Enabler
 
 **Was getan (auf Nutzerwunsch, „sehr wichtig"):** Den strategischen Kern festgehalten und
