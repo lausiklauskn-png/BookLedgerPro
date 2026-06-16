@@ -5,6 +5,26 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Profi-Readiness-Fahrplan (V1–V10) + V1 Kontenrahmen
+
+**Was getan**
+- **Master-Plan verankert** (PR #60): `OFFENE_PUNKTE.md` Abschnitt „V. PROFI-READINESS" —
+  ehrliches Audit + V1–V10 (damit kein Steuerberater/Prüfer wegen fehlender Pflicht-Bausteine
+  ablehnt) + Scope-Annahmen (EÜR primär; Bilanz/Lohn eigene Spuren).
+- **V1 umgesetzt:** Kontenrahmen 18 → **57 gängige SKR03-Konten** (`accounts.js`); **Konto
+  anlegen/bearbeiten/löschen** im UI (`views/accounts.js`) mit `addKonto`/`updateKonto`/`deleteKonto`
+  (`store.js`; Nummer unveränderlich, Löschen nur unbenutzt) + reine, node-getestete
+  `validateKonto`/`normalizeKonto`. i18n de/en. SW `v62 → v63`.
+- **14 neue Node-Tests** → `node tests/run.mjs` **444/444 grün**.
+
+**Ehrlich offen:** UI nicht headless-E2E. Seed ist gängige Auswahl, NICHT vollständiger SKR03 —
+weitere Konten frei anlegbar; vor DATEV-Export mit Berater abgleichen. SKR04-Profil später.
+
+**Offen / Nächstes (Master-Plan):** **V2** §13b/Reverse-Charge + EU/Ausland, dann V3 AfA/Anlagen, …
+**Details: `docs/OFFENE_PUNKTE.md` Abschnitt V.**
+
+---
+
 ## 2026-06-16 — A1-Rest: Persistente Mahnstufe + manuelle Zins-/Gebühren-Erfassung
 
 **Was getan**

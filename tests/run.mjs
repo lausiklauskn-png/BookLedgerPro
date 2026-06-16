@@ -9,7 +9,7 @@ import {
 } from '../src/core/crypto.js';
 import { splitSecret, combineShares, encodeShare, decodeShare } from '../src/core/shamir.js';
 import { parseEuroToCents, formatCents } from '../src/domain/money.js';
-import { saldo, KONTOART, mehrungsSeite } from '../src/domain/accounts.js';
+import { saldo, KONTOART, mehrungsSeite, validateKonto, normalizeKonto, KONTOART_LISTE, SKR03_SEED } from '../src/domain/accounts.js';
 import { baueBuchungZeilen, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen, formularAusBuchung } from '../src/domain/journal.js';
 import { hashBuchung, verifyChain, GENESIS, canonicalize } from '../src/domain/audit.js';
 import { computeEUR, computeEURIst, computeUStVoranmeldung, saldenliste, verprobeUSt } from '../src/domain/taxes.js';
@@ -173,6 +173,32 @@ await section('Konten: Mehrungsseite & Saldo', () => {
   ok('Ertrag mehrt im Haben', mehrungsSeite(KONTOART.ERTRAG) === 'H');
   ok('Aktiv-Saldo Soll-lastig positiv', saldo(KONTOART.AKTIV, { soll: 5000, haben: 2000 }) === 3000);
   ok('Ertrag-Saldo Haben-lastig positiv', saldo(KONTOART.ERTRAG, { soll: 0, haben: 5000 }) === 5000);
+});
+
+await section('V1 Kontenrahmen: erweiterter Seed + Konto-Validierung', () => {
+  // Seed deutlich erweitert + eindeutige Nummern + Standardkonten vorhanden.
+  ok('Seed >= 45 Konten', SKR03_SEED.length >= 45);
+  const nummern = SKR03_SEED.map((k) => k.nummer);
+  ok('Kontonummern eindeutig', new Set(nummern).size === nummern.length);
+  ok('Standardkonten vorhanden (1200/1576/1776/8400/4980)',
+    ['1200', '1576', '1776', '8400', '4980'].every((n) => nummern.includes(n)));
+  ok('neue Konten vorhanden (Privat/AfA/Reisekosten)',
+    ['1800', '4830', '4670'].every((n) => nummern.includes(n)));
+  ok('jedes Seed-Konto hat gültige Art', SKR03_SEED.every((k) => KONTOART_LISTE.includes(k.art)));
+
+  // Validierung
+  ok('gültiges neues Konto ok', validateKonto({ nummer: '4999', name: 'Test', art: KONTOART.AUFWAND }, nummern).length === 0);
+  ok('Nummer-Dublette → Fehler', validateKonto({ nummer: '1200', name: 'X', art: KONTOART.AKTIV }, nummern).length > 0);
+  ok('Nummer keine Ziffern → Fehler', validateKonto({ nummer: 'ABC', name: 'X', art: KONTOART.AKTIV }, []).length > 0);
+  ok('fehlender Name → Fehler', validateKonto({ nummer: '4999', name: '  ', art: KONTOART.AUFWAND }, []).length > 0);
+  ok('ungültige Art → Fehler', validateKonto({ nummer: '4999', name: 'X', art: 'quatsch' }, []).length > 0);
+  ok('ungültiger USt-Satz → Fehler', validateKonto({ nummer: '4999', name: 'X', art: KONTOART.AUFWAND, ust: 5 }, []).length > 0);
+  ok('USt 7 ok', validateKonto({ nummer: '4999', name: 'X', art: KONTOART.AUFWAND, ust: 7 }, []).length === 0);
+
+  // Normalisierung
+  const n = normalizeKonto({ nummer: ' 4999 ', name: ' Beratung ', art: KONTOART.AUFWAND, ust: '19' });
+  ok('normalizeKonto trimmt + Zahl-USt', n.nummer === '4999' && n.name === 'Beratung' && n.ust === 19);
+  ok('normalizeKonto ohne USt lässt Feld weg', normalizeKonto({ nummer: '4999', name: 'X', art: KONTOART.AUFWAND, ust: '' }).ust === undefined);
 });
 
 await section('Buchung: doppelte Buchführung & USt-Aufteilung', () => {

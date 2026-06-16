@@ -33,11 +33,13 @@ verschlüsselt (`state.js firma`).
 
 ### Abzuarbeiten (Reihenfolge = Bau-Priorität)
 
-- [ ] **V1 — Kontenrahmen vollständig + Konten anlegen/bearbeiten [MUSS].** Heute nur ~18 Seed-Konten
-      (`accounts.js`), **keine UI zum Anlegen** (`views/accounts.js` nur Ansicht). Ohne genügend
-      Konten + Anlegen kann man eine reale Firma nicht buchen. → vollständigeres SKR03-Set (gängige
-      Konten) **und** „Konto anlegen/bearbeiten" (Nummer/Name/Art/USt) im UI, verschlüsselt; freie
-      Kontonummern erlaubt. (SKR04-Profil optional später.)
+- [x] **V1 — Kontenrahmen vollständiger + Konten anlegen/bearbeiten [MUSS] — erledigt (2026-06-16).**
+      Seed von 18 → **57 gängige SKR03-Konten** (Anlagevermögen/GWG, Privat, Kfz/Reise/Werbung/
+      Bewirtung, AfA, Beratung/Buchführung, steuerfreie Erlöse …). **UI „Konto anlegen/bearbeiten/
+      löschen"** (`views/accounts.js`): `addKonto`/`updateKonto`/`deleteKonto` in `store.js`
+      (Nummer unveränderlich, Löschen nur wenn unbenutzt), `validateKonto`/`normalizeKonto`
+      (rein, node-getestet). Hinweis im Formular: vor DATEV-Export mit Berater abgleichen.
+      Offen/später: vollständiger SKR03/SKR04-Profil.
 - [ ] **V2 — Vorsteuer §13b / Reverse-Charge + EU/Ausland [MUSS].** Die Firma bezieht selbst
       Leistungen mit **Steuerschuldumkehr** (z. B. EU-/Drittland-Dienste). Heute fehlt jede
       Differenzierung. → §13b-Buchung (Vorsteuer **und** Umsatzsteuer gleichzeitig), Kennzahlen
