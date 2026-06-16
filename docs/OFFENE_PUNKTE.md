@@ -10,6 +10,70 @@ Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlic
 
 ---
 
+## V. PROFI-READINESS — Vollständigkeits-Fahrplan (echte Buchhaltung)
+
+> **Ziel (Nutzer 16.06.):** Die Buchhaltung soll für eine **echte Firma** taugen, ohne dass ein
+> Steuerberater/Buchhalter/Betriebsprüfer sie wegen **fehlender Pflicht-Bausteine sofort ablehnt**.
+> Daher: lückenlos, Schritt für Schritt, nichts auslassen. Diese Liste ist der **verbindliche
+> Master-Plan**; sie wird oben in `PULS.md §7` als oberste Priorität referenziert.
+>
+> **Annahmen (Scope, explizit — sonst ändern!):** primär **EÜR** (Freiberufler/Kleinunternehmer/
+> Einzelunternehmer, §4 Abs.3 EStG), **Kalenderjahr**, **1 Mandant**. **Bilanzierung (GmbH, GuV/
+> Bilanz)** und **Lohnbuchhaltung** sind **bewusst eigene große Spuren** (V-Bilanz / V-Lohn) — für
+> eine EÜR-Firma nicht zwingend; Lohn macht i. d. R. separate Software/der Berater.
+>
+> Status aus Audit (2026-06-16): ✅ vorhanden · ◑ teilweise · ❌ fehlt.
+
+**Bereits solide vorhanden (Fundament):** doppelte Buchführung mehrzeilig + USt-Split
+(`journal.js`), **GoBD**-Festschreibung/Hash-Kette/Storno/lückenloser Nummernkreis (`store.js`,
+`audit.js`), USt-VA-Kern (Kz 81/86/66/83), **EÜR Soll + Ist** (§4 Abs.3, `taxes.js`), Rechnung
+§14-Pflichtangaben (`rechnung.js`), E-Rechnung XRechnung-CII (`erechnung.js`), Bankimport MT940/
+CAMT + Zahlungsabgleich, **Offene Posten Debitoren/Kreditoren + Mahnwesen** (§288). Firmenstammdaten
+verschlüsselt (`state.js firma`).
+
+### Abzuarbeiten (Reihenfolge = Bau-Priorität)
+
+- [ ] **V1 — Kontenrahmen vollständig + Konten anlegen/bearbeiten [MUSS].** Heute nur ~18 Seed-Konten
+      (`accounts.js`), **keine UI zum Anlegen** (`views/accounts.js` nur Ansicht). Ohne genügend
+      Konten + Anlegen kann man eine reale Firma nicht buchen. → vollständigeres SKR03-Set (gängige
+      Konten) **und** „Konto anlegen/bearbeiten" (Nummer/Name/Art/USt) im UI, verschlüsselt; freie
+      Kontonummern erlaubt. (SKR04-Profil optional später.)
+- [ ] **V2 — Vorsteuer §13b / Reverse-Charge + EU/Ausland [MUSS].** Die Firma bezieht selbst
+      Leistungen mit **Steuerschuldumkehr** (z. B. EU-/Drittland-Dienste). Heute fehlt jede
+      Differenzierung. → §13b-Buchung (Vorsteuer **und** Umsatzsteuer gleichzeitig), Kennzahlen
+      (Kz 46/47/52/53/89/21/41/…), Kontenmapping; im Rechnungs-/Beleg-Fluss berücksichtigen.
+- [ ] **V3 — Anlagevermögen + AfA + Anlagenverzeichnis [MUSS].** Für EÜR Pflicht, sobald ein
+      Wirtschaftsgut > 800 € netto. Heute nur Hinweis-Regeln (`rechtsregeln.js gwg/anlage_afa`),
+      keine Verwaltung/Berechnung. → Anlagen-Store, lineare AfA (pro rata temporis), **GWG (§6 Abs.2)**,
+      **Sammelposten (§6 Abs.2a)**, Anlagenverzeichnis + AfA-Buchung; Anlage AVEÜR-Ausgabe.
+- [ ] **V4 — Eröffnungs-/Anfangsbestände + Kassenbuch [MUSS].** Anfangsbestände Bank/Kasse
+      (Jahresumbruch/Erststart) und **GoBD-konforme Kassenführung** (chronologisch, fortlaufend,
+      Kassenbericht) fehlen. → Anfangsbestand-Buchung + Kassenbuch-Ansicht/-Auswertung.
+- [ ] **V5 — USt-VA komplett: Periodentyp + Dauerfristverlängerung + ELSTER-Datenpaket [MUSS].**
+      Monatlich/Quartal/jährlich, Sondervorauszahlung; amtliche Kennzahlen-Vollständigkeit;
+      Export als ELSTER-konformes Datenpaket (kein ERiC-Direktversand — bewusst).
+- [ ] **V6 — Anlage EÜR (amtliches Zeilenschema) + Kontenblätter + SuSa [MUSS/SOLL].** Heute nur
+      konten-basierte EÜR-CSV. → Mapping auf die **amtlichen Anlage-EÜR-Zeilen**, Kontenblatt je
+      Konto, Summen-/Saldenliste als Bericht/Export.
+- [ ] **V7 — Betriebsprüfer-Export GoBD (GDPdU/DSFinV-K, „Z3"/IDEA) [MUSS].** Datenpaket +
+      Beschreibungsdatei (`INDEX.XML`/`gdpdu-01-09-2004.dtd`) für die digitale Betriebsprüfung.
+- [ ] **V8 — DATEV-EXTF berater-fest [SOLL].** Heute „EXTF-orientiert". → Steuerschlüssel-Mapping
+      und Header mit echtem Berater/DATEV gegen einen Testimport verifizieren; Doku „so importieren".
+- [ ] **V9 — Korrektheit/Validierung & Kleinfälle [SOLL].** Kleinunternehmer-Konsistenz
+      (keine USt-Konten bei §19), Kleinbetragsrechnung ≤250 € (§33 UStDV), Bewirtung 70/30 &
+      Geschenke-Grenze als **rechnende** Buchungshilfe (heute nur Hinweis), Storno-/Periodensperre.
+- [ ] **V10 — Browser-E2E der Buchungs-Kernpfade [SOLL].** Bisher nur Logik node-getestet; die
+      DOM-/IndexedDB-Pfade (Buchen, Festschreiben, Rechnung, Auswertungen, Export) real durchklicken/
+      dokumentieren (kein Headless-Browser in der Bau-Umgebung → manuell + Checkliste).
+
+### Bewusst eigene große Spuren (nur falls Rechtsform es verlangt)
+- [ ] **V-Bilanz — Bilanzierung (GmbH/OHG, GuV + Bilanz, §4 Abs.1/§5) [KANN/abhängig].**
+- [ ] **V-Lohn — Lohnbuchhaltung [KANN/extern].** Heute nur Zeiterfassung (`employees.js`); echte
+      Lohnabrechnung/SV/Lohnsteuer ist eigenes Produkt — i. d. R. separate Software/Berater.
+- [ ] **V-Multi — Mehrmandantenfähigkeit [KANN].**
+
+---
+
 ## A. HOCH — unbedingt beachten / als Nächstes
 
 ### A1. Mahnwesen & überfällige Forderungen — **Kern erledigt ✓, Rest offen**

@@ -160,9 +160,14 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 - **EÜR §4(3) (Zufluss/Abfluss, Ist-Prinzip)** + **zertifiziertes DATEV-EXTF** — größer, eigener PR.
 
 ## 7. Nächste konkrete Schritte (Priorität)
-0. **→ `docs/OFFENE_PUNKTE.md`** ist die lebende Merkliste (unbedingt-beachten/nacharbeiten/
-   verbessern). **Hoch:** **Mahnwesen & überfällige Forderungen** (Fälligkeit, Überfällig-Badge,
-   Mahnstufen, Verzugszinsen §288 BGB, Mahnschreiben), Verbindlichkeiten als OP-Quelle, Teilzahlungen.
+0a. **★ AKTIVER MASTER-PLAN: `docs/OFFENE_PUNKTE.md` → Abschnitt „V. PROFI-READINESS"** —
+   Vollständigkeits-Fahrplan, damit ein Steuerberater/Betriebsprüfer die Buchhaltung NICHT wegen
+   fehlender Pflicht-Bausteine ablehnt. Reihenfolge **V1→V10** (V1 Kontenrahmen+anlegen, V2 §13b/
+   Reverse-Charge, V3 AfA/Anlagenverzeichnis, V4 Anfangsbestände/Kassenbuch, V5 USt-VA komplett,
+   V6 Anlage-EÜR/Kontenblätter, V7 GoBD-Prüfer-Export, V8 DATEV berater-fest, V9 Validierung, V10 E2E).
+   **Aktuell: V1 als Nächstes.**
+0b. **Erledigt (A1–A3):** Mahnwesen (Fälligkeit/Mahnstufen/§288/persistente Stufe), Verbindlichkeiten
+   als OP-Quelle + OP-Liste, Teilzahlungen (Debitor+Kreditor), Skonto/Toleranz-Matching.
 1. **Brainstorming (Abschnitt 0) klären** — v. a. E-Rechnung, Bankimport, §19-Default, DATEV mit Berater.
 2. **WorkFloh-Anschluss vollenden:** WorkFloh-Export auf `docs/WORKFLOH_IMPORT.md` ausrichten
    (oder WorkFloh-Repo/Beispiel-JSON bereitstellen) → echten End-to-End-Import testen
