@@ -47,7 +47,7 @@ import {
   validateEingangsrechnung, anreichereVerbindlichkeiten, verbindlichkeitenSummen,
 } from '../src/domain/payables.js';
 import { buildOffeneVerbindlichkeitenCsv } from '../src/domain/export.js';
-import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B } from '../src/domain/mahnwesen.js';
+import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, letzteMahnstufe, vorschlagNaechsteStufe, mahnVerlaufSumme, mahnStufeLabel } from '../src/domain/mahnwesen.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -1385,6 +1385,26 @@ await section('Mahnwesen: Posten anreichern + Mahnschreiben-Daten', () => {
   // Bei bloßer Zahlungserinnerung (Stufe 1) keine Zinsen/Pauschale.
   const m2 = mahnschreibenDaten(ang[1], { heute, basiszinsProzent: 0, b2b: true });
   ok('Erinnerung ohne Zinsen/Pauschale', m2.zinsenCent === 0 && m2.pauschaleCent === 0);
+});
+
+await section('Mahnwesen: persistenter Verlauf (Stufe/Zins-/Gebührenverlauf)', () => {
+  ok('mahnStufeLabel 2 → 1. Mahnung', mahnStufeLabel(2) === '1. Mahnung');
+  ok('letzteMahnstufe leer → 0', letzteMahnstufe({}) === 0);
+  ok('letzteMahnstufe nimmt Maximum', letzteMahnstufe({ mahnungen: [{ stufe: 1 }, { stufe: 3 }, { stufe: 2 }] }) === 3);
+
+  // Ohne Verlauf: Vorschlag = aus Überfälligkeit abgeleitete Stufe.
+  const v0 = vorschlagNaechsteStufe({}, 20); // 20 Tage → 1. Mahnung (Stufe 2)
+  ok('ohne Verlauf: abgeleitete Stufe 2, mahnbar', v0.stufe === 2 && v0.mahnbar && v0.letzteGesendet === 0);
+  // Mit Verlauf (zuletzt Stufe 2): nächste = 3, unabhängig von Tagen.
+  const v1 = vorschlagNaechsteStufe({ mahnungen: [{ stufe: 2 }] }, 1);
+  ok('mit Verlauf: nächste Stufe 3', v1.stufe === 3 && v1.letzteGesendet === 2);
+  // Deckelung bei 3. Mahnung (Stufe 4).
+  ok('Deckelung bei Stufe 4', vorschlagNaechsteStufe({ mahnungen: [{ stufe: 4 }] }, 99).stufe === 4);
+  // Nicht überfällig, kein Verlauf → Stufe 0, nicht mahnbar.
+  ok('nicht überfällig → Stufe 0', vorschlagNaechsteStufe({}, 0).stufe === 0 && vorschlagNaechsteStufe({}, 0).mahnbar === false);
+
+  const vs = mahnVerlaufSumme({ mahnungen: [{ zinsenCent: 500, gebuehrenCent: 4000 }, { zinsenCent: 250, gebuehrenCent: 0 }] });
+  ok('Verlaufssumme Zinsen 750 / Gebühren 4000', vs.zinsenCent === 750 && vs.gebuehrenCent === 4000);
 });
 
 await section('Mahnwesen: B2B/Verbraucher je Kunde (§288 BGB)', () => {

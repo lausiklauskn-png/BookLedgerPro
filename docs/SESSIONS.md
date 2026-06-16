@@ -5,6 +5,27 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — A1-Rest: Persistente Mahnstufe + manuelle Zins-/Gebühren-Erfassung
+
+**Was getan**
+- **Reine Logik** `mahnwesen.js` (node-getestet): `letzteMahnstufe`, `vorschlagNaechsteStufe`
+  (nächste Stufe aus persistentem Verlauf statt nur aus Überfälligkeits-Tagen; Deckelung bei
+  3. Mahnung), `mahnVerlaufSumme`, `mahnStufeLabel`.
+- **Store** `crm-store.mahnungErfassen()` — Auftrag führt `mahnungen[]` (Datum/Stufe/Zinsen/
+  Gebühren). **Bewusst keine Auto-Steuerlogik.**
+- **UI** `reports.js`: Mahn-Karte zeigt „zuletzt gemahnt"; Mahnschreiben mit **editierbaren**
+  Verzugszinsen/Mahngebühren (vorbelegt §288) + „Als gesendet vermerken" (zählt Stufe hoch);
+  Hinweis, dass die Buchung der Zinsen/Gebühren separat im Journal erfolgt. i18n de/en.
+- **8 neue Node-Tests** → `node tests/run.mjs` **430/430 grün**. SW-Cache `v61 → v62`.
+
+**Ehrlich offen / ungetestet:** UI nicht headless-E2E. Auto-Buchung von Zinsen/Gebühren
+bewusst NICHT (manuell/separat). Offen: Zahlungsziel je Rechnung, Eingangsrechnungs-Verzug
+(Gegenseite); A3-Rest (Skonto-Buchung §17, Sammelzahlungen); A4 WorkFloh-Vollanbindung.
+
+**Offen / Nächstes:** Zahlungsziel je Rechnung; A3-Rest; später A4. **Details: `docs/OFFENE_PUNKTE.md`.**
+
+---
+
 ## 2026-06-16 — A3-Rest: Forderungs-Teilzahlung (OP-Tracking) + WorkFloh-Andock verankert
 
 **Was getan**

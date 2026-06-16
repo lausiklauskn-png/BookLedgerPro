@@ -52,6 +52,43 @@ export function mahnstufe(tageUeber, schwellen = MAHN_SCHWELLEN) {
   return { stufe: 0, label: 'offen', mahnbar: false };
 }
 
+/** Klartext-Bezeichnung einer Mahnstufe (0–4). */
+export function mahnStufeLabel(stufe) {
+  return ['offen', 'Zahlungserinnerung', '1. Mahnung', '2. Mahnung', '3. Mahnung'][Math.max(0, Math.min(4, Number(stufe) || 0))];
+}
+
+/**
+ * Höchste tatsächlich erfasste (gesendete) Mahnstufe eines Auftrags/einer Forderung.
+ * Persistenter Verlauf in `auftrag.mahnungen` [{datum, stufe, zinsenCent, gebuehrenCent}].
+ */
+export function letzteMahnstufe(auftrag) {
+  let max = 0;
+  for (const m of (auftrag && auftrag.mahnungen) || []) max = Math.max(max, Number(m.stufe) || 0);
+  return max;
+}
+
+/**
+ * Schlägt die nächste zu sendende Mahnstufe vor — auf Basis des PERSISTENTEN Verlaufs:
+ * ohne bisherige Mahnung die anhand der Überfälligkeit abgeleitete Stufe, sonst die
+ * nächsthöhere nach der zuletzt gesendeten (gedeckelt bei 3. Mahnung = 4).
+ * @returns {{stufe:0|1|2|3|4, label:string, mahnbar:boolean, letzteGesendet:number}}
+ */
+export function vorschlagNaechsteStufe(auftrag, tageUeber, schwellen) {
+  const letzte = letzteMahnstufe(auftrag);
+  const stufe = letzte === 0 ? mahnstufe(tageUeber, schwellen).stufe : Math.min(4, letzte + 1);
+  return { stufe, label: mahnStufeLabel(stufe), mahnbar: stufe >= 1, letzteGesendet: letzte };
+}
+
+/** Summe der im Verlauf erfassten Verzugszinsen/Mahngebühren (Cent). */
+export function mahnVerlaufSumme(auftrag) {
+  let zinsenCent = 0, gebuehrenCent = 0;
+  for (const m of (auftrag && auftrag.mahnungen) || []) {
+    zinsenCent += Math.round(Number(m.zinsenCent) || 0);
+    gebuehrenCent += Math.round(Number(m.gebuehrenCent) || 0);
+  }
+  return { zinsenCent, gebuehrenCent };
+}
+
 /**
  * Verzugszinsen in Cent (§ 288 BGB), zeitanteilig (tage/365).
  * @param betragCent offener Betrag (brutto)
