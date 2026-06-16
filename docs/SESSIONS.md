@@ -5,6 +5,17 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Klarstellung: Nicht-EU-KI ist dormant, nicht auswählbar
+
+**Was getan (Nutzer-Korrektur):** Die Strategie-Formulierung in `docs/PULS.md` §0★ und
+`docs/TRANSPARENZ_ZWISCHENSTAND.html` §0a/§8 präzisiert: **aktive KI-Nutzung bleibt strikt EU**
+(Vision EU + Mistral EU, CLAUDE.md §8 unverändert). **Nicht-EU-Anbieter sind NICHT zur Auswahl
+freigegeben** — nur als ruhende, strukturelle Option im Gerüst gedacht. „freie Anbieterwahl"
+zuvor missverständlich → jetzt: Flexibilität **innerhalb der EU**; Nicht-EU-Öffnung nur per
+ausdrücklicher, gesonderter Produktentscheidung. Reine Doku.
+
+---
+
 ## 2026-06-16 — Zahlungsabgleich: offene Posten + Matching + Ausgleichsbuchung
 
 **Was getan:** `src/domain/zahlungsabgleich.js` (neu, rein/getestet): `offenePosten(auftraege)`
