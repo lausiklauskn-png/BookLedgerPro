@@ -5,13 +5,14 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/datenschutz-avv-8vx628`
-· **main-Stand:** `3b218c7` · **Tests:** `node tests/run.mjs` → **269/269 grün**
-· **SW-Cache:** `v50` · **61 JS-Module** · **12 Bild- + 5 Icon-Assets**
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/erechnung-xrechnung-8vx628`
+· **main-Stand:** `ee89577` · **Tests:** `node tests/run.mjs` → **288/288 grün**
+· **SW-Cache:** `v51` · **62 JS-Module** · **12 Bild- + 5 Icon-Assets**
 · **Datenschutz-Modi ABGESCHLOSSEN** (Schritt 1+2+Transparenz+AVV): `src/ai/pseudonym.js`
-  (rein, inkl. `maskierungsBericht`) + `src/ai/anker.js` + Verdrahtung `mistral`/`berater` +
-  Settings-Schalter `datenschutzModus` + Transparenz-Vorschau + AVV/Art.28/32-Doku in
-  „Recht & Doku". Konzept: `docs/KONZEPT_DATENSCHUTZ_MODI.md` (§6 alle Haken).
+  + `src/ai/anker.js` + Verdrahtung `mistral`/`berater` + Settings-Schalter + AVV-Doku.
+· **NEU E-Rechnung (Schritt 1):** `src/domain/erechnung.js` — `baueXRechnungCII()` erzeugt
+  XRechnung-orientierte CII-XML aus einer Rechnung; Download-Knopf im Rechnungs-Dokument
+  (Aufträge). **Ehrlich: nicht KoSIT-validiert** (kein Validator in Bau-Umgebung).
 
 ---
 

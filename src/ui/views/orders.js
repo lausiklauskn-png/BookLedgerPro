@@ -10,8 +10,9 @@ import {
   listKunden, getKunde, listKostenstellen, ensureKostenstellenSeeded, importWorkFloh,
 } from '../../domain/crm-store.js';
 import { parseImportText, normalizeImport } from '../../domain/importworkfloh.js';
-import { pickFile, readFileText } from '../../core/files.js';
+import { pickFile, readFileText, downloadText } from '../../core/files.js';
 import { baueRechnung, pflichtangaben } from '../../domain/rechnung.js';
+import { baueXRechnungCII, xRechnungDateiname } from '../../domain/erechnung.js';
 import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
 
@@ -186,6 +187,10 @@ function rechnungView(r) {
     el('div', { class: 'btn-row no-print' }, [
       el('button', { class: 'btn', text: t('common.back'), onClick: () => repaint() }),
       el('button', { class: 'btn btn-primary', text: t('reports.print'), onClick: () => window.print() }),
+      el('button', {
+        class: 'btn', text: t('orders.xrechnung'), title: t('orders.xrechnung.hint'),
+        onClick: () => downloadText(xRechnungDateiname(r), baueXRechnungCII(r), 'application/xml'),
+      }),
     ]),
     fehlt.length ? el('div', { class: 'hinweis no-print' }, [
       el('strong', { class: 'small', text: t('orders.invoiceMissing') }),
