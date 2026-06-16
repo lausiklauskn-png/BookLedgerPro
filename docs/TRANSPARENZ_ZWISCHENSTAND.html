@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>BookLedgerPro — Technische Transparenz- und Zwischenstands-Dokumentation</title>
+<style>
+  body { font-family: 'Liberation Serif', Georgia, serif; font-size: 11.5pt; line-height: 1.45; color: #1a1a1a; }
+  h1 { font-size: 22pt; color: #1d3a5f; margin-bottom: 2pt; }
+  h2 { font-size: 15pt; color: #1d3a5f; border-bottom: 1.5pt solid #1d3a5f; padding-bottom: 2pt; margin-top: 22pt; }
+  h3 { font-size: 12.5pt; color: #25506b; margin-top: 14pt; margin-bottom: 2pt; }
+  .sub { font-size: 11pt; color: #555; margin-top: 0; }
+  .lead { font-size: 11.5pt; }
+  code, .mono { font-family: 'Liberation Mono', monospace; font-size: 10pt; background: #f2f4f7; padding: 0 2pt; }
+  table { border-collapse: collapse; width: 100%; margin: 8pt 0; font-size: 10pt; }
+  th, td { border: 0.5pt solid #99a; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  th { background: #e7edf3; color: #1d3a5f; }
+  .ok { color: #1a7a3a; font-weight: bold; }
+  .plan { color: #b06a00; font-weight: bold; }
+  .idea { color: #777; font-weight: bold; }
+  .legend { background: #f7f9fb; border: 0.5pt solid #ccd; padding: 8pt 12pt; }
+  .note { background: #fbf7ef; border-left: 3pt solid #b06a00; padding: 6pt 12pt; margin: 8pt 0; }
+  .good { background: #f0f7f1; border-left: 3pt solid #1a7a3a; padding: 6pt 12pt; margin: 8pt 0; }
+  ul { margin-top: 4pt; }
+  .foot { color: #777; font-size: 9pt; margin-top: 4pt; }
+  .center { text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>BookLedgerPro</h1>
+<p class="sub"><strong>Technische Transparenz- und Zwischenstands-Dokumentation</strong><br>
+Wie die App Ihre Daten schützt, verschlüsselt und Recht (DSGVO &amp; GoBD) einhält.</p>
+<p class="foot">Stand: 16. Juni 2026 · Arbeitsdokument (wird fortgeschrieben) · Endpoint: https://lausiklauskn-png.github.io/BookLedgerPro/</p>
+
+<h2>0. Zweck dieses Dokuments — die „gläserne App"</h2>
+<p class="lead">BookLedgerPro ist eine Buchhaltungs-Software, die mit besonders sensiblen Daten
+arbeitet: Belegen, Umsätzen, Kunden- und Mitarbeiterdaten. Solche Software verlangt Vertrauen.
+Statt Vertrauen zu <em>behaupten</em>, legen wir offen, <strong>wie</strong> die App technisch funktioniert —
+Punkt für Punkt, ehrlich, nachprüfbar. Wer dieses Dokument liest, soll danach genau wissen:
+nach welchem Prinzip die App schützt, was sie heute schon kann, und was noch in Arbeit ist.</p>
+
+<p>Wir sagen ausdrücklich auch, was <strong>noch nicht</strong> fertig oder noch nicht geprüft ist.
+Ein Transparenz-Dokument, das Geplantes als Fertiges ausgibt, wäre selbst ein Vertrauensbruch.
+Deshalb ist jeder Punkt mit einem ehrlichen Status markiert:</p>
+
+<div class="legend">
+<p style="margin:2pt 0;"><span class="ok">✓ FERTIG</span> — real implementiert und (wo möglich) automatisiert getestet.</p>
+<p style="margin:2pt 0;"><span class="plan">◐ GEPLANT</span> — Konzept steht und ist hier technisch beschrieben, aber noch nicht gebaut.</p>
+<p style="margin:2pt 0;"><span class="idea">○ IDEE</span> — vorgemerkt, noch in Klärung.</p>
+</div>
+
+<h2>1. Grundprinzipien</h2>
+<table>
+<tr><th>Prinzip</th><th>Bedeutung für Sie</th><th>Status</th></tr>
+<tr><td><strong>Offline-first &amp; lokal</strong></td><td>Alle Daten liegen auf Ihrem Gerät, nicht auf unseren Servern. Die App läuft auch im Flugmodus.</td><td><span class="ok">✓</span></td></tr>
+<tr><td><strong>Build-frei / quelloffen lesbar</strong></td><td>Die App besteht aus normalen, lesbaren Dateien — kein undurchsichtiges „kompiliertes" Paket. Jeder Fachkundige kann nachsehen, was sie tut.</td><td><span class="ok">✓</span></td></tr>
+<tr><td><strong>Verschlüsselt</strong></td><td>Sensible Inhalte werden mit starker Verschlüsselung gespeichert (Details § 2).</td><td><span class="ok">✓</span></td></tr>
+<tr><td><strong>Recht ist Architektur</strong></td><td>DSGVO und GoBD sind von Anfang an eingebaut, nicht nachträglich aufgesetzt.</td><td><span class="ok">✓</span></td></tr>
+<tr><td><strong>EU-KI, freiwillig (BYOK)</strong></td><td>KI-Funktionen laufen über EU-Dienste, nur mit Ihrer ausdrücklichen Zustimmung und Ihrem eigenen Schlüssel.</td><td><span class="ok">✓</span></td></tr>
+</table>
+
+<h2>2. Verschlüsselung — wie genau</h2>
+<p>Dies ist real implementiert und im Quellcode (<code>src/core/crypto.js</code>) nachprüfbar.</p>
+<table>
+<tr><th>Baustein</th><th>Verfahren</th></tr>
+<tr><td>Verschlüsselungs-Algorithmus</td><td><strong>AES-GCM mit 256 Bit</strong> (authentifiziert — erkennt auch nachträgliche Manipulation)</td></tr>
+<tr><td>Schlüssel aus Passwort</td><td><strong>PBKDF2-SHA-256 mit 600.000 Runden</strong> — macht das Durchprobieren von Passwörtern extrem teuer</td></tr>
+<tr><td>Zufallswerte</td><td>Pro Datensatz eigener Salt (16 Byte) und IV (12 Byte) aus dem kryptografischen Zufallsgenerator des Browsers</td></tr>
+<tr><td>Sitzungs-Schlüssel</td><td>Existiert <strong>nur im Arbeitsspeicher</strong>, solange die App entsperrt ist — wird nie auf die Festplatte geschrieben</td></tr>
+</table>
+
+<h3>Was verschlüsselt gespeichert wird</h3>
+<ul>
+<li>Einstellungen und KI-Schlüssel (der KI-Schlüssel liegt also <strong>nicht im Klartext</strong>),</li>
+<li>Buchungen / das Journal,</li>
+<li>Belege (Bilder/PDF) — binär verschlüsselt,</li>
+<li>Kunden-, Mitarbeiter- und Zeitdaten (personenbezogene Daten).</li>
+</ul>
+
+<h3>Schutz gegen Datenverlust</h3>
+<p><span class="ok">✓ FERTIG.</span> Browser-Speicher ist vergänglich. Deshalb:</p>
+<ul>
+<li><strong>Shamir Secret Sharing:</strong> Der Schlüssel kann in mehrere Teile zerlegt werden (z. B. „3 von 5 nötig"), als Schutz gegen Verlust eines einzelnen Teils.</li>
+<li><strong>Verschlüsseltes Backup-Bundle:</strong> Der gesamte Bestand lässt sich passwortverschlüsselt herunterladen und wiederherstellen.</li>
+<li><strong>Durabilitäts-Überwachung:</strong> Die App fordert dauerhaften Speicher an (<code>storage.persist()</code>) und erinnert an Backups.</li>
+</ul>
+
+<h2>3. DSGVO — Datenschutz in der Praxis</h2>
+<table>
+<tr><th>Anforderung</th><th>Umsetzung</th><th>Status</th></tr>
+<tr><td>Datensparsamkeit &amp; lokale Verarbeitung</td><td>Daten bleiben auf dem Gerät, kein Betreiber-Server, kein Konto-Zwang.</td><td><span class="ok">✓</span></td></tr>
+<tr><td>Schutz personenbezogener Daten</td><td>Kunden-/Mitarbeiterdaten werden verschlüsselt gespeichert.</td><td><span class="ok">✓</span></td></tr>
+<tr><td>Betroffenenrechte</td><td>Daten-Export und vollständiges Löschen sind in der App vorgesehen.</td><td><span class="ok">✓</span></td></tr>
+<tr><td>Recht-Doku in der App</td><td>Ansicht „Recht &amp; Doku" mit Datenschutz- und Verfahrensdokumentation.</td><td><span class="ok">✓</span></td></tr>
+<tr><td>KI nur freiwillig, EU-Datenresidenz</td><td>KI-Versand nur nach Bestätigung, ausschließlich EU-Endpoints (§ 6).</td><td><span class="ok">✓</span></td></tr>
+<tr><td>AVV/DPA-Dokumente in der App verlinkt</td><td>Auftragsverarbeitungs-Verträge der KI-Anbieter direkt zugänglich machen.</td><td><span class="plan">◐ P1</span></td></tr>
+<tr><td>Aufklärung Kleinunternehmer / KI-Autonomie</td><td>Klarstellen, welche Pflichten beim Weiterleiten von Kundendaten gelten.</td><td><span class="plan">◐ P3/P4</span></td></tr>
+</table>
+
+<h2>4. GoBD — Ordnungsmäßige Buchführung</h2>
+<p><span class="ok">✓ FERTIG</span> (nachprüfbar in <code>src/domain/audit.js</code>, <code>journal.js</code>).</p>
+<ul>
+<li><strong>Unveränderbarkeit:</strong> Festgeschriebene Buchungen können nicht mehr geändert oder gelöscht werden.</li>
+<li><strong>Storno statt Löschen:</strong> Korrekturen erfolgen durch Gegenbuchung; das Original bleibt erhalten.</li>
+<li><strong>Hash-Kette (SHA-256):</strong> Jede Buchung ist mit der vorigen kryptografisch verkettet — nachträgliche Änderungen werden erkannt.</li>
+<li><strong>Lückenloser Nummernkreis:</strong> fortlaufende Nummerierung; Lücken/Sprünge werden aufgedeckt.</li>
+<li><strong>Doppelte Buchführung &amp; cent-genaue Beträge</strong> (Ganzzahl-Arithmetik, keine Rundungsfehler).</li>
+</ul>
+<div class="note"><strong>Ehrliche Grenze:</strong> Der DATEV-Export ist „DATEV-orientiert" (dokumentierte Spalten),
+<strong>nicht</strong> das zertifizierte EXTF-Format. Eine elektronische ELSTER-Übermittlung erfolgt nicht —
+die App erzeugt ein prüfbares Datenpaket für den Steuerberater.</div>
+
+<h2>5. EU-KI-Architektur</h2>
+<p><span class="ok">✓ FERTIG.</span> Grundsatz: <strong>EU-vorrangig, rechtskonform, freiwillig.</strong></p>
+<ul>
+<li><strong>Texterkennung (OCR):</strong> ausschließlich Google Cloud Vision am <strong>EU-Endpoint</strong> (<code>eu-vision.googleapis.com</code>).</li>
+<li><strong>Kontierung &amp; Steuer-Assistenz:</strong> ausschließlich <strong>Mistral (EU)</strong> (<code>api.mistral.ai</code>).</li>
+<li><strong>On-Device-Fallback:</strong> Ist keine KI eingerichtet, arbeitet eine lokale Heuristik ohne jeden Netz-Versand.</li>
+<li><strong>Freiwillig (BYOK):</strong> eigener Schlüssel, verschlüsselt gespeichert; Versand nur nach Bestätigung.</li>
+<li><strong>Nicht-EU-Anbieter (z. B. Claude) ruhen:</strong> nicht im aktiven Bedien-Pfad, um Datenresidenz und Einfachheit zu sichern.</li>
+</ul>
+
+<h2>6. Das Herzstück: Briefkasten-Prinzip &amp; Pseudonymisierung</h2>
+<p><span class="plan">◐ GEPLANT (P5 + P7).</span> Dieser Abschnitt beschreibt das <strong>Konzept</strong>,
+das die App besonders vertrauenswürdig macht. Es ist durchdacht, aber noch nicht gebaut — wir
+beschreiben es hier vollständig, damit das Prinzip klar ist.</p>
+
+<h3>Das Problem</h3>
+<p>Wenn KI beim Sortieren und Kontieren helfen soll, müsste normalerweise der Beleg-Text — inklusive
+Namen, Telefonnummern, Firmen — zu einem KI-Dienst gesendet werden. Genau das wollen wir vermeiden.</p>
+
+<h3>Die Lösung: deterministische Pseudonymisierung mit lokalem Re-Identifikations-Tresor</h3>
+<p>So funktioniert es Schritt für Schritt:</p>
+<ol>
+<li><strong>Erkennen:</strong> Die App erkennt im Text personenbezogene Teile (Name, Telefon, E-Mail, Firma, Steuer-/Kunden-Nr., IBAN).</li>
+<li><strong>Ersetzen durch Platzhalter (Token):</strong> Jeder dieser Werte wird durch eine neutrale Zuordnungsnummer ersetzt, z. B. <span class="mono">Max Mustermann → [KUNDE_007]</span>, <span class="mono">0171… → [TEL_3]</span>.</li>
+<li><strong>Nur Neutrales verlässt das Gerät:</strong> Zur KI geht <em>ausschließlich</em> der entpersonalisierte Text mit Platzhaltern. Die KI sortiert/kontiert, <strong>ohne zu wissen, wer dahintersteckt</strong>.</li>
+<li><strong>Zurück-Einordnen:</strong> Das Ergebnis der KI enthält die Platzhalter. Die App ersetzt sie <strong>lokal</strong> wieder durch die echten Daten und ordnet alles dem richtigen Kunden zu.</li>
+<li><strong>Der „Briefkasten" bleibt zuhause:</strong> Die Zuordnungstabelle (Platzhalter ↔ echte Person) liegt <strong>verschlüsselt auf Ihrem Gerät und verlässt es nie</strong>.</li>
+</ol>
+
+<div class="good"><strong>Bildlich:</strong> Jeder Kunde hat seinen eigenen Briefkasten. Darin liegt
+ein <strong>fester Teil</strong> (Klarname/Kontakt — verlässt das Gerät nie) und ein <strong>versendbarer Teil</strong>
+(neutraler Fachtext mit Platzhalter). Derselbe Kunde bekommt immer denselben Platzhalter —
+so erkennt selbst die KI „derselbe Kunde wie zuvor", ohne je seinen Namen zu kennen.</div>
+
+<h3>Der Briefkasten ist dreistufig</h3>
+<p>Damit auch komplexe Fälle sauber abgebildet werden (eine Firma, mehrere auftragsberechtigte Mitarbeiter):</p>
+<table>
+<tr><th>Ebene</th><th>Was es ist</th><th>Rolle in der Buchhaltung</th></tr>
+<tr><td><strong>Mandant</strong></td><td>ein getrennter Buchungskreis (z. B. beim Steuerberater je Klient)</td><td>vollständig isoliert</td></tr>
+<tr><td><strong>Firma</strong></td><td>die juristische Person (Kunde/Lieferant)</td><td><strong>der Buchungs-Partner</strong> (Debitor/Kreditor)</td></tr>
+<tr><td><strong>Person</strong></td><td>einzelner Ansprechpartner/Besteller einer Firma</td><td>nur <strong>Vermerk</strong> „wer hat bestellt", nie ein Konto</td></tr>
+</table>
+<p>Grundregel: <strong>Gebucht wird immer gegen die Firma</strong> (die zahlt und haftet); die handelnde
+Person ist eine Notiz an der Buchung. Eine geteilte Firmen-E-Mail führt deshalb nie dazu, dass mehrere
+Mitarbeiter fälschlich zu einer Person verschmelzen.</p>
+
+<h3>Ehrliche Grenzen der Pseudonymisierung</h3>
+<div class="note">
+<ul>
+<li><strong>Erkennung ist nie 100 %.</strong> Seltene Namen oder fehlerhafter Scan-Text können übersehen werden — deshalb gibt es einen <strong>Vorschau-/Bestätigungsschritt</strong> („das wird gesendet, das wurde geschwärzt").</li>
+<li><strong>Pseudonym ist nicht gleich anonym (rechtlich).</strong> Pseudonymisierte Daten bleiben laut DSGVO personenbezogen — aber mit deutlich geringerem Risiko und als anerkannte Schutzmaßnahme.</li>
+<li><strong>Der OCR-Schritt ist die Ausnahme:</strong> Für die Texterkennung muss das Beleg-<em>Bild</em> selbst zur KI; geschwärzt werden kann erst der erkannte <em>Text</em>. Vollständige Schwärzung der ganzen Kette setzt lokale Texterkennung voraus (vorgemerkt).</li>
+</ul>
+</div>
+
+<h2>7. Übersicht der Ausbau-Punkte (P1–P10)</h2>
+<table>
+<tr><th>#</th><th>Inhalt</th><th>Status</th></tr>
+<tr><td>P1</td><td>Rechts-Mindestcheckliste + AVV/DPA-Dokumente in der App verlinkt</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P2</td><td>KI-Anbieterwahl je Modus (Einfach = frei mit Einwilligung; Berater = streng)</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P3</td><td>KI-Autonomiestufen in der Aufklärung erklären</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P4</td><td>Kleinunternehmer-Aufklärung (Pflichten bei Drittdaten)</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P5</td><td>Automatischer PII-Filter / Pseudonymisierung vor KI-Versand</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P6</td><td>Import vorhandener Kundendaten (CSV/vCard/JSON)</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P7</td><td>Briefkasten / Token-Tresor (Mandant ⊃ Firma ⊃ Person)</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P8</td><td>Datei-Kanal (Masse) + QR (Einzel-Teilen, lokal erzeugt)</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P9</td><td>Datei-Import-Ablauf mit exaktem Schlüssel-Abgleich</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P10</td><td>Auftrag/Rechnung führt handelnde Person als Besteller mit</td><td><span class="idea">○ vorgemerkt</span></td></tr>
+</table>
+
+<h2>8. Was heute schon steht — und was noch nicht (ehrlich)</h2>
+<div class="good"><strong>Bereits real (Phasen 0–4, 6):</strong> Verschlüsselung, Datendurabilität (Shamir/Backup),
+doppelte Buchführung mit SKR03, USt-Voranmeldung &amp; EÜR-Aufbereitung, GoBD-Festschreibung mit Hash-Kette,
+verschlüsselte Belege, Kunden/Aufträge/Mitarbeiter/Kostenstellen, CSV-/DATEV-orientierter Export,
+EU-KI (Vision + Mistral) mit On-Device-Fallback, Dashboard mit echten Kennzahlen.
+<strong>Automatisierte Tests: 134 von 134 grün.</strong></div>
+<div class="note"><strong>Noch offen / noch nicht geprüft:</strong> die Punkte P1–P10 (oben);
+zertifiziertes DATEV-EXTF und ELSTER-Einreichung; PDF-Rechnung aus Auftrag; lokale Offline-Texterkennung;
+durchgehender Beleg→Buchung-Klickpfad im Browser noch nicht abschließend bestätigt;
+die Browser-Oberfläche ist nicht automatisiert end-to-end getestet (die Kernlogik schon).</div>
+
+<h2>9. Warum Sie das nachprüfen können (nicht nur glauben müssen)</h2>
+<ul>
+<li><strong>Quelloffen und build-frei:</strong> Der Code ist lesbarer Klartext — kein verstecktes, kompiliertes Paket. Was die App tut, steht offen da.</li>
+<li><strong>Kein Server, kein Konto:</strong> Es gibt keine Betreiber-Datenbank, in der Ihre Daten landen könnten.</li>
+<li><strong>Automatisierte Tests:</strong> Die Rechenkerne (Krypto, Beträge, Buchungslogik, Hash-Kette) sind durch Tests abgesichert (134/134).</li>
+<li><strong>Dieses Dokument trennt Fertiges von Geplantem</strong> — Sie sehen den echten Stand, nicht ein Wunschbild.</li>
+</ul>
+
+<p class="foot center">BookLedgerPro — Buchhaltung, die offenlegt, wie sie schützt.<br>
+Arbeitsdokument, Stand 16.06.2026. Statusangaben gelten zu diesem Datum und werden fortgeschrieben.</p>
+
+</body>
+</html>
