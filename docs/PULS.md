@@ -5,14 +5,15 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/erechnung-empfang-8vx628`
-· **main-Stand:** `daa2c0a` · **Tests:** `node tests/run.mjs` → **303/303 grün**
-· **SW-Cache:** `v52` · **63 JS-Module** · **12 Bild- + 5 Icon-Assets**
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/bankimport-mt940-8vx628`
+· **main-Stand:** `acef6b7` · **Tests:** `node tests/run.mjs` → **314/314 grün**
+· **SW-Cache:** `v53` · **64 JS-Module** · **12 Bild- + 5 Icon-Assets**
 · **Datenschutz-Modi ABGESCHLOSSEN** (Schritt 1+2+Transparenz+AVV).
-· **E-Rechnung:** (1) Erzeugung `src/domain/erechnung.js` `baueXRechnungCII()` + Download im
-  Rechnungs-Dokument. (2) **Empfang** `src/domain/erechnungLesen.js` `parseEingangsrechnung()`
-  (CII **und** UBL) → Extraktion → Buchungsvorschlag; Import-Knopf in Belegen.
-  **Ehrlich: nicht KoSIT-validiert**, best-effort XML-Extraktion, ZUGFeRD-PDF nicht ausgepackt.
+· **E-Rechnung:** Erzeugung (`erechnung.js`, CII-XML + Download) + Empfang (`erechnungLesen.js`,
+  CII+UBL → Vorschlag). Ehrlich: nicht KoSIT-validiert, ZUGFeRD-PDF nicht ausgepackt.
+· **NEU Bankimport (Schritt 1):** `src/domain/bankimport.js` `parseMT940()` → normalisierte
+  Umsätze → Buchungsvorschlag je Umsatz (Import-Karte in Belegen). **Offen:** CAMT.053 (XML),
+  echter Zahlungsabgleich auf offene Posten.
 
 ---
 

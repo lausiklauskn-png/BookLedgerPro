@@ -39,6 +39,7 @@ import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, A
 import { baueAnker } from '../src/ai/anker.js';
 import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
+import { parseMT940, umsatzExtraktion } from '../src/domain/bankimport.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -1047,6 +1048,46 @@ await section('E-Rechnung Empfang: UBL-Syntax', () => {
 await section('E-Rechnung Empfang: unbekanntes Format', () => {
   const p = parseEingangsrechnung('<html><body>kein eRechnung</body></html>');
   ok('Format null + Fehlerhinweis', p.format === null && /Unbekannt/.test(p.fehler) && p.confidence === 0);
+});
+
+// ===== Bankimport: MT940 =====
+
+await section('Bankimport: MT940 parsen (Lastschrift + Gutschrift)', () => {
+  const mt940 = [
+    ':20:STARTUMS',
+    ':25:DE89370400440532013000EUR',
+    ':28C:00012/001',
+    ':60F:C240601EUR1000,00',
+    ':61:2406030603D119,00NMSCNONREF',
+    ':86:166?00ONLINE-UEBERWEISUNG?20Rechnung 2026-042?32BUERO SCHMIDT GMBH',
+    ':61:2406050605C238,00NTRFNONREF',
+    ':86:166?00GUTSCHRIFT?20Honorar Beratung?32KUNDE MUSTER AG',
+    ':62F:C240630EUR1119,00',
+  ].join('\n');
+  const { konto, umsaetze } = parseMT940(mt940);
+  ok('Konto-IBAN gelesen (ohne EUR)', konto === 'DE89370400440532013000');
+  ok('zwei Umsätze', umsaetze.length === 2);
+  ok('Umsatz 1: Lastschrift → ausgabe 11900 Cent', umsaetze[0].richtung === 'ausgabe' && umsaetze[0].betragCent === 11900);
+  ok('Umsatz 1: Valuta 2024-06-03', umsaetze[0].valuta === '2024-06-03');
+  ok('Umsatz 1: Zweck + Gegenname', /Rechnung 2026-042/.test(umsaetze[0].zweck) && umsaetze[0].gegen === 'BUERO SCHMIDT GMBH');
+  ok('Umsatz 2: Gutschrift → einnahme 23800 Cent', umsaetze[1].richtung === 'einnahme' && umsaetze[1].betragCent === 23800);
+  ok('Umsatz 2: Gegenname', umsaetze[1].gegen === 'KUNDE MUSTER AG');
+});
+
+await section('Bankimport: MT940 mehrzeiliger :86:-Block + Extraktion', () => {
+  const mt940 = [
+    ':25:1234567890',
+    ':61:2406100610D50,00NMSC',
+    ':86:177?00MIETE',
+    '?20Buero Mai 2026?32VERMIETER GMBH',
+    ':62F:D240630EUR50,00',
+  ].join('\n');
+  const { umsaetze } = parseMT940(mt940);
+  ok('Fortsetzungszeile in :86: übernommen', /Buero Mai 2026/.test(umsaetze[0].zweck) && umsaetze[0].gegen === 'VERMIETER GMBH');
+  const ex = umsatzExtraktion(umsaetze[0]);
+  ok('Extraktion: Betrag/Datum/Richtung', ex.betragBrutto === 5000 && ex.datum === '2024-06-10' && ex.richtung === 'ausgabe');
+  ok('Extraktion: USt-Satz offen (null)', ex.ustSatz === null);
+  ok('leerer Auszug → keine Umsätze', parseMT940('').umsaetze.length === 0);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
