@@ -64,9 +64,15 @@ verschlüsselt (`state.js firma`).
       (Konto-/Jahr-Wahl, Anfangsbestand speichern + als Buchungsentwurf, Kassenbericht,
       Negativ-Warnung, Kassenbuch-CSV). 13 Tests. **Offen/ehrlich:** offenes Kassenbuch — KEINE
       zertifizierte TSE/Kassensicherungsverordnung (elektronische Registrierkasse).
-- [ ] **V5 — USt-VA komplett: Periodentyp + Dauerfristverlängerung + ELSTER-Datenpaket [MUSS].**
-      Monatlich/Quartal/jährlich, Sondervorauszahlung; amtliche Kennzahlen-Vollständigkeit;
-      Export als ELSTER-konformes Datenpaket (kein ERiC-Direktversand — bewusst).
+- [x] **V5 — USt-VA komplett: Periodentyp + Dauerfristverlängerung + ELSTER-Datenpaket [MUSS].**
+      ✅ Umgesetzt: `domain/umsatzsteuer.js` (rein, node-getestet) — `voranmeldungsperioden`
+      (monatlich/vierteljährlich/jährlich, ELSTER-Zeitraum-Codes 01–12/41–44, schaltjahr-sicher),
+      `periodeIndexFuer`, **`sondervorauszahlung` (1/11 Vorjahres-Zahllast)**, `jahresZahllast`.
+      `export.buildElsterVaPaket` (Kennzahlen + Steuernummer/Zeitraum, mit Disclaimer).
+      Auswertungen: Karte **„USt-VA je Zeitraum"** (Typ/Jahr/Periode wählbar, Zahllast,
+      Sondervorauszahlung-Hinweis, **ELSTER-Datenpaket-Export** + Perioden-CSV). Setting
+      `vaZeitraum`. 16 Tests. **Offen/ehrlich:** „ELSTER-Datenpaket" = strukturierte Übergabedatei,
+      **KEIN ERiC-XML/-Direktversand**; Jahres-USt-Erklärung (eigenes Formular) nicht abgebildet.
 - [ ] **V6 — Anlage EÜR (amtliches Zeilenschema) + Kontenblätter + SuSa [MUSS/SOLL].** Heute nur
       konten-basierte EÜR-CSV. → Mapping auf die **amtlichen Anlage-EÜR-Zeilen**, Kontenblatt je
       Konto, Summen-/Saldenliste als Bericht/Export.

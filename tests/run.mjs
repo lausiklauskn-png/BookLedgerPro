@@ -32,7 +32,8 @@ import {
   afaPlan, anlageStatus, anlagenverzeichnis, afaBuchungZeilen, normalizeAnlage, validateAnlage,
 } from '../src/domain/anlagen.js';
 import { kassenbuchEintraege, kassenbericht, anfangsbestandZeilen, SALDENVORTRAG_KONTO } from '../src/domain/kassenbuch.js';
-import { buildKassenbuchCsv } from '../src/domain/export.js';
+import { buildKassenbuchCsv, buildElsterVaPaket } from '../src/domain/export.js';
+import { VA_ZEITRAUM, voranmeldungsperioden, periodeIndexFuer, sondervorauszahlung, jahresZahllast } from '../src/domain/umsatzsteuer.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -1636,6 +1637,46 @@ await section('V4: Kassenbuch + Anfangsbestände (GoBD)', () => {
 
   const csv = buildKassenbuchCsv(b);
   ok('Kassenbuch-CSV: Anfangs-/Endbestand', csv.includes('Anfangsbestand') && csv.includes('Endbestand'));
+});
+
+await section('V5: USt-VA Zeitraum + Sondervorauszahlung + ELSTER-Paket', () => {
+  // Perioden je Typ.
+  const monate = voranmeldungsperioden(VA_ZEITRAUM.MONATLICH, 2026);
+  ok('monatlich: 12 Perioden', monate.length === 12);
+  ok('Februar 2026 endet 28.', monate[1].von === '2026-02-01' && monate[1].bis === '2026-02-28');
+  ok('Monats-Code = 02', monate[1].code === '02');
+  const quartale = voranmeldungsperioden(VA_ZEITRAUM.VIERTELJAEHRLICH, 2026);
+  ok('vierteljährlich: 4 Perioden', quartale.length === 4);
+  ok('Q2 = Apr–Jun, Code 42', quartale[1].von === '2026-04-01' && quartale[1].bis === '2026-06-30' && quartale[1].code === '42');
+  const jahr = voranmeldungsperioden(VA_ZEITRAUM.JAEHRLICH, 2024);
+  ok('jährlich: 1 Periode, Schaltjahr Feb', jahr.length === 1 && jahr[0].von === '2024-01-01' && jahr[0].bis === '2024-12-31');
+
+  // Schaltjahr-Februar.
+  const feb2024 = voranmeldungsperioden(VA_ZEITRAUM.MONATLICH, 2024)[1];
+  ok('Februar 2024 (Schaltjahr) endet 29.', feb2024.bis === '2024-02-29');
+
+  // periodeIndexFuer.
+  ok('Index Quartal für Mai → Q2 (Index 1)', periodeIndexFuer(VA_ZEITRAUM.VIERTELJAEHRLICH, '2026-05-15') === 1);
+  ok('Index Monat für Mai → 4', periodeIndexFuer(VA_ZEITRAUM.MONATLICH, '2026-05-15') === 4);
+
+  // Sondervorauszahlung 1/11.
+  ok('Sondervorauszahlung 1/11 von 11000 = 1000', sondervorauszahlung(110000) === 10000);
+  ok('Sondervorauszahlung bei Erstattung (negativ) = 0', sondervorauszahlung(-5000) === 0);
+
+  // jahresZahllast aus Buchungen (Verkauf 19% → USt 3800, kein VSt → Zahllast 3800).
+  const idx = indexFromSeed();
+  const buchungen = [
+    { seq: 1, datum: '2025-03-10', zeilen: [{ konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+  ];
+  ok('jahresZahllast 2025 = 3800', jahresZahllast(buchungen, idx, 2025) === 3800);
+  ok('jahresZahllast 2026 = 0 (keine Buchung)', jahresZahllast(buchungen, idx, 2026) === 0);
+
+  // ELSTER-Datenpaket.
+  const va = buildUstVa(buchungen, idx, { von: '2025-01-01', bis: '2025-12-31' });
+  const paket = buildElsterVaPaket(va, { steuernummer: '12/345/67890', jahr: 2025, zeitraumCode: '41', zeitraumLabel: 'Q1 2025' });
+  ok('ELSTER-Paket: Steuernummer enthalten', paket.includes('12/345/67890'));
+  ok('ELSTER-Paket: Kz 83 enthalten', paket.includes('83;'));
+  ok('ELSTER-Paket: Disclaimer (NICHT amtlich)', paket.includes('NICHT amtlich'));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

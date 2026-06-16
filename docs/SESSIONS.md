@@ -37,6 +37,31 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-16 — V5: USt-VA komplett (Zeitraum + Sondervorauszahlung + ELSTER-Paket) [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (Fahrplan-Punkt V5, gleiche Sitzung)
+- **`domain/umsatzsteuer.js`** (rein, node-getestet): `voranmeldungsperioden(typ, jahr)` für
+  **monatlich/vierteljährlich/jährlich** (ELSTER-Zeitraum-Codes 01–12 / 41–44, Monatsenden
+  schaltjahr-sicher via `Date`), `periodeIndexFuer`, **`sondervorauszahlung`** (Dauerfrist-
+  verlängerung: 1/11 der Vorjahres-Zahllast, nur bei Zahllast > 0), `jahresZahllast` (Kz 83
+  des Jahres via `buildUstVa`).
+- **`domain/export.js`**: `buildElsterVaPaket(va, meta)` — strukturierte Übergabedatei
+  (Kennzahlen 41/43/81/86/89/93/46/47/66/61/67/83 + Steuernummer/USt-IdNr./Zeitraum) mit
+  Disclaimer „NICHT amtlich".
+- **Auswertungen**: Karte **„USt-VA je Zeitraum"** (`reports.js`): Typ/Jahr/Periode wählbar,
+  Zahllast + Sondervorauszahlungs-Hinweis (nur monatlich), **ELSTER-Datenpaket-Export** +
+  Perioden-USt-VA-CSV. Setting **`vaZeitraum`** (Default vierteljährlich) persistiert.
+  i18n de/en. SW-Cache `v67` (+1 Modul precached).
+- **Tests 526/526** (16 neu: Perioden je Typ, Schaltjahr-Februar, ELSTER-Codes, Index-Mapping,
+  Sondervorauszahlung 1/11 + Erstattung=0, jahresZahllast, ELSTER-Paket-Inhalt/Disclaimer).
+
+**Stand:** V5 vollständig (Logik node-getestet, UI statisch geprüft). **Offen/Ehrlich:**
+„ELSTER-Datenpaket" ist eine Übergabedatei, **KEIN** ERiC-XML/-Direktversand; Jahres-USt-
+Erklärung (eigenes Formular) nicht abgebildet. **Nächstes:** V6 (Anlage EÜR amtliches
+Zeilenschema + Kontenblätter + SuSa).
+
+---
+
 ## 2026-06-16 — V4: Eröffnungs-/Anfangsbestände + GoBD-Kassenbuch [Branch `claude/v2-ox8bu7`]
 
 **Was getan** (Fahrplan-Punkt V4, gleiche Sitzung)

@@ -6,7 +6,8 @@ import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
 import { computeUStVoranmeldung, computeEUR, computeEURIst, verprobeUSt } from '../../domain/taxes.js';
 import { kostenstellenAuswertung } from '../../domain/costcenters.js';
-import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv, buildOffeneVerbindlichkeitenCsv } from '../../domain/export.js';
+import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv, buildOffeneVerbindlichkeitenCsv, buildElsterVaPaket } from '../../domain/export.js';
+import { VA_ZEITRAUM, voranmeldungsperioden, periodeIndexFuer, sondervorauszahlung, jahresZahllast } from '../../domain/umsatzsteuer.js';
 import { downloadText } from '../../core/files.js';
 import { isMistralConfigured } from '../../ai/aiConfig.js';
 import { erklaereSteuer } from '../../ai/taxAssist.js';
@@ -15,13 +16,15 @@ import { offenePosten } from '../../domain/zahlungsabgleich.js';
 import { anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, vorschlagNaechsteStufe, mahnStufeLabel, letzteMahnstufe } from '../../domain/mahnwesen.js';
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { offeneVerbindlichkeiten, anreichereVerbindlichkeiten, verbindlichkeitenSummen } from '../../domain/payables.js';
-import { getSettings } from '../../state.js';
+import { getSettings, updateSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
 let _b2bById = {}; // kundeId → ist Unternehmer (B2B)? für Verzugszinsen/Pauschale
 let _auftragById = {}; // auftragId → Auftrag (für persistenten Mahn-Verlauf)
 const periode = { von: '', bis: '' };
+// USt-VA Voranmeldungszeitraum-Auswahl (eigenständig, ohne Voll-Repaint).
+let _vaTyp = null, _vaJahr = null, _vaIdx = 0;
 
 export async function mountReports(host) {
   _host = host;
@@ -81,6 +84,7 @@ async function repaint() {
     ]),
     eurIstCard(eurIst),
     vaCard(va),
+    vaPeriodeCard(buchungen, idx),
     verprobungCard(verprobung),
     claudeBereit ? assistentCard(va, eur, p) : null,
     ks.length ? kostenstellenCard(ks) : null,
@@ -284,6 +288,82 @@ function vaCard(va) {
     line('83', t('reports.kz83'), va.kz83, true),
     el('p', { class: 'muted small', text: t('reports.ustVaNote') }),
   ]);
+}
+
+// USt-VA je Voranmeldungszeitraum (Monat/Quartal/Jahr) + Sondervorauszahlung + ELSTER-Paket.
+function vaPeriodeCard(buchungen, idx) {
+  if (_vaTyp == null) _vaTyp = getSettings().vaZeitraum || VA_ZEITRAUM.VIERTELJAEHRLICH;
+  if (_vaJahr == null) _vaJahr = new Date().getFullYear();
+
+  const ergebnis = el('div');
+  const typSel = el('select', {}, [
+    el('option', { value: VA_ZEITRAUM.MONATLICH, text: t('reports.vaMonthly') }),
+    el('option', { value: VA_ZEITRAUM.VIERTELJAEHRLICH, text: t('reports.vaQuarterly') }),
+    el('option', { value: VA_ZEITRAUM.JAEHRLICH, text: t('reports.vaYearly') }),
+  ]);
+  typSel.value = _vaTyp;
+  const jahrInput = el('input', { type: 'number', value: String(_vaJahr), style: 'width:7rem' });
+  const periodeSel = el('select', {});
+
+  const fuellePerioden = () => {
+    const perioden = voranmeldungsperioden(_vaTyp, _vaJahr);
+    if (_vaIdx >= perioden.length) _vaIdx = 0;
+    clearChildren(periodeSel);
+    perioden.forEach((p, i) => periodeSel.appendChild(el('option', { value: String(i), text: p.label })));
+    periodeSel.value = String(_vaIdx);
+    return perioden;
+  };
+  const render = () => {
+    const perioden = voranmeldungsperioden(_vaTyp, _vaJahr);
+    const p = perioden[_vaIdx] || perioden[0];
+    const va = buildUstVa(buchungen, idx, { von: p.von, bis: p.bis });
+    const svVorjahr = sondervorauszahlung(jahresZahllast(buchungen, idx, _vaJahr - 1));
+    const stamp = `${p.code}-${_vaJahr}`;
+    const meta = { ...firmaMeta(), jahr: _vaJahr, zeitraumCode: p.code, zeitraumLabel: p.label };
+    const line = (label, cents, strong) => el('div', { class: 'report-line' + (strong ? ' strong' : '') }, [
+      el('span', { text: label }), el('span', { class: 'num', text: formatEuro(cents) }),
+    ]);
+    clearChildren(ergebnis);
+    ergebnis.appendChild(el('div', { class: 'muted small', text: `${p.von} – ${p.bis} · ${t('reports.vaCode')} ${p.code}` }));
+    ergebnis.appendChild(line(t('reports.kz83'), va.kz83, true));
+    if (_vaTyp === VA_ZEITRAUM.MONATLICH && svVorjahr > 0) {
+      ergebnis.appendChild(line(t('reports.vaSondervorauszahlung'), svVorjahr));
+      ergebnis.appendChild(el('p', { class: 'muted small', text: t('reports.vaSvHint') }));
+    }
+    ergebnis.appendChild(el('div', { class: 'btn-row no-print' }, [
+      el('button', {
+        class: 'btn btn-sm', text: t('reports.vaExportPaket'),
+        onClick: () => downloadText(`ust-va-elster-${stamp}.csv`, BOM + buildElsterVaPaket(va, meta), 'text/csv'),
+      }),
+      el('button', {
+        class: 'btn btn-sm', text: t('reports.exportUstVa'),
+        onClick: () => downloadText(`ust-va-${stamp}.csv`, BOM + ustVaToCsv(va), 'text/csv'),
+      }),
+    ]));
+  };
+
+  fuellePerioden();
+  typSel.addEventListener('change', () => { _vaTyp = typSel.value; updateSettings({ vaZeitraum: _vaTyp }).catch(() => {}); _vaIdx = 0; fuellePerioden(); render(); });
+  jahrInput.addEventListener('change', () => { _vaJahr = Number(jahrInput.value) || _vaJahr; fuellePerioden(); render(); });
+  periodeSel.addEventListener('change', () => { _vaIdx = Number(periodeSel.value) || 0; render(); });
+  render();
+
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.vaPeriodTitle') }),
+    el('div', { class: 'period-bar no-print' }, [
+      el('span', { class: 'muted small', text: t('reports.vaType') + ':' }), typSel,
+      jahrInput, periodeSel,
+    ]),
+    ergebnis,
+    el('p', { class: 'muted small', text: t('reports.vaPaketHint') }),
+  ]);
+}
+
+function clearChildren(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+function firmaMeta() {
+  const f = getSettings().firma || {};
+  return { steuernummer: f.steuernummer || '', ustId: f.ustId || '' };
 }
 
 function assistentCard(va, eur, p) {
