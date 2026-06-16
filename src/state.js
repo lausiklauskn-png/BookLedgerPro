@@ -13,6 +13,8 @@ const DEFAULTS = Object.freeze({
   lang: 'de',
   aiAutonomy: 'suggest', // suggest / draft / auto
   taxProfile: 'DE',     // Deutschland zuerst
+  kleinunternehmer: false, // §19 UStG — unterdrückt USt-Hinweise
+  firma: { name: '', anschrift: '', steuernummer: '', ustId: '', iban: '' }, // Aussteller-Stammdaten (Rechnung §14)
 });
 
 const _state = { settings: { ...DEFAULTS }, route: 'dashboard' };

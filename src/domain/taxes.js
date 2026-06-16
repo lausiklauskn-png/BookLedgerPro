@@ -67,6 +67,44 @@ export function computeUStVoranmeldung(buchungen, kontoIndex, periode) {
   return { umsatzsteuer, vorsteuer, zahllast: umsatzsteuer - vorsteuer, perKonto };
 }
 
+/**
+ * USt-Verprobung: vergleicht die GEBUCHTE Vor-/Umsatzsteuer mit der aus den
+ * Netto-Beträgen der Erfolgskonten ERWARTETEN Steuer (Netto × Satz). Reine
+ * Funktion über festgeschriebenen Buchungen — ein klassischer Berater-Check, der
+ * vergessene oder falsch gerechnete USt aufdeckt. Nicht-blockierend (Hinweis).
+ *
+ * Die Erwartung wird je Buchung und Satz gerundet (wie beim Buchen), damit normale
+ * Rundung KEINE Fehlalarme erzeugt; eine Abweichung ≠ 0 ist ein echtes Signal.
+ * @returns {{umsatzsteuer:{erwartet,gebucht,diff}, vorsteuer:{erwartet,gebucht,diff}, ok:boolean}}
+ */
+export function verprobeUSt(buchungen, kontoIndex, periode) {
+  let ustErwartet = 0, ustGebucht = 0, vstErwartet = 0, vstGebucht = 0;
+  for (const b of buchungen) {
+    if (b.seq == null) continue;                 // nur festgeschriebene
+    if (!inPeriode(b.datum, periode)) continue;
+    const netErtrag = {}, netAufwand = {};       // Satz → Netto (Cent)
+    for (const z of b.zeilen || []) {
+      const k = kontoIndex[z.konto];
+      if (!k) continue;
+      if (isUmsatzsteuerKonto(k)) { ustGebucht += (z.seite === 'H' ? z.betrag : -z.betrag); continue; }
+      if (isVorsteuerKonto(k)) { vstGebucht += (z.seite === 'S' ? z.betrag : -z.betrag); continue; }
+      const satz = Number(k.ust) || 0;
+      if (satz <= 0) continue;
+      if (k.art === KONTOART.ERTRAG) netErtrag[satz] = (netErtrag[satz] || 0) + (z.seite === 'H' ? z.betrag : -z.betrag);
+      else if (k.art === KONTOART.AUFWAND) netAufwand[satz] = (netAufwand[satz] || 0) + (z.seite === 'S' ? z.betrag : -z.betrag);
+    }
+    for (const [satz, net] of Object.entries(netErtrag)) ustErwartet += Math.round((net * Number(satz)) / 100);
+    for (const [satz, net] of Object.entries(netAufwand)) vstErwartet += Math.round((net * Number(satz)) / 100);
+  }
+  const ustDiff = ustGebucht - ustErwartet;
+  const vstDiff = vstGebucht - vstErwartet;
+  return {
+    umsatzsteuer: { erwartet: ustErwartet, gebucht: ustGebucht, diff: ustDiff },
+    vorsteuer: { erwartet: vstErwartet, gebucht: vstGebucht, diff: vstDiff },
+    ok: ustDiff === 0 && vstDiff === 0,
+  };
+}
+
 /** EÜR (vereinfacht): Einnahmen (Ertrag) − Ausgaben (Aufwand) = Überschuss. */
 export function computeEUR(buchungen, kontoIndex, periode) {
   const bew = kontoBewegungen(buchungen, periode);
@@ -86,4 +124,52 @@ export function computeEUR(buchungen, kontoIndex, periode) {
     }
   }
   return { einnahmen, ausgaben, ueberschuss: einnahmen - ausgaben, einnahmenKonten, ausgabenKonten };
+}
+
+// SKR03-Standard: Geldkonten (Kasse/Bank) sowie Forderungen/Verbindlichkeiten.
+const GELDKONTEN_DEFAULT = ['1000', '1200'];
+const FORDERUNG_VERB_DEFAULT = ['1400', '1600'];
+
+/**
+ * EÜR nach dem Zufluss-/Abfluss-Prinzip (§ 4 Abs. 3 i. V. m. § 11 EStG, „Ist").
+ * Anders als die periodengerechte `computeEUR` werden Betriebseinnahmen/-ausgaben
+ * erst beim GELDFLUSS erfasst — also auch bei Zahlung einer früher gebuchten
+ * Rechnung (Forderung/Verbindlichkeit). Brutto-Prinzip (USt ist Teil des Zu-/Abflusses).
+ *
+ * Klassifikation je Buchung anhand der Nicht-Geld-Gegenseite:
+ *  - Geld-Zufluss + Gegenseite Ertrag/Forderung/USt → Betriebseinnahme
+ *  - Geld-Abfluss + Gegenseite Aufwand/Verbindlichkeit/Vor-/USt → Betriebsausgabe
+ *  - reine Geld-Umbuchungen und Privateinlagen/-entnahmen (Eigenkapital) zählen NICHT.
+ *
+ * EHRLICHER HINWEIS: vereinfachtes, nachvollziehbares Ist-Modell für die üblichen
+ * Buchungsstile dieser App. Sonderfälle (durchlaufende Posten, Anzahlungen,
+ * Entnahme von Wirtschaftsgütern) sind nicht abgebildet — im Zweifel Berater.
+ *
+ * @returns {{einnahmen:number, ausgaben:number, ueberschuss:number}}
+ */
+export function computeEURIst(buchungen, kontoIndex, periode, opts = {}) {
+  const geld = new Set(opts.geldkonten || GELDKONTEN_DEFAULT);
+  const fordVerb = new Set(opts.forderungVerbindlichkeit || FORDERUNG_VERB_DEFAULT);
+  let einnahmen = 0, ausgaben = 0;
+  for (const b of buchungen) {
+    if (b.seq == null) continue;                 // nur festgeschriebene
+    if (!inPeriode(b.datum, periode)) continue;
+    let netGeld = 0;
+    const andere = [];
+    for (const z of b.zeilen || []) {
+      if (geld.has(z.konto)) netGeld += (z.seite === 'S' ? z.betrag : -z.betrag);
+      else andere.push(z);
+    }
+    if (netGeld === 0) continue;                  // keine Geldbewegung / reine Umbuchung
+    const betrieblich = andere.some((z) => {
+      const k = kontoIndex[z.konto];
+      if (!k) return false;
+      return k.art === KONTOART.ERTRAG || k.art === KONTOART.AUFWAND
+        || k.rolle === 'vorsteuer' || k.rolle === 'umsatzsteuer'
+        || fordVerb.has(z.konto);
+    });
+    if (!betrieblich) continue;                   // z.B. Privateinlage (Eigenkapital) → kein BE/BA
+    if (netGeld > 0) einnahmen += netGeld; else ausgaben += -netGeld;
+  }
+  return { einnahmen, ausgaben, ueberschuss: einnahmen - ausgaben };
 }

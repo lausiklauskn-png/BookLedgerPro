@@ -15,17 +15,298 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
   je Typ in Reihenfolge des ersten Auftretens, optionales `createRegistry()` für
   aufrufsübergreifend stabile Token, `normalizeAnchors()` (entdoppelt, Typ-Normalisierung).
   Kein Netz, keine Krypto im Modul — reine Abbildung; Übertragung bleibt opt-in.
-- **23 Node-Tests** in `tests/run.mjs` ergänzt → **157/157 grün** (Round-Trip, stabile Token,
-  Longest-Match, Sonderzeichen, Register-Stabilität inkl. Präfix-Sicherheit `_1` vs `_11`,
-  Objekt-Map in `reidentify`).
+- **23 Node-Tests** in `tests/run.mjs` ergänzt; nach Merge mit main → **246/246 grün**
+  (Round-Trip, stabile Token, Longest-Match, Sonderzeichen, Register-Stabilität inkl.
+  Präfix-Sicherheit `_1` vs `_11`, Objekt-Map in `reidentify`).
+- main war beim PR-Merge weit voraus (223 Tests, SW v47, neue Module rechnung/pruefung/
+  rechtsregeln/berater/importworkfloh); sauber zurückgemergt, alle Tests beider Seiten erhalten.
 
-**Hinweis zur Vorlage:** `docs/KONZEPT_DATENSCHUTZ_MODI.md` (§6 Bau-Reihenfolge) und ein
-`PULS.md §0` waren in der Aufgabe referenziert, existieren im Repo aber (noch) nicht — gebaut
-wurde strikt nach der selbsttragenden Aufgaben-Spezifikation. Diese Lücke ehrlich offen lassen.
+**Hinweis zur Vorlage:** `docs/KONZEPT_DATENSCHUTZ_MODI.md` (§6 Bau-Reihenfolge) existiert im
+Repo (noch) nicht — gebaut wurde strikt nach der selbsttragenden Aufgaben-Spezifikation.
+(`PULS.md §0 Brainstorming` existiert inzwischen auf main.) Diese Lücke ehrlich offen lassen.
 
-**Offen / Nächstes:** Konzept-Doku `docs/KONZEPT_DATENSCHUTZ_MODI.md` nachreichen; Bau-Schritt 2
-(Anker-Quelle aus CRM/verschl. Speicher + Verdrahtung in die KI-Pipeline vor `ai/mistral.js`,
-opt-in/Bestätigung). **Nicht im Browser E2E getestet** — Kernlogik node-getestet.
+**Offen / Nächstes:** Konzept-Doku `docs/KONZEPT_DATENSCHUTZ_MODI.md` nachreichen (Modi +
+Bau-Reihenfolge festschreiben); Bau-Schritt 2 = Anker-Quelle aus CRM/verschl. Speicher
+(`crm-store`) + Verdrahtung in die KI-Pipeline **vor** `ai/mistral.js` (Kontierung) und
+`ai/berater.js` (Steuer-Assistent), mit opt-in/Bestätigung; reidentify auf die KI-Antwort.
+**Nicht im Browser E2E getestet** — Kernlogik node-getestet.
+
+---
+
+## 2026-06-14 — EÜR nach Zufluss/Abfluss (§4 Abs.3 EStG, Ist-Prinzip)
+
+**Was getan**
+- `src/domain/taxes.js`: NEU `computeEURIst(buchungen, idx, periode, opts)` — Betriebseinnahmen/
+  -ausgaben beim **Geldfluss** (§11 EStG, brutto), gerechnet aus Geldkonten-Bewegungen
+  (Kasse/Bank). Erfasst direkte Barbuchungen **und Zahlungen früher gebuchter Rechnungen**
+  (Forderung/Verbindlichkeit) zum Zahlungszeitpunkt; Privateinlagen/-entnahmen (Eigenkapital)
+  zählen nicht. Reine, node-getestete Funktion.
+- Reports: zusätzliche Karte „EÜR nach Zufluss/Abfluss (§4 Abs.3)"; bestehende periodengerechte
+  EÜR bleibt als Soll-Sicht. i18n de/en. SW-Cache `v32→v33`.
+- `tests/run.mjs`: +5 (Abfluss-Ausgabe, Rechnung zählt nicht, Zahlung als Einnahme, Privateinlage
+  ausgeschlossen, Entwurf/Periode). **Gesamt 208/208 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 208/0; `node --check`.
+**EHRLICH:** vereinfachtes Ist-Modell für die üblichen Buchungsstile; Sonderfälle (durchlaufende
+Posten, Anzahlungen, Sachentnahmen) nicht abgebildet — im Zweifel Berater. Geldkonten-Set
+(1000/1200) und Forderung/Verbindlichkeit (1400/1600) per opts konfigurierbar.
+
+---
+
+## 2026-06-14 — DATEV-EXTF formkonform gehärtet (Konto/Gegenkonto + Steuerschlüssel)
+
+**Was getan**
+- `src/domain/export.js`: NEU `buildDatevExtf()` — **EXTF-Envelope** (Header `"EXTF";700;21;
+  "Buchungsstapel";…` + Spaltenüberschriften) + Datenzeilen im **Konto/Gegenkonto-Brutto-Modell**.
+  NEU `datevBuchungssatz()` (rein, testbar) verdichtet USt-Split-Buchungen zu EINEM Brutto-Satz
+  mit **BU-/Steuerschlüssel** (SKR03: Vorsteuer 9/8, Umsatzsteuer 3/2), Belegdatum als TTMM.
+- Reports-Export-Button nutzt jetzt EXTF (`EXTF_Buchungsstapel_*.csv`), Label „DATEV (EXTF)".
+  Altes `buildDatevCsv` bleibt erhalten.
+- SW-Cache `v31→v32`. `tests/run.mjs`: +7. **Gesamt 203/203 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 203/0; `node --check`.
+**EHRLICH (wichtig):** KEIN vollständig zertifiziertes 116-Spalten-EXTF. Steuerschlüssel-Mapping
+deckt Standardsätze (0/7/19 %) ab und ist Kontenrahmen-/Versionsabhängig — **vor Übergabe mit
+Berater/DATEV verifizieren**.
+
+---
+
+## 2026-06-14 — WorkFloh-Import (Empfangsseite) + Anleitung + ISO/IEC-Beleg + PW-Layout
+
+**Was getan (mehrere PRs):**
+- **Gebrauchsanleitung** als Menüpunkt „Anleitung" (Installations- + Schritt-für-Schritt-Teil)
+  mit **Copy-Buttons** für Splitscreen. Hinweis „Beispieltexte…" in App-Grün/fett.
+- **ISO/IEC-Beleg** im Siegel — korrekt als **Anbieter**-Zertifizierung (Google Cloud/Mistral),
+  nicht als Eigen-Zertifikat. „Passwort ändern"-Layout (einspaltig + Abstand).
+- **WorkFloh-Import (Empfangsseite)**: `src/domain/importworkfloh.js` (rein, node-getestet)
+  + `crm-store.importWorkFloh` (Dedupe über externId/externNummer, USt-Ergänzung, Status
+  „angelegt"); UI-Karte in Aufträgen („Aus WorkFloh importieren", JSON). Felder `externId`
+  (Kunde) / `externNummer` (Auftrag) ergänzt. **Schema-Vertrag**: `docs/WORKFLOH_IMPORT.md`
+  (WorkFloh exportiert dorthin — „Verknüpfung mit Buchhaltungssoftware"). +7 Node-Tests.
+
+**Ehrlich offen:** WorkFloh-Repo war in dieser Sitzung nicht zugänglich (Scope + 403) → Schema
+unilateral von BookLedgerPro definiert; WorkFloh-Seite muss darauf exportieren (oder Repo/Beispiel
+nächste Sitzung). Import-Persistenz (IndexedDB) nur UI-testbar; Mapping node-getestet. SW `v47`,
+Tests **223/223**.
+
+---
+
+## 2026-06-14 — Deckblatt/Siegel, neue 3D-Assets & „Passwort ändern" (Envelope-Krypto)
+
+**Was getan (mehrere PRs):**
+- **Deckblatt/Datenblatt** vor dem Login + Menüpunkt „Über" + **Konformitäts-Siegel** (nur
+  nachprüfbare Aussagen: EU-Datenresidenz Vision EU/Mistral EU, AES-GCM-256 lokal, DSGVO/GoBD,
+  Links zu echten Compliance-Programmen — KEIN erfundenes Zertifikat). Siegel auch in Recht & Doku.
+- **Neue 3D-Assets:** ornamentaler Schlüssel (`onboard-key.png`) beim Passwort-Festlegen;
+  Mycel-Buch-**Titelbild** (`cover.png`) oben aufs Deckblatt.
+- **Tresor auf Envelope-Verschlüsselung umgestellt** (`src/core/vault.js`): zufälliger DEK
+  verschlüsselt alle Daten, Passwort-KEK „wickelt" nur den DEK ein. **„Passwort ändern"** in
+  den Einstellungen wickelt den DEK neu ein → **keine Daten-Neuverschlüsselung, Mandant-ID &
+  Shamir bleiben stabil**. Alt-Tresore (v1) werden beim Entsperren **transparent migriert**
+  (Daten unberührt, gleiche Mandant-ID). +6 Node-Tests (Envelope wrap/unwrap/PW-Wechsel).
+
+**Ehrlich offen:** Bilder sind groß (~2 MB, optional optimieren). Envelope: bestehende v1-Migration
+ist im Code node-getestet auf Krypto-Ebene; die DB-/Browser-Migration selbst nicht headless-E2E.
+SW-Cache → `v42`, Tests **216/216**.
+
+---
+
+## 2026-06-14 — Geführter Browser-Sichttest (DeX/Chrome) + 5 Live-Fixes
+
+**Was getan:** Kompletter, gemeinsam mit dem Nutzer durchgeführter Sichttest der neuen Features
+auf der deployten PWA. **Bestätigt:** Beleg→Buchung-Pipeline end-to-end (Erkennung→Kontierung
+4930/1576/1200, Konf. 90 %, Auto-Entwurf), Plausibilität/Spielraum, Entwurf-Lebenszyklus
+(speichern/bearbeiten/löschen/festschreiben/storno), KI-Begründung mit §-Bezug (Mistral EU),
+§14-Rechnung druckbar (Nr. 2026-0001), USt-Verprobung/EÜR-Ist/USt-VA/Audit/DATEV-EXTF,
+Zeiterfassung (Std-Summe + Kosten korrekt).
+
+**Im Test gefunden & sofort behoben (gemergt #23–#27):**
+1. Storno-Endlos-Kaskade → Storno-Gegenbuchung nicht erneut stornierbar (#23).
+2. KI-Begründung nannte Konto-Namen falsch → echte Kontierung mit Namen an Mistral (#24).
+3. Firmenprofil „Gespeichert ✓" erschien nicht (Re-Render) → Flag überlebt Re-Render (#25).
+4. Auftrag: Position entfernen fehlte + Status-Etikett umgebrochen (#26).
+5. „Steuer-Assistent (Claude)/Anthropic" veraltet → **Mistral (EU)**; tote Claude-Keys raus (#27).
+
+**Erkenntnis (kein Bug):** „0 h/0 €" beim Mitarbeiter war ein **Duplikat** „Klaus Nitzsche";
+der korrekte zeigt 41h 40m / 1.250 € — Summen/Kosten rechnen korrekt.
+
+**Verifiziert:** alles live im Browser bestätigt; `node tests/run.mjs` → 210/210; SW `v38`.
+**Offen:** EXTF/EÜR-Ist sind vereinfacht (nicht zertifiziert); ELSTER-Einreichung weiterhin nur
+Datenpaket; Sage 5b–d. Optional: Kleinbetrag-`betragCent` an KI-Begründung der UI verdrahten.
+
+---
+
+## 2026-06-14 — Rechtsregel-Set erweitert (mehr §-Grundlagen für KI-Berater)
+
+**Was getan**
+- `src/domain/rechtsregeln.js`: +7 kuratierte Regeln — Arbeitszimmer/Homeoffice (§4(5) 6b/6c),
+  Fortbildung (§4(4)), Anlagevermögen/AfA >800 € (§7), Betriebsveranstaltung 110 € (§19(1)1a),
+  nicht abziehbar: Bußgelder/privat (§4(5)8 / §12), Kleinbetragsrechnung ≤250 € (§33 UStDV,
+  betragsbasiert). Bessere Grounding-Abdeckung für `begruendeBuchung`.
+- `tests/run.mjs`: +5 (Fortbildung, Arbeitszimmer, Bußgeld, Kleinbetrag-Grenze). **196/196 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 196/0; `node --check`.
+**Hinweis:** UI reicht aktuell `betragCent` nicht an `begruendeBuchung` → Kleinbetragsregel greift
+nur, wenn der Betrag mitgegeben wird (Logik vorhanden, optionale UI-Verdrahtung später).
+
+---
+
+## 2026-06-14 — Rechnungsdokument mit §14-UStG-Pflichtangaben (ausstellbare Rechnung)
+
+**Was getan** (wichtige Produkt-Lücke: bisher nur Buchung, kein Rechnungsdokument)
+- NEU `src/domain/rechnung.js` (rein, node-getestet): `baueRechnung({auftrag,kunde,firma,nummer,
+  datum,leistungsdatum,kleinunternehmer})` → strukturiertes Dokument (Positionen mit Netto,
+  Steuerzeilen je Satz, Summen, Kleinunternehmer-Variante ohne USt); `pflichtangaben(rechnung)`
+  prüft § 14 Abs. 4 UStG (Aussteller-Name/Anschrift, Steuernr./USt-IdNr., Empfänger, Datum,
+  fortlaufende Nummer, Leistungsbeschreibung, Leistungsdatum, Steuerausweis); `formatRechnungsnummer`.
+- `crm-store`: **fortlaufende Rechnungsnummer** (`naechsteRechnungsnummer`, kv `rechnungSeq`,
+  Format JAHR-NNNN) — bei `rechnungAusAuftrag` vergeben + `rechnungNummer`/`rechnungDatum` am Auftrag.
+- **Firmenprofil** (`settings.firma`: name, anschrift, steuernummer, ustId, iban) — Formular in
+  den Einstellungen (verschlüsselt gespeichert).
+- **Orders-UI:** Knopf „Rechnung anzeigen" → druckbares Rechnungs-Dokument (window.print),
+  §14-Lücken als Hinweis, Kleinunternehmer-Hinweis. Print-/Layout-CSS.
+- i18n de/en; SW-Cache `v30→v31`, `rechnung.js` in CORE_ASSETS.
+- `tests/run.mjs`: +11 (Aufbau, Summen mehrerer Sätze, Pflichtangaben vollständig/unvollständig,
+  Kleinunternehmer, Nummern-Format). **Gesamt 191/191 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 191/0; `node --check` aller geänderten Dateien.
+**Nicht verifiziert:** Rechnungs-UI/Druck nicht headless-E2E geklickt; `naechsteRechnungsnummer`/
+Firmenprofil-Persistenz nutzen IndexedDB/Vault (nicht node-getestet, Logik minimal).
+
+**Offen / Nächstes:** EÜR §4(3) Zufluss/Abfluss; DATEV-EXTF zertifizieren; Regel-Set erweitern.
+**Details: `docs/PULS.md`.**
+
+---
+
+## 2026-06-14 — Entwurf bearbeiten & löschen (geschlossene Lücke im Bedien-Lebenszyklus)
+
+**Was getan** (Feinschliff: wichtige Bedien-Lücke)
+- Entwürfe konnten angelegt, aber weder **gelöscht** noch **bearbeitet** werden (durch die
+  „immer speicherbar"-Änderung verschärft). Jetzt:
+  - `store.deleteEntwurf(id)` — löscht nur Entwürfe (festgeschrieben → nur Storno).
+  - `journal.formularAusBuchung(buchung, idx)` — **reine, node-getestete** Rekonstruktion der
+    Formularfelder (Soll/Haben/Brutto/USt) aus den Zeilen, inkl. USt-Split-Erkennung.
+  - Journal-Tabelle: pro Entwurf Knöpfe **Bearbeiten** (Formular vorbefüllen, speichert per id
+    in-place) und **Löschen**; Formular-Titel/Button passen sich an; **Abbrechen** im Edit-Modus.
+- i18n de/en; SW-Cache `v29→v30`.
+- `tests/run.mjs`: +6 `formularAusBuchung` (Ausgabe/Einnahme mit USt, ohne USt, Notizfelder).
+  **Gesamt 180/180 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 180/0; `node --check` aller geänderten Dateien.
+**Nicht verifiziert:** Journal-UI (Edit/Delete-Knöpfe) nicht headless-E2E geklickt; `deleteEntwurf`
+nutzt IndexedDB (nicht node-getestet) — Logik ist aber minimal und analog zu bestehenden Pfaden.
+
+**Offen / Nächstes:** EÜR §4(3) + DATEV-EXTF; Regel-Set erweitern. **Details: `docs/PULS.md`.**
+
+---
+
+## 2026-06-14 — KI-Berater im Beleg-Vorschlag (documents.js) konsistent
+
+**Was getan** (Abrundung des KI-Berater-Features)
+- Beleg-Vorschlag (Foto/PDF & Schnellerfassung) zeigt jetzt ebenfalls ein **Begründungs-
+  Feld mit §-Bezug**: on-device aus `rechtsregeln.js` vorbefüllt (kein Netz), per Knopf
+  „KI-Begründung" über Mistral (EU, opt-in) verfeinerbar; wird mit dem Entwurf gespeichert
+  (`saveEntwurf({begruendung})`). Quelltext (OCR/Eingabe) fließt als Kontext ein.
+- SW-Cache `v28→v29`. Keine neuen Module/Logik → bestehende **174/174 Tests** weiter grün.
+
+**Verifiziert:** `node tests/run.mjs` → 174/0; `node --check src/ui/views/documents.js`.
+**Nicht verifiziert:** UI nicht headless-E2E geklickt (reine Wiring-Änderung; genutzte Logik
+`onDeviceBegruendung`/`begruendeBuchung` ist node-getestet).
+
+**Offen / Nächstes:** Regel-Set erweitern; EÜR §4(3) + DATEV-EXTF (eigener PR). **Details: `docs/PULS.md`.**
+
+---
+
+## 2026-06-14 — KI-Berater mit Rechts-Grundlage (Begründung/Notiz mit §-Bezug)
+
+**Was getan** (eigener PR nach Merge von #15)
+- **Grounding statt Halluzination:** NEU `src/domain/rechtsregeln.js` — kuratiertes lokales
+  Regel-Set (Bewirtung §4(5)2, Geschenke §4(5)1, GWG §6(2), Kfz-Privatnutzung §6(1)4,
+  Telekommunikation, Reisekosten, Kleinunternehmer §19) mit Paragraph + Kurzregel +
+  Doku-Hinweis. `findeRechtsregeln(kontext)` + `onDeviceBegruendung(kontext)`.
+- **KI-Berater:** NEU `src/ai/berater.js` — `begruendeBuchung(kontext)` schlägt eine kurze
+  Begründung MIT §-Bezug vor (Eigenbeleg/Notiz, „parat fürs Finanzamt"). Über Mistral (EU,
+  BYOK) wird nur FORMULIERT, gegroundet auf die Regeln; ohne Mistral On-Device-Fallback aus
+  den Regeln. `buildBegruendungMessages`/`parseBegruendung` rein & node-getestet. Disclaimer
+  „keine Steuerberatung". Nutzer entscheidet/editiert.
+- **Datenmodell:** `begruendung`-Feld an der Buchung (`store.js saveEntwurf`); in die GoBD-
+  Hash-Kette aufgenommen, aber **rückwärtskompatibel** (nur gehasht wenn vorhanden →
+  Altbestände behalten ihren Hash). `audit.js hashedFields` entsprechend angepasst.
+- **UI Journal:** Begründungs-Textfeld + Knopf „KI-Begründung vorschlagen" (zeigt Quelle
+  Mistral/on-device), Anzeige 📝 in der Tabelle. i18n de/en. SW-Cache `v27→v28`,
+  `rechtsregeln.js`+`berater.js` in CORE_ASSETS, 56 JS-Module.
+- `tests/run.mjs`: +12 (Rechtsregeln, Prompt/Parser, On-Device-Fallback). **174/174 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 174/0; `node --check` aller geänderten Dateien.
+**Nicht verifiziert (ehrlich):** Live-Mistral-Begründung im Browser; das neue Journal-UI
+(Begründungsfeld/KI-Knopf) nicht headless-E2E geklickt. Regel-Set ist bewusst kompakt
+(erweiterbar), KEINE abschließende Rechtsberatung/Aktualitätsgarantie.
+
+**Offen / Nächstes:** Regel-Set erweitern; Begründung auch im Beleg-Vorschlag (documents);
+EÜR §4(3) Zufluss/Abfluss + zertifiziertes DATEV-EXTF. **Details: `docs/PULS.md`.**
+
+---
+
+## 2026-06-14 — USt-Verprobung + Kleinunternehmer-Schalter (Berater-Substanz)
+
+**Was getan** (Folge-Batch zur Profi-Härtung, gleiche PR-Branch)
+- **USt-Verprobung** (`src/domain/taxes.js` → `verprobeUSt`): reiner Berater-Check, der die
+  GEBUCHTE Vor-/Umsatzsteuer mit der aus Netto×Satz ERWARTETEN vergleicht (pro Buchung/Satz
+  gerundet → keine Rundungs-Fehlalarme). Deckt vergessene/falsch gerechnete USt auf. In den
+  Auswertungen als grün/rot-Karte (`verprobungCard`) mit „gebucht / erwartet (Abweichung)".
+- **Kleinunternehmer-Schalter (§19 UStG)**: `kleinunternehmer` in den Einstellungen
+  (Ja/Nein-Segment), `state.js`-Default `false`. Wird an `pruefeBuchung`/`buildVorschlag`
+  durchgereicht → unterdrückt die USt-„vergessen"-Hinweise für §19-Nutzer.
+- **Audit-Kette war bereits sichtbar** (Dashboard-Badge + Reports `auditCard` via
+  `verifyAuditChain`) — nichts dupliziert.
+- i18n de/en (reports.verprobung*, settings.kleinunternehmer, common.yes/no). SW-Cache `v26→v27`.
+- `tests/run.mjs`: +6 `verprobeUSt`. **Gesamt 162/162 grün**.
+
+**Verifiziert:** `node tests/run.mjs` → 162/0; `node --check` aller geänderten Dateien.
+**Nicht verifiziert (ehrlich):** neue UI (Verprobungs-Karte, Kleinunternehmer-Segment) nicht
+headless-E2E geklickt. **EÜR §4(3)/DATEV** und **KI-Berater mit Rechts-Grundlage** sind als
+eigene Folge-PRs geplant (zu groß für diesen Batch — Ehrlichkeits-Vertrag).
+
+**Offen / Nächstes:** KI-Berater (Begründung/Notiz-Feld + kuratiertes Regel-Set
+`rechtsregeln.js` + Prompt + UI); EÜR §4(3) Zufluss/Abfluss; DATEV-EXTF zertifiziert.
+**Details: `docs/PULS.md`.**
+
+---
+
+## 2026-06-14 — Profi-Härtung mit Spielraum: Kontoart-Richtung + Plausibilitäts-Hinweise
+
+**Was getan**
+- `src/ai/mistral.js`: neue reine, node-testbare Funktion **`resolveKategorie(parsed, kontoIndex)`**.
+  Die Buchungs-**Richtung** (einnahme/ausgabe) wird jetzt VERBINDLICH aus der Kontoart
+  abgeleitet (ERTRAG→einnahme, AUFWAND→ausgabe) statt der Modell-Antwort blind zu trauen.
+  Folge: ein vom Modell falsch gelabeltes Erlöskonto („ausgabe") kann **keine falsche
+  Soll/Haben-Buchung** mehr erzeugen. Nicht-Erfolgskonten (z.B. Bank 1200) werden
+  abgelehnt → On-Device-Heuristik greift. `categorize()` nutzt jetzt diese Funktion.
+- **Profi-Substanz mit Spielraum** (Leitlinie des Nutzers: „hart wie Diamant, aber
+  bedienerfreundlich, mit Spielraum — keine Haken beim Eintragen, trotzdem Berater-tauglich"):
+  - NEU `src/domain/pruefung.js` — reine `pruefeBuchung(buchung, idx, opts)` trennt **harte
+    Fehler** (validateBuchung, nur festschreibe-relevant) von **nicht-blockierenden Hinweisen**:
+    USt vergessen (nur Erlös/Output-VAT, low-noise), Zukunftsdatum, Datum vor letzter
+    Festschreibung (zeitgerecht), fehlender Buchungstext, Soll=Haben-Konto;
+    `opts.kleinunternehmer` unterdrückt USt-Hinweise. Plus `istFestschreibbar()`.
+  - **Haken entfernt:** Journal-Formular speichert Entwürfe jetzt IMMER (vorher blockierte
+    `validateBuchung` das Speichern); `buildVorschlag()` liefert IMMER einen Vorschlag (mit
+    `fehler`/`warnungen` als Metadaten) statt `ok:false`. Streng bleibt nur `festschreiben()`.
+  - **Hinweise sichtbar, Profi entscheidet:** Journal zeigt gelbe Hinweis-Karte nach dem
+    Speichern; Festschreiben fragt bei Warnungen nach („… Trotzdem festschreiben?"); Beleg-
+    Vorschlagskarte zeigt Hinweise. i18n (de/en) + `.hinweis`-Style. SW-Cache `v25 → v26`,
+    `pruefung.js` in CORE_ASSETS, 54 JS-Module.
+- `tests/run.mjs`: +6 `resolveKategorie`, +4 Vorschlag-Spielraum, +13 `pruefeBuchung`/
+  Plausibilität. **Gesamt 156/156 grün** (vorher 134).
+
+**Verifiziert:** `node tests/run.mjs` → 156 bestanden, 0 fehlgeschlagen; `node --check` für alle
+geänderten UI-Dateien.
+**Nicht verifiziert (ehrlich):** Live-Mistral im Browser; die neuen UI-Hinweise (Journal-Karte,
+Festschreib-Dialog, Beleg-Karte) sind **nicht headless-E2E** geklickt — nur Logik node-getestet.
+Kein Kleinunternehmer-Schalter in den Einstellungen (opts vorhanden, UI-Toggle offen).
+
+**Offen / Nächstes:** Browser-Sichttest der Pipeline + neuer Hinweise; optional Kleinunternehmer-
+Schalter in Einstellungen; Sage 5b. **Details: `docs/PULS.md`.**
 
 ---
 

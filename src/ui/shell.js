@@ -8,7 +8,7 @@ import { t, setLang, LANGS } from './i18n.js';
 import { applyTheme } from './theme.js';
 import { MycelMark } from './mycel.js';
 import { getSettings, updateSettings, navigate, getRoute, subscribe, MODES, AI_LEVELS } from '../state.js';
-import { getMandantId, lockVault } from '../core/vault.js';
+import { getMandantId, lockVault, changePassword } from '../core/vault.js';
 import { durabilityStatus } from '../core/durability.js';
 import { exportBackupFile, readBackup, importSnapshot } from '../core/backup.js';
 import { pickFile, readFileText } from '../core/files.js';
@@ -22,6 +22,8 @@ import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
 import { mountDashboard } from './views/dashboard.js';
+import { mountAnleitung } from './views/anleitung.js';
+import { aboutContent } from './intro.js';
 import { getAiConfig, saveAiConfig, MISTRAL_MODELS } from '../ai/aiConfig.js';
 import { testVision } from '../ai/vision.js';
 import { testMistral } from '../ai/mistral.js';
@@ -37,6 +39,8 @@ const NAV = [
   ['reports', 'nav.reports'],
   ['network', 'nav.network'],
   ['legal', 'nav.legal'],
+  ['anleitung', 'nav.anleitung'],
+  ['about', 'nav.about'],
   ['settings', 'nav.settings'],
 ];
 
@@ -107,6 +111,8 @@ function renderRoute() {
   if (route === 'customers') return void mountCustomers(content);
   if (route === 'employees') return void mountEmployees(content);
   if (route === 'legal') return void mountLegal(content);
+  if (route === 'about') return mount(content, el('section', { class: 'view' }, [aboutContent()]));
+  if (route === 'anleitung') return void mountAnleitung(content);
   if (route === 'network') return void mountNetwork(content);
   return mount(content, viewPlaceholder(route));
 }
@@ -183,6 +189,11 @@ function viewSettings() {
       AI_LEVELS.map((a) => [a, t('settings.ai.' + a)]), s.aiAutonomy,
       (v) => updateSettings({ aiAutonomy: v }), t('settings.ai.hint')),
 
+    seg(t('settings.kleinunternehmer'), 'kleinunternehmer',
+      [['nein', t('common.no')], ['ja', t('common.yes')]], s.kleinunternehmer ? 'ja' : 'nein',
+      async (v) => { await updateSettings({ kleinunternehmer: v === 'ja' }); paint(); },
+      t('settings.kleinunternehmer.hint')),
+
     seg(t('settings.theme'), 'theme',
       [['system', t('settings.theme.system')], ['light', t('settings.theme.light')], ['dark', t('settings.theme.dark')]],
       s.theme, async (v) => { applyTheme(v); await updateSettings({ theme: v }); }),
@@ -193,12 +204,101 @@ function viewSettings() {
 
     aiConfigSection(),
 
+    firmaSection(s),
+
+    passwortSection(),
+
     el('div', { class: 'setting' }, [
       el('div', { class: 'setting-label', text: 'Backup' }),
       el('div', { class: 'btn-row' }, [
         el('button', { class: 'btn', text: t('settings.backup'), onClick: doBackup }),
         el('button', { class: 'btn', text: t('settings.restore'), onClick: doRestore }),
       ]),
+    ]),
+  ]);
+}
+
+// Merkt sich kurz, dass das Firmenprofil gespeichert wurde (überlebt das Re-Render
+// nach updateSettings, das sonst die „Gespeichert ✓"-Meldung sofort verwerfen würde).
+let _firmaSaved = false;
+
+// Passwort ändern (Envelope: wickelt nur den Daten-Schlüssel neu ein).
+function passwortSection() {
+  const alt = el('input', { type: 'password', placeholder: t('pw.current'), autocomplete: 'current-password' });
+  const neu = el('input', { type: 'password', placeholder: t('pw.new'), autocomplete: 'new-password' });
+  const neu2 = el('input', { type: 'password', placeholder: t('pw.repeat'), autocomplete: 'new-password' });
+  const status = el('p', { class: 'muted small' });
+  const field = (label, input) => el('label', { class: 'field' }, [el('span', { text: label }), input]);
+  return el('div', { class: 'setting' }, [
+    el('div', { class: 'setting-label', text: t('pw.title') }),
+    el('div', { class: 'pw-row' }, [
+      el('img', { class: 'pw-key', src: './assets/img/onboard-key.png', alt: '', loading: 'lazy' }),
+      el('div', { class: 'pw-form' }, [
+        el('p', { class: 'muted small', text: t('pw.hint') }),
+        el('div', { class: 'form-grid' }, [
+          field(t('pw.current'), alt),
+          field(t('pw.new'), neu),
+          field(t('pw.repeat'), neu2),
+        ]),
+        el('div', { class: 'btn-row' }, [
+          el('button', {
+            class: 'btn btn-sm btn-primary', text: t('pw.change'),
+            onClick: async () => {
+              status.classList.remove('form-error');
+              if (neu.value !== neu2.value) { status.textContent = t('onboard.mismatch'); status.classList.add('form-error'); return; }
+              if (neu.value.length < 8) { status.textContent = t('onboard.tooShort'); status.classList.add('form-error'); return; }
+              try {
+                await changePassword(alt.value, neu.value);
+                alt.value = neu.value = neu2.value = '';
+                status.textContent = t('pw.done');
+              } catch (e) { status.textContent = String(e.message || e); status.classList.add('form-error'); }
+            },
+          }),
+          status,
+        ]),
+      ]),
+    ]),
+  ]);
+}
+
+// Firmenprofil (Rechnungssteller-Stammdaten, §14 UStG) — verschlüsselt in Settings.
+function firmaSection(s) {
+  const f = s.firma || {};
+  const inp = (val, ph) => {
+    const e = el('input', { type: 'text', value: val || '', placeholder: ph });
+    e.addEventListener('input', () => { _firmaSaved = false; status.textContent = ''; });
+    return e;
+  };
+  const status = el('span', { class: 'muted small', text: _firmaSaved ? t('settings.saved') : '' });
+  const name = inp(f.name, t('settings.firma.name'));
+  const anschrift = inp(f.anschrift, t('settings.firma.anschrift'));
+  const steuernummer = inp(f.steuernummer, t('settings.firma.steuernummer'));
+  const ustId = inp(f.ustId, t('settings.firma.ustId'));
+  const iban = inp(f.iban, t('settings.firma.iban'));
+  const field = (label, input) => el('label', { class: 'field' }, [el('span', { text: label }), input]);
+  return el('div', { class: 'setting' }, [
+    el('div', { class: 'setting-label', text: t('settings.firma') }),
+    el('p', { class: 'muted small', text: t('settings.firma.hint') }),
+    el('div', { class: 'form-grid' }, [
+      field(t('settings.firma.name'), name),
+      field(t('settings.firma.anschrift'), anschrift),
+      field(t('settings.firma.steuernummer'), steuernummer),
+      field(t('settings.firma.ustId'), ustId),
+      field(t('settings.firma.iban'), iban),
+    ]),
+    el('div', { class: 'btn-row' }, [
+      el('button', {
+        class: 'btn btn-sm btn-primary', text: t('settings.save'),
+        onClick: async () => {
+          await updateSettings({ firma: {
+            name: name.value.trim(), anschrift: anschrift.value.trim(),
+            steuernummer: steuernummer.value.trim(), ustId: ustId.value.trim(), iban: iban.value.trim(),
+          } });
+          _firmaSaved = true;     // überlebt das durch updateSettings ausgelöste Re-Render
+          paint();
+        },
+      }),
+      status,
     ]),
   ]);
 }

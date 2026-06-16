@@ -4,23 +4,29 @@
 
 import {
   encryptWithPassword, decryptWithPassword, bytesToB64u, b64uToBytes, randomBytes,
-  deriveAesKey, exportRawAesKey,
+  deriveAesKey, exportRawAesKey, importRawAesKey,
+  encryptBytesWithKey, decryptBytesWithKey, encryptWithKey, decryptWithKey,
 } from '../src/core/crypto.js';
 import { splitSecret, combineShares, encodeShare, decodeShare } from '../src/core/shamir.js';
 import { parseEuroToCents, formatCents } from '../src/domain/money.js';
 import { saldo, KONTOART, mehrungsSeite } from '../src/domain/accounts.js';
-import { baueBuchungZeilen, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen } from '../src/domain/journal.js';
+import { baueBuchungZeilen, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen, formularAusBuchung } from '../src/domain/journal.js';
 import { hashBuchung, verifyChain, GENESIS, canonicalize } from '../src/domain/audit.js';
-import { computeEUR, computeUStVoranmeldung, saldenliste } from '../src/domain/taxes.js';
+import { computeEUR, computeEURIst, computeUStVoranmeldung, saldenliste, verprobeUSt } from '../src/domain/taxes.js';
 import { seedAccounts } from '../src/domain/accounts.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
+import { pruefeBuchung, istFestschreibbar } from '../src/domain/pruefung.js';
+import { parseImportText, normalizeImport } from '../src/domain/importworkfloh.js';
+import { baueRechnung, pflichtangaben, formatRechnungsnummer } from '../src/domain/rechnung.js';
+import { findeRechtsregeln, onDeviceBegruendung } from '../src/domain/rechtsregeln.js';
+import { buildBegruendungMessages, parseBegruendung, begruendeBuchung } from '../src/ai/berater.js';
 import { auftragSummen, darfWechseln, validateAuftrag } from '../src/domain/orders.js';
 import { rechnungZeilen } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
-import { buildLedgerCsv, buildDatevCsv, buildUstVa, centsToComma, ustVaToCsv } from '../src/domain/export.js';
+import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, buildUstVa, centsToComma, ustVaToCsv } from '../src/domain/export.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -28,7 +34,7 @@ import { buildSignal } from '../src/sbkim/signal.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
-import { buildClassifyMessages, parseClassify } from '../src/ai/mistral.js';
+import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/ai/mistral.js';
 import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP } from '../src/ai/pseudonym.js';
 
 function indexFromSeed() {
@@ -72,6 +78,43 @@ await section('Krypto: Key-Export deterministisch', async () => {
   const r2 = await exportRawAesKey(k2);
   ok('gleicher Key bei gleichem Salt+PW', Buffer.compare(Buffer.from(r1), Buffer.from(r2)) === 0);
   ok('Key ist 32 Byte', r1.length === 32);
+});
+
+await section('Tresor-Envelope: DEK wrap/unwrap + Passwortwechsel', async () => {
+  const b64 = (u) => bytesToB64u(u);
+  const rawDek = randomBytes(32);
+  // Daten unter dem DEK verschlüsseln (bleibt über den PW-Wechsel hinweg gültig).
+  const dek = await importRawAesKey(rawDek, true);
+  const ctData = await encryptWithKey(dek, 'geheime-buchung');
+
+  // Passwort 1: DEK einwickeln.
+  const salt1 = randomBytes(16);
+  const kek1 = await deriveAesKey('passwort-eins', salt1, false);
+  const wrapped1 = await encryptBytesWithKey(kek1, rawDek);
+  const unwrapped1 = await decryptBytesWithKey(kek1, wrapped1);
+  ok('Unwrap mit richtigem PW = DEK', b64(unwrapped1) === b64(rawDek));
+
+  // Falsches Passwort -> Unwrap wirft (GCM-Auth).
+  let threw = false;
+  try { await decryptBytesWithKey(await deriveAesKey('falsch', salt1, false), wrapped1); } catch { threw = true; }
+  ok('Unwrap mit falschem PW wirft', threw);
+
+  // Passwortwechsel: DEK mit neuem PW (neuem Salt) neu einwickeln.
+  const salt2 = randomBytes(16);
+  const kek2 = await deriveAesKey('passwort-zwei', salt2, false);
+  const wrapped2 = await encryptBytesWithKey(kek2, unwrapped1);
+  const unwrapped2 = await decryptBytesWithKey(kek2, wrapped2);
+  ok('DEK nach PW-Wechsel unverändert', b64(unwrapped2) === b64(rawDek));
+  ok('Mandant-ID (DEK-Präfix) stabil', b64(unwrapped2.slice(0, 6)) === b64(rawDek.slice(0, 6)));
+
+  // Mit dem neuen PW entschlüsseln die ALTEN Daten weiterhin (kein Re-Encrypt nötig).
+  const dek2 = await importRawAesKey(unwrapped2, true);
+  ok('Alte Daten nach PW-Wechsel lesbar', (await decryptWithKey(dek2, ctData)) === 'geheime-buchung');
+
+  // Altes Passwort öffnet den neuen Umschlag NICHT mehr.
+  let threw2 = false;
+  try { await decryptBytesWithKey(await deriveAesKey('passwort-eins', salt2, false), wrapped2); } catch { threw2 = true; }
+  ok('Altes PW öffnet neuen Umschlag nicht', threw2);
 });
 
 await section('Shamir GF(256): split/combine', () => {
@@ -297,6 +340,240 @@ await section('Extraktion: leerer/unklarer Text', () => {
   ok('ohne Betrag kein Vorschlag', res.ok === false);
 });
 
+await section('Entwurf bearbeiten: Formular aus Buchung rekonstruieren', () => {
+  const idx = indexFromSeed();
+  const ausgabe = formularAusBuchung({
+    datum: '2026-06-02', beschreibung: 'Toner', begruendung: 'Notiz', kostenstelle: 'K1',
+    zeilen: [
+      { konto: '4930', seite: 'S', betrag: 10000 },
+      { konto: '1576', seite: 'S', betrag: 1900 },
+      { konto: '1200', seite: 'H', betrag: 11900 },
+    ],
+  }, idx);
+  ok('Ausgabe: Soll 4930 / Haben 1200', ausgabe.sollKonto === '4930' && ausgabe.habenKonto === '1200');
+  ok('Ausgabe: Brutto 11900, USt 19', ausgabe.bruttoCent === 11900 && ausgabe.ustSatz === 19);
+  ok('Ausgabe: Notizfelder erhalten', ausgabe.beschreibung === 'Toner' && ausgabe.begruendung === 'Notiz' && ausgabe.kostenstelle === 'K1');
+
+  const einnahme = formularAusBuchung({ datum: '2026-06-03', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 11900 },
+    { konto: '8400', seite: 'H', betrag: 10000 },
+    { konto: '1776', seite: 'H', betrag: 1900 },
+  ] }, idx);
+  ok('Einnahme: Soll 1200 / Haben 8400', einnahme.sollKonto === '1200' && einnahme.habenKonto === '8400');
+  ok('Einnahme: Brutto 11900, USt 19', einnahme.bruttoCent === 11900 && einnahme.ustSatz === 19);
+
+  const ohneUst = formularAusBuchung({ zeilen: [
+    { konto: '4980', seite: 'S', betrag: 5000 },
+    { konto: '1200', seite: 'H', betrag: 5000 },
+  ] }, idx);
+  ok('ohne USt: Soll 4980 / Haben 1200 / 0 %', ohneUst.sollKonto === '4980' && ohneUst.habenKonto === '1200' && ohneUst.ustSatz === 0 && ohneUst.bruttoCent === 5000);
+});
+
+await section('Vorschlag: Spielraum statt Haken (Warnung statt Blockade)', () => {
+  const ex = extractFromText('Bürobedarf\nGesamtbetrag: 119,00 EUR\n19 % MwSt');
+  const kat = categorize('Bürobedarf Toner');
+  // Unbekanntes Gegenkonto → Vorschlag entsteht trotzdem (Spielraum), trägt aber
+  // den harten Fehler mit; blockiert würde erst beim Festschreiben.
+  const grenz = buildVorschlag(ex, kat, indexFromSeed(), { gegenkonto: '9999' });
+  ok('Vorschlag entsteht trotzdem (ok:true)', grenz.ok === true);
+  ok('harter Fehler wird mitgeliefert', grenz.vorschlag.fehler.some((f) => /9999/.test(f)));
+  // Gültiger Fall: keine harten Fehler, ausgeglichen.
+  const good = buildVorschlag(ex, kat, indexFromSeed());
+  ok('gültiger Vorschlag ok & ausgeglichen', good.ok === true && istAusgeglichen(good.vorschlag.zeilen));
+  ok('gültiger Vorschlag ohne harte Fehler', good.vorschlag.fehler.length === 0);
+});
+
+await section('Plausibilitäts-Prüfung: Hinweise wie ein Berater (nicht-blockierend)', () => {
+  const idx = indexFromSeed();
+  const heute = '2026-06-14';
+  const sauber = { datum: heute, beschreibung: 'Bürobedarf', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 },
+    { konto: '1576', seite: 'S', betrag: 1900 },
+    { konto: '1200', seite: 'H', betrag: 11900 },
+  ] };
+  let p = pruefeBuchung(sauber, idx, { heute });
+  ok('saubere Buchung: keine Fehler', p.fehler.length === 0);
+  ok('saubere Buchung: keine Warnungen', p.warnungen.length === 0);
+  ok('saubere Buchung festschreibbar', istFestschreibbar(p));
+
+  // Erlöskonto USt-pflichtig, aber ohne Umsatzsteuer gebucht → Warnung (kein Fehler).
+  const ohneUst = { datum: heute, beschreibung: 'Verkauf', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 11900 },
+    { konto: '8400', seite: 'H', betrag: 11900 },
+  ] };
+  p = pruefeBuchung(ohneUst, idx, { heute });
+  ok('USt-vergessen → Warnung', p.warnungen.some((w) => /Umsatzsteuer/i.test(w)));
+  ok('USt-vergessen → kein harter Fehler', p.fehler.length === 0);
+  ok('Kleinunternehmer unterdrückt USt-Warnung',
+    pruefeBuchung(ohneUst, idx, { heute, kleinunternehmer: true }).warnungen.length === 0);
+
+  // Zukunftsdatum, fehlende Beschreibung, identische Konten.
+  p = pruefeBuchung({ datum: '2026-12-31', beschreibung: '', zeilen: [
+    { konto: '4980', seite: 'S', betrag: 5000 },
+    { konto: '4980', seite: 'H', betrag: 5000 },
+  ] }, idx, { heute });
+  ok('Zukunftsdatum → Warnung', p.warnungen.some((w) => /Zukunft/i.test(w)));
+  ok('fehlender Buchungstext → Warnung', p.warnungen.some((w) => /Buchungstext/i.test(w)));
+  ok('Soll=Haben-Konto → Warnung', p.warnungen.some((w) => /identisch/i.test(w)));
+
+  // Zeitnähe: Datum vor zuletzt festgeschriebener Buchung.
+  p = pruefeBuchung(sauber, idx, { heute, letztesFestDatum: '2026-06-30' });
+  ok('Datum vor letzter Festschreibung → Warnung', p.warnungen.some((w) => /zeitgerecht/i.test(w)));
+
+  // Harter Fehler (unausgeglichen) blockiert Festschreiben, Warnungen trotzdem berechnet.
+  p = pruefeBuchung({ datum: heute, beschreibung: 'x', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 },
+    { konto: '1200', seite: 'H', betrag: 9000 },
+  ] }, idx, { heute });
+  ok('unausgeglichen → harter Fehler', p.fehler.length > 0);
+  ok('unausgeglichen → nicht festschreibbar', istFestschreibbar(p) === false);
+});
+
+await section('EÜR Ist (§4 Abs.3, Zufluss/Abfluss)', () => {
+  const idx = indexFromSeed();
+  // Direkte Barausgabe (Aufwand+Vorsteuer an Bank) → Ausgabe brutto bei Abfluss.
+  const barAusgabe = { seq: 1, datum: '2026-03-01', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 },
+  ] };
+  // Rechnung (Forderung an Erlös+USt) → KEIN Geldfluss, zählt nicht.
+  const rechnung = { seq: 2, datum: '2026-03-02', zeilen: [
+    { konto: '1400', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 },
+  ] };
+  // Zahlung der Rechnung (Bank an Forderung) → Einnahme brutto bei Zufluss.
+  const zahlung = { seq: 3, datum: '2026-03-20', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 23800 }, { konto: '1400', seite: 'H', betrag: 23800 },
+  ] };
+  // Privateinlage (Bank an Eigenkapital) → kein BE/BA.
+  const einlage = { seq: 4, datum: '2026-03-05', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 50000 }, { konto: '0880', seite: 'H', betrag: 50000 },
+  ] };
+  const r = computeEURIst([barAusgabe, rechnung, zahlung, einlage], idx);
+  ok('Ist-Ausgaben 11900 (brutto, bei Abfluss)', r.ausgaben === 11900);
+  ok('Ist-Einnahmen 23800 (bei Zahlung, nicht bei Rechnung)', r.einnahmen === 23800);
+  ok('Überschuss 11900', r.ueberschuss === 11900);
+
+  // Entwurf (seq null) zählt nicht; Periode grenzt ab.
+  ok('Entwurf ignoriert', computeEURIst([{ seq: null, datum: '2026-03-01', zeilen: barAusgabe.zeilen }], idx).ausgaben === 0);
+  ok('Periode grenzt ab', computeEURIst([zahlung], idx, { von: '2026-04-01' }).einnahmen === 0);
+});
+
+await section('USt-Verprobung: gebucht vs. erwartet (Netto × Satz)', () => {
+  const idx = indexFromSeed();
+  const ausgabe = { seq: 1, datum: '2026-06-02', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 },
+    { konto: '1576', seite: 'S', betrag: 1900 },
+    { konto: '1200', seite: 'H', betrag: 11900 },
+  ] };
+  const einnahme = { seq: 2, datum: '2026-06-03', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 11900 },
+    { konto: '8400', seite: 'H', betrag: 10000 },
+    { konto: '1776', seite: 'H', betrag: 1900 },
+  ] };
+  let v = verprobeUSt([ausgabe, einnahme], idx);
+  ok('korrekt gebucht → ok', v.ok === true);
+  ok('Vorsteuer erwartet=gebucht=1900', v.vorsteuer.erwartet === 1900 && v.vorsteuer.gebucht === 1900 && v.vorsteuer.diff === 0);
+  ok('Umsatzsteuer erwartet=gebucht=1900', v.umsatzsteuer.erwartet === 1900 && v.umsatzsteuer.gebucht === 1900);
+
+  // Vergessene USt auf Erlös → Abweichung.
+  const vergessen = { seq: 3, datum: '2026-06-04', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 11900 },
+    { konto: '8400', seite: 'H', betrag: 11900 },
+  ] };
+  v = verprobeUSt([vergessen], idx);
+  ok('vergessene USt → nicht ok', v.ok === false);
+  ok('USt-Abweichung negativ (gebucht < erwartet)', v.umsatzsteuer.diff < 0 && v.umsatzsteuer.gebucht === 0);
+
+  // Entwürfe (seq == null) zählen nicht mit.
+  v = verprobeUSt([{ seq: null, datum: '2026-06-05', zeilen: vergessen.zeilen }], idx);
+  ok('Entwurf wird ignoriert', v.ok === true && v.umsatzsteuer.erwartet === 0);
+});
+
+await section('Rechnungs-Dokument: Aufbau + §14-Pflichtangaben', () => {
+  const auftrag = { titel: 'Projekt X', positionen: [
+    { beschreibung: 'Beratung', menge: 2, einzelpreisCent: 5000, ustSatz: 19 },
+    { beschreibung: 'Material', menge: 1, einzelpreisCent: 10000, ustSatz: 7 },
+  ] };
+  const firma = { name: 'Muster GmbH', anschrift: 'Weg 1, Berlin', steuernummer: '12/345/67890', ustId: '', iban: 'DE..' };
+  const kunde = { name: 'Kunde AG', adresse: 'Platz 2, Köln' };
+  const r = baueRechnung({ auftrag, kunde, firma, nummer: '2026-0001', datum: '2026-06-14', leistungsdatum: '2026-06-10' });
+  ok('Netto 20000', r.netto === 20000);
+  ok('USt 2600 (1900+700)', r.ust === 2600);
+  ok('Brutto 22600', r.brutto === 22600);
+  ok('Steuerzeilen: höchster Satz zuerst', r.steuerzeilen[0].satz === 19 && r.steuerzeilen[1].satz === 7);
+  ok('Positionen mit Netto', r.positionen[0].netto === 10000);
+  ok('vollständige Rechnung: keine fehlenden Pflichtangaben', pflichtangaben(r).length === 0);
+
+  // Unvollständig: ohne Firma/Nummer → Pflichtangaben fehlen.
+  const leer = baueRechnung({ auftrag, kunde: {}, firma: {}, nummer: '', datum: '', leistungsdatum: '' });
+  const fehlt = pflichtangaben(leer);
+  ok('fehlende Pflichtangaben erkannt', fehlt.length >= 5);
+  ok('nennt Rechnungsnummer', fehlt.some((m) => /Rechnungsnummer/.test(m)));
+
+  // Kleinunternehmer: keine USt, Hinweis-Pflicht erfüllt (kein USt-Mangel).
+  const ku = baueRechnung({ auftrag, kunde, firma, nummer: '2026-0002', datum: '2026-06-14', leistungsdatum: '2026-06-14', kleinunternehmer: true });
+  ok('Kleinunternehmer: USt 0', ku.ust === 0 && ku.brutto === ku.netto);
+  ok('Kleinunternehmer: kein USt-Pflichtmangel', !pflichtangaben(ku).some((m) => /Steuersatz/.test(m)));
+
+  ok('Rechnungsnummer-Format', formatRechnungsnummer(7, 2026) === '2026-0007');
+});
+
+await section('WorkFloh-Import: Normalisierung (Kunden, Aufträge, USt-Ergänzung)', () => {
+  const obj = parseImportText(JSON.stringify({
+    kunden: [
+      { externId: 'K-1', name: 'Kunde AG', adresse: 'Weg 1', ustId: 'DE1' },
+      { name: '' }, // ohne Name -> übersprungen
+    ],
+    auftraege: [
+      { externNummer: 'A-7', kundeExternId: 'K-1', titel: 'Projekt', positionen: [
+        { beschreibung: 'Beratung', menge: 2, einzelpreisCent: 5000, ustSatz: 19 },
+        { beschreibung: 'Material', menge: 1, einzelpreis: '100,00' }, // USt fehlt, Euro-Preis
+      ] },
+    ],
+  }));
+  const r = normalizeImport(obj, { defaultUstSatz: 19 });
+  ok('1 Kunde (leerer übersprungen)', r.kunden.length === 1 && r.kunden[0].externId === 'K-1');
+  ok('1 Auftrag mit externNummer', r.auftraege.length === 1 && r.auftraege[0].externNummer === 'A-7');
+  ok('Position 1: Cent übernommen', r.auftraege[0].positionen[0].einzelpreisCent === 5000);
+  ok('Position 2: Euro→Cent (10000)', r.auftraege[0].positionen[1].einzelpreisCent === 10000);
+  ok('Position 2: USt-Satz ergänzt (19)', r.auftraege[0].positionen[1].ustSatz === 19);
+  ok('Warnungen vorhanden (Name + USt)', r.warnungen.length >= 2);
+  ok('ungültiges JSON wirft', (() => { try { parseImportText('kein json'); return false; } catch { return true; } })());
+});
+
+await section('Rechtsregeln (Grounding) + KI-Berater (Begründung mit §-Bezug)', () => {
+  const bewirtung = findeRechtsregeln({ text: 'Geschäftsessen mit Kunde im Restaurant' });
+  ok('Bewirtung erkannt', bewirtung.some((r) => r.id === 'bewirtung' && /§ 4 Abs\. 5 S\. 1 Nr\. 2/.test(r.paragraph)));
+  ok('Geschenke erkannt', findeRechtsregeln({ text: 'Geschenk an Geschäftsfreund' }).some((r) => r.id === 'geschenke'));
+  ok('Kleinunternehmer aus Flag', findeRechtsregeln({ kleinunternehmer: true }).some((r) => r.id === 'kleinunternehmer'));
+  ok('Fortbildung erkannt (§4(4))', findeRechtsregeln({ text: 'Seminar Buchhaltung' }).some((r) => r.id === 'fortbildung'));
+  ok('Arbeitszimmer erkannt', findeRechtsregeln({ text: 'Homeoffice Anteil Miete' }).some((r) => r.id === 'arbeitszimmer'));
+  ok('Bußgeld nicht abziehbar erkannt', findeRechtsregeln({ text: 'Bußgeld Parken' }).some((r) => r.id === 'nicht_abziehbar'));
+  ok('Kleinbetragsrechnung bis 250 € (Betrag)', findeRechtsregeln({ betragCent: 12000 }).some((r) => r.id === 'kleinbetragsrechnung'));
+  ok('keine Kleinbetragsregel über 250 €', !findeRechtsregeln({ betragCent: 30000 }).some((r) => r.id === 'kleinbetragsrechnung'));
+  ok('kein Treffer bei neutralem Text', findeRechtsregeln({ text: 'allgemeine Lieferung' }).length === 0);
+
+  const od = onDeviceBegruendung({ text: 'Bewirtung Restaurant' });
+  ok('on-device Begründung nennt § und Quote', /§ 4 Abs\. 5/.test(od) && /70 %/.test(od));
+  ok('on-device leer ohne Treffer', onDeviceBegruendung({ text: 'xyz' }) === '');
+
+  const msgs = buildBegruendungMessages({ beschreibung: 'Geschäftsessen', text: 'Bewirtung Restaurant' });
+  ok('Prompt: System + User', msgs.length === 2 && msgs[0].role === 'system');
+  ok('Prompt enthält Rechtsregeln-Grundlage', /Rechtsregeln \(Grundlage\)/.test(msgs[1].content) && /§ 4 Abs\. 5/.test(msgs[1].content));
+  // Kontoname/Kontierung landet im Prompt (kein Raten des Namens mehr).
+  const m2 = buildBegruendungMessages({ konto: '1200', kontoName: 'Bank', kontierung: 'Soll 1200 Bank an Haben 8400 Erlöse 19% USt' });
+  ok('Prompt nennt vollständige Kontierung mit Namen', /Soll 1200 Bank an Haben 8400 Erlöse/.test(m2[1].content));
+  ok('ohne Kontierung: Nummer + Name', /Konto: 1200 Bank/.test(buildBegruendungMessages({ konto: '1200', kontoName: 'Bank' })[1].content));
+
+  ok('parseBegruendung säubert', parseBegruendung('```\nMüll\n```  Text   mit  Leerzeichen ') === 'Text mit Leerzeichen');
+});
+
+await section('KI-Berater: On-Device-Fallback ohne Mistral', async () => {
+  const r = await begruendeBuchung({ beschreibung: 'Geschäftsessen', text: 'Bewirtung im Restaurant', konto: '4980' });
+  ok('Fallback liefert Text', typeof r.text === 'string' && r.text.length > 0);
+  ok('Quelle on-device (keine KI konfiguriert)', r.quelle === 'on-device');
+  ok('Regeln-Liste nennt Bewirtungs-§', r.regeln.some((p) => /§ 4 Abs\. 5 S\. 1 Nr\. 2/.test(p)));
+});
+
 // ===== Phase 3: Aufträge, Rechnung, Zeit, Kostenstellen =====
 
 await section('Aufträge: Summen über mehrere USt-Sätze', () => {
@@ -382,6 +659,34 @@ await section('Export: CSV-Formatierung & USt-VA-Kennzahlen', () => {
 
   const datev = buildDatevCsv(buchungen, idx);
   ok('DATEV: 2-Zeilen-Buchung als Konto/Gegenkonto', datev.includes('50,00;S;1200;8200'));
+});
+
+await section('DATEV EXTF: Envelope + Konto/Gegenkonto-Brutto + Steuerschlüssel', () => {
+  const idx = indexFromSeed();
+  // Ausgabe mit Vorsteuer 19 % (USt-Split) → ein Brutto-Satz mit BU-Schlüssel.
+  const ausgabe = datevBuchungssatz({ datum: '2026-06-05', zeilen: [
+    { konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 },
+  ] }, idx);
+  ok('Ausgabe: Konto=4930, Gegenkonto=1200', ausgabe.konto === '4930' && ausgabe.gegenkonto === '1200');
+  ok('Ausgabe: Brutto 11900, S, BU=9 (Vorsteuer 19%)', ausgabe.umsatz === 11900 && ausgabe.sh === 'S' && ausgabe.bu === '9');
+
+  // Einnahme mit USt 19 %.
+  const einnahme = datevBuchungssatz({ datum: '2026-06-10', zeilen: [
+    { konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 },
+  ] }, idx);
+  ok('Einnahme: Konto=8400, Gegenkonto=1200, H, BU=3', einnahme.konto === '8400' && einnahme.gegenkonto === '1200' && einnahme.sh === 'H' && einnahme.bu === '3');
+
+  const buchungen = [
+    { seq: 1, datum: '2026-06-05', zeilen: [{ konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }] },
+    { seq: 2, datum: '2026-06-10', zeilen: [{ konto: '1200', seite: 'S', betrag: 5000 }, { konto: '8200', seite: 'H', betrag: 5000 }] },
+    { seq: null, datum: '2026-06-12', zeilen: [{ konto: '4980', seite: 'S', betrag: 1000 }, { konto: '1200', seite: 'H', betrag: 1000 }] },
+  ];
+  const extf = buildDatevExtf(buchungen, idx, { bezeichnung: 'Test' });
+  const zeilen = extf.split('\r\n');
+  ok('EXTF-Header beginnt korrekt', zeilen[0].startsWith('"EXTF";700;21;"Buchungsstapel";'));
+  ok('EXTF-Spaltenkopf enthält BU-Schlüssel', zeilen[1].includes('BU-Schlüssel') && zeilen[1].startsWith('Umsatz'));
+  ok('EXTF: nur festgeschriebene (2 Datenzeilen)', zeilen.length === 4); // header + spalten + 2
+  ok('EXTF: Belegdatum als TTMM', zeilen[2].includes(';0506;'));
 });
 
 await section('Steuer-Assistent: Kennzahlen-Text (Datenminimierung)', () => {
@@ -560,6 +865,23 @@ await section('Pseudonym: Register für aufrufsübergreifend stabile Token', () 
 await section('Pseudonym: reidentify akzeptiert auch Objekt-Map', () => {
   const out = reidentify('Hallo [[PERSON_1]], Ihre [[IBAN_2]].', { '[[PERSON_1]]': 'Eva', '[[IBAN_2]]': 'DE00' });
   ok('Objekt-Map re-identifiziert', out === 'Hallo Eva, Ihre DE00.');
+});
+
+await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
+  const idx = indexFromSeed();
+  const aufwand = resolveKategorie({ konto: '4930', richtung: 'ausgabe' }, idx);
+  ok('Aufwandskonto → ausgabe', aufwand && aufwand.richtung === 'ausgabe' && aufwand.quelle === 'mistral');
+  const ertrag = resolveKategorie({ konto: '8400', richtung: 'einnahme' }, idx);
+  ok('Ertragskonto → einnahme', ertrag && ertrag.richtung === 'einnahme');
+
+  // Falsche Modell-Richtung wird durch die Kontoart korrigiert (kein Fehlbuchen).
+  const korrigiert = resolveKategorie({ konto: '8400', richtung: 'ausgabe' }, idx);
+  ok('Erlöskonto bleibt einnahme trotz falscher Modell-Richtung', korrigiert && korrigiert.richtung === 'einnahme');
+
+  // Nicht-Erfolgskonten (z.B. Bank) dürfen nicht als Sachkonto durchrutschen → null.
+  ok('Bestandskonto 1200 → null (Heuristik greift)', resolveKategorie({ konto: '1200', richtung: 'ausgabe' }, idx) === null);
+  ok('unbekanntes Konto → null', resolveKategorie({ konto: '9999', richtung: 'ausgabe' }, idx) === null);
+  ok('null-Eingabe → null', resolveKategorie(null, idx) === null);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

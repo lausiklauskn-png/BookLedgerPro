@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v25';
+const CACHE_VERSION = 'v47';
 const CACHE_NAME = `blpr-shell-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -29,6 +29,8 @@ const CORE_ASSETS = [
   './assets/icons/apple-touch-icon.png',
   './assets/icons/favicon-32.png',
   './assets/img/hero-lock.png',
+  './assets/img/cover.png',
+  './assets/img/iso-iec.jpg',
   './assets/img/empty-journal.png',
   './assets/img/empty-documents.png',
   './assets/img/empty-customers.png',
@@ -55,6 +57,7 @@ const CORE_ASSETS = [
   './src/ui/mycelCanvas.js',
   './src/ui/empty.js',
   './src/ui/lock.js',
+  './src/ui/intro.js',
   './src/ui/shell.js',
   './src/domain/summary.js',
   './src/ui/views/dashboard.js',
@@ -65,6 +68,8 @@ const CORE_ASSETS = [
   './src/domain/accounts.js',
   './src/domain/audit.js',
   './src/domain/journal.js',
+  './src/domain/pruefung.js',
+  './src/domain/rechtsregeln.js',
   './src/domain/taxes.js',
   './src/domain/store.js',
   './src/domain/documents.js',
@@ -74,12 +79,15 @@ const CORE_ASSETS = [
   './src/ai/aiConfig.js',
   './src/ai/vision.js',
   './src/ai/mistral.js',
+  './src/ai/berater.js',
   './src/domain/orders.js',
   './src/domain/invoicing.js',
+  './src/domain/rechnung.js',
   './src/domain/employees.js',
   './src/domain/costcenters.js',
   './src/domain/encstore.js',
   './src/domain/crm-store.js',
+  './src/domain/importworkfloh.js',
   './src/domain/export.js',
   './src/ai/taxAssist.js',
   './src/ui/views/documents.js',
@@ -88,6 +96,7 @@ const CORE_ASSETS = [
   './src/ui/views/employees.js',
   './src/ui/views/legal.js',
   './src/ui/views/network.js',
+  './src/ui/views/anleitung.js',
   './src/sbkim/spore.js',
   './src/sbkim/identity.js',
   './src/sbkim/domainvector.js',

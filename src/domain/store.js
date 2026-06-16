@@ -4,7 +4,7 @@
 // Geheimnis). Hier sitzt die GoBD-Festschreibung: lückenloser Nummernkreis +
 // Hash-Kette; gebuchte Sätze sind unveränderlich, Korrektur nur per Storno.
 
-import { recAll, recGet, recPut, kvGet, kvSet } from '../core/db.js';
+import { recAll, recGet, recPut, recDel, kvGet, kvSet } from '../core/db.js';
 import { encryptWithKey, decryptWithKey } from '../core/crypto.js';
 import { getSessionKey } from '../core/vault.js';
 import { seedAccounts } from './accounts.js';
@@ -88,6 +88,7 @@ export async function saveEntwurf(buchung) {
     id: buchung.id || neueId(),
     datum: buchung.datum,
     beschreibung: buchung.beschreibung || '',
+    begruendung: buchung.begruendung || '',
     zeilen: buchung.zeilen || [],
     belegRef: buchung.belegRef || null,
     kostenstelle: buchung.kostenstelle || null,
@@ -99,6 +100,16 @@ export async function saveEntwurf(buchung) {
   };
   await recPut(await encodeBuchung(b));
   return b;
+}
+
+/** Löscht einen Buchungs-Entwurf. Festgeschriebene Buchungen NICHT löschbar (nur Storno). */
+export async function deleteEntwurf(id) {
+  const b = await getBuchung(id);
+  if (!b) return;
+  if (b.status !== BUCHUNG_STATUS.ENTWURF) {
+    throw new Error('Nur Entwürfe können gelöscht werden — festgeschriebene Buchungen nur per Storno.');
+  }
+  await recDel(id);
 }
 
 /** Schreibt eine Buchung fest: vergibt lückenlose seq + Hash, macht sie unveränderlich. */
