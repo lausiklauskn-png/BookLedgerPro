@@ -212,6 +212,26 @@ export function ustVaToCsv(va) {
   ]);
 }
 
+/**
+ * Offene-Posten-Liste der Verbindlichkeiten (Kreditoren) als CSV — für Liquiditätsplanung
+ * und Übergabe an den Steuerberater. Erwartet (angereicherte) Posten aus
+ * payables.offeneVerbindlichkeiten()/anreichereVerbindlichkeiten().
+ */
+export function buildOffeneVerbindlichkeitenCsv(posten) {
+  const rows = [['Kreditor', 'Rechnungsnr', 'Datum', 'Fällig', 'Brutto', 'Bezahlt', 'Offen', 'Überfällig (Tage)']];
+  let summe = 0;
+  for (const p of posten || []) {
+    summe += p.offenCent || 0;
+    rows.push([
+      p.name || '', p.referenz || '', p.datum || '', p.faelligAm || '',
+      centsToComma(p.bruttoCent), centsToComma(p.bezahltCent), centsToComma(p.offenCent),
+      p.ueberfaellig ? String(p.tageUeberfaellig) : '',
+    ]);
+  }
+  rows.push(['', '', '', '', '', 'Summe offen', centsToComma(summe), '']);
+  return csv(rows);
+}
+
 export function eurToCsv(eur) {
   const rows = [['Art', 'Konto', 'Bezeichnung', 'Betrag']];
   for (const e of eur.einnahmenKonten || []) rows.push(['Einnahme', e.nummer, e.name, centsToComma(e.wert)]);

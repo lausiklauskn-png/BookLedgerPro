@@ -6,13 +6,15 @@ import { formatEuro } from '../../domain/money.js';
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
 import { computeUStVoranmeldung, computeEUR, computeEURIst, verprobeUSt } from '../../domain/taxes.js';
 import { kostenstellenAuswertung } from '../../domain/costcenters.js';
-import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv } from '../../domain/export.js';
+import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv, buildOffeneVerbindlichkeitenCsv } from '../../domain/export.js';
 import { downloadText } from '../../core/files.js';
 import { isMistralConfigured } from '../../ai/aiConfig.js';
 import { erklaereSteuer } from '../../ai/taxAssist.js';
 import { listAuftraege, listKunden } from '../../domain/crm-store.js';
 import { offenePosten } from '../../domain/zahlungsabgleich.js';
 import { anreicherePosten, ueberfaelligSummen, mahnschreibenDaten } from '../../domain/mahnwesen.js';
+import { listEingangsrechnungen } from '../../domain/payables-store.js';
+import { offeneVerbindlichkeiten, anreichereVerbindlichkeiten, verbindlichkeitenSummen } from '../../domain/payables.js';
 import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
 
@@ -57,11 +59,18 @@ async function repaint() {
     offen = anreicherePosten(offenePosten(auftraege, { nameById }), { zielTage: s.zahlungszielTage });
   } catch { offen = []; }
 
+  // Offene Verbindlichkeiten (Kreditoren-OP-Liste) + Fälligkeit/Überfälligkeit.
+  let offenVerb = [];
+  try {
+    offenVerb = anreichereVerbindlichkeiten(offeneVerbindlichkeiten(await listEingangsrechnungen()));
+  } catch { offenVerb = []; }
+
   mount(_host, el('section', { class: 'view', id: 'report-view' }, [
     el('h1', { text: t('reports.title') }),
     periodeControls(),
     exportBar(buchungen, idx, eur, va),
     offen.length ? mahnungenCard(offen) : null,
+    offenVerb.length ? verbindlichkeitenCard(offenVerb) : null,
     el('div', { class: 'report-grid' }, [
       ustCard(ust),
       eurCard(eur),
@@ -144,6 +153,52 @@ function zeigeMahnung(posten) {
       el('p', { class: 'muted small', text: t('reports.mahnLegal') }),
     ].filter(Boolean)),
   ]));
+}
+
+// ---- Offene Verbindlichkeiten (Kreditoren-OP-Liste) ------------------------
+
+function verbindlichkeitenCard(posten) {
+  const sum = verbindlichkeitenSummen(posten);
+  const reihen = [...posten]
+    .sort((a, b) => (a.faelligAm || '').localeCompare(b.faelligAm || ''))
+    .map((p) => {
+      const badge = p.ueberfaellig
+        ? el('span', { class: 'badge badge-warn', text: `${t('reports.opOverdue')} ${p.tageUeberfaellig} ${t('reports.mahnDays')}` })
+        : el('span', { class: 'muted small', text: t('reports.mahnOpen') });
+      return el('tr', {}, [
+        el('td', { text: p.referenz || '—' }),
+        el('td', { text: p.name || '—' }),
+        el('td', { class: 'num', text: formatEuro(p.offenCent) }),
+        el('td', { class: 'mono small', text: p.faelligAm || '—' }),
+        el('td', {}, [badge]),
+      ]);
+    });
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.opTitle') }),
+    el('div', { class: 'report-line strong' }, [
+      el('span', { text: t('reports.opSum') }),
+      el('span', { class: 'num', text: `${formatEuro(sum.summeCent)} (${sum.anzahl})` }),
+    ]),
+    sum.ueberfaelligAnzahl ? el('div', { class: 'report-line' }, [
+      el('span', { text: t('reports.opOverdueSum') }),
+      el('span', { class: 'num', text: `${formatEuro(sum.ueberfaelligCent)} (${sum.ueberfaelligAnzahl})` }),
+    ]) : null,
+    el('table', { class: 'table' }, [
+      el('thead', {}, [el('tr', {}, [
+        el('th', { text: t('reports.mahnInvoice') }), el('th', { text: t('reports.opCreditor') }),
+        el('th', { class: 'num', text: t('reports.opOpen') }), el('th', { text: t('reports.mahnDue') }),
+        el('th', { text: t('reports.mahnStatus') }),
+      ])]),
+      el('tbody', {}, reihen),
+    ]),
+    el('div', { class: 'btn-row no-print' }, [
+      el('button', {
+        class: 'btn btn-sm', text: t('reports.opExport'),
+        onClick: () => downloadText(`offene-verbindlichkeiten-${new Date().toISOString().slice(0, 10)}.csv`, BOM + buildOffeneVerbindlichkeitenCsv(posten), 'text/csv'),
+      }),
+    ]),
+    el('p', { class: 'muted small', text: t('reports.opNote') }),
+  ].filter(Boolean));
 }
 
 const BOM = '﻿';

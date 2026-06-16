@@ -10,6 +10,8 @@
 //
 // Reine, cent-genaue Funktionen (node-getestet). Persistenz: payables-store.js.
 
+import { faelligkeit, tageUeberfaellig } from './mahnwesen.js';
+
 const VERBINDLICHKEIT_KONTO = '1600';            // Verbindlichkeiten aus L+L
 const AUFWAND_KONTO_STD = '4980';                // Sonstige betriebliche Aufwendungen (Fallback)
 const VORSTEUER_KONTO = { 19: '1576', 7: '1571' }; // abziehbare Vorsteuer
@@ -149,6 +151,37 @@ export function offeneVerbindlichkeiten(rechnungen, opts = {}) {
 /** Summe aller offenen Verbindlichkeits-Posten (Cent). */
 export function summeOffeneVerbindlichkeiten(posten) {
   return (posten || []).reduce((s, p) => s + (p.offenCent || 0), 0);
+}
+
+/**
+ * Reichert offene Verbindlichkeits-Posten um Fälligkeit/Überfälligkeit an (für die OP-Liste).
+ * Nutzt die rechnungseigene `faelligAm`, sonst Rechnungsdatum + Zahlungsziel (Default 30 Tage,
+ * üblicher für Eingangsrechnungen). Anders als beim Mahnwesen geht es hier um die EIGENE
+ * Zahlungspflicht (Liquidität/Skonto), daher keine Mahnstufe.
+ * @param posten Ergebnis von offeneVerbindlichkeiten()
+ * @param opts {heute, zielTage}
+ */
+export function anreichereVerbindlichkeiten(posten = [], opts = {}) {
+  const heute = opts.heute || new Date().toISOString().slice(0, 10);
+  const zielTage = opts.zielTage != null ? opts.zielTage : 30;
+  return posten.map((p) => {
+    const faelligAm = p.faelligAm || faelligkeit(p.datum, zielTage);
+    const tage = tageUeberfaellig(faelligAm, heute);
+    return { ...p, faelligAm, tageUeberfaellig: tage, ueberfaellig: tage > 0 };
+  });
+}
+
+/**
+ * Kennzahlen über die offenen Verbindlichkeiten (für Auswertung/Dashboard).
+ * @returns {{summeCent, anzahl, ueberfaelligCent, ueberfaelligAnzahl}}
+ */
+export function verbindlichkeitenSummen(angereichertePosten = []) {
+  let summeCent = 0, ueberfaelligCent = 0, ueberfaelligAnzahl = 0;
+  for (const p of angereichertePosten) {
+    summeCent += p.offenCent || 0;
+    if (p.ueberfaellig) { ueberfaelligCent += p.offenCent || 0; ueberfaelligAnzahl++; }
+  }
+  return { summeCent, anzahl: angereichertePosten.length, ueberfaelligCent, ueberfaelligAnzahl };
 }
 
 /** Validiert eine Eingangsrechnung (vor dem Speichern). */

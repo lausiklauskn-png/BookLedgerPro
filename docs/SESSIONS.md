@@ -5,6 +5,30 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — A2-Anschluss: OP-Liste „Offene Verbindlichkeiten" (Auswertungen)
+
+**Was getan**
+- **Reine Logik** `src/domain/payables.js` (node-getestet): `anreichereVerbindlichkeiten`
+  (offene Posten + Fälligkeit/Überfälligkeit — nutzt rechnungseigene `faelligAm`, sonst
+  Datum + Zahlungsziel, Default 30 Tage; keine Mahnstufe, da eigene Zahlungspflicht),
+  `verbindlichkeitenSummen` (Summe/Anzahl + überfällig). Wiederverwendet `mahnwesen.faelligkeit`/
+  `tageUeberfaellig`.
+- **Export** `export.buildOffeneVerbindlichkeitenCsv` (OP-Liste als CSV, Summenzeile).
+- **UI** `src/ui/views/reports.js`: neue Karte **„Offene Verbindlichkeiten (Kreditoren)"**
+  (spiegelt „Offene Forderungen & Mahnwesen"): Tabelle Lieferant/Rechnung/Offen/Fällig +
+  **Überfällig-Badge**, Summe + überfällige Summe, **CSV-Export-Knopf**. i18n de/en.
+- **9 neue Node-Tests** → `node tests/run.mjs` **402/402 grün**. SW-Cache `v57 → v58`.
+  `OFFENE_PUNKTE.md` A2-OP-Liste abgehakt.
+
+**Ehrlich offen / ungetestet:** UI nicht headless-E2E (Kernlogik node-getestet). Noch kein
+**Skonto**/Zahlungsbedingungen, kein manuelles Anlegen/Bearbeiten von Verbindlichkeiten
+(heute nur via E-Rechnung-Import), Teilzahlungs-Matching = A3.
+
+**Offen / Nächstes:** A3 (Teilzahlungen & unscharfes Matching im Zahlungsabgleich); A1-Rest
+(Mahnwesen je Kunde/persistent/Buchung). **Details: `docs/OFFENE_PUNKTE.md`.**
+
+---
+
 ## 2026-06-16 — A2: Eingangsrechnungen als offene Verbindlichkeiten (Posten-Quelle Zahlungsabgleich)
 
 **Was getan**
