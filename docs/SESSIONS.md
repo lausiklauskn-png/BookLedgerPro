@@ -5,6 +5,19 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Strategie verankert: Pseudonymisierung als Schlüssel-Enabler
+
+**Was getan (auf Nutzerwunsch, „sehr wichtig"):** Den strategischen Kern festgehalten und
+priorisiert — *Komfort UND Datenschutz zugleich* als Wettbewerbsvorteil; Vertrauen durch
+technischen Beleg statt Reputation. Pseudonymisierung = **Schlüssel-Enabler (Bau-Schritt 1,
+bereits gebaut)**, der freie Anbieterwahl im Einfach-Modus, einen Privat-/Bürger-Modus und das
+Vertrauen freischaltet. Verankert in `docs/PULS.md` (neues §0★ Leitbild/Priorität) und in
+`docs/TRANSPARENZ_ZWISCHENSTAND.html` (neuer Abschnitt §0a). 
+**Offen/Entscheidung:** P2 (KI-Anbieterwahl je Modus) berührt die strenge EU-KI-Regel
+(CLAUDE.md §8) → Produktentscheidung des Nutzers nötig, bevor gebaut wird.
+
+---
+
 ## 2026-06-16 — Doku: Transparenz-/Zwischenstands-HTML aktualisiert
 
 **Was getan:** Die kanonische, druckbare Transparenz-Doku `docs/TRANSPARENZ_ZWISCHENSTAND.html`

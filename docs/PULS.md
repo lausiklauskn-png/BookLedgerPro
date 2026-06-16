@@ -17,6 +17,19 @@
 
 ---
 
+## 0★. LEITBILD / strategische Priorität (verbindlich beim Priorisieren)
+**Der Kern-Vorteil: Komfort UND Datenschutz zugleich.** Die meisten KI-Buchhaltungs-Tools
+zwingen zur Wahl „KI-Komfort ODER Datenschutz". BookLedgerPro löst das auf — Vertrauen durch
+**technischen Beleg**, nicht durch Reputation/Firmenname: „hier ist belegt, dass deine Daten
+das Gerät nicht im Klartext verlassen".
+- **Pseudonymisierung = Schlüssel-Enabler (Bau-Schritt 1)** — funktioniert sie gut, wird ALLES
+  andere einfacher: **freie KI-Anbieterwahl im Einfach-Modus**, **Privat-/Bürger-Modus**, Vertrauen.
+  → Status: **gebaut & gemergt** (#40–#43, anker-basiert, Transparenz-Vorschau, AVV).
+- **Priorisierungsregel:** Features, die diesen Kern-Vorteil stärken/erlebbar machen, haben
+  Vorrang. Dadurch freigeschaltete Nächstschritte: **P2 KI-Anbieterwahl je Modus**
+  (Einfach = freie Wahl mit Einwilligung; Berater = streng EU) + **Privat-/Bürger-Modus**.
+  ⚠️ P2 berührt die strenge EU-KI-Regel (CLAUDE.md §8) → Produktentscheidung des Nutzers nötig.
+
 ## 0. BRAINSTORMING — zuerst klären (Funktionalität, ohne Code)
 Am Sitzungsanfang mit dem Nutzer durchgehen; entscheidet über viele Bau-Wege:
 1. **Zielgruppe/Rechtsform:** primär EÜR (Freiberufler/Kleinunternehmer) oder auch Bilanzierer (GmbH, GuV/Bilanz)?
