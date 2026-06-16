@@ -12,11 +12,18 @@ Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlic
 
 ## A. HOCH — unbedingt beachten / als Nächstes
 
-### A1. Mahnwesen & überfällige Forderungen **[MUSS]**
-**Warum:** In der Buchhaltung üblich und wirtschaftlich wichtig: Eine offene Rechnung, deren
-**Zahlungsziel/Frist abgelaufen** ist, muss **sofort sichtbar** sein, damit man **nachmahnen**
-kann. Aktuell kennt die App offene Posten (Aufträge „berechnet", Zahlungsabgleich markiert
-„bezahlt"), aber **noch keine Fälligkeit/Überfälligkeit und kein Mahnwesen**.
+### A1. Mahnwesen & überfällige Forderungen — **Kern erledigt ✓, Rest offen**
+**Erledigt (PR #53):** `src/domain/mahnwesen.js` (rein, node-getestet): Fälligkeit
+(Rechnungsdatum + Zahlungsziel), Überfälligkeit, Mahnstufen, Verzugszinsen (§288 BGB),
+40-€-Pauschale, `mahnschreibenDaten()`. Sichtbar in **Auswertungen** → Karte „Offene Forderungen
+& Mahnwesen" (überfällig-Badge + Summe) inkl. **druckbarem Mahnschreiben**. Einstellungen
+`zahlungszielTage` (14) + `verzugBasiszinsProzent` (§247 BGB, aktuell halten!).
+**Noch offen [SOLL]:** B2B/Verbraucher **je Kunde** (statt global B2B), **Mahnstufe persistent**
+je Forderung (statt nur abgeleitet), **Buchung** von Zinsen/Gebühren als Ertrag (Konto-Mapping +
+USt-Behandlung), Eingangsrechnungs-Verzug (Gegenseite), Zahlungsziel je Rechnung statt global.
+
+**Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,
+damit man nachmahnen kann — siehe jetzt Auswertungen.
 
 Konkret nachzuarbeiten:
 - **Fälligkeit je Rechnung:** Zahlungsziel (z. B. 14 Tage) → `faelligAm = rechnungDatum + Ziel`.

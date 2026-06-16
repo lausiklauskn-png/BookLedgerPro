@@ -41,6 +41,7 @@ import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domai
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
 import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat } from '../src/domain/bankimport.js';
 import { offenePosten, findeOffenePosten, zahlungsBuchungZeilen } from '../src/domain/zahlungsabgleich.js';
+import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten } from '../src/domain/mahnwesen.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -1149,6 +1150,49 @@ await section('Zahlungsabgleich: offene Posten + Matching + Ausgleichsbuchung', 
   // Ausgleichsbuchung Ausgabe: Verbindlichkeit an Bank.
   const ba = zahlungsBuchungZeilen({ richtung: 'ausgabe', betragCent: 5000, valuta: '2026-06-09' });
   ok('Ausgabe: Soll Verbindlichkeit 1600 / Haben Bank 1200', ba.zeilen[0].konto === '1600' && ba.zeilen[1].konto === '1200' && ba.zeilen[1].seite === 'H');
+});
+
+await section('Mahnwesen: Fälligkeit, Überfälligkeit, Mahnstufe', () => {
+  ok('Fälligkeit = Rechnungsdatum + 14', faelligkeit('2026-06-01', 14) === '2026-06-15');
+  ok('nicht überfällig vor Frist', tageUeberfaellig('2026-06-15', '2026-06-10') === 0);
+  ok('überfällig: 5 Tage', tageUeberfaellig('2026-06-15', '2026-06-20') === 5);
+  ok('Stufe 0 (offen) bei 0 Tagen', mahnstufe(0).stufe === 0 && mahnstufe(0).mahnbar === false);
+  ok('Stufe 1 Zahlungserinnerung ab 1 Tag', mahnstufe(1).stufe === 1 && mahnstufe(1).label === 'Zahlungserinnerung');
+  ok('Stufe 2 (1. Mahnung) ab 14 Tagen', mahnstufe(14).stufe === 2 && mahnstufe(14).label === '1. Mahnung');
+  ok('Stufe 4 (3. Mahnung) ab 42 Tagen', mahnstufe(50).stufe === 4);
+});
+
+await section('Mahnwesen: Verzugszinsen (§288 BGB) & Pauschale', () => {
+  // 1.000 € · 365 Tage · Basiszins 0 · B2B (9 %) = 90 € = 9000 Cent.
+  ok('B2B 9 % p.a. (volljährig)', verzugszinsenCent(100000, 365, { basiszinsProzent: 0, b2b: true }) === 9000);
+  ok('Verbraucher 5 % p.a.', verzugszinsenCent(100000, 365, { basiszinsProzent: 0, b2b: false }) === 5000);
+  ok('Basiszins addiert (3 % → 12 % B2B)', verzugszinsenCent(100000, 365, { basiszinsProzent: 3, b2b: true }) === 12000);
+  ok('zeitanteilig (halbes Jahr ~ Hälfte)', verzugszinsenCent(100000, 182, { basiszinsProzent: 0, b2b: true }) === Math.round(100000 * 0.09 * 182 / 365));
+  ok('40-€-Pauschale nur B2B', mahnpauschaleCent(true) === 4000 && mahnpauschaleCent(false) === 0);
+});
+
+await section('Mahnwesen: Posten anreichern + Mahnschreiben-Daten', () => {
+  const posten = [
+    { id: 'a1', betragCent: 119000, datum: '2026-05-01', referenz: '2026-0007', name: 'Muster AG' }, // alt → überfällig
+    { id: 'a2', betragCent: 50000, datum: '2026-06-14', referenz: '2026-0009', name: 'Neu GmbH' },   // frisch
+  ];
+  const heute = '2026-06-30';
+  const ang = anreicherePosten(posten, { heute, zielTage: 14 });
+  ok('a1 fällig 2026-05-15, überfällig', ang[0].faelligAm === '2026-05-15' && ang[0].ueberfaellig && ang[0].tageUeberfaellig === 46);
+  ok('a1 Mahnstufe 3. Mahnung (≥42)', ang[0].mahnstufe.stufe === 4);
+  ok('a2 (Frist 2026-06-28) leicht überfällig, Stufe 1', ang[1].tageUeberfaellig === 2 && ang[1].mahnstufe.stufe === 1);
+
+  const sum = ueberfaelligSummen(ang);
+  ok('Summen: 2 überfällig, 169000 Cent', sum.anzahl === 2 && sum.summeCent === 169000);
+
+  const m = mahnschreibenDaten(ang[0], { heute, basiszinsProzent: 0, b2b: true, neueFristTage: 7 });
+  ok('Mahnschreiben: Forderung + Zinsen + Pauschale', m.forderungCent === 119000 && m.zinsenCent > 0 && m.pauschaleCent === 4000);
+  ok('Mahnschreiben: Gesamt = Summe der Posten', m.gesamtCent === m.forderungCent + m.zinsenCent + m.pauschaleCent);
+  ok('Mahnschreiben: neue Frist heute+7', m.neueFrist === '2026-07-07' && m.stufeLabel === '3. Mahnung');
+
+  // Bei bloßer Zahlungserinnerung (Stufe 1) keine Zinsen/Pauschale.
+  const m2 = mahnschreibenDaten(ang[1], { heute, basiszinsProzent: 0, b2b: true });
+  ok('Erinnerung ohne Zinsen/Pauschale', m2.zinsenCent === 0 && m2.pauschaleCent === 0);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {

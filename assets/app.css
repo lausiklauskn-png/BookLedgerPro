@@ -172,6 +172,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 /* ---- Badges --------------------------------------------------------------- */
 .badge { display: inline-block; padding: .12rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; border: 1px solid var(--border); white-space: nowrap; }
 .badge-entwurf { background: var(--surface-2); color: var(--text-muted); }
+.badge-warn { background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
 .badge-ok { background: var(--accent-soft); color: var(--accent-strong); border-color: transparent; }
 .badge-storno { background: var(--warn-bg); color: var(--warn-text); border-color: var(--warn-border); }
 
