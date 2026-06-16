@@ -18,6 +18,7 @@ import { mountKassenbuch } from './views/kassenbuch.js';
 import { mountJournal } from './views/journal.js';
 import { mountReports } from './views/reports.js';
 import { mountBerichte } from './views/berichte.js';
+import { mountSelbsttest } from './views/selbsttest.js';
 import { getBuchungssperre, setBuchungssperre } from '../domain/store.js';
 import { mountDocuments } from './views/documents.js';
 import { mountCustomers } from './views/customers.js';
@@ -47,6 +48,7 @@ const NAV = [
   ['network', 'nav.network'],
   ['legal', 'nav.legal'],
   ['anleitung', 'nav.anleitung'],
+  ['selbsttest', 'nav.selbsttest'],
   ['about', 'nav.about'],
   ['settings', 'nav.settings'],
 ];
@@ -116,6 +118,7 @@ function renderRoute() {
   if (route === 'journal') return void mountJournal(content);
   if (route === 'reports') return void mountReports(content);
   if (route === 'berichte') return void mountBerichte(content);
+  if (route === 'selbsttest') return void mountSelbsttest(content);
   if (route === 'documents') return void mountDocuments(content);
   if (route === 'orders') return void mountOrders(content);
   if (route === 'customers') return void mountCustomers(content);

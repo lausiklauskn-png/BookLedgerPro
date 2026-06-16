@@ -104,9 +104,12 @@ verschlüsselt (`state.js firma`).
       USt-/Vorsteuer-Konto. **Plus Simulations-Testharness** (`domain/demodaten.js` + `docs/TESTDATEN.md`):
       deterministischer Demo-Mandant (klein/groß) → echte Export-Dateien (Berichte „Demo-Export")
       mit dokumentierten Vergleichswerten. 33 Tests.
-- [ ] **V10 — Browser-E2E der Buchungs-Kernpfade [SOLL].** Bisher nur Logik node-getestet; die
-      DOM-/IndexedDB-Pfade (Buchen, Festschreiben, Rechnung, Auswertungen, Export) real durchklicken/
-      dokumentieren (kein Headless-Browser in der Bau-Umgebung → manuell + Checkliste).
+- [x] **V10 — Browser-E2E der Buchungs-Kernpfade [SOLL].** ✅ Umgesetzt: **In-App-Selbstdiagnose**
+      (`domain/selbsttest.js` + Ansicht „Selbsttest"): prüft die Kern-Engine OFFLINE (AES-GCM-
+      Roundtrip + Ablehnung falsches PW, Shamir 2-von-3, GoBD-Hash-Kette + Manipulationserkennung,
+      Geldrundung, doppelte Buchführung/USt-VA/EÜR/GDPdU an Demo-Daten, Export-ZIP) → ✓/✗,
+      node-gespiegelt (13 Tests). **Manuelle Klickpfad-Abnahme** in `docs/ABNAHME_CHECKLISTE.md`
+      (DOM/IndexedDB-Pfade, da kein Headless-Browser in der Bau-Umgebung).
 
 ### Bewusst eigene große Spuren (nur falls Rechtsform es verlangt)
 - [ ] **V-Bilanz — Bilanzierung (GmbH/OHG, GuV + Bilanz, §4 Abs.1/§5) [KANN/abhängig].**

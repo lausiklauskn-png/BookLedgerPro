@@ -7,24 +7,29 @@
 
 ---
 
-## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V10** = letzter Punkt)
+## ⏭ START HIER — Profi-Readiness-Fahrplan V1–V10 KOMPLETT ✅
 
 > **Lies das zuerst und vollständig. Danach kannst du ohne Rückfragen loslegen.**
 
-**✅ V8 erledigt (DATEV-EXTF berater-fest, vorbereitet) — diese Sitzung, in `claude/v2-ox8bu7`:**
-Vollständiger EXTF-Header aus Einstellungen (Berater-/Mandanten-Nr., Sachkontenlänge, WJ),
-SKR03-BU-Schlüssel (9/8 Vorsteuer, 3/2 USt) bei einfachen Sätzen, **zeilenweiser Split ohne BU**
-bei §13b/innergem. Erwerb (keine Doppelsteuer), `export.istEinfacherSatz`, Einstellungen-Sektion
-„DATEV-Export", Doku `docs/DATEV_IMPORT.md`. **Tests 605/605, SW `v71`.** (Diese Sitzung gemergt:
-V2 #64, V3 #65, V4 #66, V5 #67, V6 #68, V7 #69, V9 #70.)
-→ **Alle MUSS (V2–V7) + V8 + V9 erledigt.** **Einziger offener Punkt: V10** (Browser-E2E der
-Kernpfade — manuell, da kein Headless-Browser). Empfehlung: **In-App-„Selbstdiagnose"** (läuft
-Kern-Invarianten im Browser: Audit-Kette, Demo-Export-Konsistenz, Krypto-Roundtrip → ✓/✗) PLUS
-Klickpfad-Checkliste in `docs/`. Damit kann ein Tester „in die Hand nehmen und sehen, ob es läuft".
+**✅ V10 erledigt (Browser-E2E: In-App-Selbstdiagnose + Abnahme-Checkliste) — diese Sitzung, in `claude/v2-ox8bu7`:**
+`domain/selbsttest.js` + Ansicht **„Selbsttest"**: prüft die Kern-Engine OFFLINE (Krypto-Roundtrip,
+Shamir, GoBD-Hash-Kette + Manipulationserkennung, Geldrundung, Buchhaltung/USt-VA/EÜR/GDPdU an
+Demo-Daten, Export-ZIP) → ✓/✗; `docs/ABNAHME_CHECKLISTE.md` (manueller Klickpfad).
+**Tests 618/618, SW `v72`.**
 
-**Nutzer-Kontext:** testet privat in 1–2 Wochen (Foto-OCR → App → Finanzamt; ggf. eigener
-DATEV-Zugang). Wichtig: App muss **auch ganz ohne DATEV** nutzbar sein (Belege/Kunden/Rechnungen/
-EÜR/USt-VA) — ist sie (DATEV ist nur ein optionaler Export).
+**🎉 Damit ist der gesamte Profi-Readiness-Fahrplan V1–V10 abgeschlossen** (diese Sitzung gemergt:
+V2 #64, V3 #65, V4 #66, V5 #67, V6 #68, V7 #69, V9 #70, V8 #71, V10 als nächster PR).
+Alle MUSS- und SOLL-Punkte erledigt.
+
+**Was als Nächstes (offene Optionen, KEIN Pflicht-Fahrplan mehr):**
+- **A4 — WorkFloh-/App-Anbindung** (Angebote/Arbeiten → Rechnung → BLP; Seam `importworkfloh.js`).
+- **Sage Phase 5b–d** (Spore/Hub/Symbiose — menschlich vermittelt, fremde Repos).
+- **Echter Praxistest** durch den Nutzer (1–2 Wochen): Foto-OCR → App → Finanzamt; DATEV-Testimport
+  via Steuerberater. Abweichungen in `docs/TESTDATEN.md` notieren → Mappings nachziehen.
+- Optionale große Spuren nur bei Bedarf: V-Bilanz (GmbH), V-Lohn, V-Multi (Mehrmandanten).
+
+**Nutzer-Kontext:** App ist **auch ganz ohne DATEV** voll nutzbar (Belege/Kunden/Rechnungen/EÜR/
+USt-VA); DATEV-EXTF/GDPdU/CSV/Voll-Backup = portabel, kein Lock-in.
 
 **Was „Vx" bedeutet — WICHTIG, nicht missverstehen:**
 „Vx" ist **KEINE** neue Programm-Version, **KEIN** Redesign, **KEIN** Major-Umbau. Falls dein
@@ -37,7 +42,8 @@ Phasen 0–6 ✅, EU-KI (Vision EU + Mistral EU) ✅, A1–A3 (Mahnwesen/Verbind
 Zahlungsabgleich), **V1 Kontenrahmen** (57 Konten + CRUD), **V2 §13b/Reverse-Charge**,
 **V3 Anlagevermögen+AfA**, **V4 Kassenbuch/Anfangsbestände**, **V5 USt-VA komplett**,
 **V6 Berichte**, **V7 GoBD/GDPdU-Export**, **V8 DATEV-EXTF berater-fest**, **V9 Kleinfälle +
-Simulations-Testharness** (s.o.). → **Nicht** A1–A3 / V1–V9 wiederholen, **kein** Redesign.
+Simulations-Testharness**, **V10 Selbstdiagnose + Abnahme-Checkliste** (s.o.). → **Nicht**
+A1–A3 / V1–V10 wiederholen, **kein** Redesign.
 
 ### V2 — was genau zu bauen ist (§13b/Reverse-Charge + EU/Ausland)
 Ziel: Die Firma bezieht selbst Leistungen mit **Steuerschuldumkehr** — z. B. **Google Cloud
@@ -88,8 +94,8 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 ---
 
 **Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v2-ox8bu7`
-· **Tests:** `node tests/run.mjs` → **605/605 grün**
-· **SW-Cache:** `v71` · **81 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Tests:** `node tests/run.mjs` → **618/618 grün**
+· **SW-Cache:** `v72` · **83 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅**
 · **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
 · **V3 ✅:** Anlagevermögen + AfA (GWG/Sammelposten/linear pro rata), Ansicht „Anlagen",
   Anlagenverzeichnis + AfA-Buchung-Entwurf + AVEÜR-CSV (`domain/anlagen.js`, `anlagen-store.js`).
@@ -108,6 +114,8 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
   (`domain/demodaten.js`, `docs/TESTDATEN.md`, Berichte „Demo-Export" → echte Dateien, dok. Sollwerte).
 · **V8 ✅:** DATEV-EXTF berater-fest vorbereitet — Header (Berater/Mandant/SKL/WJ), BU-Schlüssel
   9/8/3/2, §13b zeilenweiser Split ohne BU; Einstellungen-Sektion; `docs/DATEV_IMPORT.md`.
+· **V10 ✅:** In-App-Selbstdiagnose (`domain/selbsttest.js`, Ansicht „Selbsttest") + manuelle
+  Abnahme-Checkliste (`docs/ABNAHME_CHECKLISTE.md`).
 · **Profi-Readiness (V-Fahrplan):** V1 ✅ Kontenrahmen 57 Konten + Konten anlegen/bearbeiten/löschen.
 · **Mahnwesen A1 erweitert:** persistente Mahnstufe (`mahnungen[]`, `vorschlagNaechsteStufe`) +
   manuelle/editierbare Zins-/Gebühren-Erfassung im Mahnschreiben (keine Auto-Steuerbuchung).

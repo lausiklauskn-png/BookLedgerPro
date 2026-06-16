@@ -37,6 +37,26 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-16 — V10: Browser-E2E (In-App-Selbstdiagnose + Abnahme-Checkliste) [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (Fahrplan-Punkt V10 — letzter Punkt; Fahrplan V1–V10 damit komplett)
+- **`domain/selbsttest.js`** (`runSelbsttest`, rein/async, offline): AES-GCM-Roundtrip + Ablehnung
+  falsches Passwort, Shamir 2-von-3, GoBD-Hash-Kette + **Manipulationserkennung**, Geldrundung
+  (de-Format), doppelte Buchführung (SuSa Soll=Haben), USt-VA-Zahllast (Demo „klein" = 159,00 €),
+  EÜR == Anlage-EÜR, GDPdU-Tabelle vollständig, Export-Pipeline (Demo-ZIP).
+- **Ansicht „Selbsttest"** (`ui/views/selbsttest.js`, neuer Nav-Eintrag/Route): führt die Diagnose
+  aus, zeigt ✓/✗ je Prüfung + Zusammenfassung + „erneut ausführen". i18n de/en. SW-Cache `v72`.
+- **`docs/ABNAHME_CHECKLISTE.md`**: manueller Klickpfad (Onboarding/Buchen/Belege/Rechnung/
+  Auswertung/Berichte/Export/Backup/PWA/„ohne DATEV") für die DOM-/IndexedDB-Pfade.
+- **Tests 618/618** (13 neu: runSelbsttest gesamt grün + jede Einzelprüfung).
+
+**Stand:** **Profi-Readiness-Fahrplan V1–V10 vollständig abgeschlossen.** Logik node-getestet
+(618), Kern-Engine zusätzlich in-App offline prüfbar; DOM-Pfade via Checkliste manuell. **Offen
+(kein Pflicht-Fahrplan mehr):** A4 WorkFloh-Anbindung, Sage 5b–d, echter Praxistest des Nutzers
+(Foto-OCR→App→Finanzamt, DATEV-Testimport via Steuerberater), optional V-Bilanz/V-Lohn/V-Multi.
+
+---
+
 ## 2026-06-16 — V8: DATEV-EXTF berater-fest (vorbereitet) [Branch `claude/v2-ox8bu7`]
 
 **Was getan** (Fahrplan-Punkt V8, gleiche Sitzung)

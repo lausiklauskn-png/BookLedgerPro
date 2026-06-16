@@ -41,6 +41,7 @@ import { gdpduCsvBuchungen, gdpduCsvKonten, buildGdpduIndexXml, buildGdpduPaket 
 import { kleinbetragsrechnung, geschenkAbzug, bewirtungAufteilung, KLEINBETRAG_GRENZE_CENT, GESCHENK_GRENZE_CENT } from '../src/domain/kleinfaelle.js';
 import { istGesperrt } from '../src/domain/pruefung.js';
 import { demoMandant, demoExportDateien, DEMO_JAHR } from '../src/domain/demodaten.js';
+import { runSelbsttest } from '../src/domain/selbsttest.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -1889,6 +1890,14 @@ await section('V8: DATEV-EXTF berater-fest (Header, BU-Schlüssel, Splits)', () 
   // 2-Zeilen-Satz ohne Steuer → einfacher Satz, BU leer.
   const bar = { seq: 4, datum: '2026-03-05', zeilen: [{ konto: '1000', seite: 'S', betrag: 5000 }, { konto: '8200', seite: 'H', betrag: 5000 }] };
   ok('2-Zeilen-Satz einfach, BU leer', istEinfacherSatz(bar.zeilen, idx) && datevBuchungssatz(bar, idx).bu === '');
+});
+
+await section('V10: In-App-Selbstdiagnose (runSelbsttest)', async () => {
+  const r = await runSelbsttest();
+  ok('Selbsttest: mehrere Prüfungen', r.gesamt >= 8);
+  ok('Selbsttest: alle bestanden (ok)', r.ok === true && r.bestanden === r.gesamt);
+  // Jede Einzelprüfung grün.
+  for (const e of r.ergebnisse) ok(`Selbsttest-Prüfung: ${e.name}`, e.ok);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
