@@ -5,14 +5,14 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/erechnung-xrechnung-8vx628`
-· **main-Stand:** `ee89577` · **Tests:** `node tests/run.mjs` → **288/288 grün**
-· **SW-Cache:** `v51` · **62 JS-Module** · **12 Bild- + 5 Icon-Assets**
-· **Datenschutz-Modi ABGESCHLOSSEN** (Schritt 1+2+Transparenz+AVV): `src/ai/pseudonym.js`
-  + `src/ai/anker.js` + Verdrahtung `mistral`/`berater` + Settings-Schalter + AVV-Doku.
-· **NEU E-Rechnung (Schritt 1):** `src/domain/erechnung.js` — `baueXRechnungCII()` erzeugt
-  XRechnung-orientierte CII-XML aus einer Rechnung; Download-Knopf im Rechnungs-Dokument
-  (Aufträge). **Ehrlich: nicht KoSIT-validiert** (kein Validator in Bau-Umgebung).
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/erechnung-empfang-8vx628`
+· **main-Stand:** `daa2c0a` · **Tests:** `node tests/run.mjs` → **303/303 grün**
+· **SW-Cache:** `v52` · **63 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Datenschutz-Modi ABGESCHLOSSEN** (Schritt 1+2+Transparenz+AVV).
+· **E-Rechnung:** (1) Erzeugung `src/domain/erechnung.js` `baueXRechnungCII()` + Download im
+  Rechnungs-Dokument. (2) **Empfang** `src/domain/erechnungLesen.js` `parseEingangsrechnung()`
+  (CII **und** UBL) → Extraktion → Buchungsvorschlag; Import-Knopf in Belegen.
+  **Ehrlich: nicht KoSIT-validiert**, best-effort XML-Extraktion, ZUGFeRD-PDF nicht ausgepackt.
 
 ---
 

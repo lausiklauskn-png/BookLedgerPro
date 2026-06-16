@@ -38,6 +38,7 @@ import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/a
 import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, ANKER_TYP, maskierungsBericht } from '../src/ai/pseudonym.js';
 import { baueAnker } from '../src/ai/anker.js';
 import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
+import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -1000,6 +1001,52 @@ await section('E-Rechnung: Kleinunternehmer (§19) → Kategorie E, keine USt', 
   ok('Kategorie E (befreit)', xml.includes('<ram:CategoryCode>E</ram:CategoryCode>'));
   ok('Befreiungsgrund §19', xml.includes('Kleinunternehmer gemäß § 19 UStG'));
   ok('keine USt (0,00)', xml.includes('<ram:TaxTotalAmount currencyID="EUR">0.00</ram:TaxTotalAmount>'));
+});
+
+await section('E-Rechnung Empfang: CII Round-Trip (erzeugen → einlesen)', () => {
+  const r = baueRechnung({
+    auftrag: { titel: 'Wartung', positionen: [{ beschreibung: 'Service', menge: 1, einzelpreisCent: 10000, ustSatz: 19 }] },
+    kunde: { name: 'Empfänger GmbH', adresse: 'Zielstr. 3, 80331 München' },
+    firma: { name: 'Lieferant & Sohn', anschrift: 'Quellweg 9, 20095 Hamburg', ustId: 'DE111111111' },
+    nummer: 'RE-2026-555', datum: '2026-05-20', leistungsdatum: '2026-05-18',
+  });
+  const xml = baueXRechnungCII(r);
+  ok('Format als CII erkannt', erkenneFormat(xml) === 'CII');
+  const p = parseEingangsrechnung(xml);
+  ok('Rechnungsnummer gelesen', p.nummer === 'RE-2026-555');
+  ok('Datum normalisiert (102 → ISO)', p.datum === '2026-05-20');
+  ok('Lieferant (Verkäufer) gelesen + entescaped', p.lieferant === 'Lieferant & Sohn');
+  ok('Brutto 11900 / USt 1900 / Netto 10000 Cent', p.brutto === 11900 && p.ust === 1900 && p.netto === 10000);
+  ok('USt-Satz 19', p.ustSatz === 19);
+  ok('hohe Confidence', p.confidence >= 0.8);
+  const ex = eingangsrechnungExtraktion(p);
+  ok('Extraktion fürs Vorschlag-Format', ex.betragBrutto === 11900 && ex.datum === '2026-05-20' && ex.ustSatz === 19 && ex.vendor === 'Lieferant & Sohn');
+});
+
+await section('E-Rechnung Empfang: UBL-Syntax', () => {
+  const ubl = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">',
+    '<cbc:CustomizationID>urn:cen.eu:en16931:2017</cbc:CustomizationID>',
+    '<cbc:ID>UBL-7788</cbc:ID>',
+    '<cbc:IssueDate>2026-04-10</cbc:IssueDate>',
+    '<cac:AccountingSupplierParty><cac:Party><cac:PartyLegalEntity><cbc:RegistrationName>Muster Lieferant AG</cbc:RegistrationName></cac:PartyLegalEntity></cac:Party></cac:AccountingSupplierParty>',
+    '<cac:TaxTotal><cbc:TaxAmount currencyID="EUR">38.00</cbc:TaxAmount><cac:TaxSubtotal><cac:TaxCategory><cbc:Percent>19</cbc:Percent></cac:TaxCategory></cac:TaxSubtotal></cac:TaxTotal>',
+    '<cac:LegalMonetaryTotal><cbc:TaxExclusiveAmount currencyID="EUR">200.00</cbc:TaxExclusiveAmount><cbc:PayableAmount currencyID="EUR">238.00</cbc:PayableAmount></cac:LegalMonetaryTotal>',
+    '</Invoice>',
+  ].join('\n');
+  ok('Format als UBL erkannt', erkenneFormat(ubl) === 'UBL');
+  const p = parseEingangsrechnung(ubl);
+  ok('Nummer = erstes cbc:ID (nicht CustomizationID)', p.nummer === 'UBL-7788');
+  ok('Datum gelesen', p.datum === '2026-04-10');
+  ok('Lieferant aus PartyLegalEntity', p.lieferant === 'Muster Lieferant AG');
+  ok('Brutto 23800 / USt 3800 / Netto 20000', p.brutto === 23800 && p.ust === 3800 && p.netto === 20000);
+  ok('USt-Satz 19', p.ustSatz === 19);
+});
+
+await section('E-Rechnung Empfang: unbekanntes Format', () => {
+  const p = parseEingangsrechnung('<html><body>kein eRechnung</body></html>');
+  ok('Format null + Fehlerhinweis', p.format === null && /Unbekannt/.test(p.fehler) && p.confidence === 0);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {

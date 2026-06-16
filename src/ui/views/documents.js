@@ -5,7 +5,8 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
-import { pickFile, formatBytes } from '../../core/files.js';
+import { pickFile, formatBytes, readFileText } from '../../core/files.js';
+import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
 import { loadAccounts, saveEntwurf } from '../../domain/store.js';
 import { extractFromText } from '../../ai/extract.js';
 import { categorize as categorizeAI } from '../../ai/mistral.js';
@@ -61,6 +62,7 @@ async function repaint(extra) {
     el('h1', { text: t('docs.title') }),
     schnellerfassung(),
     extra || null,
+    eRechnungKarte(),
     uploadKarte(),
     belegListe(belege, visionBereit),
   ]));
@@ -164,6 +166,36 @@ async function vorschlagKarte(vorschlag, belegId, quelltext) {
   card.appendChild(status);
   card.appendChild(el('p', { class: 'muted small', text: t('docs.postManual') }));
   return card;
+}
+
+// ---- E-Rechnung (XRechnung XML) einlesen → Buchungsvorschlag ---------------
+
+function eRechnungKarte() {
+  const out = el('div', { class: 'vorschlag-slot' });
+  const btn = el('button', {
+    class: 'btn', text: t('docs.eInvoiceImport'),
+    onClick: async () => {
+      out.replaceChildren();
+      const file = await pickFile('application/xml,text/xml,.xml', null);
+      if (!file) return;
+      try {
+        const p = parseEingangsrechnung(await readFileText(file));
+        if (!p.format) { out.appendChild(el('p', { class: 'form-error', text: p.fehler })); return; }
+        const ex = eingangsrechnungExtraktion(p);
+        const kat = await categorizeAI(p.lieferant || '', _idx, { anker: await kiAnker() });
+        const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
+        if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
+        out.appendChild(el('div', { class: 'muted small', text: `${p.format} · ${t('docs.eInvoiceFrom')} ${p.lieferant || '—'} · ${p.nummer || '—'}` }));
+        out.appendChild(await vorschlagKarte(res.vorschlag, null, p.lieferant || ''));
+      } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
+    },
+  });
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('docs.eInvoice') }),
+    el('p', { class: 'muted small', text: t('docs.eInvoiceHint') }),
+    el('div', { class: 'btn-row' }, [btn]),
+    out,
+  ]);
 }
 
 // ---- Upload (Datei / Foto / PDF) + Beleg-Liste -----------------------------
