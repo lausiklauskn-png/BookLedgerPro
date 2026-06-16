@@ -11,7 +11,7 @@ import { parseBankauszug, umsatzExtraktion } from '../../domain/bankimport.js';
 import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen } from '../../domain/zahlungsabgleich.js';
 import { offeneVerbindlichkeiten, eingangsrechnungZeilen } from '../../domain/payables.js';
 import { saveEingangsrechnung, listEingangsrechnungen, zahlungHinzufuegen } from '../../domain/payables-store.js';
-import { listAuftraege, listKunden, setAuftragStatus } from '../../domain/crm-store.js';
+import { listAuftraege, listKunden, auftragZahlungHinzufuegen } from '../../domain/crm-store.js';
 import { loadAccounts, saveEntwurf } from '../../domain/store.js';
 import { extractFromText } from '../../ai/extract.js';
 import { categorize as categorizeAI } from '../../ai/mistral.js';
@@ -277,6 +277,14 @@ function bankImportKarte() {
   ]);
 }
 
+// Erfasst die (Teil-)Zahlung eines Bank-Umsatzes gegen den passenden offenen Posten:
+// Verbindlichkeit → Eingangsrechnung, Forderung → Auftrag (markiert bei Ausgleich „bezahlt").
+async function zahlungVerbuchen(p, u, datum) {
+  const zahlung = { betragCent: u.betragCent, datum, ref: u.zweck || null };
+  if (p.kind === 'verbindlichkeit') await zahlungHinzufuegen(p.id, zahlung);
+  else await auftragZahlungHinzufuegen(p.id, zahlung);
+}
+
 function umsatzRow(u, posten = []) {
   const slot = el('div', {});
   const vz = (u.gegen || u.zweck || '').slice(0, 80);
@@ -295,22 +303,17 @@ function umsatzRow(u, posten = []) {
         const bk = zahlungsBuchungZeilen(u, p);
         try {
           await saveEntwurf({ datum: bk.datum, beschreibung: bk.beschreibung, zeilen: bk.zeilen });
-          if (p.kind === 'verbindlichkeit') {
-            // Bezahlte Verbindlichkeit: Zahlung gegen die Eingangsrechnung verbuchen.
-            await zahlungHinzufuegen(p.id, { betragCent: u.betragCent, datum: bk.datum, ref: u.zweck || null });
-            slot.appendChild(el('p', { class: 'muted small', text: `${t('docs.bankMatchPaid')} (${p.referenz || ''})` }));
-          } else {
-            await setAuftragStatus(p.id, 'bezahlt');
-            slot.appendChild(el('p', { class: 'muted small', text: `${t('docs.bankMatchDone')} (${p.referenz || ''})` }));
-          }
+          // Vollständige Zahlung als Zahlung erfassen (Rest → 0 markiert automatisch „bezahlt").
+          await zahlungVerbuchen(p, u, bk.datum);
+          const msg = p.kind === 'verbindlichkeit' ? t('docs.bankMatchPaid') : t('docs.bankMatchDone');
+          slot.appendChild(el('p', { class: 'muted small', text: `${msg} (${p.referenz || ''})` }));
         } catch (e) { slot.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
       },
     }));
   } else {
-    // Kein exakter Treffer: Teilzahlung/Skonto auf eine offene VERBINDLICHKEIT anbieten
-    // (Teilzahlungen werden dort sauber als Rest geführt; Forderungen bleiben exakt).
-    const kand = findeKandidaten(u, posten).find(
-      (k) => k.posten.kind === 'verbindlichkeit' && (k.art === 'teilzahlung' || k.art === 'skonto'));
+    // Kein exakter Treffer: Teilzahlung/Skonto auf einen offenen Posten anbieten
+    // (Forderung ODER Verbindlichkeit — der Rest wird sauber weitergeführt).
+    const kand = findeKandidaten(u, posten).find((k) => k.art === 'teilzahlung' || k.art === 'skonto');
     if (kand) {
       const p = kand.posten;
       knoepfe.push(el('button', {
@@ -321,7 +324,7 @@ function umsatzRow(u, posten = []) {
           const bk = zahlungsBuchungZeilen(u, p);
           try {
             await saveEntwurf({ datum: bk.datum, beschreibung: bk.beschreibung, zeilen: bk.zeilen });
-            await zahlungHinzufuegen(p.id, { betragCent: u.betragCent, datum: bk.datum, ref: u.zweck || null });
+            await zahlungVerbuchen(p, u, bk.datum);
             slot.appendChild(el('p', { class: 'muted small', text: t('docs.bankPartialDone').replace('{rest}', formatEuro(kand.restCent || kand.skontoCent || 0)) }));
             if (kand.art === 'skonto') slot.appendChild(el('p', { class: 'muted small', text: t('docs.bankSkontoHint').replace('{betrag}', formatEuro(kand.skontoCent)) }));
           } catch (e) { slot.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }

@@ -5,11 +5,15 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/mahnwesen-b2b-vb-p84gtm`
-· **Tests:** `node tests/run.mjs` → **415/415 grün**
-· **SW-Cache:** `v60` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/forderungen-teilzahlung-p84gtm`
+· **Tests:** `node tests/run.mjs` → **422/422 grün**
+· **SW-Cache:** `v61` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
 · **Zahlungsabgleich** (Forderungen + Verbindlichkeiten, Matching, Ausgleichsbuchung,
-  **NEU Teilzahlung/Skonto/Toleranz via `findeKandidaten`**) ✓ · **Bankimport** MT940+CAMT.053 ✓.
+  Teilzahlung/Skonto/Toleranz via `findeKandidaten`, **NEU Forderungs-Teilzahlung/OP-Rest**) ✓ ·
+  **Bankimport** MT940+CAMT.053 ✓.
+· **Nächste große Option (A4, spätere Sitzung):** **WorkFloh-/App-Anbindung** — Angebote/Arbeiten
+  → Rechnung → in BLP weiterverarbeiten; Seam da (`importworkfloh.js`/`importWorkFloh`), Details
+  in `OFFENE_PUNKTE.md` A4.
 · **A2 — Verbindlichkeiten (Eingangsrechnungen):** `src/domain/payables.js` (+`payables-store.js`)
   — `eingangsrechnungZeilen` (Aufwand+Vorsteuer an 1600), `offeneVerbindlichkeiten`
   (Posten-Quelle für den Zahlungsabgleich, `richtung:'ausgabe'`), Status/Zahlungen/Storno.

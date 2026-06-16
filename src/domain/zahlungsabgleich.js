@@ -9,7 +9,7 @@
 // Lieferantenrechnungen (Verbindlichkeiten) sind als Posten-Quelle noch nicht erfasst —
 // die Matching-/Buchungslogik ist aber richtungsneutral und dafür vorbereitet.
 
-import { auftragSummen } from './orders.js';
+import { auftragOffen } from './orders.js';
 import { AUFTRAG_STATUS } from './orders.js';
 
 // Tagesabstand zwischen zwei ISO-Daten (oder null).
@@ -31,11 +31,13 @@ export function offenePosten(auftraege = [], opts = {}) {
   const out = [];
   for (const a of auftraege) {
     if (a.status !== AUFTRAG_STATUS.BERECHNET) continue;
-    const brutto = auftragSummen(a.positionen).brutto;
-    if (brutto <= 0) continue;
+    // Offener Rest (Brutto − geleistete Teilzahlungen) — so passt das Matching auch
+    // auf eine Restzahlung; vollständig bezahlte „berechnet"-Aufträge fallen heraus.
+    const offen = auftragOffen(a);
+    if (offen <= 0) continue;
     out.push({
       id: a.id,
-      betragCent: brutto,
+      betragCent: offen,
       datum: a.rechnungDatum || (a.createdAt || '').slice(0, 10) || '',
       referenz: a.rechnungNummer || '',
       name: nameById[a.kundeId] || '',

@@ -22,7 +22,7 @@ import { parseImportText, normalizeImport } from '../src/domain/importworkfloh.j
 import { baueRechnung, pflichtangaben, formatRechnungsnummer } from '../src/domain/rechnung.js';
 import { findeRechtsregeln, onDeviceBegruendung } from '../src/domain/rechtsregeln.js';
 import { buildBegruendungMessages, parseBegruendung, begruendeBuchung } from '../src/ai/berater.js';
-import { auftragSummen, darfWechseln, validateAuftrag } from '../src/domain/orders.js';
+import { auftragSummen, darfWechseln, validateAuftrag, auftragOffen, auftragGezahlt } from '../src/domain/orders.js';
 import { rechnungZeilen } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
@@ -1197,6 +1197,30 @@ await section('A3: Teilzahlung/Skonto/Toleranz-Matching (findeKandidaten)', () =
   // Teilzahlung lässt sich direkt verbuchen (gezahlter Betrag, Rest bleibt offen).
   const bk = zahlungsBuchungZeilen({ richtung: 'ausgabe', betragCent: 20000, valuta: '2026-06-10' }, teil[0].posten);
   ok('Teilzahlung-Buchung: 1600 S / 1200 H über 20000', bk.zeilen[0].konto === '1600' && bk.zeilen[0].betrag === 20000 && bk.zeilen[1].konto === '1200');
+});
+
+await section('A3: Forderungs-Teilzahlung (offener Rest bei Aufträgen)', () => {
+  const basis = { positionen: [{ menge: 1, einzelpreisCent: 10000, ustSatz: 19 }] }; // brutto 11900
+  ok('auftragGezahlt summiert Zahlungen', auftragGezahlt({ ...basis, zahlungen: [{ betragCent: 4000 }, { betragCent: 1000 }] }) === 5000);
+  ok('auftragOffen ohne Zahlung = Brutto', auftragOffen(basis) === 11900);
+  ok('auftragOffen mit Teilzahlung = Rest', auftragOffen({ ...basis, zahlungen: [{ betragCent: 5000 }] }) === 6900);
+  ok('auftragOffen voll bezahlt = 0', auftragOffen({ ...basis, zahlungen: [{ betragCent: 11900 }] }) === 0);
+
+  const auftraege = [
+    { id: 'a1', status: 'berechnet', rechnungNummer: 'R-1', rechnungDatum: '2026-06-01', kundeId: 'k1',
+      positionen: basis.positionen, zahlungen: [{ betragCent: 5000 }] },            // Rest 6900
+    { id: 'a2', status: 'berechnet', rechnungNummer: 'R-2', kundeId: 'k1',
+      positionen: basis.positionen, zahlungen: [{ betragCent: 11900 }] },           // voll bezahlt → raus
+  ];
+  const posten = offenePosten(auftraege, { nameById: { k1: 'Muster AG' } });
+  ok('nur a1 offen, betragCent = Rest 6900', posten.length === 1 && posten[0].id === 'a1' && posten[0].betragCent === 6900);
+
+  // Restzahlung 6900 matcht exakt den offenen Rest.
+  const m = findeOffenePosten({ richtung: 'einnahme', betragCent: 6900, zweck: 'R-1' }, posten);
+  ok('Restzahlung trifft a1', m && m.posten.id === 'a1');
+  // Eine weitere Teilzahlung (3000) wird als Teilzahlung erkannt, Rest 3900.
+  const teil = findeKandidaten({ richtung: 'einnahme', betragCent: 3000, zweck: 'R-1' }, posten);
+  ok('Forderungs-Teilzahlung erkannt, Rest 3900', teil[0].art === 'teilzahlung' && teil[0].restCent === 3900);
 });
 
 // ===== A2: Eingangsrechnungen als offene Verbindlichkeiten (Kreditoren) =====

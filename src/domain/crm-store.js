@@ -4,7 +4,7 @@
 
 import { encPut, encGet, encList, encDel, neueId } from './encstore.js';
 import { recAll, recPut, recDel, kvGet, kvSet } from '../core/db.js';
-import { AUFTRAG_STATUS } from './orders.js';
+import { AUFTRAG_STATUS, auftragOffen } from './orders.js';
 import { rechnungZeilen } from './invoicing.js';
 import { formatRechnungsnummer } from './rechnung.js';
 import { saveEntwurf } from './store.js';
@@ -41,10 +41,29 @@ export async function saveAuftrag(a) {
     rechnungBuchungId: a.rechnungBuchungId || null,
     rechnungNummer: a.rechnungNummer || null,
     rechnungDatum: a.rechnungDatum || null,
+    zahlungen: a.zahlungen || [],
     externNummer: a.externNummer || null,
     createdAt: a.createdAt || new Date().toISOString(),
   };
   return encPut(auftrag);
+}
+
+/**
+ * Erfasst eine (Teil-)Zahlung auf eine Forderung (berechneter Auftrag). Ist die Forderung
+ * danach vollständig ausgeglichen, wird der Auftrag automatisch als „bezahlt" markiert.
+ */
+export async function auftragZahlungHinzufuegen(id, zahlung) {
+  const a = await getAuftrag(id);
+  if (!a) throw new Error('Auftrag nicht gefunden');
+  const betrag = Math.round(Number(zahlung.betragCent) || 0);
+  if (!(betrag > 0)) throw new Error('Zahlbetrag muss positiv sein');
+  a.zahlungen = [...(a.zahlungen || []), {
+    datum: zahlung.datum || new Date().toISOString().slice(0, 10),
+    betragCent: betrag,
+    ref: zahlung.ref || null,
+  }];
+  if (auftragOffen(a) <= 0) a.status = AUFTRAG_STATUS.BEZAHLT;
+  return encPut(a);
 }
 export const listAuftraege = () => encList('auftrag');
 export const getAuftrag = (id) => encGet(id);

@@ -5,6 +5,30 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — A3-Rest: Forderungs-Teilzahlung (OP-Tracking) + WorkFloh-Andock verankert
+
+**Was getan**
+- **Reine Logik** `orders.js`: `auftragGezahlt()`/`auftragOffen()` (node-getestet) — Auftrag führt
+  jetzt `zahlungen[]`, offener Rest = Brutto − Teilzahlungen. `zahlungsabgleich.offenePosten`
+  liefert den **offenen Rest** (statt Brutto); voll bezahlte „berechnet"-Aufträge fallen heraus.
+- **Store** `crm-store.auftragZahlungHinzufuegen()` — erfasst (Teil-)Zahlung, markiert bei
+  Ausgleich automatisch „bezahlt". (Browser-Pfad.)
+- **UI** `documents.js`: Bankimport-Aktion „◑ Teilzahlung verbuchen" gilt jetzt **auch für
+  Forderungen** (Bank an Forderung, Rest bleibt offen); exakte Zahlungen werden ebenfalls als
+  Zahlung erfasst (Historie) — gemeinsamer Helfer `zahlungVerbuchen`.
+- **Docs:** `OFFENE_PUNKTE.md` **A4 App-Anbindung / WorkFloh-Integration** verankert (Angebote/
+  Arbeiten → Rechnung → BLP; als Option, spätere Sitzung; Seam: `importworkfloh.js`/`importWorkFloh`).
+- **7 neue Node-Tests** → `node tests/run.mjs` **422/422 grün**. SW-Cache `v60 → v61`.
+
+**Ehrlich offen / ungetestet:** UI nicht headless-E2E. Skonto-Buchung §17 weiterhin nur Hinweis;
+Sammelzahlungen offen. WorkFloh-**Vollanbindung** bewusst noch nicht gebaut (nur Datei-Import-Seam +
+verbindlich dokumentiert).
+
+**Offen / Nächstes:** A3-Rest (Sammelzahlungen, Skonto-Buchung), A1-Rest (persistente Mahnstufe,
+Zins-/Gebührenbuchung), später **A4 WorkFloh-Vollanbindung**. **Details: `docs/OFFENE_PUNKTE.md`.**
+
+---
+
 ## 2026-06-16 — A1-Rest: B2B/Verbraucher je Kunde (korrekte Verzugszinsen)
 
 **Was getan**
