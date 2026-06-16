@@ -81,6 +81,27 @@ const STEUERSCHLUESSEL = {
   einnahme: { 19: '3', 7: '2' },
 };
 
+/** Nur Standard-Steuerkonten (USt/Vorsteuer 7/19) lassen sich automatisch verschlüsseln. */
+function istStandardSteuer(konto, kontoIndex) {
+  const k = kontoIndex[konto];
+  return !!(k && (k.rolle === 'vorsteuer' || k.rolle === 'umsatzsteuer'));
+}
+
+/**
+ * Ein Satz ist „einfach" (per BU-Schlüssel als EIN Konto/Gegenkonto-Satz exportierbar), wenn er
+ * 2 Zeilen hat ODER genau 3 Zeilen mit GENAU einer Standard-Steuerzeile. Alles andere
+ * (§13b, innergem. Erwerb, mehrere Sätze/Splits) wird zeilenweise & steuerneutral exportiert.
+ */
+export function istEinfacherSatz(zeilen, kontoIndex) {
+  if (!zeilen) return false;
+  if (zeilen.length === 2) return true;
+  if (zeilen.length === 3) {
+    const steuer = zeilen.filter((z) => istStandardSteuer(z.konto, kontoIndex));
+    return steuer.length === 1;
+  }
+  return false;
+}
+
 /** 'YYYY-MM-DD' → 'TTMM' (Belegdatum im EXTF; Jahr stammt aus dem WJ im Header). */
 function ddmm(datum) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datum || '');
@@ -138,9 +159,11 @@ function pad2(n) { return String(n).padStart(2, '0'); }
 function extfHeaderZeile(opts, jahr) {
   const d = new Date();
   const ts = `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}000`;
+  const wjBeginn = opts.wjBeginn || `${jahr}0101`;
+  const skl = String(opts.sachkontenlaenge || 4);
   const felder = [
     '"EXTF"', '700', '21', '"Buchungsstapel"', '13', ts, '', '"RE"', '', '',
-    opts.berater || '', opts.mandant || '', `${jahr}0101`, '4',
+    opts.berater || '', opts.mandant || '', wjBeginn, skl,
     opts.von || '', opts.bis || '', `"${opts.bezeichnung || 'BookLedgerPro Buchungsstapel'}"`, '', '1', '0',
     String(opts.festschreibung ? 1 : 0), '"EUR"', '', '', '', '', '', '', '', '', '',
   ];
@@ -161,14 +184,20 @@ export function buildDatevExtf(buchungen, kontoIndex, opts = {}) {
   const fest = sortFest(buchungen).filter((b) => b.seq != null);
   const jahr = opts.jahr || Number((fest[0] && fest[0].datum || '').slice(0, 4)) || new Date().getFullYear();
   const zeilen = [extfHeaderZeile(opts, jahr), csvRow(EXTF_SPALTEN)];
+  const row = (umsatz, sh, konto, gegen, bu, b) => csvRow([
+    centsToComma(umsatz), sh, 'EUR', '', '', '',
+    konto, gegen, bu, ddmm(b.datum), b.seq, '', '', b.beschreibung || '', b.kostenstelle || '',
+  ]);
   for (const b of fest) {
-    const d = datevBuchungssatz(b, kontoIndex);
-    if (!d.konto || !d.gegenkonto) continue;
-    zeilen.push(csvRow([
-      centsToComma(d.umsatz), d.sh, 'EUR', '', '', '',
-      d.konto, d.gegenkonto, d.bu, ddmm(b.datum), b.seq, '', '',
-      b.beschreibung || '', b.kostenstelle || '',
-    ]));
+    if (istEinfacherSatz(b.zeilen, kontoIndex)) {
+      const d = datevBuchungssatz(b, kontoIndex);
+      if (!d.konto || !d.gegenkonto) continue;
+      zeilen.push(row(d.umsatz, d.sh, d.konto, d.gegenkonto, d.bu, b));
+    } else {
+      // §13b / innergem. Erwerb / Mehrfach-Splits: zeilenweise, steuerneutral (ohne BU-Schlüssel,
+      // ohne Gegenkonto) — import-sicher, da die Steuer bereits explizit gebucht ist.
+      for (const z of b.zeilen || []) zeilen.push(row(z.betrag, z.seite, z.konto, '', '', b));
+    }
   }
   return zeilen.join('\r\n');
 }

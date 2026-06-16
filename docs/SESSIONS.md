@@ -37,6 +37,30 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-16 — V8: DATEV-EXTF berater-fest (vorbereitet) [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (Fahrplan-Punkt V8, gleiche Sitzung)
+- **`export.js`**: vollständiger EXTF-Header aus Einstellungen — **Berater-/Mandanten-Nr.,
+  Sachkontenlänge, WJ-Beginn**, Bezeichnung. Neue Hilfsfunktion **`istEinfacherSatz`**:
+  einfache Sätze (2 Zeilen, oder 3 Zeilen mit genau 1 Standard-Steuerzeile) → **ein** Satz mit
+  Brutto + **BU-Schlüssel** (SKR03: Vorsteuer 9/8, USt 3/2); **§13b/innergem. Erwerb/Mehrfach-
+  Splits → zeilenweiser, steuerneutraler Export OHNE BU/Gegenkonto** (verhindert Doppelsteuer
+  beim Import — vorher falsch konsolidiert).
+- **`state.js`** + **Einstellungen-Sektion „DATEV-Export"** (`shell.js`): Berater-/Mandanten-Nr.,
+  Sachkontenlänge; Reports-Export übergibt sie an `buildDatevExtf`.
+- **`docs/DATEV_IMPORT.md`**: Aufbau, BU-Schlüssel-Tabelle, Automatik-vs-Split, Import-Schritte,
+  Prüf-Checkliste gegen die Demo-Werte, ehrliche Grenzen.
+- **Tests 605/605** (13 neu: Header mit Berater/Mandant/SKL/WJ, BU 9 Ausgabe / BU 3 Einnahme,
+  EXTF-Datenzeile, §13b-Split ohne BU + leeres Gegenkonto + alle Konten, 2-Zeilen-Satz BU leer).
+  SW-Cache `v71`.
+
+**Stand:** V8 vorbereitet & node-getestet. **Offen/Ehrlich:** endgültige „Berater-Festigkeit" =
+**realer DATEV-Testimport** (privat/Steuerberater) — mit Demo-Export + TESTDATEN.md vorbereitbar;
+kein zertifiziertes 116-Spalten-EXTF. **Nächstes/letzter Punkt:** V10 (Browser-E2E / In-App-
+Selbstdiagnose, manuell).
+
+---
+
 ## 2026-06-16 — V9: Korrektheit/Kleinfälle + Simulations-Testharness [Branch `claude/v2-ox8bu7`]
 
 **Was getan** (Fahrplan-Punkt V9 + vom Nutzer gewünschte Testmöglichkeit, gleiche Sitzung)

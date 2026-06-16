@@ -249,13 +249,23 @@ function verbindlichkeitenCard(posten) {
 
 const BOM = '﻿';
 
+function datevOpts() {
+  const s = getSettings();
+  const d = s.datev || {};
+  const f = s.firma || {};
+  return {
+    berater: d.beraterNr || '', mandant: d.mandantNr || '', sachkontenlaenge: d.sachkontenlaenge || 4,
+    bezeichnung: (f.name ? f.name + ' — ' : '') + 'BookLedgerPro', festschreibung: true,
+  };
+}
+
 function exportBar(buchungen, idx, eur, va) {
   const stamp = new Date().toISOString().slice(0, 10);
   const dl = (name, text) => downloadText(name, BOM + text, 'text/csv');
   return el('div', { class: 'card export-bar no-print' }, [
     el('span', { class: 'muted small', text: t('reports.export') + ':' }),
     el('button', { class: 'btn btn-sm', text: t('reports.exportJournal'), onClick: () => dl(`journal-${stamp}.csv`, buildLedgerCsv(buchungen, idx)) }),
-    el('button', { class: 'btn btn-sm', text: t('reports.exportDatev'), onClick: () => dl(`EXTF_Buchungsstapel_${stamp}.csv`, buildDatevExtf(buchungen, idx)) }),
+    el('button', { class: 'btn btn-sm', text: t('reports.exportDatev'), onClick: () => dl(`EXTF_Buchungsstapel_${stamp}.csv`, buildDatevExtf(buchungen, idx, datevOpts())) }),
     el('button', { class: 'btn btn-sm', text: t('reports.exportUstVa'), onClick: () => dl(`ust-va-${stamp}.csv`, ustVaToCsv(va)) }),
     el('button', { class: 'btn btn-sm', text: t('reports.exportEur'), onClick: () => dl(`euer-${stamp}.csv`, eurToCsv(eur)) }),
     el('button', { class: 'btn btn-sm', text: t('reports.print'), onClick: () => window.print() }),
