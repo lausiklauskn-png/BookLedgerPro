@@ -36,6 +36,8 @@ import { buildKassenbuchCsv, buildElsterVaPaket } from '../src/domain/export.js'
 import { VA_ZEITRAUM, voranmeldungsperioden, periodeIndexFuer, sondervorauszahlung, jahresZahllast } from '../src/domain/umsatzsteuer.js';
 import { summenSaldenliste, kontenblatt, anlageEUR, eurGruppeFuer, EUR_GRUPPE } from '../src/domain/berichte.js';
 import { buildSusaCsv, buildKontenblattCsv, buildAnlageEURCsv } from '../src/domain/export.js';
+import { crc32, zipFiles } from '../src/core/zip.js';
+import { gdpduCsvBuchungen, gdpduCsvKonten, buildGdpduIndexXml, buildGdpduPaket } from '../src/domain/gdpdu.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -1721,6 +1723,46 @@ await section('V6: SuSa + Kontenblatt + Anlage-EÜR-Gruppierung', () => {
   ok('Anlage-EÜR: Raumkosten-Gruppe 50000', eur.ausgaben.find((a) => a.gruppe === EUR_GRUPPE.AUS_RAUM).wert === 50000);
   ok('Anlage-EÜR: USt/VSt nicht als Erfolg gezählt', !eur.einnahmen.some((e) => (e.konten || []).includes('1776')));
   ok('Anlage-EÜR-CSV: Überschusszeile', buildAnlageEURCsv(eur).includes('Überschuss'));
+});
+
+await section('V7: ZIP-Writer + GoBD/GDPdU-Export', () => {
+  // CRC-32 Referenzwert ("123456789" → 0xCBF43926).
+  ok('crc32 Referenzwert', crc32(new TextEncoder().encode('123456789')) === 0xCBF43926);
+
+  // ZIP-Struktur (store): Signaturen, Dateiname, EOCD-Dateianzahl.
+  const zip = zipFiles([{ name: 'a.txt', data: 'hallo' }, { name: 'b.csv', data: 'x;y' }]);
+  ok('ZIP beginnt mit PK\\x03\\x04', zip[0] === 0x50 && zip[1] === 0x4b && zip[2] === 0x03 && zip[3] === 0x04);
+  const txt = new TextDecoder().decode(zip);
+  ok('ZIP enthält Dateinamen', txt.includes('a.txt') && txt.includes('b.csv'));
+  // EOCD-Signatur am Ende + Dateianzahl 2 (Offsetbytes 8/9 nach EOCD-Start).
+  const eocd = zip.length - 22;
+  ok('EOCD-Signatur', zip[eocd] === 0x50 && zip[eocd + 1] === 0x4b && zip[eocd + 2] === 0x05 && zip[eocd + 3] === 0x06);
+  ok('EOCD: 2 Einträge', zip[eocd + 10] === 2 && zip[eocd + 11] === 0);
+
+  const idx = indexFromSeed();
+  const buchungen = [
+    { seq: 1, datum: '2026-05-02', status: 'festgeschrieben', beschreibung: 'Verkauf', zeilen: [{ konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+    { seq: null, datum: '2026-05-03', zeilen: [{ konto: '1000', seite: 'S', betrag: 500 }, { konto: '8200', seite: 'H', betrag: 500 }] }, // Entwurf: NICHT exportieren
+  ];
+  const csvB = gdpduCsvBuchungen(buchungen, idx);
+  ok('GDPdU-Buchungen: Header + 3 Zeilen (nur festgeschrieben)', csvB.split('\r\n').length === 4);
+  ok('GDPdU-Buchungen: Entwurf ausgeschlossen', !csvB.includes('8200'));
+  ok('GDPdU-Buchungen: Spaltenkopf', csvB.startsWith('Datum;Belegnummer;Buchungstext'));
+
+  const csvK = gdpduCsvKonten([{ nummer: '8400', name: 'Erlöse 19% USt', art: 'ertrag', ust: 19 }]);
+  ok('GDPdU-Konten: Zeile vorhanden', csvK.includes('8400;Erlöse 19% USt;ertrag;19'));
+
+  const xml = buildGdpduIndexXml({ jahr: 2026, firma: 'Muster GmbH', steuernummer: '12/345/67890' });
+  ok('index.xml: DOCTYPE referenziert DTD', xml.includes('<!DOCTYPE DataSet SYSTEM "gdpdu-01-09-2004.dtd">'));
+  ok('index.xml: beide Tabellen', xml.includes('buchungen.csv') && xml.includes('konten.csv'));
+  ok('index.xml: Separator/Dezimal', xml.includes('<Separator>;</Separator>') && xml.includes('<DecimalSymbol>,</DecimalSymbol>'));
+  ok('index.xml: Datum-Spalte als Date', xml.includes('<Date><Format>YYYY-MM-DD</Format></Date>'));
+  ok('index.xml: Lieferant', xml.includes('Muster GmbH'));
+
+  const paket = buildGdpduPaket(buchungen, [{ nummer: '8400', name: 'E', art: 'ertrag' }], idx, { jahr: 2026 });
+  ok('Paket: 4 Dateien (index/buchungen/konten/info)', paket.length === 4 && paket.some((f) => f.name === 'index.xml'));
+  const zip2 = zipFiles(paket);
+  ok('Paket als ZIP baubar', zip2[0] === 0x50 && zip2.length > 100);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

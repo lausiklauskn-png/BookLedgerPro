@@ -81,8 +81,13 @@ verschlüsselt (`state.js firma`).
       Ansicht **„Berichte"** (Anlage-EÜR-Gruppierung, SuSa-Tabelle, Kontenblatt mit Konto-Auswahl;
       je CSV). 17 Tests. **Offen/ehrlich:** Anlage-EÜR ist an der Formularstruktur *orientiert* —
       exakte amtliche **Zeilennummern** (jahresabhängig) sind am Formular/mit Berater zu prüfen.
-- [ ] **V7 — Betriebsprüfer-Export GoBD (GDPdU/DSFinV-K, „Z3"/IDEA) [MUSS].** Datenpaket +
-      Beschreibungsdatei (`INDEX.XML`/`gdpdu-01-09-2004.dtd`) für die digitale Betriebsprüfung.
+- [x] **V7 — Betriebsprüfer-Export GoBD (GDPdU, „Z3"/IDEA) [MUSS].** ✅ Umgesetzt:
+      `core/zip.js` (zero-dep ZIP-Writer, store + CRC-32) + `domain/gdpdu.js` (rein,
+      node-getestet): `buildGdpduIndexXml` (Beschreibungsstandard, DOCTYPE → `gdpdu-01-09-2004.dtd`),
+      `gdpduCsvBuchungen` (nur festgeschrieben) / `gdpduCsvKonten`, `buildGdpduPaket`.
+      Export-Karte in **„Berichte"** → ZIP-Datenpaket (index.xml + buchungen.csv + konten.csv +
+      info). 16 Tests. **Offen/ehrlich:** GDPdU-*orientiert* — DTD wird bewusst NICHT mitgepackt
+      (Prüfsoftware liefert sie), vor echter Prüfung mit IDEA testen; **kein DSFinV-K** (Kasse).
 - [ ] **V8 — DATEV-EXTF berater-fest [SOLL].** Heute „EXTF-orientiert". → Steuerschlüssel-Mapping
       und Header mit echtem Berater/DATEV gegen einen Testimport verifizieren; Doku „so importieren".
 - [ ] **V9 — Korrektheit/Validierung & Kleinfälle [SOLL].** Kleinunternehmer-Konsistenz

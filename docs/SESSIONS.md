@@ -37,6 +37,29 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-16 — V7: GoBD-Betriebsprüfer-Export (GDPdU „Z3") [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (Fahrplan-Punkt V7, gleiche Sitzung)
+- **`core/zip.js`** (rein, zero-dep): ZIP-Writer (Methode 0 „store") + `crc32` — für build-freie
+  Binär-Datenpakete im Browser.
+- **`domain/gdpdu.js`** (rein, node-getestet): `buildGdpduIndexXml` (GDPdU-Beschreibungs-
+  standard, `<!DOCTYPE DataSet SYSTEM "gdpdu-01-09-2004.dtd">`, Tabellen mit Spaltentypen
+  Date/Numeric/AlphaNumeric, Separator `;`, DecimalSymbol `,`), `gdpduCsvBuchungen` (nur
+  festgeschrieben), `gdpduCsvKonten`, `buildGdpduPaket` (Dateiliste index.xml/buchungen.csv/
+  konten.csv/info).
+- **„Berichte"**: Karte **GoBD-Betriebsprüfer-Export** → baut ZIP via `zipFiles` und lädt
+  `GoBD-GDPdU-Export-<Jahr>.zip` (Validity/Steuernummer aus Firmenprofil). i18n de/en.
+  SW-Cache `v69` (+2 Module precached).
+- **Tests 559/559** (16 neu: CRC-32-Referenzwert, ZIP-Signaturen/EOCD/Dateianzahl, GDPdU-CSV
+  nur festgeschrieben + Spaltenkopf, index.xml DOCTYPE/Tabellen/Spaltentypen/Lieferant, Paket→ZIP).
+
+**Stand:** V7 vollständig (Logik node-getestet, UI statisch geprüft). **Offen/Ehrlich:**
+GDPdU-*orientiert* — die DTD wird bewusst NICHT mitgepackt (Prüfsoftware liefert sie),
+vor echter Prüfung mit IDEA testen; **kein DSFinV-K** (Kassendaten). **Nächstes:** V8
+(DATEV-EXTF berater-fest) — „SOLL"; alternativ V9 (Korrektheit/Kleinfälle, „SOLL").
+
+---
+
 ## 2026-06-16 — V6: Anlage EÜR + Kontenblätter + SuSa [Branch `claude/v2-ox8bu7`]
 
 **Was getan** (Fahrplan-Punkt V6, gleiche Sitzung)
