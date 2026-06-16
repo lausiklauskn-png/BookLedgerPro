@@ -5,6 +5,39 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — A2: Eingangsrechnungen als offene Verbindlichkeiten (Posten-Quelle Zahlungsabgleich)
+
+**Was getan**
+- **Reine Logik** `src/domain/payables.js` (node-getestet): `eingangsrechnungZeilen`
+  (Eingangsrechnung „auf Ziel": Aufwand + abziehbare Vorsteuer **an** Verbindlichkeiten 1600),
+  `eingangsrechnungSummen`/`bruttoVonPositionen`/`rechnungBrutto`, `summeZahlungen`/`offenerBetrag`,
+  `rechnungStatus` (offen/teilbezahlt/bezahlt/storniert), **`offeneVerbindlichkeiten`** (offene
+  Kreditoren-Posten **im selben Format wie `zahlungsabgleich.offenePosten`**, `richtung:'ausgabe'`
+  + `kind:'verbindlichkeit'`, `betragCent`=offener Rest, nach Fälligkeit sortiert),
+  `summeOffeneVerbindlichkeiten`, `validateEingangsrechnung`.
+- **Store** `src/domain/payables-store.js` (verschlüsselt via `encstore`): CRUD +
+  `zahlungHinzufuegen` + `stornoEingangsrechnung` + `offeneVerbindlichkeitenPosten`.
+  ⚠️ Browser-Pfad (Vault/IndexedDB) — nicht node-getestet.
+- **UI-Einbindung** `src/ui/views/documents.js`: E-Rechnung-Empfang bekommt
+  **„+ Als offene Verbindlichkeit erfassen"** (speichert Kreditorenrechnung + bucht „auf Ziel"
+  als Entwurf, `buchungRef` verknüpft); **Bankimport** lädt jetzt Forderungen **und**
+  Verbindlichkeiten → Ausgangszahlungen matchen offene Verbindlichkeiten (`findeOffenePosten`),
+  buchen „Verbindlichkeit an Bank" und vermerken die Zahlung. i18n de/en.
+- **40 neue Node-Tests** → `node tests/run.mjs` **393/393 grün**. SW-Cache `v56 → v57`
+  (+ `payables.js`, `payables-store.js`). `OFFENE_PUNKTE.md` A2 abgehakt.
+
+**Ehrlich offen / ungetestet**
+- UI-Pfade (E-Rechnung-Erfassen, Bankimport-Verbindlichkeits-Abgleich) **nicht headless-E2E**
+  getestet (kein Browser) — nur statisch/`node --check`. Kernlogik node-getestet.
+- Keine eigene **Verbindlichkeiten-/OP-Liste**-Ansicht; Erfassung bislang aus E-Rechnung-XML
+  (nicht aus Foto/PDF-Beleg). Teilzahlungs-/unscharfes Matching = A3 (offen).
+
+**Offen / Nächstes:** Verbindlichkeiten-OP-Liste (Ansicht) + Skonto/Fälligkeit; A3 (Teilzahlungen/
+unscharfes Matching); A1-Rest (Mahnwesen: B2B/VB je Kunde, persistente Mahnstufe, Buchung
+Zinsen/Gebühren). **Details: `docs/OFFENE_PUNKTE.md`.**
+
+---
+
 ## 2026-06-16 — Mahnwesen (A1-Kern): Fälligkeit/Überfälligkeit + Verzugszinsen + Mahnschreiben
 
 **Was getan:** `src/domain/mahnwesen.js` (neu, rein/getestet): `faelligkeit`, `tageUeberfaellig`,

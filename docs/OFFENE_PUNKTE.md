@@ -49,11 +49,26 @@ Konkret nachzuarbeiten:
   `mahnstufeVorschlag()`, `verzugszinsen(betrag, tage, basiszins, b2b)`, `mahnschreibenDaten()`.
   Danach UI (Dashboard-Kennzahl, OP-Liste, Mahnung-Button) — UI als nicht-headless-E2E kennzeichnen.
 
-### A2. Verbindlichkeiten als Posten-Quelle für den Zahlungsabgleich **[MUSS]**
-Eingangsrechnungen (E-Rechnung-Empfang/Belege) werden noch **nicht als offene Verbindlichkeiten**
-erfasst. Der Zahlungsabgleich (`zahlungsabgleich.js`) ist richtungsneutral vorbereitet, aber es
-fehlt die **Quelle** offener Verbindlichkeiten (Kreditoren) inkl. Fälligkeit → für Skonto/Mahnung
-der Gegenseite und vollständige OP-Liste.
+### A2. Verbindlichkeiten als Posten-Quelle für den Zahlungsabgleich — **erledigt ✓**
+**Erledigt (2026-06-16):** `src/domain/payables.js` (rein, node-getestet) + `payables-store.js`
+(verschlüsselt via `encstore`):
+- `eingangsrechnungZeilen()` — Eingangsrechnung „auf Ziel" buchen: Aufwand + abziehbare
+  Vorsteuer **an** Verbindlichkeiten aus L+L (1600), mehrere USt-Sätze/Aufwandskonten, ausgeglichen.
+- **`offeneVerbindlichkeiten()`** — leitet offene Kreditoren-Posten ab (Brutto − Zahlungen,
+  Stichtag-fähig, nach Fälligkeit sortiert) **im selben Posten-Format wie**
+  `zahlungsabgleich.offenePosten()`, aber `richtung:'ausgabe'` + `kind:'verbindlichkeit'`;
+  `betragCent` = offener Rest (Teilzahlung-tauglich). Damit greifen `findeOffenePosten()` und
+  `zahlungsBuchungZeilen()` (Verbindlichkeit an Bank) direkt.
+- `rechnungStatus` (offen/teilbezahlt/bezahlt/storniert), Zahlungen, Storno, Validierung.
+- **UI** (`documents.js`): E-Rechnung-Empfang bietet **„+ Als offene Verbindlichkeit erfassen"**
+  (speichert Kreditorenrechnung + bucht „auf Ziel" als Entwurf); der **Bankimport** lädt jetzt
+  Forderungen **und** Verbindlichkeiten als Posten → Ausgangszahlungen werden offenen
+  Verbindlichkeiten zugeordnet und als „Verbindlichkeit an Bank" gebucht + Zahlung vermerkt.
+- 40 Node-Tests; `node tests/run.mjs` **393/393 grün**. SW-Cache `v57`.
+
+**Noch offen [SOLL]:** eigene **Verbindlichkeiten-/OP-Liste** (Ansicht) inkl. Fälligkeit/Skonto
+und Verzug der Gegenseite (Eingangsrechnungs-Mahnung); Teilzahlungs-Matching (siehe A3); Erfassung
+von Verbindlichkeiten auch aus Foto/PDF-Belegen (heute aus E-Rechnung-XML).
 
 ### A3. Teilzahlungen & unscharfes Matching **[SOLL]**
 Zahlungsabgleich matcht aktuell nur **exakten Betrag**. Nötig: Teilzahlungen (Restforderung
