@@ -18,9 +18,13 @@ Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlic
 40-€-Pauschale, `mahnschreibenDaten()`. Sichtbar in **Auswertungen** → Karte „Offene Forderungen
 & Mahnwesen" (überfällig-Badge + Summe) inkl. **druckbarem Mahnschreiben**. Einstellungen
 `zahlungszielTage` (14) + `verzugBasiszinsProzent` (§247 BGB, aktuell halten!).
-**Noch offen [SOLL]:** B2B/Verbraucher **je Kunde** (statt global B2B), **Mahnstufe persistent**
-je Forderung (statt nur abgeleitet), **Buchung** von Zinsen/Gebühren als Ertrag (Konto-Mapping +
-USt-Behandlung), Eingangsrechnungs-Verzug (Gegenseite), Zahlungsziel je Rechnung statt global.
+**B2B/Verbraucher je Kunde erledigt (2026-06-16):** Kunden-Flag `istVerbraucher` (crm-store +
+Kundenformular/-liste); `mahnwesen.kundeIstB2B()` (rein, node-getestet); das Mahnschreiben nutzt
+nun den Aufschlag je Kunde (Unternehmer +9, Verbraucher +5 %-Punkte) und die 40-€-Pauschale nur
+bei Unternehmern. Default konservativ B2B. SW `v60`.
+**Noch offen [SOLL]:** **Mahnstufe persistent** je Forderung (statt nur abgeleitet), **Buchung**
+von Zinsen/Gebühren als Ertrag (Konto-Mapping + USt-Behandlung), Eingangsrechnungs-Verzug
+(Gegenseite), Zahlungsziel je Rechnung statt global.
 
 **Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,
 damit man nachmahnen kann — siehe jetzt Auswertungen.

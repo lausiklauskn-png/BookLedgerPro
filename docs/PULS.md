@@ -5,9 +5,9 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/zahlungsabgleich-teilzahlung-p84gtm`
-· **Tests:** `node tests/run.mjs` → **410/410 grün**
-· **SW-Cache:** `v59` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/mahnwesen-b2b-vb-p84gtm`
+· **Tests:** `node tests/run.mjs` → **415/415 grün**
+· **SW-Cache:** `v60` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
 · **Zahlungsabgleich** (Forderungen + Verbindlichkeiten, Matching, Ausgleichsbuchung,
   **NEU Teilzahlung/Skonto/Toleranz via `findeKandidaten`**) ✓ · **Bankimport** MT940+CAMT.053 ✓.
 · **A2 — Verbindlichkeiten (Eingangsrechnungen):** `src/domain/payables.js` (+`payables-store.js`)
@@ -18,7 +18,8 @@
   Fälligkeit/Überfällig-Badge + CSV-Export (`anreichereVerbindlichkeiten`/`verbindlichkeitenSummen`).
 · **Mahnwesen (A1-Kern):** `src/domain/mahnwesen.js` — Fälligkeit/Überfälligkeit, Mahnstufen,
   Verzugszinsen §288 BGB, Mahnschreiben; Auswertungen-Karte „Offene Forderungen & Mahnwesen".
-  **Offen (OFFENE_PUNKTE A1):** B2B/Verbraucher je Kunde, Mahnstufe persistent, Buchung der Zinsen/Gebühren.
+  **NEU B2B/Verbraucher je Kunde** (`istVerbraucher`-Flag, `kundeIstB2B`): Verzugszins-Aufschlag
+  9 %/5 % + Pauschale nur B2B, je Kunde. **Offen (A1-Rest):** Mahnstufe persistent, Buchung Zinsen/Gebühren.
 · **Datenschutz-Modi ABGESCHLOSSEN** (Schritt 1+2+Transparenz+AVV).
 · **E-Rechnung:** Erzeugung (`erechnung.js`, CII-XML + Download) + Empfang (`erechnungLesen.js`,
   CII+UBL → Vorschlag). Ehrlich: nicht KoSIT-validiert, ZUGFeRD-PDF nicht ausgepackt.

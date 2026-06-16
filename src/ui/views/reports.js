@@ -12,13 +12,14 @@ import { isMistralConfigured } from '../../ai/aiConfig.js';
 import { erklaereSteuer } from '../../ai/taxAssist.js';
 import { listAuftraege, listKunden } from '../../domain/crm-store.js';
 import { offenePosten } from '../../domain/zahlungsabgleich.js';
-import { anreicherePosten, ueberfaelligSummen, mahnschreibenDaten } from '../../domain/mahnwesen.js';
+import { anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B } from '../../domain/mahnwesen.js';
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { offeneVerbindlichkeiten, anreichereVerbindlichkeiten, verbindlichkeitenSummen } from '../../domain/payables.js';
 import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
+let _b2bById = {}; // kundeId → ist Unternehmer (B2B)? für Verzugszinsen/Pauschale
 const periode = { von: '', bis: '' };
 
 export async function mountReports(host) {
@@ -54,7 +55,8 @@ async function repaint() {
   let offen = [];
   try {
     const [auftraege, kunden] = await Promise.all([listAuftraege(), listKunden()]);
-    const nameById = {}; for (const k of kunden) nameById[k.id] = k.name;
+    const nameById = {}; _b2bById = {};
+    for (const k of kunden) { nameById[k.id] = k.name; _b2bById[k.id] = kundeIstB2B(k); }
     const s = getSettings();
     offen = anreicherePosten(offenePosten(auftraege, { nameById }), { zielTage: s.zahlungszielTage });
   } catch { offen = []; }
@@ -124,10 +126,11 @@ function mahnungenCard(posten) {
 
 function zeigeMahnung(posten) {
   const s = getSettings();
+  const b2b = posten.kundeId != null && _b2bById[posten.kundeId] === false ? false : true;
   const d = mahnschreibenDaten(posten, {
     zielTage: s.zahlungszielTage,
     basiszinsProzent: s.verzugBasiszinsProzent,
-    b2b: true,
+    b2b,
   });
   const firma = s.firma || {};
   const zeile = (label, cents, strong) => el('div', { class: 'report-line' + (strong ? ' strong' : '') }, [
