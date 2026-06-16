@@ -5,9 +5,25 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/bookledgerpro-status-jeo3qz`
-· **main-Stand:** `e59133c` · **Tests:** `node tests/run.mjs` → **223/223 grün**
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/bookledgerpro-status-jeo3qz`
+· **main-Stand:** `6343357` · **Tests:** `node tests/run.mjs` → **223/223 grün**
 · **SW-Cache:** `v47` · **59 JS-Module** · **12 Bild- + 5 Icon-Assets**
+
+---
+
+## 0. BRAINSTORMING — zuerst klären (Funktionalität, ohne Code)
+Am Sitzungsanfang mit dem Nutzer durchgehen; entscheidet über viele Bau-Wege:
+1. **Zielgruppe/Rechtsform:** primär EÜR (Freiberufler/Kleinunternehmer) oder auch Bilanzierer (GmbH, GuV/Bilanz)?
+2. **Kleinunternehmer §19:** soll das Onboarding danach fragen und global steuern (Rechnungen ohne USt, keine USt-VA)?
+3. **E-Rechnung (XRechnung/ZUGFeRD):** B2B-Empfang in DE seit 2025 Pflicht — Erzeugen und/oder Einlesen? (großes Thema)
+4. **Bank/Zahlungen:** Bankimport (CAMT/MT940) + Zahlungsabgleich? Macht die Ist-EÜR (§4 Abs.3) erst echt + Offene Posten.
+5. **USt-VA-Abgabe:** bei Kennzahlen/CSV bleiben oder echte ELSTER/ERiC (nicht build-frei → Architektur-Entscheidung)?
+6. **DATEV/Berater:** welches Format braucht der Berater konkret? Steuerschlüssel-Mapping mit ihm verifizieren (aktuell „EXTF-orientiert", nicht zertifiziert).
+7. **Mandanten:** mehrere Firmen je Installation? Aktuell 1 Tresor = 1 Mandant.
+8. **Geschäftsjahr:** immer Kalenderjahr? USt-VA monatlich/quartalsweise?
+9. **WorkFloh-Anschluss — Umfang/Richtung:** nur Kunden+Aufträge (steht) oder auch Zeiten/Rechnungen/Zahlungen? nur Import oder Rückmeldung „berechnet"? Datei oder Sage-Sync?
+10. **Betriebsprüfung/Aufbewahrung:** GoBD-Export (DSFinV-K/GDPdU), Fristen, Beleg-Originalarchiv?
+11. **AVV/Datenschutz bei KI:** Auftragsverarbeitungsverträge mit Google/Mistral? Hinweis im Datenblatt?
 
 ---
 
@@ -17,7 +33,7 @@ ES-Module, keine CDNs, GitHub Pages), **EU-KI-gestützt** (Google Vision EU + Mi
 GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 
 ## 2. Eckdaten / unveränderliche Fakten
-- **Repo:** `lausiklauskn-png/BookLedgerPro` · **Endpoint:** `https://lausiklauskn-png.github.io/BookLedgerPro/`
+- **Repo:** `lausiklauskn-png/bookledgerpro` · **Live-URL (KLEIN!):** `https://lausiklauskn-png.github.io/bookledgerpro/` (Großschreib-Variante 404't — Pfad case-sensitive)
 - **DB-Suffix:** `bookledgerpro` (NIE ändern — gemeinsamer Origin auf GitHub Pages → sonst
   Kollision mit Geschwister-Apps, real beobachtet als `blocked-origin-collision`).
 - **Arbeitsbranch:** `claude/general-discussion-x9xyk9`; pro Thema 1 PR, **Freibrief: mergen
@@ -103,16 +119,18 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 - **EÜR §4(3) (Zufluss/Abfluss, Ist-Prinzip)** + **zertifiziertes DATEV-EXTF** — größer, eigener PR.
 
 ## 7. Nächste konkrete Schritte (Priorität)
-1. **Sichttest abschließen:** Beleg per Foto/PDF → „Texterkennung (Google Vision EU)" →
-   Buchungsvorschlag prüfen (Brutto/Datum/USt/Konto, Soll=Haben) → Entwurf → Journal →
-   Festschreiben. Auffälligkeiten an Extraktion (`ai/extract.js`) / Kontierungs-Prompt
-   (`ai/mistral.js buildClassifyMessages`) nachjustieren.
-2. **Sage 5b** (mit Nutzer als Vermittler): Identität + Spore in-app erzeugen, `sbkim/`
-   deployen, Hub-Registrierung, Handshake. Headless prüfen mit
-   `node tools/verify_remote_spore.mjs sbkim/spore.json` (Urteil VALID).
-3. **Phase 4-Rest / Phase 5c-d** nach Bedarf: echte EÜR, PDF-Rechnung, echter domainVector,
-   Symbiose-Import.
-4. **Optional:** Lighthouse/Perf, weitere UX-Politur, lokaler OCR-Fallback.
+1. **Brainstorming (Abschnitt 0) klären** — v. a. E-Rechnung, Bankimport, §19-Default, DATEV mit Berater.
+2. **WorkFloh-Anschluss vollenden:** WorkFloh-Export auf `docs/WORKFLOH_IMPORT.md` ausrichten
+   (oder WorkFloh-Repo/Beispiel-JSON bereitstellen) → echten End-to-End-Import testen
+   (Menü „Aufträge" → „Aus WorkFloh importieren").
+3. **Bild-Optimierung:** `cover.png` (~2,4 MB) / `onboard-key.png` (~1,8 MB) → WebP/kleiner
+   (schnellerer Erststart, schlanker SW-Cache).
+4. **Kleinbetrags-Regel (≤250 €, §33 UStDV)** an die KI-Begründung der UI verdrahten (`betragCent`).
+5. **Browser-E2E** der neuen UI-Teile (Plausibilität, KI-Begründung, Rechnung-Druck, Auswertungen,
+   Passwortwechsel) — bisher nur Logik node-getestet.
+6. **Optional groß:** E-Rechnung (XRechnung/ZUGFeRD), Bankimport (CAMT), Sage 5b (Spore in-app +
+   Hub-Registrierung; `node tools/verify_remote_spore.mjs sbkim/spore.json`), Lighthouse/Perf,
+   lokaler OCR-Fallback (Tesseract).
 
 ## 8. Architektur-Landkarte (wo was liegt)
 - `src/core/` crypto · shamir · db · durability · files · vault · backup
