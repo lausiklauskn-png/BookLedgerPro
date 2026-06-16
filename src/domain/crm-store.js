@@ -42,6 +42,7 @@ export async function saveAuftrag(a) {
     rechnungNummer: a.rechnungNummer || null,
     rechnungDatum: a.rechnungDatum || null,
     zahlungen: a.zahlungen || [],
+    mahnungen: a.mahnungen || [],
     externNummer: a.externNummer || null,
     createdAt: a.createdAt || new Date().toISOString(),
   };
@@ -116,6 +117,23 @@ export async function setAuftragStatus(id, status) {
   const a = await getAuftrag(id);
   if (!a) throw new Error('Auftrag nicht gefunden');
   a.status = status;
+  return encPut(a);
+}
+
+/**
+ * Vermerkt eine tatsächlich gesendete Mahnung (persistenter Verlauf) mit erfassten
+ * Verzugszinsen/Mahngebühren. Diese werden bewusst MANUELL erfasst (keine automatische
+ * USt-/Buchungslogik) — die Buchung von Zinsen/Gebühren bleibt ein separater Schritt.
+ */
+export async function mahnungErfassen(id, m) {
+  const a = await getAuftrag(id);
+  if (!a) throw new Error('Auftrag nicht gefunden');
+  a.mahnungen = [...(a.mahnungen || []), {
+    datum: m.datum || new Date().toISOString().slice(0, 10),
+    stufe: Math.max(1, Math.min(4, Number(m.stufe) || 1)),
+    zinsenCent: Math.round(Number(m.zinsenCent) || 0),
+    gebuehrenCent: Math.round(Number(m.gebuehrenCent) || 0),
+  }];
   return encPut(a);
 }
 

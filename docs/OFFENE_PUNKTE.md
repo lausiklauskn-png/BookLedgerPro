@@ -22,9 +22,16 @@ Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlic
 Kundenformular/-liste); `mahnwesen.kundeIstB2B()` (rein, node-getestet); das Mahnschreiben nutzt
 nun den Aufschlag je Kunde (Unternehmer +9, Verbraucher +5 %-Punkte) und die 40-€-Pauschale nur
 bei Unternehmern. Default konservativ B2B. SW `v60`.
-**Noch offen [SOLL]:** **Mahnstufe persistent** je Forderung (statt nur abgeleitet), **Buchung**
-von Zinsen/Gebühren als Ertrag (Konto-Mapping + USt-Behandlung), Eingangsrechnungs-Verzug
-(Gegenseite), Zahlungsziel je Rechnung statt global.
+
+**Persistente Mahnstufe + manuelle Zins-/Gebühren-Erfassung erledigt (2026-06-16):** Auftrag führt
+`mahnungen[]` (Verlauf je gesendeter Mahnung mit Datum/Stufe/Zinsen/Gebühren);
+`mahnwesen.letzteMahnstufe`/`vorschlagNaechsteStufe`/`mahnVerlaufSumme`/`mahnStufeLabel` (rein,
+node-getestet). UI: Karte zeigt „zuletzt gemahnt: …", die nächste Stufe zählt hoch (nicht nur aus
+Tagen abgeleitet); im Mahnschreiben **editierbare** Verzugszinsen/Mahngebühren (vorbelegt mit §288)
++ „Als gesendet vermerken". `crm-store.mahnungErfassen()`. SW `v62`.
+**Noch offen [SOLL]:** **Buchung** von Zinsen/Gebühren als Ertrag (Konto-Mapping + USt-Behandlung)
+— bewusst manuell/separat im Journal, kein Auto-Buchen; Eingangsrechnungs-Verzug (Gegenseite);
+Zahlungsziel je Rechnung statt global.
 
 **Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,
 damit man nachmahnen kann — siehe jetzt Auswertungen.

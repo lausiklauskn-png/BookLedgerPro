@@ -5,9 +5,11 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/forderungen-teilzahlung-p84gtm`
-· **Tests:** `node tests/run.mjs` → **422/422 grün**
-· **SW-Cache:** `v61` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/mahnstufe-persistent-p84gtm`
+· **Tests:** `node tests/run.mjs` → **430/430 grün**
+· **SW-Cache:** `v62` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Mahnwesen A1 erweitert:** persistente Mahnstufe (`mahnungen[]`, `vorschlagNaechsteStufe`) +
+  manuelle/editierbare Zins-/Gebühren-Erfassung im Mahnschreiben (keine Auto-Steuerbuchung).
 · **Zahlungsabgleich** (Forderungen + Verbindlichkeiten, Matching, Ausgleichsbuchung,
   Teilzahlung/Skonto/Toleranz via `findeKandidaten`, **NEU Forderungs-Teilzahlung/OP-Rest**) ✓ ·
   **Bankimport** MT940+CAMT.053 ✓.
