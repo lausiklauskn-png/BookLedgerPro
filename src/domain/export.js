@@ -279,6 +279,31 @@ export function buildAnlagenverzeichnisCsv(verzeichnis) {
 }
 
 /**
+ * ELSTER-orientiertes USt-VA-Datenpaket: amtliche Kennzahlen (mit Code) + Meta (Steuernummer,
+ * Zeitraum). EHRLICHER HINWEIS: KEIN ERiC-XML und KEIN Direktversand an ELSTER — eine
+ * strukturierte Übergabedatei zur manuellen Erfassung/Prüfung. Vor Einreichung verifizieren.
+ */
+export function buildElsterVaPaket(va, meta = {}) {
+  const z = (kz, wert) => [kz, centsToComma(wert || 0)];
+  const rows = [
+    ['# USt-Voranmeldung — Datenpaket (NICHT amtlich eingereicht)'],
+    ['Steuernummer', meta.steuernummer || ''],
+    ['USt-IdNr.', meta.ustId || ''],
+    ['Jahr', meta.jahr != null ? String(meta.jahr) : ''],
+    ['Zeitraum-Code', meta.zeitraumCode || ''],
+    ['Zeitraum', meta.zeitraumLabel || ''],
+    ['Kennzahl', 'Wert'],
+    z('41', va.kz41), z('43', va.kz43),
+    z('81', va.kz81), z('86', va.kz86),
+    z('89', va.kz89), z('93', va.kz93),
+    z('46', va.kz46), z('47', va.kz47),
+    z('66', va.kz66), z('61', va.kz61), z('67', va.kz67),
+    z('83', va.kz83),
+  ];
+  return csv(rows);
+}
+
+/**
  * Kassenbuch-CSV (chronologisch, mit laufendem Bestand). Erwartet das Ergebnis von
  * kassenbuch.kassenbericht(...). GoBD-orientiert; vor Übergabe an den Berater prüfen.
  */
