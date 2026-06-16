@@ -151,6 +151,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .hinweis-liste li { margin: .15rem 0; }
 .pseudonym-info summary { cursor: pointer; }
 .pseudonym-preview { white-space: pre-wrap; word-break: break-word; max-height: 12rem; overflow: auto; margin: .4rem 0 0; padding: .5rem .6rem; background: var(--surface-2); border-radius: var(--radius-sm, 8px); }
+.bank-row { border-top: 1px solid var(--border); padding-top: .4rem; margin-top: .4rem; }
 
 /* Rechnungs-Dokument (druckbar). */
 .rechnung-doc .rech-kopf { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }

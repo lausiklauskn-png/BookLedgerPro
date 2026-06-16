@@ -7,6 +7,7 @@ import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
 import { pickFile, formatBytes, readFileText } from '../../core/files.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
+import { parseMT940, umsatzExtraktion } from '../../domain/bankimport.js';
 import { loadAccounts, saveEntwurf } from '../../domain/store.js';
 import { extractFromText } from '../../ai/extract.js';
 import { categorize as categorizeAI } from '../../ai/mistral.js';
@@ -63,6 +64,7 @@ async function repaint(extra) {
     schnellerfassung(),
     extra || null,
     eRechnungKarte(),
+    bankImportKarte(),
     uploadKarte(),
     belegListe(belege, visionBereit),
   ]));
@@ -196,6 +198,51 @@ function eRechnungKarte() {
     el('div', { class: 'btn-row' }, [btn]),
     out,
   ]);
+}
+
+// ---- Bankimport (MT940) → Buchungsvorschläge je Umsatz ---------------------
+
+function bankImportKarte() {
+  const out = el('div', { class: 'vorschlag-slot' });
+  const btn = el('button', {
+    class: 'btn', text: t('docs.bankImport'),
+    onClick: async () => {
+      out.replaceChildren();
+      const file = await pickFile('text/plain,.sta,.940,.txt,.mt940', null);
+      if (!file) return;
+      try {
+        const { konto, umsaetze } = parseMT940(await readFileText(file));
+        if (!umsaetze.length) { out.appendChild(el('p', { class: 'form-error', text: t('docs.bankNone') })); return; }
+        out.appendChild(el('div', { class: 'muted small', text: `${t('docs.bankAccount')}: ${konto || '—'} · ${umsaetze.length} ${t('docs.bankTxns')}` }));
+        for (const u of umsaetze) out.appendChild(umsatzRow(u));
+      } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
+    },
+  });
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('docs.bank') }),
+    el('p', { class: 'muted small', text: t('docs.bankHint') }),
+    el('div', { class: 'btn-row' }, [btn]),
+    out,
+  ]);
+}
+
+function umsatzRow(u) {
+  const slot = el('div', {});
+  const vz = (u.gegen || u.zweck || '').slice(0, 80);
+  const info = el('span', { class: 'mono small', text: `${u.valuta} · ${u.richtung === 'einnahme' ? '+' : '−'}${formatEuro(u.betragCent)} · ${vz}` });
+  const mk = el('button', {
+    class: 'btn btn-sm', type: 'button', text: t('docs.bankDraft'),
+    onClick: async () => {
+      slot.replaceChildren();
+      const ex = umsatzExtraktion(u);
+      const kat = await categorizeAI(u.zweck || u.gegen || '', _idx, { anker: await kiAnker() });
+      kat.richtung = u.richtung; // Kontoauszug bestimmt die Richtung verbindlich
+      const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
+      if (!res.ok) { slot.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
+      slot.appendChild(await vorschlagKarte(res.vorschlag, null, u.zweck || ''));
+    },
+  });
+  return el('div', { class: 'bank-row' }, [el('div', { class: 'btn-row' }, [info, mk]), slot]);
 }
 
 // ---- Upload (Datei / Foto / PDF) + Beleg-Liste -----------------------------
