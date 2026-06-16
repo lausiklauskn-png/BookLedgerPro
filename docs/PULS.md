@@ -5,9 +5,10 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/general-discussion-x9xyk9`
-· **main-Stand:** `4ba49c8` · **Tests:** `node tests/run.mjs` → **134/134 grün**
-· **SW-Cache:** `v25` · **53 JS-Module** · **12 Bild- + 5 Icon-Assets**
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/pseudonym-logic-module-8vx628`
+· **main-Stand:** `9ebcfe0` · **Tests:** `node tests/run.mjs` → **157/157 grün**
+· **SW-Cache:** `v25` · **54 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Neu:** `src/ai/pseudonym.js` (Datenschutz-Modi, Bau-Schritt 1 — tokenize/reidentify).
 
 ---
 
@@ -96,7 +97,7 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 - `src/core/` crypto · shamir · db · durability · files · vault · backup
 - `src/domain/` money · accounts · journal · audit · taxes · store · documents · orders ·
   invoicing · employees · costcenters · encstore · crm-store · export · summary
-- `src/ai/` extract · categorize · suggest · **aiConfig · vision · mistral** · taxAssist
+- `src/ai/` extract · categorize · suggest · **aiConfig · vision · mistral** · taxAssist · **pseudonym** (Datenschutz-Modi)
 - `src/sbkim/` spore · identity · domainvector · signal  (+ `tools/verify_remote_spore.mjs`)
 - `src/ui/` dom · i18n · theme · mycel · mycelCanvas · empty · lock · shell ·
   `views/` dashboard · accounts · journal · reports · documents · customers · orders ·

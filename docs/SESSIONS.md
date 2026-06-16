@@ -5,6 +5,30 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Datenschutz-Modi, Bau-Schritt 1: Pseudonym-Logik
+
+**Was getan**
+- Reines Logik-Modul **`src/ai/pseudonym.js`** angelegt (Datenschutz-Modi, Bau-Schritt 1):
+  `tokenize()` ersetzt **exakte** bekannte Identifikatoren (Anker) durch **stabile** Token
+  `[[TYP_N]]`, `reidentify()` macht es verlustfrei rückgängig. Longest-Match (überlappende
+  Anker), Sonderzeichen-/Regex-sicher (Links-nach-rechts-Scan, kein Regex), Token-Nummern
+  je Typ in Reihenfolge des ersten Auftretens, optionales `createRegistry()` für
+  aufrufsübergreifend stabile Token, `normalizeAnchors()` (entdoppelt, Typ-Normalisierung).
+  Kein Netz, keine Krypto im Modul — reine Abbildung; Übertragung bleibt opt-in.
+- **23 Node-Tests** in `tests/run.mjs` ergänzt → **157/157 grün** (Round-Trip, stabile Token,
+  Longest-Match, Sonderzeichen, Register-Stabilität inkl. Präfix-Sicherheit `_1` vs `_11`,
+  Objekt-Map in `reidentify`).
+
+**Hinweis zur Vorlage:** `docs/KONZEPT_DATENSCHUTZ_MODI.md` (§6 Bau-Reihenfolge) und ein
+`PULS.md §0` waren in der Aufgabe referenziert, existieren im Repo aber (noch) nicht — gebaut
+wurde strikt nach der selbsttragenden Aufgaben-Spezifikation. Diese Lücke ehrlich offen lassen.
+
+**Offen / Nächstes:** Konzept-Doku `docs/KONZEPT_DATENSCHUTZ_MODI.md` nachreichen; Bau-Schritt 2
+(Anker-Quelle aus CRM/verschl. Speicher + Verdrahtung in die KI-Pipeline vor `ai/mistral.js`,
+opt-in/Bestätigung). **Nicht im Browser E2E getestet** — Kernlogik node-getestet.
+
+---
+
 ## 2026-06-14 — KI-Setup-Politur + Nachfolge-Brief
 
 **Was getan**
