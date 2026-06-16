@@ -263,13 +263,23 @@ function vaCard(va) {
     el('span', { text: (kz ? `Kz ${kz} · ` : '') + label }),
     el('span', { class: 'num', text: formatEuro(cents) }),
   ]);
+  // Zeilen für Steuerschuldumkehr/EU nur zeigen, wenn relevant (sonst Karte schlank halten).
+  const opt = (kz, label, cents, strong) => (cents ? line(kz, label, cents, strong) : null);
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('reports.ustVaKennzahlen') }),
+    opt('41', t('reports.kz41'), va.kz41),
+    opt('43', t('reports.kz43'), va.kz43),
     line('81', t('reports.kz81'), va.kz81),
     line('', t('reports.kz81s'), va.kz81Steuer),
     line('86', t('reports.kz86'), va.kz86),
     line('', t('reports.kz86s'), va.kz86Steuer),
+    opt('89', t('reports.kz89'), va.kz89),
+    opt('93', t('reports.kz93'), va.kz93),
+    opt('46', t('reports.kz46'), va.kz46),
+    opt('47', t('reports.kz47'), va.kz47),
     line('66', t('reports.kz66'), va.kz66),
+    opt('61', t('reports.kz61'), va.kz61),
+    opt('67', t('reports.kz67'), va.kz67),
     el('div', { class: 'mycel-divider' }),
     line('83', t('reports.kz83'), va.kz83, true),
     el('p', { class: 'muted small', text: t('reports.ustVaNote') }),

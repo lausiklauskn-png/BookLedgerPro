@@ -35,6 +35,20 @@ export async function loadAccounts() {
   return a;
 }
 
+/**
+ * Ergänzt fehlende Standard-Konten (aus dem Seed) — ohne bestehende, ggf. vom Nutzer
+ * editierte Konten zu verändern. Für nachgelieferte Konten (z.B. §13b/innergem. Erwerb),
+ * damit auch ältere Tresore die neuen Funktionen nutzen können.
+ */
+export async function ensureSeedKonten(nummern) {
+  const have = new Set((await recAll('konto')).map((k) => k.nummer));
+  let ergaenzt = 0;
+  for (const k of seedAccounts()) {
+    if (nummern.includes(k.nummer) && !have.has(k.nummer)) { await recPut(k); ergaenzt++; }
+  }
+  return ergaenzt;
+}
+
 export async function accountIndex() {
   const a = await loadAccounts();
   const idx = {};

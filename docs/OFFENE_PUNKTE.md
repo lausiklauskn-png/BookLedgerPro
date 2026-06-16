@@ -40,10 +40,15 @@ verschlüsselt (`state.js firma`).
       (Nummer unveränderlich, Löschen nur wenn unbenutzt), `validateKonto`/`normalizeKonto`
       (rein, node-getestet). Hinweis im Formular: vor DATEV-Export mit Berater abgleichen.
       Offen/später: vollständiger SKR03/SKR04-Profil.
-- [ ] **V2 — Vorsteuer §13b / Reverse-Charge + EU/Ausland [MUSS].** Die Firma bezieht selbst
-      Leistungen mit **Steuerschuldumkehr** (z. B. EU-/Drittland-Dienste). Heute fehlt jede
-      Differenzierung. → §13b-Buchung (Vorsteuer **und** Umsatzsteuer gleichzeitig), Kennzahlen
-      (Kz 46/47/52/53/89/21/41/…), Kontenmapping; im Rechnungs-/Beleg-Fluss berücksichtigen.
+- [x] **V2 — Vorsteuer §13b / Reverse-Charge + EU/Ausland [MUSS].** ✅ Umgesetzt:
+      `baueReverseChargeZeilen` (journal.js) bucht bei §13b/innergem. Erwerb Vorsteuer **und**
+      geschuldete USt gleichzeitig (Netto an den Lieferanten); neue Konten 1577/1787 (§13b) +
+      1574/1772 (ig Erwerb) + 8120/8125 (steuerfreie Ausfuhr/ig Lieferung) mit `rolle`-Markern;
+      `buildUstVa` erweitert um **Kz 46/47/67** (§13b), **Kz 89/93/61** (ig Erwerb), **Kz 41/43**
+      (steuerfrei) inkl. korrekter Zahllast (RC neutralisiert sich); Umsatzart-Auswahl im
+      Journal-Formular; node-getestet (28 Tests). **Offen/ehrlich:** §13b modelliert für 19 %
+      (Hauptfall Cloud/Software); exakte Kz-Zuordnung am ELSTER-Formular/mit Berater verifizieren;
+      noch nicht im E-Rechnungs-Empfang automatisch erkannt (manuelle Umsatzart-Wahl).
 - [ ] **V3 — Anlagevermögen + AfA + Anlagenverzeichnis [MUSS].** Für EÜR Pflicht, sobald ein
       Wirtschaftsgut > 800 € netto. Heute nur Hinweis-Regeln (`rechtsregeln.js gwg/anlage_afa`),
       keine Verwaltung/Berechnung. → Anlagen-Store, lineare AfA (pro rata temporis), **GWG (§6 Abs.2)**,

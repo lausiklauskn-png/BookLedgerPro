@@ -3,12 +3,12 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
-import { loadAccounts, listBuchungen, saveEntwurf, festschreiben, storno, getBuchung, deleteEntwurf } from '../../domain/store.js';
-import { baueBuchungZeilen, summeSeiten, BUCHUNG_STATUS, formularAusBuchung } from '../../domain/journal.js';
+import { loadAccounts, listBuchungen, saveEntwurf, festschreiben, storno, getBuchung, deleteEntwurf, ensureSeedKonten } from '../../domain/store.js';
+import { baueBuchungZeilen, baueReverseChargeZeilen, UMSATZART, summeSeiten, BUCHUNG_STATUS, formularAusBuchung } from '../../domain/journal.js';
 import { pruefeBuchung } from '../../domain/pruefung.js';
 import { begruendeBuchung } from '../../ai/berater.js';
 import { ladeAnker } from '../../ai/anker.js';
-import { KONTOART } from '../../domain/accounts.js';
+import { KONTOART, REVERSE_CHARGE_KONTEN } from '../../domain/accounts.js';
 import { UST_SAETZE } from '../../domain/taxes.js';
 import { listKostenstellen, ensureKostenstellenSeeded } from '../../domain/crm-store.js';
 import { getSettings } from '../../state.js';
@@ -27,6 +27,8 @@ function centsZuEingabe(c) { return (Number(c || 0) / 100).toFixed(2).replace('.
 export async function mountJournal(host) {
   _host = host;
   await ensureKostenstellenSeeded();
+  // §13b/innergem. Erwerb-Konten nachziehen (ältere Tresore), damit die Umsatzart wählbar ist.
+  await ensureSeedKonten(['1574', '1577', '1772', '1787', '8120', '8125']).catch(() => {});
   await repaint();
 }
 
@@ -86,6 +88,15 @@ function buchungForm(konten, idx) {
   const fHaben = el('select', {}, kontoOptions(konten));
   const fBetrag = el('input', { type: 'text', placeholder: '0,00' });
   const fUst = el('select', {}, UST_SAETZE.map((s) => el('option', { value: String(s) }, `${s} %`)));
+  const fUmsatzart = el('select', {}, [
+    el('option', { value: UMSATZART.INLAND }, t('journal.umsatzart.inland')),
+    el('option', { value: UMSATZART.REVERSE_CHARGE_13B }, t('journal.umsatzart.13b')),
+    el('option', { value: UMSATZART.IG_ERWERB }, t('journal.umsatzart.igErwerb')),
+  ]);
+  const rcHint = el('p', { class: 'muted small', text: t('journal.umsatzart.hint') });
+  rcHint.style.display = 'none';
+  const syncRc = () => { rcHint.style.display = fUmsatzart.value === UMSATZART.INLAND ? 'none' : ''; };
+  fUmsatzart.addEventListener('change', syncRc);
   const fKs = el('select', {}, [el('option', { value: '' }, t('journal.noKostenstelle')),
     ..._kostenstellen.map((k) => el('option', { value: k.nummer }, `${k.nummer} · ${k.name}`))]);
   fHaben.selectedIndex = Math.min(1, konten.length - 1);
@@ -140,13 +151,25 @@ function buchungForm(konten, idx) {
       err.textContent = '';
       try {
         const satz = Number(fUst.value) || 0;
-        const steuer = pickSteuer(idx, konten, fSoll.value, fHaben.value, satz);
-        const built = baueBuchungZeilen({
-          sollKonto: fSoll.value, habenKonto: fHaben.value,
-          brutto: fBetrag.value, ustSatz: steuer ? satz : 0,
-          steuerKonto: steuer ? steuer.steuerKonto : null,
-          steuerSeite: steuer ? steuer.steuerSeite : null,
-        });
+        const art = fUmsatzart.value;
+        let built;
+        if (art === UMSATZART.REVERSE_CHARGE_13B || art === UMSATZART.IG_ERWERB) {
+          // Steuerschuldumkehr: Betrag = NETTO; bucht Vorsteuer UND geschuldete USt.
+          const rc = REVERSE_CHARGE_KONTEN[art === UMSATZART.IG_ERWERB ? 'ig_erwerb' : '13b'];
+          built = baueReverseChargeZeilen({
+            netto: fBetrag.value, ustSatz: satz,
+            aufwandKonto: fSoll.value, gegenKonto: fHaben.value,
+            vorsteuerKonto: rc.vorsteuer, umsatzsteuerKonto: rc.umsatzsteuer,
+          });
+        } else {
+          const steuer = pickSteuer(idx, konten, fSoll.value, fHaben.value, satz);
+          built = baueBuchungZeilen({
+            sollKonto: fSoll.value, habenKonto: fHaben.value,
+            brutto: fBetrag.value, ustSatz: steuer ? satz : 0,
+            steuerKonto: steuer ? steuer.steuerKonto : null,
+            steuerSeite: steuer ? steuer.steuerSeite : null,
+          });
+        }
         const buchung = { id: _editId || undefined, datum: fDatum.value, beschreibung: fText.value, begruendung: fBegruendung.value.trim(), zeilen: built.zeilen, kostenstelle: fKs.value || null };
         // Spielraum: Entwurf wird IMMER gespeichert. Hinweise blockieren nicht;
         // streng wird erst beim Festschreiben geprüft.
@@ -170,8 +193,10 @@ function buchungForm(konten, idx) {
       field(t('journal.haben'), fHaben),
       field(t('journal.gross'), fBetrag),
       field(t('journal.ust'), fUst),
+      field(t('journal.umsatzart'), fUmsatzart),
       field(t('journal.kostenstelle'), fKs),
     ]),
+    rcHint,
     el('label', { class: 'field' }, [
       el('span', { text: t('journal.begruendung') }),
       fBegruendung,

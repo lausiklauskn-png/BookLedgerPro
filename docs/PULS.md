@@ -7,25 +7,28 @@
 
 ---
 
-## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V2**)
+## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V3**)
 
 > **Lies das zuerst und vollständig. Danach kannst du ohne Rückfragen loslegen.**
 
-**Was „V2" bedeutet — WICHTIG, nicht missverstehen:**
-„V2" ist **KEINE** neue Programm-Version, **KEIN** Redesign, **KEIN** Major-Umbau. Falls dein
+**✅ V2 erledigt (§13b/Reverse-Charge + EU/Ausland) — diese Sitzung, in `claude/v2-ox8bu7`:**
+`baueReverseChargeZeilen` (journal.js) bucht §13b/innergem. Erwerb (Vorsteuer **und** USt
+gleichzeitig, Netto an den Lieferanten); neue Konten 1577/1787 + 1574/1772 + 8120/8125
+(rolle-Marker); `buildUstVa` um Kz 41/43/46/47/61/67/89/93 erweitert (Zahllast korrekt, RC
+neutralisiert sich); Umsatzart-Wahl im Journal-Formular; **Tests 472/472, SW `v64`.**
+→ **Nächste Aufgabe = V3** (Anlagevermögen + AfA + Anlagenverzeichnis), Details in
+`docs/OFFENE_PUNKTE.md` Abschnitt V. **Ein Fahrplan-Punkt pro Sitzung/PR.**
+
+**Was „Vx" bedeutet — WICHTIG, nicht missverstehen:**
+„Vx" ist **KEINE** neue Programm-Version, **KEIN** Redesign, **KEIN** Major-Umbau. Falls dein
 Branch zufällig `claude/v2-…` heißt: **ignoriere den Branchnamen als Bedeutungsträger.**
-„V2" = **Punkt V2 aus dem Master-Fahrplan** in `docs/OFFENE_PUNKTE.md`, Abschnitt **„V. PROFI-
-READINESS"** → konkret: **„§13b/Reverse-Charge + EU/Ausland"** in der Umsatzsteuer. Mehr nicht.
+„Vx" = **Punkt Vx aus dem Master-Fahrplan** in `docs/OFFENE_PUNKTE.md`, Abschnitt **„V. PROFI-
+READINESS"**. Mehr nicht.
 
 **Projektzustand (nichts davon neu bauen — ist fertig & gemergt):** reife Buchhaltungs-PWA,
-Phasen 0–6 ✅, EU-KI (Vision EU + Mistral EU) ✅. Diese Sitzung zuvor erledigt und in `main`:
-A2 Verbindlichkeiten, OP-Listen, A3 Zahlungsabgleich-Matching/Teilzahlungen, A1 Mahnwesen
-(B2B/Verbraucher + persistente Stufe), **Profi-Readiness-Fahrplan V1–V10**, **V1 Kontenrahmen**
-(57 Konten + Konto anlegen/bearbeiten/löschen). **Tests 444/444 grün, SW `v63`, `main`-Stand
-`607d2f2`.** → **Nicht** A1–A3 oder V1 wiederholen, **kein** Redesign, **keine** neue PULS-Datei.
-
-**Deine Aufgabe diese Sitzung = NUR V2.** Definition of Done unten. Danach V3 (AfA) usw. — aber
-immer **ein Fahrplan-Punkt pro Sitzung/PR**, nicht mehrere auf einmal.
+Phasen 0–6 ✅, EU-KI (Vision EU + Mistral EU) ✅, A1–A3 (Mahnwesen/Verbindlichkeiten/
+Zahlungsabgleich), **V1 Kontenrahmen** (57 Konten + CRUD), **V2 §13b/Reverse-Charge** (s.o.).
+→ **Nicht** A1–A3 / V1 / V2 wiederholen, **kein** Redesign, **keine** neue PULS-Datei.
 
 ### V2 — was genau zu bauen ist (§13b/Reverse-Charge + EU/Ausland)
 Ziel: Die Firma bezieht selbst Leistungen mit **Steuerschuldumkehr** — z. B. **Google Cloud
@@ -75,9 +78,11 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v1-kontenrahmen-p84gtm`
-· **Tests:** `node tests/run.mjs` → **444/444 grün**
-· **SW-Cache:** `v63` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v2-ox8bu7`
+· **Tests:** `node tests/run.mjs` → **472/472 grün**
+· **SW-Cache:** `v64` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Konten 1577/1787/1574/1772/8120/8125,
+  USt-VA Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
 · **Profi-Readiness (V-Fahrplan):** V1 ✅ Kontenrahmen 57 Konten + Konten anlegen/bearbeiten/löschen.
 · **Mahnwesen A1 erweitert:** persistente Mahnstufe (`mahnungen[]`, `vorschlagNaechsteStufe`) +
   manuelle/editierbare Zins-/Gebühren-Erfassung im Mahnschreiben (keine Auto-Steuerbuchung).
