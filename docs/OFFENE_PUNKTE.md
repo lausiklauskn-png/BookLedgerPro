@@ -90,9 +90,15 @@ verschlüsselt (`state.js firma`).
       (Prüfsoftware liefert sie), vor echter Prüfung mit IDEA testen; **kein DSFinV-K** (Kasse).
 - [ ] **V8 — DATEV-EXTF berater-fest [SOLL].** Heute „EXTF-orientiert". → Steuerschlüssel-Mapping
       und Header mit echtem Berater/DATEV gegen einen Testimport verifizieren; Doku „so importieren".
-- [ ] **V9 — Korrektheit/Validierung & Kleinfälle [SOLL].** Kleinunternehmer-Konsistenz
-      (keine USt-Konten bei §19), Kleinbetragsrechnung ≤250 € (§33 UStDV), Bewirtung 70/30 &
-      Geschenke-Grenze als **rechnende** Buchungshilfe (heute nur Hinweis), Storno-/Periodensperre.
+- [x] **V9 — Korrektheit/Validierung & Kleinfälle [SOLL].** ✅ Umgesetzt: `domain/kleinfaelle.js`
+      (rein, node-getestet) — `kleinbetragsrechnung` (§33 UStDV, ≤250 €), `geschenkAbzug`
+      (§4 Abs.5 Nr.1, 50 € netto → Konto/VSt-Abzug), `bewirtungAufteilung` (§4 Abs.5 Nr.2,
+      **rechnender** 70/30-Split, Vorsteuer 100% → Buchungsentwurf im Journal). Konten 4654/4635.
+      **Periodensperre:** `pruefung.istGesperrt` + harte Sperre in `store.festschreiben` +
+      Einstellung „Buchungssperre". **Kleinunternehmer-Konsistenz** (§19): Warnung bei
+      USt-/Vorsteuer-Konto. **Plus Simulations-Testharness** (`domain/demodaten.js` + `docs/TESTDATEN.md`):
+      deterministischer Demo-Mandant (klein/groß) → echte Export-Dateien (Berichte „Demo-Export")
+      mit dokumentierten Vergleichswerten. 33 Tests.
 - [ ] **V10 — Browser-E2E der Buchungs-Kernpfade [SOLL].** Bisher nur Logik node-getestet; die
       DOM-/IndexedDB-Pfade (Buchen, Festschreiben, Rechnung, Auswertungen, Export) real durchklicken/
       dokumentieren (kein Headless-Browser in der Bau-Umgebung → manuell + Checkliste).

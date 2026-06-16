@@ -3,8 +3,9 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
-import { loadAccounts, listBuchungen, saveEntwurf, festschreiben, storno, getBuchung, deleteEntwurf, ensureSeedKonten } from '../../domain/store.js';
+import { loadAccounts, listBuchungen, saveEntwurf, festschreiben, storno, getBuchung, deleteEntwurf, ensureSeedKonten, getBuchungssperre } from '../../domain/store.js';
 import { baueBuchungZeilen, baueReverseChargeZeilen, UMSATZART, summeSeiten, BUCHUNG_STATUS, formularAusBuchung } from '../../domain/journal.js';
+import { bewirtungAufteilung } from '../../domain/kleinfaelle.js';
 import { pruefeBuchung } from '../../domain/pruefung.js';
 import { begruendeBuchung } from '../../ai/berater.js';
 import { ladeAnker } from '../../ai/anker.js';
@@ -18,6 +19,7 @@ let _host = null;
 let _kostenstellen = [];
 let _idx = {};
 let _letztesFestDatum = null;
+let _sperreBis = '';   // Buchungssperre (Periodenabschluss): Datum bis einschließlich gesperrt
 let _hinweise = null; // Warnungen der zuletzt gespeicherten Buchung (nicht-blockierend)
 let _editId = null;    // wird ein Entwurf bearbeitet?
 let _editVorlage = null; // vorbefüllte Formularwerte (aus formularAusBuchung)
@@ -28,7 +30,8 @@ export async function mountJournal(host) {
   _host = host;
   await ensureKostenstellenSeeded();
   // §13b/innergem. Erwerb-Konten nachziehen (ältere Tresore), damit die Umsatzart wählbar ist.
-  await ensureSeedKonten(['1574', '1577', '1772', '1787', '8120', '8125']).catch(() => {});
+  await ensureSeedKonten(['1574', '1577', '1772', '1787', '8120', '8125', '4654', '4635']).catch(() => {});
+  _sperreBis = await getBuchungssperre().catch(() => '');
   await repaint();
 }
 
@@ -136,6 +139,19 @@ function buchungForm(konten, idx) {
     },
   });
 
+  const bewirtungBtn = el('button', {
+    class: 'btn btn-sm', type: 'button', text: t('journal.bewirtung'),
+    onClick: async () => {
+      err.textContent = '';
+      try {
+        const built = bewirtungAufteilung({ netto: fBetrag.value, ustSatz: Number(fUst.value) || 0, gegenKonto: fHaben.value });
+        await saveEntwurf({ datum: fDatum.value, beschreibung: fText.value || t('journal.bewirtung'), zeilen: built.zeilen });
+        _hinweise = [t('journal.bewirtungDone')];
+        await repaint();
+      } catch (ex) { err.textContent = String(ex.message || ex); }
+    },
+  });
+
   const submit = el('button', {
     class: 'btn btn-primary', type: 'submit', text: _editId ? t('journal.saveEdit') : t('journal.saveDraft'),
   });
@@ -175,7 +191,7 @@ function buchungForm(konten, idx) {
         // streng wird erst beim Festschreiben geprüft.
         await saveEntwurf(buchung);
         _editId = null; _editVorlage = null;
-        const { warnungen } = pruefeBuchung(buchung, idx, { letztesFestDatum: _letztesFestDatum, kleinunternehmer: getSettings().kleinunternehmer });
+        const { warnungen } = pruefeBuchung(buchung, idx, { letztesFestDatum: _letztesFestDatum, kleinunternehmer: getSettings().kleinunternehmer, gesperrtBis: _sperreBis });
         _hinweise = warnungen;
         await repaint();
       } catch (ex) {
@@ -201,8 +217,9 @@ function buchungForm(konten, idx) {
       el('span', { text: t('journal.begruendung') }),
       fBegruendung,
     ]),
-    el('div', { class: 'btn-row' }, [beraterBtn, beraterStatus]),
+    el('div', { class: 'btn-row' }, [beraterBtn, bewirtungBtn, beraterStatus]),
     el('p', { class: 'muted small', text: t('journal.aiReasonNote') }),
+    el('p', { class: 'muted small', text: t('journal.bewirtungHint') }),
     err,
     el('div', { class: 'btn-row' }, cancelBtn ? [submit, cancelBtn] : [submit]),
   ]);
@@ -264,7 +281,7 @@ function aktion(b, idx) {
       onClick: async () => {
         // Hinweise zeigen, aber den Profi entscheiden lassen (nicht-blockierend).
         const frisch = await getBuchung(b.id);
-        const { warnungen } = pruefeBuchung(frisch, _idx, { letztesFestDatum: _letztesFestDatum, kleinunternehmer: getSettings().kleinunternehmer });
+        const { warnungen } = pruefeBuchung(frisch, _idx, { letztesFestDatum: _letztesFestDatum, kleinunternehmer: getSettings().kleinunternehmer, gesperrtBis: _sperreBis });
         let frage = t('journal.confirmPost');
         if (warnungen.length) frage = t('journal.hints') + ':\n– ' + warnungen.join('\n– ') + '\n\n' + frage;
         if (!confirm(frage)) return;

@@ -13,6 +13,12 @@ import { KONTOART } from './accounts.js';
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
+/** Liegt ein Buchungsdatum in einer gesperrten (abgeschlossenen) Periode? (≤ Sperrdatum) */
+export function istGesperrt(datum, sperreBis) {
+  if (!sperreBis || !datum || !ISO.test(datum)) return false;
+  return datum <= sperreBis;
+}
+
 /**
  * Prüft eine Buchung und trennt harte Fehler von weichen Hinweisen.
  * @param buchung - {datum, beschreibung, zeilen:[{konto,seite,betrag}]}
@@ -28,6 +34,11 @@ export function pruefeBuchung(buchung, kontoIndex, opts = {}) {
   const zeilen = (buchung && buchung.zeilen) || [];
   const heute = opts.heute || new Date().toISOString().slice(0, 10);
   const datum = buchung && buchung.datum;
+
+  // Periodensperre: in eine abgeschlossene Periode darf nicht (fest-)gebucht werden (harter Fehler).
+  if (opts.gesperrtBis && istGesperrt(datum, opts.gesperrtBis)) {
+    fehler.push(`Periode bis ${opts.gesperrtBis} ist gesperrt — in diesem Zeitraum sind keine Buchungen mehr möglich.`);
+  }
 
   if (datum && ISO.test(datum) && datum > heute) {
     warnungen.push('Buchungsdatum liegt in der Zukunft.');
@@ -55,6 +66,17 @@ export function pruefeBuchung(buchung, kontoIndex, opts = {}) {
     });
     if (erloesMitUSt && !hatUStZeile) {
       warnungen.push('Erlöskonto ist USt-pflichtig, aber keine Umsatzsteuer gebucht — bitte USt-Satz prüfen.');
+    }
+  }
+
+  // Kleinunternehmer-Konsistenz (§19 UStG): kein USt-/Vorsteuer-Ausweis.
+  if (kontoIndex && opts.kleinunternehmer) {
+    const hatSteuerkonto = zeilen.some((z) => {
+      const k = kontoIndex[z.konto];
+      return k && (k.rolle === 'umsatzsteuer' || k.rolle === 'vorsteuer');
+    });
+    if (hatSteuerkonto) {
+      warnungen.push('Kleinunternehmer (§19 UStG): kein USt-/Vorsteuer-Ausweis — Steuerkonto sollte nicht bebucht werden.');
     }
   }
 

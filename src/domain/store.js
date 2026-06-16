@@ -10,9 +10,15 @@ import { getSessionKey } from '../core/vault.js';
 import { seedAccounts, validateKonto, normalizeKonto } from './accounts.js';
 import { validateBuchung, istAusgeglichen, stornoZeilen, BUCHUNG_STATUS } from './journal.js';
 import { hashBuchung, verifyChain, GENESIS } from './audit.js';
+import { istGesperrt } from './pruefung.js';
 
 const SEQ_KEY = 'buchungSeq';
 const LASTHASH_KEY = 'buchungLastHash';
+const SPERRE_KEY = 'buchungssperreBis';
+
+/** Buchungssperre (Periodenabschluss): Datum, bis zu dem nicht mehr festgeschrieben wird. */
+export async function getBuchungssperre() { return (await kvGet(SPERRE_KEY)) || ''; }
+export async function setBuchungssperre(datum) { await kvSet(SPERRE_KEY, datum || ''); }
 
 function key() {
   const k = getSessionKey();
@@ -166,6 +172,8 @@ export async function festschreiben(id) {
   const b = await getBuchung(id);
   if (!b) throw new Error('Buchung nicht gefunden');
   if (b.status === BUCHUNG_STATUS.FESTGESCHRIEBEN) throw new Error('Bereits festgeschrieben');
+  const sperre = await kvGet(SPERRE_KEY);
+  if (istGesperrt(b.datum, sperre)) throw new Error(`Periode bis ${sperre} ist gesperrt — Festschreiben nicht möglich.`);
   const idx = await accountIndex();
   const fehler = validateBuchung(b, idx);
   if (fehler.length) throw new Error('Nicht festschreibbar: ' + fehler.join(' '));
