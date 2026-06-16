@@ -7,21 +7,24 @@
 
 ---
 
-## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V8 oder V10**)
+## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V10** = letzter Punkt)
 
 > **Lies das zuerst und vollständig. Danach kannst du ohne Rückfragen loslegen.**
 
-**✅ V9 erledigt (Korrektheit/Kleinfälle + Simulations-Testharness) — diese Sitzung, in `claude/v2-ox8bu7`:**
-`domain/kleinfaelle.js` (Kleinbetragsrechnung §33 UStDV, Geschenke §4 Abs.5 Nr.1, **Bewirtung 70/30
-rechnend**), **Periodensperre** (`pruefung.istGesperrt` + harte Sperre in `store.festschreiben` +
-Einstellung), Kleinunternehmer-Konsistenz-Warnung. **NEU Simulations-Testmöglichkeit**:
-`domain/demodaten.js` (deterministischer Demo-Mandant klein/groß) + `docs/TESTDATEN.md`
-(dokumentierte Vergleichswerte) + Berichte-Karte **„Demo-/Test-Export"** → echte Export-Dateien
-als ZIP (ohne DATEV/ELSTER-Zugang). **Tests 592/592, SW `v70`.** (Diese Sitzung gemergt:
-**V2** #64, **V3** #65, **V4** #66, **V5** #67, **V6** #68, **V7** #69.)
-→ **Alle MUSS-Punkte (V2–V7) erledigt.** Übrig nur „SOLL": **V8** (DATEV-EXTF berater-fest —
-braucht echten DATEV-Testimport; teils per `docs/TESTDATEN.md` simulierbar) und **V10**
-(Browser-E2E der Kernpfade — manuell, da kein Headless-Browser). Details in `OFFENE_PUNKTE.md`.
+**✅ V8 erledigt (DATEV-EXTF berater-fest, vorbereitet) — diese Sitzung, in `claude/v2-ox8bu7`:**
+Vollständiger EXTF-Header aus Einstellungen (Berater-/Mandanten-Nr., Sachkontenlänge, WJ),
+SKR03-BU-Schlüssel (9/8 Vorsteuer, 3/2 USt) bei einfachen Sätzen, **zeilenweiser Split ohne BU**
+bei §13b/innergem. Erwerb (keine Doppelsteuer), `export.istEinfacherSatz`, Einstellungen-Sektion
+„DATEV-Export", Doku `docs/DATEV_IMPORT.md`. **Tests 605/605, SW `v71`.** (Diese Sitzung gemergt:
+V2 #64, V3 #65, V4 #66, V5 #67, V6 #68, V7 #69, V9 #70.)
+→ **Alle MUSS (V2–V7) + V8 + V9 erledigt.** **Einziger offener Punkt: V10** (Browser-E2E der
+Kernpfade — manuell, da kein Headless-Browser). Empfehlung: **In-App-„Selbstdiagnose"** (läuft
+Kern-Invarianten im Browser: Audit-Kette, Demo-Export-Konsistenz, Krypto-Roundtrip → ✓/✗) PLUS
+Klickpfad-Checkliste in `docs/`. Damit kann ein Tester „in die Hand nehmen und sehen, ob es läuft".
+
+**Nutzer-Kontext:** testet privat in 1–2 Wochen (Foto-OCR → App → Finanzamt; ggf. eigener
+DATEV-Zugang). Wichtig: App muss **auch ganz ohne DATEV** nutzbar sein (Belege/Kunden/Rechnungen/
+EÜR/USt-VA) — ist sie (DATEV ist nur ein optionaler Export).
 
 **Was „Vx" bedeutet — WICHTIG, nicht missverstehen:**
 „Vx" ist **KEINE** neue Programm-Version, **KEIN** Redesign, **KEIN** Major-Umbau. Falls dein
@@ -33,7 +36,7 @@ READINESS"**. Mehr nicht.
 Phasen 0–6 ✅, EU-KI (Vision EU + Mistral EU) ✅, A1–A3 (Mahnwesen/Verbindlichkeiten/
 Zahlungsabgleich), **V1 Kontenrahmen** (57 Konten + CRUD), **V2 §13b/Reverse-Charge**,
 **V3 Anlagevermögen+AfA**, **V4 Kassenbuch/Anfangsbestände**, **V5 USt-VA komplett**,
-**V6 Berichte (SuSa/Kontenblatt/Anlage-EÜR)**, **V7 GoBD/GDPdU-Export**, **V9 Kleinfälle +
+**V6 Berichte**, **V7 GoBD/GDPdU-Export**, **V8 DATEV-EXTF berater-fest**, **V9 Kleinfälle +
 Simulations-Testharness** (s.o.). → **Nicht** A1–A3 / V1–V9 wiederholen, **kein** Redesign.
 
 ### V2 — was genau zu bauen ist (§13b/Reverse-Charge + EU/Ausland)
@@ -85,8 +88,8 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 ---
 
 **Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v2-ox8bu7`
-· **Tests:** `node tests/run.mjs` → **592/592 grün**
-· **SW-Cache:** `v70` · **81 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Tests:** `node tests/run.mjs` → **605/605 grün**
+· **SW-Cache:** `v71` · **81 JS-Module** · **12 Bild- + 5 Icon-Assets**
 · **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
 · **V3 ✅:** Anlagevermögen + AfA (GWG/Sammelposten/linear pro rata), Ansicht „Anlagen",
   Anlagenverzeichnis + AfA-Buchung-Entwurf + AVEÜR-CSV (`domain/anlagen.js`, `anlagen-store.js`).
@@ -103,6 +106,8 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 · **V9 ✅:** Kleinfälle — Bewirtung 70/30 (rechnend), Geschenke-/Kleinbetragsgrenze, Periodensperre
   (`store.festschreiben` + Einstellung), Kleinunternehmer-Warnung. **+ Simulations-Testharness**
   (`domain/demodaten.js`, `docs/TESTDATEN.md`, Berichte „Demo-Export" → echte Dateien, dok. Sollwerte).
+· **V8 ✅:** DATEV-EXTF berater-fest vorbereitet — Header (Berater/Mandant/SKL/WJ), BU-Schlüssel
+  9/8/3/2, §13b zeilenweiser Split ohne BU; Einstellungen-Sektion; `docs/DATEV_IMPORT.md`.
 · **Profi-Readiness (V-Fahrplan):** V1 ✅ Kontenrahmen 57 Konten + Konten anlegen/bearbeiten/löschen.
 · **Mahnwesen A1 erweitert:** persistente Mahnstufe (`mahnungen[]`, `vorschlagNaechsteStufe`) +
   manuelle/editierbare Zins-/Gebühren-Erfassung im Mahnschreiben (keine Auto-Steuerbuchung).

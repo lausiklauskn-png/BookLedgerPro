@@ -88,8 +88,13 @@ verschlüsselt (`state.js firma`).
       Export-Karte in **„Berichte"** → ZIP-Datenpaket (index.xml + buchungen.csv + konten.csv +
       info). 16 Tests. **Offen/ehrlich:** GDPdU-*orientiert* — DTD wird bewusst NICHT mitgepackt
       (Prüfsoftware liefert sie), vor echter Prüfung mit IDEA testen; **kein DSFinV-K** (Kasse).
-- [ ] **V8 — DATEV-EXTF berater-fest [SOLL].** Heute „EXTF-orientiert". → Steuerschlüssel-Mapping
-      und Header mit echtem Berater/DATEV gegen einen Testimport verifizieren; Doku „so importieren".
+- [x] **V8 — DATEV-EXTF berater-fest [SOLL].** ✅ Vorbereitet & node-getestet: vollständiger
+      EXTF-Header aus Einstellungen (**Berater-/Mandanten-Nr., Sachkontenlänge, WJ-Beginn**),
+      SKR03-Standard-**BU-Schlüssel** (Vorsteuer 9/8, USt 3/2) bei einfachen Sätzen, **korrekter
+      zeilenweiser Split ohne BU** bei §13b/innergem. Erwerb/Mehrfach-Splits (keine Doppelsteuer);
+      Doku **`docs/DATEV_IMPORT.md`** („so importieren" + Prüf-Checkliste). 13 Tests. **Offen/ehrlich:**
+      endgültige „Berater-Festigkeit" = **realer DATEV-Testimport** (privat/Steuerberater) — mit dem
+      Demo-Export (`docs/TESTDATEN.md`) jetzt vorbereitbar; kein zertifiziertes 116-Spalten-EXTF.
 - [x] **V9 — Korrektheit/Validierung & Kleinfälle [SOLL].** ✅ Umgesetzt: `domain/kleinfaelle.js`
       (rein, node-getestet) — `kleinbetragsrechnung` (§33 UStDV, ≤250 €), `geschenkAbzug`
       (§4 Abs.5 Nr.1, 50 € netto → Konto/VSt-Abzug), `bewirtungAufteilung` (§4 Abs.5 Nr.2,

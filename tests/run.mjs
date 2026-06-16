@@ -26,7 +26,7 @@ import { auftragSummen, darfWechseln, validateAuftrag, auftragOffen, auftragGeza
 import { rechnungZeilen } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
-import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, buildUstVa, centsToComma, ustVaToCsv, buildAnlagenverzeichnisCsv } from '../src/domain/export.js';
+import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, istEinfacherSatz, buildUstVa, centsToComma, ustVaToCsv, buildAnlagenverzeichnisCsv } from '../src/domain/export.js';
 import {
   AFA_METHODE, klassifiziere, sammelpostenZulaessig, afaPlanGwg, afaPlanLinear, afaPlanSammelposten,
   afaPlan, anlageStatus, anlagenverzeichnis, afaBuchungZeilen, normalizeAnlage, validateAnlage,
@@ -1852,6 +1852,43 @@ await section('Simulation: Demo-Mandant „groß" — Konsistenz im Maßstab', (
 
   const zip = zipFiles(demoExportDateien(m));
   ok('groß Demo-Export als ZIP baubar', zip[0] === 0x50 && zip.length > 1000);
+});
+
+await section('V8: DATEV-EXTF berater-fest (Header, BU-Schlüssel, Splits)', () => {
+  const idx = indexFromSeed();
+  // Header mit Berater-/Mandantennummer + Sachkontenlänge.
+  const b1 = [{ seq: 1, datum: '2026-04-08', beschreibung: 'Büro', zeilen: [{ konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }] }];
+  const extf = buildDatevExtf(b1, idx, { berater: '12345', mandant: '6789', sachkontenlaenge: 4, jahr: 2026 });
+  const headerZeile = extf.split('\r\n')[0];
+  ok('EXTF-Header: "EXTF";700;21', headerZeile.startsWith('"EXTF";700;21;"Buchungsstapel";13'));
+  ok('EXTF-Header: Berater 12345 + Mandant 6789', headerZeile.includes(';12345;6789;'));
+  ok('EXTF-Header: WJ-Beginn + Sachkontenlänge', headerZeile.includes(';20260101;4;'));
+
+  // Standard-Ausgabe (3 Zeilen, eine Vorsteuerzeile) → ein Satz mit BU 9, Brutto, Gegenkonto.
+  ok('einfacher Satz erkannt (3 Z., 1 Steuer)', istEinfacherSatz(b1[0].zeilen, idx) === true);
+  const dv = datevBuchungssatz(b1[0], idx);
+  ok('BU-Schlüssel 9 (Vorsteuer 19%)', dv.bu === '9' && dv.konto === '4930' && dv.gegenkonto === '1200' && dv.umsatz === 11900);
+  const datenZeile = extf.split('\r\n')[2];
+  ok('EXTF-Datenzeile: 119,00;S;EUR;…;4930;1200;9', datenZeile.startsWith('119,00;S;EUR;;;;4930;1200;9;'));
+
+  // Standard-Einnahme → BU 3.
+  const verkauf = { seq: 2, datum: '2026-01-15', zeilen: [{ konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] };
+  ok('BU-Schlüssel 3 (USt 19% Einnahme)', datevBuchungssatz(verkauf, idx).bu === '3');
+
+  // §13b (4 Zeilen) → KEIN einfacher Satz → zeilenweiser Split OHNE falschen BU-Schlüssel.
+  const rc = { seq: 3, datum: '2026-05-02', beschreibung: 'Cloud §13b', zeilen: [
+    { konto: '4950', seite: 'S', betrag: 10000 }, { konto: '1577', seite: 'S', betrag: 1900 }, { konto: '1787', seite: 'H', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 10000 }] };
+  ok('§13b ist kein einfacher Satz', istEinfacherSatz(rc.zeilen, idx) === false);
+  const extfRc = buildDatevExtf([rc], idx, {});
+  const rcZeilen = extfRc.split('\r\n').slice(2).filter(Boolean);
+  ok('§13b: 4 zeilenweise Datensätze', rcZeilen.length === 4);
+  ok('§13b: kein BU-Schlüssel gesetzt (steuerneutral)', rcZeilen.every((z) => { const f = z.split(';'); return f[8] === ''; }));
+  ok('§13b: Gegenkonto leer (Split)', rcZeilen.every((z) => z.split(';')[7] === ''));
+  ok('§13b: alle Konten erscheinen', extfRc.includes(';4950;') && extfRc.includes(';1577;') && extfRc.includes(';1787;') && extfRc.includes(';1200;'));
+
+  // 2-Zeilen-Satz ohne Steuer → einfacher Satz, BU leer.
+  const bar = { seq: 4, datum: '2026-03-05', zeilen: [{ konto: '1000', seite: 'S', betrag: 5000 }, { konto: '8200', seite: 'H', betrag: 5000 }] };
+  ok('2-Zeilen-Satz einfach, BU leer', istEinfacherSatz(bar.zeilen, idx) && datevBuchungssatz(bar, idx).bu === '');
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

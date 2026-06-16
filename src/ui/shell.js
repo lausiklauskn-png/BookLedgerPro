@@ -221,6 +221,8 @@ function viewSettings() {
 
     firmaSection(s),
 
+    datevSection(s),
+
     buchungssperreSection(),
 
     passwortSection(),
@@ -275,6 +277,34 @@ function passwortSection() {
         ]),
       ]),
     ]),
+  ]);
+}
+
+// DATEV-EXTF-Stammdaten (Berater-/Mandantennummer) für den Buchungsstapel-Header.
+function datevSection(s) {
+  const d = s.datev || {};
+  const status = el('span', { class: 'muted small' });
+  const beraterNr = el('input', { type: 'text', value: d.beraterNr || '', placeholder: 'Berater-Nr.' });
+  const mandantNr = el('input', { type: 'text', value: d.mandantNr || '', placeholder: 'Mandanten-Nr.' });
+  const skl = el('input', { type: 'number', value: String(d.sachkontenlaenge || 4), style: 'width:6rem' });
+  return el('div', { class: 'setting' }, [
+    el('div', { class: 'setting-label', text: t('settings.datev') }),
+    el('div', { class: 'form-grid' }, [
+      el('label', { class: 'field' }, [el('span', { text: t('settings.datev.berater') }), beraterNr]),
+      el('label', { class: 'field' }, [el('span', { text: t('settings.datev.mandant') }), mandantNr]),
+      el('label', { class: 'field' }, [el('span', { text: t('settings.datev.skl') }), skl]),
+    ]),
+    el('div', { class: 'btn-row' }, [
+      el('button', {
+        class: 'btn btn-sm', text: t('common.save'),
+        onClick: async () => {
+          await updateSettings({ datev: { beraterNr: beraterNr.value.trim(), mandantNr: mandantNr.value.trim(), sachkontenlaenge: Number(skl.value) || 4 } });
+          status.textContent = t('settings.saved');
+        },
+      }),
+      status,
+    ]),
+    el('p', { class: 'muted small', text: t('settings.datev.hint') }),
   ]);
 }
 
