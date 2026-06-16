@@ -23,6 +23,8 @@ const DSGVO = [
   '• Datensparsamkeit & lokale Verarbeitung: Alle Daten werden ausschließlich auf Ihrem Gerät gespeichert und mit AES-GCM-256 verschlüsselt (Schlüssel aus Ihrem Passwort, PBKDF2). Es gibt keinen Server, kein Tracking, keine Cookies.',
   '• Personenbezogene Daten (Kunden, Mitarbeiter, Zeiten) werden verschlüsselt gespeichert.',
   '• Externe EU-KI (Google Cloud Vision — EU-Endpoint für Texterkennung; Mistral — EU für Kontierung/Steuer-Assistent) ist standardmäßig deaktiviert und nur mit eigenem API-Schlüssel nutzbar. Eine Übertragung erfolgt ausschließlich nach ausdrücklicher Bestätigung und innerhalb der EU (DSGVO); es werden Datenminimierungs-Grundsätze angewendet (Steuer-Assistent sendet nur aggregierte Kennzahlen).',
+  '• Auftragsverarbeitung (Art. 28 DSGVO): Wenn Sie die externe EU-KI aktivieren, verarbeiten die jeweiligen Anbieter (Google für Cloud Vision, Mistral AI) in Ihrem Auftrag Daten. Schließen Sie VOR der produktiven Nutzung mit personenbezogenen Daten den Auftragsverarbeitungsvertrag (AVV/DPA) des jeweiligen Anbieters ab und prüfen Sie dessen Datenschutzbedingungen. Verantwortliche/r im Sinne der DSGVO bleiben Sie; die App ist nur das lokale Werkzeug.',
+  '• Technische Maßnahme „Pseudonymisieren" (Art. 32 DSGVO): Im optionalen Datenschutz-Modus (Einstellungen) werden bekannte Identifikatoren aus Ihren Stammdaten (Namen, Firma, IBAN, USt-IdNr., Steuernr., Adresse) vor dem Senden an die KI durch stabile Platzhalter ersetzt und in der Antwort zurückübersetzt. Die Beleg-Texterkennung sendet weiterhin das Bild; Pseudonymisierung wirkt nur auf gesendete Texte.',
   '• Betroffenenrechte: Auskunft/Datenübertragbarkeit über den verschlüsselten Gesamt-Export; Löschung über „Alle Daten löschen".',
 ];
 

@@ -67,7 +67,8 @@ das **Bild** (separat bestätigt) — Bild-Pseudonymisierung ist NICHT Teil dies
      (`pseudonym.maskierungsBericht`, `documents.js`). Zähler ohne Klartext.
    - Bild-/OCR-Pfad (Vision) bleibt bewusst außen vor (Bild kann nicht
      anker-basiert maskiert werden); ggf. späterer Hinweis-/Schwärzungs-Workflow.
-   - AVV-Hinweis im Datenblatt (Mistral/Google als Auftragsverarbeiter).
+   - ✅ AVV-Hinweis (Art. 28 DSGVO) + Pseudonymisierung als Maßnahme (Art. 32) in der
+     DSGVO-Sektion „Recht & Doku" (`ui/views/legal.js`).
 
 ## 7. Ehrlich offen / NICHT geprüft
 - Reine Logik (`pseudonym.js`, `anker.baueAnker`) ist **node-getestet** (264/264).
