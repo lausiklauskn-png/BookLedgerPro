@@ -37,6 +37,7 @@ import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
 import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/ai/mistral.js';
 import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, ANKER_TYP, maskierungsBericht } from '../src/ai/pseudonym.js';
 import { baueAnker } from '../src/ai/anker.js';
+import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -938,6 +939,67 @@ await section('Datenschutz-Modi: Transparenz-Bericht (maskierungsBericht)', () =
   ok('Typ aus Token-Form erkannt', maskierungsBericht([{ token: '[[IBAN_1]]', wert: 'DE..' }]).proTyp.IBAN === 1);
   // Bericht enthält keine Klartextwerte (nur Zähler).
   ok('Bericht ohne Klartext', !JSON.stringify(b).includes('Mustermann'));
+});
+
+// ===== E-Rechnung: XRechnung/CII-Erzeugung =====
+
+// Minimaler Wohlgeformtheits-Check (Tag-Balance) — ersetzt KEINEN echten Validator.
+function xmlWohlgeformt(xml) {
+  const re = /<(\/?)([a-zA-Z:]+)(?:\s[^>]*?)?(\/?)>/g;
+  const stack = []; let m;
+  while ((m = re.exec(xml))) {
+    const [, close, name, self] = m;
+    if (self) continue;
+    if (close) { if (stack.pop() !== name) return false; }
+    else stack.push(name);
+  }
+  return stack.length === 0;
+}
+
+await section('E-Rechnung: Adresse zerlegen', () => {
+  const a = splitAdresse('Hauptstr. 1, 50667 Köln');
+  ok('Straße/PLZ/Ort getrennt', a.strasse === 'Hauptstr. 1' && a.plz === '50667' && a.ort === 'Köln');
+  const b = splitAdresse('Nur eine Zeile');
+  ok('ohne PLZ → alles als Straße', b.strasse === 'Nur eine Zeile' && b.plz === '' && b.ort === '');
+});
+
+await section('E-Rechnung: XRechnung (CII) aus Rechnung — Regelfall 19%+7%', () => {
+  const r = baueRechnung({
+    auftrag: { titel: 'Projekt', positionen: [
+      { beschreibung: 'Beratung', menge: 2, einzelpreisCent: 5000, ustSatz: 19 }, // 100,00 @19
+      { beschreibung: 'Material', menge: 1, einzelpreisCent: 10000, ustSatz: 7 }, // 100,00 @7
+    ] },
+    kunde: { name: 'Kunde & Co. KG', adresse: 'Beispielweg 5, 10115 Berlin', ustId: 'DE123456789' },
+    firma: { name: 'Meine Firma GmbH', anschrift: 'Hauptstr. 1, 50667 Köln', ustId: 'DE999999999', iban: 'DE89 3704 0044 0532 0130 00' },
+    nummer: '2026-0007', datum: '2026-06-16', leistungsdatum: '2026-06-15',
+  });
+  const xml = baueXRechnungCII(r);
+  ok('XML-Deklaration + CII-Wurzel', xml.startsWith('<?xml') && xml.includes('<rsm:CrossIndustryInvoice'));
+  ok('wohlgeformt (Tag-Balance)', xmlWohlgeformt(xml));
+  ok('EN16931/XRechnung-Leitfaden', xml.includes('en16931') && xml.includes('xrechnung_3.0'));
+  ok('Rechnungsnr. (BT-1) + TypeCode 380', xml.includes('<ram:ID>2026-0007</ram:ID>') && xml.includes('<ram:TypeCode>380</ram:TypeCode>'));
+  ok('Ausstellungsdatum 102 (BT-2)', xml.includes('format="102">20260616<'));
+  ok('Leistungsdatum 102 (BT-72)', xml.includes('format="102">20260615<'));
+  ok('Verkäufer/Käufer (BT-27/44)', xml.includes('<ram:Name>Meine Firma GmbH</ram:Name>') && xml.includes('<ram:Name>Kunde &amp; Co. KG</ram:Name>'));
+  ok('XML-Escaping des &', !xml.includes('Kunde & Co') && xml.includes('Kunde &amp; Co. KG'));
+  ok('Verkäufer USt-IdNr. (BT-31)', xml.includes('schemeID="VA">DE999999999<'));
+  ok('IBAN ohne Leerzeichen (BT-84)', xml.includes('<ram:IBANID>DE89370400440532013000</ram:IBANID>'));
+  ok('zwei Steuerzeilen 19/7 %', xml.includes('<ram:RateApplicablePercent>19.00</ram:RateApplicablePercent>') && xml.includes('<ram:RateApplicablePercent>7.00</ram:RateApplicablePercent>'));
+  ok('Summen: Netto 200,00 / USt 26,00 / Brutto 226,00', xml.includes('<ram:LineTotalAmount>200.00</ram:LineTotalAmount>') && xml.includes('<ram:TaxTotalAmount currencyID="EUR">26.00</ram:TaxTotalAmount>') && xml.includes('<ram:GrandTotalAmount>226.00</ram:GrandTotalAmount>'));
+  ok('Dateiname-Vorschlag', xRechnungDateiname(r) === 'XRechnung_2026-0007.xml');
+});
+
+await section('E-Rechnung: Kleinunternehmer (§19) → Kategorie E, keine USt', () => {
+  const r = baueRechnung({
+    auftrag: { positionen: [{ beschreibung: 'Leistung', menge: 1, einzelpreisCent: 10000, ustSatz: 0 }] },
+    kunde: { name: 'Kunde' }, firma: { name: 'Klein UG', anschrift: 'Weg 2, 12345 Stadt' },
+    nummer: '2026-0001', datum: '2026-06-16', kleinunternehmer: true,
+  });
+  const xml = baueXRechnungCII(r);
+  ok('wohlgeformt', xmlWohlgeformt(xml));
+  ok('Kategorie E (befreit)', xml.includes('<ram:CategoryCode>E</ram:CategoryCode>'));
+  ok('Befreiungsgrund §19', xml.includes('Kleinunternehmer gemäß § 19 UStG'));
+  ok('keine USt (0,00)', xml.includes('<ram:TaxTotalAmount currencyID="EUR">0.00</ram:TaxTotalAmount>'));
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
