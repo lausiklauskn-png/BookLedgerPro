@@ -37,6 +37,53 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-16 — V3: Anlagevermögen + AfA + Anlagenverzeichnis [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (Fahrplan-Punkt V3, gleiche Sitzung wie V2)
+- **`domain/anlagen.js`** (rein, node-getestet): AfA-Methoden **GWG-Sofortabschreibung**
+  (§6 Abs.2, ≤ 800 € netto), **Sammelposten** (§6 Abs.2a, 250–1.000 €, 20 %/J. über 5 J.,
+  ohne zeitanteilige Kürzung), **lineare AfA** (§7 Abs.1, **pro rata temporis** monatsgenau im
+  Anschaffungs-/Schlussjahr). `klassifiziere`, `afaPlan*`, `anlageStatus`, `anlagenverzeichnis`,
+  `afaBuchungZeilen` (Soll 4830/4855 an Anlagekonto), `normalizeAnlage`/`validateAnlage`.
+- **`domain/anlagen-store.js`**: Stammdaten-CRUD (Klartext-Records `type:'anlage'`, wie Konten).
+- **`domain/export.js`**: `buildAnlagenverzeichnisCsv` (AVEÜR-orientiert).
+- **Ansicht „Anlagen"** (`ui/views/anlagen.js`, neuer Nav-Eintrag/Route): Erfassen/Bearbeiten
+  (Methodenvorschlag nach Betrag), Anlagenverzeichnis je Wirtschaftsjahr mit Summen,
+  **„AfA buchen"** → Buchungsentwurf (Festschreiben bleibt manuell, GoBD), AVEÜR-CSV-Export.
+  i18n de/en. SW-Cache `v65` (+3 Module precached).
+- **Tests 497/497** (25 neu: Klassifikation, Pläne GWG/linear-prorata/Sammelposten,
+  Status, AfA-Buchung, Verzeichnis-Summen, CSV, Normalisierung/Validierung).
+
+**Stand:** V3 vollständig (Logik node-getestet, UI statisch geprüft — nicht headless-E2E).
+**Offen/Ehrlich:** AVEÜR-CSV ist AVEÜR-*orientiert* (kein amtliches Formular); GWG-250-€-
+Aufzeichnungsgrenze, degressive AfA, Sonderabschreibungen, **Anlagenabgang/Verkauf** nicht
+modelliert. **Nächstes:** V4 (Eröffnungs-/Anfangsbestände + GoBD-Kassenbuch).
+
+---
+
+## 2026-06-16 — V2: §13b/Reverse-Charge + EU/Ausland (USt) [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (Fahrplan-Punkt V2, „weiter laut PULS")
+- **`baueReverseChargeZeilen` (journal.js)** + `UMSATZART`: Steuerschuldumkehr (§13b UStG /
+  innergem. Erwerb) bucht **gleichzeitig** abziehbare Vorsteuer (Soll) und geschuldete USt
+  (Haben); an den Lieferanten fließt nur der **Netto**-Betrag. Option „nicht abziehbar" →
+  USt wird Kostenbestandteil. Buchung ist immer ausgeglichen.
+- **Konten (accounts.js):** 1577/1787 (§13b VSt/USt), 1574/1772 (ig Erwerb VSt/USt),
+  8125/8120 (steuerfreie ig Lieferung / Ausfuhr) mit neuen `rolle`-Markern; Map
+  `REVERSE_CHARGE_KONTEN` + `STEUERFREI_ERLOES_KONTEN`. `store.ensureSeedKonten` zieht die
+  Konten in älteren Tresoren nach.
+- **USt-VA (export.js `buildUstVa`):** neue Kennzahlen **Kz 46/47/67** (§13b),
+  **Kz 89/93/61** (ig Erwerb), **Kz 41/43** (steuerfrei); Kz 83 inkl. RC (hebt sich bei
+  vollem Abzug auf). `ustVaToCsv` + Auswertungs-Karte zeigen die Kennzahlen (nur ≠ 0).
+- **UI:** Umsatzart-Auswahl im Journal-Formular (Betrag = Netto bei RC). i18n de/en. SW `v64`.
+- **Tests 472/472** (28 neu). PR #64 gemergt.
+
+> Hinweis: Branch `claude/v2-ox8bu7` war zunächst auf veraltetem `main` (PR #63 Ist-EÜR);
+> Ist-EÜR existierte bereits in `main` → #63 geschlossen, Branch auf `main` zurückgesetzt,
+> V2/V3 korrekt umgesetzt.
+
+---
+
 ## 2026-06-16 — Profi-Readiness-Fahrplan (V1–V10) + V1 Kontenrahmen
 
 **Was getan**

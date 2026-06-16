@@ -7,16 +7,17 @@
 
 ---
 
-## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V3**)
+## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V4**)
 
 > **Lies das zuerst und vollständig. Danach kannst du ohne Rückfragen loslegen.**
 
-**✅ V2 erledigt (§13b/Reverse-Charge + EU/Ausland) — diese Sitzung, in `claude/v2-ox8bu7`:**
-`baueReverseChargeZeilen` (journal.js) bucht §13b/innergem. Erwerb (Vorsteuer **und** USt
-gleichzeitig, Netto an den Lieferanten); neue Konten 1577/1787 + 1574/1772 + 8120/8125
-(rolle-Marker); `buildUstVa` um Kz 41/43/46/47/61/67/89/93 erweitert (Zahllast korrekt, RC
-neutralisiert sich); Umsatzart-Wahl im Journal-Formular; **Tests 472/472, SW `v64`.**
-→ **Nächste Aufgabe = V3** (Anlagevermögen + AfA + Anlagenverzeichnis), Details in
+**✅ V3 erledigt (Anlagevermögen + AfA + Anlagenverzeichnis) — diese Sitzung, in `claude/v2-ox8bu7`:**
+`domain/anlagen.js` (rein, node-getestet): GWG-Sofortabschreibung (§6 Abs.2), Sammelposten
+(§6 Abs.2a, 5 J.), lineare AfA (§7 Abs.1, pro rata temporis monatsgenau); `anlagen-store.js`;
+Ansicht **„Anlagen"** (Erfassen, Anlagenverzeichnis je Jahr, **AfA-Buchung als Entwurf**,
+AVEÜR-CSV). **Tests 497/497, SW `v65`.** (Davor in dieser Sitzung bereits **V2** §13b/Reverse-
+Charge gemergt, PR #64.)
+→ **Nächste Aufgabe = V4** (Eröffnungs-/Anfangsbestände + GoBD-Kassenbuch), Details in
 `docs/OFFENE_PUNKTE.md` Abschnitt V. **Ein Fahrplan-Punkt pro Sitzung/PR.**
 
 **Was „Vx" bedeutet — WICHTIG, nicht missverstehen:**
@@ -27,8 +28,8 @@ READINESS"**. Mehr nicht.
 
 **Projektzustand (nichts davon neu bauen — ist fertig & gemergt):** reife Buchhaltungs-PWA,
 Phasen 0–6 ✅, EU-KI (Vision EU + Mistral EU) ✅, A1–A3 (Mahnwesen/Verbindlichkeiten/
-Zahlungsabgleich), **V1 Kontenrahmen** (57 Konten + CRUD), **V2 §13b/Reverse-Charge** (s.o.).
-→ **Nicht** A1–A3 / V1 / V2 wiederholen, **kein** Redesign, **keine** neue PULS-Datei.
+Zahlungsabgleich), **V1 Kontenrahmen** (57 Konten + CRUD), **V2 §13b/Reverse-Charge**,
+**V3 Anlagevermögen+AfA** (s.o.). → **Nicht** A1–A3 / V1–V3 wiederholen, **kein** Redesign.
 
 ### V2 — was genau zu bauen ist (§13b/Reverse-Charge + EU/Ausland)
 Ziel: Die Firma bezieht selbst Leistungen mit **Steuerschuldumkehr** — z. B. **Google Cloud
@@ -79,10 +80,11 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 ---
 
 **Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v2-ox8bu7`
-· **Tests:** `node tests/run.mjs` → **472/472 grün**
-· **SW-Cache:** `v64` · **68 JS-Module** · **12 Bild- + 5 Icon-Assets**
-· **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Konten 1577/1787/1574/1772/8120/8125,
-  USt-VA Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
+· **Tests:** `node tests/run.mjs` → **497/497 grün**
+· **SW-Cache:** `v65` · **71 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
+· **V3 ✅:** Anlagevermögen + AfA (GWG/Sammelposten/linear pro rata), Ansicht „Anlagen",
+  Anlagenverzeichnis + AfA-Buchung-Entwurf + AVEÜR-CSV (`domain/anlagen.js`, `anlagen-store.js`).
 · **Profi-Readiness (V-Fahrplan):** V1 ✅ Kontenrahmen 57 Konten + Konten anlegen/bearbeiten/löschen.
 · **Mahnwesen A1 erweitert:** persistente Mahnstufe (`mahnungen[]`, `vorschlagNaechsteStufe`) +
   manuelle/editierbare Zins-/Gebühren-Erfassung im Mahnschreiben (keine Auto-Steuerbuchung).

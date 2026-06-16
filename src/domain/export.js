@@ -257,6 +257,27 @@ export function buildOffeneVerbindlichkeitenCsv(posten) {
   return csv(rows);
 }
 
+/**
+ * Anlagenverzeichnis / AVEÜR-orientierte CSV zu einem Wirtschaftsjahr. Erwartet das
+ * Ergebnis von anlagen.anlagenverzeichnis(anlagen, jahr).
+ * EHRLICHER HINWEIS: Spaltenform ist AVEÜR-ORIENTIERT (nachvollziehbar), nicht das amtliche
+ * Anlage-AVEÜR-Formular. Vor Übergabe an den Steuerberater prüfen.
+ */
+export function buildAnlagenverzeichnisCsv(verzeichnis) {
+  const rows = [['Bezeichnung', 'Anschaffung', 'AK netto', 'Methode', 'Nutzungsdauer (J.)',
+    `AfA ${verzeichnis.jahr}`, 'AfA kumuliert', 'Restbuchwert', 'Anlagekonto']];
+  for (const z of verzeichnis.zeilen || []) {
+    rows.push([
+      z.bezeichnung || '', z.anschaffungsdatum || '', centsToComma(z.akNettoCents),
+      z.methode || '', z.nutzungsdauerJahre || '',
+      centsToComma(z.afaJahr), centsToComma(z.kumuliert), centsToComma(z.restbuchwert), z.anlageKonto || '',
+    ]);
+  }
+  const s = verzeichnis.summen || {};
+  rows.push(['', '', centsToComma(s.ak), '', '', centsToComma(s.afaJahr), centsToComma(s.kumuliert), centsToComma(s.restbuchwert), '']);
+  return csv(rows);
+}
+
 export function eurToCsv(eur) {
   const rows = [['Art', 'Konto', 'Bezeichnung', 'Betrag']];
   for (const e of eur.einnahmenKonten || []) rows.push(['Einnahme', e.nummer, e.name, centsToComma(e.wert)]);
