@@ -13,6 +13,7 @@ import { durabilityStatus } from '../core/durability.js';
 import { exportBackupFile, readBackup, importSnapshot } from '../core/backup.js';
 import { pickFile, readFileText } from '../core/files.js';
 import { mountAccounts } from './views/accounts.js';
+import { mountAnlagen } from './views/anlagen.js';
 import { mountJournal } from './views/journal.js';
 import { mountReports } from './views/reports.js';
 import { mountDocuments } from './views/documents.js';
@@ -32,6 +33,7 @@ const NAV = [
   ['dashboard', 'nav.dashboard'],
   ['journal', 'nav.journal'],
   ['accounts', 'nav.accounts'],
+  ['anlagen', 'nav.anlagen'],
   ['documents', 'nav.documents'],
   ['orders', 'nav.orders'],
   ['customers', 'nav.customers'],
@@ -104,6 +106,7 @@ function renderRoute() {
   if (route === 'dashboard') return void mountDashboard(content);
   if (route === 'settings') return mount(content, viewSettings());
   if (route === 'accounts') return void mountAccounts(content);
+  if (route === 'anlagen') return void mountAnlagen(content);
   if (route === 'journal') return void mountJournal(content);
   if (route === 'reports') return void mountReports(content);
   if (route === 'documents') return void mountDocuments(content);

@@ -26,7 +26,11 @@ import { auftragSummen, darfWechseln, validateAuftrag, auftragOffen, auftragGeza
 import { rechnungZeilen } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
-import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, buildUstVa, centsToComma, ustVaToCsv } from '../src/domain/export.js';
+import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, buildUstVa, centsToComma, ustVaToCsv, buildAnlagenverzeichnisCsv } from '../src/domain/export.js';
+import {
+  AFA_METHODE, klassifiziere, sammelpostenZulaessig, afaPlanGwg, afaPlanLinear, afaPlanSammelposten,
+  afaPlan, anlageStatus, anlagenverzeichnis, afaBuchungZeilen, normalizeAnlage, validateAnlage,
+} from '../src/domain/anlagen.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -1536,6 +1540,62 @@ await section('V2: USt-VA-Kennzahlen §13b / innergem. Erwerb / steuerfrei', () 
   const csv = ustVaToCsv(va);
   ok('CSV enthält §13b-Zeile (47)', csv.includes('47;darauf Umsatzsteuer §13b'));
   ok('CSV enthält Zahllast-Zeile', csv.includes('83;Verbleibende'));
+});
+
+await section('V3: Anlagevermögen + AfA (Klassifikation & Pläne)', () => {
+  ok('≤ 800 € netto → GWG', klassifiziere(80000) === AFA_METHODE.GWG);
+  ok('> 800 € netto → linear', klassifiziere(80001) === AFA_METHODE.LINEAR);
+  ok('Sammelposten zulässig 250–1.000 €', sammelpostenZulaessig(50000) && !sammelpostenZulaessig(25000) && !sammelpostenZulaessig(100001));
+
+  const gwg = afaPlanGwg(60000, '2026-05-10');
+  ok('GWG: voller Aufwand im Jahr', gwg.length === 1 && gwg[0].afa === 60000 && gwg[0].restbuchwert === 0);
+
+  // Lineare AfA pro rata: 1.200 € / 3 J. ab April → 9/12 im Jahr 1.
+  const lin = afaPlanLinear(120000, 3, '2026-04-15');
+  ok('linear pro rata: 4 Kalenderjahre', lin.length === 4);
+  ok('linear: Jahr1 = 30000 (9/12)', lin[0].jahr === 2026 && lin[0].afa === 30000);
+  ok('linear: Jahr2/3 = 40000', lin[1].afa === 40000 && lin[2].afa === 40000);
+  ok('linear: Schlussjahr trägt Rest 10000', lin[3].afa === 10000 && lin[3].restbuchwert === 0);
+  ok('linear: Summe = AK', lin.reduce((s, p) => s + p.afa, 0) === 120000);
+
+  // Start im Januar → erstes Jahr voll.
+  const linJan = afaPlanLinear(120000, 3, '2026-01-01');
+  ok('linear Jan-Start: Jahr1 voll 40000, 3 Jahre', linJan.length === 3 && linJan[0].afa === 40000);
+
+  // Sammelposten: 20 % p.a., letzter Rest trägt Rundung; Summe = AK.
+  const sp = afaPlanSammelposten(100001, '2026-03-01');
+  ok('Sammelposten: 5 Jahre', sp.length === 5);
+  ok('Sammelposten: 20000 p.a., letztes Jahr 20001', sp[0].afa === 20000 && sp[4].afa === 20001);
+  ok('Sammelposten: Summe = AK', sp.reduce((s, p) => s + p.afa, 0) === 100001);
+
+  // Status zu einem Jahr.
+  const anlage = { akNettoCents: 120000, nutzungsdauerJahre: 3, anschaffungsdatum: '2026-04-15', methode: AFA_METHODE.LINEAR, anlageKonto: '0400' };
+  const st2027 = anlageStatus(anlage, 2027);
+  ok('Status 2027: AfA 40000, kumuliert 70000, RBW 50000', st2027.afaJahr === 40000 && st2027.kumuliert === 70000 && st2027.restbuchwert === 50000);
+  const stNach = anlageStatus(anlage, 2030);
+  ok('Status nach Planende: RBW 0, AfA 0', stNach.restbuchwert === 0 && stNach.afaJahr === 0);
+
+  // AfA-Buchung: Soll Aufwand an Haben Anlagekonto.
+  const buchG = afaBuchungZeilen({ akNettoCents: 60000, anschaffungsdatum: '2026-05-10', methode: AFA_METHODE.GWG, anlageKonto: '0480' }, 2026);
+  ok('GWG-Buchung: 4855 Soll an 0480 Haben 60000',
+    zeile(buchG.zeilen, '4855', 'S').betrag === 60000 && zeile(buchG.zeilen, '0480', 'H').betrag === 60000);
+  const buchL = afaBuchungZeilen(anlage, 2027);
+  ok('lineare AfA-Buchung: 4830 Soll 40000', zeile(buchL.zeilen, '4830', 'S').betrag === 40000);
+  ok('keine AfA-Buchung außerhalb des Plans', afaBuchungZeilen(anlage, 2035) === null);
+
+  // Verzeichnis + Summen + CSV.
+  const vz = anlagenverzeichnis([anlage, { akNettoCents: 60000, anschaffungsdatum: '2026-05-10', methode: AFA_METHODE.GWG, anlageKonto: '0480', bezeichnung: 'Laptop' }], 2026);
+  ok('Verzeichnis 2026: AfA-Summe 30000 (linear) + 60000 (GWG)', vz.summen.afaJahr === 90000);
+  ok('Verzeichnis: AK-Summe 180000', vz.summen.ak === 180000);
+  ok('AVEÜR-CSV enthält Laptop + Summenzeile', buildAnlagenverzeichnisCsv(vz).includes('Laptop'));
+
+  // Normalisierung + Validierung.
+  const norm = normalizeAnlage({ bezeichnung: ' Drucker ', akNetto: '1.200,00', anschaffungsdatum: '2026-04-15', methode: 'linear', nutzungsdauerJahre: '3', anlageKonto: '0400' });
+  ok('normalizeAnlage: Euro→Cent + trim', norm.akNettoCents === 120000 && norm.bezeichnung === 'Drucker' && norm.nutzungsdauerJahre === 3);
+  ok('validateAnlage: ok', validateAnlage(norm).length === 0);
+  ok('validateAnlage: linear ohne Nutzungsdauer → Fehler', validateAnlage({ ...norm, nutzungsdauerJahre: 0 }).length > 0);
+  ok('validateAnlage: Sammelposten außerhalb 250–1.000 → Fehler',
+    validateAnlage({ ...norm, methode: AFA_METHODE.SAMMELPOSTEN, akNettoCents: 120000 }).length > 0);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

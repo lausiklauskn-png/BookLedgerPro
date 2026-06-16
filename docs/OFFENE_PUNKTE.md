@@ -49,10 +49,13 @@ verschlüsselt (`state.js firma`).
       Journal-Formular; node-getestet (28 Tests). **Offen/ehrlich:** §13b modelliert für 19 %
       (Hauptfall Cloud/Software); exakte Kz-Zuordnung am ELSTER-Formular/mit Berater verifizieren;
       noch nicht im E-Rechnungs-Empfang automatisch erkannt (manuelle Umsatzart-Wahl).
-- [ ] **V3 — Anlagevermögen + AfA + Anlagenverzeichnis [MUSS].** Für EÜR Pflicht, sobald ein
-      Wirtschaftsgut > 800 € netto. Heute nur Hinweis-Regeln (`rechtsregeln.js gwg/anlage_afa`),
-      keine Verwaltung/Berechnung. → Anlagen-Store, lineare AfA (pro rata temporis), **GWG (§6 Abs.2)**,
-      **Sammelposten (§6 Abs.2a)**, Anlagenverzeichnis + AfA-Buchung; Anlage AVEÜR-Ausgabe.
+- [x] **V3 — Anlagevermögen + AfA + Anlagenverzeichnis [MUSS].** ✅ Umgesetzt: `domain/anlagen.js`
+      (rein, node-getestet) mit **GWG-Sofortabschreibung (§6 Abs.2)**, **Sammelposten (§6 Abs.2a,
+      5 J.)**, **lineare AfA (§7 Abs.1, pro rata temporis monatsgenau)**; `anlagen-store.js`
+      (Stammdaten-CRUD), Ansicht **„Anlagen"** (Erfassen/Bearbeiten, Anlagenverzeichnis je
+      Wirtschaftsjahr, **AfA-Buchung als Entwurf**, **Anlagenverzeichnis/AVEÜR-CSV**). 25 Tests.
+      **Offen/ehrlich:** AVEÜR-CSV ist AVEÜR-*orientiert* (kein amtliches Formular); GWG-Aufzeichnungs-
+      untergrenze (250 €), degressive AfA, Sonderabschreibungen, Abgang/Verkauf nicht modelliert.
 - [ ] **V4 — Eröffnungs-/Anfangsbestände + Kassenbuch [MUSS].** Anfangsbestände Bank/Kasse
       (Jahresumbruch/Erststart) und **GoBD-konforme Kassenführung** (chronologisch, fortlaufend,
       Kassenbericht) fehlen. → Anfangsbestand-Buchung + Kassenbuch-Ansicht/-Auswertung.
