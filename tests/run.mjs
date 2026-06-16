@@ -35,6 +35,7 @@ import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
 import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/ai/mistral.js';
+import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP } from '../src/ai/pseudonym.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -795,6 +796,75 @@ await section('Mistral EU: Kontierungs-Prompt & Parser', () => {
   ok('JSON geparst', JSON.stringify(parseClassify('{"konto":"4930","richtung":"ausgabe"}')) === '{"konto":"4930","richtung":"ausgabe"}');
   ok('JSON aus Text extrahiert', parseClassify('Antwort: {"konto":"8400","richtung":"einnahme"} ok').konto === '8400');
   ok('kein JSON -> null', parseClassify('keine Ahnung') === null);
+});
+
+// ===== Datenschutz-Modi: Pseudonymisierung (tokenize/reidentify) =====
+
+await section('Pseudonym: stabile Token & exakter Round-Trip', () => {
+  const text = 'Rechnung an Max Mustermann. Zahlung von Max Mustermann auf DE89 3704 0044 0532 0130 00.';
+  const anker = [
+    { wert: 'Max Mustermann', typ: 'PERSON' },
+    { wert: 'DE89 3704 0044 0532 0130 00', typ: 'IBAN' },
+  ];
+  const { text: pseudo, map } = tokenize(text, anker);
+  ok('Person ersetzt', !pseudo.includes('Max Mustermann'));
+  ok('IBAN ersetzt', !pseudo.includes('DE89 3704'));
+  ok('gleicher Wert → gleicher Token (beide Vorkommen)', (pseudo.match(/\[\[PERSON_1\]\]/g) || []).length === 2);
+  ok('Token je Typ nummeriert (PERSON_1, IBAN_1)', pseudo.includes('[[PERSON_1]]') && pseudo.includes('[[IBAN_1]]'));
+  ok('Map enthält Originalwerte', map.find((e) => e.typ === 'PERSON').wert === 'Max Mustermann');
+  ok('Round-Trip stellt Original her', reidentify(pseudo, map) === text);
+});
+
+await section('Pseudonym: Longest-Match (überlappende Anker)', () => {
+  const text = 'Müller GmbH zahlt; Müller privat zahlt auch.';
+  // Bewusst unsortiert: kürzerer Anker zuerst — Longest-Match muss trotzdem greifen.
+  const { text: pseudo, map } = tokenize(text, ['Müller', 'Müller GmbH']);
+  ok('längerer Anker zuerst ersetzt', pseudo.startsWith('[[ID_1]] zahlt'));
+  ok('kürzerer Anker als eigener Token', /\[\[ID_2\]\] privat/.test(pseudo));
+  ok('„Müller GmbH" nicht zerlegt', !pseudo.includes('[[ID_2]] GmbH'));
+  ok('Round-Trip ok', reidentify(pseudo, map) === text);
+});
+
+await section('Pseudonym: Sonderzeichen-sichere, exakte Treffer', () => {
+  const text = 'Konto a.b+c(2) und Muster (GmbH) [Test].';
+  const anker = ['a.b+c(2)', 'Muster (GmbH)'];
+  const { text: pseudo, map } = tokenize(text, anker);
+  ok('Regex-Sonderzeichen literal ersetzt', pseudo.includes('[[ID_1]]') && !pseudo.includes('a.b+c(2)'));
+  ok('zweiter Sonderzeichen-Anker ersetzt', !pseudo.includes('Muster (GmbH)'));
+  ok('Round-Trip mit Sonderzeichen', reidentify(pseudo, map) === text);
+});
+
+await section('Pseudonym: Normalisierung & Nicht-Treffer', () => {
+  const norm = normalizeAnchors(['Anna', { value: 'a@b.de', type: 'e-mail' }, '  ', '', 'Anna']);
+  ok('leere/Whitespace-Anker verworfen + entdoppelt', norm.length === 2);
+  ok('String-Anker erhält Standard-Typ', norm[0].typ === STANDARD_TYP);
+  ok('Typ normalisiert (e-mail → E_MAIL)', norm[1].typ === 'E_MAIL');
+
+  const { text: pseudo, map } = tokenize('Hier steht kein bekannter Name.', ['Zoltan']);
+  ok('nicht vorkommender Anker → kein Token', map.length === 0 && pseudo === 'Hier steht kein bekannter Name.');
+});
+
+await section('Pseudonym: Register für aufrufsübergreifend stabile Token', () => {
+  const reg = createRegistry();
+  const a = tokenize('Brief an Klaus.', [{ wert: 'Klaus', typ: 'PERSON' }], { registry: reg });
+  const b = tokenize('Auch Klaus erwähnt Petra.', [{ wert: 'Klaus', typ: 'PERSON' }, { wert: 'Petra', typ: 'PERSON' }], { registry: reg });
+  ok('Klaus behält Token über Aufrufe', a.text.includes('[[PERSON_1]]') && b.text.includes('[[PERSON_1]]'));
+  ok('neue Person bekommt nächste Nummer', b.text.includes('[[PERSON_2]]'));
+  ok('Register sammelt alle Einträge', reg.entries.length === 2);
+
+  // Präfix-Sicherheit: [[PERSON_1]] darf nicht in [[PERSON_11]] hineingreifen.
+  const viele = createRegistry();
+  const namen = Array.from({ length: 11 }, (_, k) => 'Name' + (k + 1));
+  const original = 'X ' + namen.join(' ');
+  let t = 'X';
+  for (const name of namen) t = tokenize(t + ' ' + name, [{ wert: name, typ: 'PERSON' }], { registry: viele }).text;
+  ok('11 Token vergeben', viele.entries.length === 11 && t.includes('[[PERSON_11]]'));
+  ok('Round-Trip mit zweistelligen Token-Nummern', reidentify(t, viele.entries) === original);
+});
+
+await section('Pseudonym: reidentify akzeptiert auch Objekt-Map', () => {
+  const out = reidentify('Hallo [[PERSON_1]], Ihre [[IBAN_2]].', { '[[PERSON_1]]': 'Eva', '[[IBAN_2]]': 'DE00' });
+  ok('Objekt-Map re-identifiziert', out === 'Hallo Eva, Ihre DE00.');
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {

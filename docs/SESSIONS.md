@@ -5,6 +5,34 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Datenschutz-Modi, Bau-Schritt 1: Pseudonym-Logik
+
+**Was getan**
+- Reines Logik-Modul **`src/ai/pseudonym.js`** angelegt (Datenschutz-Modi, Bau-Schritt 1):
+  `tokenize()` ersetzt **exakte** bekannte Identifikatoren (Anker) durch **stabile** Token
+  `[[TYP_N]]`, `reidentify()` macht es verlustfrei rückgängig. Longest-Match (überlappende
+  Anker), Sonderzeichen-/Regex-sicher (Links-nach-rechts-Scan, kein Regex), Token-Nummern
+  je Typ in Reihenfolge des ersten Auftretens, optionales `createRegistry()` für
+  aufrufsübergreifend stabile Token, `normalizeAnchors()` (entdoppelt, Typ-Normalisierung).
+  Kein Netz, keine Krypto im Modul — reine Abbildung; Übertragung bleibt opt-in.
+- **23 Node-Tests** in `tests/run.mjs` ergänzt; nach Merge mit main → **246/246 grün**
+  (Round-Trip, stabile Token, Longest-Match, Sonderzeichen, Register-Stabilität inkl.
+  Präfix-Sicherheit `_1` vs `_11`, Objekt-Map in `reidentify`).
+- main war beim PR-Merge weit voraus (223 Tests, SW v47, neue Module rechnung/pruefung/
+  rechtsregeln/berater/importworkfloh); sauber zurückgemergt, alle Tests beider Seiten erhalten.
+
+**Hinweis zur Vorlage:** `docs/KONZEPT_DATENSCHUTZ_MODI.md` (§6 Bau-Reihenfolge) existiert im
+Repo (noch) nicht — gebaut wurde strikt nach der selbsttragenden Aufgaben-Spezifikation.
+(`PULS.md §0 Brainstorming` existiert inzwischen auf main.) Diese Lücke ehrlich offen lassen.
+
+**Offen / Nächstes:** Konzept-Doku `docs/KONZEPT_DATENSCHUTZ_MODI.md` nachreichen (Modi +
+Bau-Reihenfolge festschreiben); Bau-Schritt 2 = Anker-Quelle aus CRM/verschl. Speicher
+(`crm-store`) + Verdrahtung in die KI-Pipeline **vor** `ai/mistral.js` (Kontierung) und
+`ai/berater.js` (Steuer-Assistent), mit opt-in/Bestätigung; reidentify auf die KI-Antwort.
+**Nicht im Browser E2E getestet** — Kernlogik node-getestet.
+
+---
+
 ## 2026-06-14 — EÜR nach Zufluss/Abfluss (§4 Abs.3 EStG, Ist-Prinzip)
 
 **Was getan**
