@@ -41,6 +41,11 @@ import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domai
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
 import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat } from '../src/domain/bankimport.js';
 import { offenePosten, findeOffenePosten, zahlungsBuchungZeilen } from '../src/domain/zahlungsabgleich.js';
+import {
+  eingangsrechnungZeilen, eingangsrechnungSummen, bruttoVonPositionen, rechnungBrutto,
+  offenerBetrag, rechnungStatus, offeneVerbindlichkeiten, summeOffeneVerbindlichkeiten,
+  validateEingangsrechnung,
+} from '../src/domain/payables.js';
 import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten } from '../src/domain/mahnwesen.js';
 
 function indexFromSeed() {
@@ -1150,6 +1155,102 @@ await section('Zahlungsabgleich: offene Posten + Matching + Ausgleichsbuchung', 
   // Ausgleichsbuchung Ausgabe: Verbindlichkeit an Bank.
   const ba = zahlungsBuchungZeilen({ richtung: 'ausgabe', betragCent: 5000, valuta: '2026-06-09' });
   ok('Ausgabe: Soll Verbindlichkeit 1600 / Haben Bank 1200', ba.zeilen[0].konto === '1600' && ba.zeilen[1].konto === '1200' && ba.zeilen[1].seite === 'H');
+});
+
+// ===== A2: Eingangsrechnungen als offene Verbindlichkeiten (Kreditoren) =====
+
+await section('Eingangsrechnung → Buchung (Aufwand + Vorsteuer an Verbindlichkeit 1600)', () => {
+  // Bürobedarf 100,00 netto @19% + Bücher 100,00 netto @7%
+  const rechnung = { kreditor: 'Schmidt GmbH', datum: '2026-06-14', positionen: [
+    { nettoCent: 10000, ustSatz: 19, aufwandKonto: '4930' },
+    { nettoCent: 10000, ustSatz: 7, aufwandKonto: '4940' },
+  ] };
+  const summen = eingangsrechnungSummen(rechnung.positionen);
+  ok('Netto 20000', summen.netto === 20000);
+  ok('Vorsteuer 2600 (1900+700)', summen.vorsteuer === 2600);
+  ok('Brutto 22600', summen.brutto === 22600);
+  ok('bruttoVonPositionen 22600', bruttoVonPositionen(rechnung.positionen) === 22600);
+
+  const { zeilen } = eingangsrechnungZeilen(rechnung);
+  ok('Soll Aufwand 4930 = 10000', zeile(zeilen, '4930', 'S')?.betrag === 10000);
+  ok('Soll Aufwand 4940 = 10000', zeile(zeilen, '4940', 'S')?.betrag === 10000);
+  ok('Soll Vorsteuer 1576 = 1900', zeile(zeilen, '1576', 'S')?.betrag === 1900);
+  ok('Soll Vorsteuer 1571 = 700', zeile(zeilen, '1571', 'S')?.betrag === 700);
+  ok('Haben Verbindlichkeit 1600 = 22600', zeile(zeilen, '1600', 'H')?.betrag === 22600);
+  ok('Eingangsrechnungsbuchung ausgeglichen', istAusgeglichen(zeilen));
+
+  // Mehrere Positionen auf demselben Aufwandskonto werden zusammengefasst.
+  const z2 = eingangsrechnungZeilen({ datum: '2026-06-14', kreditor: 'X', positionen: [
+    { nettoCent: 3000, ustSatz: 19, aufwandKonto: '4980' },
+    { nettoCent: 2000, ustSatz: 19, aufwandKonto: '4980' },
+  ] }).zeilen;
+  ok('gleiches Aufwandskonto summiert (4980 = 5000)', zeile(z2, '4980', 'S')?.betrag === 5000);
+  ok('Brutto 5950 als Verbindlichkeit', zeile(z2, '1600', 'H')?.betrag === 5950);
+
+  // Validierung gegen den echten Kontenindex: Konten existieren, Buchung gültig.
+  ok('Buchung gegen Seed-Konten gültig', validateBuchung({ datum: rechnung.datum, zeilen }, indexFromSeed()).length === 0);
+
+  // bruttoCent hat Vorrang vor Positionen.
+  ok('rechnungBrutto nutzt expliziten bruttoCent', rechnungBrutto({ bruttoCent: 11900, positionen: [{ nettoCent: 999, ustSatz: 19 }] }) === 11900);
+});
+
+await section('Offene Verbindlichkeiten + Status (Teilzahlung/Storno/Stichtag)', () => {
+  const rechnungen = [
+    { id: 'er:1', kreditor: 'Alpha', rechnungsnr: 'A-1', datum: '2026-06-01', faelligAm: '2026-07-01',
+      bruttoCent: 11900, zahlungen: [] },                                              // offen
+    { id: 'er:2', kreditor: 'Beta', rechnungsnr: 'B-2', datum: '2026-06-02', faelligAm: '2026-06-20',
+      bruttoCent: 20000, zahlungen: [{ datum: '2026-06-10', betragCent: 5000 }] },     // teilbezahlt
+    { id: 'er:3', kreditor: 'Gamma', rechnungsnr: 'G-3', datum: '2026-06-03',
+      bruttoCent: 5000, zahlungen: [{ datum: '2026-06-15', betragCent: 5000 }] },       // bezahlt
+    { id: 'er:4', kreditor: 'Delta', rechnungsnr: 'D-4', datum: '2026-06-04',
+      bruttoCent: 9999, storniert: true },                                              // storniert
+  ];
+  ok('offen: er1 = 11900', offenerBetrag(rechnungen[0]) === 11900);
+  ok('teilbezahlt: er2 offen = 15000', offenerBetrag(rechnungen[1]) === 15000);
+  ok('Status er1 offen', rechnungStatus(rechnungen[0]) === 'offen');
+  ok('Status er2 teilbezahlt', rechnungStatus(rechnungen[1]) === 'teilbezahlt');
+  ok('Status er3 bezahlt', rechnungStatus(rechnungen[2]) === 'bezahlt');
+  ok('Status er4 storniert', rechnungStatus(rechnungen[3]) === 'storniert');
+
+  const posten = offeneVerbindlichkeiten(rechnungen);
+  ok('nur 2 offene Posten (bezahlt+storniert raus)', posten.length === 2);
+  ok('nach Fälligkeit sortiert (Beta 06-20 vor Alpha 07-01)', posten[0].name === 'Beta' && posten[1].name === 'Alpha');
+  ok('richtung ausgabe + kind verbindlichkeit', posten[0].richtung === 'ausgabe' && posten[0].kind === 'verbindlichkeit');
+  ok('betragCent = offener Rest (Beta 15000)', posten[0].betragCent === 15000 && posten[0].offenCent === 15000);
+  ok('Posten-Format kompatibel (referenz/name)', posten[1].referenz === 'A-1' && posten[1].name === 'Alpha');
+  ok('Summe offen = 26900', summeOffeneVerbindlichkeiten(posten) === 26900);
+  ok('Beta bezahltCent = 5000', posten.find((p) => p.name === 'Beta').bezahltCent === 5000);
+
+  // Stichtag vor der Teilzahlung → er2 voll offen, er3 noch offen (Zahlung am 06-15)
+  const am0609 = offeneVerbindlichkeiten(rechnungen, { stichtag: '2026-06-09' });
+  ok('Stichtag 06-09: 3 offene Posten', am0609.length === 3);
+  ok('Stichtag 06-09: Beta voll offen 20000', am0609.find((p) => p.name === 'Beta').betragCent === 20000);
+});
+
+await section('A2-Integration: Bank-Ausgabe matcht offene Verbindlichkeit', () => {
+  // Die offenen Verbindlichkeiten speisen denselben Zahlungsabgleich wie die Forderungen.
+  const posten = offeneVerbindlichkeiten([
+    { id: 'er:1', kreditor: 'Alpha GmbH', rechnungsnr: 'RE-2026-007', datum: '2026-06-01', bruttoCent: 11900 },
+    { id: 'er:2', kreditor: 'Beta AG', rechnungsnr: 'B-2', datum: '2026-06-02', bruttoCent: 5000 },
+  ]);
+  const u = { richtung: 'ausgabe', betragCent: 11900, valuta: '2026-06-05', zweck: 'Ueberweisung RE-2026-007', gegen: 'Alpha GmbH' };
+  const m = findeOffenePosten(u, posten);
+  ok('Bank-Ausgabe trifft Verbindlichkeit er:1', m && m.posten.id === 'er:1');
+  ok('Score nutzt Nummer + Name', m.score >= 1 + 3 + 2);
+  ok('Forderungs-Einnahme trifft Verbindlichkeit NICHT', findeOffenePosten({ richtung: 'einnahme', betragCent: 11900 }, posten) === null);
+
+  const b = zahlungsBuchungZeilen(u, m.posten);
+  ok('Ausgleich: Soll Verbindlichkeit 1600 / Haben Bank 1200', b.zeilen[0].konto === '1600' && b.zeilen[0].seite === 'S' && b.zeilen[1].konto === '1200' && b.zeilen[1].seite === 'H');
+  ok('Betrag 11900 ausgeglichen', b.zeilen[0].betrag === 11900 && b.zeilen[1].betrag === 11900);
+});
+
+await section('Validierung Eingangsrechnung', () => {
+  ok('ohne Kreditor ungültig', validateEingangsrechnung({ datum: '2026-06-01', positionen: [{ nettoCent: 100, ustSatz: 19 }] }).length > 0);
+  ok('ohne Datum ungültig', validateEingangsrechnung({ kreditor: 'X', positionen: [{ nettoCent: 100, ustSatz: 19 }] }).length > 0);
+  ok('falscher USt-Satz ungültig', validateEingangsrechnung({ kreditor: 'X', datum: '2026-06-01', positionen: [{ nettoCent: 100, ustSatz: 5 }] }).length > 0);
+  ok('gültige Rechnung ohne Fehler', validateEingangsrechnung({ kreditor: 'X', datum: '2026-06-01', positionen: [{ nettoCent: 100, ustSatz: 19 }] }).length === 0);
+  ok('Brutto statt Positionen erlaubt', validateEingangsrechnung({ kreditor: 'X', datum: '2026-06-01', bruttoCent: 11900 }).length === 0);
+  ok('weder Position noch Brutto → Fehler', validateEingangsrechnung({ kreditor: 'X', datum: '2026-06-01' }).length > 0);
 });
 
 await section('Mahnwesen: Fälligkeit, Überfälligkeit, Mahnstufe', () => {

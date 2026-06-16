@@ -9,6 +9,8 @@ import { pickFile, formatBytes, readFileText } from '../../core/files.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
 import { parseBankauszug, umsatzExtraktion } from '../../domain/bankimport.js';
 import { offenePosten, findeOffenePosten, zahlungsBuchungZeilen } from '../../domain/zahlungsabgleich.js';
+import { offeneVerbindlichkeiten, eingangsrechnungZeilen } from '../../domain/payables.js';
+import { saveEingangsrechnung, listEingangsrechnungen, zahlungHinzufuegen } from '../../domain/payables-store.js';
 import { listAuftraege, listKunden, setAuftragStatus } from '../../domain/crm-store.js';
 import { loadAccounts, saveEntwurf } from '../../domain/store.js';
 import { extractFromText } from '../../ai/extract.js';
@@ -190,6 +192,7 @@ function eRechnungKarte() {
         const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
         if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
         out.appendChild(el('div', { class: 'muted small', text: `${p.format} · ${t('docs.eInvoiceFrom')} ${p.lieferant || '—'} · ${p.nummer || '—'}` }));
+        out.appendChild(verbindlichkeitErfassenZeile(p, kat));
         out.appendChild(await vorschlagKarte(res.vorschlag, null, p.lieferant || ''));
       } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
     },
@@ -199,6 +202,44 @@ function eRechnungKarte() {
     el('p', { class: 'muted small', text: t('docs.eInvoiceHint') }),
     el('div', { class: 'btn-row' }, [btn]),
     out,
+  ]);
+}
+
+// Erfasst eine eingelesene Eingangsrechnung als OFFENE VERBINDLICHKEIT (Kreditor) und
+// bucht sie „auf Ziel" (Aufwand + Vorsteuer an 1600) als Entwurf. Die offene Verbindlichkeit
+// taucht danach im Bankimport-Zahlungsabgleich auf (Ausgangszahlung → Verbindlichkeit an Bank).
+function verbindlichkeitErfassenZeile(p, kat) {
+  const slot = el('div', {});
+  const aufwand = (kat && /^[34]/.test(String(kat.konto)) && _idx[kat.konto]) ? kat.konto : '4980';
+  const netto = p.netto != null ? p.netto : (p.brutto != null ? Math.round(p.brutto / (1 + (p.ustSatz || 0) / 100)) : null);
+  const btn = el('button', {
+    class: 'btn btn-sm', type: 'button', text: t('docs.payableCreate'),
+    onClick: async () => {
+      slot.replaceChildren();
+      try {
+        const rechnung = {
+          kreditor: p.lieferant || '—',
+          rechnungsnr: p.nummer || '',
+          datum: p.datum || new Date().toISOString().slice(0, 10),
+          positionen: netto != null ? [{ nettoCent: netto, ustSatz: p.ustSatz || 0, aufwandKonto: aufwand }] : [],
+          bruttoCent: p.brutto != null ? p.brutto : undefined,
+        };
+        const { zeilen } = eingangsrechnungZeilen(rechnung);
+        const entwurf = await saveEntwurf({
+          datum: rechnung.datum,
+          beschreibung: `${t('docs.payable')}: ${rechnung.kreditor} ${rechnung.rechnungsnr}`.trim(),
+          zeilen,
+        });
+        await saveEingangsrechnung({ ...rechnung, buchungRef: entwurf.id });
+        slot.appendChild(el('p', { class: 'muted small', text: t('docs.payableDone') }));
+      } catch (e) { slot.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
+    },
+  });
+  return el('div', { class: 'bank-row' }, [
+    el('div', { class: 'btn-row' }, [
+      el('span', { class: 'small muted', text: t('docs.payableHint') }), btn,
+    ]),
+    slot,
   ]);
 }
 
@@ -215,12 +256,13 @@ function bankImportKarte() {
       try {
         const { format, konto, umsaetze } = parseBankauszug(await readFileText(file));
         if (!umsaetze.length) { out.appendChild(el('p', { class: 'form-error', text: t('docs.bankNone') })); return; }
-        // Offene Forderungs-Posten für den Zahlungsabgleich laden (aus Aufträgen).
+        // Offene Posten für den Zahlungsabgleich laden: Forderungen (aus Aufträgen,
+        // richtung 'einnahme') + Verbindlichkeiten (Eingangsrechnungen, richtung 'ausgabe').
         let posten = [];
         try {
-          const [auftraege, kunden] = await Promise.all([listAuftraege(), listKunden()]);
+          const [auftraege, kunden, eingang] = await Promise.all([listAuftraege(), listKunden(), listEingangsrechnungen()]);
           const nameById = {}; for (const k of kunden) nameById[k.id] = k.name;
-          posten = offenePosten(auftraege, { nameById });
+          posten = [...offenePosten(auftraege, { nameById }), ...offeneVerbindlichkeiten(eingang)];
         } catch { posten = []; }
         out.appendChild(el('div', { class: 'muted small', text: `${format || '—'} · ${t('docs.bankAccount')}: ${konto || '—'} · ${umsaetze.length} ${t('docs.bankTxns')}` }));
         for (const u of umsaetze) out.appendChild(umsatzRow(u, posten));
@@ -253,8 +295,14 @@ function umsatzRow(u, posten = []) {
         const bk = zahlungsBuchungZeilen(u, p);
         try {
           await saveEntwurf({ datum: bk.datum, beschreibung: bk.beschreibung, zeilen: bk.zeilen });
-          await setAuftragStatus(p.id, 'bezahlt');
-          slot.appendChild(el('p', { class: 'muted small', text: `${t('docs.bankMatchDone')} (${p.referenz || ''})` }));
+          if (p.kind === 'verbindlichkeit') {
+            // Bezahlte Verbindlichkeit: Zahlung gegen die Eingangsrechnung verbuchen.
+            await zahlungHinzufuegen(p.id, { betragCent: u.betragCent, datum: bk.datum, ref: u.zweck || null });
+            slot.appendChild(el('p', { class: 'muted small', text: `${t('docs.bankMatchPaid')} (${p.referenz || ''})` }));
+          } else {
+            await setAuftragStatus(p.id, 'bezahlt');
+            slot.appendChild(el('p', { class: 'muted small', text: `${t('docs.bankMatchDone')} (${p.referenz || ''})` }));
+          }
         } catch (e) { slot.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
       },
     }));
