@@ -73,9 +73,14 @@ verschlüsselt (`state.js firma`).
       Sondervorauszahlung-Hinweis, **ELSTER-Datenpaket-Export** + Perioden-CSV). Setting
       `vaZeitraum`. 16 Tests. **Offen/ehrlich:** „ELSTER-Datenpaket" = strukturierte Übergabedatei,
       **KEIN ERiC-XML/-Direktversand**; Jahres-USt-Erklärung (eigenes Formular) nicht abgebildet.
-- [ ] **V6 — Anlage EÜR (amtliches Zeilenschema) + Kontenblätter + SuSa [MUSS/SOLL].** Heute nur
-      konten-basierte EÜR-CSV. → Mapping auf die **amtlichen Anlage-EÜR-Zeilen**, Kontenblatt je
-      Konto, Summen-/Saldenliste als Bericht/Export.
+- [x] **V6 — Anlage EÜR (Zeilenschema) + Kontenblätter + SuSa [MUSS/SOLL].** ✅ Umgesetzt:
+      `domain/berichte.js` (rein, node-getestet) — `summenSaldenliste` (SuSa mit Summen),
+      `kontenblatt` (Kontoauszug je Konto, chronologisch, laufender Saldo, Entwürfe ausgeschlossen),
+      `anlageEUR` (Erfolgskonten → **Anlage-EÜR-Gruppen**, netto, Überschuss wie computeEUR) +
+      `eurGruppeFuer`. Export `buildSusaCsv`/`buildKontenblattCsv`/`buildAnlageEURCsv`. Neue
+      Ansicht **„Berichte"** (Anlage-EÜR-Gruppierung, SuSa-Tabelle, Kontenblatt mit Konto-Auswahl;
+      je CSV). 17 Tests. **Offen/ehrlich:** Anlage-EÜR ist an der Formularstruktur *orientiert* —
+      exakte amtliche **Zeilennummern** (jahresabhängig) sind am Formular/mit Berater zu prüfen.
 - [ ] **V7 — Betriebsprüfer-Export GoBD (GDPdU/DSFinV-K, „Z3"/IDEA) [MUSS].** Datenpaket +
       Beschreibungsdatei (`INDEX.XML`/`gdpdu-01-09-2004.dtd`) für die digitale Betriebsprüfung.
 - [ ] **V8 — DATEV-EXTF berater-fest [SOLL].** Heute „EXTF-orientiert". → Steuerschlüssel-Mapping

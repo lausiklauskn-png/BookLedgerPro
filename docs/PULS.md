@@ -7,18 +7,18 @@
 
 ---
 
-## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V6**)
+## ⏭ START HIER — Nachfolge-Brief für die nächste Sitzung (Aufgabe: **V7**)
 
 > **Lies das zuerst und vollständig. Danach kannst du ohne Rückfragen loslegen.**
 
-**✅ V5 erledigt (USt-VA komplett: Zeitraum + Sondervorauszahlung + ELSTER-Paket) — diese Sitzung, in `claude/v2-ox8bu7`:**
-`domain/umsatzsteuer.js` (rein, node-getestet): `voranmeldungsperioden` (monatlich/quartal/
-jährlich, ELSTER-Codes 01–12/41–44, schaltjahr-sicher), `sondervorauszahlung` (1/11),
-`jahresZahllast`; `export.buildElsterVaPaket`; Auswertungs-Karte **„USt-VA je Zeitraum"** mit
-ELSTER-Datenpaket-Export; Setting `vaZeitraum`. **Tests 526/526, SW `v67`.** (Diese Sitzung
-zuvor gemergt: **V2** #64, **V3** #65, **V4** #66.)
-→ **Nächste Aufgabe = V6** (Anlage EÜR amtliches Zeilenschema + Kontenblätter + SuSa),
-Details in `docs/OFFENE_PUNKTE.md` Abschnitt V. **Ein Fahrplan-Punkt pro PR.**
+**✅ V6 erledigt (Anlage EÜR + Kontenblätter + SuSa) — diese Sitzung, in `claude/v2-ox8bu7`:**
+`domain/berichte.js` (rein, node-getestet): `summenSaldenliste` (SuSa), `kontenblatt`
+(Kontoauszug, laufender Saldo), `anlageEUR` (Erfolgskonten → Formular-Gruppen, Überschuss wie
+computeEUR), `eurGruppeFuer`; Export-CSV (SuSa/Kontenblatt/Anlage-EÜR); neue Ansicht
+**„Berichte"**. **Tests 543/543, SW `v68`.** (Diese Sitzung zuvor gemergt: **V2** #64, **V3** #65,
+**V4** #66, **V5** #67.)
+→ **Nächste Aufgabe = V7** (Betriebsprüfer-Export GoBD: GDPdU/DSFinV-K „Z3"/IDEA — Datenpaket +
+Beschreibungsdatei `INDEX.XML`), Details in `docs/OFFENE_PUNKTE.md` Abschnitt V. **Ein Punkt pro PR.**
 
 **Was „Vx" bedeutet — WICHTIG, nicht missverstehen:**
 „Vx" ist **KEINE** neue Programm-Version, **KEIN** Redesign, **KEIN** Major-Umbau. Falls dein
@@ -29,8 +29,9 @@ READINESS"**. Mehr nicht.
 **Projektzustand (nichts davon neu bauen — ist fertig & gemergt):** reife Buchhaltungs-PWA,
 Phasen 0–6 ✅, EU-KI (Vision EU + Mistral EU) ✅, A1–A3 (Mahnwesen/Verbindlichkeiten/
 Zahlungsabgleich), **V1 Kontenrahmen** (57 Konten + CRUD), **V2 §13b/Reverse-Charge**,
-**V3 Anlagevermögen+AfA**, **V4 Kassenbuch/Anfangsbestände**, **V5 USt-VA komplett** (s.o.).
-→ **Nicht** A1–A3 / V1–V5 wiederholen, **kein** Redesign.
+**V3 Anlagevermögen+AfA**, **V4 Kassenbuch/Anfangsbestände**, **V5 USt-VA komplett**,
+**V6 Berichte (SuSa/Kontenblatt/Anlage-EÜR)** (s.o.). → **Nicht** A1–A3 / V1–V6 wiederholen,
+**kein** Redesign.
 
 ### V2 — was genau zu bauen ist (§13b/Reverse-Charge + EU/Ausland)
 Ziel: Die Firma bezieht selbst Leistungen mit **Steuerschuldumkehr** — z. B. **Google Cloud
@@ -81,8 +82,8 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 ---
 
 **Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v2-ox8bu7`
-· **Tests:** `node tests/run.mjs` → **526/526 grün**
-· **SW-Cache:** `v67` · **75 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Tests:** `node tests/run.mjs` → **543/543 grün**
+· **SW-Cache:** `v68` · **77 JS-Module** · **12 Bild- + 5 Icon-Assets**
 · **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
 · **V3 ✅:** Anlagevermögen + AfA (GWG/Sammelposten/linear pro rata), Ansicht „Anlagen",
   Anlagenverzeichnis + AfA-Buchung-Entwurf + AVEÜR-CSV (`domain/anlagen.js`, `anlagen-store.js`).
@@ -92,6 +93,8 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 · **V5 ✅:** USt-VA komplett — Voranmeldungszeitraum (Monat/Quartal/Jahr, ELSTER-Codes),
   Sondervorauszahlung (1/11), ELSTER-Datenpaket-Export; `domain/umsatzsteuer.js`, Karte
   „USt-VA je Zeitraum", Setting `vaZeitraum`.
+· **V6 ✅:** Berichte — SuSa, Kontenblatt (laufender Saldo), Anlage-EÜR-Gruppierung;
+  `domain/berichte.js`, Ansicht „Berichte", je CSV-Export.
 · **Profi-Readiness (V-Fahrplan):** V1 ✅ Kontenrahmen 57 Konten + Konten anlegen/bearbeiten/löschen.
 · **Mahnwesen A1 erweitert:** persistente Mahnstufe (`mahnungen[]`, `vorschlagNaechsteStufe`) +
   manuelle/editierbare Zins-/Gebühren-Erfassung im Mahnschreiben (keine Auto-Steuerbuchung).

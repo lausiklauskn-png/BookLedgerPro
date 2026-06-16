@@ -37,6 +37,28 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-16 — V6: Anlage EÜR + Kontenblätter + SuSa [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (Fahrplan-Punkt V6, gleiche Sitzung)
+- **`domain/berichte.js`** (rein, node-getestet): `summenSaldenliste` (SuSa = Saldenliste +
+  Soll-/Haben-Gesamtsummen), `kontenblatt` (Kontoauszug je Konto, chronologisch, **laufender
+  Saldo**, Entwürfe ausgeschlossen), `anlageEUR` (Erfolgskonten → **Anlage-EÜR-Gruppen**,
+  netto, Überschuss = computeEUR) + `eurGruppeFuer` (Konto→Gruppe mit Fallback je Kontoart).
+- **`domain/export.js`**: `buildSusaCsv`, `buildKontenblattCsv`, `buildAnlageEURCsv`.
+- **Ansicht „Berichte"** (`ui/views/berichte.js`, neuer Nav-Eintrag/Route): Anlage-EÜR-
+  Gruppierung (Einnahmen/Ausgaben/Überschuss), SuSa-Tabelle, Kontenblatt mit Konto-Auswahl;
+  Periodenfilter; je CSV-Export. i18n de/en. SW-Cache `v68` (+2 Module precached).
+- **Tests 543/543** (17 neu: SuSa Soll=Haben, Bank-Saldo, Kontenblatt laufender Saldo +
+  Entwurf-Ausschluss, Gruppen-Zuordnung, Anlage-EÜR-Summen/Überschuss, USt/VSt nicht als
+  Erfolg, CSV-Inhalte).
+
+**Stand:** V6 vollständig (Logik node-getestet, UI statisch geprüft). **Offen/Ehrlich:**
+Anlage-EÜR an der Formularstruktur *orientiert* — exakte **Zeilennummern** (jahresabhängig)
+am amtlichen Formular/mit Berater prüfen. **Nächstes:** V7 (GoBD-Betriebsprüfer-Export
+GDPdU/DSFinV-K „Z3"/IDEA + Beschreibungsdatei).
+
+---
+
 ## 2026-06-16 — V5: USt-VA komplett (Zeitraum + Sondervorauszahlung + ELSTER-Paket) [Branch `claude/v2-ox8bu7`]
 
 **Was getan** (Fahrplan-Punkt V5, gleiche Sitzung)
