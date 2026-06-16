@@ -5,9 +5,11 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/general-discussion-x9xyk9`
-· **main-Stand:** `4ba49c8` · **Tests:** `node tests/run.mjs` → **134/134 grün**
-· **SW-Cache:** `v25` · **53 JS-Module** · **12 Bild- + 5 Icon-Assets**
+**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v2-ox8bu7`
+· **Tests:** `node tests/run.mjs` → **146/146 grün**
+· **SW-Cache:** `v26` · **53 JS-Module** · **12 Bild- + 5 Icon-Assets**
+· **Neu:** strenge Ist-EÜR (§4 Abs.3 EStG, Bruttoverfahren) in `domain/taxes.js computeEURIst`,
+  Karte + CSV in „Auswertung".
 
 ---
 
@@ -72,9 +74,11 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
   - 5d: Symbiose-Import (Belege aus **Mein-Tresor**, Aufträge aus **WorkFloh** → Buchungen).
   - Briefkasten-Ritual (§11.6, `docs/SAGE_SYNC_BRIEFKASTEN.md`) wird **erst aktiv**, wenn
     BookLedgerPro ein deployter Sage-Knoten ist.
-- **Steuer-Recht-Resterledigung:** strenge Zufluss-/Abfluss-EÜR (§4 Abs.3 EStG);
-  zertifiziertes DATEV-EXTF + Steuerschlüssel-Mapping; **keine** ELSTER/ERiC-Einreichung
-  (nur Datenpaket). PDF-Rechnung aus Auftrag fehlt (nur Buchung).
+- **Steuer-Recht-Resterledigung:** ✅ strenge Zufluss-/Abfluss-EÜR (§4 Abs.3 EStG,
+  Bruttoverfahren) ist da (`computeEURIst`, Node-getestet) — deckt Standardfälle ab,
+  Sonderfälle (Skonto-Splits, gemischte Zahlungen, anteilige Privatnutzung) NICHT.
+  Noch offen: zertifiziertes DATEV-EXTF + Steuerschlüssel-Mapping; **keine** ELSTER/ERiC-
+  Einreichung (nur Datenpaket); PDF-Rechnung aus Auftrag fehlt (nur Buchung).
 - **Performance/Lighthouse** nicht gemessen (kein Headless-Browser).
 - **Lokales Offline-OCR** (Tesseract.js) nicht eingebunden — Vision EU ist der OCR-Pfad.
 - **Git-Nebensache:** Abzweig `claude/eu-ki-vision-mistral` zeigt remote noch auf denselben
@@ -88,8 +92,8 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 2. **Sage 5b** (mit Nutzer als Vermittler): Identität + Spore in-app erzeugen, `sbkim/`
    deployen, Hub-Registrierung, Handshake. Headless prüfen mit
    `node tools/verify_remote_spore.mjs sbkim/spore.json` (Urteil VALID).
-3. **Phase 4-Rest / Phase 5c-d** nach Bedarf: echte EÜR, PDF-Rechnung, echter domainVector,
-   Symbiose-Import.
+3. **Phase 4-Rest / Phase 5c-d** nach Bedarf: ~~echte EÜR~~ ✅, PDF-Rechnung aus Auftrag
+   (§14 UStG-Pflichtangaben), zertifiziertes DATEV-EXTF, echter domainVector, Symbiose-Import.
 4. **Optional:** Lighthouse/Perf, weitere UX-Politur, lokaler OCR-Fallback.
 
 ## 8. Architektur-Landkarte (wo was liegt)

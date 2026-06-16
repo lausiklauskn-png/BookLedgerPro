@@ -3,11 +3,12 @@
 // festgeschriebenen Buchungen (seq != null). Storno-Buchungen heben ihre
 // Originale rechnerisch wieder auf, daher werden sie mitgezählt.
 //
-// EHRLICHER HINWEIS: Die EÜR hier ist eine vereinfachte, periodengerechte
-// Auswertung aus den Erfolgskonten (Aufwand/Ertrag). Die strenge Zufluss-/
-// Abfluss-EÜR nach §4 Abs.3 EStG (Ist-Prinzip) folgt in Phase 4.
+// EHRLICHER HINWEIS: `computeEUR` ist eine vereinfachte, periodengerechte Auswertung
+// aus den Erfolgskonten (Aufwand/Ertrag). `computeEURIst` ist die strenge Zufluss-/
+// Abfluss-EÜR nach §4 Abs.3 EStG (Ist-Prinzip, Bruttoverfahren) — Erfassung zum
+// Geldfluss (Kasse/Bank), nicht zum Rechnungsdatum.
 
-import { KONTOART, isVorsteuerKonto, isUmsatzsteuerKonto } from './accounts.js';
+import { KONTOART, isVorsteuerKonto, isUmsatzsteuerKonto, isGeldKonto, isEigenkapitalKonto } from './accounts.js';
 
 export const UST_SAETZE = [0, 7, 19];
 
@@ -65,6 +66,56 @@ export function computeUStVoranmeldung(buchungen, kontoIndex, periode) {
     }
   }
   return { umsatzsteuer, vorsteuer, zahllast: umsatzsteuer - vorsteuer, perKonto };
+}
+
+/**
+ * Strenge Ist-EÜR nach §4 Abs.3 EStG (Zufluss-/Abfluss-Prinzip), Bruttoverfahren.
+ *
+ * Betriebseinnahmen/-ausgaben werden im Moment des **Geldflusses** (Kasse/Bank) erfasst —
+ * nicht zum Rechnungsdatum. Pro festgeschriebener Buchung mit Geldkonto-Beteiligung:
+ *  - Netto-Geldzufluss (Soll Geld > Haben Geld) → die Gegenbuchungen erklären eine
+ *    **Betriebseinnahme** (brutto: Erlös + vereinnahmte USt + getilgte Forderung).
+ *  - Netto-Geldabfluss → die Gegenbuchungen erklären eine **Betriebsausgabe** (brutto:
+ *    Aufwand + gezahlte Vorsteuer + USt-Vorauszahlung ans Finanzamt + getilgte Verbindlichkeit).
+ *
+ * Erfolgsneutral und damit NICHT gezählt: reine Geld-zu-Geld-Umbuchungen (z.B. Kasse↔Bank,
+ * Netto-Geldfluss = 0) sowie Eigenkapital-/Privat-Zeilen (Privatentnahme/-einlage).
+ *
+ * EHRLICHE GRENZE: Bruttoverfahren-Standardfälle sind abgedeckt und Node-getestet. Die
+ * Brutto-Positionen werden je Gegenkonto ausgewiesen (Erlös/USt getrennt); Sonderfälle
+ * (Skonto-Splits, gemischte Zahlungen, anteilige Privatnutzung) sind nicht modelliert.
+ */
+export function computeEURIst(buchungen, kontoIndex, periode) {
+  const einnahmenMap = {}, ausgabenMap = {};
+  let einnahmen = 0, ausgaben = 0;
+  for (const b of buchungen) {
+    if (b.seq == null) continue;            // nur festgeschriebene
+    if (!inPeriode(b.datum, periode)) continue;
+    const zeilen = b.zeilen || [];
+    let geldSoll = 0, geldHaben = 0;
+    for (const z of zeilen) {
+      if (isGeldKonto(kontoIndex[z.konto])) {
+        if (z.seite === 'S') geldSoll += z.betrag; else geldHaben += z.betrag;
+      }
+    }
+    const netto = geldSoll - geldHaben;     // > 0 Zufluss, < 0 Abfluss
+    if (netto === 0) continue;              // kein Netto-Geldfluss → erfolgsneutral
+    const einnahme = netto > 0;
+    const map = einnahme ? einnahmenMap : ausgabenMap;
+    for (const z of zeilen) {
+      const k = kontoIndex[z.konto];
+      if (isGeldKonto(k) || isEigenkapitalKonto(k)) continue; // Geld + Privat erfolgsneutral
+      // Bei Einnahme zählt die Haben-Seite der Gegenkonten positiv, bei Ausgabe die Soll-Seite.
+      const richtung = einnahme ? (z.seite === 'H' ? 1 : -1) : (z.seite === 'S' ? 1 : -1);
+      const wert = z.betrag * richtung;
+      const cur = map[z.konto] || (map[z.konto] = { nummer: z.konto, name: k ? k.name : '(unbekannt)', wert: 0 });
+      cur.wert += wert;
+      if (einnahme) einnahmen += wert; else ausgaben += wert;
+    }
+  }
+  const einnahmenKonten = Object.values(einnahmenMap).filter((e) => e.wert !== 0).sort((a, b) => a.nummer.localeCompare(b.nummer));
+  const ausgabenKonten = Object.values(ausgabenMap).filter((a) => a.wert !== 0).sort((a, b) => a.nummer.localeCompare(b.nummer));
+  return { einnahmen, ausgaben, ueberschuss: einnahmen - ausgaben, einnahmenKonten, ausgabenKonten };
 }
 
 /** EÜR (vereinfacht): Einnahmen (Ertrag) − Ausgaben (Aufwand) = Überschuss. */

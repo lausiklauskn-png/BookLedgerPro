@@ -5,6 +5,31 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-16 — Strenge Ist-EÜR (§4 Abs.3 EStG) [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (PULS-Priorität 3, „weiter laut PULS")
+- **`computeEURIst` (`domain/taxes.js`)**: strenge Zufluss-/Abfluss-EÜR nach §4 Abs.3 EStG,
+  **Bruttoverfahren** — Betriebseinnahmen/-ausgaben werden zum **Geldfluss** (Kasse/Bank)
+  erfasst, nicht zum Rechnungsdatum. Brutto-Positionen je Gegenkonto (Erlös/USt getrennt,
+  vereinnahmte USt + gezahlte Vorsteuer enthalten). Forderungs-/Verbindlichkeits-Tilgung
+  zählt im Zahlungsmoment; reine Geld-zu-Geld-Umbuchungen und Eigenkapital/Privat sind
+  **erfolgsneutral**.
+- `accounts.js`: Kasse/Bank als `rolle:'geld'`, Eigenkapital als `rolle:'eigenkapital'`;
+  neue Helfer `isGeldKonto`/`isEigenkapitalKonto`.
+- „Auswertung" (`ui/views/reports.js`): eigene **Ist-EÜR-Karte** neben der vereinfachten
+  EÜR + **EÜR-(Ist)-CSV**-Export (nutzt `eurToCsv`, gleiche Form). i18n de/en ergänzt,
+  alte „folgt in Phase 4"-Notiz entfernt.
+- Tests **146/146** (12 neu: Barverkauf, Ausgabe brutto, Forderungstilgung, Rechnung ohne
+  Geldfluss nicht erfasst, Geld-zu-Geld/Privat erfolgsneutral, Periodenfilter). SW-Cache `v26`.
+- ROADMAP Phase 4 abgehakt, PULS fortgeschrieben.
+
+**Ehrlich offen / Grenzen:** Bruttoverfahren-Standardfälle abgedeckt; **nicht** modelliert:
+Skonto-Splits, gemischte Zahlungen, anteilige Privatnutzung. Browser-UI nicht headless
+E2E-getestet (Kernlogik node-getestet). Weiter offen: DATEV-EXTF (zertifiziert), PDF-Rechnung,
+Sage 5b–d, Beleg→Buchung-Sichttest im Browser.
+
+---
+
 ## 2026-06-14 — KI-Setup-Politur + Nachfolge-Brief
 
 **Was getan**

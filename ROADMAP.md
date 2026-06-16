@@ -24,8 +24,8 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
       lückenloser Nummernkreis; Buchungen verschlüsselt gespeichert (`domain/store.js`)
 - [x] 45/45 Node-Tests grün (Kernlogik). ⚠️ Browser-UI nicht headless E2E-getestet.
 
-> Offen/Teil-Phase-4: strenge Zufluss-/Abfluss-EÜR (§4 Abs.3 EStG); Kostenstellen-Feld
-> ist im Modell vorgesehen, UI-Zuordnung folgt mit Phase 3.
+> Strenge Zufluss-/Abfluss-EÜR (§4 Abs.3 EStG) ist in Phase 4 nachgereicht
+> (`computeEURIst`). Kostenstellen-Feld ist im Modell vorgesehen, UI-Zuordnung in Phase 3.
 
 ## ✅ Phase 2 — Belege & Erkennung (Kern)
 - [x] Verschlüsselter Beleg-Store (Foto/PDF), `domain/documents.js` (AES-GCM)
@@ -57,7 +57,11 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 
 ## ✅ Phase 4 — Steuer & Export
 - [x] USt-Voranmeldung-Kennzahlen (Kz 81/86/66/83) + EÜR-Aufbereitung (`domain/export.js`)
-- [x] Export: Journal-CSV, DATEV-orientierte CSV, USt-VA-CSV, EÜR-CSV; Drucken→PDF
+- [x] **Strenge Ist-EÜR (Zufluss-/Abfluss, §4 Abs.3 EStG, Bruttoverfahren)** (`domain/taxes.js`
+      `computeEURIst`): Erfassung zum Geldfluss (Kasse/Bank), inkl. vereinnahmter USt /
+      gezahlter Vorsteuer; Privat/Geld-Umbuchungen erfolgsneutral. Node-getestet, eigene
+      Karte + CSV in „Auswertung". (Neben der bisherigen vereinfachten Erfolgskonten-EÜR.)
+- [x] Export: Journal-CSV, DATEV-orientierte CSV, USt-VA-CSV, EÜR-CSV, EÜR-(Ist)-CSV; Drucken→PDF
 - [x] Steuer-Assistent (`ai/taxAssist.js`, opt-in Claude, nur aggregierte Kennzahlen)
 - [x] DSGVO/GoBD-Doku in-app (Ansicht „Recht & Doku") + `docs/legal/*` +
       Betroffenenrechte (Export / vollständiges Löschen)
@@ -66,7 +70,9 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 > **Ehrlich offen:** DATEV-Export ist DATEV-*orientiert* (kein zertifiziertes EXTF +
 > Steuerschlüssel-Mapping); **keine** ELSTER/ERiC-Einreichung (nur Datenpaket); „PDF"
 > über Browser-Druck (keine PDF-Lib); Claude-Pfade nicht live getestet;
-> Browser-UI nicht headless E2E-getestet.
+> Browser-UI nicht headless E2E-getestet. Ist-EÜR deckt die Bruttoverfahren-Standardfälle
+> ab (Node-getestet); Sonderfälle (Skonto-Splits, gemischte Zahlungen, anteilige
+> Privatnutzung) sind nicht modelliert.
 
 ## ◑ Phase 5 — Sage-Mycel-Symbiose (lokale Andock-Vorbereitung)
 - [x] SBKIM-Protokoll byte-kompatibel: Ed25519-Identität, Spore-Bau/-Verifikation

@@ -11,7 +11,8 @@ import { parseEuroToCents, formatCents } from '../src/domain/money.js';
 import { saldo, KONTOART, mehrungsSeite } from '../src/domain/accounts.js';
 import { baueBuchungZeilen, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen } from '../src/domain/journal.js';
 import { hashBuchung, verifyChain, GENESIS, canonicalize } from '../src/domain/audit.js';
-import { computeEUR, computeUStVoranmeldung, saldenliste } from '../src/domain/taxes.js';
+import { computeEUR, computeEURIst, computeUStVoranmeldung, saldenliste } from '../src/domain/taxes.js';
+import { isGeldKonto, isEigenkapitalKonto } from '../src/domain/accounts.js';
 import { seedAccounts } from '../src/domain/accounts.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
@@ -197,6 +198,49 @@ await section('Steuer: USt-Voranmeldung & EÜR', () => {
   // Periodenfilter: nur Juni-05 zählt
   const ustVor = computeUStVoranmeldung(buchungen, idx, { von: '2026-06-01', bis: '2026-06-07' });
   ok('Periode filtert: nur Vorsteuer im Fenster', ustVor.vorsteuer === 1900 && ustVor.umsatzsteuer === 0);
+});
+
+await section('Steuer: Ist-EÜR (Zufluss-/Abfluss, §4 Abs.3 EStG)', () => {
+  const idx = indexFromSeed();
+  ok('Kasse/Bank sind Geldkonten', isGeldKonto(idx['1000']) && isGeldKonto(idx['1200']));
+  ok('Eigenkapital ist erfolgsneutral markiert', isEigenkapitalKonto(idx['0880']));
+
+  const buchungen = [
+    // 1) Barverkauf 238 (200 Erlös + 38 USt) → Zufluss Kasse → Einnahme brutto
+    { seq: 1, datum: '2026-06-02', zeilen: [{ konto: '1000', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+    // 2) Bürobedarf 119 (100 + 19 VSt) per Bank → Abfluss → Ausgabe brutto
+    { seq: 2, datum: '2026-06-05', zeilen: [{ konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }] },
+    // 3) Rechnung (Forderung an Erlöse+USt) — KEIN Geldfluss → NICHT in der Ist-EÜR
+    { seq: 3, datum: '2026-06-08', zeilen: [{ konto: '1400', seite: 'S', betrag: 11900 }, { konto: '8400', seite: 'H', betrag: 10000 }, { konto: '1776', seite: 'H', betrag: 1900 }] },
+    // 4) Kunde zahlt die Forderung (Bank an Forderung) → Zufluss → Einnahme brutto 119
+    { seq: 4, datum: '2026-06-12', zeilen: [{ konto: '1200', seite: 'S', betrag: 11900 }, { konto: '1400', seite: 'H', betrag: 11900 }] },
+    // 5) Geld-zu-Geld (Kasse → Bank) → Netto-Geldfluss 0 → erfolgsneutral
+    { seq: 5, datum: '2026-06-13', zeilen: [{ konto: '1200', seite: 'S', betrag: 5000 }, { konto: '1000', seite: 'H', betrag: 5000 }] },
+    // 6) Privatentnahme (Eigenkapital an Kasse) → Abfluss, aber erfolgsneutral
+    { seq: 6, datum: '2026-06-14', zeilen: [{ konto: '0880', seite: 'S', betrag: 4000 }, { konto: '1000', seite: 'H', betrag: 4000 }] },
+  ];
+
+  const eur = computeEURIst(buchungen, idx);
+  // Einnahmen: 23800 (Barverkauf) + 11900 (gezahlte Forderung) = 35700
+  ok('Ist-Einnahmen brutto 35700', eur.einnahmen === 35700);
+  // Ausgaben: 11900 (Bürobedarf brutto)
+  ok('Ist-Ausgaben brutto 11900', eur.ausgaben === 11900);
+  ok('Ist-Überschuss 23800', eur.ueberschuss === 23800);
+
+  const erl = eur.einnahmenKonten.find((e) => e.nummer === '8400');
+  const ust = eur.einnahmenKonten.find((e) => e.nummer === '1776');
+  const ford = eur.einnahmenKonten.find((e) => e.nummer === '1400');
+  ok('Erlös-Position 20000 (netto, getrennt von USt)', erl && erl.wert === 20000);
+  ok('vereinnahmte USt-Position 3800', ust && ust.wert === 3800);
+  ok('getilgte Forderung als Einnahme 11900', ford && ford.wert === 11900);
+
+  ok('Rechnung ohne Geldfluss nicht erfasst (kein Erlös 30000)', erl.wert === 20000);
+  ok('Privatentnahme nicht als Ausgabe', !eur.ausgabenKonten.some((a) => a.nummer === '0880'));
+  ok('Geld-zu-Geld nicht erfasst', !eur.einnahmenKonten.some((e) => e.nummer === '1000'));
+
+  // Periodenfilter: nur der Barverkauf am 02.06.
+  const eurFenster = computeEURIst(buchungen, idx, { von: '2026-06-01', bis: '2026-06-03' });
+  ok('Periode filtert Ist-EÜR', eurFenster.einnahmen === 23800 && eurFenster.ausgaben === 0);
 });
 
 await section('Integration: Festschreiben + Storno + Kette (spiegelt store.js)', async () => {

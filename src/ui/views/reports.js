@@ -4,7 +4,7 @@ import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
-import { computeUStVoranmeldung, computeEUR } from '../../domain/taxes.js';
+import { computeUStVoranmeldung, computeEUR, computeEURIst } from '../../domain/taxes.js';
 import { kostenstellenAuswertung } from '../../domain/costcenters.js';
 import { buildLedgerCsv, buildDatevCsv, buildUstVa, ustVaToCsv, eurToCsv } from '../../domain/export.js';
 import { downloadText } from '../../core/files.js';
@@ -37,6 +37,7 @@ async function repaint() {
 
   const ust = computeUStVoranmeldung(buchungen, idx, p);
   const eur = computeEUR(buchungen, idx, p);
+  const eurIst = computeEURIst(buchungen, idx, p);
   const va = buildUstVa(buchungen, idx, p);
   const ks = kostenstellenAuswertung(buchungen, idx, p);
   const audit = await verifyAuditChain();
@@ -45,10 +46,11 @@ async function repaint() {
   mount(_host, el('section', { class: 'view', id: 'report-view' }, [
     el('h1', { text: t('reports.title') }),
     periodeControls(),
-    exportBar(buchungen, idx, eur, va),
+    exportBar(buchungen, idx, eur, eurIst, va),
     el('div', { class: 'report-grid' }, [
       ustCard(ust),
       eurCard(eur),
+      eurIstCard(eurIst),
     ]),
     vaCard(va),
     claudeBereit ? assistentCard(va, eur, p) : null,
@@ -59,7 +61,7 @@ async function repaint() {
 
 const BOM = '﻿';
 
-function exportBar(buchungen, idx, eur, va) {
+function exportBar(buchungen, idx, eur, eurIst, va) {
   const stamp = new Date().toISOString().slice(0, 10);
   const dl = (name, text) => downloadText(name, BOM + text, 'text/csv');
   return el('div', { class: 'card export-bar no-print' }, [
@@ -68,6 +70,7 @@ function exportBar(buchungen, idx, eur, va) {
     el('button', { class: 'btn btn-sm', text: t('reports.exportDatev'), onClick: () => dl(`datev-${stamp}.csv`, buildDatevCsv(buchungen, idx)) }),
     el('button', { class: 'btn btn-sm', text: t('reports.exportUstVa'), onClick: () => dl(`ust-va-${stamp}.csv`, ustVaToCsv(va)) }),
     el('button', { class: 'btn btn-sm', text: t('reports.exportEur'), onClick: () => dl(`euer-${stamp}.csv`, eurToCsv(eur)) }),
+    el('button', { class: 'btn btn-sm', text: t('reports.exportEurIst'), onClick: () => dl(`euer-ist-${stamp}.csv`, eurToCsv(eurIst)) }),
     el('button', { class: 'btn btn-sm', text: t('reports.print'), onClick: () => window.print() }),
   ]);
 }
@@ -170,6 +173,17 @@ function eurCard(eur) {
     el('div', { class: 'mycel-divider' }),
     zeile(t('reports.surplus'), eur.ueberschuss, { strong: true }),
     el('p', { class: 'muted small', text: t('reports.eurNote') }),
+  ]);
+}
+
+function eurIstCard(eur) {
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.eurIst') }),
+    zeile(t('reports.incomeGross'), eur.einnahmen),
+    zeile(t('reports.expenseGross'), eur.ausgaben),
+    el('div', { class: 'mycel-divider' }),
+    zeile(t('reports.surplus'), eur.ueberschuss, { strong: true }),
+    el('p', { class: 'muted small', text: t('reports.eurIstNote') }),
   ]);
 }
 

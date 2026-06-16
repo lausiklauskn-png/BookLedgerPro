@@ -28,8 +28,8 @@ export function saldo(kontoart, bewegung) {
 // ustSatz/vorsteuerSatz nur informativ für Standard-Buchungen.
 export const SKR03_SEED = [
   // Aktiva
-  { nummer: '1000', name: 'Kasse', art: KONTOART.AKTIV },
-  { nummer: '1200', name: 'Bank', art: KONTOART.AKTIV },
+  { nummer: '1000', name: 'Kasse', art: KONTOART.AKTIV, rolle: 'geld' },
+  { nummer: '1200', name: 'Bank', art: KONTOART.AKTIV, rolle: 'geld' },
   { nummer: '1400', name: 'Forderungen aus Lieferungen und Leistungen', art: KONTOART.AKTIV },
   { nummer: '1576', name: 'Abziehbare Vorsteuer 19%', art: KONTOART.AKTIV, ust: 19, rolle: 'vorsteuer' },
   { nummer: '1571', name: 'Abziehbare Vorsteuer 7%', art: KONTOART.AKTIV, ust: 7, rolle: 'vorsteuer' },
@@ -37,7 +37,7 @@ export const SKR03_SEED = [
   { nummer: '1600', name: 'Verbindlichkeiten aus Lieferungen und Leistungen', art: KONTOART.PASSIV },
   { nummer: '1776', name: 'Umsatzsteuer 19%', art: KONTOART.PASSIV, ust: 19, rolle: 'umsatzsteuer' },
   { nummer: '1771', name: 'Umsatzsteuer 7%', art: KONTOART.PASSIV, ust: 7, rolle: 'umsatzsteuer' },
-  { nummer: '0880', name: 'Eigenkapital', art: KONTOART.PASSIV },
+  { nummer: '0880', name: 'Eigenkapital', art: KONTOART.PASSIV, rolle: 'eigenkapital' },
   // Aufwand
   { nummer: '3400', name: 'Wareneingang 19% Vorsteuer', art: KONTOART.AUFWAND, ust: 19 },
   { nummer: '4120', name: 'Gehälter', art: KONTOART.AUFWAND },
@@ -57,3 +57,7 @@ export function seedAccounts() {
 
 export function isVorsteuerKonto(konto) { return konto && konto.rolle === 'vorsteuer'; }
 export function isUmsatzsteuerKonto(konto) { return konto && konto.rolle === 'umsatzsteuer'; }
+/** Geldkonto (Kasse/Bank) — Zahlungsmittel für die Ist-Versteuerung (Zufluss/Abfluss). */
+export function isGeldKonto(konto) { return konto && konto.rolle === 'geld'; }
+/** Eigenkapital/Privat — erfolgsneutral, zählt NICHT als Betriebseinnahme/-ausgabe (EÜR). */
+export function isEigenkapitalKonto(konto) { return konto && konto.rolle === 'eigenkapital'; }
