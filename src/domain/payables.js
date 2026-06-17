@@ -10,7 +10,7 @@
 //
 // Reine, cent-genaue Funktionen (node-getestet). Persistenz: payables-store.js.
 
-import { faelligkeit, tageUeberfaellig } from './mahnwesen.js';
+import { tageUeberfaellig, faelligAmVon } from './mahnwesen.js';
 
 const VERBINDLICHKEIT_KONTO = '1600';            // Verbindlichkeiten aus L+L
 const AUFWAND_KONTO_STD = '4980';                // Sonstige betriebliche Aufwendungen (Fallback)
@@ -169,10 +169,7 @@ export function summeOffeneVerbindlichkeiten(posten) {
  * @returns {string} JJJJ-MM-TT (oder '' ohne Datum)
  */
 export function berechneFaelligAm(rechnung = {}, defaultZielTage = 30) {
-  if (rechnung.faelligAm) return rechnung.faelligAm;
-  if (!rechnung.datum) return '';
-  const ziel = rechnung.zahlungszielTage != null ? rechnung.zahlungszielTage : defaultZielTage;
-  return faelligkeit(rechnung.datum, ziel);
+  return faelligAmVon(rechnung, defaultZielTage);
 }
 
 /**

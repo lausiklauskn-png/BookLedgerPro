@@ -209,8 +209,14 @@ Auto-Festschreiben** (GoBD). SW `v87`, 783/783 Tests.
 `zahlungszielTage`; `payables.berechneFaelligAm(rechnung, defaultZielTage)` (explizites `faelligAm` →
 Datum + rechnungseigenes Ziel → Datum + Default 30) wird in `offeneVerbindlichkeiten`/
 `anreichereVerbindlichkeiten`/der OP-Liste genutzt, validiert (ganzzahlig ≥ 0), node-getestet.
-**Noch offen [SOLL]:** Zahlungsziel je Rechnung auch für **Forderungen** (heute global aus Einstellungen)
-+ Eingangsrechnungs-Verzug (Gegenseite, Mahnung erhalten/prüfen).
+**Zahlungsziel je Forderung erledigt (2026-06-17, A1-Rest):** Aufträge tragen jetzt ein optionales
+`zahlungszielTage`; `mahnwesen.faelligAmVon(posten, defaultZielTage)` (explizites `faelligAm` → Rechnungsdatum +
+posten-eigenes Ziel → Default) wird von `anreicherePosten`/`mahnschreibenDaten` genutzt, `payables.berechneFaelligAm`
+delegiert daran (Duplikat entfernt). `zahlungsabgleich.offenePosten` reicht `faelligAm`/`zahlungszielTage` des Auftrags
+durch; `orders.validateAuftrag` validiert das Ziel; UI-Feld „Zahlungsziel (Tage)" im Auftragsformular. node-getestet
+(+16 → 1045/1045), SW `v99`.
+**Noch offen [SOLL]:** Eingangsrechnungs-Verzug (Gegenseite, Mahnung erhalten/prüfen); Ziel auf dem gedruckten
+§14-Dokument („zahlbar bis"); WorkFloh-`rechnung`-Block überträgt (noch) kein Zahlungsziel; Edit bestehender Aufträge.
 
 **Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,
 damit man nachmahnen kann — siehe jetzt Auswertungen.

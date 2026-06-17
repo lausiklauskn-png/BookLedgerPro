@@ -85,7 +85,7 @@ import {
   extraktionZuEingangsrechnung, berechneFaelligAm,
 } from '../src/domain/payables.js';
 import { buildOffeneVerbindlichkeitenCsv } from '../src/domain/export.js';
-import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, letzteMahnstufe, vorschlagNaechsteStufe, mahnVerlaufSumme, mahnStufeLabel, MAHN_KONTEN, mahnbuchungZeilen, mahnbuchungEntwurf } from '../src/domain/mahnwesen.js';
+import { faelligkeit, faelligAmVon, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, letzteMahnstufe, vorschlagNaechsteStufe, mahnVerlaufSumme, mahnStufeLabel, MAHN_KONTEN, mahnbuchungZeilen, mahnbuchungEntwurf } from '../src/domain/mahnwesen.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
   erstelleMandant, leereRegistry, findeMandant, aktiverMandant, addMandant,
@@ -1672,6 +1672,50 @@ await section('Zahlungsabgleich: offene Posten + Matching + Ausgleichsbuchung', 
   // Ausgleichsbuchung Ausgabe: Verbindlichkeit an Bank.
   const ba = zahlungsBuchungZeilen({ richtung: 'ausgabe', betragCent: 5000, valuta: '2026-06-09' });
   ok('Ausgabe: Soll Verbindlichkeit 1600 / Haben Bank 1200', ba.zeilen[0].konto === '1600' && ba.zeilen[1].konto === '1200' && ba.zeilen[1].seite === 'H');
+});
+
+await section('A1-Rest: Zahlungsziel je Forderung (faelligAmVon + offenePosten + Mahnwesen)', () => {
+  // faelligAmVon: explizites faelligAm hat Vorrang.
+  ok('explizites faelligAm gewinnt', faelligAmVon({ faelligAm: '2026-08-01', datum: '2026-06-01', zahlungszielTage: 10 }) === '2026-08-01');
+  // Posten-eigenes Zahlungsziel statt Default.
+  ok('eigenes Ziel (30 Tage)', faelligAmVon({ datum: '2026-06-01', zahlungszielTage: 30 }) === '2026-07-01');
+  ok('Ziel 0 Tage = sofort fällig', faelligAmVon({ datum: '2026-06-01', zahlungszielTage: 0 }) === '2026-06-01');
+  // Default greift nur ohne eigenes Ziel.
+  ok('Default 14 ohne eigenes Ziel', faelligAmVon({ datum: '2026-06-01' }) === '2026-06-15');
+  ok('Default-Parameter überschreibbar (7)', faelligAmVon({ datum: '2026-06-01' }, 7) === '2026-06-08');
+  ok('ohne Datum → leer', faelligAmVon({ zahlungszielTage: 30 }) === '');
+
+  // offenePosten reicht das Zahlungsziel des Auftrags durch.
+  const auftraege = [
+    { id: 'a1', status: 'berechnet', rechnungNummer: 'R-1', rechnungDatum: '2026-06-01', kundeId: 'k1',
+      zahlungszielTage: 30, positionen: [{ menge: 1, einzelpreisCent: 10000, ustSatz: 19 }] },
+    { id: 'a2', status: 'berechnet', rechnungNummer: 'R-2', rechnungDatum: '2026-06-01', kundeId: 'k1',
+      positionen: [{ menge: 1, einzelpreisCent: 10000, ustSatz: 19 }] }, // ohne Ziel
+  ];
+  const posten = offenePosten(auftraege, { nameById: { k1: 'Muster AG' } });
+  ok('Posten trägt zahlungszielTage', posten[0].zahlungszielTage === 30 && posten[1].zahlungszielTage === null);
+
+  // Mahnwesen nutzt das auftragsindividuelle Ziel statt nur des globalen Defaults (14).
+  const ang = anreicherePosten(posten, { zielTage: 14, heute: '2026-06-20' });
+  const p1 = ang.find((p) => p.id === 'a1');
+  const p2 = ang.find((p) => p.id === 'a2');
+  ok('a1 (Ziel 30) fällig 2026-07-01, am 20.06. nicht überfällig', p1.faelligAm === '2026-07-01' && !p1.ueberfaellig);
+  ok('a2 (Default 14) fällig 2026-06-15, am 20.06. überfällig (5 Tage)', p2.faelligAm === '2026-06-15' && p2.tageUeberfaellig === 5);
+
+  // mahnschreibenDaten respektiert das Posten-Ziel auch ohne Vor-Anreicherung.
+  const d = mahnschreibenDaten({ datum: '2026-06-01', zahlungszielTage: 30, referenz: 'R-1', betragCent: 11900 }, { zielTage: 14, heute: '2026-06-20' });
+  ok('mahnschreibenDaten nutzt Posten-Ziel (fällig 2026-07-01)', d.faelligAm === '2026-07-01' && d.tageUeberfaellig === 0);
+
+  // validateAuftrag prüft das optionale Zahlungsziel.
+  const basis = { titel: 'X', positionen: [{ menge: 1, einzelpreisCent: 100 }] };
+  ok('gültiges Ziel ok', validateAuftrag({ ...basis, zahlungszielTage: 30 }).length === 0);
+  ok('Ziel null ok (kein Fehler)', validateAuftrag({ ...basis, zahlungszielTage: null }).length === 0);
+  ok('negatives Ziel → Fehler', validateAuftrag({ ...basis, zahlungszielTage: -1 }).some((e) => /Zahlungsziel/.test(e)));
+  ok('nicht-ganzzahliges Ziel → Fehler', validateAuftrag({ ...basis, zahlungszielTage: 12.5 }).some((e) => /Zahlungsziel/.test(e)));
+
+  // Regression: payables.berechneFaelligAm bleibt identisch (delegiert an faelligAmVon).
+  ok('payables-Default bleibt 30', berechneFaelligAm({ datum: '2026-06-01' }) === '2026-07-01');
+  ok('payables eigenes Ziel (7)', berechneFaelligAm({ datum: '2026-06-01', zahlungszielTage: 7 }) === '2026-06-08');
 });
 
 await section('A3: Teilzahlung/Skonto/Toleranz-Matching (findeKandidaten)', () => {

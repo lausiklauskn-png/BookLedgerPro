@@ -5,6 +5,43 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — A1-Rest: Zahlungsziel je Forderung (Fälligkeit aus auftragsindividuellem Ziel) [Branch `claude/bookledgerpro-next-steps-9v3kaz`]
+
+**Ausgangslage / Auswahl** (build-freier Rest-Korb leer → mit dem Nutzer abgestimmt, AskUserQuestion)
+- Vier Wege standen offen (neues build-freies Feature / Browser-Sichttest / umgebungs-blockiert). Der Nutzer
+  fragte nach meiner Priorisierung → **empfohlen & umgesetzt: Zahlungsziel je Forderung** (offener [SOLL]-Punkt A1).
+- **Warum:** Eingangsrechnungen (Verbindlichkeiten) trugen seit R3 ein **rechnungseigenes** `zahlungszielTage`
+  (`payables.berechneFaelligAm`), **Forderungen** dagegen leiteten die Fälligkeit nur aus dem **globalen** Setting
+  `zahlungszielTage` ab. Bei kundenindividuellen Zielen (14/30/60 Tage) war die Mahnwesen-Fälligkeit damit falsch.
+  Genuin **build-frei, autonom, node-testbar** → ein sauberer, in sich abgeschlossener PR.
+
+**Was getan** (reine Logik zuerst, node-getestet — **+16 → 1045/1045**)
+- **`src/domain/mahnwesen.js`:** neuer reiner Helfer **`faelligAmVon(posten, defaultZielTage=14)`** —
+  `posten.faelligAm` (Vorrang) → Rechnungsdatum + posten-eigenes `zahlungszielTage` → Rechnungsdatum + Default.
+  `anreicherePosten` und `mahnschreibenDaten` nutzen ihn jetzt (statt des flachen `faelligkeit(datum, zielTage)`),
+  honorieren also das **auftragsindividuelle Ziel**.
+- **`src/domain/payables.js`:** `berechneFaelligAm` **delegiert** jetzt an `faelligAmVon` (identische Logik,
+  Duplikat entfernt; Default-Ziel 30 für Eingangsrechnungen bleibt). Verhalten unverändert (Regression node-getestet).
+- **`src/domain/zahlungsabgleich.js` `offenePosten`:** reicht `faelligAm` + `zahlungszielTage` des Auftrags in die
+  Forderungs-Posten durch (Auftrag ohne Angabe → `''`/`null`).
+- **`src/domain/orders.js` `validateAuftrag`:** optionales `zahlungszielTage` validiert (ganzzahlig ≥ 0).
+- **UI (statisch geprüft):** `ui/views/orders.js` Auftragsformular bekommt ein Feld **„Zahlungsziel (Tage)"**
+  (Platzhalter = globaler Default, leer = Standard) + Hinweistext; wird als `zahlungszielTage` gespeichert.
+  i18n `orders.zahlungsziel`/`.hint` de+en.
+- **SW-Cache** `v98 → v99` (kein neues Modul — nur bestehende Dateien geändert).
+
+**Stand:** `node tests/run.mjs` **1045/1045 grün**. Alle berührten Dateien `node --check`-sauber.
+
+**Offen / Grenzen (ehrlich)**
+- **Kein Editieren** bestehender Aufträge (das Formular ist „neu anlegen" — das Ziel wird bei Anlage gesetzt; ein
+  Edit-Pfad existiert bislang generell nicht). Das Ziel erscheint **nicht** auf dem gedruckten §14-Rechnungsdokument
+  (`rechnung.js` bewusst nicht angefasst — wäre eigener Folgeschritt „zahlbar bis").
+- **WorkFloh-`rechnung`-Block** überträgt (noch) kein Zahlungsziel — bewusst außen vor gelassen (Folge-Idee).
+- UI/Glue **statisch geprüft** (kein Headless-Browser) → das Feld + die Mahnwesen-Fälligkeit sind als
+  **Browser-Sichttest** zu bestätigen.
+
+---
+
 ## 2026-06-17 — R5a-Rest: SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-/Struktur-Validierung [Branch `claude/bookledgerpro-swift-iso-validation-s852dy`]
 
 **Ausgangslage / Auswahl** (Schritt nach R4-Rest, gemäß `docs/NACHFOLGE_PLAN.md`)

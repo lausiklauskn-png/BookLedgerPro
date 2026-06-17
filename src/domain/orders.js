@@ -71,5 +71,9 @@ export function validateAuftrag(a) {
     if (!Number.isFinite(Number(p.menge)) || Number(p.menge) <= 0) errors.push('Menge muss positiv sein.');
     if (!Number.isInteger(p.einzelpreisCent) || p.einzelpreisCent < 0) errors.push('Einzelpreis ungültig.');
   }
+  // Zahlungsziel je Forderung (A1-Rest, optional): ganzzahlige Tage ≥ 0.
+  if (a.zahlungszielTage != null && (!Number.isInteger(Number(a.zahlungszielTage)) || Number(a.zahlungszielTage) < 0)) {
+    errors.push('Zahlungsziel (Tage) ungültig.');
+  }
   return errors;
 }
