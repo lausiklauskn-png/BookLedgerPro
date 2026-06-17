@@ -132,6 +132,132 @@ export function findeKandidaten(umsatz, posten = [], opts = {}) {
 }
 
 /**
+ * Sammelzahlung (R2b): findet Kombinationen offener Posten, deren Summe einem
+ * Bank-Umsatz entspricht (eine Zahlung deckt mehrere Rechnungen ab). Konservativ:
+ * gleiche Richtung Pflicht, mindestens **zwei** Posten je Kombination (Einzeltreffer
+ * deckt `findeKandidaten` ab), Summe == Zahlung ± `toleranzCent` (Rundungs-Cent).
+ * Tiefen-/Kandidatenbeschränkung verhindert eine kombinatorische Explosion.
+ * Bewertung: exakte Summe und Referenz/Name im Verwendungszweck heben den Score,
+ * weniger Teile werden bevorzugt. UI nutzt den Score als Schwelle und lässt den
+ * Nutzer die Kombination **explizit** bestätigen.
+ * @returns {{posten:object[], summeCent:number, differenzCent:number, score:number}[]}
+ */
+export function findeSammelzuordnung(umsatz, posten = [], opts = {}) {
+  const u = umsatz || {};
+  const toleranzCent = opts.toleranzCent != null ? opts.toleranzCent : 2;
+  const maxTeile = opts.maxTeile || 4;
+  const maxKombinationen = opts.maxKombinationen || 5;
+  const maxKandidaten = opts.maxKandidaten || 12;
+  const zahlung = Math.abs(Math.round(Number(u.betragCent) || 0));
+  if (zahlung <= 0) return [];
+  const zweck = String(u.zweck || '').toLowerCase();
+  const gegen = String(u.gegen || '').toLowerCase();
+
+  const relevanz = (p) => {
+    let s = 0;
+    const ref = String(p.referenz || '').toLowerCase();
+    const nm = String(p.name || '').toLowerCase();
+    if (ref && zweck.includes(ref)) s += 3;
+    if (nm && (gegen.includes(nm) || zweck.includes(nm))) s += 2;
+    return s;
+  };
+
+  // Kandidaten: gleiche Richtung, offener Betrag > 0 und einzeln nicht größer als die
+  // Zahlung (+Toleranz). Nach Relevanz vorsortieren und auf `maxKandidaten` begrenzen.
+  const kandidaten = posten
+    .filter((p) => p.richtung === u.richtung && (p.betragCent || 0) > 0 && (p.betragCent || 0) <= zahlung + toleranzCent)
+    .map((p) => ({ p, r: relevanz(p) }))
+    .sort((a, b) => b.r - a.r)
+    .slice(0, maxKandidaten)
+    .map((x) => x.p);
+
+  const bewerteKombi = (parts, summe) => {
+    let score = 100 - Math.abs(summe - zahlung) * 10; // exakte Summe bevorzugt
+    score -= (parts.length - 2) * 5;                  // weniger Teile bevorzugt
+    let dd = 0, nd = 0;
+    for (const p of parts) {
+      score += relevanz(p) * 5;
+      const d = tageDiff(p.datum, u.valuta);
+      if (d != null) { dd += d; nd++; }
+    }
+    if (nd) score += Math.max(0, 1 - dd / nd / 60); // Datumsnähe als Tiebreaker
+    return { posten: parts, summeCent: summe, differenzCent: summe - zahlung, score };
+  };
+
+  const treffer = [];
+  const n = kandidaten.length;
+  const combo = [];
+  const rec = (start, summe) => {
+    if (combo.length >= 2 && Math.abs(summe - zahlung) <= toleranzCent) {
+      treffer.push(bewerteKombi(combo.slice(), summe));
+    }
+    if (combo.length >= maxTeile) return;
+    for (let i = start; i < n; i++) {
+      const naechste = summe + (kandidaten[i].betragCent || 0);
+      if (naechste > zahlung + toleranzCent) continue; // Überschuss: diesen Posten überspringen
+      combo.push(kandidaten[i]);
+      rec(i + 1, naechste);
+      combo.pop();
+    }
+  };
+  rec(0, 0);
+
+  treffer.sort((a, b) => (b.score - a.score) || (a.posten.length - b.posten.length));
+  return treffer.slice(0, maxKombinationen);
+}
+
+/**
+ * Verteilt einen Zahlbetrag der Reihe nach auf eine **explizit gewählte** Liste offener
+ * Posten (R2b): jeder Posten erhält `min(verbleibende Zahlung, offener Betrag)`; der letzte
+ * kann teilbezahlt werden (Rest bleibt offen). Übersteigt die Zahlung die Summe der Posten,
+ * bleibt der Überschuss `unverteiltCent` (UI warnt — Überzahlung wird nicht erzwungen).
+ * @returns {{zuordnung:{posten,betragCent,offenCent,restCent,voll:boolean}[], verteiltCent:number, unverteiltCent:number}}
+ */
+export function verteileSammelzahlung(zahlungCent, postenListe = []) {
+  let rest = Math.abs(Math.round(Number(zahlungCent) || 0));
+  const gesamt = rest;
+  const zuordnung = [];
+  for (const p of postenListe) {
+    const offen = p.betragCent || 0;
+    if (offen <= 0 || rest <= 0) continue;
+    const betrag = Math.min(rest, offen);
+    rest -= betrag;
+    zuordnung.push({ posten: p, betragCent: betrag, offenCent: offen, restCent: offen - betrag, voll: betrag === offen });
+  }
+  return { zuordnung, verteiltCent: gesamt - rest, unverteiltCent: rest };
+}
+
+/**
+ * Baut die Ausgleichs-Buchungszeilen einer Sammelzahlung (R2b) — **eine Zeile je Rechnung**:
+ *  - Einnahme: Soll Bank (Summe) / je Posten Haben Forderung (Teilbetrag).
+ *  - Ausgabe:  je Posten Soll Verbindlichkeit (Teilbetrag) / Haben Bank (Summe).
+ * Erwartet die Zuordnung aus `verteileSammelzahlung` (`{posten, betragCent}`). Posten mit
+ * Betrag 0 fallen heraus. Gibt `null` zurück, wenn nichts zu buchen ist.
+ * @returns {{zeilen:Array, beschreibung:string, datum:string, summeCent:number}|null}
+ */
+export function sammelBuchungZeilen(umsatz, zuordnung = [], opts = {}) {
+  const bank = opts.bankKonto || '1200';
+  const forderung = opts.forderungKonto || '1400';
+  const verbindlichkeit = opts.verbindlichkeitKonto || '1600';
+  const u = umsatz || {};
+  const datum = u.valuta || '';
+  const eintraege = zuordnung.filter((z) => (z.betragCent || 0) > 0);
+  const summe = eintraege.reduce((s, z) => s + z.betragCent, 0);
+  if (!eintraege.length || summe <= 0) return null;
+  const refs = eintraege.map((z) => z.posten && z.posten.referenz).filter(Boolean);
+  const refText = refs.length ? ` Rechnungen ${refs.join(', ')}` : '';
+  if (u.richtung === 'einnahme') {
+    const zeilen = [{ konto: bank, seite: 'S', betrag: summe }];
+    for (const z of eintraege) zeilen.push({ konto: forderung, seite: 'H', betrag: z.betragCent });
+    return { zeilen, beschreibung: `Sammel-Zahlungseingang${refText}`.trim(), datum, summeCent: summe };
+  }
+  const zeilen = [];
+  for (const z of eintraege) zeilen.push({ konto: verbindlichkeit, seite: 'S', betrag: z.betragCent });
+  zeilen.push({ konto: bank, seite: 'H', betrag: summe });
+  return { zeilen, beschreibung: `Sammel-Zahlungsausgang${refText}`.trim(), datum, summeCent: summe };
+}
+
+/**
  * Baut die Ausgleichs-Buchungszeilen für einen Bank-Umsatz.
  *  - Einnahme (Kunde zahlt Rechnung): Soll Bank / Haben Forderung.
  *  - Ausgabe (wir zahlen Lieferant):   Soll Verbindlichkeit / Haben Bank.

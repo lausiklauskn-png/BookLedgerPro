@@ -67,7 +67,7 @@ import { baueAnker } from '../src/ai/anker.js';
 import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
 import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat } from '../src/domain/bankimport.js';
-import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen } from '../src/domain/zahlungsabgleich.js';
+import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen, findeSammelzuordnung, verteileSammelzahlung, sammelBuchungZeilen } from '../src/domain/zahlungsabgleich.js';
 import { skontoSplit, skontoBuchungZeilen, skontoEntwurf, skontoSaetze, SKONTO_KONTEN } from '../src/domain/skonto.js';
 import {
   eingangsrechnungZeilen, eingangsrechnungSummen, bruttoVonPositionen, rechnungBrutto,
@@ -1282,6 +1282,78 @@ await section('A3: Forderungs-Teilzahlung (offener Rest bei Aufträgen)', () => 
   // Eine weitere Teilzahlung (3000) wird als Teilzahlung erkannt, Rest 3900.
   const teil = findeKandidaten({ richtung: 'einnahme', betragCent: 3000, zweck: 'R-1' }, posten);
   ok('Forderungs-Teilzahlung erkannt, Rest 3900', teil[0].art === 'teilzahlung' && teil[0].restCent === 3900);
+});
+
+await section('R2b: Sammelzahlung (eine Zahlung auf mehrere Rechnungen)', () => {
+  const summe = (zeilen, seite) => zeilen.filter((z) => z.seite === seite).reduce((s, z) => s + z.betrag, 0);
+  // Drei offene Forderungen.
+  const posten = [
+    { id: 'a1', richtung: 'einnahme', kind: 'forderung', betragCent: 11900, referenz: 'R-1', name: 'Muster AG', datum: '2026-06-01' },
+    { id: 'a2', richtung: 'einnahme', kind: 'forderung', betragCent: 23800, referenz: 'R-2', name: 'Muster AG', datum: '2026-06-02' },
+    { id: 'a3', richtung: 'einnahme', kind: 'forderung', betragCent: 5000,  referenz: 'R-3', name: 'Andere KG', datum: '2026-06-03' },
+  ];
+
+  // --- findeSammelzuordnung: Zahlung 35700 = R-1 + R-2 (11900 + 23800) ---
+  const komb = findeSammelzuordnung({ richtung: 'einnahme', betragCent: 35700, zweck: 'Sammelzahlung R-1 R-2' }, posten);
+  ok('Sammel: mind. eine Kombination gefunden', komb.length >= 1);
+  const top = komb[0];
+  ok('Sammel: Top-Kombi summiert exakt 35700', top.summeCent === 35700 && top.differenzCent === 0);
+  ok('Sammel: Top-Kombi = zwei Posten (R-1, R-2)', top.posten.length === 2 && top.posten.map((p) => p.id).sort().join() === 'a1,a2');
+
+  // Kombinationen haben immer ≥ 2 Posten (Einzeltreffer deckt findeKandidaten ab).
+  const einzel = findeSammelzuordnung({ richtung: 'einnahme', betragCent: 5000 }, posten);
+  ok('Sammel: Einzelbetrag liefert keine (≥2-Teile-)Kombi', einzel.length === 0);
+
+  // Rundungs-Toleranz: 35699 (1 Cent zu wenig) findet die Kombi trotzdem.
+  const tol = findeSammelzuordnung({ richtung: 'einnahme', betragCent: 35699 }, posten);
+  ok('Sammel: 1 Cent Toleranz findet Kombi', tol.length >= 1 && Math.abs(tol[0].differenzCent) <= 2);
+
+  // Falsche Richtung → keine Kombination.
+  ok('Sammel: falsche Richtung → leer', findeSammelzuordnung({ richtung: 'ausgabe', betragCent: 35700 }, posten).length === 0);
+
+  // Drei Posten zusammen: 40700 = R-1 + R-2 + R-3.
+  const drei = findeSammelzuordnung({ richtung: 'einnahme', betragCent: 40700 }, posten, { maxTeile: 3 });
+  ok('Sammel: Drei-Posten-Kombi 40700', drei.length >= 1 && drei[0].summeCent === 40700 && drei[0].posten.length === 3);
+
+  // Ranking: Referenz im Zweck hebt die passende Kombination (R-1+R-3=16900 vs. allein wäre kein 2er sonst).
+  const rank = findeSammelzuordnung({ richtung: 'einnahme', betragCent: 16900, zweck: 'zahlung r-1 und r-3' }, posten);
+  ok('Sammel: R-1+R-3 gefunden (16900)', rank[0].summeCent === 16900 && rank[0].posten.map((p) => p.id).sort().join() === 'a1,a3');
+
+  // --- verteileSammelzahlung: exakte Verteilung auf zwei volle Posten ---
+  const v = verteileSammelzahlung(35700, [posten[0], posten[1]]);
+  ok('Verteilung: 2 Posten voll, nichts unverteilt', v.zuordnung.length === 2 && v.unverteiltCent === 0 && v.zuordnung.every((z) => z.voll && z.restCent === 0));
+  ok('Verteilung: Beträge je Posten korrekt', v.zuordnung[0].betragCent === 11900 && v.zuordnung[1].betragCent === 23800);
+
+  // Restbildung: Zahlung 30000 deckt R-1 voll, R-2 teilweise (Rest 5700 bleibt offen).
+  const vr = verteileSammelzahlung(30000, [posten[0], posten[1]]);
+  ok('Verteilung: R-1 voll', vr.zuordnung[0].betragCent === 11900 && vr.zuordnung[0].voll);
+  ok('Verteilung: R-2 teilbezahlt 18100, Rest 5700', vr.zuordnung[1].betragCent === 18100 && vr.zuordnung[1].restCent === 5700 && !vr.zuordnung[1].voll);
+  ok('Verteilung: nichts unverteilt', vr.unverteiltCent === 0);
+
+  // Überzahlung: 40000 auf R-1+R-2 (35700) → 4300 bleiben unverteilt (UI warnt).
+  const vu = verteileSammelzahlung(40000, [posten[0], posten[1]]);
+  ok('Verteilung: Überschuss unverteilt 4300', vu.unverteiltCent === 4300 && vu.verteiltCent === 35700);
+
+  // --- sammelBuchungZeilen: eine Zeile je Rechnung, ausgeglichen ---
+  const bk = sammelBuchungZeilen({ richtung: 'einnahme', valuta: '2026-06-10' }, v.zuordnung);
+  ok('Sammelbuchung Einnahme: Bank-Soll = Summe 35700', bk.zeilen[0].konto === '1200' && bk.zeilen[0].seite === 'S' && bk.zeilen[0].betrag === 35700);
+  ok('Sammelbuchung Einnahme: je Rechnung eine Forderungs-Haben-Zeile', bk.zeilen.filter((z) => z.konto === '1400' && z.seite === 'H').length === 2);
+  ok('Sammelbuchung Einnahme: S = H = 35700', summe(bk.zeilen, 'S') === 35700 && summe(bk.zeilen, 'H') === 35700);
+  ok('Sammelbuchung: Referenzen in Beschreibung', bk.beschreibung.includes('R-1') && bk.beschreibung.includes('R-2'));
+
+  // Ausgabe-Richtung: je Verbindlichkeit eine Soll-Zeile, Bank-Haben = Summe.
+  const vb = [
+    { id: 'v1', richtung: 'ausgabe', kind: 'verbindlichkeit', betragCent: 5000, referenz: 'L-1', name: 'Lief', datum: '2026-06-01' },
+    { id: 'v2', richtung: 'ausgabe', kind: 'verbindlichkeit', betragCent: 7000, referenz: 'L-2', name: 'Lief', datum: '2026-06-02' },
+  ];
+  const va = verteileSammelzahlung(12000, vb);
+  const bka = sammelBuchungZeilen({ richtung: 'ausgabe', valuta: '2026-06-11' }, va.zuordnung);
+  ok('Sammelbuchung Ausgabe: 2× Verbindlichkeit-Soll + Bank-Haben', bka.zeilen.filter((z) => z.konto === '1600' && z.seite === 'S').length === 2 && bka.zeilen.some((z) => z.konto === '1200' && z.seite === 'H' && z.betrag === 12000));
+  ok('Sammelbuchung Ausgabe: S = H = 12000', summe(bka.zeilen, 'S') === 12000 && summe(bka.zeilen, 'H') === 12000);
+
+  // Leere/null-Fälle.
+  ok('Sammelbuchung: leere Zuordnung → null', sammelBuchungZeilen({ richtung: 'einnahme' }, []) === null);
+  ok('Sammelzuordnung: Betrag 0 → leer', findeSammelzuordnung({ richtung: 'einnahme', betragCent: 0 }, posten).length === 0);
 });
 
 await section('R2a: Skonto-Buchung mit USt-/Vorsteuer-Korrektur (§17 UStG)', () => {

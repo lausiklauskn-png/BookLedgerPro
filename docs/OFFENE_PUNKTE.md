@@ -284,9 +284,16 @@ Brutto-Anteil (`posten.saetze` in `offenePosten`/`offeneVerbindlichkeiten`). UI:
 (§17 UStG)"** im Bankimport (`documents.js`) → `saveEntwurf` (manuell, GoBD). SW `v88`, 816/816 Tests.
 **Bewusst manuell** (kein Auto-Festschreiben — Korrektheit vor Bequemlichkeit).
 
-**Noch offen [SOLL]:**
-- **Sammelzahlungen** (eine Zahlung auf mehrere Rechnungen), Score-Schwelle mit expliziter
-  Mehrfach-Auswahl in der UI. → R2b.
+**Sammelzahlungen erledigt (R2b, 2026-06-17):** Eine Bankzahlung deckt **mehrere** offene Rechnungen ab.
+`zahlungsabgleich.findeSammelzuordnung` (rein, node-getestet) schlägt **Kombinationen** gleichgerichteter offener
+Posten vor (tiefen-/kandidatenbeschränkte Subset-Summe, Summe == Zahlung ± Toleranz, **≥2 Teile**, Score nach
+Referenz/Name/Datumsnähe); `verteileSammelzahlung` verteilt den Zahlbetrag der Reihe nach auf die **explizit
+gewählten** Posten (Restbildung beim letzten, Überschuss bleibt `unverteiltCent`); `sammelBuchungZeilen` baut **eine
+Zeile je Rechnung** (Bank an Forderung/Verbindlichkeit, ausgeglichen). UI: Knopf **„◫ Sammelzahlung (mehrere
+Rechnungen)"** im Bankimport (`documents.js`) → Checkbox-Auswahl (Vorschlag vorausgewählt, laufende Summe/Status) →
+`saveEntwurf` (manuell, GoBD) + Zahlung je Posten. SW `v89`, 838/838 Tests.
+
+**Noch offen [SOLL]:** —
 
 ### A4. App-Anbindung / WorkFloh-Integration **[SOLL] — spätere Sitzung, sauber als Option vorbereiten**
 **Vision (Nutzer):** Funktionierende Apps sollen sich an BookLedgerPro **anbinden** können bzw.

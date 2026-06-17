@@ -18,18 +18,20 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Aktueller nächster Schritt: R2b — Sammelzahlungen** (eine Bankzahlung auf **mehrere** offene
-Rechnungen → Mehrfach-Zuordnung in der UI, Score-Schwelle mit expliziter Auswahl; A3-Rest).
+abarbeiten. **Aktueller nächster Schritt: R3 — Verbindlichkeiten aus Foto/PDF-Belegen** + eigene
+Verbindlichkeiten-Ansicht (A2-Rest); **Zahlungsziel je Rechnung** (A1-Rest).
 Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
 **Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** (B1/B2/B3); **R1 (Verzugszinsen/Mahngebühren
-buchen) ist abgeschlossen + gemergt**; **R2a (Skonto-Buchung mit USt-/Vorsteuer-Korrektur §17 UStG) ist
-abgeschlossen + gemergt** (`domain/skonto.js`, Knopf „Skonto buchen (§17 UStG)" im Bankimport — siehe
-`docs/SESSIONS.md` oben).
-R2b: Eine Bankzahlung deckt **mehrere** offene Posten ab → in der UI mehrere Rechnungen auswählen und
-gemeinsam ausgleichen (Bank an Forderung/Verbindlichkeit, je Rechnung eine Zeile; Teilbeträge/Restbildung
-sauber). Reine Auswahl-/Zuordnungslogik (z. B. `findeSammelzuordnung`) **ZUERST node-getestet**, dann UI
+buchen) ist abgeschlossen + gemergt**; **R2a (Skonto-Buchung §17 UStG) ist abgeschlossen + gemergt**;
+**R2b (Sammelzahlungen — eine Bankzahlung auf mehrere offene Rechnungen) ist abgeschlossen + gemergt**
+(`domain/zahlungsabgleich.js`: `findeSammelzuordnung`/`verteileSammelzahlung`/`sammelBuchungZeilen`, Knopf
+„◫ Sammelzahlung (mehrere Rechnungen)" im Bankimport — siehe `docs/SESSIONS.md` oben).
+R3: Heute werden Verbindlichkeiten nur aus **E-Rechnung-XML** erfasst (`payables.js`/`payables-store.js`).
+Ziel: Verbindlichkeiten auch aus **Foto/PDF-Belegen** anlegen (Vision-OCR → `eingangsrechnungZeilen`) +
+eine **eigene Verbindlichkeiten-Ansicht** zum manuellen Anlegen/Bearbeiten; dazu **Zahlungsziel je Rechnung**
+(statt global, A1-Rest). Reine Logik (Erfassung/Validierung) **ZUERST node-getestet**, dann UI
 (DOM/IndexedDB als „statisch geprüft" kennzeichnen). Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R
-(R2b) + `docs/OFFENE_PUNKTE.md` (A3). (Falls R2b doch zu groß ist: feiner schneiden und Plan fortschreiben —
+(R3) + `docs/OFFENE_PUNKTE.md` (A1/A2). (Falls R3 zu groß ist: feiner schneiden und Plan fortschreiben —
 nie „halb" mergen.)
 
 MEHRERE PRs ERLAUBT (NEU): Wenn sich mehrere Plan-Punkte **sauber und in sich
@@ -67,8 +69,8 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach R2a (Abschnitt A Mehrmandanten abgeschlossen; Abschnitt B
-Bilanzierung B1+B2+B3 abgeschlossen; R1 Verzugszinsen/Mahngebühren buchen abgeschlossen; R2a Skonto-Buchung
-§17 UStG abgeschlossen) · Tests **816/816** · SW **v88** · 93 JS-Module · nächster Schritt
-**R2b (Sammelzahlungen — eine Zahlung auf mehrere Rechnungen)**.
+**Stand dieses Briefes:** 2026-06-17 nach R2b (Abschnitt A Mehrmandanten abgeschlossen; Abschnitt B
+Bilanzierung B1+B2+B3 abgeschlossen; R1 Verzugszinsen/Mahngebühren abgeschlossen; R2a Skonto-Buchung §17 UStG
+abgeschlossen; R2b Sammelzahlungen abgeschlossen) · Tests **838/838** · SW **v89** · 93 JS-Module · nächster
+Schritt **R3 (Verbindlichkeiten aus Foto/PDF-Belegen + eigene Ansicht; Zahlungsziel je Rechnung)**.
 (Diese Zeile bei jeder Sitzung aktualisieren.)
