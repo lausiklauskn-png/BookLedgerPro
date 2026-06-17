@@ -5,6 +5,42 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R2a: Skonto-Buchung mit USt-/Vorsteuer-Korrektur (§17 UStG) [Branch `claude/r2-skonto-ust-korrektur-iwybxg`]
+
+**Was getan** (NACHFOLGE_PLAN.md, Schritt **R2a** — A3-Rest, „R2" feiner geschnitten in R2a Skonto / R2b Sammelzahlung)
+- **Reine Logik zuerst (`src/domain/skonto.js`, node-getestet):**
+  - `SKONTO_KONTEN` — SKR03: gewährte Skonti **8730/8731/8736** (Erlösschmälerung Verkauf), erhaltene Skonti
+    **3730/3731/3736** (Aufwandsminderung Einkauf), USt-Korrektur **1776/1771**, Vorsteuer-Korrektur **1576/1571**.
+  - `skontoSplit(brutto, ustProzent)` → zerlegt einen Bruttobetrag in Netto + USt je Satz.
+  - `skontoBuchungZeilen({richtung, offenCent, zahlungCent, ustProzent|saetze, konten?})` → gleicht den offenen
+    Posten **komplett** aus: **Einnahme** (Forderung, Skonto gewährt) = Soll Bank + Soll gewährte Skonti (netto)
+    + Soll USt (Korrektur) / Haben Forderung; **Ausgabe** (Verbindlichkeit, Skonto erhalten) = Soll Verbindlichkeit /
+    Haben Bank + Haben erhaltene Skonti (netto) + Haben Vorsteuer (Korrektur). **Gemischte USt-Sätze** werden
+    **proportional** je Brutto-Anteil aufgeteilt (größter-Rest-Methode, kein Cent-Verlust). Guards: kein Abzug /
+    Überzahlung / keine Zahlung → `null`.
+  - `skontoEntwurf(...)` → vollständiger Buchungs-**Entwurf** (Datum/Beschreibung/§17-Begründung) inkl. Skonto-Meta.
+- **§17 UStG (ehrlich):** Zahlt der Kunde mit Skonto, mindert sich das Entgelt → beim **Ausgangsumsatz** sinkt die
+  geschuldete **USt**, beim **Eingangsumsatz** die abziehbare **Vorsteuer** (§17 Abs. 1 UStG). Buchung gleicht den
+  Posten exakt aus (Bank + Skonto-Netto + USt-/Vorsteuer-Korrektur = offener Brutto).
+- **Posten-Anreicherung:** `zahlungsabgleich.offenePosten` (Forderungen) + `payables.offeneVerbindlichkeiten`
+  (Kreditoren) tragen jetzt `saetze` = Brutto-Anteile je USt-Satz (aus `auftragSummen`/`eingangsrechnungSummen`).
+- **UI (statisch geprüft, kein Headless-Browser):** Der bisherige Skonto-**Hinweis** im Bankimport
+  (`ui/views/documents.js`) wird zum Knopf **„Skonto buchen (§17 UStG)"** → `skontoEntwurf` → `saveEntwurf`
+  (manuell, **kein Auto-Festschreiben** — GoBD) und markiert den Posten als ausgeglichen. Teilzahlung bleibt davon
+  getrennt (nur gezahlter Betrag, Rest offen). i18n de+en (`bankSkonto` neu betextet, `bankSkontoDone`/`bankSkontoUst`).
+  SW `v88`, neues Modul precacht.
+
+**Stand:** `node tests/run.mjs` **816/816 grün** (+33). Reine Skonto-Logik node-getestet (Split, Einnahme/Ausgabe
+einzelner Satz, gemischte Sätze proportional, Ausgeglichenheit S=H, Guards, Entwurf-Begründung §17, Seed-Konten,
+Integration mit `offenePosten.saetze`). UI/Glue statisch geprüft.
+
+**Offen/Nächstes:** **R2b** — Sammelzahlungen (eine Bankzahlung auf mehrere offene Rechnungen → Mehrfach-Zuordnung
+in der UI). **Grenze (ehrlich):** Skonto-Entwurf wird nicht auto-festgeschrieben; Klickpfad nicht headless E2E
+getestet; bei gemischten Rechnungen wird der Skonto proportional je Brutto-Anteil je Satz verteilt (kaufmännisch
+üblich) — exakte Rechnungsaufteilung im Zweifel mit Berater prüfen.
+
+---
+
 ## 2026-06-17 — R1: Verzugszinsen/Mahngebühren buchen [Branch `claude/r1-delayed-interest-dunning-ckk0bb`]
 
 **Was getan** (NACHFOLGE_PLAN.md, Schritt **R1** — A1-Rest, schließt das Mahnwesen-Soll „Buchung" ab)

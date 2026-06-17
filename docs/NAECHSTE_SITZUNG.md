@@ -18,19 +18,19 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Aktueller nächster Schritt: R2 — Skonto-Buchung mit USt-/Vorsteuer-Korrektur (§17 UStG)
-+ Sammelzahlungen (A3-Rest).** Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen**
-(siehe `docs/MANDANTEN.md`); **Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** (B1/B2/B3);
-**R1 (Verzugszinsen/Mahngebühren buchen) ist abgeschlossen + gemergt** (siehe `docs/SESSIONS.md` oben).
-R2: Bei Zahlung mit **Skonto** den Zahlungsabzug buchen UND die **USt/Vorsteuer nachträglich korrigieren**
-(§17 UStG) — beim Ausgangsumsatz mindert sich die USt, beim Eingangsumsatz die Vorsteuer; Konto-Mapping
-(Skontoaufwand/-ertrag + USt-Korrektur) sauber, **manuell, kein Auto-Buchen** (Korrektheit vor Bequemlichkeit).
-Zusätzlich **Sammelzahlungen** (eine Bankzahlung auf mehrere offene Rechnungen → Mehrfach-Zuordnung).
-Die Skonto-Erkennung existiert bereits als Hinweis (`zahlungsabgleich.findeKandidaten`, Art `skonto`) — R2
-ergänzt die **Buchung** daraus. **Reine Logik ZUERST node-getestet**, dann UI (DOM/IndexedDB als „statisch
-geprüft" kennzeichnen). Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`
-(A3). (Falls R2 doch unscharf/zu groß ist: feiner schneiden — z. B. R2a Skonto, R2b Sammelzahlung — und
-Plan fortschreiben — nie „halb" mergen.)
+abarbeiten. **Aktueller nächster Schritt: R2b — Sammelzahlungen** (eine Bankzahlung auf **mehrere** offene
+Rechnungen → Mehrfach-Zuordnung in der UI, Score-Schwelle mit expliziter Auswahl; A3-Rest).
+Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
+**Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** (B1/B2/B3); **R1 (Verzugszinsen/Mahngebühren
+buchen) ist abgeschlossen + gemergt**; **R2a (Skonto-Buchung mit USt-/Vorsteuer-Korrektur §17 UStG) ist
+abgeschlossen + gemergt** (`domain/skonto.js`, Knopf „Skonto buchen (§17 UStG)" im Bankimport — siehe
+`docs/SESSIONS.md` oben).
+R2b: Eine Bankzahlung deckt **mehrere** offene Posten ab → in der UI mehrere Rechnungen auswählen und
+gemeinsam ausgleichen (Bank an Forderung/Verbindlichkeit, je Rechnung eine Zeile; Teilbeträge/Restbildung
+sauber). Reine Auswahl-/Zuordnungslogik (z. B. `findeSammelzuordnung`) **ZUERST node-getestet**, dann UI
+(DOM/IndexedDB als „statisch geprüft" kennzeichnen). Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R
+(R2b) + `docs/OFFENE_PUNKTE.md` (A3). (Falls R2b doch zu groß ist: feiner schneiden und Plan fortschreiben —
+nie „halb" mergen.)
 
 MEHRERE PRs ERLAUBT (NEU): Wenn sich mehrere Plan-Punkte **sauber und in sich
 abgeschlossen** in einer Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener
@@ -67,7 +67,8 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach R1 (Abschnitt A Mehrmandanten abgeschlossen; Abschnitt B
-Bilanzierung B1+B2+B3 abgeschlossen; R1 Verzugszinsen/Mahngebühren buchen abgeschlossen) · Tests **783/783**
-· SW **v87** · 92 JS-Module · nächster Schritt **R2 (Skonto-Buchung §17 UStG + Sammelzahlungen)**.
+**Stand dieses Briefes:** 2026-06-17 nach R2a (Abschnitt A Mehrmandanten abgeschlossen; Abschnitt B
+Bilanzierung B1+B2+B3 abgeschlossen; R1 Verzugszinsen/Mahngebühren buchen abgeschlossen; R2a Skonto-Buchung
+§17 UStG abgeschlossen) · Tests **816/816** · SW **v88** · 93 JS-Module · nächster Schritt
+**R2b (Sammelzahlungen — eine Zahlung auf mehrere Rechnungen)**.
 (Diese Zeile bei jeder Sitzung aktualisieren.)

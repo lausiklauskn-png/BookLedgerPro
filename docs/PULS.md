@@ -36,16 +36,17 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R2"** (Rest-SOLL): **Skonto-Buchung mit USt-/Vorsteuer-Korrektur
-(§17 UStG)** (A3-Rest) + **Sammelzahlungen** (eine Zahlung, mehrere Rechnungen). Reihenfolge im Rest-SOLL nach
-Bedarf (R2…R6); Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R2b"** (Rest-SOLL): **Sammelzahlungen** — eine Bankzahlung auf
+**mehrere** offene Rechnungen (Mehrfach-Zuordnung in der UI, Score-Schwelle). Reihenfolge im Rest-SOLL nach
+Bedarf (R2b…R6); Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md` (A3).
+**R2a (Skonto-Buchung mit USt-/Vorsteuer-Korrektur §17 UStG) ist abgeschlossen + gemergt.**
 **R1 (Verzugszinsen/Mahngebühren buchen) ist abgeschlossen + gemergt.**
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach R1):** SW **v87** · Tests **783/783** grün · 92 JS-Module.
-**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1 ✅.** Reihenfolge im Plan:
-~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → Rest-SOLL (R2…).
+**Kopf-Status (Stand nach R2a):** SW **v88** · Tests **816/816** grün · 93 JS-Module.
+**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1 ✅; R2a ✅.** Reihenfolge im Plan:
+~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → R2b (Sammelzahlung) → Rest-SOLL.
 **R1 erledigt:** `domain/mahnwesen.js` bucht Verzugszinsen/Mahngebühren als **Forderung 1400 an Zinserträge 2650 /
 sonstige betr. Erträge 2700 — ohne USt** (nicht steuerbarer Schadensersatz §288 BGB / Abschn. 1.3 UStAE):
 `mahnbuchungZeilen`/`mahnbuchungEntwurf` (rein, node-getestet) + Knopf **„Als Buchungsentwurf übernehmen"** im

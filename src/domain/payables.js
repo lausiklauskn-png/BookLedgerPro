@@ -125,6 +125,11 @@ export function offeneVerbindlichkeiten(rechnungen, opts = {}) {
     const offen = offenerBetrag(r, stichtag);
     if (offen <= 0) continue;
     const brutto = rechnungBrutto(r);
+    // Brutto-Anteile je USt-Satz (für die spätere § 17-Skonto-/Vorsteuer-Korrektur).
+    const summen = eingangsrechnungSummen(r.positionen);
+    const saetze = Object.entries(summen.perSatz)
+      .map(([satz, g]) => ({ ustProzent: Number(satz), bruttoCent: g.netto + g.ust }))
+      .filter((s) => s.bruttoCent > 0);
     out.push({
       id: r.id,
       betragCent: offen,
@@ -138,6 +143,7 @@ export function offeneVerbindlichkeiten(rechnungen, opts = {}) {
       bezahltCent: brutto - offen,
       offenCent: offen,
       buchungRef: r.buchungRef || null,
+      saetze,
     });
   }
   out.sort((a, b) => {

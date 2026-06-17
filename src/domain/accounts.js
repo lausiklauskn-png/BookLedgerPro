@@ -72,6 +72,10 @@ export const SKR03_SEED = [
   // ---- Wareneingang (Klasse 3) ----
   { nummer: '3300', name: 'Wareneingang 7% Vorsteuer', art: KONTOART.AUFWAND, ust: 7 },
   { nummer: '3400', name: 'Wareneingang 19% Vorsteuer', art: KONTOART.AUFWAND, ust: 19 },
+  // Erhaltene Skonti (Aufwandsminderung beim Einkauf; Vorsteuer-Korrektur §17 UStG).
+  { nummer: '3730', name: 'Erhaltene Skonti', art: KONTOART.AUFWAND, ust: 0, rolle: 'skonto_erhalten' },
+  { nummer: '3731', name: 'Erhaltene Skonti 7% Vorsteuer', art: KONTOART.AUFWAND, ust: 7, rolle: 'skonto_erhalten' },
+  { nummer: '3736', name: 'Erhaltene Skonti 19% Vorsteuer', art: KONTOART.AUFWAND, ust: 19, rolle: 'skonto_erhalten' },
   // ---- Betriebliche Aufwendungen (Klasse 4) ----
   { nummer: '4100', name: 'Löhne und Gehälter', art: KONTOART.AUFWAND },
   { nummer: '4120', name: 'Gehälter', art: KONTOART.AUFWAND },
@@ -111,6 +115,10 @@ export const SKR03_SEED = [
   { nummer: '8300', name: 'Erlöse 7% USt', art: KONTOART.ERTRAG, ust: 7 },
   { nummer: '8400', name: 'Erlöse 19% USt', art: KONTOART.ERTRAG, ust: 19 },
   { nummer: '8500', name: 'Provisionserlöse', art: KONTOART.ERTRAG, ust: 19 },
+  // Gewährte Skonti (Erlösschmälerung beim Verkauf; USt-Korrektur §17 UStG).
+  { nummer: '8730', name: 'Gewährte Skonti', art: KONTOART.ERTRAG, ust: 0, rolle: 'skonto_gewaehrt' },
+  { nummer: '8731', name: 'Gewährte Skonti 7% USt', art: KONTOART.ERTRAG, ust: 7, rolle: 'skonto_gewaehrt' },
+  { nummer: '8736', name: 'Gewährte Skonti 19% USt', art: KONTOART.ERTRAG, ust: 19, rolle: 'skonto_gewaehrt' },
 ];
 
 export function seedAccounts() {

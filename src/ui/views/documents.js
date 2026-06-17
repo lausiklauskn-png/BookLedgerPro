@@ -10,6 +10,7 @@ import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/
 import { extrahiereZugferdXml, kostPflichtfelder } from '../../domain/zugferd.js';
 import { parseBankauszug, umsatzExtraktion } from '../../domain/bankimport.js';
 import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen } from '../../domain/zahlungsabgleich.js';
+import { skontoEntwurf } from '../../domain/skonto.js';
 import { offeneVerbindlichkeiten, eingangsrechnungZeilen } from '../../domain/payables.js';
 import { saveEingangsrechnung, listEingangsrechnungen, zahlungHinzufuegen } from '../../domain/payables-store.js';
 import { listAuftraege, listKunden, auftragZahlungHinzufuegen } from '../../domain/crm-store.js';
@@ -292,8 +293,9 @@ function bankImportKarte() {
 
 // Erfasst die (Teil-)Zahlung eines Bank-Umsatzes gegen den passenden offenen Posten:
 // Verbindlichkeit → Eingangsrechnung, Forderung → Auftrag (markiert bei Ausgleich „bezahlt").
-async function zahlungVerbuchen(p, u, datum) {
-  const zahlung = { betragCent: u.betragCent, datum, ref: u.zweck || null };
+// `extra` erlaubt eine abweichende Ausgleichshöhe (z. B. inkl. Skonto) + Zusatzfelder.
+async function zahlungVerbuchen(p, u, datum, extra = {}) {
+  const zahlung = { betragCent: u.betragCent, datum, ref: u.zweck || null, ...extra };
   if (p.kind === 'verbindlichkeit') await zahlungHinzufuegen(p.id, zahlung);
   else await auftragZahlungHinzufuegen(p.id, zahlung);
 }
@@ -324,22 +326,52 @@ function umsatzRow(u, posten = []) {
       },
     }));
   } else {
-    // Kein exakter Treffer: Teilzahlung/Skonto auf einen offenen Posten anbieten
-    // (Forderung ODER Verbindlichkeit — der Rest wird sauber weitergeführt).
+    // Kein exakter Treffer: Skonto ODER Teilzahlung auf einen offenen Posten anbieten.
     const kand = findeKandidaten(u, posten).find((k) => k.art === 'teilzahlung' || k.art === 'skonto');
-    if (kand) {
+    if (kand && kand.art === 'skonto') {
+      // Skonto: Posten KOMPLETT ausgleichen inkl. USt-/Vorsteuer-Korrektur nach §17 UStG
+      // (Buchungs-ENTWURF, manuell festschreiben — Korrektheit vor Bequemlichkeit).
+      const p = kand.posten;
+      const datum = u.valuta || new Date().toISOString().slice(0, 10);
+      const entwurf = skontoEntwurf({
+        richtung: u.richtung,
+        offenCent: kand.offenCent,
+        zahlungCent: kand.gezahltCent,
+        saetze: p.saetze,
+        referenz: p.referenz,
+        name: p.name,
+        datum,
+      });
+      if (entwurf) {
+        knoepfe.push(el('button', {
+          class: 'btn btn-sm', type: 'button',
+          text: `${t('docs.bankSkonto')} ${p.referenz || ''}`.trim(),
+          title: entwurf.begruendung,
+          onClick: async () => {
+            slot.replaceChildren();
+            try {
+              await saveEntwurf({ datum: entwurf.datum, beschreibung: entwurf.beschreibung, begruendung: entwurf.begruendung, zeilen: entwurf.zeilen });
+              // Posten gilt als ausgeglichen (Bank + Skonto = offener Betrag).
+              await zahlungVerbuchen(p, u, entwurf.datum, { betragCent: kand.offenCent, bankCent: kand.gezahltCent, skontoCent: entwurf.skontoBruttoCent });
+              slot.appendChild(el('p', { class: 'muted small', text: t('docs.bankSkontoDone').replace('{betrag}', formatEuro(entwurf.skontoBruttoCent)) }));
+              slot.appendChild(el('p', { class: 'muted small', text: t('docs.bankSkontoUst').replace('{netto}', formatEuro(entwurf.nettoSkontoCent)).replace('{ust}', formatEuro(entwurf.ustSkontoCent)) }));
+            } catch (e) { slot.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
+          },
+        }));
+      }
+    } else if (kand) {
+      // Teilzahlung: nur den gezahlten Betrag verbuchen, der Rest bleibt offen.
       const p = kand.posten;
       knoepfe.push(el('button', {
         class: 'btn btn-sm', type: 'button',
-        text: `${t(kand.art === 'skonto' ? 'docs.bankSkonto' : 'docs.bankPartial')} ${p.referenz || ''}`.trim(),
+        text: `${t('docs.bankPartial')} ${p.referenz || ''}`.trim(),
         onClick: async () => {
           slot.replaceChildren();
           const bk = zahlungsBuchungZeilen(u, p);
           try {
             await saveEntwurf({ datum: bk.datum, beschreibung: bk.beschreibung, zeilen: bk.zeilen });
             await zahlungVerbuchen(p, u, bk.datum);
-            slot.appendChild(el('p', { class: 'muted small', text: t('docs.bankPartialDone').replace('{rest}', formatEuro(kand.restCent || kand.skontoCent || 0)) }));
-            if (kand.art === 'skonto') slot.appendChild(el('p', { class: 'muted small', text: t('docs.bankSkontoHint').replace('{betrag}', formatEuro(kand.skontoCent)) }));
+            slot.appendChild(el('p', { class: 'muted small', text: t('docs.bankPartialDone').replace('{rest}', formatEuro(kand.restCent || 0)) }));
           } catch (e) { slot.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
         },
       }));
