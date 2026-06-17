@@ -3,8 +3,13 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **885/885 grün**, SW `v91`.
-> Nächster Schritt: **R6/Rest** [KANN] — Lighthouse/Perf (braucht Headless-Browser), lokales OCR (nur build-frei-sauber), ZUGFeRD-Erzeugen (PDF-Lib → nicht build-frei), Sage 5b–d (fremde Repos, menschlich vermittelt) — **oder Browser-Sichttest** nach Bedarf. A+B fertig; R1–R5 ✅; **R6/P1 ✅** (Privat-/Bürger-Modus, PR #99); **R6/P2 ✅** (Feature-Gates ansichtsintern konsumiert: journal/reports/documents/dashboard). Tests **972/972**, SW `v95`.
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **983/983 grün**, SW `v96`.
+> Nächster Schritt: **R6/Rest** [KANN] bleibt **umgebungs-/menschen-blockiert** (Lighthouse/Perf → Headless-Browser;
+> lokales OCR → Tesseract ist wasm/npm-Runtime, NICHT build-frei; ZUGFeRD-Erzeugen → PDF-Lib, nicht build-frei;
+> Sage 5b–d → fremde Repos, menschlich vermittelt) **oder Browser-Sichttest** (echter Nutzer). Build-freie
+> Rest-Körbe für Code-Sitzungen: **R4-Rest** (Zahlungsstatus/Teilzahlungen aus WorkFloh übernehmen),
+> **R5a-Rest** (echte SWIFT/ISO-20022-Schema-Validierung). A+B fertig; R1–R5 ✅ inkl. **R5c-Rest NER-Scoping ✅**
+> (Fremd-PII unter `EXTERN`-Scope im Briefkasten); **R6/P1 ✅**; **R6/P2 ✅**. Tests **983/983**, SW `v96`.
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -170,7 +175,16 @@
     routet bei Setting **`briefkastenScopes`** (Default aus, opt-in) über den Briefkasten und liest den aktiven
     Mandanten aus der Registry; UI-Schalter im Pseudonym-Modus (`shell.js`), i18n de+en, SW `v93`, **+26 Tests
     (942/942)**. UI/Glue statisch geprüft. **Grenze:** Person-Attribute (E-Mail/USt-IdNr) sind dem Parent-Scope
-    (Firma/Mandant) zugeordnet, nicht dem einzelnen Personen-Token; kein NER-Scoping (NER-Anker bleiben flach). (PR R5c.)
+    (Firma/Mandant) zugeordnet, nicht dem einzelnen Personen-Token. (PR R5c.)
+  - [x] **R5c-Rest — NER-Scoping.** ✅ Im Briefkasten-Modus (`briefkastenScopes`) tragen jetzt auch die im Belegtext
+    erkannten **Fremd-PII** (NER) einen Scope — den externen Scope **`EXTERN`** (`piiAnker(text,{scope})`/
+    `kombiniereAnker(…,{scope})`, `EXTERN_SCOPE` in `ai/ner.js`), sodass `tokenize()` gruppierende, sichtbar externe
+    Token erzeugt (`[[EXTERN_IBAN_1]]`, `[[EXTERN_EMAIL_1]]`) statt flacher `[[IBAN_1]]`. `ai/anker.js` reicht den
+    Scope **nur** im Briefkasten-Modus durch (flacher Pseudonym-Modus unverändert/abwärtskompatibel); exakte
+    (gescopte) Stammdaten-Anker behalten bei gleichem Wert Typ-Vorrang. Nebenbei: Transparenz-Badge (`documents.js`)
+    zeigt scope-präfixierte Typen lesbar (neuer `tOpt`-i18n-Fallback statt rohem Schlüssel). node-getestet
+    (**+11 → 983/983**), SW `v96`. UI/Glue statisch geprüft. **Grenze:** EIN gemeinsamer `EXTERN`-Scope — verschiedene
+    Drittparteien werden NICHT geclustert (aus flachem Belegtext nur heuristisch/FP-riskant trennbar → konservativ). (PR R5c-Rest.)
 - [ ] **R6 [KANN]** ZUGFeRD-**Erzeugen** (nur falls build-frei lösbar), Lighthouse, lokales OCR, Privat-/Bürger-Modus, Sage 5b–d. **In Teil-PRs (fein geschnitten):**
   - [x] **R6/P1 — Privat-/Bürger-Modus (Grundlage + NAV-Gating).** ✅ `src/domain/nutzungsmodus.js` (rein,
     node-getestet, +30 → 972/972): Nutzungskontext **`firma|privat|verein`** (Default `firma`, Bestand

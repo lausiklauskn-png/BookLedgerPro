@@ -25,6 +25,15 @@ export const NER_TYP = Object.freeze({
   TELEFON: 'TELEFON',
 });
 
+// Scope für PII DRITTER, wenn der dreistufige Briefkasten (ai/briefkasten.js) aktiv ist.
+// Die exakten Stammdaten tragen dann Hierarchie-Scopes (MANDANT, FIRMA_1, FIRMA_2_IBAN …);
+// die im Belegtext erkannte Fremd-PII wird mit DIESEM Scope versehen (EXTERN_IBAN,
+// EXTERN_EMAIL …), sodass die KI sie als externe, gruppierte Dritt-Identifikatoren sieht —
+// deutlich getrennt von den bekannten eigenen/Mandanten-Entitäten. Bewusst EIN gemeinsamer
+// Scope: welche der Fremd-Treffer zu derselben Drittpartei gehören, ist aus flachem
+// Belegtext nicht ohne Heuristik (FP-Risiko) ableitbar → konservativ alle als „extern".
+export const EXTERN_SCOPE = 'EXTERN';
+
 // Erkennungsmuster, geordnet nach Spezifität (spezifischste zuerst, damit z.B. eine
 // USt-IdNr nicht als Teil eines anderen Treffers verloren geht). Jedes Muster ist
 // bewusst eng gefasst, um Belegtext (Rechnungsnummern, Beträge, Datumsangaben) nicht
@@ -81,18 +90,30 @@ export function erkennePII(text) {
   return behalten;
 }
 
+// Versieht einen NER-Typ — falls ein nicht-leerer Scope übergeben ist — mit dem
+// Scope-Präfix (EXTERN_IBAN, EXTERN_EMAIL …). Ohne Scope bleibt der flache Typ erhalten
+// (Rückwärtskompatibilität für den nicht-hierarchischen Pseudonym-Modus).
+function mitScope(typ, scope) {
+  const s = String(scope == null ? '' : scope).trim();
+  return s ? `${s}_${typ}` : typ;
+}
+
 /**
  * Liefert die erkannten PII als entdoppelte Anker-Liste ({wert, typ}) für tokenize().
+ * Ist `scope` gesetzt (z.B. `EXTERN`), tragen die Typen den Scope-Präfix, damit die
+ * Fremd-PII im dreistufigen Briefkasten als externe, gruppierte Dritt-Identifikatoren
+ * erscheint (siehe `EXTERN_SCOPE`). Ohne `scope` bleiben die Typen flach.
  * @param {string} text
+ * @param {{scope?:string}} [options]
  * @returns {{wert:string, typ:string}[]}
  */
-export function piiAnker(text) {
+export function piiAnker(text, { scope } = {}) {
   const gesehen = new Set();
   const out = [];
   for (const { wert, typ } of erkennePII(text)) {
     if (gesehen.has(wert)) continue;
     gesehen.add(wert);
-    out.push({ wert, typ });
+    out.push({ wert, typ: mitScope(typ, scope) });
   }
   return out;
 }
@@ -101,11 +122,15 @@ export function piiAnker(text) {
  * Kombiniert die exakten Stammdaten-Anker mit den im Text erkannten PII-Ankern.
  * Die exakten Anker stehen ZUERST → bei gleichem Wert behält `pseudonym.normalizeAnchors`
  * deren Typ (Stammdaten sind verlässlicher als die Heuristik). Reine Funktion.
+ * `options.scope` reicht den Fremd-PII-Scope an `piiAnker()` durch (NER-Scoping im
+ * Briefkasten-Modus); die exakten Anker bleiben unangetastet (sie tragen ihre eigenen
+ * Hierarchie-Scopes bereits).
  * @param {{wert:string,typ?:string}[]} exakteAnker
  * @param {string} text
+ * @param {{scope?:string}} [options]
  * @returns {{wert:string,typ:string}[]}
  */
-export function kombiniereAnker(exakteAnker, text) {
+export function kombiniereAnker(exakteAnker, text, { scope } = {}) {
   const exakt = Array.isArray(exakteAnker) ? exakteAnker : [];
-  return [...exakt, ...piiAnker(text)];
+  return [...exakt, ...piiAnker(text, { scope })];
 }

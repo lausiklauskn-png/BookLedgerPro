@@ -18,32 +18,33 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Abschnitt R bis R5 ist komplett** (R1–R4 ✅; R5a/R5b/R5c ✅); **R6/P1 (Privat-/Bürger-Modus:
-`domain/nutzungsmodus.js`, NAV-Gating, Setting `nutzungsmodus`) ✅ + gemergt (PR #99)**; **R6/P2 (Feature-Gates
-ansichtsintern konsumiert: journal/reports/documents/dashboard lesen `zeigeFeature`/`zeigeAnsicht`) ✅**.
-**Aktueller nächster Schritt: R6/Rest [KANN]** — die Restoptionen brauchen jeweils etwas, das in dieser Umgebung
-fehlt: **Lighthouse/Perf** (Headless-Browser), **lokales OCR** (nur build-frei-sauber — Tesseract ist wasm/npm-
-Runtime → genau prüfen, ob build-frei machbar), **ZUGFeRD-Erzeugen** (XML in PDF/A-3 einbetten → PDF-Lib, nicht
-build-frei), **Sage 5b–d** (fremde Repos, menschlich vermittelt). **Daher praktischer nächster Schritt: ein
-Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier): (a) eine WorkFloh-Austauschdatei MIT
-`rechnung`-Block importieren (Aufträge → „Aus WorkFloh importieren") → Buchungsentwurf (Forderung an Erlöse + USt)
-prüfen, Auftrag „berechnet"; (b) OCR→Verbindlichkeit-Klickpfad (Foto/PDF → Google Vision EU → „Verbindlichkeit aus
-diesem Beleg erfassen" → Zahlungsabgleich); (c) **Pseudonym-Modus mit dreistufigem Briefkasten** (Einstellungen
-→ „Dreistufiger Briefkasten" an) → Belegtext an die KI → Maskierung/Token prüfen; (d) **Privat-/Verein-Modus**
-(Einstellungen → „Nutzungskontext") → prüfen, dass die NAV die geschäftlichen Ansichten ausblendet **und (P2)
-zusätzlich USt-Felder im Journal, Mahn-/Kreditoren-Knöpfe und KPIs je Modus verschwinden**. Wenn der Nutzer
-stattdessen einen Code-Schritt wünscht: zuerst prüfen, ob lokales OCR wirklich build-frei lösbar ist; sonst R6/Rest
-als „blockiert (Umgebung/Mensch)" dokumentieren und mit dem Nutzer den nächsten sinnvollen Korb abstimmen.
-Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
-**Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** (B1/B2/B3); **R1–R4 ✅** (Verzugszinsen/
-Mahngebühren · Skonto §17 UStG · Sammelzahlungen · Verbindlichkeiten aus Foto/PDF · Rechnungs-Übernahme
-aus WorkFloh, PR #95); **R5a/R5b/R5c ✅** (Bankformate härten · NER · dreistufiger Briefkasten);
-**R6/P1 ✅** (Privat-/Bürger-Modus); **R6/P2 ✅** (Feature-Gates ansichtsintern). **Bewusst offen** (eigene
-Schritte, falls gewünscht): R4-Rest **API/Push** (Echtzeit) + Übernahme von **Zahlungsstatus/Teilzahlungen**;
-R5a-Rest **echte SWIFT-/ISO-20022-Schema-Validierung**; R5c-Rest **Person-Attribut-Bindung pro Personen-Token**
-+ **NER-Scoping**. Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`. Reine Logik
-**ZUERST node-getestet**, dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen). (Falls ein Schritt zu
-groß ist: feiner schneiden und Plan fortschreiben — nie „halb" mergen.)
+abarbeiten. **Abschnitt R bis R5 ist komplett** (R1–R4 ✅; R5a/R5b/R5c ✅; **R5c-Rest NER-Scoping ✅** — Fremd-PII
+trägt im Briefkasten-Modus den `EXTERN`-Scope); **R6/P1 ✅** (Privat-/Bürger-Modus, PR #99); **R6/P2 ✅** (Feature-Gates
+ansichtsintern konsumiert). **R6/Rest [KANN] ist umgebungs-/menschen-blockiert** (verifiziert): **Lighthouse/Perf**
+braucht Headless-Browser (keiner hier); **lokales OCR** = Tesseract (wasm/npm-Runtime) ist **nicht build-frei**
+(Goldene Regel #1 verbietet CDNs/npm-Runtime); **ZUGFeRD-Erzeugen** braucht PDF/A-3-Lib (nicht build-frei); **Sage 5b–d**
+sind fremde Repos (menschlich vermittelt). **Daher zwei gleichwertige Wege — mit dem Nutzer abstimmen, sonst Empfehlung
+nehmen:**
+(A) **Browser-Sichttest durch den Nutzer** (kein Headless hier): (a) WorkFloh-Austauschdatei MIT `rechnung`-Block
+importieren (Aufträge → „Aus WorkFloh importieren") → Buchungsentwurf (Forderung an Erlöse + USt) prüfen, Auftrag
+„berechnet"; (b) OCR→Verbindlichkeit (Foto/PDF → Google Vision EU → „Verbindlichkeit aus diesem Beleg erfassen" →
+Zahlungsabgleich); (c) **Pseudonym-Modus mit dreistufigem Briefkasten** (Einstellungen → „Dreistufiger Briefkasten" an)
+→ Belegtext an die KI → Maskierung/Token prüfen, **inkl. neuer `[[EXTERN_*]]`-Token für Fremd-PII**; (d) **Privat-/
+Verein-Modus** (Einstellungen → „Nutzungskontext") → NAV blendet geschäftliche Ansichten aus **und (P2) USt-Felder im
+Journal, Mahn-/Kreditoren-Knöpfe und KPIs je Modus verschwinden**.
+(B) **build-freier Code-Korb (EMPFOHLEN für eine reine Code-Sitzung):** **R4-Rest** — Zahlungsstatus/Teilzahlungen aus
+WorkFloh übernehmen (Austauschformat **v3**: optionale `zahlungen[]` je Rechnung → in BLP als Zahlung/Teilzahlung +
+Zahlungsabgleich; reine Logik in `importworkfloh`/`invoicing`/`crm-store`/`connect`, **zuerst node-getestet**) — höherer
+Geschäftswert. **Alternativ R5a-Rest** — echte SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-Validierung (schwerer/spröder).
+Wenn unklar, welcher Korb: **kurz mit dem Nutzer abstimmen** (AskUserQuestion), dann EINEN sauber umsetzen.
+Mehrmandanten (Abschnitt A: M1/M2a/M2b/M3) **abgeschlossen** (`docs/MANDANTEN.md`); **Abschnitt B (Bilanzierung)
+abgeschlossen** (B1/B2/B3); **R1–R4 ✅** (PR #95); **R5a/R5b/R5c ✅** + **R5c-Rest ✅**; **R6/P1 ✅**; **R6/P2 ✅**.
+**Bewusst offen:** R4-Rest **API/Push** (Echtzeit) + **Zahlungsstatus/Teilzahlungen**; R5a-Rest **SWIFT-/ISO-20022-
+Schema-Validierung**; R5c-Rest **Person-Attribut-Bindung pro Personen-Token** (das **NER-Scoping** ist jetzt erledigt;
+offen bleibt die **Clusterung verschiedener Drittparteien** unter eigenen EXTERN_n-Scopes — heuristisch/FP-riskant).
+Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`. Reine Logik **ZUERST node-getestet**,
+dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen). (Falls ein Schritt zu groß ist: feiner schneiden und Plan
+fortschreiben — nie „halb" mergen.)
 
 MEHRERE PRs ERLAUBT: Wenn sich mehrere Plan-Punkte **sauber und in sich abgeschlossen** in einer
 Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener PR**, jeder einzeln grün und gemergt.
@@ -80,9 +81,9 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach **R6/P2** (Abschnitt A Mehrmandanten + Abschnitt B Bilanzierung +
-R1–R5 abgeschlossen + gemergt; **R6/P1 Privat-/Bürger-Modus** PR #99; **R6/P2 Feature-Gates ansichtsintern** —
-`journal/reports/documents/dashboard` lesen `zeigeFeature`/`zeigeAnsicht`, reine Politik unverändert) ·
-Tests **972/972** · SW **v95** · 97 JS-Module · **R bis R5 komplett, R6/P1 ✅, R6/P2 ✅** · nächster Schritt
-**R6/Rest** (Lighthouse/OCR/ZUGFeRD/Sage 5b–d — meist Headless/PDF-Lib/fremde Repos) bzw. **Browser-Sichttest**.
-(Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach **R5c-Rest NER-Scoping** (Abschnitt A Mehrmandanten + Abschnitt B
+Bilanzierung + R1–R5 abgeschlossen + gemergt; R6/P1 PR #99; R6/P2 Feature-Gates ansichtsintern; **R5c-Rest:**
+Fremd-PII trägt im Briefkasten-Modus den `EXTERN`-Scope → `[[EXTERN_IBAN_1]]`, exakte Stammdaten behalten Vorrang) ·
+Tests **983/983** · SW **v96** · 97 JS-Module · **R bis R5 komplett inkl. R5c-Rest, R6/P1 ✅, R6/P2 ✅** · nächster
+Schritt: **R6/Rest blockiert (Umgebung/Mensch)** → **R4-Rest** (Zahlungsstatus/Teilzahlungen aus WorkFloh, empfohlen)
+oder **R5a-Rest** (Bank-Schema-Validierung) bzw. **Browser-Sichttest**. (Diese Zeile bei jeder Sitzung aktualisieren.)

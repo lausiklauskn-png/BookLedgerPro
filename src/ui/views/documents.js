@@ -3,7 +3,7 @@
 // On-Device-Heuristik-Fallback). Respektiert den KI-Autonomie-Schalter.
 
 import { el, mount } from '../dom.js';
-import { t } from '../i18n.js';
+import { t, tOpt } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
 import { pickFile, formatBytes, readFileText, readFileBytes } from '../../core/files.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
@@ -49,7 +49,7 @@ async function pseudonymBadge(quelltext) {
   const bericht = maskierungsBericht(map);
   if (!bericht.gesamt) return null;
   const proTyp = Object.entries(bericht.proTyp)
-    .map(([typ, n]) => `${n}× ${t('pseudonym.typ.' + typ) || typ}`).join(', ');
+    .map(([typ, n]) => `${n}× ${tOpt('pseudonym.typ.' + typ) || typ}`).join(', ');
   return el('details', { class: 'hinweis pseudonym-info' }, [
     el('summary', { class: 'small', text: `🛡 ${t('pseudonym.badge').replace('{n}', String(bericht.gesamt))} (${proTyp})` }),
     el('p', { class: 'muted small', text: t('pseudonym.previewHint') }),

@@ -5,6 +5,46 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R5c-Rest: NER-Scoping (Fremd-PII unter EXTERN-Scope) [Branch `claude/r5c-ner-scoping`]
+
+**Ausgangslage / Auswahl** (Schritt nach R6/P2)
+- **R6/Rest [KANN] ist umgebungs-/menschen-blockiert** und das verifiziert: **Lighthouse/Perf** braucht einen
+  Headless-Browser (hier keiner); **lokales OCR** = Tesseract (wasm/npm-Runtime) ist **nicht build-frei**
+  (geprüft: nichts vendored, Goldene Regel #1 verbietet CDNs/npm-Runtime); **ZUGFeRD-Erzeugen** braucht eine
+  PDF/A-3-Lib (nicht build-frei); **Sage 5b–d** sind fremde Repos (menschlich vermittelt). Der „praktische
+  nächste Schritt" laut Brief — ein **Browser-Sichttest** — verlangt den menschlichen Nutzer mit echtem Browser.
+- Daher (gemäß Brief: „nächsten sinnvollen Korb abstimmen") **mit dem Nutzer abgestimmt** → Wahl: **R5c-Rest
+  NER-Scoping** (build-frei, reine Logik, node-testbar, enge Fortsetzung der R5-Datenschutz-Familie).
+
+**Was getan**
+- **Reine Logik zuerst (node-getestet, +11 → 983/983):** `src/ai/ner.js`
+  - Neuer Export `EXTERN_SCOPE = 'EXTERN'`; `piiAnker(text, {scope})` und `kombiniereAnker(exakt, text, {scope})`
+    versehen die im Belegtext erkannten **Fremd-PII** (IBAN/E-Mail/USt-IdNr/Steuernr/Telefon Dritter) bei gesetztem
+    Scope mit dem Präfix (`EXTERN_IBAN`, `EXTERN_EMAIL` …) → `pseudonym.tokenize()` erzeugt gruppierende, sichtbar
+    externe Token (`[[EXTERN_IBAN_1]]`) statt flacher `[[IBAN_1]]`. Ohne Scope unverändert flach (abwärtskompatibel).
+- **Glue (statisch geprüft):** `src/ai/anker.js ladeAnker()` reicht `EXTERN_SCOPE` an `kombiniereAnker` **nur**
+  im Briefkasten-Modus (`briefkastenScopes === true`) durch; flacher Pseudonym-Modus bleibt flach. Exakte (gescopte)
+  Stammdaten-Anker stehen weiter zuerst → behalten bei gleichem Wert ihren Typ-Vorrang (eigene/Mandanten-Entität
+  schlägt EXTERN-Heuristik).
+- **Transparenz-Badge lesbar (Nebenfix):** `t()` liefert bei fehlendem Schlüssel den Schlüssel selbst, daher zeigte
+  der Badge scope-präfixierte Typen (schon bei R5c `FIRMA_2_IBAN`, jetzt auch `EXTERN_IBAN`) als rohen i18n-Schlüssel.
+  Neuer `tOpt(key)` (i18n) liefert `null` statt Schlüssel → `documents.js` fällt sauber auf den Roh-Typ zurück.
+- **SW-Cache** `v95 → v96` (keine neuen Module → Precache unverändert).
+
+**Stand:** `node tests/run.mjs` **983/983 grün**. Alle berührten Dateien `node --check`-sauber.
+
+**Offen / Grenzen (ehrlich)**
+- **EIN gemeinsamer `EXTERN`-Scope** — verschiedene Drittparteien werden **NICHT** geclustert; das ginge aus flachem
+  Belegtext nur heuristisch (FP-Risiko) → bewusst konservativ belassen.
+- UI/Glue (`anker.js`/`documents.js`) **statisch geprüft** (kein Headless-Browser): der reale Briefkasten-Lauf mit
+  EXTERN-Token + Badge ist als **Browser-Sichttest** zu bestätigen.
+
+**Nächstes:** R6/Rest bleibt blockiert (Umgebung/Mensch). Build-freie Code-Körbe für die nächste Sitzung:
+**R4-Rest** (Zahlungsstatus/Teilzahlungen aus WorkFloh übernehmen) oder **R5a-Rest** (echte SWIFT/ISO-20022-Schema-
+Validierung) — oder Browser-Sichttest durch den Nutzer. Siehe `docs/NACHFOLGE_PLAN.md` / `docs/NAECHSTE_SITZUNG.md`.
+
+---
+
 ## 2026-06-17 — R6/P2: Feature-Gates ansichtsintern konsumieren [Branch `claude/bookledgerpro-feature-gates-ixswxu`]
 
 **Was getan** (Schritt **R6/P2** — die in R6/P1 definierten Gates jetzt in den Views lesen)
