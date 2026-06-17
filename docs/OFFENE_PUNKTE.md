@@ -33,8 +33,15 @@ ein PR, bei grüner CI selbstständig mergen**):
   **`docs/DATENSICHERUNG.md`** (Stellen: BLP intern · verschlüsselter gewählter Ordner re-importierbar ·
   Server/Offsite; **freie Nutzer-Wahl `backupStrategie`** beim Onboarding + in Einstellungen änderbar;
   **Backup→Restore-Roundtrip-Selbsttest** als beweisbare Prüfung). Backup-Kern existiert bereits
-  (`core/backup.js`, verschlüsselte `.blpr.json`, Shamir, persist). **Vorschlag:** Roundtrip-Selbsttest
-  als früher build-freier PR (vor der Kalkulation).
+  (`core/backup.js`, verschlüsselte `.blpr.json`, Shamir, persist).
+- **Test-Modus (Sandbox-Tresor): JA, Spec steht.** Verbindliches Doku: **`docs/TEST_MODUS.md`** (wegwerfbarer
+  Test-Tresor über die Mehrmandanten-Schicht; mehrere getrennte Tests, behalten/verwerfen/aufräumen, optional
+  Demo-vorbefüllt; echte Daten unberührt; build-frei/node-testbar). **WICHTIG:** Auch **Mein-WorkFloh** soll
+  einen Test-Modus nach dieser Spec bekommen (⇄-Abschnitt im Doku; eigenes Repo, über den Nutzer).
+- **★ GESAMT-BAUPLAN nächste Phase:** **`docs/BAUPLAN.md`** — geordnete Reihenfolge aller vereinbarten Themen
+  (Block 1 Vertrauen/Sicherheit: Roundtrip-Selbsttest → Test-Modus → Backup-UX/`backupStrategie`; Block 2
+  Kalkulation/Angebote fein geschnitten; Block 3 später/blockiert). **Arbeitsweise:** mehrere saubere PRs pro
+  Sitzung wo sinnvoll (nicht zwingend 1/Sitzung).
 
 **Festgelegte Bau-Reihenfolge (je eigener PR, Freibrief-Merge):**
 1. ✅ ELSTER-Weiterleitungs-Link + AVV-Anbieterlinks (klein) — *diese Sitzung*.
