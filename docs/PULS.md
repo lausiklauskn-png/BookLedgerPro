@@ -35,8 +35,14 @@
 - **Unverrückbar:** DB-Suffix `bookledgerpro` NIE ändern · build-frei (keine Bundler/CDNs/npm-Runtime) ·
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
-**📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = mit dem Nutzer abstimmen (AskUserQuestion).** Der **build-freie Rest-Korb ist leer**; in dieser Sitzung
+**📋 Der vorausschauende Gesamt-Bauplan steht jetzt in `docs/BAUPLAN.md`** (geordnete Reihenfolge aller mit dem
+Nutzer 2026-06-17 vereinbarten Themen: Kalkulation/Angebote + Datensicherung + Test-Modus); Ritual/erledigte Tracks
+in `docs/NACHFOLGE_PLAN.md`. **Nächste PRs = BAUPLAN abarbeiten, Block 1 zuerst** (mehrere saubere PRs pro Sitzung wo
+sinnvoll): **1.** Backup→Restore-Roundtrip-Selbsttest (`docs/DATENSICHERUNG.md`, Pflicht #1) → **2.** Test-Modus/
+Sandbox-Tresor (`docs/TEST_MODUS.md`) → **3.** Backup-UX + `backupStrategie`. Danach **Block 2: Kalkulation/Angebote**
+(`docs/KALKULATION_KATALOG.md`; Prime Directive: Kalkulation intern, Angebot/Rechnung neutral). **Vermerk:** auch
+**Mein-WorkFloh** soll einen Test-Modus nach `docs/TEST_MODUS.md` bekommen (fremdes Repo, über den Nutzer).
+**(Frühere Notiz, Kontext):** Der reine „build-freie Rest-Korb" war leer; in der vorigen Sitzung
 wurde (Nutzer: „keine Präferenz" → empfohlene Folge-Idee) **„Edit bestehender Aufträge"** umgesetzt: ein noch nicht
 berechneter Auftrag ist nachträglich editierbar (`orders.darfAuftragBearbeiten`/`anwendeAuftragEdit` rein/node-getestet,
 `crm-store.updateAuftrag`, UI-„Bearbeiten"-Knopf; GoBD-gesperrt sobald berechnet/bezahlt/Zahlung erfasst). SW `v102`,
