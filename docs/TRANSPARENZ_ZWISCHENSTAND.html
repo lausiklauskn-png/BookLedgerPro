@@ -61,16 +61,16 @@
 <h1>BookLedgerPro</h1>
 <p class="sub"><strong>Technische Transparenz- und Zwischenstands-Dokumentation</strong><br>
 Wie die App Ihre Daten schützt, verschlüsselt und Recht (DSGVO &amp; GoBD) einhält.</p>
-<p class="foot">Stand: 16. Juni 2026 (aktualisiert) · Arbeitsdokument (wird fortgeschrieben) · Endpoint: https://lausiklauskn-png.github.io/bookledgerpro/ · Automatisierte Tests: <strong>314/314 grün</strong></p>
+<p class="foot">Stand: 16. Juni 2026 (aktualisiert) · Arbeitsdokument (wird fortgeschrieben) · Endpoint: https://lausiklauskn-png.github.io/bookledgerpro/ · Automatisierte Tests: <strong>618/618 grün</strong> · Service-Worker-Cache <code>v72</code></p>
 
 <div class="good no-break">
-<strong>Aktualisierung 16.06.2026 — von „geplant" zu „fertig":</strong>
+<strong>Aktualisierung 16.06.2026 — Profi-Readiness-Fahrplan V1–V10 vollständig abgeschlossen:</strong>
 <ul style="margin:4pt 0;">
-<li><span class="ok">✓</span> <strong>Datenschutz-Modus „Pseudonymisieren"</strong> ist real gebaut (anker-basiert, siehe § 6) — inkl. <strong>Transparenz-Vorschau</strong> des gesendeten Texts.</li>
-<li><span class="ok">✓</span> <strong>AVV-/DSGVO-Hinweis</strong> (Art. 28 &amp; 32) in „Recht &amp; Doku" ergänzt (war P1).</li>
-<li><span class="ok">✓</span> <strong>E-Rechnung</strong>: XRechnung/CII <em>erzeugen</em> und eingehende XRechnung (CII + UBL) <em>einlesen</em>.</li>
-<li><span class="ok">✓</span> <strong>Bankimport (MT940)</strong>: Kontoauszug einlesen → Buchungsvorschlag je Umsatz.</li>
-<li>Testumfang von 134 auf <strong>314</strong> erhöht (alle grün).</li>
+<li><span class="ok">✓</span> <strong>§13b/Reverse-Charge + EU/Ausland</strong>, <strong>Anlagevermögen + AfA</strong>, <strong>GoBD-Kassenbuch</strong>, <strong>USt-VA komplett</strong> (Zeitraum + Sondervorauszahlung + ELSTER-Paket).</li>
+<li><span class="ok">✓</span> <strong>Berichte</strong> (Anlage-EÜR-Gruppierung, Kontenblätter, SuSa), <strong>GoBD-Betriebsprüfer-Export (GDPdU „Z3")</strong>, <strong>DATEV-EXTF berater-fest</strong> (Header/BU-Schlüssel/§13b-Split).</li>
+<li><span class="ok">✓</span> <strong>Kleinfälle</strong> (Bewirtung 70/30, Geschenke-/Kleinbetragsgrenze, Periodensperre) + <strong>Simulations-Testdaten</strong> (Demo-Export mit dokumentierten Vergleichswerten, ohne DATEV/ELSTER-Zugang).</li>
+<li><span class="ok">✓</span> <strong>In-App-Selbstdiagnose</strong> (Navigation „Selbsttest" → ✓/✗ der Kern-Engine) + <strong>Abnahme-Checkliste</strong> für den manuellen Klickpfad.</li>
+<li>Testumfang von 314 auf <strong>618</strong> erhöht (alle grün). Detail-Statustabelle siehe § 0b.</li>
 </ul>
 </div>
 
@@ -109,6 +109,49 @@ sind <strong>nicht zur Auswahl freigegeben</strong> — sie sind allenfalls eine
 strukturelle Option im Gerüst der App. Eine Öffnung wäre eine ausdrückliche, gesonderte
 Entscheidung; bis dahin bleibt sie geschlossen.</p>
 </div>
+
+<h2>0b. Funktions-Fahrplan „Profi-Readiness" V1–V10 — Stand offen/erledigt</h2>
+<p class="lead">Der Fahrplan zur vollwertigen Buchhaltung (für Klein- <em>und</em> Normalbetriebe) ist
+<strong>vollständig abgeschlossen</strong> — alle MUSS- und SOLL-Punkte. Stand 16.06.2026,
+automatisierte Tests <strong>618/618 grün</strong>.</p>
+<table>
+<tr><th>Punkt</th><th>Inhalt</th><th>Status</th></tr>
+<tr><td>V1</td><td>Kontenrahmen erweitert (57 SKR03-Konten) + Konten anlegen/bearbeiten/löschen</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V2</td><td>§13b / Reverse-Charge + EU/Ausland (USt-VA Kz 41/43/46/47/61/67/89/93)</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V3</td><td>Anlagevermögen + AfA (GWG, Sammelposten, lineare AfA) + Anlagenverzeichnis</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V4</td><td>Eröffnungs-/Anfangsbestände + GoBD-Kassenbuch (laufender Bestand, „nie negativ")</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V5</td><td>USt-VA komplett: Zeitraum (Monat/Quartal/Jahr) + Sondervorauszahlung (1/11) + ELSTER-Datenpaket</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V6</td><td>Anlage EÜR (Gruppierung) + Kontenblätter + Summen-/Saldenliste (SuSa)</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V7</td><td>GoBD-Betriebsprüfer-Export (GDPdU „Z3"): index.xml + Daten-CSV als ZIP</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V8</td><td>DATEV-EXTF berater-fest (Header, BU-Schlüssel 9/8/3/2, §13b-Split)</td><td><span class="ok">✓ erledigt*</span></td></tr>
+<tr><td>V9</td><td>Korrektheit/Kleinfälle (Bewirtung 70/30, Geschenke-/Kleinbetragsgrenze, Periodensperre) + Simulations-Testdaten</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V10</td><td>Browser-Abnahme: In-App-Selbstdiagnose + manuelle Klickpfad-Checkliste</td><td><span class="ok">✓ erledigt</span></td></tr>
+</table>
+<p class="foot">* V8: Format &amp; Steuerschlüssel sind gebaut und node-getestet; die endgültige „Berater-Festigkeit"
+bestätigt ein realer DATEV-Testimport (privat oder über den Steuerberater) — vorbereitet über den Demo-Export.</p>
+
+<h3>Frühere Ausbaustufen (ebenfalls erledigt)</h3>
+<table>
+<tr><th>Bereich</th><th>Inhalt</th><th>Status</th></tr>
+<tr><td>A1</td><td>Mahnwesen: Fälligkeit, Verzugszinsen §288 BGB, Mahnstufen, B2B/Verbraucher</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>A2</td><td>Eingangsrechnungen / Verbindlichkeiten + offene-Posten-Liste (Kreditoren)</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>A3</td><td>Zahlungsabgleich (Matching, Teilzahlung/Skonto) + Bankimport MT940 &amp; CAMT.053</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>—</td><td>Datenschutz-Modus „Pseudonymisieren" + AVV-Hinweis; E-Rechnung erzeugen/empfangen</td><td><span class="ok">✓ erledigt</span></td></tr>
+</table>
+
+<h3>Noch offen — kein Pflicht-Fahrplan mehr</h3>
+<table>
+<tr><th>Punkt</th><th>Inhalt</th><th>Status</th></tr>
+<tr><td>Praxistest</td><td>Echter Durchlauf Foto-OCR → App → Finanzamt + DATEV-Testimport (durch den Nutzer)</td><td><span class="plan">◐ offen</span></td></tr>
+<tr><td>A4</td><td>WorkFloh-/App-Anbindung (Angebote/Arbeiten → Rechnung → BookLedgerPro)</td><td><span class="plan">◐ offen</span></td></tr>
+<tr><td>Sage 5b–d</td><td>Mycel-Andock (Spore/Hub/Symbiose) — menschlich vermittelt, fremde Repos</td><td><span class="plan">◐ offen</span></td></tr>
+<tr><td>KoSIT/ZUGFeRD</td><td>KoSIT-validierte E-Rechnung; ZUGFeRD-PDF auspacken; zertifiziertes 116-Spalten-EXTF; ELSTER-Direktversand</td><td><span class="plan">◐ offen</span></td></tr>
+<tr><td>optional</td><td>Bilanzierung (GmbH), Lohnbuchhaltung, Mehrmandantenfähigkeit</td><td><span class="idea">○ bei Bedarf</span></td></tr>
+</table>
+<div class="good"><strong>Ohne DATEV voll nutzbar:</strong> Belege scannen (OCR), Kundendaten, Rechnungen,
+einfaches/manuelles Rechnungswesen, EÜR &amp; USt-VA, Kassenbuch und Auswertungen funktionieren
+<strong>komplett ohne DATEV</strong>. DATEV-EXTF/GDPdU/CSV/Voll-Backup sind nur optionale, portable
+Export-Wege (kein Anbieter-Lock-in).</div>
 
 <h2>1. Grundprinzipien</h2>
 <table>
@@ -259,19 +302,22 @@ Datendurabilität (Shamir/Backup), doppelte Buchführung mit SKR03, USt-Voranmel
 (periodengerecht <em>und</em> nach Zufluss/Abfluss §4(3)), GoBD-Festschreibung mit Hash-Kette,
 verschlüsselte Belege, Kunden/Aufträge/Mitarbeiter/Kostenstellen, CSV-/DATEV-EXTF-orientierter Export,
 EU-KI (Vision + Mistral) mit On-Device-Fallback, <strong>Datenschutz-Modus „Pseudonymisieren"</strong>,
-<strong>E-Rechnung (erzeugen + empfangen)</strong>, <strong>Bankimport MT940</strong>, Dashboard mit echten
-Kennzahlen. <strong>Automatisierte Tests: 314 von 314 grün.</strong></div>
-<div class="note"><strong>Noch offen / noch nicht geprüft:</strong> Zahlungsabgleich (CAMT.053 + offene Posten);
-KoSIT-validierte E-Rechnung &amp; ZUGFeRD-PDF; zertifiziertes DATEV-EXTF und ELSTER-Einreichung;
+<strong>E-Rechnung (erzeugen + empfangen)</strong>, <strong>Bankimport (MT940 &amp; CAMT.053) + Zahlungsabgleich</strong>,
+Dashboard mit echten Kennzahlen. <strong>Plus der komplette Profi-Readiness-Fahrplan V1–V10</strong>
+(§13b, AfA/Anlagen, Kassenbuch, USt-VA mit ELSTER-Paket, SuSa/Kontenblätter/Anlage-EÜR, GoBD/GDPdU-Export,
+DATEV-EXTF, Kleinfälle, Selbstdiagnose). <strong>Automatisierte Tests: 618 von 618 grün.</strong></div>
+<div class="note"><strong>Noch offen / noch nicht geprüft:</strong> KoSIT-validierte E-Rechnung &amp; ZUGFeRD-PDF;
+zertifiziertes 116-Spalten-DATEV-EXTF und ELSTER-Direktversand (bewusst nur Datenpaket);
 dreistufiger Briefkasten (P7) und automatische PII-Erkennung (NER); lokale Offline-Texterkennung;
-Sage-Andock (Phase 5b–d). <strong>Die Browser-Oberfläche ist nicht automatisiert end-to-end getestet</strong>
-(die Kernlogik schon, 314/314).</div>
+Sage-Andock (Phase 5b–d); WorkFloh-Anbindung (A4). <strong>Die Browser-Oberfläche ist nicht automatisiert
+end-to-end getestet</strong> — dafür gibt es die In-App-Selbstdiagnose (Kern-Engine) und die manuelle
+Abnahme-Checkliste. <strong>Der echte Praxistest (Foto→App→Finanzamt, DATEV-Import) steht beim Nutzer aus.</strong></div>
 
 <h2>10. Warum Sie das nachprüfen können (nicht nur glauben müssen)</h2>
 <ul>
 <li><strong>Quelloffen und build-frei:</strong> Der Code ist lesbarer Klartext — kein verstecktes, kompiliertes Paket. Was die App tut, steht offen da.</li>
 <li><strong>Kein Server, kein Konto:</strong> Es gibt keine Betreiber-Datenbank, in der Ihre Daten landen könnten.</li>
-<li><strong>Automatisierte Tests:</strong> Die Rechenkerne (Krypto, Beträge, Buchungslogik, Hash-Kette, Pseudonymisierung, E-Rechnung, Bankimport) sind durch Tests abgesichert — reproduzierbar mit <code>node tests/run.mjs</code> (314/314).</li>
+<li><strong>Automatisierte Tests:</strong> Die Rechenkerne (Krypto, Beträge, Buchungslogik, Hash-Kette, Pseudonymisierung, E-Rechnung, Bankimport) sind durch Tests abgesichert — reproduzierbar mit <code>node tests/run.mjs</code> (618/618) und in der App über <strong>„Selbsttest"</strong> sichtbar.</li>
 <li><strong>Dieses Dokument trennt Fertiges von Geplantem</strong> — Sie sehen den echten Stand, nicht ein Wunschbild.</li>
 </ul>
 
