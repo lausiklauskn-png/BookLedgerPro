@@ -8,7 +8,7 @@
 //   "kunden":    [{ externId, name, adresse?, email?, ustId? }],
 //   "auftraege": [{ externNummer, kundeExternId?, titel, positionen:
 //                   [{ beschreibung?, menge, einzelpreisCent|einzelpreis, ustSatz? }],
-//                   rechnung?: { nummer, datum, leistungsdatum? } }]
+//                   rechnung?: { nummer, datum, leistungsdatum?, zahlungszielTage? } }]
 // }
 // Fehlt ein USt-Satz, wird er in BookLedgerPro ergänzt (Default, editierbar).
 //
@@ -56,6 +56,13 @@ function normalizeRechnung(raw, label, warnungen) {
   const r = { nummer, datum };
   const ld = String(raw.leistungsdatum || '').trim();
   if (ld && ISO_DATUM.test(ld)) r.leistungsdatum = ld;
+  // v4: auftragseigenes Zahlungsziel (ganze Tage ≥ 0) konservativ übernehmen — die Gegenseite
+  // erbt die Fälligkeit. Ungültige Angaben werden verworfen + als Warnung gezählt (nichts erfunden).
+  if (raw.zahlungszielTage != null && String(raw.zahlungszielTage) !== '') {
+    const ziel = Number(raw.zahlungszielTage);
+    if (Number.isInteger(ziel) && ziel >= 0) r.zahlungszielTage = ziel;
+    else warnungen.push(`Rechnung „${nummer}": Zahlungsziel ungültig → ignoriert.`);
+  }
   const zahlungen = normalizeZahlungen(raw.zahlungen, nummer, warnungen);
   if (zahlungen.length) r.zahlungen = zahlungen;
   return r;

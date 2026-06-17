@@ -253,6 +253,18 @@
   Datum/Leistungsdatum (nur wenn vorhanden). i18n `orders.payableUntil` de+en. SW `v100`, **+6 Tests (1051/1051)**.
   UI/Glue statisch geprüft. **Grenze:** kein Edit bestehender Aufträge; WorkFloh-`rechnung`-Block überträgt weiter
   kein Ziel; Eingangsrechnungs-Verzug der Gegenseite weiter offen. (PR „zahlbar bis".)
+- [x] **Zahlungsziel je Auftrag durabel + im Austauschformat (v4)** (mit dem Nutzer abgestimmt, „nach deiner
+  Empfehlung"; build-freier Rest-Korb leer). ✅ Zwei eng gekoppelte Teile in EINEM PR:
+  **(1) Bugfix Persistenz:** `crm-store.saveAuftrag` hat das A1-Rest-Feld `zahlungszielTage` aus der Whitelist
+  **fallen gelassen** → Fälligkeit/„zahlbar bis"/Mahnwesen fielen nach dem Speichern **immer** auf den globalen
+  Default zurück. `saveAuftrag` persistiert es jetzt (ganze Tage ≥ 0 / null). **(2) Übertragung (v4):**
+  `connect.buildAustauschPaket` trägt `rechnung.zahlungszielTage` reziprok mit (nur eigenes Ziel; null → Feld weg);
+  `importworkfloh.normalizeRechnung` übernimmt es konservativ (Integer ≥ 0, sonst verworfen + Warnung);
+  `crm-store.importWorkFloh` setzt es beim Import auf den Auftrag → die Gegenstelle erbt dieselbe Fälligkeit.
+  `AUSTAUSCH_VERSION` 3→**4** (abwärtskompatibel). +8 Tests (**1059/1059**), SW `v101`. Docs CONNECT.md/
+  WORKFLOH_IMPORT.md auf v4. **Grenze:** `saveAuftrag`-Persistenz ist IndexedDB → **statisch geprüft** (kein
+  Headless-Browser); reine Logik (Export/Normalisierung) node-getestet. Edit bestehender Aufträge + Eingangs-
+  rechnungs-Verzug der Gegenseite weiter offen. (PR „Zahlungsziel durabel + v4".)
 
 ---
 

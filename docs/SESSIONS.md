@@ -5,6 +5,43 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — Zahlungsziel je Auftrag durabel + im Austauschformat (v4) [Branch `claude/bookledgerpro-next-steps-o185d5`]
+
+**Ausgangslage / Auswahl** (build-freier Rest-Korb leer → mit dem Nutzer abgestimmt, AskUserQuestion)
+- Optionen waren: zwei „große" Features (Mehrmandanten / Bilanzierung), eine kleine build-freie Folge-Idee,
+  oder Browser-Sichttest. Beim Erkunden zeigte sich: **die „großen" Features (M-/B-Serie) sind bereits gebaut
+  und gemergt** (`domain/mandanten.js`, `bilanz.js`, `bilanzierung.js` + UI). Der Nutzer wählte **„nach deiner
+  Empfehlung"**. → empfohlen + umgesetzt: die Folge-Idee **„WorkFloh-`rechnung`-Block überträgt das Zahlungsziel"**.
+- **Beim Implementieren echten Bug gefunden:** `crm-store.saveAuftrag` führt eine **Feld-Whitelist** und ließ
+  `zahlungszielTage` (A1-Rest) **fallen** → das auftragsindividuelle Zahlungsziel ging beim Speichern verloren;
+  Mahnwesen (`offenePosten`→`faelligAmVon`) und die gedruckte **„zahlbar bis"-Zeile** fielen nach dem Speichern
+  **immer** auf den globalen Default zurück. A1-Rest + „zahlbar bis" waren damit faktisch wirkungslos. → Bugfix
+  mit in denselben PR gezogen (gehört thematisch zusammen — ohne Persistenz ist die Übertragung sinnlos).
+
+**Was getan** (reine Logik zuerst, node-getestet — **+8 → 1059/1059**)
+- **Bugfix Persistenz (`src/domain/crm-store.js` `saveAuftrag`):** `zahlungszielTage` wird jetzt mit-persistiert
+  (ganze Tage ≥ 0 oder null). Damit greifen A1-Rest (Mahnwesen-Fälligkeit) und „zahlbar bis" endlich durchgängig.
+- **Übertragung (Austauschformat v4):** `connect.buildAustauschPaket` trägt `rechnung.zahlungszielTage` reziprok
+  mit (nur bei eigenem Ziel; null → Feld weg); `AUSTAUSCH_VERSION` 3→**4** (abwärtskompatibel).
+  `importworkfloh.normalizeRechnung` übernimmt das Ziel konservativ (Integer ≥ 0, sonst verworfen + Warnung);
+  `crm-store.importWorkFloh` reicht es beim Import an `saveAuftrag` → der importierte Auftrag erbt dieselbe
+  Fälligkeit wie die Ausgangsseite (statt des globalen Defaults der Gegenstelle).
+- **Tests:** +8 (Export trägt/lässt-weg, 0-Tage-Sonderfall, Round-trip, ungültiges Ziel → verworfen + Warnung,
+  Abwärtskompatibilität). Bestehende „v3"-Header-Assertion auf v4 nachgezogen.
+- **Docs:** `docs/CONNECT.md` + `docs/WORKFLOH_IMPORT.md` auf v4 (neues Feld `rechnung.zahlungszielTage`).
+- **SW-Cache** `v100 → v101` (kein neues Modul — nur bestehende, bereits precachte Dateien geändert).
+
+**Stand:** `node tests/run.mjs` **1059/1059 grün**. Alle berührten Module `node --check`-sauber.
+
+**Offen / Grenzen (ehrlich)**
+- Der **`saveAuftrag`-Persistenz-Fix** läuft über IndexedDB (`encPut`) → **statisch geprüft**, kein Headless-Browser.
+  Die reine Logik (Export/Normalisierung/Round-trip) ist node-getestet. **Browser-Sichttest empfohlen:** Auftrag mit
+  Zahlungsziel anlegen → speichern → Mahnwesen/„zahlbar bis" prüfen; WorkFloh-Austauschdatei mit
+  `rechnung.zahlungszielTage` importieren → geerbte Fälligkeit prüfen.
+- **Kein Edit** bestehender Aufträge (weiter offene Folge-Idee); **Eingangsrechnungs-Verzug (Gegenseite)** weiter offen.
+
+---
+
 ## 2026-06-17 — „zahlbar bis" auf der §14-Rechnung (Fälligkeitsdatum auf dem Druckdokument) [Branch `claude/bookledgerpro-next-steps-tshhqz`]
 
 **Ausgangslage / Auswahl** (build-freier Rest-Korb leer → mit dem Nutzer abgestimmt, AskUserQuestion)

@@ -39,6 +39,10 @@ export async function saveAuftrag(a) {
     kundeId: a.kundeId || null, titel: a.titel || '',
     status: a.status || AUFTRAG_STATUS.ANGELEGT,
     positionen: a.positionen || [], kostenstelle: a.kostenstelle || null,
+    // Zahlungsziel je Forderung (A1-Rest): MUSS persistiert werden, sonst fällt das
+    // Mahnwesen (offenePosten/faelligAmVon) und die gedruckte „zahlbar bis"-Zeile immer
+    // auf den globalen Default zurück. Ganze Tage ≥ 0 oder null (kein eigenes Ziel).
+    zahlungszielTage: a.zahlungszielTage != null ? a.zahlungszielTage : null,
     rechnungBuchungId: a.rechnungBuchungId || null,
     rechnungNummer: a.rechnungNummer || null,
     rechnungDatum: a.rechnungDatum || null,
@@ -118,6 +122,9 @@ export async function importWorkFloh(parsed) {
     const auftrag = await saveAuftrag({
       titel: a.titel, kundeId, positionen: a.positionen,
       status: AUFTRAG_STATUS.ANGELEGT, externNummer: a.externNummer,
+      // v4: auftragseigenes Zahlungsziel aus dem rechnung-Block übernehmen → Fälligkeit/
+      // Mahnwesen der Gegenstelle entsprechen der Ausgangsseite (kein globaler Default-Bruch).
+      zahlungszielTage: a.rechnung && a.rechnung.zahlungszielTage != null ? a.rechnung.zahlungszielTage : null,
     });
     auftraegeNeu++;
     if (a.externNummer) externNummern.add(a.externNummer);

@@ -2783,7 +2783,7 @@ await section('Punkt 7/A4: Offenes Austauschformat (Anbindung andere Buchhaltung
   const kunden = [{ id: 'kunde:1', name: 'Beispiel GmbH', anschrift: 'Weg 2', email: 'a@b.de', ustId: 'DE123' }];
   const auftraege = [{ id: 'A-1', kundeId: 'kunde:1', titel: 'Auftrag X', positionen: [{ beschreibung: 'Leistung', menge: 1, einzelpreisCent: 100000, ustSatz: 19 }] }];
   const paket = buildAustauschPaket({ kunden, auftraege });
-  ok('Export: Format/Version-Header (v3)', paket.format === AUSTAUSCH_FORMAT && paket.version === 3);
+  ok('Export: Format/Version-Header (v4)', paket.format === AUSTAUSCH_FORMAT && paket.version === 4);
   ok('Export: Kunde + Auftrag übernommen', paket.kunden[0].name === 'Beispiel GmbH' && paket.auftraege[0].positionen[0].einzelpreisCent === 100000);
   ok('Export: Auftrag ohne Rechnung trägt kein rechnung-Feld', paket.auftraege[0].rechnung === undefined);
 
@@ -2816,6 +2816,36 @@ await section('Punkt 7/A4: Offenes Austauschformat (Anbindung andere Buchhaltung
   // Fremdformat / Müll wird abgelehnt.
   ok('Parse: fremdes format → Fehler', !parseAustauschPaket(JSON.stringify({ format: 'lexoffice', kunden: [] })).ok);
   ok('Parse: kein JSON → Fehler', !parseAustauschPaket('{kaputt').ok);
+});
+
+await section('Zahlungsziel je Auftrag durch das Austauschformat (v4)', () => {
+  const kunden = [{ id: 'kunde:1', name: 'Beispiel GmbH' }];
+  const basis = { id: 'A-1', kundeId: 'kunde:1', titel: 'Auftrag X',
+    positionen: [{ beschreibung: 'Leistung', menge: 1, einzelpreisCent: 100000, ustSatz: 19 }] };
+
+  // Export: berechneter Auftrag mit eigenem Zahlungsziel trägt es im rechnung-Block.
+  const mitZiel = buildAustauschPaket({ kunden, auftraege: [{ ...basis, rechnungNummer: '2026-0001', rechnungDatum: '2026-06-01', zahlungszielTage: 30 }] });
+  ok('Export: rechnung trägt zahlungszielTage', mitZiel.auftraege[0].rechnung.zahlungszielTage === 30);
+  ok('Export: zahlungsziel 0 (sofort fällig) wird mitgegeben', buildAustauschPaket({ kunden, auftraege: [{ ...basis, rechnungNummer: '2026-0002', rechnungDatum: '2026-06-01', zahlungszielTage: 0 }] }).auftraege[0].rechnung.zahlungszielTage === 0);
+  // Ohne eigenes Ziel (null) bleibt das Feld weg (abwärtskompatibel).
+  const ohneZiel = buildAustauschPaket({ kunden, auftraege: [{ ...basis, rechnungNummer: '2026-0003', rechnungDatum: '2026-06-01', zahlungszielTage: null }] });
+  ok('Export: ohne eigenes Ziel kein Feld', ohneZiel.auftraege[0].rechnung.zahlungszielTage === undefined);
+
+  // Round-trip: Export → JSON → normalizeImport übernimmt das Zahlungsziel als Zahl.
+  const norm = normalizeImport(parseAustauschPaket(JSON.stringify(mitZiel)).obj);
+  ok('Round-trip: zahlungszielTage übernommen', norm.auftraege[0].rechnung.zahlungszielTage === 30);
+
+  // Import: ungültiges Zahlungsziel → verworfen + Warnung; gültige Rechnung bleibt erhalten.
+  const ungueltig = normalizeImport({ auftraege: [{ externNummer: 'A-9', titel: 'Y', positionen: [{ menge: 1, einzelpreisCent: 100, ustSatz: 0 }],
+    rechnung: { nummer: 'R-9', datum: '2026-06-10', zahlungszielTage: -5 } }] });
+  ok('Import: negatives Ziel verworfen', ungueltig.auftraege[0].rechnung.zahlungszielTage === undefined);
+  ok('Import: Warnung für ungültiges Ziel', ungueltig.warnungen.some((w) => /Zahlungsziel ungültig/.test(w)));
+  ok('Import: Rechnung trotzdem gültig', ungueltig.auftraege[0].rechnung.nummer === 'R-9');
+
+  // Abwärtskompatibel: rechnung ohne zahlungszielTage trägt das Feld nicht.
+  const ohne = normalizeImport({ auftraege: [{ externNummer: 'A-10', titel: 'Z', positionen: [{ menge: 1, einzelpreisCent: 100, ustSatz: 0 }],
+    rechnung: { nummer: 'R-10', datum: '2026-06-10' } }] });
+  ok('Import: ohne Ziel → Feld fehlt', ohne.auftraege[0].rechnung.zahlungszielTage === undefined);
 });
 
 await section('Mandanten (M1): Speicher-Namensbildung', () => {

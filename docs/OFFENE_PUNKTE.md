@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R5a-Rest SWIFT/ISO-20022-Schema-Validierung).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (Zahlungsziel durabel + Austauschformat v4 inkl. saveAuftrag-Persistenz-Bugfix).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -220,8 +220,13 @@ Fälligkeitsdatum **„zahlbar bis JJJJ-MM-TT"** auf dem gedruckten Rechnungsdok
 Parameter `defaultZielTage` + Feld `zahlbarBis` (= `mahnwesen.faelligAmVon`, auftragseigenes Ziel vor globalem Default;
 ohne Rechnungsdatum leer), `pflichtangaben` unverändert (Fälligkeit ist keine §14-Pflichtangabe); UI-Kopfzeile +
 i18n `orders.payableUntil`. SW `v100`, +6 Tests (1051/1051).
-**Noch offen [SOLL]:** Eingangsrechnungs-Verzug (Gegenseite, Mahnung erhalten/prüfen); WorkFloh-`rechnung`-Block
-überträgt (noch) kein Zahlungsziel; Edit bestehender Aufträge.
+**Zahlungsziel durabel + im Austauschformat (v4) erledigt (2026-06-17):** **(1)** Bugfix — `crm-store.saveAuftrag`
+hatte `zahlungszielTage` aus seiner Feld-Whitelist **fallen gelassen**, sodass A1-Rest + „zahlbar bis" nach dem
+Speichern faktisch wirkungslos waren (immer globaler Default); jetzt persistiert. **(2)** `connect.buildAustauschPaket`
+trägt `rechnung.zahlungszielTage` reziprok mit (v4), `importworkfloh.normalizeRechnung` übernimmt es konservativ,
+`crm-store.importWorkFloh` setzt es auf den Auftrag → Gegenstelle erbt die Fälligkeit. +8 Tests (1059/1059), SW `v101`.
+**Noch offen [SOLL]:** Eingangsrechnungs-Verzug (Gegenseite, Mahnung erhalten/prüfen); Edit bestehender Aufträge.
+**[Sichttest]** `saveAuftrag`-Persistenz (IndexedDB) ist nur statisch geprüft → im Browser bestätigen.
 
 **Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,
 damit man nachmahnen kann — siehe jetzt Auswertungen.

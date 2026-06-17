@@ -9,11 +9,11 @@ Damit kann **Mein-WorkFloh** (public) ebenso andocken wie **andere Buchhaltungss
 - **Import:** „Austausch-Datei wählen" (akzeptiert das Format unten **und** das alte WorkFloh-`{kunden,auftraege}`).
 - **Export:** „Austausch-Datei exportieren" — lädt Kunden + Aufträge im offenen Format herunter.
 
-## Format (Version 3)
+## Format (Version 4)
 ```json
 {
   "format": "bookledgerpro-austausch",
-  "version": 3,
+  "version": 4,
   "erzeugt": "2026-06-17T00:00:00.000Z",
   "kunden": [
     { "externId": "K-1001", "name": "Beispiel GmbH", "adresse": "Weg 2, 50667 Köln", "email": "a@b.de", "ustId": "DE123456789" }
@@ -21,7 +21,7 @@ Damit kann **Mein-WorkFloh** (public) ebenso andocken wie **andere Buchhaltungss
   "auftraege": [
     { "externNummer": "A-2026-1", "kundeExternId": "K-1001", "titel": "Auftrag X",
       "positionen": [ { "beschreibung": "Leistung", "menge": 1, "einzelpreisCent": 100000, "ustSatz": 19 } ],
-      "rechnung": { "nummer": "2026-0001", "datum": "2026-06-01", "leistungsdatum": "2026-06-01",
+      "rechnung": { "nummer": "2026-0001", "datum": "2026-06-01", "leistungsdatum": "2026-06-01", "zahlungszielTage": 30,
         "zahlungen": [ { "datum": "2026-06-05", "betragCent": 60000, "ref": "VZ-2026-0001" } ] } }
   ]
 }
@@ -36,8 +36,13 @@ Damit kann **Mein-WorkFloh** (public) ebenso andocken wie **andere Buchhaltungss
   BLP je Zahlung einen Zahlungseingang-Buchungs-Entwurf (Bank an Forderung) + vermerkt die
   (Teil-)Zahlung am Auftrag (Auto-„bezahlt" bei Ausgleich; Festschreiben manuell, GoBD). Beim Export
   trägt ein berechneter Auftrag seine erfassten Zahlungen reziprok mit.
+- **`rechnung.zahlungszielTage` (optional, v4 — Zahlungsziel-Übernahme):** das **auftragseigene**
+  Zahlungsziel in ganzen Tagen (≥ 0). Beim Import erbt der Auftrag dieses Ziel → Fälligkeit,
+  gedruckte „zahlbar bis"-Zeile und Mahnwesen entsprechen der Ausgangsseite (statt nur des globalen
+  Defaults der Gegenstelle). Beim Export trägt ein berechneter Auftrag mit eigenem Ziel es reziprok
+  mit; ohne eigenes Ziel bleibt das Feld weg. Ungültige Werte werden beim Import verworfen + gewarnt.
 - **Abwärtskompatibel:** Ein „bare" `{ "kunden": [...], "auftraege": [...] }` ohne `format/version`
-  wird ebenso akzeptiert wie Version 1/2 (ohne `rechnung`/`zahlungen`).
+  wird ebenso akzeptiert wie Version 1/2/3 (ohne `rechnung`/`zahlungen`/`zahlungszielTage`).
 - `einzelpreisCent` (Integer) **oder** `einzelpreis` (Euro-String) sind erlaubt; fehlender `ustSatz` wird beim Import ergänzt (Default, editierbar).
 - `externId`/`externNummer` dienen der **Idempotenz/Dedupe** (Mehrfach-Import erzeugt keine Dubletten).
 
