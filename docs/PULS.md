@@ -28,9 +28,9 @@ Mehrmandanten **JA** · Bilanzierung (GmbH) **JA** · AVV-Verträge **umsetzen**
 **Festgelegte Bau-Reihenfolge (je eigener PR, Freibrief-Merge):**
 1. ✅ **erledigt:** ELSTER-Weiterleitungs-Link + AVV-Anbieterlinks.
 2. ✅ **erledigt:** §19-Kleinunternehmer-Abfrage im Onboarding (`lock.js stepProfil`).
-3. **Abweichendes Wirtschaftsjahr** (Punkt 28) — **als Nächstes**. Setting `wirtschaftsjahrBeginn` (MM-TT, Default 01-01);
-   in `domain/umsatzsteuer.js` (Perioden) + EXTF-WJ-Beginn nutzen. Node-testbar.
-4. **Steuerberater-Übergabe-Datenblatt** (Punkt 31) — kompaktes „so importieren" + Kennzahlen
+3. ✅ **erledigt:** Abweichendes Wirtschaftsjahr (`domain/geschaeftsjahr.js`, Setting
+   `wirtschaftsjahrBeginn`, Dashboard + DATEV-WJ; USt-VA bleibt kalendarisch).
+4. **Steuerberater-Übergabe-Datenblatt** (Punkt 31) — **als Nächstes** — kompaktes „so importieren" + Kennzahlen
    (baut auf `TESTDATEN.md`/`DATEV_IMPORT.md`); evtl. als druckbare Ansicht.
 5. **Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung** (Punkt 29) — mittel.
 6. **ZUGFeRD (PDF/A-3) + KoSIT-Validierung** — groß.
@@ -116,8 +116,8 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 **Letzte Aktualisierung:** 2026-06-17 · **Branch:** `claude/v2-ox8bu7`
 · **Tests:** `node tests/run.mjs` → **618/618 grün**
-· **SW-Cache:** `v74` · **83 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅**
-· **Entscheidungen 17.06.:** ELSTER (Link) ✅ + AVV-Links ✅ + §19-Onboarding ✅; nächste: Wirtschaftsjahr (28).
+· **SW-Cache:** `v75` · **84 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅**
+· **Entscheidungen 17.06.:** ELSTER (Link) ✅ + AVV-Links ✅ + §19-Onboarding ✅ + Wirtschaftsjahr ✅; nächste: Übergabe-Datenblatt (31).
 · **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
 · **V3 ✅:** Anlagevermögen + AfA (GWG/Sammelposten/linear pro rata), Ansicht „Anlagen",
   Anlagenverzeichnis + AfA-Buchung-Entwurf + AVEÜR-CSV (`domain/anlagen.js`, `anlagen-store.js`).

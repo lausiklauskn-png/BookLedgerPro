@@ -255,6 +255,7 @@ function datevOpts() {
   const f = s.firma || {};
   return {
     berater: d.beraterNr || '', mandant: d.mandantNr || '', sachkontenlaenge: d.sachkontenlaenge || 4,
+    wjBeginnMMDD: s.wirtschaftsjahrBeginn || '01-01',
     bezeichnung: (f.name ? f.name + ' — ' : '') + 'BookLedgerPro', festschreibung: true,
   };
 }

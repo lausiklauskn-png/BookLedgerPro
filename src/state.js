@@ -18,6 +18,7 @@ const DEFAULTS = Object.freeze({
   datenschutzModus: 'aus', // aus | pseudonym — ersetzt bekannte Identifikatoren vor KI-Versand
   zahlungszielTage: 14,    // Standard-Zahlungsziel für Fälligkeit/Mahnwesen
   vaZeitraum: 'vierteljaehrlich', // USt-Voranmeldungszeitraum: monatlich/vierteljaehrlich/jaehrlich
+  wirtschaftsjahrBeginn: '01-01', // MM-TT; 01-01 = Kalenderjahr (abweichendes WJ möglich)
   verzugBasiszinsProzent: 3.37, // Basiszinssatz §247 BGB — REGELMÄSSIG AKTUALISIEREN
   firma: { name: '', anschrift: '', steuernummer: '', ustId: '', iban: '' }, // Aussteller-Stammdaten (Rechnung §14)
   datev: { beraterNr: '', mandantNr: '', sachkontenlaenge: 4 }, // für DATEV-EXTF-Header (Berater/Mandant)

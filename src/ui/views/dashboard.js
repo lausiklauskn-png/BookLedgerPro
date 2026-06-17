@@ -3,25 +3,29 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
-import { navigate } from '../../state.js';
+import { navigate, getSettings } from '../../state.js';
 import { getMandantId } from '../../core/vault.js';
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
 import { listBelege } from '../../domain/documents.js';
 import { listKunden, listAuftraege } from '../../domain/crm-store.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
+import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
 
 export async function mountDashboard(host) {
   mount(host, el('section', { class: 'view' }, [el('h1', { text: t('dashboard.welcome') }), el('p', { class: 'muted', text: '…' })]));
 
-  const jahr = new Date().getFullYear();
+  const wjBeginn = getSettings().wirtschaftsjahrBeginn || '01-01';
+  const heute = new Date().toISOString().slice(0, 10);
+  const jahr = wirtschaftsjahrVon(heute, wjBeginn);
   const [konten, buchungen, belege, kunden, auftraege, audit] = await Promise.all([
     loadAccounts(), listBuchungen(), listBelege().catch(() => []),
     listKunden().catch(() => []), listAuftraege().catch(() => []), verifyAuditChain().catch(() => ({ ok: true, count: 0 })),
   ]);
   const idx = {};
   for (const k of konten) idx[k.nummer] = k;
-  const k = dashboardKennzahlen(buchungen, idx, jahr);
+  const k = dashboardKennzahlen(buchungen, idx, jahr, wjBeginn);
+  const wjLabel = wjBeginn === '01-01' ? String(jahr) : `${wjPeriode(jahr, wjBeginn).von} – ${wjPeriode(jahr, wjBeginn).bis}`;
 
   const kpi = (label, value, cls) => el('div', { class: 'kpi ' + (cls || '') }, [
     el('div', { class: 'kpi-value', text: value }),
@@ -31,7 +35,7 @@ export async function mountDashboard(host) {
   mount(host, el('section', { class: 'view' }, [
     el('div', { class: 'dash-head' }, [
       el('h1', { text: t('dashboard.welcome') }),
-      el('span', { class: 'muted small', text: `${t('dashboard.year')} ${jahr}` }),
+      el('span', { class: 'muted small', text: `${t('dashboard.year')} ${wjLabel}` }),
     ]),
     el('p', { class: 'muted', text: t('app.tagline') }),
 

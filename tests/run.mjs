@@ -42,6 +42,7 @@ import { kleinbetragsrechnung, geschenkAbzug, bewirtungAufteilung, KLEINBETRAG_G
 import { istGesperrt } from '../src/domain/pruefung.js';
 import { demoMandant, demoExportDateien, DEMO_JAHR } from '../src/domain/demodaten.js';
 import { runSelbsttest } from '../src/domain/selbsttest.js';
+import { wjPeriode, wirtschaftsjahrVon, wjBeginnYYYYMMDD, validateWjBeginn } from '../src/domain/geschaeftsjahr.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -1898,6 +1899,31 @@ await section('V10: In-App-Selbstdiagnose (runSelbsttest)', async () => {
   ok('Selbsttest: alle bestanden (ok)', r.ok === true && r.bestanden === r.gesamt);
   // Jede Einzelprüfung grün.
   for (const e of r.ergebnisse) ok(`Selbsttest-Prüfung: ${e.name}`, e.ok);
+});
+
+await section('Punkt 28: Abweichendes Wirtschaftsjahr', () => {
+  const kal = wjPeriode(2026, '01-01');
+  ok('Kalenderjahr 01-01 → 01.01.–31.12.', kal.von === '2026-01-01' && kal.bis === '2026-12-31');
+  const wj = wjPeriode(2026, '07-01');
+  ok('WJ 07-01 → 2026-07-01 .. 2027-06-30', wj.von === '2026-07-01' && wj.bis === '2027-06-30');
+  const schalt = wjPeriode(2024, '03-01');
+  ok('WJ 03-01/2024 endet 2025-02-28 (kein Schaltjahr-Ende)', schalt.bis === '2025-02-28');
+
+  ok('Datum 2026-03-15 fällt in WJ 2025 (Beginn 07-01)', wirtschaftsjahrVon('2026-03-15', '07-01') === 2025);
+  ok('Datum 2026-08-01 fällt in WJ 2026 (Beginn 07-01)', wirtschaftsjahrVon('2026-08-01', '07-01') === 2026);
+  ok('Kalenderjahr: 2026-03-15 → 2026', wirtschaftsjahrVon('2026-03-15', '01-01') === 2026);
+
+  ok('WJ-Beginn YYYYMMDD (DATEV)', wjBeginnYYYYMMDD(2026, '07-01') === '20260701' && wjBeginnYYYYMMDD(2026, '01-01') === '20260101');
+  ok('validateWjBeginn', validateWjBeginn('07-01') && !validateWjBeginn('7-1') && !validateWjBeginn('13-01') && !validateWjBeginn('02-30'));
+
+  // jahrPeriode bleibt rückwärtskompatibel (Kalenderjahr ohne Argument).
+  ok('jahrPeriode(2026) unverändert kalendarisch', jahrPeriode(2026).von === '2026-01-01' && jahrPeriode(2026).bis === '2026-12-31');
+
+  // DATEV-EXTF-Header übernimmt den WJ-Beginn.
+  const idx = indexFromSeed();
+  const b = [{ seq: 1, datum: '2026-08-01', zeilen: [{ konto: '1200', seite: 'S', betrag: 100 }, { konto: '8200', seite: 'H', betrag: 100 }] }];
+  const extf = buildDatevExtf(b, idx, { jahr: 2026, wjBeginnMMDD: '07-01' });
+  ok('EXTF-Header WJ-Beginn 20260701', extf.split('\r\n')[0].includes(';20260701;'));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

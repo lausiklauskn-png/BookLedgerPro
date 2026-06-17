@@ -37,6 +37,22 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-17 — Punkt 28: Abweichendes Wirtschaftsjahr [Branch `claude/v2-ox8bu7`]
+
+**Was getan**
+- **`domain/geschaeftsjahr.js`** (rein, node-getestet): `wjPeriode(jahr, wjBeginn)` (Beginn +1J −1Tag,
+  schaltjahr-sicher), `wirtschaftsjahrVon(datum)`, `wjBeginnYYYYMMDD`, `validateWjBeginn`.
+- **`summary.jahrPeriode(jahr, wjBeginn='01-01')`** delegiert an `wjPeriode` (rückwärtskompatibel);
+  `dashboardKennzahlen` nimmt optionalen `wjBeginn`.
+- **Setting `wirtschaftsjahrBeginn`** (MM-TT, Default 01-01) + Einstellungen-Sektion „Wirtschaftsjahr".
+- **Dashboard** zeigt WJ-Label + rechnet auf das laufende Wirtschaftsjahr; **DATEV-EXTF-Header**
+  übernimmt den WJ-Beginn (`opts.wjBeginnMMDD`). **USt-VA bleibt bewusst kalendarisch** (Gesetz).
+- i18n de/en, SW-Cache `v75` (+1 Modul). Tests **628/628** (10 neu).
+
+**Stand:** Punkt 28 erledigt. **Nächstes:** Punkt 31 (Steuerberater-Übergabe-Datenblatt).
+
+---
+
 ## 2026-06-17 — Punkt 27: §19-Kleinunternehmer-Abfrage im Onboarding [Branch `claude/v2-ox8bu7`]
 
 **Was getan**
