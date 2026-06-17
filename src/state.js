@@ -17,6 +17,7 @@ const DEFAULTS = Object.freeze({
   kleinunternehmer: false, // §19 UStG — unterdrückt USt-Hinweise
   gewinnermittlung: 'euer', // euer (§4 Abs.3) | bilanz (§4 Abs.1/§5 EStG) — Default EÜR (Bestand unverändert)
   datenschutzModus: 'aus', // aus | pseudonym — ersetzt bekannte Identifikatoren vor KI-Versand
+  nerPii: true, // im Pseudonym-Modus zusätzlich erkannte PII Dritter (E-Mail/IBAN/USt-IdNr/Tel.) maskieren
   zahlungszielTage: 14,    // Standard-Zahlungsziel für Fälligkeit/Mahnwesen
   vaZeitraum: 'vierteljaehrlich', // USt-Voranmeldungszeitraum: monatlich/vierteljaehrlich/jaehrlich
   wirtschaftsjahrBeginn: '01-01', // MM-TT; 01-01 = Kalenderjahr (abweichendes WJ möglich)

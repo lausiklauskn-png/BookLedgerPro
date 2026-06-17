@@ -8,7 +8,7 @@ import { formatEuro } from '../../domain/money.js';
 import { pickFile, formatBytes, readFileText, readFileBytes } from '../../core/files.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
 import { extrahiereZugferdXml, kostPflichtfelder } from '../../domain/zugferd.js';
-import { parseBankauszug, umsatzExtraktion } from '../../domain/bankimport.js';
+import { parseBankauszug, umsatzExtraktion, pruefeBankauszug } from '../../domain/bankimport.js';
 import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen, findeSammelzuordnung, verteileSammelzahlung, sammelBuchungZeilen } from '../../domain/zahlungsabgleich.js';
 import { skontoEntwurf } from '../../domain/skonto.js';
 import { offeneVerbindlichkeiten, eingangsrechnungZeilen, extraktionZuEingangsrechnung, validateEingangsrechnung } from '../../domain/payables.js';
@@ -32,16 +32,17 @@ let _host = null;
 let _idx = {};
 
 // Anker nur laden, wenn der Datenschutz-Modus „pseudonym" aktiv ist (sonst null →
-// KI-Module senden den Text unverändert). Browser/IndexedDB-Pfad.
-async function kiAnker() {
-  return getSettings().datenschutzModus === 'pseudonym' ? await ladeAnker() : null;
+// KI-Module senden den Text unverändert). `text` (optional) erlaubt zusätzlich die
+// NER-PII-Erkennung Dritter im Belegtext (siehe ai/anker.ladeAnker). Browser/IndexedDB.
+async function kiAnker(text) {
+  return getSettings().datenschutzModus === 'pseudonym' ? await ladeAnker(text) : null;
 }
 
 // Transparenz-Bauteil: zeigt bei aktivem Datenschutz-Modus, was an die KI ging.
 // Liefert null, wenn der Modus aus ist oder nichts maskiert wurde. Browser-UI.
 async function pseudonymBadge(quelltext) {
   if (!quelltext) return null;
-  const anker = await kiAnker();
+  const anker = await kiAnker(quelltext);
   if (!anker || !anker.length) return null;
   const { text: pseudo, map } = tokenize(quelltext, anker, { wortgrenze: true });
   const bericht = maskierungsBericht(map);
@@ -86,7 +87,7 @@ function schnellerfassung() {
     onClick: async () => {
       out.replaceChildren();
       const ex = extractFromText(ta.value);
-      const kat = await categorizeAI(ta.value, _idx, { anker: await kiAnker() });
+      const kat = await categorizeAI(ta.value, _idx, { anker: await kiAnker(ta.value) });
       const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
       if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
       out.appendChild(await vorschlagKarte(res.vorschlag, null, ta.value));
@@ -146,7 +147,7 @@ async function vorschlagKarte(vorschlag, belegId, quelltext) {
     onClick: async () => {
       beraterStatus.textContent = '…';
       try {
-        const r = await begruendeBuchung(beraterKontext, { anker: await kiAnker() });
+        const r = await begruendeBuchung(beraterKontext, { anker: await kiAnker(beraterKontext.text) });
         fBegruendung.value = r.text;
         beraterStatus.textContent = r.quelle === 'mistral' ? t('journal.aiReasonMistral') : t('journal.aiReasonLocal');
       } catch (e) { beraterStatus.textContent = String(e.message || e); }
@@ -200,7 +201,7 @@ function eRechnungKarte() {
         const p = parseEingangsrechnung(xml);
         if (!p.format) { out.appendChild(el('p', { class: 'form-error', text: p.fehler })); return; }
         const ex = eingangsrechnungExtraktion(p);
-        const kat = await categorizeAI(p.lieferant || '', _idx, { anker: await kiAnker() });
+        const kat = await categorizeAI(p.lieferant || '', _idx, { anker: await kiAnker(p.lieferant || '') });
         const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
         if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
         out.appendChild(el('div', { class: 'muted small', text: `${p.format}${istPdf ? ' (ZUGFeRD/PDF)' : ''} · ${t('docs.eInvoiceFrom')} ${p.lieferant || '—'} · ${p.nummer || '—'}` }));
@@ -295,6 +296,21 @@ function verbindlichkeitAusExtraktionZeile(ex, kat) {
 
 // ---- Bankimport (MT940) → Buchungsvorschläge je Umsatz ---------------------
 
+// Übersetzt die Prüf-Warnungen aus pruefeBankauszug() in einen kompakten Hinweis.
+function bankPruefHinweis(pruef) {
+  const zeilen = pruef.warnungen.map((w) => {
+    if (w.code === 'saldo-differenz') return t('docs.bankWarnSaldo').replace('{betrag}', formatEuro(Math.abs(w.differenzCent)));
+    if (w.code === 'unvollstaendige-umsaetze') return t('docs.bankWarnUnvollstaendig').replace('{anzahl}', String(w.anzahl));
+    if (w.code === 'format-unbekannt') return t('docs.bankWarnFormat');
+    if (w.code === 'keine-umsaetze') return t('docs.bankNone');
+    return w.code;
+  });
+  return el('div', { class: 'hinweis warn small' }, [
+    el('strong', { text: `⚠ ${t('docs.bankWarnTitel')} ` }),
+    el('span', { text: zeilen.join(' · ') }),
+  ]);
+}
+
 function bankImportKarte() {
   const out = el('div', { class: 'vorschlag-slot' });
   const btn = el('button', {
@@ -304,7 +320,8 @@ function bankImportKarte() {
       const file = await pickFile('text/plain,application/xml,text/xml,.sta,.940,.txt,.mt940,.xml', null);
       if (!file) return;
       try {
-        const { format, konto, umsaetze } = parseBankauszug(await readFileText(file));
+        const parsed = parseBankauszug(await readFileText(file));
+        const { format, konto, umsaetze } = parsed;
         if (!umsaetze.length) { out.appendChild(el('p', { class: 'form-error', text: t('docs.bankNone') })); return; }
         // Offene Posten für den Zahlungsabgleich laden: Forderungen (aus Aufträgen,
         // richtung 'einnahme') + Verbindlichkeiten (Eingangsrechnungen, richtung 'ausgabe').
@@ -315,6 +332,9 @@ function bankImportKarte() {
           posten = [...offenePosten(auftraege, { nameById }), ...offeneVerbindlichkeiten(eingang)];
         } catch { posten = []; }
         out.appendChild(el('div', { class: 'muted small', text: `${format || '—'} · ${t('docs.bankAccount')}: ${konto || '—'} · ${umsaetze.length} ${t('docs.bankTxns')}` }));
+        // Plausibilitätsprüfung (Saldo-Abgleich / unvollständige Umsätze) als Hinweis.
+        const pruef = pruefeBankauszug(parsed);
+        if (pruef.warnungen.length) out.appendChild(bankPruefHinweis(pruef));
         for (const u of umsaetze) out.appendChild(umsatzRow(u, posten));
       } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
     },
@@ -492,7 +512,7 @@ function umsatzRow(u, posten = []) {
     onClick: async () => {
       slot.replaceChildren();
       const ex = umsatzExtraktion(u);
-      const kat = await categorizeAI(u.zweck || u.gegen || '', _idx, { anker: await kiAnker() });
+      const kat = await categorizeAI(u.zweck || u.gegen || '', _idx, { anker: await kiAnker(u.zweck || u.gegen || '') });
       kat.richtung = u.richtung; // Kontoauszug bestimmt die Richtung verbindlich
       const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
       if (!res.ok) { slot.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
@@ -571,7 +591,7 @@ async function visionExtraktion(b) {
     const text = await ocr({ base64: bytesToBase64(bytes), mimeType: b.mediaType });
     if (!text) { alert(t('docs.ocrNoText')); return; }
     const ex = extractFromText(text);
-    const kat = await categorizeAI(text, _idx, { anker: await kiAnker() });   // Mistral EU, sonst Heuristik
+    const kat = await categorizeAI(text, _idx, { anker: await kiAnker(text) });   // Mistral EU, sonst Heuristik
     const res = buildVorschlag(ex, kat, _idx);
     if (!res.ok) { alert(res.fehler); return; }
     // R3: Aus dem OCR-Beleg lässt sich entweder direkt buchen (Buchungsvorschlag) ODER eine

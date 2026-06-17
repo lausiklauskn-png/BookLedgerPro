@@ -4,7 +4,7 @@
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
 > `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **885/885 grün**, SW `v91`.
-> Nächster Schritt: **R5** (Bankformate härten / NER / dreistufiger Briefkasten) oder Sichttest nach Bedarf. A+B fertig; R1 ✅; R2a ✅ (Skonto §17 UStG); R2b ✅ (Sammelzahlung); R3 ✅ (Verbindlichkeiten aus Foto/PDF); **R4 ✅ (Rechnungs-Übernahme aus WorkFloh: fertige Rechnung → Forderung/Buchung; Austauschformat v2; API/Push bewusst offen)**.
+> Nächster Schritt: **R5c** (dreistufiger Briefkasten, P7) oder **R6**/Sichttest nach Bedarf. A+B fertig; R1–R4 ✅; **R5a ✅ (Bankformate härten: CAMT .052/.054 + Saldo-Prüfung + strukturierte RmtInf); R5b ✅ (NER: PII Dritter über die Anker hinaus maskieren)**. Tests **916/916**, SW `v92`.
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -140,7 +140,24 @@
   `rechnungenUebernommen`; `connect.buildAustauschPaket` → **Format v2** (abwärtskompatibel), berechnete Aufträge tragen ihre
   Rechnung reziprok mit. UI: Import-Banner zählt übernommene Rechnungen; i18n de+en, SW `v91`, **+22 Tests (885/885)**.
   UI/Glue statisch geprüft. **Bewusst offen:** API/Push (Echtzeit), Übernahme von Zahlungsstatus/Teilzahlungen. (PR #95.)
-- [ ] **R5** Bankformate härten (CAMT .052/.054, SWIFT-Validierung), NER (PII über Anker hinaus), dreistufiger Briefkasten (P7).
+- [~] **R5** Bankformate härten + NER + dreistufiger Briefkasten — **in Teil-PRs:**
+  - [x] **R5a — Bankformate härten.** ✅ `domain/bankimport.js`: CAMT-Container **.052 (`<Rpt>`)** und
+    **.054 (`<Ntfctn>`)** zusätzlich zu .053 (`<Stmt>`); **Saldo-Parsing** (MT940 `:60F/M:`/`:62F/M:`, CAMT
+    `<Bal>` OPBD/PRCD ↔ CLBD/CLAV, signiert via C/D bzw. CdtDbtInd) → `parseMT940`/`parseCAMT` liefern
+    `saldoStartCent`/`saldoEndeCent`; **`pruefeBankauszug(parsed)`** rechnet (Anfang ± Umsätze) gegen den
+    Schlusssaldo und meldet `saldo-differenz`/`unvollstaendige-umsaetze`/`format-unbekannt`/`keine-umsaetze`;
+    **strukturierte RmtInf** (CAMT `CdtrRefInf`/`EndToEndId` → `umsatz.ref` + in den Zweck, hilft dem
+    Zahlungsabgleich auf die Rechnungsnummer). UI: Bankimport zeigt Prüf-Hinweise; i18n de+en. **Grenze:**
+    Plausibilitäts-/Integritätsprüfung, **KEINE** SWIFT-/ISO-20022-Schema-Validierung. (PR R5a.)
+  - [x] **R5b — NER (PII über die Anker hinaus).** ✅ `ai/ner.js` (rein, node-getestet): `erkennePII(text)`
+    erkennt **konservativ** E-Mail/IBAN (kompakt+gruppiert)/USt-IdNr (DE/AT)/Steuernr (FF/BBB/UUUU)/Telefon
+    (intl + national mit Trenner, **ohne Punkt** → keine Datums-/Betrags-Falschtreffer), löst Überlappungen
+    Longest-Match auf; **kein BIC** (kollidiert mit Großwörtern wie „RECHNUNG"). `piiAnker`/`kombiniereAnker`
+    ergänzen die Stammdaten-Anker um im Text gefundene PII **Dritter** (exakte Anker behalten Typ-Vorrang) →
+    fließen vor dem KI-Versand in `pseudonym.tokenize`. Gated über Setting `nerPii` (Default an, nur im
+    Pseudonym-Modus sichtbar); `anker.ladeAnker(text)` + Call-Sites (journal/documents) reichen den Text durch.
+    i18n de+en (inkl. `pseudonym.typ.TELEFON`). UI/Glue statisch geprüft. (PR R5b.)
+  - [ ] **R5c — Dreistufiger Briefkasten** (Mandant ⊃ Firma ⊃ Person, P7) für Pseudonymisierung/CRM — offen.
 - [ ] **R6 [KANN]** ZUGFeRD-**Erzeugen** (nur falls build-frei lösbar), Lighthouse, lokales OCR, Privat-/Bürger-Modus, Sage 5b–d.
 
 ---

@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R4).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R5a/R5b).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -346,14 +346,18 @@ Rechnung/USt-Buchung erfolgt in BLP). Damit ist der **Datei-Import** bereits der
 - **[TEILWEISE 2026-06-17] ZUGFeRD:** ✅ **Empfang** — eingebettete CII/UBL aus **PDF** best-effort
   auspacken (`zugferd.extrahiereZugferdXml`, native `DecompressionStream` für FlateDecode) → bestehender
   Buchungsvorschlag. **Offen:** ZUGFeRD *erzeugen* (XML in PDF/A-3 einbetten) braucht PDF-Lib → nicht build-frei.
-- **[SOLL] Bankformate härten:** keine vollständige **SWIFT-(MT940)/ISO-20022-(CAMT)**-Validierung;
-  reale Bank-Dialekte testen; weitere CAMT-Varianten (.052/.054), Strukturierte RmtInf.
+- **[TEILWEISE 2026-06-17] Bankformate härten (R5a):** ✅ CAMT-Varianten **.052 (`<Rpt>`)/.054
+  (`<Ntfctn>`)** zusätzlich zu .053, **Saldo-Integritätsprüfung** (`pruefeBankauszug`: Anfang ± Umsätze
+  vs. Schlusssaldo) und **strukturierte RmtInf** (`CdtrRefInf`/`EndToEndId` → Beleg-Referenz). **Offen:**
+  keine vollständige **SWIFT-(MT940)/ISO-20022-(CAMT)**-Schema-Validierung; reale Bank-Dialekte testen.
 - **[SOLL] DATEV-EXTF:** „EXTF-orientiert", **nicht** das zertifizierte 116-Spalten-Format;
   Steuerschlüssel-Mapping nur Standardsätze → mit Berater/DATEV verifizieren.
-- **[SOLL] PII-Erkennung über Anker hinaus (NER):** heute anker-basiert (nur bekannte Stammdaten).
-  Unbekannte Dritt-Namen in Fremdbelegen werden nicht erkannt → optionale lokale NER vormerken.
+- **[ERLEDIGT 2026-06-17] PII-Erkennung über Anker hinaus (NER) (R5b):** ✅ `ai/ner.js` erkennt
+  konservativ E-Mail/IBAN/USt-IdNr/Steuernr/Telefon **Dritter** im Belegtext und ergänzt sie als
+  zusätzliche Anker für `pseudonym.tokenize` (Setting `nerPii`, Default an, nur im Pseudonym-Modus).
+  Exakte Stammdaten-Anker behalten Typ-Vorrang; node-getestet. **Grenze:** kein BIC/Namens-NER (FP-Risiko).
 - **[SOLL] Dreistufiger Briefkasten** (Mandant ⊃ Firma ⊃ Person) für Pseudonymisierung/CRM
-  (P7); heute flache Anker, 1 Tresor = 1 Mandant.
+  (P7, **R5c — offen**); heute flache Anker, 1 Tresor = 1 Mandant.
 - **[SOLL] UI end-to-end testen:** kein Headless-Browser in der Bau-Umgebung → DOM-/IndexedDB-Pfade
   sind nur statisch geprüft. Manuelle Sichttests dokumentieren oder Headless-E2E einführen.
 

@@ -64,9 +64,10 @@ import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
 import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/ai/mistral.js';
 import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, ANKER_TYP, maskierungsBericht } from '../src/ai/pseudonym.js';
 import { baueAnker } from '../src/ai/anker.js';
+import { erkennePII, piiAnker, kombiniereAnker, NER_TYP } from '../src/ai/ner.js';
 import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
-import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat } from '../src/domain/bankimport.js';
+import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat, pruefeBankauszug } from '../src/domain/bankimport.js';
 import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen, findeSammelzuordnung, verteileSammelzahlung, sammelBuchungZeilen } from '../src/domain/zahlungsabgleich.js';
 import { skontoSplit, skontoBuchungZeilen, skontoEntwurf, skontoSaetze, SKONTO_KONTEN } from '../src/domain/skonto.js';
 import {
@@ -1225,6 +1226,131 @@ await section('Bankimport: CAMT.053 (ISO 20022, XML) + Format-Weiche', () => {
   ok('parseBankauszug erkennt CAMT', parseBankauszug(camt).format === 'CAMT' && parseBankauszug(camt).umsaetze.length === 2);
   ok('parseBankauszug erkennt MT940', parseBankauszug(':25:DE12\n:61:2406030603D5,00NMSC\n:86:166?20Test').format === 'MT940');
   ok('parseBankauszug: unbekannt → leer', parseBankauszug('weder noch').format === null);
+});
+
+// ===== R5: Bankformate härten — Salden, Validierung, CAMT .052/.054, RmtInf =====
+
+await section('Bankimport: MT940 Salden + Integritätsprüfung', () => {
+  const mt940 = [
+    ':25:DE89370400440532013000EUR',
+    ':60F:C240601EUR1000,00',
+    ':61:2406030603D119,00NMSCNONREF',
+    ':86:166?20Rechnung 042?32BUERO SCHMIDT GMBH',
+    ':61:2406050605C238,00NTRFNONREF',
+    ':86:166?20Honorar?32KUNDE MUSTER AG',
+    ':62F:C240630EUR1119,00',
+  ].join('\n');
+  const parsed = parseBankauszug(mt940);
+  ok('Anfangssaldo +100000 Cent (C)', parsed.saldoStartCent === 100000);
+  ok('Schlusssaldo +111900 Cent (C)', parsed.saldoEndeCent === 111900);
+  const pruef = pruefeBankauszug(parsed);
+  ok('Saldo geht auf → ok, keine Warnung', pruef.ok && pruef.warnungen.length === 0);
+  ok('berechneter Endsaldo = Schlusssaldo', pruef.berechneterEndsaldoCent === 111900);
+
+  // Manipulierter Schlusssaldo → Saldo-Differenz wird erkannt.
+  const kaputt = parseBankauszug(mt940.replace(':62F:C240630EUR1119,00', ':62F:C240630EUR1200,00'));
+  const p2 = pruefeBankauszug(kaputt);
+  const w = p2.warnungen.find((x) => x.code === 'saldo-differenz');
+  ok('Saldo-Differenz erkannt', !p2.ok && !!w && w.differenzCent === 8100);
+
+  // Soll-Anfangssaldo (D) wird negativ interpretiert.
+  const negativ = parseMT940(':60F:D240601EUR50,00\n:61:2406030603C50,00NMSC\n:62F:C240630EUR0,00');
+  ok('D-Anfangssaldo negativ', negativ.saldoStartCent === -5000 && pruefeBankauszug({ format: 'MT940', ...negativ }).ok);
+});
+
+await section('Bankimport: CAMT .052 (Rpt) und .054 (Ntfctn) Container', () => {
+  const rpt = [
+    '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.052.001.08"><BkToCstmrAcctRpt><Rpt>',
+    '<Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct>',
+    '<Ntry><Amt Ccy="EUR">50.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><ValDt><Dt>2026-06-07</Dt></ValDt>',
+    '<NtryDtls><TxDtls><RmtInf><Ustrd>Vorabgutschrift</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>',
+    '</Rpt></BkToCstmrAcctRpt></Document>',
+  ].join('\n');
+  const r = parseBankauszug(rpt);
+  ok('CAMT.052 als CAMT erkannt + 1 Umsatz', r.format === 'CAMT' && r.umsaetze.length === 1 && r.umsaetze[0].betragCent === 5000);
+
+  const ntf = [
+    '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.08"><BkToCstmrDbtCdtNtfctn><Ntfctn>',
+    '<Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct>',
+    '<Ntry><Amt Ccy="EUR">75.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><BookgDt><Dt>2026-06-08</Dt></BookgDt>',
+    '<NtryDtls><TxDtls><RmtInf><Ustrd>Lastschrift Strom</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>',
+    '</Ntfctn></BkToCstmrDbtCdtNtfctn></Document>',
+  ].join('\n');
+  const n = parseBankauszug(ntf);
+  ok('CAMT.054 (Ntfctn) → ausgabe, BookgDt-Fallback', n.format === 'CAMT' && n.umsaetze[0].richtung === 'ausgabe' && n.umsaetze[0].valuta === '2026-06-08');
+});
+
+await section('Bankimport: CAMT Salden (OPBD/CLBD) + strukturierte RmtInf', () => {
+  const camt = [
+    '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt><Stmt>',
+    '<Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct>',
+    '<Bal><Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1000.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal>',
+    '<Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1119.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal>',
+    '<Ntry><Amt Ccy="EUR">119.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><ValDt><Dt>2026-06-03</Dt></ValDt>',
+    '<NtryDtls><TxDtls><RmtInf><Strd><CdtrRefInf><Ref>RF18539007547034</Ref></CdtrRefInf></Strd></RmtInf></TxDtls></NtryDtls></Ntry>',
+    '<Ntry><Amt Ccy="EUR">238.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><ValDt><Dt>2026-06-05</Dt></ValDt>',
+    '<NtryDtls><TxDtls><Refs><EndToEndId>NOTPROVIDED-77</EndToEndId></Refs><RmtInf><Ustrd>Honorar</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>',
+    '</Stmt></BkToCstmrStmt></Document>',
+  ].join('\n');
+  const parsed = parseBankauszug(camt);
+  ok('CAMT-Anfangs-/Schlusssaldo gelesen', parsed.saldoStartCent === 100000 && parsed.saldoEndeCent === 111900);
+  const pruef = pruefeBankauszug(parsed);
+  ok('CAMT Saldo geht auf', pruef.ok && pruef.berechneterEndsaldoCent === 111900);
+  ok('strukturierte Gläubigerreferenz (CdtrRefInf) als ref + im Zweck', parsed.umsaetze[0].ref === 'RF18539007547034' && /RF18539007547034/.test(parsed.umsaetze[0].zweck));
+  ok('EndToEndId als Referenz-Fallback', parsed.umsaetze[1].ref === 'NOTPROVIDED-77' && /Honorar/.test(parsed.umsaetze[1].zweck));
+});
+
+await section('Bankimport: pruefeBankauszug Randfälle', () => {
+  ok('unbekanntes Format → Warnung', pruefeBankauszug(parseBankauszug('weder noch')).warnungen.some((w) => w.code === 'format-unbekannt'));
+  ok('keine Umsätze → Warnung', pruefeBankauszug({ format: 'MT940', umsaetze: [] }).warnungen.some((w) => w.code === 'keine-umsaetze'));
+  const p = pruefeBankauszug({ format: 'CAMT', umsaetze: [{ betragCent: null, valuta: '' }, { betragCent: 100, valuta: '2026-06-01' }] });
+  const u = p.warnungen.find((w) => w.code === 'unvollstaendige-umsaetze');
+  ok('unvollständige Umsätze gezählt', !!u && u.anzahl === 1);
+  ok('ohne Anfangssaldo → kein Saldo-Vergleich', pruefeBankauszug({ format: 'MT940', umsaetze: [{ betragCent: 100, valuta: '2026-06-01', richtung: 'einnahme' }] }).berechneterEndsaldoCent === null);
+});
+
+// ===== R5: NER — PII-Erkennung über die Anker hinaus =====
+
+await section('NER: erkennt E-Mail/IBAN/USt-IdNr/Steuernr/Telefon', () => {
+  const text = 'Kontakt max.muster@example.com, IBAN DE89 3704 0044 0532 0130 00, '
+    + 'USt-IdNr DE123456789, Steuernr 21/815/08150, Tel +49 30 1234567.';
+  const treffer = erkennePII(text);
+  const byTyp = (typ) => treffer.filter((x) => x.typ === typ).map((x) => x.wert);
+  ok('E-Mail erkannt', byTyp(ANKER_TYP.EMAIL).includes('max.muster@example.com'));
+  ok('IBAN (gruppiert) erkannt', byTyp(ANKER_TYP.IBAN).some((v) => v.replace(/\s/g, '') === 'DE89370400440532013000'));
+  ok('USt-IdNr erkannt', byTyp(ANKER_TYP.USTID).includes('DE123456789'));
+  ok('Steuernummer erkannt', byTyp(ANKER_TYP.STEUERNR).includes('21/815/08150'));
+  ok('Telefon erkannt', byTyp(NER_TYP.TELEFON).some((v) => v.includes('+49 30 1234567')));
+  // Keine überlappenden Doppeltreffer (kompakt vs. gruppiert für dieselbe IBAN).
+  ok('IBAN nicht doppelt (Überlappung aufgelöst)', byTyp(ANKER_TYP.IBAN).length === 1);
+});
+
+await section('NER: konservativ — keine Falsch-Positiven bei Datum/Betrag/Nummer', () => {
+  const harmlos = 'Rechnung RE-2026/042 vom 01.06.2026 über 1.234,56 EUR, Pos 030.';
+  const treffer = erkennePII(harmlos);
+  ok('Datum 01.06.2026 nicht als Telefon', !treffer.some((x) => x.wert.includes('01.06.2026')));
+  ok('Betrag 1.234,56 nicht erkannt', !treffer.some((x) => x.wert.includes('234,56')));
+  ok('Rechnungsnummer (ein „/") nicht als Steuernr', !treffer.some((x) => x.typ === ANKER_TYP.STEUERNR));
+  ok('Großwort RECHNUNG nicht maskiert (kein BIC)', erkennePII('RECHNUNG ABCDEFGH').length === 0);
+});
+
+await section('NER: piiAnker entdoppelt + kombiniereAnker (exakt hat Vorrang)', () => {
+  const text = 'Zahlung an info@muster.de und nochmals info@muster.de.';
+  ok('piiAnker entdoppelt gleiche E-Mail', piiAnker(text).filter((a) => a.wert === 'info@muster.de').length === 1);
+
+  // Kombination: bekannte Firma (exakter Anker) + im Text erkannte fremde E-Mail.
+  const beleg = 'Lieferant Muster GmbH, Rückfragen an info@muster.de.';
+  const exakt = [{ wert: 'Muster GmbH', typ: ANKER_TYP.FIRMA }];
+  const anker = kombiniereAnker(exakt, beleg);
+  const { text: pseudo, map } = tokenize(beleg, anker, { wortgrenze: true });
+  ok('Firma maskiert', /\[\[FIRMA_1\]\]/.test(pseudo) && !/Muster GmbH/.test(pseudo));
+  ok('fremde E-Mail (NER) maskiert', /\[\[EMAIL_1\]\]/.test(pseudo) && !/info@muster\.de/.test(pseudo));
+  ok('Map enthält beide Klartexte', map.some((e) => e.wert === 'Muster GmbH') && map.some((e) => e.wert === 'info@muster.de'));
+
+  // Exakter Anker hat bei gleichem Wert Typ-Vorrang vor der Heuristik.
+  const k2 = kombiniereAnker([{ wert: 'kunde@x.de', typ: ANKER_TYP.PERSON }], 'Mail kunde@x.de');
+  const r2 = tokenize('Mail kunde@x.de', k2);
+  ok('Stammdaten-Typ gewinnt (PERSON statt EMAIL)', r2.map[0].typ === ANKER_TYP.PERSON);
 });
 
 await section('Zahlungsabgleich: offene Posten + Matching + Ausgleichsbuchung', () => {

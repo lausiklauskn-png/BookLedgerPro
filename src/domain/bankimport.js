@@ -1,13 +1,17 @@
 // src/domain/bankimport.js
-// Bankimport: liest einen Kontoauszug — MT940 (SWIFT) ODER CAMT.053 (ISO-20022-XML,
-// moderner SEPA-Standard) — und liefert ein einheitliches Umsatz-Modell. Daraus lässt
-// sich je Umsatz ein Buchungs-ENTWURF vorschlagen (über ai/suggest, wie Beleg/E-Rechnung).
-// Reine, testbare Funktionen — kein Netz, kein DOM.
+// Bankimport: liest einen Kontoauszug — MT940 (SWIFT) ODER CAMT (ISO-20022-XML:
+// .053 Tageskontoauszug, .052 Intraday-Report, .054 Soll-/Haben-Avis) — und liefert
+// ein einheitliches Umsatz-Modell. Daraus lässt sich je Umsatz ein Buchungs-ENTWURF
+// vorschlagen (über ai/suggest, wie Beleg/E-Rechnung). Reine, testbare Funktionen —
+// kein Netz, kein DOM.
 //
-// EHRLICHER HINWEIS: deckt die in der Praxis üblichen Felder ab (MT940: :25:/:61:/:86:;
-// CAMT.053: <Ntry> mit Betrag/Soll-Haben/Datum/Verwendungszweck/Gegenpartei). KEINE
-// vollständige SWIFT-/ISO-20022-Validierung; exotische Bank-Dialekte können abweichen.
-// Der Zahlungsabgleich (Matching auf offene Posten) folgt separat.
+// EHRLICHER HINWEIS: deckt die in der Praxis üblichen Felder ab (MT940: :25:/:60x:/
+// :61:/:62x:/:86:; CAMT: <Stmt>/<Rpt>/<Ntfctn> mit <Bal> Anfangs-/Schluss-Saldo und
+// <Ntry> Betrag/Soll-Haben/Datum/Verwendungszweck/strukturierte RmtInf/Gegenpartei).
+// `pruefeBankauszug()` rechnet den Schlusssaldo gegen (Anfangssaldo ± Umsätze) und
+// meldet Abweichungen/unvollständige Umsätze — KEINE vollständige SWIFT-/ISO-20022-
+// Schema-Validierung; exotische Bank-Dialekte können abweichen. Der Zahlungsabgleich
+// (Matching auf offene Posten) folgt separat.
 
 import { parseEuroToCents } from './money.js';
 
@@ -35,13 +39,27 @@ function gegenName(roh) {
   return m32.map((x) => x.replace(/\?3[23]/, '').trim()).join(' ').replace(/\s+/g, ' ').trim();
 }
 
+// MT940-Saldo-Feld (:60F:/:60M: Anfang, :62F:/:62M: Schluss) → signierte Cent.
+// Form: <C|D>YYMMDD<CCY><Betrag>, z.B. „C240601EUR1000,00". C = Haben (positiv),
+// D = Soll (negativ). Liefert null, wenn das Feld nicht passt.
+function mt940SaldoCent(rest) {
+  const m = String(rest || '').match(/^(C|D)\d{6}[A-Z]{3}([\d.,]+)/);
+  if (!m) return null;
+  const betrag = parseEuroToCents(m[2]);
+  if (betrag == null) return null;
+  return m[1] === 'D' ? -betrag : betrag;
+}
+
 /**
  * Parst einen MT940-Kontoauszug.
- * @returns {{konto:string, umsaetze:Array<{valuta:string, betragCent:number, richtung:'einnahme'|'ausgabe', zweck:string, gegen:string}>}}
+ * @returns {{konto:string, saldoStartCent:number|null, saldoEndeCent:number|null,
+ *   umsaetze:Array<{valuta:string, betragCent:number, richtung:'einnahme'|'ausgabe', zweck:string, gegen:string}>}}
  */
 export function parseMT940(text) {
   const zeilen = String(text || '').replace(/\r\n?/g, '\n').split('\n');
   let konto = '';
+  let saldoStartCent = null;
+  let saldoEndeCent = null;
   const umsaetze = [];
   let aktivesFeld = null; // 'umsatz86' während :86:-Block
 
@@ -53,6 +71,13 @@ export function parseMT940(text) {
       aktivesFeld = null;
       if (code === '25') {
         konto = rest.replace(/EUR$/i, '').trim();
+      } else if (code === '60F' || code === '60M') {
+        // Erster Anfangssaldo gewinnt (Folgeauszüge: :60M: nur als Fallback).
+        if (saldoStartCent == null) saldoStartCent = mt940SaldoCent(rest);
+      } else if (code === '62F' || code === '62M') {
+        // Letzter Schlusssaldo gewinnt.
+        const s = mt940SaldoCent(rest);
+        if (s != null) saldoEndeCent = s;
       } else if (code === '61') {
         const m = rest.match(/^(\d{6})(\d{4})?(RC|RD|C|D)[A-Z]?([\d.,]+)/);
         if (m) {
@@ -82,7 +107,7 @@ export function parseMT940(text) {
     }
   }
   for (const u of umsaetze) delete u._roh;
-  return { konto, umsaetze };
+  return { konto, saldoStartCent, saldoEndeCent, umsaetze };
 }
 
 /**
@@ -126,16 +151,38 @@ function camtText(xml, local) {
 /** Erkennt das Auszugsformat. @returns {'MT940'|'CAMT'|null} */
 export function erkenneBankformat(text) {
   const s = String(text || '');
-  if (/camt\.05[0-9]/i.test(s) || /<(?:[\w.-]+:)?Ntry\b/.test(s)) return 'CAMT';
+  // CAMT.052 (Intraday-Report), .053 (Tagesauszug), .054 (Avis) sowie deren
+  // Wurzel-Container <Stmt>/<Rpt>/<Ntfctn> bzw. ein <Ntry>-Umsatz.
+  if (/camt\.05[0-9]/i.test(s)
+    || /<(?:[\w.-]+:)?(?:Ntry|Stmt|Rpt|Ntfctn)\b/.test(s)) return 'CAMT';
   if (/(^|\n):2[05][A-Z]?:/.test(s) || /(^|\n):61:/.test(s)) return 'MT940';
   return null;
 }
 
-/** Parst einen CAMT.053-Auszug → gleiches Umsatz-Modell wie parseMT940. */
+// CAMT-Saldo: signierte Cent aus einem <Bal>-Block (CdtDbtInd CRDT/DBIT).
+function camtSaldoCent(bal) {
+  const betrag = parseEuroToCents(camtText(bal, 'Amt'));
+  if (betrag == null) return null;
+  return camtText(bal, 'CdtDbtInd').toUpperCase() === 'DBIT' ? -betrag : betrag;
+}
+
+/**
+ * Parst einen CAMT-Auszug (.052/.053/.054) → gleiches Umsatz-Modell wie parseMT940.
+ * Der Statement-Container heißt je Nachrichtentyp <Stmt> (.053), <Rpt> (.052) oder
+ * <Ntfctn> (.054); Anfangs-/Schluss-Saldo kommen aus <Bal> (OPBD/PRCD bzw. CLBD/CLAV).
+ */
 export function parseCAMT(xml) {
-  const stmt = camtBlock(xml, 'Stmt') || String(xml);
+  const stmt = camtBlock(xml, 'Stmt') || camtBlock(xml, 'Rpt') || camtBlock(xml, 'Ntfctn') || String(xml);
   const acct = camtBlock(stmt, 'Acct');
   const konto = camtText(acct, 'IBAN') || camtText(camtBlock(acct, 'Othr'), 'Id');
+  // Salden: <Bal> mit Typ-Code in <Tp><CdOrPrtry><Cd>. OPBD/PRCD = Anfang, CLBD/CLAV = Schluss.
+  let saldoStartCent = null;
+  let saldoEndeCent = null;
+  for (const bal of camtAlle(stmt, 'Bal')) {
+    const cd = camtText(camtBlock(bal, 'Tp'), 'Cd').toUpperCase();
+    if ((cd === 'OPBD' || cd === 'PRCD') && saldoStartCent == null) saldoStartCent = camtSaldoCent(bal);
+    else if (cd === 'CLBD' || cd === 'CLAV') saldoEndeCent = camtSaldoCent(bal);
+  }
   const umsaetze = [];
   for (const ntry of camtAlle(stmt, 'Ntry')) {
     const cd = camtText(ntry, 'CdtDbtInd').toUpperCase();
@@ -143,7 +190,13 @@ export function parseCAMT(xml) {
     const details = camtBlock(ntry, 'NtryDtls');
     // Datum: bevorzugt Valuta (ValDt), sonst Buchungsdatum (BookgDt).
     const valuta = camtText(camtBlock(ntry, 'ValDt'), 'Dt') || camtText(camtBlock(ntry, 'BookgDt'), 'Dt');
-    const zweck = camtText(details || ntry, 'Ustrd');
+    const ustrd = camtText(details || ntry, 'Ustrd');
+    // Strukturierte RmtInf: Gläubigerreferenz (CdtrRefInf) bzw. EndToEnd-Id als Beleg-Referenz.
+    const ref = camtText(camtBlock(details || ntry, 'CdtrRefInf'), 'Ref')
+      || camtText(camtBlock(details || ntry, 'Refs'), 'EndToEndId');
+    // Verwendungszweck: unstrukturiert + (falls separat) strukturierte Referenz, damit
+    // der Zahlungsabgleich auf die Rechnungsnummer trifft.
+    const zweck = [ustrd, ref && !ustrd.includes(ref) ? ref : ''].filter(Boolean).join(' ').trim();
     // Gegenpartei: bei Gutschrift der Zahler (Dbtr), bei Lastschrift der Empfänger (Cdtr).
     const parteien = camtBlock(details || ntry, 'RltdPties');
     const gegen = camtText(camtBlock(parteien, einnahme ? 'Dbtr' : 'Cdtr'), 'Nm')
@@ -152,20 +205,54 @@ export function parseCAMT(xml) {
       valuta: (valuta || '').slice(0, 10),
       betragCent: parseEuroToCents(camtText(ntry, 'Amt')),
       richtung: einnahme ? 'einnahme' : 'ausgabe',
-      zweck: zweck || '',
+      zweck,
       gegen: gegen || '',
+      ref: ref || '',
     });
   }
-  return { konto, umsaetze };
+  return { konto, saldoStartCent, saldoEndeCent, umsaetze };
 }
 
 /**
- * Einheitlicher Einstieg: erkennt MT940 oder CAMT.053 und parst entsprechend.
- * @returns {{format:'MT940'|'CAMT'|null, konto:string, umsaetze:Array}}
+ * Einheitlicher Einstieg: erkennt MT940 oder CAMT und parst entsprechend.
+ * @returns {{format:'MT940'|'CAMT'|null, konto:string, saldoStartCent:number|null,
+ *   saldoEndeCent:number|null, umsaetze:Array}}
  */
 export function parseBankauszug(text) {
   const format = erkenneBankformat(text);
   if (format === 'CAMT') return { format, ...parseCAMT(text) };
   if (format === 'MT940') return { format, ...parseMT940(text) };
-  return { format: null, konto: '', umsaetze: [] };
+  return { format: null, konto: '', saldoStartCent: null, saldoEndeCent: null, umsaetze: [] };
+}
+
+/**
+ * Plausibilitäts-/Integritätsprüfung eines geparsten Auszugs (KEINE Schema-Validierung):
+ * rechnet den Schlusssaldo gegen (Anfangssaldo ± Umsätze) und meldet Abweichungen,
+ * fehlende/unvollständige Umsätze und unbekanntes Format. Reine Funktion.
+ * @param {{format?:string, saldoStartCent?:number|null, saldoEndeCent?:number|null, umsaetze?:Array}} parsed
+ * @returns {{ok:boolean, warnungen:Array<{code:string, [k:string]:any}>,
+ *   saldoStartCent:number|null, saldoEndeCent:number|null,
+ *   berechneterEndsaldoCent:number|null, anzahl:number}}
+ */
+export function pruefeBankauszug(parsed) {
+  const p = parsed || {};
+  const umsaetze = Array.isArray(p.umsaetze) ? p.umsaetze : [];
+  const warnungen = [];
+  if (!p.format) warnungen.push({ code: 'format-unbekannt' });
+  if (!umsaetze.length) warnungen.push({ code: 'keine-umsaetze' });
+  const unvollstaendig = umsaetze.filter((u) => u.betragCent == null || !u.valuta).length;
+  if (unvollstaendig) warnungen.push({ code: 'unvollstaendige-umsaetze', anzahl: unvollstaendig });
+
+  const saldoStartCent = p.saldoStartCent != null ? p.saldoStartCent : null;
+  const saldoEndeCent = p.saldoEndeCent != null ? p.saldoEndeCent : null;
+  let berechneterEndsaldoCent = null;
+  if (saldoStartCent != null) {
+    const summe = umsaetze.reduce(
+      (s, u) => s + (u.richtung === 'einnahme' ? (u.betragCent || 0) : -(u.betragCent || 0)), 0);
+    berechneterEndsaldoCent = saldoStartCent + summe;
+    if (saldoEndeCent != null && berechneterEndsaldoCent !== saldoEndeCent) {
+      warnungen.push({ code: 'saldo-differenz', differenzCent: saldoEndeCent - berechneterEndsaldoCent });
+    }
+  }
+  return { ok: warnungen.length === 0, warnungen, saldoStartCent, saldoEndeCent, berechneterEndsaldoCent, anzahl: umsaetze.length };
 }
