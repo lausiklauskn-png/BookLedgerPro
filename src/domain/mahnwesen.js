@@ -172,3 +172,69 @@ export function mahnschreibenDaten(posten, opts = {}) {
     neueFrist: addTage(heute, opts.neueFristTage != null ? opts.neueFristTage : 7),
   };
 }
+
+// ---- Buchung von Verzugszinsen/Mahngebühren (R1) ----------------------------
+//
+// EHRLICHE USt-EINORDNUNG: Sowohl Verzugszinsen als auch Mahngebühren sind nach
+// h. M. (Abschn. 1.3 UStAE) NICHT steuerbarer **echter Schadensersatz** — es fehlt
+// der Leistungsaustausch. Daher KEINE Umsatzsteuer auf der Buchung; die Forderung
+// gegen den säumigen Schuldner erhöht sich um den Brutto = Netto-Betrag. Im Zweifel
+// (z. B. vertraglich vereinbarte „Bearbeitungsgebühr") den Berater fragen.
+
+/** Standard-Kontenzuordnung (SKR03) für die Buchung von Verzugszinsen/Mahngebühren. */
+export const MAHN_KONTEN = {
+  forderung: '1400',      // Forderungen aus Lieferungen und Leistungen (Soll)
+  zinsertrag: '2650',     // Sonstige Zinsen und ähnliche Erträge (Haben)
+  gebuehrertrag: '2700',  // Sonstige betriebliche Erträge (Haben)
+};
+
+/**
+ * Baut die Buchungszeilen für berechnete Verzugszinsen/Mahngebühren (ohne USt).
+ *
+ *   Soll  Forderungen (1400)             zinsen + gebühren
+ *   Haben Zinserträge (2650)             zinsen
+ *   Haben Sonstige betr. Erträge (2700)  gebühren
+ *
+ * @param opts.zinsenCent Verzugszinsen (Cent, ≥0)
+ * @param opts.gebuehrenCent Mahngebühren/Pauschale (Cent, ≥0)
+ * @param opts.konten optionale Konto-Überschreibung (forderung/zinsertrag/gebuehrertrag)
+ * @returns {{zeilen:Array, summeCent:number, zinsenCent:number, gebuehrenCent:number}}
+ */
+export function mahnbuchungZeilen(opts = {}) {
+  const zinsenCent = Math.max(0, Math.round(Number(opts.zinsenCent) || 0));
+  const gebuehrenCent = Math.max(0, Math.round(Number(opts.gebuehrenCent) || 0));
+  const k = { ...MAHN_KONTEN, ...(opts.konten || {}) };
+  const summeCent = zinsenCent + gebuehrenCent;
+  const zeilen = [];
+  if (summeCent > 0) {
+    zeilen.push({ konto: k.forderung, seite: 'S', betrag: summeCent });
+    if (zinsenCent > 0) zeilen.push({ konto: k.zinsertrag, seite: 'H', betrag: zinsenCent });
+    if (gebuehrenCent > 0) zeilen.push({ konto: k.gebuehrertrag, seite: 'H', betrag: gebuehrenCent });
+  }
+  return { zeilen, summeCent, zinsenCent, gebuehrenCent };
+}
+
+/**
+ * Baut einen vollständigen Buchungs-ENTWURF (manuell, KEIN Auto-Festschreiben —
+ * GoBD-Disziplin) für Verzugszinsen/Mahngebühren aus einem offenen Posten bzw. den
+ * Mahnschreiben-Daten. Gibt null zurück, wenn weder Zinsen noch Gebühren anfallen.
+ * @returns {{datum, beschreibung, begruendung, zeilen, summeCent, zinsenCent, gebuehrenCent}|null}
+ */
+export function mahnbuchungEntwurf(opts = {}) {
+  const res = mahnbuchungZeilen(opts);
+  if (!res.zeilen.length) return null;
+  const teile = [];
+  if (res.zinsenCent > 0) teile.push('Verzugszinsen');
+  if (res.gebuehrenCent > 0) teile.push('Mahngebühren');
+  const refTeil = opts.referenz ? ` Rechnung ${opts.referenz}` : '';
+  const nameTeil = opts.name ? ` (${opts.name})` : '';
+  return {
+    datum: opts.datum || new Date().toISOString().slice(0, 10),
+    beschreibung: `${teile.join(' + ')}${refTeil}${nameTeil}`.trim(),
+    begruendung: 'Verzugszinsen/Mahngebühren als nicht steuerbarer Schadensersatz (§ 288 BGB) — ohne USt. Im Zweifel Steuerberater.',
+    zeilen: res.zeilen,
+    summeCent: res.summeCent,
+    zinsenCent: res.zinsenCent,
+    gebuehrenCent: res.gebuehrenCent,
+  };
+}

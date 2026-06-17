@@ -74,7 +74,7 @@ import {
   validateEingangsrechnung, anreichereVerbindlichkeiten, verbindlichkeitenSummen,
 } from '../src/domain/payables.js';
 import { buildOffeneVerbindlichkeitenCsv } from '../src/domain/export.js';
-import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, letzteMahnstufe, vorschlagNaechsteStufe, mahnVerlaufSumme, mahnStufeLabel } from '../src/domain/mahnwesen.js';
+import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, letzteMahnstufe, vorschlagNaechsteStufe, mahnVerlaufSumme, mahnStufeLabel, MAHN_KONTEN, mahnbuchungZeilen, mahnbuchungEntwurf } from '../src/domain/mahnwesen.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
   erstelleMandant, leereRegistry, findeMandant, aktiverMandant, addMandant,
@@ -1479,6 +1479,58 @@ await section('Mahnwesen: B2B/Verbraucher je Kunde (§288 BGB)', () => {
   const vb = mahnschreibenDaten(posten, { heute: '2026-06-30', basiszinsProzent: 0, b2b: false });
   ok('B2B Pauschale 40 €, Verbraucher 0', b2b.pauschaleCent === 4000 && vb.pauschaleCent === 0);
   ok('B2B-Zinsen (9 %) > Verbraucher-Zinsen (5 %)', b2b.zinsenCent > vb.zinsenCent && vb.zinsenCent > 0);
+});
+
+await section('Mahnwesen R1: Verzugszinsen/Mahngebühren buchen (ohne USt)', () => {
+  const idx = indexFromSeed();
+  // Standardkonten existieren im SKR03-Seed (sonst nicht festschreibbar).
+  ok('SKR03 kennt 1400/2650/2700', !!idx['1400'] && !!idx['2650'] && !!idx['2700']);
+  ok('Forderung 1400 ist Aktivkonto', idx['1400'].art === KONTOART.AKTIV);
+  ok('2650 + 2700 sind Ertragskonten', idx['2650'].art === KONTOART.ERTRAG && idx['2700'].art === KONTOART.ERTRAG);
+
+  // Zinsen + Gebühren: Soll Forderung an Haben Zinsertrag + Gebührenertrag, ausgeglichen.
+  const beide = mahnbuchungZeilen({ zinsenCent: 1234, gebuehrenCent: 4000 });
+  ok('Summe = Zinsen + Gebühren', beide.summeCent === 5234);
+  ok('drei Zeilen (Forderung + 2 Erträge)', beide.zeilen.length === 3);
+  ok('Buchung ausgeglichen (Soll=Haben)', istAusgeglichen(beide.zeilen));
+  ok('keine festschreib-Fehler (gültig gegen Kontenliste)', validateBuchung({ datum: '2026-06-17', zeilen: beide.zeilen }, idx).length === 0);
+  ok('Soll auf Forderung 1400 (Gesamt)', zeile(beide.zeilen, '1400', 'S').betrag === 5234);
+  ok('Haben Zinsertrag 2650', zeile(beide.zeilen, '2650', 'H').betrag === 1234);
+  ok('Haben Gebührenertrag 2700', zeile(beide.zeilen, '2700', 'H').betrag === 4000);
+  ok('KEINE USt-Zeile (Schadensersatz, nicht steuerbar)',
+    !beide.zeilen.some((z) => { const k = idx[z.konto]; return k && (k.rolle === 'umsatzsteuer' || k.rolle === 'vorsteuer'); }));
+
+  // Nur Zinsen → 2 Zeilen, kein Gebührenkonto.
+  const nurZins = mahnbuchungZeilen({ zinsenCent: 500, gebuehrenCent: 0 });
+  ok('nur Zinsen → 2 Zeilen', nurZins.zeilen.length === 2 && istAusgeglichen(nurZins.zeilen));
+  ok('nur Zinsen: kein 2700', !nurZins.zeilen.some((z) => z.konto === '2700'));
+
+  // Nur Gebühren → 2 Zeilen, kein Zinskonto.
+  const nurGeb = mahnbuchungZeilen({ zinsenCent: 0, gebuehrenCent: 4000 });
+  ok('nur Gebühren → 2 Zeilen', nurGeb.zeilen.length === 2 && !nurGeb.zeilen.some((z) => z.konto === '2650'));
+
+  // Nichts → keine Zeilen, Entwurf null.
+  ok('0/0 → keine Zeilen', mahnbuchungZeilen({ zinsenCent: 0, gebuehrenCent: 0 }).zeilen.length === 0);
+  ok('0/0 → Entwurf null', mahnbuchungEntwurf({ zinsenCent: 0, gebuehrenCent: 0 }) === null);
+
+  // Konto-Überschreibung.
+  const custom = mahnbuchungZeilen({ zinsenCent: 100, konten: { forderung: '1410', zinsertrag: '8200' } });
+  ok('konten-Override greift', zeile(custom.zeilen, '1410', 'S') && zeile(custom.zeilen, '8200', 'H'));
+
+  // Vollständiger Entwurf aus Mahnschreiben-Daten.
+  const ent = mahnbuchungEntwurf({ zinsenCent: 1234, gebuehrenCent: 4000, referenz: 'R-7', name: 'Müller', datum: '2026-06-17' });
+  ok('Entwurf hat Datum', ent.datum === '2026-06-17');
+  ok('Entwurf-Beschreibung nennt Referenz', /R-7/.test(ent.beschreibung) && /Verzugszinsen/.test(ent.beschreibung) && /Mahngeb/.test(ent.beschreibung));
+  ok('Entwurf-Begründung nennt Schadensersatz/ohne USt', /Schadensersatz/.test(ent.begruendung) && /ohne USt/.test(ent.begruendung));
+  ok('Entwurf node-festschreibbar (validateBuchung leer)', validateBuchung(ent, idx).length === 0);
+  ok('MAHN_KONTEN Default = 1400/2650/2700', MAHN_KONTEN.forderung === '1400' && MAHN_KONTEN.zinsertrag === '2650' && MAHN_KONTEN.gebuehrertrag === '2700');
+
+  // Anbindung an die bestehende Mahnschreiben-Berechnung (§288) → Buchungsentwurf.
+  const posten = anreicherePosten([{ id: 'a1', betragCent: 119000, datum: '2026-05-01', referenz: 'R-9', name: 'Z' }],
+    { heute: '2026-06-30', zielTage: 14 })[0];
+  const md = mahnschreibenDaten(posten, { heute: '2026-06-30', basiszinsProzent: 0, b2b: true });
+  const aus = mahnbuchungEntwurf({ zinsenCent: md.zinsenCent, gebuehrenCent: md.pauschaleCent, referenz: md.referenz, name: md.name });
+  ok('aus §288-Mahnschreiben gebauter Entwurf ausgeglichen', istAusgeglichen(aus.zeilen) && aus.summeCent === md.zinsenCent + md.pauschaleCent);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {

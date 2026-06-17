@@ -3,7 +3,7 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js';
-import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
+import { loadAccounts, listBuchungen, verifyAuditChain, saveEntwurf, ensureSeedKonten } from '../../domain/store.js';
 import { computeUStVoranmeldung, computeEUR, computeEURIst, verprobeUSt } from '../../domain/taxes.js';
 import { kostenstellenAuswertung } from '../../domain/costcenters.js';
 import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv, buildOffeneVerbindlichkeitenCsv, buildElsterVaPaket, buildGuvCsv, buildBilanzCsv } from '../../domain/export.js';
@@ -15,7 +15,7 @@ import { isMistralConfigured } from '../../ai/aiConfig.js';
 import { erklaereSteuer } from '../../ai/taxAssist.js';
 import { listAuftraege, listKunden, mahnungErfassen } from '../../domain/crm-store.js';
 import { offenePosten } from '../../domain/zahlungsabgleich.js';
-import { anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, vorschlagNaechsteStufe, mahnStufeLabel, letzteMahnstufe } from '../../domain/mahnwesen.js';
+import { anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, vorschlagNaechsteStufe, mahnStufeLabel, letzteMahnstufe, mahnbuchungEntwurf, MAHN_KONTEN } from '../../domain/mahnwesen.js';
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { offeneVerbindlichkeiten, anreichereVerbindlichkeiten, verbindlichkeitenSummen } from '../../domain/payables.js';
 import { getSettings, updateSettings } from '../../state.js';
@@ -201,6 +201,25 @@ function zeigeMahnung(posten) {
                 gebuehrenCent: parseEuroToCents(gebuehrenInput.value) || 0,
               });
               status.textContent = t('reports.mahnRecorded');
+            } catch (err) { status.textContent = String(err.message || err); }
+          },
+        }),
+        // R1: Verzugszinsen/Mahngebühren als Buchungsentwurf ins Journal übernehmen
+        // (manuell, GoBD — Festschreiben bleibt dem Nutzer überlassen).
+        el('button', {
+          class: 'btn', text: t('reports.mahnBook'),
+          onClick: async () => {
+            const entwurf = mahnbuchungEntwurf({
+              zinsenCent: parseEuroToCents(zinsenInput.value) || 0,
+              gebuehrenCent: parseEuroToCents(gebuehrenInput.value) || 0,
+              referenz: d.referenz, name: d.name, datum: d.datum,
+            });
+            if (!entwurf) { status.textContent = t('reports.mahnBookNone'); return; }
+            try {
+              // Standardkonten sicherstellen, falls der Nutzer sie entfernt hat.
+              await ensureSeedKonten([MAHN_KONTEN.forderung, MAHN_KONTEN.zinsertrag, MAHN_KONTEN.gebuehrertrag]);
+              await saveEntwurf(entwurf);
+              status.textContent = t('reports.mahnBooked');
             } catch (err) { status.textContent = String(err.message || err); }
           },
         }),
