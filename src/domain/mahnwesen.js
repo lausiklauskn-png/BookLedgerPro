@@ -28,6 +28,23 @@ export function faelligkeit(rechnungDatum, zielTage = 14) {
   return addTage(rechnungDatum, zielTage);
 }
 
+/**
+ * Fälligkeitsdatum eines offenen Postens/einer Rechnung mit **Zahlungsziel JE POSTEN**
+ * (A1-Rest): explizites `faelligAm` hat Vorrang, sonst Rechnungsdatum + posten-eigenes
+ * `zahlungszielTage`, sonst Rechnungsdatum + `defaultZielTage`. So gilt ein je Auftrag/
+ * Rechnung vereinbartes Ziel (14/30/60 …) statt nur des globalen Defaults aus den
+ * Einstellungen. Spiegelbild zu payables.berechneFaelligAm (das hierher delegiert).
+ * @param {{faelligAm?:string, datum?:string, zahlungszielTage?:?number}} posten
+ * @param {number} [defaultZielTage=14]
+ * @returns {string} JJJJ-MM-TT (oder '' ohne Datum)
+ */
+export function faelligAmVon(posten = {}, defaultZielTage = 14) {
+  if (posten.faelligAm) return posten.faelligAm;
+  if (!posten.datum) return '';
+  const ziel = posten.zahlungszielTage != null ? posten.zahlungszielTage : defaultZielTage;
+  return faelligkeit(posten.datum, ziel);
+}
+
 /** Tage überfällig (>0 wenn fällig + überschritten), sonst 0. */
 export function tageUeberfaellig(faelligAm, heute) {
   const d = tageDiff(faelligAm, heute);
@@ -128,7 +145,7 @@ export function anreicherePosten(posten = [], opts = {}) {
   const heute = opts.heute || new Date().toISOString().slice(0, 10);
   const zielTage = opts.zielTage != null ? opts.zielTage : 14;
   return posten.map((p) => {
-    const faelligAm = faelligkeit(p.datum, zielTage);
+    const faelligAm = faelligAmVon(p, zielTage);
     const tage = tageUeberfaellig(faelligAm, heute);
     return { ...p, faelligAm, tageUeberfaellig: tage, ueberfaellig: tage > 0, mahnstufe: mahnstufe(tage, opts.schwellen) };
   });
@@ -149,7 +166,7 @@ export function mahnschreibenDaten(posten, opts = {}) {
   const heute = opts.heute || new Date().toISOString().slice(0, 10);
   const zielTage = opts.zielTage != null ? opts.zielTage : 14;
   const b2b = opts.b2b !== false;
-  const faelligAm = posten.faelligAm || faelligkeit(posten.datum, zielTage);
+  const faelligAm = posten.faelligAm || faelligAmVon(posten, zielTage);
   const tage = posten.tageUeberfaellig != null ? posten.tageUeberfaellig : tageUeberfaellig(faelligAm, heute);
   const st = posten.mahnstufe || mahnstufe(tage, opts.schwellen);
   const forderungCent = posten.betragCent || 0;

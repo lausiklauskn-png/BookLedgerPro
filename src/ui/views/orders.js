@@ -110,6 +110,8 @@ function form() {
     ..._kunden.map((k) => el('option', { value: k.id }, k.name))]);
   const ks = el('select', {}, [el('option', { value: '' }, t('journal.noKostenstelle')),
     ..._kostenstellen.map((k) => el('option', { value: k.nummer }, `${k.nummer} · ${k.name}`))]);
+  const defaultZiel = getSettings().zahlungszielTage;
+  const ziel = el('input', { type: 'number', min: '0', step: '1', placeholder: String(defaultZiel != null ? defaultZiel : 14) });
   const posBox = el('div', { class: 'pos-box' }, [positionsRow()]);
   const addPos = el('button', { class: 'btn btn-sm', type: 'button', text: t('orders.addPos'),
     onClick: () => posBox.appendChild(positionsRow()) });
@@ -120,7 +122,9 @@ function form() {
       e.preventDefault();
       err.textContent = '';
       const positionen = Array.from(posBox.children).map((r) => r._read()).filter((p) => p.einzelpreisCent > 0);
-      const auftrag = { titel: titel.value, kundeId: kunde.value || null, kostenstelle: ks.value || null, positionen };
+      const zielRoh = String(ziel.value).trim();
+      const zahlungszielTage = zielRoh === '' ? null : Math.trunc(Number(zielRoh));
+      const auftrag = { titel: titel.value, kundeId: kunde.value || null, kostenstelle: ks.value || null, zahlungszielTage, positionen };
       const fehler = validateAuftrag(auftrag);
       if (fehler.length) { err.textContent = fehler.join(' '); return; }
       await saveAuftrag(auftrag);
@@ -128,7 +132,8 @@ function form() {
     },
   }, [
     el('h2', { class: 'card-title', text: t('orders.new') }),
-    el('div', { class: 'form-grid' }, [field(t('orders.titel'), titel), field(t('orders.customer'), kunde), field(t('orders.kostenstelle'), ks)]),
+    el('div', { class: 'form-grid' }, [field(t('orders.titel'), titel), field(t('orders.customer'), kunde), field(t('orders.kostenstelle'), ks), field(t('orders.zahlungsziel'), ziel)]),
+    el('p', { class: 'muted small', text: t('orders.zahlungsziel.hint') }),
     el('div', { class: 'pos-head' }, [el('span', { text: t('orders.posDesc') }), el('span', { text: t('orders.qty') }), el('span', { text: t('orders.price') }), el('span', { text: t('orders.vat') }), el('span', {})]),
     posBox,
     el('div', { class: 'btn-row' }, [addPos]),

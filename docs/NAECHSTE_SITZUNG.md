@@ -17,11 +17,14 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles.
 
 AUFGABE DIESER SITZUNG: **Mit dem Nutzer abstimmen (AskUserQuestion), womit es weitergeht** — denn der
-**build-freie Code-Korb ist jetzt LEER**: A+B fertig; **R1–R5 ✅** inkl. **R4-Rest ✅** (Austauschformat v3),
+**build-freie Code-Korb ist LEER**: A+B fertig; **R1–R5 ✅** inkl. **R4-Rest ✅** (Austauschformat v3),
 **R5a-Rest ✅** (SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-/Struktur-Validierung, `domain/bankschema.js`),
-**R5c-Rest ✅** (NER-Scoping); **R6/P1 ✅** (Privat-/Bürger-Modus, PR #99); **R6/P2 ✅** (Feature-Gates ansichtsintern).
+**R5c-Rest ✅** (NER-Scoping); **R6/P1 ✅** (Privat-/Bürger-Modus, PR #99); **R6/P2 ✅** (Feature-Gates ansichtsintern);
+**A1-Rest ✅** (Zahlungsziel je Forderung — `mahnwesen.faelligAmVon`, Feld im Auftragsformular, SW v99, 1045 Tests).
 **Verbleibend nur noch umgebungs-/menschen-blockierte [KANN]-Punkte ODER ein Browser-Sichttest ODER eine neue,
-mit dem Nutzer vereinbarte Feature-Idee.** Konkret:
+mit dem Nutzer vereinbarte Feature-Idee.** Mögliche kleine build-freie Folge-Ideen (mit dem Nutzer abstimmen): „zahlbar
+bis" auf dem gedruckten §14-Dokument, Edit bestehender Aufträge, WorkFloh-`rechnung`-Block überträgt das Zahlungsziel,
+Eingangsrechnungs-Verzug (Gegenseite). Konkret:
 (A) **R6/Rest [KANN] — umgebungs-/menschen-blockiert** (verifiziert): **Lighthouse/Perf** braucht Headless-Browser
 (keiner hier); **lokales OCR** = Tesseract (wasm/npm-Runtime) ist **nicht build-frei** (Goldene Regel #1 verbietet
 CDNs/npm-Runtime); **ZUGFeRD-Erzeugen** braucht PDF/A-3-Lib (nicht build-frei); **Sage 5b–d** sind fremde Repos
@@ -78,10 +81,10 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach **R5a-Rest SWIFT/ISO-20022-Schema-Validierung** (Abschnitt A Mehrmandanten +
-Abschnitt B Bilanzierung + R1–R5 inkl. R4-Rest/R5a-Rest/R5c-Rest abgeschlossen + gemergt; R6/P1 PR #99; R6/P2
-Feature-Gates ansichtsintern; **R5a-Rest:** `src/domain/bankschema.js` — `validiereMT940`/`validiereCAMT`/
-`validiereBankauszug` prüfen die SWIFT-Feldformate bzw. die ISO-20022-Nachrichten-Struktur, UI-Hinweis im Bankimport;
-**KEINE** zertifizierte XSD-/SWIFT-Netzwerk-Validierung) · Tests **1029/1029** · SW **v98** · 98 JS-Module ·
-**build-freier Rest-Korb LEER** · nächster Schritt: **mit dem Nutzer abstimmen** (R6/Rest blockiert / Browser-Sichttest
-/ neue Feature-Idee). (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach **A1-Rest Zahlungsziel je Forderung** (Abschnitt A Mehrmandanten +
+Abschnitt B Bilanzierung + R1–R5 inkl. R4-Rest/R5a-Rest/R5c-Rest + R6/P1 PR #99 + R6/P2 abgeschlossen + gemergt;
+**A1-Rest:** `mahnwesen.faelligAmVon` macht das auftragsindividuelle `zahlungszielTage` in Mahnwesen/Fälligkeit
+wirksam, `payables.berechneFaelligAm` delegiert daran, Feld „Zahlungsziel (Tage)" im Auftragsformular) ·
+Tests **1045/1045** · SW **v99** · 98 JS-Module · **build-freier Rest-Korb LEER** · nächster Schritt:
+**mit dem Nutzer abstimmen** (R6/Rest blockiert / Browser-Sichttest / neue Feature-Idee). (Diese Zeile bei jeder
+Sitzung aktualisieren.)

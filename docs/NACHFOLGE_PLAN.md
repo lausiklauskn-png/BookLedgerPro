@@ -233,6 +233,16 @@
     `el()` filtert nur `null`-Kinder → durchgehend Ternär-Form (`? card : null`). (PR R6/P2.)
   - [ ] **R6/Rest [KANN]** Lighthouse/Perf (braucht Headless-Browser), lokales OCR (nur build-frei-sauber),
     ZUGFeRD-Erzeugen (PDF-Lib → nicht build-frei), Sage 5b–d (fremde Repos, menschlich vermittelt).
+- [x] **A1-Rest — Zahlungsziel je Forderung** (mit dem Nutzer abgestimmt, da build-freier Rest-Korb leer). ✅
+  Symmetrie zu R3/payables: bisher trugen nur Eingangsrechnungen ein **rechnungseigenes** `zahlungszielTage`,
+  Forderungen leiteten die Fälligkeit nur aus dem **globalen** Setting ab → bei kundenindividuellen Zielen falsch.
+  Neuer reiner Helfer **`mahnwesen.faelligAmVon(posten, defaultZielTage=14)`** (explizites `faelligAm` → Rechnungs-
+  datum + posten-eigenes `zahlungszielTage` → Default), genutzt von `anreicherePosten`/`mahnschreibenDaten`;
+  `payables.berechneFaelligAm` **delegiert** an ihn (Duplikat weg, Verhalten identisch). `zahlungsabgleich.offenePosten`
+  reicht `faelligAm`/`zahlungszielTage` des Auftrags durch; `orders.validateAuftrag` prüft das optionale Ziel
+  (ganzzahlig ≥ 0). UI: Feld **„Zahlungsziel (Tage)"** im Auftragsformular (`ui/views/orders.js`), i18n de+en.
+  SW `v99`, **+16 Tests (1045/1045)**. UI/Glue statisch geprüft. **Grenze:** kein Edit bestehender Aufträge, kein
+  Ziel auf dem gedruckten §14-Dokument, WorkFloh-`rechnung`-Block überträgt (noch) kein Ziel. (PR A1-Rest.)
 
 ---
 

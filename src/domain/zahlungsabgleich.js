@@ -48,6 +48,11 @@ export function offenePosten(auftraege = [], opts = {}) {
       name: nameById[a.kundeId] || '',
       kundeId: a.kundeId || null,
       richtung: 'einnahme',
+      // Zahlungsziel je Forderung (A1-Rest): rechnungseigene Fälligkeit/Tage durchreichen,
+      // damit das Mahnwesen (anreicherePosten/mahnschreibenDaten) das auftragsindividuelle
+      // Ziel statt nur des globalen Defaults verwendet. Auftrag ohne Angabe → null/''.
+      faelligAm: a.faelligAm || '',
+      zahlungszielTage: a.zahlungszielTage != null ? a.zahlungszielTage : null,
       saetze,
     });
   }
