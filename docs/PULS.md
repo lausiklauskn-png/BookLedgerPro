@@ -36,22 +36,21 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „B1"** (Bilanzierung — Modus + Kontengrundlage: Setting
-`gewinnermittlung: 'euer'|'bilanz'`, Default `euer` → Bestandsnutzer unverändert; Bilanz-Grundkonten/
-Saldenvortrag-Eröffnungskonto ergänzen falls nötig; reine Klassifikation node-getestet; minimale UI-Schalter).
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „B2"** (Bilanzierung — GuV): neue **`src/domain/bilanz.js`**
+(rein, node-getestet) mit `gewinnUndVerlust(buchungen, idx, periode)` → Erträge/Aufwendungen gegliedert,
+**Jahresüberschuss/-fehlbetrag**; Ansicht + CSV-Export. Baut auf der B1-Klassifikation auf
+(`domain/bilanzierung.js`: `istErfolgskonto`/`guvSeite`/`klassifiziereKonto`). **B3 (Bilanz)** folgt danach.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
+**B1 (Modus + Kontengrundlage) ist abgeschlossen + gemergt** (PR #87) — siehe `docs/SESSIONS.md` (oberster Eintrag).
 
-**Kopf-Status (Stand nach M3):** SW **v83** · Tests **699/699** grün · 90 JS-Module.
-**M1 + M2a + M2b sind erledigt.** M2 wurde gesplittet: **M2a** = Core-Verdrahtung (`core/db.js` aktive DB
-konfigurierbar, `core/mandantenStore.js` mit Registry + `initMandanten`/`wechsleAktivenMandant`, +9 Tests);
-**M2b** = Sperrbildschirm-UI (Auswahlliste bei >1 Mandant, „Neuer Mandant" → eigener Tresor-Onboarding,
-Wechsel über `wechsleAktivenMandant`, DSGVO-Hinweis; +10 Tests).
-Reihenfolge dort: ~~M1~~ → ~~M2a~~ → ~~M2b~~ → **M3** (Mehrmandanten) · B1 → B2 → B3 (Bilanzierung) · danach Rest-SOLL (R1…).
-**Wichtig für M3:** Core+Lock sind fertig. M3 macht den aktiven Mandanten in der **Shell** sichtbar
-(`ui/shell.js`, Header zeigt heute `getMandantId()` — jetzt den Mandanten-NAMEN aus der Registry zeigen) und
-ergänzt „Mandant wechseln" (→ `location.reload()` nach `lockVault`/Auswahl) + Verwaltung (umbenennen/entfernen
-über `umbenenneMandant`/`entferneMandant`; Entfernen nur mit Bestätigung, Tresor-DB bleibt erhalten).
-Design-Abschnitt in `NACHFOLGE_PLAN.md` Abschnitt A bleibt verbindlich.
+**Kopf-Status (Stand nach B1):** SW **v84** · Tests **726/726** grün · 91 JS-Module.
+**Abschnitt A komplett (M1/M2a/M2b/M3); B1 erledigt.** Reihenfolge im Plan:
+~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → **B2** → B3 (Bilanzierung) · danach Rest-SOLL (R1…).
+**Wichtig für B2:** Die reine Klassifikation steht (`domain/bilanzierung.js`, node-getestet). B2 baut darauf eine
+**GuV** auf: Erfolgskonten (Aufwand/Ertrag) aus den festgeschriebenen Buchungen je Periode aggregieren
+(Salden über `accounts.js saldo`/`mehrungsSeite`), gegliedert nach `guvSeite`, Jahresüberschuss = Erträge −
+Aufwendungen. **Reine Logik ZUERST node-getestet**, dann Ansicht + CSV (DOM als „statisch geprüft"). Modus-Schalter
+`gewinnermittlung` (B1) kann die GuV-Ansicht/-Navigation gaten. **EHRLICH:** keine E-Bilanz-Taxonomie behaupten.
 
 **✅ Bereits fertig & gemergt (NICHT wiederholen):** Profi-Readiness **V1–V10** (Kontenrahmen, §13b,
 AfA/Anlagen, Kassenbuch, USt-VA komplett, Berichte/SuSa, GoBD/GDPdU, DATEV-EXTF, Kleinfälle,
@@ -109,10 +108,12 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-17 (M2a) · **Branch:** `claude/v2-ox8bu7`
-· **Tests:** `node tests/run.mjs` → **689/689 grün**
-· **SW-Cache:** `v81` · **90 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · M1 ✅ · M2a ✅**
-· **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (je 1 PR/Sitzung; nächste = **M1**).
+**Letzte Aktualisierung:** 2026-06-17 (B1) · **Branch (letzte PR):** `claude/bilanzierung-b1-setup-4cx6s3`
+· **Tests:** `node tests/run.mjs` → **726/726 grün**
+· **SW-Cache:** `v84` · **91 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B1 ✅**
+· **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (je 1 PR/Sitzung; nächste = **B2 — GuV**).
+· **B1 ✅:** Bilanzierung-Modus (`gewinnermittlung` euer|bilanz, Default euer) + Konten-Klassifikation
+  (`domain/bilanzierung.js`) + Bilanz-Grundkonten 0800/0840/0860/0970 im Seed + Modus-Schalter (PR #87).
 · **Entscheidungen 17.06.:** ELSTER-Link ✅ · AVV-Links ✅ · §19-Onboarding ✅ · Wirtschaftsjahr ✅ ·
   Übergabe-Datenblatt ✅ · Beleg-Verknüpfung/GoBD-Aufbewahrung ✅ · ZUGFeRD-Empfang+KoSIT ✅ ·
   A4 offene Anbindung (Import/Export + Partner-Link) ✅; **nächste (groß):** Mehrmandanten → Bilanzierung.

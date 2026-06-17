@@ -3,7 +3,8 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **699/699 grün**, SW `v82`.
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **726/726 grün**, SW `v84`.
+> Nächster Schritt: **B2 — GuV** (A abgeschlossen, B1 ✅).
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -72,9 +73,14 @@
 ## B) Bilanzierung (zweite Gewinnermittlungsart neben EÜR)
 > Begründung: GmbH/OHG brauchen GuV + Bilanz (§4 Abs.1/§5 EStG). Modus-Schalter, Bestandskonten-Vortrag.
 
-- [ ] **B1 — Modus + Kontengrundlage.** Setting `gewinnermittlung: 'euer'|'bilanz'` (Default `euer`,
-  bestehende Nutzer unverändert). Konten-Seed um Bilanz-Grundkonten ergänzen falls nötig; Saldenvortrag/
-  Eröffnungsbilanzkonto (z. B. 9000 vorhanden). Reine Klassifikation node-getestet. Minimale UI (Schalter).
+- [x] **B1 — Modus + Kontengrundlage.** ✅ Setting `gewinnermittlung: 'euer'|'bilanz'` (Default `euer`,
+  bestehende Nutzer unverändert) in `state.js`. **`src/domain/bilanzierung.js`** (rein, node-getestet):
+  `GEWINNERMITTLUNG`/`normalizeGewinnermittlung`/`istBilanzierung` + Konten-Klassifikation
+  (`istBestandskonto`/`istErfolgskonto`/`abschlussBereich`/`bilanzSeite`/`guvSeite`/`klassifiziereKonto`) als
+  Grundlage für B2/B3 + `BILANZ_GRUNDKONTO_NUMMERN`. Bilanz-Grundkonten **0800/0840/0860/0970** in den
+  SKR03-Seed ergänzt (Saldenvortrag/Eröffnung **9000** war vorhanden). Minimaler Modus-Schalter in den
+  Einstellungen (`shell.js`), Wechsel auf Bilanz zieht Grundkonten via `ensureSeedKonten` nach. i18n de+en,
+  SW `v84`, **+27 Tests (726/726)**. UI/Glue statisch geprüft. (PR #87.)
 - [ ] **B2 — GuV.** `domain/bilanz.js` (rein, node-getestet): `gewinnUndVerlust(buchungen, idx, periode)`
   → Erträge/Aufwendungen gegliedert, Jahresüberschuss; Ansicht + CSV.
 - [ ] **B3 — Bilanz.** `bilanz(buchungen, idx, stichtag, eröffnungssalden)` → Aktiva/Passiva aus den
