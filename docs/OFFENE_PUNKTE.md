@@ -22,6 +22,12 @@ ein PR, bei grüner CI selbstständig mergen**):
 - **Bilanzierung (GmbH/OHG, GuV + Bilanz): JA** — eigener großer PR (V-Bilanz).
 - **AVV-Verträge: abschließen/umsetzen** — ✅ In-App-Links zu Google-/Mistral-DPA in „Recht & Doku"
   (Vertragsabschluss selbst bleibt organisatorische Nutzer-Aufgabe).
+- **Angebote & Kalkulation (Werbetechnik): JA, geplant — Design steht.** Eigener großer Bereich,
+  **NACH** den laufenden BLP-Schritten zu bauen. Verbindliche Bau-Grundlage: **`docs/KALKULATION_KATALOG.md`**
+  (Kostentreiber-Matrix, Rechenformel, adaptiver Baukasten-UX, Nummernkreis-Bridge Angebot→Rechnung,
+  selbstlernende Vor-/Nachkalkulation, BLP als Vorbereitungs-/Kontrollschicht für DATEV, Mehrrechner/Sync).
+  **Prime Directive:** Kalkulation rein intern, Angebot/Rechnung neutral nach außen. Offene Entscheidung
+  vor Baubeginn: **Nummernkreis-Hoheit** (stellt BLP die Rechnung aus oder DATEV/Steuerberater?).
 
 **Festgelegte Bau-Reihenfolge (je eigener PR, Freibrief-Merge):**
 1. ✅ ELSTER-Weiterleitungs-Link + AVV-Anbieterlinks (klein) — *diese Sitzung*.
