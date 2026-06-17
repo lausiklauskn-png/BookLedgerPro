@@ -7,9 +7,16 @@
 // {
 //   "kunden":    [{ externId, name, adresse?, email?, ustId? }],
 //   "auftraege": [{ externNummer, kundeExternId?, titel, positionen:
-//                   [{ beschreibung?, menge, einzelpreisCent|einzelpreis, ustSatz? }] }]
+//                   [{ beschreibung?, menge, einzelpreisCent|einzelpreis, ustSatz? }],
+//                   rechnung?: { nummer, datum, leistungsdatum? } }]
 // }
 // Fehlt ein USt-Satz, wird er in BookLedgerPro ergänzt (Default, editierbar).
+//
+// R4 Stufe 2 — RECHNUNGS-ÜBERNAHME: Trägt ein Auftrag ein `rechnung`-Objekt (bereits in
+// WorkFloh gestellte Rechnung), wird es hier normalisiert. Die Übernahme als Forderung/
+// Buchung erfolgt in crm-store.importWorkFloh (Nummer/Datum stammen aus WorkFloh, es wird
+// KEINE neue BLP-Rechnungsnummer vergeben). Unvollständige Rechnungsangaben werden verworfen
+// (der Auftrag kommt dann als „angelegt" herein) und als Warnung gezählt — nichts wird erfunden.
 
 import { parseEuroToCents } from './money.js';
 
@@ -21,6 +28,28 @@ function centsOf(pos) {
   if (Number.isInteger(pos.einzelpreisCent)) return pos.einzelpreisCent;
   if (pos.einzelpreis != null) return parseEuroToCents(String(pos.einzelpreis)) || 0;
   return 0;
+}
+
+const ISO_DATUM = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Normalisiert ein optionales Rechnungs-Objekt eines Auftrags (R4 Stufe 2). Fehlen Nummer
+ * oder ein gültiges Datum, wird `null` zurückgegeben und eine Warnung erzeugt — der Auftrag
+ * wird dann als reiner „angelegt"-Auftrag (ohne Rechnung) übernommen. Nichts wird erfunden.
+ * @returns {{nummer:string, datum:string, leistungsdatum?:string}|null}
+ */
+function normalizeRechnung(raw, label, warnungen) {
+  if (!raw || typeof raw !== 'object') return null;
+  const nummer = String(raw.nummer || '').trim();
+  const datum = String(raw.datum || '').trim();
+  if (!nummer || !ISO_DATUM.test(datum)) {
+    warnungen.push(`Auftrag „${label || '?'}": Rechnungsangaben unvollständig (Nummer/Datum) → als Auftrag ohne Rechnung übernommen.`);
+    return null;
+  }
+  const r = { nummer, datum };
+  const ld = String(raw.leistungsdatum || '').trim();
+  if (ld && ISO_DATUM.test(ld)) r.leistungsdatum = ld;
+  return r;
 }
 
 /** Parst den Import-Text zu einem Objekt (wirft bei ungültigem JSON). */
@@ -78,6 +107,7 @@ export function normalizeImport(obj, { defaultUstSatz = 19 } = {}) {
       kundeExternId: a.kundeExternId != null ? String(a.kundeExternId) : null,
       titel: titel || `Import ${a.externNummer || ''}`.trim(),
       positionen,
+      rechnung: normalizeRechnung(a.rechnung, titel || a.externNummer, warnungen),
     });
   }
 

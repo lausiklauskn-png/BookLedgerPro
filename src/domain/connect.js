@@ -7,7 +7,9 @@
 // und docs/CONNECT.md): „bare" {kunden, auftraege} wird ebenso akzeptiert wie das gewrappte Paket.
 
 export const AUSTAUSCH_FORMAT = 'bookledgerpro-austausch';
-export const AUSTAUSCH_VERSION = 1;
+// v2 (R4 Stufe 2): Aufträge dürfen optional eine bereits gestellte `rechnung` tragen
+// (Rechnungs-Übernahme). Abwärtskompatibel — v1-Pakete ohne `rechnung` bleiben gültig.
+export const AUSTAUSCH_VERSION = 2;
 
 /** BLP-Daten → offenes Austauschpaket (für Fremdsoftware / WorkFloh). */
 export function buildAustauschPaket({ kunden = [], auftraege = [] } = {}) {
@@ -22,17 +24,29 @@ export function buildAustauschPaket({ kunden = [], auftraege = [] } = {}) {
       email: k.email || '',
       ustId: k.ustId || '',
     })),
-    auftraege: auftraege.map((a) => ({
-      externNummer: a.externNummer || a.nummer || a.id || null,
-      kundeExternId: a.kundeExternId || a.kundeId || null,
-      titel: a.titel || a.beschreibung || '',
-      positionen: (a.positionen || []).map((p) => ({
-        beschreibung: p.beschreibung || '',
-        menge: p.menge != null ? p.menge : 1,
-        einzelpreisCent: Number.isInteger(p.einzelpreisCent) ? p.einzelpreisCent : 0,
-        ustSatz: p.ustSatz != null ? p.ustSatz : null,
-      })),
-    })),
+    auftraege: auftraege.map((a) => {
+      const out = {
+        externNummer: a.externNummer || a.nummer || a.id || null,
+        kundeExternId: a.kundeExternId || a.kundeId || null,
+        titel: a.titel || a.beschreibung || '',
+        positionen: (a.positionen || []).map((p) => ({
+          beschreibung: p.beschreibung || '',
+          menge: p.menge != null ? p.menge : 1,
+          einzelpreisCent: Number.isInteger(p.einzelpreisCent) ? p.einzelpreisCent : 0,
+          ustSatz: p.ustSatz != null ? p.ustSatz : null,
+        })),
+      };
+      // Reziprozität: bereits berechnete Aufträge tragen ihre Rechnung mit (Nummer/Datum),
+      // damit eine Gegenstelle sie als Rechnung statt nur als Auftrag übernehmen kann.
+      if (a.rechnungNummer && a.rechnungDatum) {
+        out.rechnung = {
+          nummer: a.rechnungNummer,
+          datum: a.rechnungDatum,
+          leistungsdatum: a.leistungsdatum || a.rechnungDatum,
+        };
+      }
+      return out;
+    }),
   };
 }
 

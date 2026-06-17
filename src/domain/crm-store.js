@@ -5,7 +5,7 @@
 import { encPut, encGet, encList, encDel, neueId } from './encstore.js';
 import { recAll, recPut, recDel, kvGet, kvSet } from '../core/db.js';
 import { AUFTRAG_STATUS, auftragOffen } from './orders.js';
-import { rechnungZeilen } from './invoicing.js';
+import { rechnungZeilen, rechnungsUebernahmeEntwurf, validateRechnungsUebernahme } from './invoicing.js';
 import { formatRechnungsnummer } from './rechnung.js';
 import { saveEntwurf } from './store.js';
 
@@ -74,7 +74,13 @@ export const deleteAuftrag = (id) => encDel(id);
  * Importiert normalisierte WorkFloh-Daten ({kunden, auftraege} aus normalizeImport).
  * Dedupe: Kunden über externId bzw. Name, Aufträge über externNummer. Aufträge kommen
  * als „angelegt" herein (Rechnung/USt-Buchung erfolgt in BookLedgerPro).
- * @returns {Promise<{kundenNeu:number, auftraegeNeu:number, auftraegeUebersprungen:number}>}
+ *
+ * R4 Stufe 2 — RECHNUNGS-ÜBERNAHME: Trägt ein Auftrag ein gültiges `rechnung`-Objekt
+ * (bereits in WorkFloh gestellt), wird daraus direkt ein Buchungs-ENTWURF (Forderung an
+ * Erlöse + USt) erzeugt und der Auftrag als „berechnet" markiert. Nummer/Datum stammen aus
+ * WorkFloh — es wird KEINE neue BLP-Rechnungsnummer vergeben. Festschreiben bleibt manuell
+ * (GoBD). Ist die Rechnung ungültig, wird der Auftrag normal als „angelegt" übernommen.
+ * @returns {Promise<{kundenNeu:number, auftraegeNeu:number, auftraegeUebersprungen:number, rechnungenUebernommen:number}>}
  */
 export async function importWorkFloh(parsed) {
   const vorhandeneKunden = await listKunden();
@@ -99,18 +105,35 @@ export async function importWorkFloh(parsed) {
 
   const vorhandeneAuftraege = await listAuftraege();
   const externNummern = new Set(vorhandeneAuftraege.filter((a) => a.externNummer).map((a) => a.externNummer));
-  let auftraegeNeu = 0, auftraegeUebersprungen = 0;
+  let auftraegeNeu = 0, auftraegeUebersprungen = 0, rechnungenUebernommen = 0;
   for (const a of (parsed.auftraege || [])) {
     if (a.externNummer && externNummern.has(a.externNummer)) { auftraegeUebersprungen++; continue; }
     const kundeId = a.kundeExternId ? (externIdToId[a.kundeExternId] || null) : null;
-    await saveAuftrag({
+    const auftrag = await saveAuftrag({
       titel: a.titel, kundeId, positionen: a.positionen,
       status: AUFTRAG_STATUS.ANGELEGT, externNummer: a.externNummer,
     });
     auftraegeNeu++;
     if (a.externNummer) externNummern.add(a.externNummer);
+
+    // R4 Stufe 2: bereits gestellte Rechnung → Forderung/Buchung übernehmen (kein neuer Nr.-Lauf).
+    if (a.rechnung && a.positionen.length && !validateRechnungsUebernahme(a.rechnung).length) {
+      const entwurf = rechnungsUebernahmeEntwurf(auftrag, a.rechnung);
+      const buchung = await saveEntwurf({
+        datum: entwurf.datum,
+        beschreibung: entwurf.beschreibung,
+        zeilen: entwurf.zeilen,
+        kostenstelle: entwurf.kostenstelle,
+      });
+      auftrag.rechnungBuchungId = buchung.id;
+      auftrag.rechnungNummer = entwurf.nummer;
+      auftrag.rechnungDatum = entwurf.datum;
+      auftrag.status = AUFTRAG_STATUS.BERECHNET;
+      await encPut(auftrag);
+      rechnungenUebernommen++;
+    }
   }
-  return { kundenNeu, auftraegeNeu, auftraegeUebersprungen };
+  return { kundenNeu, auftraegeNeu, auftraegeUebersprungen, rechnungenUebernommen };
 }
 
 export async function setAuftragStatus(id, status) {

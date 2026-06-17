@@ -29,4 +29,42 @@ export function rechnungZeilen(auftrag, opts = {}) {
   return { zeilen, summen };
 }
 
+/**
+ * Prüft die Mindestangaben einer aus WorkFloh ÜBERNOMMENEN, bereits gestellten Rechnung
+ * (R4 Stufe 2). Die Nummer stammt vom ausstellenden System (WorkFloh) und wird NICHT neu
+ * vergeben; Datum muss als JJJJ-MM-TT vorliegen. Keine §14-Vollprüfung — das Dokument selbst
+ * liegt beim Aussteller; hier wird nur die Übernahme als Forderung/Buchung abgesichert.
+ * @returns {string[]} fehlende/ungültige Angaben
+ */
+export function validateRechnungsUebernahme(rechnung = {}) {
+  const errors = [];
+  if (!String(rechnung.nummer || '').trim()) errors.push('Rechnungsnummer fehlt.');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(rechnung.datum || ''))) errors.push('Rechnungsdatum (JJJJ-MM-TT) fehlt oder ungültig.');
+  return errors;
+}
+
+/**
+ * Baut aus einem Auftrag + einer bereits gestellten Rechnung (von WorkFloh) den Buchungs-
+ * ENTWURF für die ÜBERNAHME als Forderung (R4 Stufe 2: fertige Rechnung statt nur Auftrag).
+ * Anders als rechnungAusAuftrag wird KEINE neue BLP-Rechnungsnummer vergeben — Nummer und
+ * Datum stammen aus WorkFloh (der Aussteller führt die fortlaufende Nummerierung). Reine
+ * Funktion; Festschreiben bleibt manuell (GoBD).
+ * @returns {{nummer, datum, leistungsdatum, beschreibung, zeilen, summen, kostenstelle}}
+ */
+export function rechnungsUebernahmeEntwurf(auftrag = {}, rechnung = {}) {
+  const { zeilen, summen } = rechnungZeilen(auftrag);
+  const nummer = String(rechnung.nummer || '').trim();
+  const datum = String(rechnung.datum || '');
+  const basis = `Rechnung ${nummer} (WorkFloh)`;
+  return {
+    nummer,
+    datum,
+    leistungsdatum: rechnung.leistungsdatum || datum,
+    beschreibung: auftrag.titel ? `${basis}: ${auftrag.titel}` : basis,
+    zeilen,
+    summen,
+    kostenstelle: auftrag.kostenstelle || null,
+  };
+}
+
 export const INVOICING_KONTEN = { FORDERUNG_KONTO, ERLOES_KONTO, UST_KONTO };
