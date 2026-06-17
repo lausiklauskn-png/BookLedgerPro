@@ -55,6 +55,11 @@ export function baueAnker({ kunden = [], mitarbeiter = [], firma = {} } = {}) {
  * zusätzlich im Text erkannte PII-Muster (E-Mail/IBAN/USt-IdNr/Steuernr./Telefon
  * Dritter, die NICHT in den Stammdaten stehen) als weitere Anker ergänzt — die
  * exakten Stammdaten-Anker behalten Vorrang (siehe `ner.kombiniereAnker`).
+ *
+ * Ist die Einstellung `briefkastenScopes === true`, werden die Stammdaten-Anker statt
+ * flach über den **dreistufigen Briefkasten** (Mandant ⊃ Firma ⊃ Person, `ai/briefkasten.js`)
+ * erzeugt → die Token tragen dann die Hierarchie (`[[FIRMA_2_IBAN_1]]`, `[[FIRMA_1_PERSON_1]]`).
+ * Downstream bleibt alles gleich: es ist weiterhin eine `{wert,typ}[]`-Liste für `tokenize()`.
  * @param {string} [text] der vor dem KI-Versand zu maskierende Klartext.
  * @returns {Promise<{wert:string,typ:string}[]>}
  */
@@ -70,7 +75,16 @@ export async function ladeAnker(text) {
     ]);
     const settings = getSettings() || {};
     const firma = settings.firma || {};
-    const exakt = baueAnker({ kunden, mitarbeiter, firma });
+    let exakt;
+    if (settings.briefkastenScopes === true) {
+      const [{ baueBriefkasten, briefkastenAnker }, mandant] = await Promise.all([
+        import('./briefkasten.js'),
+        aktiverMandantInfo(),
+      ]);
+      exakt = briefkastenAnker(baueBriefkasten({ mandant, firma, kunden, mitarbeiter }));
+    } else {
+      exakt = baueAnker({ kunden, mitarbeiter, firma });
+    }
     if (text && settings.nerPii !== false) {
       const { kombiniereAnker } = await import('./ner.js');
       return kombiniereAnker(exakt, text);
@@ -78,5 +92,20 @@ export async function ladeAnker(text) {
     return exakt;
   } catch {
     return [];
+  }
+}
+
+// Liest — best effort — den aktiven Mandanten (Name/ID) aus der unverschlüsselten
+// Mandanten-Registry. Fehlt sie/schlägt fehl → `{}` (Briefkasten kommt ohne Mandant aus).
+async function aktiverMandantInfo() {
+  try {
+    const [{ ladeRegistry }, { aktiverMandant }] = await Promise.all([
+      import('../core/mandantenStore.js'),
+      import('../domain/mandanten.js'),
+    ]);
+    const registry = await ladeRegistry();
+    return aktiverMandant(registry) || {};
+  } catch {
+    return {};
   }
 }

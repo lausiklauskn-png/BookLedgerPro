@@ -36,9 +36,11 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R5c"** (dreistufiger Briefkasten, Mandant ⊃ Firma ⊃ Person, P7) —
-**oder** „R6" [KANN] / **Browser-Sichttest** (WorkFloh-Datei mit Rechnung importieren → Buchungsentwurf prüfen;
-OCR→Verbindlichkeit-Klickpfad, Vision EU). Reihenfolge nach Bedarf; Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R6" [KANN]** (ZUGFeRD-Erzeugen nur falls build-frei, Lighthouse,
+lokales OCR, Privat-/Bürger-Modus, Sage 5b–d) **oder Browser-Sichttest** (WorkFloh-Datei mit Rechnung
+importieren → Buchungsentwurf prüfen; OCR→Verbindlichkeit-Klickpfad, Vision EU). Reihenfolge nach Bedarf;
+Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**R5c (dreistufiger Briefkasten Mandant ⊃ Firma ⊃ Person für Pseudonymisierung/CRM, `ai/briefkasten.js`, Setting `briefkastenScopes`) ist abgeschlossen + gemergt → Abschnitt R bis R5 komplett.**
 **R5a (Bankformate härten: CAMT .052/.054 + Saldo-Integritätsprüfung + strukturierte RmtInf) ist abgeschlossen + gemergt.**
 **R5b (NER: PII Dritter — E-Mail/IBAN/USt-IdNr/Steuernr/Telefon — über die Anker hinaus maskieren, `ai/ner.js`, Setting `nerPii`) ist abgeschlossen + gemergt.**
 **R4 (Rechnungs-Übernahme aus WorkFloh: fertige Rechnung → Forderung/Buchung; Austauschformat v2; API/Push bewusst offen) ist abgeschlossen + gemergt (PR #95).**
@@ -49,9 +51,17 @@ OCR→Verbindlichkeit-Klickpfad, Vision EU). Reihenfolge nach Bedarf; Details in
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach R5a/R5b):** SW **v92** · Tests **916/916** grün · 95 JS-Module.
-**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1 ✅; R2a ✅; R2b ✅; R3 ✅; R4 ✅; R5a ✅; R5b ✅.** Reihenfolge im Plan:
-~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → ~~R5a~~ → ~~R5b~~ → R5c/R6.
+**Kopf-Status (Stand nach R5c):** SW **v93** · Tests **942/942** grün · 96 JS-Module.
+**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1 ✅; R2a ✅; R2b ✅; R3 ✅; R4 ✅; R5a ✅; R5b ✅; R5c ✅.** Reihenfolge im Plan:
+~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → ~~R5a~~ → ~~R5b~~ → ~~R5c~~ → R6.
+**R5c erledigt:** `ai/briefkasten.js` (rein, node-getestet) — `baueBriefkasten({mandant,firma,kunden,mitarbeiter})`
+ordnet die exakten Stammdaten-Anker in **Mandant ⊃ Firma ⊃ Person** ein (eigene Firma = `FIRMA_1`/eigen,
+Mitarbeiter = deren Personen; Firmenkunden = weitere `FIRMA_n` mit ihren E-Mail/USt-IdNr/Adresse-Ankern;
+Privatkunden = Personen am Mandanten); `briefkastenAnker` plättet das in eine **scope-präfixierte** `{wert,typ}`-Liste,
+sodass `pseudonym.tokenize` gruppierende Token erzeugt (`[[FIRMA_2_IBAN_1]]`, `[[FIRMA_1_PERSON_1]]`) — die KI sieht,
+wer zu wem gehört, bei gleichem Schutz + verlustfreier Re-Identifizierung. `briefkastenBericht` (Zähler ohne Klartext),
+`tokenizeBriefkasten`. Glue: `ai/anker.js ladeAnker` routet bei Setting **`briefkastenScopes`** (Default aus) über den
+Briefkasten + liest den aktiven Mandanten aus der Registry; UI-Schalter im Pseudonym-Modus (`shell.js`), i18n de+en. +26 Tests.
 **R2b erledigt:** `domain/zahlungsabgleich.js` — `findeSammelzuordnung` (tiefenbeschränkte Subset-Summe: Kombinationen
 gleichgerichteter offener Posten, deren Summe der Zahlung ± Toleranz entspricht, ≥2 Teile, Score nach Referenz/Name/
 Datumsnähe), `verteileSammelzahlung` (Zahlbetrag der Reihe nach verteilen, Restbildung/Überzahlung sauber),
@@ -333,7 +343,7 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 - `src/core/` crypto · shamir · db · durability · files · vault · backup
 - `src/domain/` money · accounts · journal · pruefung · rechtsregeln · audit · taxes · store · documents · orders ·
   invoicing · employees · costcenters · encstore · crm-store · export · summary
-- `src/ai/` extract · categorize · suggest · **aiConfig · vision · mistral** · taxAssist · **pseudonym** (Datenschutz-Modi)
+- `src/ai/` extract · categorize · suggest · **aiConfig · vision · mistral** · taxAssist · **pseudonym · anker · ner · briefkasten** (Datenschutz-Modi)
 - `src/sbkim/` spore · identity · domainvector · signal  (+ `tools/verify_remote_spore.mjs`)
 - `src/ui/` dom · i18n · theme · mycel · mycelCanvas · empty · lock · shell ·
   `views/` dashboard · accounts · journal · reports · documents · customers · orders ·
