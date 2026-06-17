@@ -9,9 +9,11 @@
 export const AUSTAUSCH_FORMAT = 'bookledgerpro-austausch';
 // v2 (R4 Stufe 2): Aufträge dürfen optional eine bereits gestellte `rechnung` tragen
 // (Rechnungs-Übernahme). v3 (R4-Rest): die `rechnung` darf zusätzlich ein `zahlungen`-Array
-// `[{datum, betragCent, ref?}]` tragen (Zahlungs-/Teilzahlungs-Übernahme). Abwärtskompatibel —
-// v1/v2-Pakete ohne `zahlungen` bleiben gültig.
-export const AUSTAUSCH_VERSION = 3;
+// `[{datum, betragCent, ref?}]` tragen (Zahlungs-/Teilzahlungs-Übernahme). v4: die `rechnung`
+// darf ein `zahlungszielTage` (ganze Tage ≥ 0) tragen → die Gegenseite erbt das auftragseigene
+// Zahlungsziel (Fälligkeit/„zahlbar bis"/Mahnwesen) statt nur ihres globalen Defaults.
+// Abwärtskompatibel — v1–v3-Pakete ohne diese Felder bleiben gültig.
+export const AUSTAUSCH_VERSION = 4;
 
 /** BLP-Daten → offenes Austauschpaket (für Fremdsoftware / WorkFloh). */
 export function buildAustauschPaket({ kunden = [], auftraege = [] } = {}) {
@@ -46,6 +48,11 @@ export function buildAustauschPaket({ kunden = [], auftraege = [] } = {}) {
           datum: a.rechnungDatum,
           leistungsdatum: a.leistungsdatum || a.rechnungDatum,
         };
+        // v4: auftragseigenes Zahlungsziel (ganze Tage ≥ 0) reziprok mitgeben — die Gegenseite
+        // erbt damit dieselbe Fälligkeit. Ohne eigenes Ziel (null) bleibt das Feld weg.
+        if (Number.isInteger(a.zahlungszielTage) && a.zahlungszielTage >= 0) {
+          out.rechnung.zahlungszielTage = a.zahlungszielTage;
+        }
         // v3: bereits erfasste (Teil-)Zahlungen reziprok mitgeben (gültige Einträge).
         const zahlungen = (a.zahlungen || [])
           .filter((z) => z && Math.round(Number(z.betragCent) || 0) > 0 && /^\d{4}-\d{2}-\d{2}$/.test(String(z.datum || '')))

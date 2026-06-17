@@ -63,6 +63,9 @@ ist **ebenfalls optional** (R4-Rest — Zahlungs-/Teilzahlungs-Übernahme, Austa
     übernimmt sie 1:1 und vergibt **keine eigene** Nummer (der Aussteller führt die Nummerierung).
   - `datum` (Pflicht, `JJJJ-MM-TT`): Rechnungsdatum.
   - `leistungsdatum` (optional, Default = `datum`).
+  - `zahlungszielTage` (optional, **v4 — Zahlungsziel-Übernahme**): das auftragseigene Zahlungsziel
+    in ganzen Tagen (≥ 0). BLP übernimmt es auf den Auftrag → Fälligkeit, gedruckte „zahlbar bis"-Zeile
+    und Mahnwesen entsprechen der WorkFloh-Seite. Ungültige Werte werden verworfen + als Hinweis gezählt.
   - Sind `nummer`/`datum` unvollständig oder ungültig, wird der **Rechnungsblock verworfen**
     (der Auftrag kommt als „angelegt" herein) und als Hinweis gezählt — nichts wird erfunden.
   - `zahlungen[]` (optional, **R4-Rest — Zahlungs-/Teilzahlungs-Übernahme, v3**): in WorkFloh

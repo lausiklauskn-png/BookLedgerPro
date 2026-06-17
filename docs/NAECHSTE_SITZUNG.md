@@ -21,11 +21,13 @@ AUFGABE DIESER SITZUNG: **Mit dem Nutzer abstimmen (AskUserQuestion), womit es w
 **R5a-Rest ✅** (SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-/Struktur-Validierung, `domain/bankschema.js`),
 **R5c-Rest ✅** (NER-Scoping); **R6/P1 ✅** (Privat-/Bürger-Modus, PR #99); **R6/P2 ✅** (Feature-Gates ansichtsintern);
 **A1-Rest ✅** (Zahlungsziel je Forderung — `mahnwesen.faelligAmVon`); **„zahlbar bis" ✅** (Fälligkeitsdatum auf der
-gedruckten §14-Rechnung — `rechnung.baueRechnung` Feld `zahlbarBis`, SW v100, 1051 Tests).
+gedruckten §14-Rechnung — `rechnung.baueRechnung` Feld `zahlbarBis`); **Zahlungsziel durabel + Austauschformat v4 ✅**
+(Bugfix: `crm-store.saveAuftrag` persistiert `zahlungszielTage` jetzt — vorher fiel es aus der Whitelist, A1-Rest +
+„zahlbar bis" waren faktisch wirkungslos; + `connect`/`importworkfloh`/`importWorkFloh` übertragen `rechnung.zahlungszielTage`
+reziprok, **SW v101, 1059 Tests**).
 **Verbleibend nur noch umgebungs-/menschen-blockierte [KANN]-Punkte ODER ein Browser-Sichttest ODER eine neue,
 mit dem Nutzer vereinbarte Feature-Idee.** Mögliche kleine build-freie Folge-Ideen (mit dem Nutzer abstimmen):
-Edit bestehender Aufträge, WorkFloh-`rechnung`-Block überträgt das Zahlungsziel,
-Eingangsrechnungs-Verzug (Gegenseite). Konkret:
+Edit bestehender Aufträge, Eingangsrechnungs-Verzug (Gegenseite). Konkret:
 (A) **R6/Rest [KANN] — umgebungs-/menschen-blockiert** (verifiziert): **Lighthouse/Perf** braucht Headless-Browser
 (keiner hier); **lokales OCR** = Tesseract (wasm/npm-Runtime) ist **nicht build-frei** (Goldene Regel #1 verbietet
 CDNs/npm-Runtime); **ZUGFeRD-Erzeugen** braucht PDF/A-3-Lib (nicht build-frei); **Sage 5b–d** sind fremde Repos
@@ -37,8 +39,12 @@ bei Ausgleich; (b) OCR→Verbindlichkeit (Foto/PDF → Google Vision EU → „V
 → Zahlungsabgleich); (c) Pseudonym-Modus mit dreistufigem Briefkasten (Einstellungen → „Dreistufiger Briefkasten" an)
 → Belegtext an die KI → Maskierung/Token prüfen, inkl. `[[EXTERN_*]]`-Token für Fremd-PII; (d) Privat-/Verein-Modus
 (Einstellungen → „Nutzungskontext") → NAV blendet geschäftliche Ansichten aus und USt-Felder/Mahn-/Kreditoren-Knöpfe/
-KPIs je Modus verschwinden; (e) **NEU: Bankauszug einlesen** (Belege → „Bankauszug einlesen", MT940/CAMT) → den
-**Schema-Hinweis** prüfen (grün „Struktur ok" / gelb Hinweise / rot Verstöße) zusätzlich zur Saldo-Plausibilität.
+KPIs je Modus verschwinden; (e) Bankauszug einlesen (Belege → „Bankauszug einlesen", MT940/CAMT) → den
+**Schema-Hinweis** prüfen (grün „Struktur ok" / gelb Hinweise / rot Verstöße) zusätzlich zur Saldo-Plausibilität;
+(f) **NEU: Zahlungsziel durabel** — Auftrag mit „Zahlungsziel (Tage)" anlegen → **speichern** → in Auswertungen/
+Mahnwesen die Fälligkeit + auf der gedruckten Rechnung „zahlbar bis" prüfen (vor dem Bugfix ging das Ziel beim
+Speichern verloren); danach eine WorkFloh-Austauschdatei mit `rechnung.zahlungszielTage` importieren → der Auftrag
+soll dieselbe Fälligkeit erben (statt des globalen Defaults).
 (C) **Neue Feature-Idee** — falls der Nutzer eine Richtung vorgibt: sauber/fein schneiden, reine Logik ZUERST
 node-getestet, dann UI, EINEN sauberen PR.
 **Bewusst offen (keine reinen Code-Körbe mehr):** R4-Familie **API/Push** (Echtzeit) statt Datei; **echte XSD-/
@@ -82,11 +88,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach **„zahlbar bis" auf der §14-Rechnung** (Abschnitt A Mehrmandanten +
-Abschnitt B Bilanzierung + R1–R5 inkl. R4-Rest/R5a-Rest/R5c-Rest + R6/P1 PR #99 + R6/P2 + A1-Rest abgeschlossen + gemergt;
-**„zahlbar bis":** `rechnung.baueRechnung` bekam Parameter `defaultZielTage` + Feld `zahlbarBis`
-(= `mahnwesen.faelligAmVon`, auftragseigenes Ziel vor globalem Default; ohne Rechnungsdatum leer), die Rechnungs-Kopfzeile
-zeigt „zahlbar bis JJJJ-MM-TT", i18n `orders.payableUntil` de+en) · Tests **1051/1051** · SW **v100** · 98 JS-Module ·
-**build-freier Rest-Korb im Wesentlichen LEER** · nächster Schritt: **mit dem Nutzer abstimmen** (kleine Folge-Ideen:
-Edit bestehender Aufträge / WorkFloh überträgt Zahlungsziel / Eingangsrechnungs-Verzug · ODER Browser-Sichttest ·
-ODER umgebungs-blockierte KANN-Punkte). (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach **Zahlungsziel je Auftrag durabel + im Austauschformat (v4)**
+(Abschnitt A Mehrmandanten + Abschnitt B Bilanzierung + R1–R5 inkl. R4-Rest/R5a-Rest/R5c-Rest + R6/P1 PR #99 + R6/P2 +
+A1-Rest + „zahlbar bis" abgeschlossen + gemergt; **diese Sitzung:** Bugfix `crm-store.saveAuftrag` persistiert
+`zahlungszielTage` (vorher aus der Whitelist gefallen → A1-Rest/„zahlbar bis" faktisch wirkungslos) +
+`connect`/`importworkfloh`/`importWorkFloh` übertragen `rechnung.zahlungszielTage` reziprok, `AUSTAUSCH_VERSION` 3→4) ·
+Tests **1059/1059** · SW **v101** · 98 JS-Module · **build-freier Rest-Korb im Wesentlichen LEER** · nächster Schritt:
+**mit dem Nutzer abstimmen** (kleine Folge-Ideen: Edit bestehender Aufträge / Eingangsrechnungs-Verzug · ODER
+Browser-Sichttest · ODER umgebungs-blockierte KANN-Punkte). (Diese Zeile bei jeder Sitzung aktualisieren.)

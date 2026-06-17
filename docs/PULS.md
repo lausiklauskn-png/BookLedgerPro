@@ -90,15 +90,19 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „zahlbar bis" auf der §14-Rechnung):** SW **v100** · Tests **1051/1051** grün · 98 JS-Module.
-**„zahlbar bis" erledigt (diese Sitzung, mit dem Nutzer abgestimmt):** Das auftragseigene Zahlungsziel (A1-Rest)
-erscheint jetzt als **Fälligkeitsdatum „zahlbar bis JJJJ-MM-TT"** auf dem gedruckten §14-Rechnungsdokument.
-`rechnung.baueRechnung` bekam Parameter `defaultZielTage` + Feld `zahlbarBis` (spiegelt `mahnwesen.faelligAmVon`:
-auftragseigenes Ziel vor globalem Default; ohne Rechnungsdatum leer); `pflichtangaben` **unverändert** (Fälligkeit ist
-keine §14-Pflichtangabe). UI: Kopfzeile der Rechnung zeigt die Zeile neben Datum/Leistungsdatum, i18n `orders.payableUntil`
-de+en. +6 Tests, SW `v100`. **Grenze:** UI statisch geprüft (Browser-Sichttest offen); kein Edit bestehender Aufträge,
-WorkFloh-`rechnung`-Block überträgt weiter kein Ziel, Eingangsrechnungs-Verzug der Gegenseite weiter offen.
-**Build-freier Rest-Korb damit im Wesentlichen leer → nächste Sitzung wieder mit dem Nutzer abstimmen.**
+**Kopf-Status (Stand nach „Zahlungsziel durabel + v4"):** SW **v101** · Tests **1059/1059** grün · 98 JS-Module.
+**Zahlungsziel je Auftrag durabel + im Austauschformat (v4) erledigt (diese Sitzung, „nach Empfehlung"):**
+Zwei eng gekoppelte Teile in EINEM PR. **(1) Bugfix:** `crm-store.saveAuftrag` ließ das A1-Rest-Feld
+`zahlungszielTage` aus seiner Whitelist **fallen** → Mahnwesen-Fälligkeit und gedruckte „zahlbar bis"-Zeile fielen
+nach dem Speichern **immer** auf den globalen Default zurück (A1-Rest + „zahlbar bis" faktisch wirkungslos);
+jetzt persistiert. **(2) Übertragung (v4):** `connect.buildAustauschPaket` trägt `rechnung.zahlungszielTage`
+reziprok mit (`AUSTAUSCH_VERSION` 3→4, abwärtskompatibel); `importworkfloh.normalizeRechnung` übernimmt es
+konservativ (Integer ≥ 0, sonst verworfen + Warnung); `crm-store.importWorkFloh` setzt es auf den importierten
+Auftrag → die Gegenstelle erbt dieselbe Fälligkeit. +8 Tests, SW `v101`. Docs CONNECT/WORKFLOH_IMPORT auf v4.
+**Grenze:** `saveAuftrag`-Persistenz (IndexedDB) statisch geprüft → **Browser-Sichttest empfohlen** (Auftrag mit
+Ziel anlegen→speichern→Mahnwesen/„zahlbar bis" prüfen; Import mit `zahlungszielTage` → geerbte Fälligkeit). Kein
+Edit bestehender Aufträge; Eingangsrechnungs-Verzug der Gegenseite weiter offen.
+**Build-freier Rest-Korb damit weiterhin im Wesentlichen leer → nächste Sitzung wieder mit dem Nutzer abstimmen.**
 **Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1–R5 ✅ inkl. R5a-Rest; R6/P1 ✅ (Privat-/Bürger-Modus); R6/P2 ✅ (Feature-Gates ansichtsintern).** Reihenfolge im Plan:
 ~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → ~~R4-Rest~~ → ~~R5a~~ → ~~R5a-Rest~~ → ~~R5b~~ → ~~R5c~~ → ~~R5c-Rest (NER-Scoping)~~ → ~~R6/P1~~ → ~~R6/P2~~ → R6/Rest (Lighthouse/OCR/ZUGFeRD/Sage 5b–d, blockiert) bzw. Browser-Sichttest. **Build-freier Rest-Korb leer.**
 **R5c erledigt:** `ai/briefkasten.js` (rein, node-getestet) — `baueBriefkasten({mandant,firma,kunden,mitarbeiter})`
