@@ -202,7 +202,12 @@ Tagen abgeleitet); im Mahnschreiben **editierbare** Verzugszinsen/Mahngebühren 
 (nicht steuerbarer Schadensersatz §288 BGB / Abschn. 1.3 UStAE, ehrlich dokumentiert). Knopf
 **„Als Buchungsentwurf übernehmen"** im Mahnschreiben (`reports.js`) → `saveEntwurf`, **manuell/kein
 Auto-Festschreiben** (GoBD). SW `v87`, 783/783 Tests.
-**Noch offen [SOLL]:** Eingangsrechnungs-Verzug (Gegenseite); Zahlungsziel je Rechnung statt global.
+**Zahlungsziel je Rechnung erledigt (2026-06-17, R3):** Eingangsrechnungen tragen jetzt ein Feld
+`zahlungszielTage`; `payables.berechneFaelligAm(rechnung, defaultZielTage)` (explizites `faelligAm` →
+Datum + rechnungseigenes Ziel → Datum + Default 30) wird in `offeneVerbindlichkeiten`/
+`anreichereVerbindlichkeiten`/der OP-Liste genutzt, validiert (ganzzahlig ≥ 0), node-getestet.
+**Noch offen [SOLL]:** Zahlungsziel je Rechnung auch für **Forderungen** (heute global aus Einstellungen)
++ Eingangsrechnungs-Verzug (Gegenseite, Mahnung erhalten/prüfen).
 
 **Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,
 damit man nachmahnen kann — siehe jetzt Auswertungen.
@@ -254,10 +259,14 @@ mit Fälligkeit (rechnungseigene `faelligAm`, sonst Datum + Zahlungsziel), **Üb
 Summe + überfällige Summe, **CSV-Export der OP-Liste** (`export.buildOffeneVerbindlichkeitenCsv`).
 Node-getestet; SW `v58`.
 
-**Noch offen [SOLL]:** **Skonto** (Zahlungsbedingungen je Rechnung), Verzug der Gegenseite
-(Eingangsrechnungs-Mahnung erhalten/prüfen); Teilzahlungs-Matching (siehe A3); Erfassung von
-Verbindlichkeiten auch aus **Foto/PDF-Belegen** (heute aus E-Rechnung-XML); eigene
-**Verbindlichkeiten-Ansicht** zum manuellen Anlegen/Bearbeiten (heute nur via E-Rechnung-Import).
+**Foto/PDF + eigene Ansicht erledigt (2026-06-17, R3):** `payables.extraktionZuEingangsrechnung(ex, opts)`
+bildet aus einem OCR-/Extraktions-Ergebnis (Vision EU → `ai/extract`) einen Eingangsrechnungs-Entwurf
+(Netto cent-genau aus Brutto+USt, 0-%-Fallback, fehlende Felder nicht erfunden); node-getestet.
+UI: **neue Ansicht „Verbindlichkeiten"** (`ui/views/payables.js`, Nav nach „Belege") zum **manuellen
+Anlegen/Bearbeiten/Stornieren/Löschen** + optional „auf Ziel" buchen; im Beleg-OCR (`documents.js`)
+zusätzlich **„Verbindlichkeit aus diesem Beleg erfassen"**. SW `v90`, +25 Tests (863/863).
+**Noch offen [SOLL]:** Verzug der Gegenseite (Eingangsrechnungs-Mahnung erhalten/prüfen) — Teilzahlung/
+Skonto/Sammelzahlung sind über A3/R2a/R2b bereits abgedeckt.
 
 ### A3. Teilzahlungen & unscharfes Matching — **Kern erledigt ✓ (Verbindlichkeiten), Rest offen**
 **Erledigt (2026-06-16):** `zahlungsabgleich.findeKandidaten()` (rein, node-getestet) liefert

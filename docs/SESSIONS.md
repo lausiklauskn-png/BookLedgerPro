@@ -5,6 +5,42 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R3: Verbindlichkeiten aus Foto/PDF + eigene Ansicht + Zahlungsziel je Rechnung [Branch `claude/payables-photo-pdf-r3-80rs6p`]
+
+**Was getan** (Schritt **R3** — A2-Rest „eigene Verbindlichkeiten-Ansicht" + R3 „Foto/PDF-Beleg → Verbindlichkeit" + A1-Rest „Zahlungsziel je Rechnung")
+- **Reine Logik zuerst (`src/domain/payables.js`, node-getestet, +25 Tests):**
+  - `extraktionZuEingangsrechnung(ex, opts)` → bildet aus einem **OCR-/Extraktions-Ergebnis**
+    (`ai/extract.extractFromText` ODER `erechnungLesen.eingangsrechnungExtraktion`:
+    `{betragBrutto, datum, ustSatz, vendor, confidence}`) einen **Eingangsrechnungs-ENTWURF**. Aus Brutto + USt-Satz
+    wird das **Netto cent-genau** abgeleitet; ohne erkannten Satz konservativ **0 %** (keine Vorsteuer). Felder werden
+    **nicht erfunden** — fehlt Kreditor/Datum/Betrag, greift die Validierung (Nutzer ergänzt). Kein `bruttoCent` →
+    Positionen treiben den Betrag (Buchung = gespeicherter Brutto).
+  - **Zahlungsziel je Rechnung (A1):** neues Feld `zahlungszielTage` auf der Eingangsrechnung; `berechneFaelligAm(rechnung,
+    defaultZielTage)` (Reihenfolge: explizites `faelligAm` → Datum + rechnungseigenes Ziel → Datum + Default 30).
+    `offeneVerbindlichkeiten` reicht `zahlungszielTage` in die Posten durch; `anreichereVerbindlichkeiten` nutzt das
+    **Zahlungsziel je Rechnung** vor dem globalen Default (auch die Auswertungs-OP-Liste profitiert automatisch).
+    `validateEingangsrechnung` prüft `zahlungszielTage` (ganzzahlig ≥ 0). Store (`payables-store.js`) persistiert das Feld.
+- **UI (statisch geprüft, kein Headless-Browser):**
+  - **Neue Ansicht „Verbindlichkeiten"** (`src/ui/views/payables.js`, Nav nach „Belege"): Liste mit Status/Fälligkeit/
+    offen/brutto, Formular zum **manuellen Anlegen/Bearbeiten** (Kreditor, Rechnungsnr., Datum, **Zahlungsziel (Tage)**,
+    Netto, USt-Satz, Aufwandskonto via Datalist), optional **„auf Ziel" buchen** (Entwurf), **Stornieren**, **Löschen**
+    (nur ungebucht, GoBD). Festschreiben bleibt manuell.
+  - **Foto/PDF-Beleg → Verbindlichkeit** (`ui/views/documents.js`): nach OCR (Google Vision EU) bietet die
+    Beleg-Extraktion jetzt **zusätzlich** „Verbindlichkeit aus diesem Beleg erfassen" (neben dem direkten
+    Buchungsvorschlag) → `extraktionZuEingangsrechnung` → „auf Ziel" gebucht, erscheint im Zahlungsabgleich.
+  - i18n de+en (`pay.*`, `docs.payableFromOcr`, `nav.payables`), SW `v90` (+ `views/payables.js` precached).
+
+**Stand:** `node tests/run.mjs` **863/863 grün** (+25). Reine Logik node-getestet (Extraktion→Entwurf inkl. Netto-Ableitung/
+0-%-Fallback/fehlende Felder, Zahlungsziel je Rechnung in `berechneFaelligAm`/OP-Liste/Validierung). UI/Glue statisch geprüft.
+
+**Offen/Nächstes:** R-Abschnitt (Forderungs-/Verbindlichkeits-Soll) damit weitgehend rund. Nächster sinnvoller Schritt:
+**Sichttest des OCR→Verbindlichkeit-Klickpfads** im Browser (Vision EU) + ggf. Phase-4-Rest (echte EÜR-Zufluss/-Abfluss,
+PDF-Rechnung aus Auftrag) oder Sage 5b. **Grenze (ehrlich):** OCR-Extraktion ist best-effort (Heuristik) — Lieferant/Datum
+werden bei Lücken mit Platzhalter/heute vorbelegt und sind in der Verbindlichkeiten-Ansicht nachzuarbeiten; Klickpfad nicht
+headless E2E getestet.
+
+---
+
 ## 2026-06-17 — R2b: Sammelzahlungen (eine Bankzahlung auf mehrere Rechnungen) [Branch `claude/batch-payments-r2b-mcmdwg`]
 
 **Was getan** (NACHFOLGE_PLAN.md, Schritt **R2b** — A3-Rest, schließt das Zahlungsabgleich-Soll „Sammelzahlung" ab)

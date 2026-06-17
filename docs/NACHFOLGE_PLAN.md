@@ -3,8 +3,8 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **838/838 grün**, SW `v89`.
-> Nächster Schritt: **R3 — Verbindlichkeiten aus Foto/PDF-Belegen** + eigene Verbindlichkeiten-Ansicht (A2-Rest); Zahlungsziel je Rechnung (A1-Rest). A+B fertig; R1 ✅; R2a ✅ (Skonto §17 UStG); R2b ✅ (Sammelzahlung).
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **863/863 grün**, SW `v90`.
+> Nächster Schritt: **R4** (A4 Stufe 2: Rechnungs-Übernahme) oder Rest-SOLL/Sichttest nach Bedarf. A+B fertig; R1 ✅; R2a ✅ (Skonto §17 UStG); R2b ✅ (Sammelzahlung); **R3 ✅ (Verbindlichkeiten aus Foto/PDF + eigene Ansicht + Zahlungsziel je Rechnung)**.
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -125,7 +125,13 @@
   (mehrere Rechnungen)"** im Bankimport → Auswahl-Panel mit Checkboxen (Vorschlag vorausgewählt, laufende Summe + Status
   passt/über/unter) → `saveEntwurf` (manuell, **kein Auto-Festschreiben**, GoBD) + Zahlung je Posten erfasst. i18n de+en,
   CSS `.sammel-*`, SW `v89`, **+22 Tests (838/838)**. UI/Glue statisch geprüft. (PR R2b.)
-- [ ] **R3** Verbindlichkeiten aus **Foto/PDF-Belegen** + eigene Verbindlichkeiten-Ansicht (A2-Rest); Zahlungsziel je Rechnung (A1-Rest).
+- [x] **R3** Verbindlichkeiten aus **Foto/PDF-Belegen** + eigene Verbindlichkeiten-Ansicht (A2-Rest); Zahlungsziel je Rechnung (A1-Rest): ✅
+  `domain/payables.js` (rein, node-getestet): `extraktionZuEingangsrechnung(ex, opts)` (OCR/Extraktions-Felder → Eingangsrechnungs-Entwurf,
+  Netto cent-genau aus Brutto+USt, 0-%-Fallback, fehlende Felder nicht erfunden), **Zahlungsziel je Rechnung** via Feld `zahlungszielTage`
+  + `berechneFaelligAm(rechnung, defaultZielTage)` (durchgereicht in `offeneVerbindlichkeiten`/`anreichereVerbindlichkeiten`, validiert).
+  UI (statisch): **neue Ansicht „Verbindlichkeiten"** (`ui/views/payables.js`, Nav nach „Belege") — Liste + manuelles Anlegen/Bearbeiten/
+  Stornieren/Löschen + optional „auf Ziel" buchen; **Foto/PDF-Beleg → Verbindlichkeit** im Beleg-OCR (`documents.js`). i18n de+en,
+  SW `v90`, **+25 Tests (863/863)**. UI/Glue statisch geprüft. (PR R3.)
 - [ ] **R4** A4 **Stufe 2**: Rechnungs-Übernahme (statt nur Auftrag) + optional API/Push; reziproke WorkFloh-Verlinkung schärfen.
 - [ ] **R5** Bankformate härten (CAMT .052/.054, SWIFT-Validierung), NER (PII über Anker hinaus), dreistufiger Briefkasten (P7).
 - [ ] **R6 [KANN]** ZUGFeRD-**Erzeugen** (nur falls build-frei lösbar), Lighthouse, lokales OCR, Privat-/Bürger-Modus, Sage 5b–d.

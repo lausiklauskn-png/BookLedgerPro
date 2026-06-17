@@ -73,6 +73,7 @@ import {
   eingangsrechnungZeilen, eingangsrechnungSummen, bruttoVonPositionen, rechnungBrutto,
   offenerBetrag, rechnungStatus, offeneVerbindlichkeiten, summeOffeneVerbindlichkeiten,
   validateEingangsrechnung, anreichereVerbindlichkeiten, verbindlichkeitenSummen,
+  extraktionZuEingangsrechnung, berechneFaelligAm,
 } from '../src/domain/payables.js';
 import { buildOffeneVerbindlichkeitenCsv } from '../src/domain/export.js';
 import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, letzteMahnstufe, vorschlagNaechsteStufe, mahnVerlaufSumme, mahnStufeLabel, MAHN_KONTEN, mahnbuchungZeilen, mahnbuchungEntwurf } from '../src/domain/mahnwesen.js';
@@ -1552,6 +1553,69 @@ await section('Verbindlichkeiten-OP-Liste: Fälligkeit/Überfälligkeit + Kennza
   ok('CSV Header nennt Überfällig-Spalte', csvOut.split('\r\n')[0].includes('Überfällig (Tage)'));
   ok('CSV nennt Alpha + 119,00 + 32 Tage', csvOut.includes('Alpha') && csvOut.includes('119,00') && /;32$/m.test(csvOut.split('\r\n')[1]));
   ok('CSV Summenzeile 269,00', csvOut.includes('Summe offen;269,00'));
+});
+
+// ===== R3: Verbindlichkeit aus Foto/PDF-Beleg (Vision-OCR → Eingangsrechnung) =====
+
+await section('R3: extraktionZuEingangsrechnung (OCR-Felder → Eingangsrechnungs-Entwurf)', () => {
+  // Typisches OCR-Ergebnis (ai/extract.extractFromText): Brutto 119,00 @19%, Lieferant erkannt.
+  const ex = { betragBrutto: 11900, datum: '2026-06-15', ustSatz: 19, vendor: 'Müller Bürobedarf GmbH', confidence: 0.7 };
+  const r = extraktionZuEingangsrechnung(ex, { aufwandKonto: '4930' });
+  ok('Kreditor aus vendor', r.kreditor === 'Müller Bürobedarf GmbH');
+  ok('Datum übernommen', r.datum === '2026-06-15');
+  ok('eine Position mit abgeleitetem Netto 10000', r.positionen.length === 1 && r.positionen[0].nettoCent === 10000);
+  ok('USt-Satz 19 + Aufwandskonto 4930', r.positionen[0].ustSatz === 19 && r.positionen[0].aufwandKonto === '4930');
+  ok('quelle ocr + confidence durchgereicht', r.quelle === 'ocr' && r.confidence === 0.7);
+  ok('kein bruttoCent gesetzt (Positionen treiben Betrag)', r.bruttoCent === undefined);
+
+  // Entwurf ist gültig (Brutto rekonstruiert sich aus den Positionen → 11900).
+  ok('Entwurf gültig', validateEingangsrechnung(r).length === 0);
+  ok('rekonstruierter Brutto = 11900', rechnungBrutto(r) === 11900);
+  const { zeilen } = eingangsrechnungZeilen(r);
+  ok('Buchung „auf Ziel" ausgeglichen', istAusgeglichen(zeilen));
+  ok('Haben Verbindlichkeit 1600 = 11900', zeile(zeilen, '1600', 'H')?.betrag === 11900);
+
+  // Kein erkannter USt-Satz → konservativ 0 % (keine Vorsteuer), Netto = Brutto.
+  const r0 = extraktionZuEingangsrechnung({ betragBrutto: 5000, datum: '2026-06-01', ustSatz: null, vendor: 'X' });
+  ok('ohne Satz: 0 % + Netto = Brutto', r0.positionen[0].ustSatz === 0 && r0.positionen[0].nettoCent === 5000);
+  ok('ohne Satz: Default-Aufwandskonto 4980', r0.positionen[0].aufwandKonto === '4980');
+
+  // Fehlende Felder werden NICHT erfunden → Validierung greift, Nutzer ergänzt.
+  const leer = extraktionZuEingangsrechnung({ betragBrutto: null, datum: null, ustSatz: 19, vendor: null });
+  ok('ohne Brutto: keine Position', leer.positionen.length === 0);
+  ok('ohne Kreditor/Datum/Betrag: ungültig (Nutzer ergänzt)', validateEingangsrechnung(leer).length >= 2);
+
+  // erechnungLesen.eingangsrechnungExtraktion liefert dasselbe Feldformat → muss passen.
+  const exER = { betragBrutto: 22600, datum: '2026-06-14', ustSatz: 7, vendor: 'Verlag AG', confidence: 0.85 };
+  const rER = extraktionZuEingangsrechnung(exER, { aufwandKonto: '4940', rechnungsnr: 'RE-2026-99' });
+  ok('rechnungsnr aus opts', rER.rechnungsnr === 'RE-2026-99');
+  ok('7 % Netto 21121 (round 22600/1.07)', rER.positionen[0].nettoCent === Math.round(22600 / 1.07));
+});
+
+await section('R3/A1: Zahlungsziel je Rechnung (berechneFaelligAm + OP-Liste)', () => {
+  // berechneFaelligAm: explizites faelligAm hat Vorrang.
+  ok('explizites faelligAm gewinnt', berechneFaelligAm({ faelligAm: '2026-07-01', datum: '2026-06-01', zahlungszielTage: 10 }) === '2026-07-01');
+  // sonst: rechnungseigenes Zahlungsziel (A1) vor Default.
+  ok('rechnungseigenes Ziel (7 Tage)', berechneFaelligAm({ datum: '2026-06-01', zahlungszielTage: 7 }) === '2026-06-08');
+  ok('Default-Ziel (30) ohne eigenes', berechneFaelligAm({ datum: '2026-06-01' }, 30) === '2026-07-01');
+  ok('ohne Datum → leer', berechneFaelligAm({ zahlungszielTage: 7 }) === '');
+
+  // In der OP-Liste schlägt das Zahlungsziel je Rechnung den globalen Default durch.
+  const rechnungen = [
+    { id: 'er:1', kreditor: 'Skonto-Kurz', datum: '2026-06-01', zahlungszielTage: 7, bruttoCent: 11900 },
+    { id: 'er:2', kreditor: 'Standard', datum: '2026-06-01', bruttoCent: 5000 },
+  ];
+  const posten = offeneVerbindlichkeiten(rechnungen);
+  ok('zahlungszielTage in Posten durchgereicht', posten.find((p) => p.id === 'er:1').zahlungszielTage === 7);
+  const ang = anreichereVerbindlichkeiten(posten, { heute: '2026-06-15', zielTage: 30 });
+  const p1 = ang.find((p) => p.id === 'er:1');
+  const p2 = ang.find((p) => p.id === 'er:2');
+  ok('er:1 fällig datum+7 (2026-06-08), überfällig', p1.faelligAm === '2026-06-08' && p1.ueberfaellig === true && p1.tageUeberfaellig === 7);
+  ok('er:2 fällig datum+30 (2026-07-01), nicht überfällig', p2.faelligAm === '2026-07-01' && p2.ueberfaellig === false);
+
+  // Validierung: ungültiges Zahlungsziel wird abgewiesen.
+  ok('negatives Zahlungsziel ungültig', validateEingangsrechnung({ kreditor: 'X', datum: '2026-06-01', bruttoCent: 100, zahlungszielTage: -3 }).length > 0);
+  ok('gültiges Zahlungsziel ok', validateEingangsrechnung({ kreditor: 'X', datum: '2026-06-01', bruttoCent: 100, zahlungszielTage: 14 }).length === 0);
 });
 
 await section('Mahnwesen: Fälligkeit, Überfälligkeit, Mahnstufe', () => {

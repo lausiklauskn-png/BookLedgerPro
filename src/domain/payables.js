@@ -139,6 +139,7 @@ export function offeneVerbindlichkeiten(rechnungen, opts = {}) {
       richtung: 'ausgabe',
       kind: 'verbindlichkeit',
       faelligAm: r.faelligAm || '',
+      zahlungszielTage: r.zahlungszielTage != null ? r.zahlungszielTage : null,
       bruttoCent: brutto,
       bezahltCent: brutto - offen,
       offenCent: offen,
@@ -160,8 +161,24 @@ export function summeOffeneVerbindlichkeiten(posten) {
 }
 
 /**
+ * Bestimmt das Fälligkeitsdatum einer Eingangsrechnung (A1: Zahlungsziel je Rechnung).
+ * Reihenfolge: explizites `faelligAm` der Rechnung → Rechnungsdatum + rechnungseigenes
+ * `zahlungszielTage` → Rechnungsdatum + Default-Zahlungsziel (`defaultZielTage`).
+ * @param {{faelligAm?:string, datum?:string, zahlungszielTage?:number}} rechnung
+ * @param {number} [defaultZielTage=30]
+ * @returns {string} JJJJ-MM-TT (oder '' ohne Datum)
+ */
+export function berechneFaelligAm(rechnung = {}, defaultZielTage = 30) {
+  if (rechnung.faelligAm) return rechnung.faelligAm;
+  if (!rechnung.datum) return '';
+  const ziel = rechnung.zahlungszielTage != null ? rechnung.zahlungszielTage : defaultZielTage;
+  return faelligkeit(rechnung.datum, ziel);
+}
+
+/**
  * Reichert offene Verbindlichkeits-Posten um Fälligkeit/Überfälligkeit an (für die OP-Liste).
- * Nutzt die rechnungseigene `faelligAm`, sonst Rechnungsdatum + Zahlungsziel (Default 30 Tage,
+ * Nutzt die rechnungseigene `faelligAm`, sonst Rechnungsdatum + Zahlungsziel — bevorzugt das
+ * Zahlungsziel JE RECHNUNG (`zahlungszielTage` des Postens, A1), sonst den Default (30 Tage,
  * üblicher für Eingangsrechnungen). Anders als beim Mahnwesen geht es hier um die EIGENE
  * Zahlungspflicht (Liquidität/Skonto), daher keine Mahnstufe.
  * @param posten Ergebnis von offeneVerbindlichkeiten()
@@ -171,7 +188,7 @@ export function anreichereVerbindlichkeiten(posten = [], opts = {}) {
   const heute = opts.heute || new Date().toISOString().slice(0, 10);
   const zielTage = opts.zielTage != null ? opts.zielTage : 30;
   return posten.map((p) => {
-    const faelligAm = p.faelligAm || faelligkeit(p.datum, zielTage);
+    const faelligAm = berechneFaelligAm(p, zielTage);
     const tage = tageUeberfaellig(faelligAm, heute);
     return { ...p, faelligAm, tageUeberfaellig: tage, ueberfaellig: tage > 0 };
   });
@@ -190,6 +207,37 @@ export function verbindlichkeitenSummen(angereichertePosten = []) {
   return { summeCent, anzahl: angereichertePosten.length, ueberfaelligCent, ueberfaelligAnzahl };
 }
 
+/**
+ * Bildet aus einem Extraktions-Ergebnis (ai/extract.extractFromText ODER
+ * erechnungLesen.eingangsrechnungExtraktion: {betragBrutto, datum, ustSatz, vendor, confidence})
+ * einen Eingangsrechnungs-ENTWURF (R3: Verbindlichkeit aus Foto/PDF-Beleg). Reine Abbildung —
+ * die Felder werden NICHT erfunden: fehlt Kreditor oder Datum, bleiben sie leer und die
+ * Validierung greift (Nutzer ergänzt). Aus Brutto + USt-Satz wird das Netto (cent-genau)
+ * abgeleitet; ist kein gültiger Satz erkannt, wird konservativ 0 % angenommen (keine
+ * Vorsteuer geltend gemacht). Es wird KEIN `bruttoCent` gesetzt — die Positionen treiben den
+ * Betrag, damit Buchung und gespeicherter Brutto deckungsgleich bleiben.
+ * @param {{betragBrutto?:?number, datum?:?string, ustSatz?:?number, vendor?:?string, confidence?:number}} ex
+ * @param {{aufwandKonto?:string, zahlungszielTage?:number, rechnungsnr?:string, quelle?:string}} [opts]
+ * @returns {{kreditor, rechnungsnr, datum, positionen, zahlungszielTage, quelle, confidence}}
+ */
+export function extraktionZuEingangsrechnung(ex = {}, opts = {}) {
+  const satz = [0, 7, 19].includes(Number(ex.ustSatz)) ? Number(ex.ustSatz) : 0;
+  const brutto = ex.betragBrutto != null && Number.isFinite(Number(ex.betragBrutto))
+    ? Math.round(Number(ex.betragBrutto)) : null;
+  const netto = brutto != null && brutto >= 0 ? Math.round(brutto / (1 + satz / 100)) : null;
+  const aufwandKonto = opts.aufwandKonto || AUFWAND_KONTO_STD;
+  const positionen = netto != null ? [{ nettoCent: netto, ustSatz: satz, aufwandKonto }] : [];
+  return {
+    kreditor: (ex.vendor || '').trim(),
+    rechnungsnr: opts.rechnungsnr || ex.rechnungsnr || '',
+    datum: ex.datum || '',
+    positionen,
+    zahlungszielTage: opts.zahlungszielTage != null ? opts.zahlungszielTage : null,
+    quelle: opts.quelle || 'ocr',
+    confidence: ex.confidence || 0,
+  };
+}
+
 /** Validiert eine Eingangsrechnung (vor dem Speichern). */
 export function validateEingangsrechnung(r) {
   const errors = [];
@@ -203,6 +251,7 @@ export function validateEingangsrechnung(r) {
   }
   if (r.bruttoCent != null && (!Number.isInteger(r.bruttoCent) || r.bruttoCent < 0)) errors.push('Bruttobetrag ungültig.');
   if (r.faelligAm && !/^\d{4}-\d{2}-\d{2}$/.test(r.faelligAm)) errors.push('Fälligkeitsdatum ungültig.');
+  if (r.zahlungszielTage != null && (!Number.isInteger(r.zahlungszielTage) || r.zahlungszielTage < 0)) errors.push('Zahlungsziel (Tage) ungültig.');
   return errors;
 }
 
