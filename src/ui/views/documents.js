@@ -22,7 +22,7 @@ import { isVisionConfigured } from '../../ai/aiConfig.js';
 import { buildVorschlag } from '../../ai/suggest.js';
 import { begruendeBuchung } from '../../ai/berater.js';
 import { onDeviceBegruendung } from '../../domain/rechtsregeln.js';
-import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, bytesToBase64, linkBeleg } from '../../domain/documents.js';
+import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, bytesToBase64, linkBeleg, aufbewahrungBis, istAufbewahrungspflichtig } from '../../domain/documents.js';
 import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
 
@@ -155,7 +155,9 @@ async function vorschlagKarte(vorschlag, belegId, quelltext) {
 
   const status = el('p', { class: 'muted small' });
   async function uebernehmen() {
-    const entwurf = await saveEntwurf({ datum: vorschlag.datum, beschreibung: vorschlag.beschreibung, begruendung: fBegruendung.value.trim(), zeilen: vorschlag.zeilen });
+    // belegRef geht in die Buchung (GoBD-Belegprinzip, Teil der Hash-Kette);
+    // buchungId verlinkt zusätzlich rückwärts den Beleg.
+    const entwurf = await saveEntwurf({ datum: vorschlag.datum, beschreibung: vorschlag.beschreibung, begruendung: fBegruendung.value.trim(), zeilen: vorschlag.zeilen, belegRef: belegId || null });
     if (belegId) await linkBeleg(belegId, entwurf.id);
     status.textContent = t('docs.draftCreated');
     return entwurf;
@@ -376,6 +378,7 @@ function belegListe(belege, visionBereit) {
     el('td', { class: 'muted small', text: b.mediaType }),
     el('td', { class: 'num muted small', text: formatBytes(b.size) }),
     el('td', { class: 'muted small mono', text: (b.createdAt || '').slice(0, 10) }),
+    el('td', { class: 'muted small mono', text: aufbewahrungBis(b.createdAt).slice(0, 4), title: t('docs.keepUntil') }),
     el('td', { text: b.buchungId ? '🔗' : '' }),
     el('td', { class: 'actions' }, [belegAktionen(b, visionBereit)]),
   ]));
@@ -384,7 +387,7 @@ function belegListe(belege, visionBereit) {
       el('thead', {}, el('tr', {}, [
         el('th', { text: t('docs.name') }), el('th', { text: t('docs.kind') }),
         el('th', { class: 'num', text: t('docs.size') }), el('th', { text: t('docs.date') }),
-        el('th', {}), el('th', {}),
+        el('th', { text: t('docs.keepUntil') }), el('th', {}), el('th', {}),
       ])),
       el('tbody', {}, rows),
     ]),
@@ -401,7 +404,11 @@ function belegAktionen(b, visionBereit) {
   }
   wrap.appendChild(el('button', {
     class: 'btn btn-sm', text: t('common.delete'),
-    onClick: async () => { if (confirm(t('docs.confirmDelete'))) { await deleteBeleg(b.id); await repaint(); } },
+    onClick: async () => {
+      if (b.buchungId) { alert(t('docs.deleteLinked')); return; }            // GoBD: verknüpft → nicht löschbar
+      const frist = istAufbewahrungspflichtig(b) ? `\n\n${t('docs.deleteRetention')} ${aufbewahrungBis(b.createdAt)}` : '';
+      if (confirm(t('docs.confirmDelete') + frist)) { await deleteBeleg(b.id); await repaint(); }
+    },
   }));
   return wrap;
 }

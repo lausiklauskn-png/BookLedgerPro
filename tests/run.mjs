@@ -43,6 +43,8 @@ import { istGesperrt } from '../src/domain/pruefung.js';
 import { demoMandant, demoExportDateien, DEMO_JAHR } from '../src/domain/demodaten.js';
 import { runSelbsttest } from '../src/domain/selbsttest.js';
 import { wjPeriode, wirtschaftsjahrVon, wjBeginnYYYYMMDD, validateWjBeginn } from '../src/domain/geschaeftsjahr.js';
+import { aufbewahrungBis, istAufbewahrungspflichtig, darfBelegLoeschen, AUFBEWAHRUNG_JAHRE } from '../src/domain/aufbewahrung.js';
+import { hashedFields } from '../src/domain/audit.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -1940,6 +1942,21 @@ await section('Punkt 31: Steuerberater-Übergabe-Datenblatt', () => {
   ok('Übergabe: DATEV Berater/Mandant', txt.includes('Berater 111') && txt.includes('Mandant 222'));
   ok('Übergabe: Kz 83 + Überschuss', txt.includes('Kz 83 Zahllast') && txt.includes('Überschuss'));
   ok('Übergabe: nennt DATEV/GoBD-Dateien', txt.includes('DATEV-CSV') && txt.includes('GoBD-Datenpaket'));
+});
+
+await section('Punkt 29: Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung', () => {
+  ok('Aufbewahrungsfrist 10 Jahre', AUFBEWAHRUNG_JAHRE === 10);
+  ok('aufbewahrungBis: 2026 → 2036-12-31', aufbewahrungBis('2026-03-15T10:00:00Z') === '2036-12-31');
+  const beleg = { id: 'beleg:1', createdAt: '2026-03-15T10:00:00Z', buchungId: null };
+  ok('noch aufbewahrungspflichtig 2030', istAufbewahrungspflichtig(beleg, '2030-01-01') === true);
+  ok('nach Fristablauf 2037 nicht mehr', istAufbewahrungspflichtig(beleg, '2037-01-01') === false);
+  ok('löschbar erst nach Fristablauf (unverknüpft)', !darfBelegLoeschen(beleg, '2030-01-01') && darfBelegLoeschen(beleg, '2037-01-01'));
+  const verknuepft = { ...beleg, buchungId: 'b:1' };
+  ok('verknüpfter Beleg NIE löschbar (Belegprinzip)', !darfBelegLoeschen(verknuepft, '2037-01-01'));
+
+  // belegRef ist Teil der Hash-Felder (Belegprinzip in der Kette) — nur wenn gesetzt.
+  const hf = hashedFields({ datum: '2026-01-01', zeilen: [], belegRef: 'beleg:1' });
+  ok('belegRef in hashedFields', hf.belegRef === 'beleg:1');
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

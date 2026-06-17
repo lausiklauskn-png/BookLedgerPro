@@ -37,6 +37,24 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-17 — Punkt 29: Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung [Branch `claude/v2-ox8bu7`]
+
+**Was getan**
+- **`domain/aufbewahrung.js`** (rein, node-getestet): `aufbewahrungBis` (Jahr + 10, §147 AO),
+  `istAufbewahrungspflichtig`, `darfBelegLoeschen` (Belegprinzip: verknüpfte Belege nie löschbar).
+  Re-Export über `documents.js`.
+- **Beleg-Verknüpfung:** Beim Beleg→Entwurf wird jetzt **`belegRef`** in die Buchung gesetzt
+  (Teil der Hash-Kette, GoBD-Belegprinzip) zusätzlich zum rückwärtigen `linkBeleg` (buchungId).
+- **Belege-Ansicht:** Spalte „aufbewahren bis"; **Löschen verknüpfter Belege blockiert**,
+  Frist-Warnung bei noch laufender Aufbewahrung. i18n de/en. SW `v77` (+aufbewahrung.js precached).
+- Tests **639/639** (7 neu). **A4-Scope erweitert (Nutzer 17.06.):** WorkFloh public →
+  beidseitige Verlinkung + generische Anbindung an andere Buchhaltungssoftware (in OFFENE_PUNKTE/PULS notiert).
+
+**Stand:** Punkt 29 erledigt; alle kleinen Folgepunkte (27/28/29/31) durch. **Nächstes (groß, je eigener PR,
+Freibrief-Merge):** ZUGFeRD/KoSIT → A4 (erweitert) → Mehrmandanten → Bilanzierung.
+
+---
+
 ## 2026-06-17 — Punkt 31: Steuerberater-Übergabe-Datenblatt [Branch `claude/v2-ox8bu7`]
 
 **Was getan**
