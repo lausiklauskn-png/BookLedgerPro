@@ -37,8 +37,22 @@ export function mountLegal(host) {
     siegel(),
     textCard(t('legal.gobd'), GOBD),
     textCard(t('legal.dsgvo'), DSGVO),
+    avvCard(),
     rightsCard(),
   ]));
+}
+
+// AVV/DPA-Verträge der EU-KI-Anbieter — direkt zum Abschließen verlinkt (Entscheidung: umsetzen).
+function avvCard() {
+  const link = (href, text) => el('a', { class: 'btn btn-sm', href, target: '_blank', rel: 'noopener noreferrer', text });
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('legal.avvTitle') }),
+    el('p', { class: 'small', text: t('legal.avvHint') }),
+    el('div', { class: 'btn-row' }, [
+      link('https://cloud.google.com/terms/data-processing-addendum', t('legal.avvGoogle')),
+      link('https://mistral.ai/terms/#data-processing-agreement', t('legal.avvMistral')),
+    ]),
+  ]);
 }
 
 function textCard(title, absaetze) {

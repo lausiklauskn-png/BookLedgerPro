@@ -37,6 +37,26 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-17 — Entscheidungen Teil 1 (ELSTER-Link + AVV) + Nachfolge-Brief mit Freibrief [Branch `claude/v2-ox8bu7`]
+
+**Was getan**
+- **Nutzer-Entscheidungen festgehalten** (`OFFENE_PUNKTE.md` neuer Kopf-Abschnitt): ELSTER **JA**
+  (Datenpaket + Link, kein ERiC), Mehrmandanten **JA**, Bilanzierung **JA**, AVV **umsetzen**;
+  inkl. **festgelegter Bau-Reihenfolge** (je 1 PR, Freibrief-Merge) + neue Klein-Punkte 27/28/29/31.
+- **ELSTER-Weiterleitung (Entscheidung, klein):** Link „Bei ELSTER eingeben ↗" in der Karte
+  „USt-VA je Zeitraum" (`reports.js`) zusätzlich zum ELSTER-Datenpaket-Download.
+- **AVV/DPA (Entscheidung, klein):** neue Karte in „Recht & Doku" (`legal.js`) mit Direktlinks
+  zu **Google Cloud DPA** und **Mistral DPA** (Art. 28 DSGVO). i18n de/en. SW-Cache `v73`.
+- **Neuer Nachfolge-Brief** in `PULS.md` („START HIER") mit **ausdrücklich weitergereichtem
+  Freibrief** (selbstständiges Mergen bei grüner CI) + priorisierter Reihenfolge der nächsten PRs.
+- Tests **618/618 grün** (reine UI/Doku-Ergänzung, keine Logikänderung).
+
+**Stand:** Fahrplan V1–V10 komplett; Entscheidungen verankert; Reihenfolge der Folge-PRs steht.
+**Nächstes (lt. Brief):** §19-Onboarding (27) → abweichendes Wirtschaftsjahr (28) → Übergabe-
+Datenblatt (31) → Beleg-Verknüpfung/Aufbewahrung (29) → ZUGFeRD/KoSIT → A4 → Mehrmandanten → Bilanz.
+
+---
+
 ## 2026-06-16 — V10: Browser-E2E (In-App-Selbstdiagnose + Abnahme-Checkliste) [Branch `claude/v2-ox8bu7`]
 
 **Was getan** (Fahrplan-Punkt V10 — letzter Punkt; Fahrplan V1–V10 damit komplett)
