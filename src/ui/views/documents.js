@@ -26,6 +26,7 @@ import { begruendeBuchung } from '../../ai/berater.js';
 import { onDeviceBegruendung } from '../../domain/rechtsregeln.js';
 import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, bytesToBase64, linkBeleg, aufbewahrungBis, istAufbewahrungspflichtig } from '../../domain/documents.js';
 import { getSettings } from '../../state.js';
+import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
@@ -207,7 +208,8 @@ function eRechnungKarte() {
         out.appendChild(el('div', { class: 'muted small', text: `${p.format}${istPdf ? ' (ZUGFeRD/PDF)' : ''} · ${t('docs.eInvoiceFrom')} ${p.lieferant || '—'} · ${p.nummer || '—'}` }));
         const kosit = kostPflichtfelder(p);
         out.appendChild(el('div', { class: kosit.ok ? 'muted small' : 'form-error', text: kosit.ok ? `✓ ${t('docs.kositOk')}` : `⚠ ${t('docs.kositMissing')}: ${kosit.fehlende.join(', ')}` }));
-        out.appendChild(verbindlichkeitErfassenZeile(p, kat));
+        // R6/P2: Kreditoren-OP („auf Ziel" als Verbindlichkeit) nur, wenn das Feature gilt.
+        if (zeigeFeature(getSettings(), FEATURE.VERBINDLICHKEITEN)) out.appendChild(verbindlichkeitErfassenZeile(p, kat));
         out.appendChild(await vorschlagKarte(res.vorschlag, null, p.lieferant || ''));
       } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
     },
@@ -597,7 +599,7 @@ async function visionExtraktion(b) {
     // R3: Aus dem OCR-Beleg lässt sich entweder direkt buchen (Buchungsvorschlag) ODER eine
     // offene VERBINDLICHKEIT „auf Ziel" erfassen (Kreditor, erscheint im Zahlungsabgleich).
     await repaint(el('div', {}, [
-      verbindlichkeitAusExtraktionZeile(ex, kat),
+      zeigeFeature(getSettings(), FEATURE.VERBINDLICHKEITEN) ? verbindlichkeitAusExtraktionZeile(ex, kat) : null,
       await vorschlagKarte(res.vorschlag, b.id, text),
     ]));
   } catch (e) {

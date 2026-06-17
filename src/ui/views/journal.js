@@ -13,6 +13,7 @@ import { KONTOART, REVERSE_CHARGE_KONTEN } from '../../domain/accounts.js';
 import { UST_SAETZE } from '../../domain/taxes.js';
 import { listKostenstellen, ensureKostenstellenSeeded } from '../../domain/crm-store.js';
 import { getSettings } from '../../state.js';
+import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
@@ -84,6 +85,12 @@ function pickSteuer(idx, konten, sollNr, habenNr, satz) {
 }
 
 function buchungForm(konten, idx) {
+  // R6/P2: fachliche Feature-Gates ansichtsintern konsumieren. Im Privat-Modus
+  // (zeigeFeature(UMSATZSTEUER)=false) USt-Satz + Umsatzart (Reverse-Charge) und den
+  // Bewirtungs-Split (70/30 inkl. USt) ausblenden; Kostenstelle nur wenn relevant.
+  const _s = getSettings();
+  const zeigeUst = zeigeFeature(_s, FEATURE.UMSATZSTEUER);
+  const zeigeKs = zeigeFeature(_s, FEATURE.KOSTENSTELLEN);
   const heute = new Date().toISOString().slice(0, 10);
   const fDatum = el('input', { type: 'text', value: heute, placeholder: 'YYYY-MM-DD' });
   const fText = el('input', { type: 'text', placeholder: t('journal.desc') });
@@ -139,7 +146,7 @@ function buchungForm(konten, idx) {
     },
   });
 
-  const bewirtungBtn = el('button', {
+  const bewirtungBtn = zeigeUst ? el('button', {
     class: 'btn btn-sm', type: 'button', text: t('journal.bewirtung'),
     onClick: async () => {
       err.textContent = '';
@@ -150,7 +157,7 @@ function buchungForm(konten, idx) {
         await repaint();
       } catch (ex) { err.textContent = String(ex.message || ex); }
     },
-  });
+  }) : null;
 
   const submit = el('button', {
     class: 'btn btn-primary', type: 'submit', text: _editId ? t('journal.saveEdit') : t('journal.saveDraft'),
@@ -166,8 +173,9 @@ function buchungForm(konten, idx) {
       e.preventDefault();
       err.textContent = '';
       try {
-        const satz = Number(fUst.value) || 0;
-        const art = fUmsatzart.value;
+        // Im Privat-Modus ohne USt-Ausweis: immer 0 % / Inland (Felder sind ausgeblendet).
+        const satz = zeigeUst ? (Number(fUst.value) || 0) : 0;
+        const art = zeigeUst ? fUmsatzart.value : UMSATZART.INLAND;
         let built;
         if (art === UMSATZART.REVERSE_CHARGE_13B || art === UMSATZART.IG_ERWERB) {
           // Steuerschuldumkehr: Betrag = NETTO; bucht Vorsteuer UND geschuldete USt.
@@ -208,18 +216,18 @@ function buchungForm(konten, idx) {
       field(t('journal.soll'), fSoll),
       field(t('journal.haben'), fHaben),
       field(t('journal.gross'), fBetrag),
-      field(t('journal.ust'), fUst),
-      field(t('journal.umsatzart'), fUmsatzart),
-      field(t('journal.kostenstelle'), fKs),
+      zeigeUst ? field(t('journal.ust'), fUst) : null,
+      zeigeUst ? field(t('journal.umsatzart'), fUmsatzart) : null,
+      zeigeKs ? field(t('journal.kostenstelle'), fKs) : null,
     ]),
-    rcHint,
+    zeigeUst ? rcHint : null,
     el('label', { class: 'field' }, [
       el('span', { text: t('journal.begruendung') }),
       fBegruendung,
     ]),
     el('div', { class: 'btn-row' }, [beraterBtn, bewirtungBtn, beraterStatus]),
     el('p', { class: 'muted small', text: t('journal.aiReasonNote') }),
-    el('p', { class: 'muted small', text: t('journal.bewirtungHint') }),
+    zeigeUst ? el('p', { class: 'muted small', text: t('journal.bewirtungHint') }) : null,
     err,
     el('div', { class: 'btn-row' }, cancelBtn ? [submit, cancelBtn] : [submit]),
   ]);
