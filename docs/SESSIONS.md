@@ -5,6 +5,46 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R5c: Dreistufiger Briefkasten (Mandant ⊃ Firma ⊃ Person) [Branch `claude/r5c-three-level-mailbox-twzjko`]
+
+**Was getan** (Schritt **R5c** — Pseudonymisierung/CRM in die fachliche Hierarchie ordnen)
+- **Reine Logik zuerst (node-getestet, +26 Tests → 942/942):** `src/ai/briefkasten.js`
+  - `baueBriefkasten({mandant, firma, kunden, mitarbeiter})` baut den dreistufigen Baum:
+    **Mandant** (Tenant/Tresor) ⊃ **Firma** ⊃ **Person**. Die **eigene Firma** (Firmenprofil) wird
+    `FIRMA_1` (`eigen: true`), **Mitarbeiter** werden deren Personen; **Firmenkunden**
+    (`istVerbraucher !== true`) werden weitere `FIRMA_n` mit ihren E-Mail/USt-IdNr/Adresse-Ankern;
+    **Privatkunden** (`istVerbraucher === true`) werden Personen direkt am Mandanten. Firmen-Nummer
+    **deterministisch nach Daten-Reihenfolge** → Scope bleibt stabil, egal in welcher Reihenfolge die
+    Namen im Belegtext stehen.
+  - `briefkastenAnker(bk)` plättet den Baum in eine entdoppelte, **scope-präfixierte** `{wert,typ}`-Liste.
+    Da nur die `typ`-Strings die Hierarchie tragen, erzeugt das **bestehende** `pseudonym.tokenize` daraus
+    gruppierende Token (`[[MANDANT_1]]`, `[[FIRMA_2_1]]`, `[[FIRMA_2_USTID_1]]`, `[[FIRMA_1_PERSON_1]]`,
+    `[[MANDANT_PERSON_1]]`) — die KI erkennt, wer zu wem gehört, bei **gleichem Schutz** und
+    **verlustfreier Re-Identifizierung** (kein Umbau an tokenize/reidentify/maskierungsBericht).
+  - `briefkastenBericht(bk)` (Transparenz: Zähler je Ebene, **ohne Klartext**), `tokenizeBriefkasten`.
+- **Glue/UI (statisch geprüft):** `ai/anker.js ladeAnker` routet bei Setting **`briefkastenScopes`**
+  (Default **aus**, opt-in) über den Briefkasten statt der flachen `baueAnker`-Liste und liest den aktiven
+  Mandanten best-effort aus der unverschlüsselten Registry (`core/mandantenStore` + `domain/mandanten`).
+  NER-Kombination (`nerPii`) bleibt davor wirksam. UI-Schalter im **Pseudonym-Modus** (`shell.js`,
+  konditional wie `nerPii`), i18n de+en.
+- SW-Cache **v93** (+ `src/ai/briefkasten.js` precached).
+
+**Stand:** `node tests/run.mjs` **942/942 grün** (+26). **R5 vollständig (R5a/R5b/R5c) ✅.** A+B + R1–R5 ✅.
+
+**Offen / Grenzen (ehrlich)**
+- Person-Attribute (E-Mail/USt-IdNr/Adresse) werden dem **Parent-Scope** (Firma bzw. Mandant) zugeordnet,
+  nicht dem einzelnen Personen-Token — die feinste Bindung „dieses Attribut gehört zu genau dieser Person"
+  bleibt offen (Personen-Nummern vergibt tokenize erst nach Text-Auftreten).
+- **NER-Anker bleiben flach** (im Briefkasten-Modus werden die Stammdaten hierarchisch, die im Text
+  erkannten PII Dritter weiterhin als flache `EMAIL/IBAN/…`-Anker ergänzt).
+- Setting **Default aus** → bestehendes Verhalten unverändert, bis der Nutzer den Briefkasten aktiviert.
+- UI/Glue (anker/shell/Registry-Lesepfad) **statisch geprüft** (kein Headless-Browser); reine Logik node-getestet.
+
+**Nächstes:** R6 [KANN] (ZUGFeRD-Erzeugen nur falls build-frei, Lighthouse, lokales OCR, Privat-/Bürger-Modus,
+Sage 5b–d) **oder** Browser-Sichttest — siehe `docs/NACHFOLGE_PLAN.md`.
+
+---
+
 ## 2026-06-17 — R5a (Bankformate härten) + R5b (NER/PII über die Anker hinaus)
 
 **Was getan**

@@ -258,6 +258,13 @@ function viewSettings() {
           (v) => updateSettings({ nerPii: v === 'ja' }), t('settings.datenschutz.nerHint'))
       : null,
 
+    // Dreistufiger Briefkasten (Mandant ⊃ Firma ⊃ Person) — nur im Pseudonym-Modus.
+    s.datenschutzModus === 'pseudonym'
+      ? seg(t('settings.datenschutz.briefkasten'), 'briefkastenScopes',
+          [['nein', t('common.no')], ['ja', t('common.yes')]], s.briefkastenScopes === true ? 'ja' : 'nein',
+          (v) => updateSettings({ briefkastenScopes: v === 'ja' }), t('settings.datenschutz.briefkastenHint'))
+      : null,
+
     seg(t('settings.theme'), 'theme',
       [['system', t('settings.theme.system')], ['light', t('settings.theme.light')], ['dark', t('settings.theme.dark')]],
       s.theme, async (v) => { applyTheme(v); await updateSettings({ theme: v }); }),

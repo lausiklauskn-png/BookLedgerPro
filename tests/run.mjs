@@ -65,6 +65,7 @@ import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/a
 import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, ANKER_TYP, maskierungsBericht } from '../src/ai/pseudonym.js';
 import { baueAnker } from '../src/ai/anker.js';
 import { erkennePII, piiAnker, kombiniereAnker, NER_TYP } from '../src/ai/ner.js';
+import { baueBriefkasten, briefkastenAnker, briefkastenBericht, tokenizeBriefkasten, EBENE } from '../src/ai/briefkasten.js';
 import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
 import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat, pruefeBankauszug } from '../src/domain/bankimport.js';
@@ -1351,6 +1352,82 @@ await section('NER: piiAnker entdoppelt + kombiniereAnker (exakt hat Vorrang)', 
   const k2 = kombiniereAnker([{ wert: 'kunde@x.de', typ: ANKER_TYP.PERSON }], 'Mail kunde@x.de');
   const r2 = tokenize('Mail kunde@x.de', k2);
   ok('Stammdaten-Typ gewinnt (PERSON statt EMAIL)', r2.map[0].typ === ANKER_TYP.PERSON);
+});
+
+await section('Briefkasten: Hierarchie Mandant ⊃ Firma ⊃ Person (baueBriefkasten)', () => {
+  const bk = baueBriefkasten({
+    mandant: { id: 'standard', name: 'Kanzlei Nord' },
+    firma: { name: 'Meine Firma GmbH', iban: 'DE89370400440532013000', ustId: 'DE999111222', anschrift: 'Hauptstr. 1, 50667 Köln' },
+    mitarbeiter: [{ name: 'Klaus Nitzsche' }],
+    kunden: [
+      { name: 'Acme Bau AG', ustId: 'DE123456789', adresse: 'Werkweg 9, 10115 Berlin', istVerbraucher: false },
+      { name: 'Erika Musterfrau', email: 'erika@example.de', istVerbraucher: true },
+      { name: 'AG', istVerbraucher: false }, // zu kurz → verworfen
+    ],
+  });
+  ok('Wurzel ist Mandant', bk.ebene === EBENE.MANDANT && bk.id === 'standard');
+  ok('eigene Firma = FIRMA_1 (eigen)', bk.firmen[0].eigen === true && bk.firmen[0].nr === 1);
+  ok('Firmenkunde = FIRMA_2 (nicht eigen)', bk.firmen[1].nr === 2 && bk.firmen[1].eigen === false);
+  ok('zu kurzer Firmenname verworfen', bk.firmen.length === 2);
+  ok('Mitarbeiter = Person der eigenen Firma', bk.firmen[0].personen.length === 1 && bk.firmen[0].personen[0].name === 'Klaus Nitzsche');
+  ok('Privatkunde = Person am Mandanten', bk.personen.length === 1 && bk.personen[0].name === 'Erika Musterfrau');
+
+  const anker = briefkastenAnker(bk);
+  const byWert = (w) => anker.find((a) => a.wert === w);
+  ok('Mandant-Name als MANDANT-Anker', byWert('Kanzlei Nord').typ === EBENE.MANDANT);
+  ok('eigene Firma scope FIRMA_1', byWert('Meine Firma GmbH').typ === 'FIRMA_1');
+  ok('eigene IBAN scope FIRMA_1_IBAN', byWert('DE89370400440532013000').typ === 'FIRMA_1_IBAN');
+  ok('Mitarbeiter scope FIRMA_1_PERSON', byWert('Klaus Nitzsche').typ === 'FIRMA_1_PERSON');
+  ok('Firmenkunde scope FIRMA_2', byWert('Acme Bau AG').typ === 'FIRMA_2');
+  ok('Firmenkunde-USt scope FIRMA_2_USTID', byWert('DE123456789').typ === 'FIRMA_2_USTID');
+  ok('Privatkunde scope MANDANT_PERSON', byWert('Erika Musterfrau').typ === 'MANDANT_PERSON');
+  ok('Privatkunde-E-Mail scope MANDANT_PERSON_EMAIL', byWert('erika@example.de').typ === 'MANDANT_PERSON_EMAIL');
+});
+
+await section('Briefkasten: leere/teilweise Quellen', () => {
+  ok('ganz leer → nur Mandant-Gerüst', briefkastenAnker(baueBriefkasten()).length === 0);
+  const ohneFirma = baueBriefkasten({ mitarbeiter: [{ name: 'Anna Beispiel' }] });
+  ok('ohne Firmenprofil → Mitarbeiter am Mandanten', ohneFirma.firmen.length === 0
+    && ohneFirma.personen.length === 1
+    && briefkastenAnker(ohneFirma).find((a) => a.wert === 'Anna Beispiel').typ === 'MANDANT_PERSON');
+});
+
+await section('Briefkasten: scope-Token gruppieren in der KI-Sicht (tokenize round-trip)', () => {
+  const bk = baueBriefkasten({
+    firma: { name: 'Meine Firma GmbH' },
+    kunden: [
+      { name: 'Acme Bau AG', ustId: 'DE123456789', istVerbraucher: false },
+      { name: 'Beta Handel GmbH', ustId: 'DE987654321', istVerbraucher: false },
+    ],
+  });
+  // Beta steht im Belegtext VOR Acme → die laufende Nummer richtet sich nach Auftreten,
+  // der Firmen-Scope bleibt aber stabil aus den Stammdaten.
+  const beleg = 'Rechnung: Beta Handel GmbH (DE987654321) im Auftrag von Acme Bau AG (DE123456789).';
+  const { text: pseudo, map } = tokenizeBriefkasten(beleg, bk, { wortgrenze: true });
+  // Beta = FIRMA_3, Acme = FIRMA_2 (Daten-Reihenfolge; eigene Firma = FIRMA_1).
+  ok('Firma + zugehörige USt-IdNr teilen denselben Scope (FIRMA_3)', /\[\[FIRMA_3_\d+\]\]/.test(pseudo) && /\[\[FIRMA_3_USTID_\d+\]\]/.test(pseudo));
+  ok('zweite Firma in eigenem Scope (FIRMA_2)', /\[\[FIRMA_2_\d+\]\]/.test(pseudo) && /\[\[FIRMA_2_USTID_\d+\]\]/.test(pseudo));
+  ok('keine Klartext-Namen mehr', !pseudo.includes('Acme Bau AG') && !pseudo.includes('Beta Handel GmbH'));
+  ok('verlustfreie Re-Identifizierung', reidentify(pseudo, map) === beleg);
+});
+
+await section('Briefkasten: Transparenz-Bericht ohne Klartext (briefkastenBericht)', () => {
+  const bk = baueBriefkasten({
+    mandant: { name: 'Kanzlei Nord' },
+    firma: { name: 'Meine Firma GmbH' },
+    mitarbeiter: [{ name: 'Klaus Nitzsche' }],
+    kunden: [
+      { name: 'Acme Bau AG', istVerbraucher: false },
+      { name: 'Erika Musterfrau', istVerbraucher: true },
+    ],
+  });
+  const b = briefkastenBericht(bk);
+  ok('zählt 2 Firmen', b.firmen === 2);
+  ok('zählt 2 Personen (Mitarbeiter + Privatkunde)', b.personen === 2);
+  ok('1 Mandant', b.mandanten === 1);
+  ok('Anker-Zähler > 0', b.anker > 0);
+  ok('Bericht ohne Klartext', !JSON.stringify(b).includes('Nitzsche') && !JSON.stringify(b).includes('Acme'));
+  ok('leerer Briefkasten → Nullen', briefkastenBericht(null).firmen === 0 && briefkastenBericht(null).mandanten === 0);
 });
 
 await section('Zahlungsabgleich: offene Posten + Matching + Ausgleichsbuchung', () => {

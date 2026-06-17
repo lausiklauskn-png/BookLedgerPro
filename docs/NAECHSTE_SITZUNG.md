@@ -18,31 +18,35 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Aktueller nächster Schritt: R5c — dreistufiger Briefkasten** (Mandant ⊃ Firma ⊃ Person,
-P7) für Pseudonymisierung/CRM (heute flache Anker, 1 Tresor = 1 Mandant). **Alternativ/zuerst sinnvoll,
-falls bevorzugt:** **R6 [KANN]** (ZUGFeRD-Erzeugen nur falls build-frei, Lighthouse, lokales OCR,
-Privat-/Bürger-Modus, Sage 5b–d) **oder Browser-Sichttest** — (a) eine WorkFloh-Austauschdatei MIT
-`rechnung`-Block importieren (Aufträge → „Aus WorkFloh importieren") → Buchungsentwurf (Forderung an
-Erlöse + USt) prüfen, Auftrag „berechnet"; (b) OCR→Verbindlichkeit-Klickpfad (Foto/PDF → Google Vision EU
-→ „Verbindlichkeit aus diesem Beleg erfassen" → Zahlungsabgleich) — kein Headless-Browser hier, daher
-echter Nutzer-Sichttest.
+abarbeiten. **Abschnitt R bis R5 ist komplett** (R1–R4 ✅; R5a/R5b/R5c ✅). **Aktueller nächster Schritt:
+R6 [KANN]** — ZUGFeRD-**Erzeugen** (nur falls build-frei lösbar), Lighthouse, lokales OCR (Tesseract als
+Fallback), Privat-/Bürger-Modus, Sage 5b–d. **Falls R6 zu groß/heikel: feiner schneiden** (je Teil 1 PR) —
+z. B. zuerst der **Privat-/Bürger-Modus** (baut auf dem Pseudonymisierungs-Enabler + Briefkasten auf) oder
+**Lighthouse/Perf-Messung**. **Alternativ/zuerst sinnvoll: Browser-Sichttest** — (a) eine WorkFloh-
+Austauschdatei MIT `rechnung`-Block importieren (Aufträge → „Aus WorkFloh importieren") → Buchungsentwurf
+(Forderung an Erlöse + USt) prüfen, Auftrag „berechnet"; (b) OCR→Verbindlichkeit-Klickpfad (Foto/PDF →
+Google Vision EU → „Verbindlichkeit aus diesem Beleg erfassen" → Zahlungsabgleich); (c) **Pseudonym-Modus
+mit dreistufigem Briefkasten** (Einstellungen → „Dreistufiger Briefkasten" an) → Belegtext an die KI →
+Maskierung/Token prüfen — kein Headless-Browser hier, daher echter Nutzer-Sichttest.
 Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
 **Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** (B1/B2/B3); **R1–R4 ✅** (Verzugszinsen/
 Mahngebühren · Skonto §17 UStG · Sammelzahlungen · Verbindlichkeiten aus Foto/PDF · Rechnungs-Übernahme
 aus WorkFloh, PR #95); **R5a (Bankformate härten: CAMT .052/.054 + Saldo-Integritätsprüfung
 `pruefeBankauszug` + strukturierte RmtInf, `domain/bankimport.js`) ✅**; **R5b (NER: PII Dritter — E-Mail/
-IBAN/USt-IdNr/Steuernr/Telefon — über die Anker hinaus maskieren, `ai/ner.js` + Setting `nerPii`) ✅**
-(siehe `docs/SESSIONS.md` oben).
+IBAN/USt-IdNr/Steuernr/Telefon — über die Anker hinaus maskieren, `ai/ner.js` + Setting `nerPii`) ✅**;
+**R5c (dreistufiger Briefkasten Mandant ⊃ Firma ⊃ Person, `ai/briefkasten.js` + Setting `briefkastenScopes`,
+scope-präfixierte Token wie `[[FIRMA_2_IBAN_1]]`/`[[FIRMA_1_PERSON_1]]`) ✅** (siehe `docs/SESSIONS.md` oben).
 **Bewusst offen** (eigene Schritte, falls gewünscht): R4-Rest **API/Push** (Echtzeit) + Übernahme von
-**Zahlungsstatus/Teilzahlungen**; R5a-Rest **echte SWIFT-/ISO-20022-Schema-Validierung**. Plan-Details in
-`docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`. Reine Logik **ZUERST node-getestet**, dann
-UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen). (Falls ein Schritt zu groß ist: feiner schneiden
-und Plan fortschreiben — nie „halb" mergen.)
+**Zahlungsstatus/Teilzahlungen**; R5a-Rest **echte SWIFT-/ISO-20022-Schema-Validierung**; R5c-Rest
+**Person-Attribut-Bindung pro Personen-Token** + **NER-Scoping**. Plan-Details in `docs/NACHFOLGE_PLAN.md`
+Abschnitt R + `docs/OFFENE_PUNKTE.md`. Reine Logik **ZUERST node-getestet**, dann UI (DOM/IndexedDB als
+„statisch geprüft" kennzeichnen). (Falls ein Schritt zu groß ist: feiner schneiden und Plan fortschreiben —
+nie „halb" mergen.)
 
-MEHRERE PRs ERLAUBT (NEU): Wenn sich mehrere Plan-Punkte **sauber und in sich
-abgeschlossen** in einer Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener
-PR**, jeder einzeln grün und gemergt. Niemals einen Schritt „halb" mergen; im Zweifel
-feiner schneiden (M2a/M2b …) und den Plan fortschreiben. Sauber/fehlerfrei VOR schnell.
+MEHRERE PRs ERLAUBT: Wenn sich mehrere Plan-Punkte **sauber und in sich abgeschlossen** in einer
+Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener PR**, jeder einzeln grün und gemergt.
+Niemals einen Schritt „halb" mergen; im Zweifel feiner schneiden und den Plan fortschreiben.
+Sauber/fehlerfrei VOR schnell.
 
 RITUAL JE PR (verbindlich, automatisch durchziehen):
 1) `git fetch origin main && git reset --hard origin/main`; pro PR einen eigenen
@@ -56,7 +60,7 @@ RITUAL JE PR (verbindlich, automatisch durchziehen):
 
 UNVERRÜCKBARE REGELN: DB-Suffix `bookledgerpro` NIEMALS ändern · build-frei (native
 ES-Module, keine Bundler/CDNs/npm-Runtime) · Datendurabilität (Regel #2) · Krypto-/GoBD-/
-DSGVO-Disziplin · EU-KI opt-in. „Vx/Mx/Bx" = Schritt aus dem Plan, KEINE Programm-Version.
+DSGVO-Disziplin · EU-KI opt-in. „Vx/Mx/Bx/Rx" = Schritt aus dem Plan, KEINE Programm-Version.
 
 ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 - `docs/PULS.md` „START HIER" auf den dann nächsten Schritt zeigen lassen + Kopf-Status
@@ -74,8 +78,9 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach R5a + R5b (Abschnitt A Mehrmandanten + Abschnitt B Bilanzierung +
+**Stand dieses Briefes:** 2026-06-17 nach R5c (Abschnitt A Mehrmandanten + Abschnitt B Bilanzierung +
 R1–R4 abgeschlossen + gemergt; **R5a Bankformate härten** — CAMT .052/.054, Saldo-Integritätsprüfung,
-strukturierte RmtInf; **R5b NER** — PII Dritter über die Anker hinaus maskieren) · Tests **916/916** ·
-SW **v92** · 95 JS-Module · nächster Schritt **R5c (dreistufiger Briefkasten, P7)** bzw. R6/Browser-Sichttest.
-(Diese Zeile bei jeder Sitzung aktualisieren.)
+strukturierte RmtInf; **R5b NER** — PII Dritter über die Anker hinaus maskieren; **R5c dreistufiger
+Briefkasten** — Mandant ⊃ Firma ⊃ Person, scope-präfixierte Token, Setting `briefkastenScopes`) · Tests
+**942/942** · SW **v93** · 96 JS-Module · **Abschnitt R bis R5 komplett** · nächster Schritt **R6 [KANN]**
+bzw. Browser-Sichttest. (Diese Zeile bei jeder Sitzung aktualisieren.)

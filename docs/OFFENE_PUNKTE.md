@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R5a/R5b).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R5c).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -356,8 +356,13 @@ Rechnung/USt-Buchung erfolgt in BLP). Damit ist der **Datei-Import** bereits der
   konservativ E-Mail/IBAN/USt-IdNr/Steuernr/Telefon **Dritter** im Belegtext und ergänzt sie als
   zusätzliche Anker für `pseudonym.tokenize` (Setting `nerPii`, Default an, nur im Pseudonym-Modus).
   Exakte Stammdaten-Anker behalten Typ-Vorrang; node-getestet. **Grenze:** kein BIC/Namens-NER (FP-Risiko).
-- **[SOLL] Dreistufiger Briefkasten** (Mandant ⊃ Firma ⊃ Person) für Pseudonymisierung/CRM
-  (P7, **R5c — offen**); heute flache Anker, 1 Tresor = 1 Mandant.
+- **[ERLEDIGT 2026-06-17] Dreistufiger Briefkasten** (Mandant ⊃ Firma ⊃ Person) für Pseudonymisierung/CRM
+  (P7, **R5c**): ✅ `ai/briefkasten.js` ordnet die exakten Stammdaten-Anker in die Hierarchie ein (eigene Firma =
+  `FIRMA_1`/eigen, Mitarbeiter = deren Personen; Firmenkunden = `FIRMA_n`; Privatkunden = Personen am Mandanten) und
+  vergibt **scope-präfixierte** Typen → `tokenize` erzeugt gruppierende Token (`[[FIRMA_2_IBAN_1]]`,
+  `[[FIRMA_1_PERSON_1]]`). Setting `briefkastenScopes` (Default aus, opt-in), `ladeAnker` routet dann darüber + liest
+  den aktiven Mandanten aus der Registry; node-getestet (+26), SW `v93`. **Grenze:** Person-Attribute hängen am
+  Parent-Scope (Firma/Mandant), nicht am einzelnen Personen-Token; NER-Anker bleiben flach.
 - **[SOLL] UI end-to-end testen:** kein Headless-Browser in der Bau-Umgebung → DOM-/IndexedDB-Pfade
   sind nur statisch geprüft. Manuelle Sichttests dokumentieren oder Headless-E2E einführen.
 

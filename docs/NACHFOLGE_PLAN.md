@@ -4,7 +4,7 @@
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
 > `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **885/885 grün**, SW `v91`.
-> Nächster Schritt: **R5c** (dreistufiger Briefkasten, P7) oder **R6**/Sichttest nach Bedarf. A+B fertig; R1–R4 ✅; **R5a ✅ (Bankformate härten: CAMT .052/.054 + Saldo-Prüfung + strukturierte RmtInf); R5b ✅ (NER: PII Dritter über die Anker hinaus maskieren)**. Tests **916/916**, SW `v92`.
+> Nächster Schritt: **R6** [KANN] oder **Browser-Sichttest** nach Bedarf. A+B fertig; R1–R4 ✅; **R5a ✅ (Bankformate härten: CAMT .052/.054 + Saldo-Prüfung + strukturierte RmtInf); R5b ✅ (NER: PII Dritter über die Anker hinaus maskieren); R5c ✅ (dreistufiger Briefkasten Mandant ⊃ Firma ⊃ Person, `ai/briefkasten.js`, Setting `briefkastenScopes`)** → Abschnitt R bis R5 komplett. Tests **942/942**, SW `v93`.
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -140,7 +140,7 @@
   `rechnungenUebernommen`; `connect.buildAustauschPaket` → **Format v2** (abwärtskompatibel), berechnete Aufträge tragen ihre
   Rechnung reziprok mit. UI: Import-Banner zählt übernommene Rechnungen; i18n de+en, SW `v91`, **+22 Tests (885/885)**.
   UI/Glue statisch geprüft. **Bewusst offen:** API/Push (Echtzeit), Übernahme von Zahlungsstatus/Teilzahlungen. (PR #95.)
-- [~] **R5** Bankformate härten + NER + dreistufiger Briefkasten — **in Teil-PRs:**
+- [x] **R5** Bankformate härten + NER + dreistufiger Briefkasten — **in Teil-PRs (alle ✅):**
   - [x] **R5a — Bankformate härten.** ✅ `domain/bankimport.js`: CAMT-Container **.052 (`<Rpt>`)** und
     **.054 (`<Ntfctn>`)** zusätzlich zu .053 (`<Stmt>`); **Saldo-Parsing** (MT940 `:60F/M:`/`:62F/M:`, CAMT
     `<Bal>` OPBD/PRCD ↔ CLBD/CLAV, signiert via C/D bzw. CdtDbtInd) → `parseMT940`/`parseCAMT` liefern
@@ -157,7 +157,20 @@
     fließen vor dem KI-Versand in `pseudonym.tokenize`. Gated über Setting `nerPii` (Default an, nur im
     Pseudonym-Modus sichtbar); `anker.ladeAnker(text)` + Call-Sites (journal/documents) reichen den Text durch.
     i18n de+en (inkl. `pseudonym.typ.TELEFON`). UI/Glue statisch geprüft. (PR R5b.)
-  - [ ] **R5c — Dreistufiger Briefkasten** (Mandant ⊃ Firma ⊃ Person, P7) für Pseudonymisierung/CRM — offen.
+  - [x] **R5c — Dreistufiger Briefkasten** (Mandant ⊃ Firma ⊃ Person, P7) für Pseudonymisierung/CRM. ✅
+    `ai/briefkasten.js` (rein, node-getestet): `baueBriefkasten({mandant,firma,kunden,mitarbeiter})` ordnet die
+    exakten Stammdaten-Anker in die Hierarchie ein — **eigene Firma = `FIRMA_1`** (`eigen`), **Mitarbeiter** = deren
+    Personen; **Firmenkunden** (`istVerbraucher !== true`) = weitere **`FIRMA_n`** mit ihren E-Mail/USt-IdNr/Adresse-
+    Ankern; **Privatkunden** (`istVerbraucher === true`) = **Personen am Mandanten**. Firmen-Nummer **deterministisch
+    nach Daten-Reihenfolge** (Scope stabil, unabhängig von der Text-Reihenfolge). `briefkastenAnker` plättet das in
+    eine **scope-präfixierte** `{wert,typ}`-Liste → `pseudonym.tokenize` erzeugt gruppierende Token
+    (`[[FIRMA_2_IBAN_1]]`, `[[FIRMA_1_PERSON_1]]`), sodass die KI Zugehörigkeiten erkennt — bei gleichem Schutz +
+    verlustfreier Re-Identifizierung (kein Umbau an tokenize/reidentify nötig, nur die `typ`-Strings tragen die
+    Hierarchie). `briefkastenBericht` (Zähler ohne Klartext), `tokenizeBriefkasten`. Glue: `ai/anker.js ladeAnker`
+    routet bei Setting **`briefkastenScopes`** (Default aus, opt-in) über den Briefkasten und liest den aktiven
+    Mandanten aus der Registry; UI-Schalter im Pseudonym-Modus (`shell.js`), i18n de+en, SW `v93`, **+26 Tests
+    (942/942)**. UI/Glue statisch geprüft. **Grenze:** Person-Attribute (E-Mail/USt-IdNr) sind dem Parent-Scope
+    (Firma/Mandant) zugeordnet, nicht dem einzelnen Personen-Token; kein NER-Scoping (NER-Anker bleiben flach). (PR R5c.)
 - [ ] **R6 [KANN]** ZUGFeRD-**Erzeugen** (nur falls build-frei lösbar), Lighthouse, lokales OCR, Privat-/Bürger-Modus, Sage 5b–d.
 
 ---
