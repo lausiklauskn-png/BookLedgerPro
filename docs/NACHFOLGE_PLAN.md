@@ -25,17 +25,34 @@
 > passt zum Krypto-Modell, schützt die Datendurabilität (Regel #2). **DB-Suffix `bookledgerpro` bleibt.**
 > Trennung über einen **Mandanten-Präfix in den IndexedDB-Namen** bzw. eine Mandanten-Registry.
 
-- [ ] **M1 — Fundament (rein + Design).** `docs/db.js`/`vault.js` analysieren. Neues `domain/mandanten.js`
-  (rein, node-getestet): Registry-Datenmodell `{id, name, erstellt}`, `aktiverMandant`, Helfer für den
-  **Speicher-Präfix je Mandant** (z. B. DB-/Store-Namensbildung) **ohne** das DB-Suffix `bookledgerpro`
-  zu ändern. **Noch keine** Tresor-Umverdrahtung — nur die reine Schicht + Tests + kurzer Design-Abschnitt
-  in dieser Datei. (Klein, sicher.)
+- [x] **M1 — Fundament (rein + Design).** ✅ `src/domain/mandanten.js` (rein, node-getestet, 29 Tests):
+  Registry `{mandanten:[{id,name,erstellt}], aktiv}`, `aktiverMandant`, immutable Ops
+  (`addMandant`/`umbenenneMandant`/`entferneMandant`/`setzeAktiv`/`findeMandant`), `validateMandantName`,
+  `neueMandantId`, **Speicher-Namensbildung** `dbNameFuer(id)` ohne das DB-Suffix `bookledgerpro` zu
+  ändern, sowie `mitLegacyMandant` (migrationsfreier Seed). **Keine** Tresor-Umverdrahtung. (PR M1.)
 - [ ] **M2 — Tresor je Mandant + Auswahl am Sperrbildschirm.** `lock.js`/`vault.js`: bestehenden Einzel-
   Tresor **migrationsfrei** als „Mandant 1" registrieren; Mandant **anlegen** (eigenes Passwort/Shamir/Backup)
   und **auswählen/wechseln**. Sorgfältig: Sitzungs-Key beim Wechsel sauber verwerfen. UI statisch geprüft.
 - [ ] **M3 — Shell-Indikator + Verwaltung.** Aktiver Mandant sichtbar (Header), „Mandant wechseln" + in
   Einstellungen „Mandanten verwalten" (umbenennen/entfernen — Entfernen nur mit Bestätigung, Daten bleiben
   im jeweiligen Tresor). Doku `docs/MANDANTEN.md`.
+
+### Design-Abschnitt Mehrmandanten (entstanden in M1, verbindlich für M2/M3)
+- **1 Mandant = 1 getrennter, eigenständig verschlüsselter Tresor.** Kein Record-Namespacing →
+  keine Kreuz-Kontamination, jeder Tresor hat eigenen DEK/Passwort/Shamir/Backup.
+- **Speichertrennung über DB-Namens-Präfix, Suffix bleibt:** `dbNameFuer(id)` →
+  Legacy/Default = `blpr_bookledgerpro` (unverändert → **migrationsfrei**); weitere Mandanten =
+  `blpr_<id>_bookledgerpro`. Jeder Name endet auf `bookledgerpro` (Regel #3 → keine Origin-Kollision).
+- **Legacy-Mandant:** feste ID `standard`. Der bestehende Einzel-Tresor wird in M2 als „Mandant 1"
+  (ID `standard`) registriert und behält seinen DB-Namen — **ohne Migration**.
+- **Registry-Speicherort (M2-Entscheidung, hier festgehalten):** Die Mandanten-Liste muss **vor** dem
+  Entsperren lesbar sein (Auswahl am Sperrbildschirm) → sie liegt **unverschlüsselt** in einer eigenen
+  kleinen kv-DB (Vorschlag: `blpr_mandanten_bookledgerpro`, Suffix wieder erhalten). Konsequenz: die
+  **Namen** der Mandanten sind unverschlüsselt (DSGVO-Hinweis im UI; keine personenbezogenen Pflichtdaten
+  im Namen erzwingen). Tresor-Inhalte bleiben pro Mandant verschlüsselt.
+- **Wechsel (M2):** beim Mandantenwechsel den Sitzungs-DEK sauber verwerfen (`lockVault`), DB-Handle der
+  alten DB schließen, dann Ziel-DB öffnen + entsperren. `core/db.js` braucht dafür eine konfigurierbare
+  DB-Namens-Quelle (heute Konstante) — in M2 umzuverdrahten, NICHT in M1.
 
 ## B) Bilanzierung (zweite Gewinnermittlungsart neben EÜR)
 > Begründung: GmbH/OHG brauchen GuV + Bilanz (§4 Abs.1/§5 EStG). Modus-Schalter, Bestandskonten-Vortrag.

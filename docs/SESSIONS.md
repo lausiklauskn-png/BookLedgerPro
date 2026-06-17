@@ -5,6 +5,30 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — M1: Mehrmandanten-Fundament (reine Schicht) [Branch `claude/m1-mehrmandanten-fundament-0k6qiu`]
+
+**Was getan** (NACHFOLGE_PLAN.md, Schritt M1 — „Fundament rein + Design")
+- **Neues `src/domain/mandanten.js` (rein, kein IndexedDB-Zugriff):** Registry-Datenmodell
+  `{mandanten:[{id,name,erstellt}], aktiv}` mit immutablen Operationen `addMandant`,
+  `umbenenneMandant`, `entferneMandant`, `setzeAktiv`, `findeMandant`, `aktiverMandant`;
+  `erstelleMandant`/`validateMandantName`/`neueMandantId`.
+- **Speicher-Namensbildung `dbNameFuer(id)`:** Legacy/Default (ID `standard` oder leer) →
+  unveränderter Bestandsname `blpr_bookledgerpro` (**migrationsfrei**); weitere Mandanten →
+  `blpr_<id>_bookledgerpro`. **Suffix `bookledgerpro` bleibt** (Regel #3, keine Origin-Kollision).
+- **`mitLegacyMandant`:** migrationsfreier Seed — leere Registry → Bestand als „Mandant 1"
+  (ID `standard`) aktiv; vorhandene Registries bleiben unangetastet.
+- **Design-Abschnitt** in `NACHFOLGE_PLAN.md` (Abschnitt A) ergänzt: 1 Mandant = 1 getrennter
+  Tresor, unverschlüsselte Registry-DB für Sperrbildschirm-Auswahl, DEK-Verwerfen beim Wechsel.
+- **Tests 680/680** (29 neu: Namensbildung inkl. Suffix/Legacy/ungültige ID, ID-/Namensprüfung,
+  Registry-Ops immutabel, Legacy-Seed). `node tests/run.mjs` grün. **SW-Cache `v80`**, Modul precached.
+
+**Stand:** M1 vollständig (reine Logik node-getestet; **keine** Tresor-Umverdrahtung — bewusst M2).
+**Offen/Nächstes:** **M2** — Tresor je Mandant + Auswahl am Sperrbildschirm (`lock.js`/`vault.js`/
+`core/db.js` DB-Namen konfigurierbar machen, Bestand als „Mandant 1" registrieren, Wechsel mit
+sauberem DEK-Verwerfen). Design-Abschnitt in `NACHFOLGE_PLAN.md` ist verbindlich.
+
+---
+
 ## 2026-06-16 — V2: §13b/Reverse-Charge + EU/Ausland (USt) [Branch `claude/v2-ox8bu7`]
 
 **Was getan** (Fahrplan-Punkt V2, „weiter laut PULS")
