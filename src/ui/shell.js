@@ -249,7 +249,14 @@ function viewSettings() {
     seg(t('settings.datenschutz'), 'datenschutzModus',
       [['aus', t('settings.datenschutz.aus')], ['pseudonym', t('settings.datenschutz.pseudonym')]],
       s.datenschutzModus || 'aus',
-      (v) => updateSettings({ datenschutzModus: v }), t('settings.datenschutz.hint')),
+      async (v) => { await updateSettings({ datenschutzModus: v }); paint(); }, t('settings.datenschutz.hint')),
+
+    // NER-Zusatz: nur im Pseudonym-Modus sinnvoll → konditional eingeblendet.
+    s.datenschutzModus === 'pseudonym'
+      ? seg(t('settings.datenschutz.ner'), 'nerPii',
+          [['nein', t('common.no')], ['ja', t('common.yes')]], s.nerPii === false ? 'nein' : 'ja',
+          (v) => updateSettings({ nerPii: v === 'ja' }), t('settings.datenschutz.nerHint'))
+      : null,
 
     seg(t('settings.theme'), 'theme',
       [['system', t('settings.theme.system')], ['light', t('settings.theme.light')], ['dark', t('settings.theme.dark')]],

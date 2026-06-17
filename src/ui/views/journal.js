@@ -127,7 +127,7 @@ function buchungForm(konten, idx) {
       try {
         const sollK = idx[fSoll.value], habenK = idx[fHaben.value];
         const kontierung = `Soll ${fSoll.value} ${sollK ? sollK.name : ''} an Haben ${fHaben.value} ${habenK ? habenK.name : ''}`.replace(/\s+/g, ' ').trim();
-        const anker = getSettings().datenschutzModus === 'pseudonym' ? await ladeAnker() : null;
+        const anker = getSettings().datenschutzModus === 'pseudonym' ? await ladeAnker(fText.value) : null;
         const r = await begruendeBuchung({
           beschreibung: fText.value, konto: fSoll.value, kontoName: sollK ? sollK.name : '',
           kontierung, text: fText.value,

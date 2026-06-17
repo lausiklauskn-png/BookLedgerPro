@@ -5,6 +5,46 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R5a (Bankformate härten) + R5b (NER/PII über die Anker hinaus)
+
+**Was getan**
+- **R5a — Bankformate härten** (`src/domain/bankimport.js`, rein/node-getestet):
+  - **CAMT-Container .052 (`<Rpt>`) und .054 (`<Ntfctn>`)** zusätzlich zu .053 (`<Stmt>`);
+    `erkenneBankformat` erkennt die neuen Wurzel-Tags/Namespaces.
+  - **Saldo-Parsing:** MT940 `:60F/:60M:` (Anfang) + `:62F/:62M:` (Schluss), CAMT `<Bal>`
+    (OPBD/PRCD ↔ CLBD/CLAV), signiert über C/D bzw. CdtDbtInd → `parseMT940`/`parseCAMT`
+    liefern `saldoStartCent`/`saldoEndeCent`.
+  - **`pruefeBankauszug(parsed)`:** rechnet (Anfang ± Umsätze) gegen den Schlusssaldo und meldet
+    `saldo-differenz`/`unvollstaendige-umsaetze`/`format-unbekannt`/`keine-umsaetze`.
+  - **Strukturierte RmtInf** (CAMT `CdtrRefInf`/`EndToEndId` → `umsatz.ref` + in den Verwendungszweck,
+    hilft dem Zahlungsabgleich, die Rechnungsnummer zu treffen).
+  - UI (`documents.js`): Bankimport zeigt die Prüf-Hinweise; i18n de+en; Karten-Texte auf .052/.053/.054.
+- **R5b — NER (PII über die Anker hinaus)** (`src/ai/ner.js`, rein/node-getestet):
+  - `erkennePII(text)` erkennt **konservativ** E-Mail, IBAN (kompakt + gruppiert), USt-IdNr (DE/AT),
+    Steuernr (FF/BBB/UUUU), Telefon (intl `+49`/`0049` + national mit Trenner, **ohne Punkt** → keine
+    Datums-/Betragstreffer); löst Überlappungen Longest-Match auf; **kein BIC** (kollidiert mit
+    Großwörtern wie „RECHNUNG").
+  - `piiAnker`/`kombiniereAnker` ergänzen die Stammdaten-Anker um im Text gefundene PII **Dritter**
+    (exakte Anker behalten Typ-Vorrang via `normalizeAnchors`) → fließen vor dem KI-Versand in
+    `pseudonym.tokenize`. Setting **`nerPii`** (Default an, nur im Pseudonym-Modus sichtbar);
+    `anker.ladeAnker(text)` + Call-Sites (journal/documents) reichen den Text durch.
+  - i18n de+en inkl. `pseudonym.typ.TELEFON` + Settings-Toggle in `shell.js`.
+- SW-Cache **v92** (+ `src/ai/ner.js` precached). **+31 Tests → 916/916 grün.**
+
+**Stand**
+- R5 in Teil-PRs: **R5a ✅, R5b ✅**; **R5c (dreistufiger Briefkasten, P7) offen**. A+B + R1–R4 weiterhin ✅.
+
+**Offen / Grenzen (ehrlich)**
+- Bankimport: Plausibilitäts-/Integritätsprüfung, **KEINE** SWIFT-/ISO-20022-Schema-Validierung; reale
+  Bank-Dialekte (Sub-Felder, Sonderzeichen) nur best-effort.
+- NER bewusst konservativ → erkennt **keine** freien Personennamen/BIC (FP-Vermeidung); kann selten zu
+  viel maskieren (datenschutz-sichere Richtung).
+- UI/Glue (documents/journal/shell) **statisch geprüft** (kein Headless-Browser); reine Logik node-getestet.
+
+**Nächstes:** R5c (dreistufiger Briefkasten) oder R6/Sichttest — siehe `docs/NACHFOLGE_PLAN.md`.
+
+---
+
 ## 2026-06-17 — R4 Stufe 2: Rechnungs-Übernahme aus WorkFloh [Branch `claude/r4-workfloh-invoice-import-jc3yd7`, PR #95]
 
 **Was getan** (Schritt **R4** — A4 Stufe 2: bereits gestellte Rechnung statt nur Auftrag übernehmen)

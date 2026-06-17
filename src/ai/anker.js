@@ -50,9 +50,15 @@ export function baueAnker({ kunden = [], mitarbeiter = [], firma = {} } = {}) {
  * Firmenprofil (Settings). Browser/IndexedDB — NICHT headless-E2E getestet.
  * Fällt bei Fehlern auf eine leere Liste zurück (kein Anker → keine Maskierung,
  * aber auch kein Absturz der Pipeline).
+ *
+ * Ist `text` gesetzt UND die Einstellung `nerPii` nicht ausdrücklich `false`, werden
+ * zusätzlich im Text erkannte PII-Muster (E-Mail/IBAN/USt-IdNr/Steuernr./Telefon
+ * Dritter, die NICHT in den Stammdaten stehen) als weitere Anker ergänzt — die
+ * exakten Stammdaten-Anker behalten Vorrang (siehe `ner.kombiniereAnker`).
+ * @param {string} [text] der vor dem KI-Versand zu maskierende Klartext.
  * @returns {Promise<{wert:string,typ:string}[]>}
  */
-export async function ladeAnker() {
+export async function ladeAnker(text) {
   try {
     const [{ listKunden, listMitarbeiter }, { getSettings }] = await Promise.all([
       import('../domain/crm-store.js'),
@@ -62,8 +68,14 @@ export async function ladeAnker() {
       listKunden().catch(() => []),
       listMitarbeiter().catch(() => []),
     ]);
-    const firma = (getSettings() || {}).firma || {};
-    return baueAnker({ kunden, mitarbeiter, firma });
+    const settings = getSettings() || {};
+    const firma = settings.firma || {};
+    const exakt = baueAnker({ kunden, mitarbeiter, firma });
+    if (text && settings.nerPii !== false) {
+      const { kombiniereAnker } = await import('./ner.js');
+      return kombiniereAnker(exakt, text);
+    }
+    return exakt;
   } catch {
     return [];
   }
