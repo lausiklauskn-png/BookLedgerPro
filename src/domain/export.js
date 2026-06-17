@@ -453,3 +453,21 @@ export function buildGuvCsv(guv) {
   rows.push(['', '', guv.jahresueberschuss >= 0 ? 'Jahresüberschuss' : 'Jahresfehlbetrag', centsToComma(guv.jahresueberschuss)]);
   return csv(rows);
 }
+
+/**
+ * Bilanz (Bilanzierung, B3) als CSV. Erwartet bilanz.bilanz(...). Der
+ * Jahresüberschuss/-fehlbetrag erscheint als Ergebnisposten auf der Passivseite
+ * (Eigenkapital). EHRLICHER HINWEIS: Bilanz im Konten-Sinn, KEINE amtliche
+ * §266-HGB-Gliederung, kein Konzernabschluss, keine E-Bilanz-Taxonomie.
+ */
+export function buildBilanzCsv(bilanz) {
+  const rows = [['Seite', 'Konto', 'Bezeichnung', 'Betrag']];
+  if (bilanz.stichtag) rows.push(['# Stichtag', '', bilanz.stichtag, '']);
+  for (const a of bilanz.aktiva || []) rows.push(['Aktiva', a.nummer, a.name, centsToComma(a.wert)]);
+  rows.push(['', '', 'Summe Aktiva', centsToComma(bilanz.summeAktiva)]);
+  for (const p of bilanz.passiva || []) rows.push(['Passiva', p.nummer, p.name, centsToComma(p.wert)]);
+  rows.push(['Passiva', '', bilanz.jahresueberschuss >= 0 ? 'Jahresüberschuss (Ergebnis)' : 'Jahresfehlbetrag (Ergebnis)', centsToComma(bilanz.jahresueberschuss)]);
+  rows.push(['', '', 'Summe Passiva (inkl. Ergebnis)', centsToComma(bilanz.summePassivaMitErgebnis)]);
+  if (!bilanz.ausgeglichen) rows.push(['', '', 'Differenz (NICHT ausgeglichen)', centsToComma(bilanz.differenz)]);
+  return csv(rows);
+}
