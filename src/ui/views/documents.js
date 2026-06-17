@@ -9,6 +9,7 @@ import { pickFile, formatBytes, readFileText, readFileBytes } from '../../core/f
 import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
 import { extrahiereZugferdXml, kostPflichtfelder } from '../../domain/zugferd.js';
 import { parseBankauszug, umsatzExtraktion, pruefeBankauszug } from '../../domain/bankimport.js';
+import { validiereBankauszug } from '../../domain/bankschema.js';
 import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen, findeSammelzuordnung, verteileSammelzahlung, sammelBuchungZeilen } from '../../domain/zahlungsabgleich.js';
 import { skontoEntwurf } from '../../domain/skonto.js';
 import { offeneVerbindlichkeiten, eingangsrechnungZeilen, extraktionZuEingangsrechnung, validateEingangsrechnung } from '../../domain/payables.js';
@@ -313,6 +314,31 @@ function bankPruefHinweis(pruef) {
   ]);
 }
 
+// Eine Schema-/Struktur-Meldung (Fehler ODER Warnung) lesbar machen.
+// `{tag/detail/code}` → kompakte Zeile; vieles ist bereits sprechend (z. B. "max 16 Zeichen").
+function schemaZeile(m) {
+  const teil = m.detail || (m.tag ? `:${m.tag}:` : '') || m.code;
+  return m.tag && m.detail ? `:${m.tag}: ${m.detail}` : teil;
+}
+
+// Übersetzt die Schema-/Struktur-Validierung (validiereBankauszug) in einen Hinweis:
+// klare Verstöße als Fehler (rot), strittige Punkte als Hinweise (gelb), sonst ✓.
+function bankSchemaHinweis(val) {
+  if (val.fehler && val.fehler.length) {
+    return el('div', { class: 'hinweis warn small' }, [
+      el('strong', { text: `⚠ ${t('docs.bankSchemaFehlerTitel')} ` }),
+      el('span', { text: val.fehler.map(schemaZeile).join(' · ') }),
+    ]);
+  }
+  if (val.warnungen && val.warnungen.length) {
+    return el('div', { class: 'hinweis small' }, [
+      el('strong', { text: `${t('docs.bankSchemaHinweisTitel')} ` }),
+      el('span', { text: val.warnungen.map(schemaZeile).join(' · ') }),
+    ]);
+  }
+  return el('p', { class: 'muted small', text: t('docs.bankSchemaOk').replace('{format}', val.format || '—') });
+}
+
 function bankImportKarte() {
   const out = el('div', { class: 'vorschlag-slot' });
   const btn = el('button', {
@@ -322,9 +348,17 @@ function bankImportKarte() {
       const file = await pickFile('text/plain,application/xml,text/xml,.sta,.940,.txt,.mt940,.xml', null);
       if (!file) return;
       try {
-        const parsed = parseBankauszug(await readFileText(file));
+        const roh = await readFileText(file);
+        const parsed = parseBankauszug(roh);
         const { format, konto, umsaetze } = parsed;
-        if (!umsaetze.length) { out.appendChild(el('p', { class: 'form-error', text: t('docs.bankNone') })); return; }
+        // Struktur-/Schema-Validierung (SWIFT-Feldformate / ISO-20022-Nachrichten-Struktur)
+        // VOR den Umsätzen anzeigen — auch wenn keine Umsätze geparst wurden.
+        const schema = validiereBankauszug(roh);
+        if (!umsaetze.length) {
+          out.appendChild(bankSchemaHinweis(schema));
+          out.appendChild(el('p', { class: 'form-error', text: t('docs.bankNone') }));
+          return;
+        }
         // Offene Posten für den Zahlungsabgleich laden: Forderungen (aus Aufträgen,
         // richtung 'einnahme') + Verbindlichkeiten (Eingangsrechnungen, richtung 'ausgabe').
         let posten = [];
@@ -334,6 +368,8 @@ function bankImportKarte() {
           posten = [...offenePosten(auftraege, { nameById }), ...offeneVerbindlichkeiten(eingang)];
         } catch { posten = []; }
         out.appendChild(el('div', { class: 'muted small', text: `${format || '—'} · ${t('docs.bankAccount')}: ${konto || '—'} · ${umsaetze.length} ${t('docs.bankTxns')}` }));
+        // Struktur-/Schema-Validierung (Feldformate / Nachrichten-Struktur).
+        out.appendChild(bankSchemaHinweis(schema));
         // Plausibilitätsprüfung (Saldo-Abgleich / unvollständige Umsätze) als Hinweis.
         const pruef = pruefeBankauszug(parsed);
         if (pruef.warnungen.length) out.appendChild(bankPruefHinweis(pruef));

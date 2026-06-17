@@ -3,13 +3,14 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **1001/1001 grün**, SW `v97`.
-> Nächster Schritt: **R6/Rest** [KANN] bleibt **umgebungs-/menschen-blockiert** (Lighthouse/Perf → Headless-Browser;
-> lokales OCR → Tesseract ist wasm/npm-Runtime, NICHT build-frei; ZUGFeRD-Erzeugen → PDF-Lib, nicht build-frei;
-> Sage 5b–d → fremde Repos, menschlich vermittelt) **oder Browser-Sichttest** (echter Nutzer). Verbleibender
-> build-freier Rest-Korb für Code-Sitzungen: **R5a-Rest** (echte SWIFT/ISO-20022-Schema-Validierung).
-> A+B fertig; R1–R5 ✅ inkl. **R5c-Rest NER-Scoping ✅**; **R4-Rest Zahlungs-/Teilzahlungs-Übernahme ✅**
-> (Austauschformat v3); **R6/P1 ✅**; **R6/P2 ✅**. Tests **1001/1001**, SW `v97`.
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **1029/1029 grün**, SW `v98`.
+> Nächster Schritt: **mit dem Nutzer abstimmen** (AskUserQuestion) — der **build-freie Rest-Korb ist leer**
+> (R4-Rest ✅, **R5a-Rest SWIFT/ISO-20022-Schema-Validierung ✅**). Verbleibend nur noch **umgebungs-/menschen-
+> blockierte** [KANN]-Punkte (**R6/Rest**: Lighthouse/Perf → Headless-Browser; lokales OCR → Tesseract ist wasm/
+> npm-Runtime, NICHT build-frei; ZUGFeRD-Erzeugen → PDF-Lib, nicht build-frei; Sage 5b–d → fremde Repos, menschlich
+> vermittelt) **oder Browser-Sichttest** (echter Nutzer) **oder eine neue, mit dem Nutzer vereinbarte Feature-Idee**.
+> A+B fertig; R1–R5 ✅ inkl. **R5a-Rest ✅** + **R5c-Rest NER-Scoping ✅**; **R4-Rest Zahlungs-/Teilzahlungs-Übernahme ✅**
+> (Austauschformat v3); **R6/P1 ✅**; **R6/P2 ✅**. Tests **1029/1029**, SW `v98`.
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -163,6 +164,20 @@
     **strukturierte RmtInf** (CAMT `CdtrRefInf`/`EndToEndId` → `umsatz.ref` + in den Zweck, hilft dem
     Zahlungsabgleich auf die Rechnungsnummer). UI: Bankimport zeigt Prüf-Hinweise; i18n de+en. **Grenze:**
     Plausibilitäts-/Integritätsprüfung, **KEINE** SWIFT-/ISO-20022-Schema-Validierung. (PR R5a.)
+  - [x] **R5a-Rest — SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-/Struktur-Validierung.** ✅ Neues Modul
+    `src/domain/bankschema.js` (rein, node-getestet, +28 → **1029/1029**): `validiereMT940(text)` prüft die
+    **SWIFT-FIN-Feldformate** — Pflichtfelder `:20:/:25:/:28C:/:60a:/:62a:`, Feldformate (16x, 35x, `5n[/5n]`,
+    Saldo `1!a6!n3!a15d`, Statement-Line `:61:` Front `6!n[4!n]2a[1!a]15d1!a3!c`), Reihenfolge der Sequenz,
+    Datums-/Betrags-Plausibilität; `validiereCAMT(xml)` prüft die **ISO-20022-Nachrichten-Struktur** von
+    camt.052/.053/.054 — Namespace→Variante/Version, Pflicht-Container (`BkToCstmr…`, `GrpHdr`+`MsgId`+`CreDtTm`,
+    Statement+`Id`+`Acct`), je `<Ntry>`: `<Amt>` mit **Ccy-Attribut** (ISO 4217), `CdtDbtInd` ∈ {CRDT,DBIT},
+    Status/Datum, .053-Salden OPBD/CLBD; `validiereBankauszug` = Format-Weiche. **Klare Verstöße = Fehler,
+    dialekt-strittige Punkte = Warnungen** (konservativ, nicht-blockierend). UI: Bankimport (`documents.js`)
+    zeigt den Schema-Hinweis (`bankSchemaHinweis`, grün/gelb/rot) vor der Saldo-Plausibilität; i18n de+en, SW
+    `v98`, Modul precached. UI/Glue statisch geprüft. **EHRLICHE GRENZE:** Struktur-/Feldformat-Prüfung nach den
+    dokumentierten Spezifikationen — **KEINE zertifizierte XSD-Validierung** (ein echter XSD-Validator ist nicht
+    build-frei) und **KEINE** SWIFT-Netzwerk-Konformitätsprüfung; es wird keine Konformität behauptet, die nicht
+    belegt ist. **→ build-freier Rest-Korb damit leer.** (PR R5a-Rest.)
   - [x] **R5b — NER (PII über die Anker hinaus).** ✅ `ai/ner.js` (rein, node-getestet): `erkennePII(text)`
     erkennt **konservativ** E-Mail/IBAN (kompakt+gruppiert)/USt-IdNr (DE/AT)/Steuernr (FF/BBB/UUUU)/Telefon
     (intl + national mit Trenner, **ohne Punkt** → keine Datums-/Betrags-Falschtreffer), löst Überlappungen

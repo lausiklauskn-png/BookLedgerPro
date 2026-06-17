@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R4-Rest Zahlungs-/Teilzahlungs-Übernahme).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R5a-Rest SWIFT/ISO-20022-Schema-Validierung).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -356,10 +356,16 @@ Rechnung/USt-Buchung erfolgt in BLP). Damit ist der **Datei-Import** bereits der
 - **[TEILWEISE 2026-06-17] ZUGFeRD:** ✅ **Empfang** — eingebettete CII/UBL aus **PDF** best-effort
   auspacken (`zugferd.extrahiereZugferdXml`, native `DecompressionStream` für FlateDecode) → bestehender
   Buchungsvorschlag. **Offen:** ZUGFeRD *erzeugen* (XML in PDF/A-3 einbetten) braucht PDF-Lib → nicht build-frei.
-- **[TEILWEISE 2026-06-17] Bankformate härten (R5a):** ✅ CAMT-Varianten **.052 (`<Rpt>`)/.054
+- **[ERLEDIGT 2026-06-17] Bankformate härten (R5a + R5a-Rest):** ✅ CAMT-Varianten **.052 (`<Rpt>`)/.054
   (`<Ntfctn>`)** zusätzlich zu .053, **Saldo-Integritätsprüfung** (`pruefeBankauszug`: Anfang ± Umsätze
-  vs. Schlusssaldo) und **strukturierte RmtInf** (`CdtrRefInf`/`EndToEndId` → Beleg-Referenz). **Offen:**
-  keine vollständige **SWIFT-(MT940)/ISO-20022-(CAMT)**-Schema-Validierung; reale Bank-Dialekte testen.
+  vs. Schlusssaldo) und **strukturierte RmtInf** (`CdtrRefInf`/`EndToEndId` → Beleg-Referenz). **R5a-Rest ✅:**
+  echte **SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-/Struktur-Validierung** in `src/domain/bankschema.js` (rein,
+  node-getestet): `validiereMT940` (SWIFT-FIN-Feldformate + Pflichtfelder + Reihenfolge), `validiereCAMT`
+  (ISO-20022-Nachrichten-Struktur camt.052/.053/.054: Pflicht-Container, `<Amt Ccy>`, `CdtDbtInd`, Status/Datum),
+  `validiereBankauszug` (Format-Weiche); UI-Hinweis im Bankimport. SW `v98`, +28 Tests (1029/1029).
+  **Grenze (ehrlich):** Struktur-/Feldformat-Prüfung nach den dokumentierten Specs — **KEINE zertifizierte
+  XSD-Validierung** (nicht build-frei) und **KEINE** SWIFT-Netzwerk-Konformität; klare Verstöße = Fehler,
+  dialekt-strittige Punkte = Warnungen (konservativ). Reale Bank-Dialekte weiter mit echten Auszügen testen.
 - **[SOLL] DATEV-EXTF:** „EXTF-orientiert", **nicht** das zertifizierte 116-Spalten-Format;
   Steuerschlüssel-Mapping nur Standardsätze → mit Berater/DATEV verifizieren.
 - **[ERLEDIGT 2026-06-17] PII-Erkennung über Anker hinaus (NER) (R5b):** ✅ `ai/ner.js` erkennt

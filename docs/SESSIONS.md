@@ -5,6 +5,43 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R5a-Rest: SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-/Struktur-Validierung [Branch `claude/bookledgerpro-swift-iso-validation-s852dy`]
+
+**Ausgangslage / Auswahl** (Schritt nach R4-Rest, gemäß `docs/NACHFOLGE_PLAN.md`)
+- Zwei gleichwertige Wege: **(A) Browser-Sichttest** (braucht den menschlichen Nutzer mit echtem Browser — hier
+  keiner) oder **(B) build-freier Code-Korb**. Der Plan **empfiehlt B / R5a-Rest** als letzten verbliebenen
+  build-freien Rest-Korb → autonome Code-Sitzung, R5a-Rest sauber umgesetzt.
+
+**Was getan** (reine Logik zuerst, node-getestet — **+28 → 1029/1029**)
+- **Neu `src/domain/bankschema.js`** (rein, kein Netz/DOM) — **Struktur-/Schema-Validierung** des Bankimports,
+  bewusst getrennt von der **semantischen** `pruefeBankauszug()` (Saldo-Integrität) in `bankimport.js`:
+  - `validiereMT940(text)` — SWIFT-FIN-Feldformate: Pflichtfelder `:20:/:25:/:28C:/:60a:/:62a:`, Feldformate
+    (16x, 35x, `5n[/5n]`, Saldo `1!a6!n3!a15d`, Statement-Line `:61:` Front `6!n[4!n]2a[1!a]15d1!a3!c`), Datums-/
+    Betrags-Plausibilität, Sequenz-Reihenfolge (als Warnung, dialekt-tolerant), `:28:`-statt-`:28C:`-Warnung,
+    fehlender Geschäftsvorfall-Code → Warnung.
+  - `validiereCAMT(xml)` — ISO-20022-Nachrichten-Struktur camt.052/.053/.054: Namespace→Variante/Version,
+    Pflicht-Container (`BkToCstmrAcctRpt`/`BkToCstmrStmt`/`BkToCstmrDbtCdtNtfctn`, `GrpHdr`+`MsgId`+`CreDtTm`,
+    Statement+`Id`+`Acct`); je `<Ntry>`: `<Amt>` mit **Ccy-Attribut** (ISO 4217), `CdtDbtInd` ∈ {CRDT,DBIT},
+    Status `<Sts>`/Datum (Warnung wenn fehlt), für .053 Salden OPBD/CLBD (Warnung).
+  - `validiereBankauszug(text)` — Format-Weiche (über `erkenneBankformat`); unbekannt → Fehler `format-unbekannt`.
+  - **Konservativ:** klare Verstöße = **Fehler**, dialekt-strittige Punkte = **Warnungen** (nicht-blockierend).
+- **UI (statisch geprüft):** `ui/views/documents.js` Bankimport zeigt jetzt `bankSchemaHinweis(schema)` (grün
+  „Struktur ok" / gelb Hinweise / rot Verstöße) vor der Saldo-Plausibilität; i18n `docs.bankSchema*` de+en.
+- **SW-Cache** `v97 → v98`; `src/domain/bankschema.js` ins Precache aufgenommen.
+
+**Stand:** `node tests/run.mjs` **1029/1029 grün**. Alle berührten Dateien `node --check`-sauber.
+
+**Offen / Grenzen (ehrlich)**
+- **KEINE zertifizierte XSD-Validierung** (ein echter XSD-Validator ist nicht build-frei) und **KEINE**
+  SWIFT-Netzwerk-Konformitätsprüfung — es wird **keine Konformität behauptet, die nicht belegt ist**. Reale
+  Bank-Dialekte weichen ab → strittige Punkte bewusst als Warnungen; mit echten Bank-Auszügen weiter testen.
+- UI/Glue (`documents.js`) **statisch geprüft** (kein Headless-Browser): der reale Schema-Hinweis im Bankimport
+  ist als **Browser-Sichttest** zu bestätigen.
+- **Build-freier Rest-Korb damit leer:** verbleibend nur noch umgebungs-/menschen-blockierte [KANN]-Punkte
+  (R6/Rest) oder ein Browser-Sichttest oder eine neue, mit dem Nutzer vereinbarte Feature-Idee.
+
+---
+
 ## 2026-06-17 — R4-Rest: Zahlungs-/Teilzahlungs-Übernahme aus WorkFloh (Austauschformat v3) [Branch `claude/bookledgerpro-next-steps-k8bcp8`]
 
 **Ausgangslage / Auswahl** (Schritt nach R5c-Rest, gemäß `docs/NACHFOLGE_PLAN.md`)

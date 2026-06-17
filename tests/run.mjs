@@ -75,6 +75,7 @@ import { baueBriefkasten, briefkastenAnker, briefkastenBericht, tokenizeBriefkas
 import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
 import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat, pruefeBankauszug } from '../src/domain/bankimport.js';
+import { validiereMT940, validiereCAMT, validiereBankauszug } from '../src/domain/bankschema.js';
 import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen, findeSammelzuordnung, verteileSammelzahlung, sammelBuchungZeilen } from '../src/domain/zahlungsabgleich.js';
 import { skontoSplit, skontoBuchungZeilen, skontoEntwurf, skontoSaetze, SKONTO_KONTEN } from '../src/domain/skonto.js';
 import {
@@ -1354,6 +1355,139 @@ await section('Bankimport: pruefeBankauszug Randfälle', () => {
   const u = p.warnungen.find((w) => w.code === 'unvollstaendige-umsaetze');
   ok('unvollständige Umsätze gezählt', !!u && u.anzahl === 1);
   ok('ohne Anfangssaldo → kein Saldo-Vergleich', pruefeBankauszug({ format: 'MT940', umsaetze: [{ betragCent: 100, valuta: '2026-06-01', richtung: 'einnahme' }] }).berechneterEndsaldoCent === null);
+});
+
+// ===== R5a-Rest: SWIFT/ISO-20022-Schema-/Struktur-Validierung (bankschema.js) =====
+
+await section('Bankschema: MT940 — gültiger Auszug besteht', () => {
+  const mt940 = [
+    ':20:STARTREF',
+    ':25:DE89370400440532013000EUR',
+    ':28C:5/1',
+    ':60F:C240601EUR1000,00',
+    ':61:2406030603D119,00NMSCNONREF',
+    ':86:166?20Rechnung 042?32BUERO SCHMIDT GMBH',
+    ':61:2406050605C238,00NTRFNONREF',
+    ':86:166?20Honorar?32KUNDE MUSTER AG',
+    ':62F:C240630EUR1119,00',
+  ].join('\n');
+  const v = validiereMT940(mt940);
+  ok('keine Fehler', v.ok && v.fehler.length === 0);
+  ok('zwei Statement-Lines erkannt', v.anzahlUmsaetze === 2);
+  ok('Format als MT940 gemeldet', v.format === 'MT940');
+  ok('validiereBankauszug-Weiche → MT940 ok', validiereBankauszug(mt940).ok);
+});
+
+await section('Bankschema: MT940 — Pflichtfelder & Formatfehler', () => {
+  ok('leer → Fehler', !validiereMT940('').ok && validiereMT940('').fehler.some((f) => f.code === 'leer'));
+  // Fehlende Pflichtfelder :20:/:28C:/:62a:
+  const ohne = ':25:DE12\n:60F:C240601EUR10,00\n:61:2406030603D5,00NMSC';
+  const v = validiereMT940(ohne);
+  ok('20 fehlt', v.fehler.some((f) => f.code === 'pflichtfeld-fehlt' && f.tag === '20'));
+  ok('28C fehlt', v.fehler.some((f) => f.code === 'pflichtfeld-fehlt' && f.tag === '28C'));
+  ok('62a fehlt', v.fehler.some((f) => f.code === 'pflichtfeld-fehlt' && f.tag === '62a'));
+
+  // Defekter Saldo (Buchstaben im Betrag) + zu langes :20:
+  const kaputt = [
+    ':20:DIESE-REFERENZ-IST-VIEL-ZU-LANG',
+    ':25:DE12',
+    ':28C:1',
+    ':60F:C240601EURABC,00',
+    ':62F:C240630EUR10,00',
+  ].join('\n');
+  const k = validiereMT940(kaputt);
+  ok(':20: zu lang → Formatfehler', k.fehler.some((f) => f.code === 'format' && f.tag === '20'));
+  ok('Saldo-Betrag defekt → Formatfehler', k.fehler.some((f) => f.code === 'format' && f.tag === '60F'));
+});
+
+await section('Bankschema: MT940 — :61:-Format & GVC-Warnung', () => {
+  // Ungültiges Valuta-Datum (Monat 13) → Datumsfehler
+  const baddate = [':20:R', ':25:DE1', ':28C:1', ':60F:C240601EUR0,00', ':61:2413030603C5,00NMSC', ':62F:C240630EUR5,00'].join('\n');
+  ok('ungültiges :61:-Datum → Fehler', validiereMT940(baddate).fehler.some((f) => f.code === 'datum' && f.tag === '61'));
+  // Fehlender Geschäftsvorfall-Code (1!a3!c) → Warnung, kein Fehler
+  const nogvc = [':20:R', ':25:DE1', ':28C:1', ':60F:C240601EUR0,00', ':61:2406030603C5,00', ':62F:C240630EUR5,00'].join('\n');
+  const v = validiereMT940(nogvc);
+  ok('GVC fehlt → Warnung, nicht Fehler', v.ok && v.warnungen.some((w) => w.code === 'gvc-fehlt'));
+  // :28: statt :28C: → nicht-Standard-Warnung, kein Pflichtfeld-Fehler
+  const alt28 = [':20:R', ':25:DE1', ':28:1', ':60F:C240601EUR0,00', ':61:2406030603C5,00NMSC', ':62F:C240630EUR5,00'].join('\n');
+  const a = validiereMT940(alt28);
+  ok(':28: → Warnung statt Fehler', a.ok && a.warnungen.some((w) => w.code === 'feld-nichtstandard'));
+});
+
+await section('Bankschema: MT940 — Reihenfolge-Warnung', () => {
+  // :25: vor :20: → Reihenfolge-Warnung (aber kein Fehler, Dialekt-tolerant)
+  const umgedreht = [':25:DE1', ':20:R', ':28C:1', ':60F:C240601EUR0,00', ':61:2406030603C5,00NMSC', ':62F:C240630EUR5,00'].join('\n');
+  const v = validiereMT940(umgedreht);
+  ok('Reihenfolge als Warnung, nicht Fehler', v.ok && v.warnungen.some((w) => w.code === 'reihenfolge'));
+});
+
+await section('Bankschema: CAMT — gültiges camt.053 besteht', () => {
+  const camt = [
+    '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt>',
+    '<GrpHdr><MsgId>MSG-1</MsgId><CreDtTm>2026-06-30T10:00:00</CreDtTm></GrpHdr><Stmt>',
+    '<Id>STMT-1</Id><Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct>',
+    '<Bal><Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1000.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal>',
+    '<Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">1119.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal>',
+    '<Ntry><Amt Ccy="EUR">119.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><ValDt><Dt>2026-06-03</Dt></ValDt></Ntry>',
+    '</Stmt></BkToCstmrStmt></Document>',
+  ].join('\n');
+  const v = validiereCAMT(camt);
+  ok('keine Fehler', v.ok && v.fehler.length === 0);
+  ok('Variante 053 + Version erkannt', v.variante === '053' && v.version === '08');
+  ok('ein Umsatz', v.anzahlUmsaetze === 1);
+  ok('keine Saldo-/Status-Warnung (vollständig)', !v.warnungen.some((w) => w.code === 'saldo-fehlt' || w.code === 'ntry-status-fehlt'));
+});
+
+await section('Bankschema: CAMT — Pflicht-Container & GrpHdr', () => {
+  // Kein GrpHdr, falscher Container für 052
+  const ohneHdr = [
+    '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.052.001.08"><BkToCstmrStmt><Rpt>',
+    '<Id>R</Id><Acct><Id><IBAN>DE1</IBAN></Id></Acct>',
+    '<Ntry><Amt Ccy="EUR">5.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Ntry>',
+    '</Rpt></BkToCstmrStmt></Document>',
+  ].join('\n');
+  const v = validiereCAMT(ohneHdr);
+  ok('GrpHdr fehlt → Fehler', v.fehler.some((f) => f.code === 'pflicht-fehlt' && /GrpHdr/.test(f.detail)));
+  ok('falscher Container (052 erwartet BkToCstmrAcctRpt) → Fehler', v.fehler.some((f) => f.code === 'container-fehlt'));
+  ok('Status/Datum fehlen → Warnungen', v.warnungen.some((w) => w.code === 'ntry-status-fehlt') && v.warnungen.some((w) => w.code === 'ntry-datum-fehlt'));
+});
+
+await section('Bankschema: CAMT — Ntry-Fehler (Ccy/CdtDbtInd)', () => {
+  const camt = [
+    '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt>',
+    '<GrpHdr><MsgId>M</MsgId><CreDtTm>2026-06-30T10:00:00</CreDtTm></GrpHdr><Stmt>',
+    '<Id>S</Id><Acct><Id><IBAN>DE1</IBAN></Id></Acct>',
+    '<Bal><Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">0.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal>',
+    '<Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy="EUR">5.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Bal>',
+    // Amt ohne Ccy-Attribut + ungültiger CdtDbtInd
+    '<Ntry><Amt>5.00</Amt><CdtDbtInd>HABEN</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><ValDt><Dt>2026-06-03</Dt></ValDt></Ntry>',
+    '</Stmt></BkToCstmrStmt></Document>',
+  ].join('\n');
+  const v = validiereCAMT(camt);
+  ok('Amt ohne Ccy → Fehler', v.fehler.some((f) => f.code === 'ntry-ccy-fehlt'));
+  ok('CdtDbtInd ungültig → Fehler', v.fehler.some((f) => f.code === 'ntry-cdtdbt-wert'));
+  ok('insgesamt nicht ok', !v.ok);
+});
+
+await section('Bankschema: CAMT — unbekannter Namespace → Warnung, nicht Fehler', () => {
+  const camt = [
+    '<Document><BkToCstmrStmt>',
+    '<GrpHdr><MsgId>M</MsgId><CreDtTm>2026-06-30T10:00:00</CreDtTm></GrpHdr><Stmt>',
+    '<Id>S</Id><Acct><Id><IBAN>DE1</IBAN></Id></Acct>',
+    '<Ntry><Amt Ccy="EUR">5.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><ValDt><Dt>2026-06-03</Dt></ValDt></Ntry>',
+    '</Stmt></BkToCstmrStmt></Document>',
+  ].join('\n');
+  const v = validiereCAMT(camt);
+  ok('Namespace-Warnung gesetzt', v.warnungen.some((w) => w.code === 'namespace-unbekannt'));
+  ok('Variante über Container erkannt (053)', v.variante === '053');
+});
+
+await section('Bankschema: validiereBankauszug — Format-Weiche', () => {
+  ok('unbekanntes Format → format-unbekannt + nicht ok', (() => {
+    const v = validiereBankauszug('weder noch');
+    return !v.ok && v.format === null && v.fehler.some((f) => f.code === 'format-unbekannt');
+  })());
+  ok('CAMT-Weiche', validiereBankauszug('<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><Stmt><Ntry></Ntry></Stmt></Document>').format === 'CAMT');
 });
 
 // ===== R5: NER — PII-Erkennung über die Anker hinaus =====

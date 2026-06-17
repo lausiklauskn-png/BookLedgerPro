@@ -36,15 +36,28 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = letzten build-freien Rest-Korb umsetzen: R5a-Rest** (echte SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-
-Validierung — schwerer/spröder; heute nur Plausibilitäts-/Integritätsprüfung in `domain/bankimport.js`). **R6/Rest
-[KANN] bleibt blockiert** (Umgebung/Mensch): **Lighthouse/Perf** (Headless-Browser fehlt), **lokales OCR** (Tesseract =
-wasm/npm-Runtime → **nicht build-frei**, verifiziert: nichts vendored, Regel #1 verbietet CDNs/npm-Runtime),
-**ZUGFeRD-Erzeugen** (PDF/A-3-Lib → nicht build-frei), **Sage 5b–d** (fremde Repos, menschlich vermittelt) — **oder
-Browser-Sichttest** (echter Nutzer, kein Headless hier). Browser-Sichttest-Punkte unverändert: (a) WorkFloh-`rechnung`-
-Block (jetzt inkl. `zahlungen[]`) → Buchungsentwurf + Zahlungseingang; (b) OCR→Verbindlichkeit (Vision EU);
-(c) Pseudonym-Briefkasten; (d) Privat-/Verein-Modus (NAV + USt/Mahn/Kreditoren/KPIs).
+**Nächste PR = mit dem Nutzer abstimmen (AskUserQuestion).** Der **build-freie Rest-Korb ist jetzt leer**: R4-Rest
+und **R5a-Rest** (echte SWIFT-(MT940)/ISO-20022-(CAMT)-**Schema-/Struktur-Validierung**, `domain/bankschema.js`) sind
+**erledigt + gemergt**. Verbleibend sind nur noch **umgebungs-/menschen-blockierte** [KANN]-Punkte **oder ein
+Browser-Sichttest** — beides braucht eine Nutzer-Entscheidung. **R6/Rest [KANN] bleibt blockiert** (Umgebung/Mensch):
+**Lighthouse/Perf** (Headless-Browser fehlt), **lokales OCR** (Tesseract = wasm/npm-Runtime → **nicht build-frei**,
+verifiziert: nichts vendored, Regel #1 verbietet CDNs/npm-Runtime), **ZUGFeRD-Erzeugen** (PDF/A-3-Lib → nicht
+build-frei), **Sage 5b–d** (fremde Repos, menschlich vermittelt). **Browser-Sichttest** (echter Nutzer, kein Headless
+hier) — Punkte unverändert: (a) WorkFloh-`rechnung`-Block (inkl. `zahlungen[]`) → Buchungsentwurf + Zahlungseingang;
+(b) OCR→Verbindlichkeit (Vision EU); (c) Pseudonym-Briefkasten; (d) Privat-/Verein-Modus (NAV + USt/Mahn/Kreditoren/
+KPIs); (e) NEU: **Bankauszug einlesen** → Schema-Hinweis (Struktur ok / Verstöße / Hinweise) prüfen.
+Sonst: eine **neue Feature-Idee** mit dem Nutzer vereinbaren und fein schneiden.
 Details: `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**R5a-Rest SWIFT/ISO-20022-Schema-Validierung erledigt (diese Sitzung):** `src/domain/bankschema.js` (rein,
+node-getestet) — `validiereMT940` prüft die **SWIFT-FIN-Feldformate** (Pflichtfelder :20:/:25:/:28C:/:60a:/:62a:,
+Feldformate 16x/35x/5n[/5n]/1!a6!n3!a15d, :61:-Front 6!n[4!n]2a[1!a]15d1!a3!c, Reihenfolge); `validiereCAMT` prüft die
+**ISO-20022-Nachrichten-Struktur** von camt.052/.053/.054 (Namespace→Variante/Version, Pflicht-Container
+BkToCstmr…/GrpHdr+MsgId+CreDtTm/Stmt+Id+Acct, je `<Ntry>`: Amt mit **Ccy-Attribut**, CdtDbtInd ∈ {CRDT,DBIT}, Status/
+Datum, .053-Salden OPBD/CLBD); `validiereBankauszug` ist die Format-Weiche. Klare Verstöße = **Fehler**, dialekt-
+strittige Punkte = **Warnungen** (konservativ). UI: Bankimport zeigt den Schema-Hinweis (`bankSchemaHinweis`), i18n
+de+en. +28 Tests (**1029/1029**), SW `v98`. **EHRLICHE GRENZE:** Struktur-/Feldformat-Prüfung nach den dokumentierten
+Spezifikationen — **KEINE zertifizierte XSD-Validierung** (nicht build-frei) und **KEINE** SWIFT-Netzwerk-Konformität;
+keine Konformität behauptet, die nicht belegt ist. UI/Glue statisch geprüft.
 **R4-Rest Zahlungs-/Teilzahlungs-Übernahme erledigt (diese Sitzung):** Eine `rechnung` darf im Austauschformat **v3**
 ein optionales `zahlungen[]` `{datum, betragCent|betrag, ref?}` tragen. `importworkfloh.normalizeZahlungen` (rein)
 normalisiert konservativ (ISO-Datum + positiver Betrag, Euro/Cent; unvollständig → verworfen + Warnung);
@@ -65,6 +78,7 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 `shell.js` konsumiert) + `zeigeFeature`/`FEATURE`; Setting `nutzungsmodus`, Schalter „Nutzungskontext", i18n de+en. +30 Tests.
 **R5c (dreistufiger Briefkasten Mandant ⊃ Firma ⊃ Person für Pseudonymisierung/CRM, `ai/briefkasten.js`, Setting `briefkastenScopes`) ist abgeschlossen + gemergt → Abschnitt R bis R5 komplett.**
 **R5a (Bankformate härten: CAMT .052/.054 + Saldo-Integritätsprüfung + strukturierte RmtInf) ist abgeschlossen + gemergt.**
+**R5a-Rest (SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-/Struktur-Validierung, `domain/bankschema.js`; KEINE zertifizierte XSD-Validierung) ist abgeschlossen + gemergt — letzter build-freier Rest-Korb.**
 **R5b (NER: PII Dritter — E-Mail/IBAN/USt-IdNr/Steuernr/Telefon — über die Anker hinaus maskieren, `ai/ner.js`, Setting `nerPii`) ist abgeschlossen + gemergt.**
 **R4-Rest (Zahlungs-/Teilzahlungs-Übernahme aus WorkFloh: `rechnung.zahlungen[]` → Zahlungseingang-Entwurf Bank an Forderung + (Teil-)Zahlung am Auftrag; Austauschformat v3; API/Push bewusst offen) ist abgeschlossen + gemergt.**
 **R4 (Rechnungs-Übernahme aus WorkFloh: fertige Rechnung → Forderung/Buchung; Austauschformat v2; API/Push bewusst offen) ist abgeschlossen + gemergt (PR #95).**
@@ -75,9 +89,9 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach R4-Rest Zahlungs-/Teilzahlungs-Übernahme):** SW **v97** · Tests **1001/1001** grün · 97 JS-Module.
-**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1–R5 ✅; R6/P1 ✅ (Privat-/Bürger-Modus); R6/P2 ✅ (Feature-Gates ansichtsintern).** Reihenfolge im Plan:
-~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → ~~R5a~~ → ~~R5b~~ → ~~R5c~~ → ~~R5c-Rest (NER-Scoping)~~ → ~~R6/P1~~ → ~~R6/P2~~ → R6/Rest (Lighthouse/OCR/ZUGFeRD/Sage 5b–d, blockiert) bzw. R4-Rest/R5a-Rest/Browser-Sichttest.
+**Kopf-Status (Stand nach R5a-Rest SWIFT/ISO-20022-Schema-Validierung):** SW **v98** · Tests **1029/1029** grün · 98 JS-Module.
+**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1–R5 ✅ inkl. R5a-Rest; R6/P1 ✅ (Privat-/Bürger-Modus); R6/P2 ✅ (Feature-Gates ansichtsintern).** Reihenfolge im Plan:
+~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → ~~R4-Rest~~ → ~~R5a~~ → ~~R5a-Rest~~ → ~~R5b~~ → ~~R5c~~ → ~~R5c-Rest (NER-Scoping)~~ → ~~R6/P1~~ → ~~R6/P2~~ → R6/Rest (Lighthouse/OCR/ZUGFeRD/Sage 5b–d, blockiert) bzw. Browser-Sichttest. **Build-freier Rest-Korb leer.**
 **R5c erledigt:** `ai/briefkasten.js` (rein, node-getestet) — `baueBriefkasten({mandant,firma,kunden,mitarbeiter})`
 ordnet die exakten Stammdaten-Anker in **Mandant ⊃ Firma ⊃ Person** ein (eigene Firma = `FIRMA_1`/eigen,
 Mitarbeiter = deren Personen; Firmenkunden = weitere `FIRMA_n` mit ihren E-Mail/USt-IdNr/Adresse-Ankern;

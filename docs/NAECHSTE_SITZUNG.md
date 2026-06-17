@@ -14,38 +14,34 @@
 Projekt: BookLedgerPro (lausiklauskn-png/bookledgerpro).
 
 START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + obersten
-`docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles — danach
-OHNE Rückfragen loslegen.
+`docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles.
 
-AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Abschnitt R ist bis auf R6/Rest komplett** (R1–R4 ✅; **R4-Rest Zahlungs-/Teilzahlungs-Übernahme ✅** —
-Austauschformat v3; R5a/R5b/R5c ✅; **R5c-Rest NER-Scoping ✅**); **R6/P1 ✅** (Privat-/Bürger-Modus, PR #99);
-**R6/P2 ✅** (Feature-Gates ansichtsintern konsumiert). **R6/Rest [KANN] ist umgebungs-/menschen-blockiert**
-(verifiziert): **Lighthouse/Perf** braucht Headless-Browser (keiner hier); **lokales OCR** = Tesseract
-(wasm/npm-Runtime) ist **nicht build-frei** (Goldene Regel #1 verbietet CDNs/npm-Runtime); **ZUGFeRD-Erzeugen** braucht
-PDF/A-3-Lib (nicht build-frei); **Sage 5b–d** sind fremde Repos (menschlich vermittelt). **Daher zwei gleichwertige
-Wege — mit dem Nutzer abstimmen, sonst Empfehlung nehmen:**
-(A) **Browser-Sichttest durch den Nutzer** (kein Headless hier): (a) WorkFloh-Austauschdatei MIT `rechnung`-Block
-(jetzt inkl. optionalem `zahlungen[]`) importieren (Aufträge → „Aus WorkFloh importieren") → Buchungsentwurf
-(Forderung an Erlöse + USt) prüfen, Auftrag „berechnet", **je Zahlung ein Zahlungseingang-Entwurf (Bank an Forderung),
-Auto-„bezahlt" bei Ausgleich**; (b) OCR→Verbindlichkeit (Foto/PDF → Google Vision EU → „Verbindlichkeit aus diesem
-Beleg erfassen" → Zahlungsabgleich); (c) **Pseudonym-Modus mit dreistufigem Briefkasten** (Einstellungen →
-„Dreistufiger Briefkasten" an) → Belegtext an die KI → Maskierung/Token prüfen, inkl. `[[EXTERN_*]]`-Token für
-Fremd-PII; (d) **Privat-/Verein-Modus** (Einstellungen → „Nutzungskontext") → NAV blendet geschäftliche Ansichten aus
-**und (P2) USt-Felder im Journal, Mahn-/Kreditoren-Knöpfe und KPIs je Modus verschwinden**.
-(B) **build-freier Code-Korb (EMPFOHLEN für eine reine Code-Sitzung):** **R5a-Rest** — echte SWIFT-(MT940)/ISO-20022-
-(CAMT)-Schema-Validierung des Bankimports (heute nur Plausibilitäts-/Integritätsprüfung `pruefeBankauszug` in
-`domain/bankimport.js`; reine Logik, zuerst node-getestet). Das ist der **letzte verbliebene** build-freie Rest-Korb
-(R4-Rest ist erledigt). EHRLICH: schwerer/spröder, da reale Bank-Dialekte abweichen — konservativ + ehrlich
-dokumentieren, keine Konformität behaupten, die nicht belegt ist. Wenn unklar oder zu groß: **kurz mit dem Nutzer
-abstimmen** (AskUserQuestion) und ggf. feiner schneiden, dann EINEN sauber umsetzen.
-Mehrmandanten (Abschnitt A: M1/M2a/M2b/M3) **abgeschlossen** (`docs/MANDANTEN.md`); **Abschnitt B (Bilanzierung)
-abgeschlossen** (B1/B2/B3); **R1–R4 ✅** (PR #95) + **R4-Rest ✅** (v3); **R5a/R5b/R5c ✅** + **R5c-Rest ✅**;
-**R6/P1 ✅**; **R6/P2 ✅**. **Bewusst offen:** R4-Familie **API/Push** (Echtzeit) statt Datei; R5a-Rest **SWIFT-/
-ISO-20022-Schema-Validierung**; R5c-Rest **Clusterung verschiedener Drittparteien** unter eigenen EXTERN_n-Scopes
-(heuristisch/FP-riskant). Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`. Reine Logik
-**ZUERST node-getestet**, dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen). (Falls ein Schritt zu groß ist:
-feiner schneiden und Plan fortschreiben — nie „halb" mergen.)
+AUFGABE DIESER SITZUNG: **Mit dem Nutzer abstimmen (AskUserQuestion), womit es weitergeht** — denn der
+**build-freie Code-Korb ist jetzt LEER**: A+B fertig; **R1–R5 ✅** inkl. **R4-Rest ✅** (Austauschformat v3),
+**R5a-Rest ✅** (SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-/Struktur-Validierung, `domain/bankschema.js`),
+**R5c-Rest ✅** (NER-Scoping); **R6/P1 ✅** (Privat-/Bürger-Modus, PR #99); **R6/P2 ✅** (Feature-Gates ansichtsintern).
+**Verbleibend nur noch umgebungs-/menschen-blockierte [KANN]-Punkte ODER ein Browser-Sichttest ODER eine neue,
+mit dem Nutzer vereinbarte Feature-Idee.** Konkret:
+(A) **R6/Rest [KANN] — umgebungs-/menschen-blockiert** (verifiziert): **Lighthouse/Perf** braucht Headless-Browser
+(keiner hier); **lokales OCR** = Tesseract (wasm/npm-Runtime) ist **nicht build-frei** (Goldene Regel #1 verbietet
+CDNs/npm-Runtime); **ZUGFeRD-Erzeugen** braucht PDF/A-3-Lib (nicht build-frei); **Sage 5b–d** sind fremde Repos
+(menschlich vermittelt). → ohne Nutzer/Umgebung NICHT autonom lösbar.
+(B) **Browser-Sichttest durch den Nutzer** (kein Headless hier): (a) WorkFloh-Austauschdatei MIT `rechnung`-Block
+(inkl. optionalem `zahlungen[]`) importieren (Aufträge → „Aus WorkFloh importieren") → Buchungsentwurf (Forderung an
+Erlöse + USt) prüfen, Auftrag „berechnet", je Zahlung ein Zahlungseingang-Entwurf (Bank an Forderung), Auto-„bezahlt"
+bei Ausgleich; (b) OCR→Verbindlichkeit (Foto/PDF → Google Vision EU → „Verbindlichkeit aus diesem Beleg erfassen"
+→ Zahlungsabgleich); (c) Pseudonym-Modus mit dreistufigem Briefkasten (Einstellungen → „Dreistufiger Briefkasten" an)
+→ Belegtext an die KI → Maskierung/Token prüfen, inkl. `[[EXTERN_*]]`-Token für Fremd-PII; (d) Privat-/Verein-Modus
+(Einstellungen → „Nutzungskontext") → NAV blendet geschäftliche Ansichten aus und USt-Felder/Mahn-/Kreditoren-Knöpfe/
+KPIs je Modus verschwinden; (e) **NEU: Bankauszug einlesen** (Belege → „Bankauszug einlesen", MT940/CAMT) → den
+**Schema-Hinweis** prüfen (grün „Struktur ok" / gelb Hinweise / rot Verstöße) zusätzlich zur Saldo-Plausibilität.
+(C) **Neue Feature-Idee** — falls der Nutzer eine Richtung vorgibt: sauber/fein schneiden, reine Logik ZUERST
+node-getestet, dann UI, EINEN sauberen PR.
+**Bewusst offen (keine reinen Code-Körbe mehr):** R4-Familie **API/Push** (Echtzeit) statt Datei; **echte XSD-/
+SWIFT-Netzwerk-Konformität** der Bankformate (nicht build-frei); R5c-Rest **Clusterung verschiedener Drittparteien**
+unter eigenen EXTERN_n-Scopes (heuristisch/FP-riskant). Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R +
+`docs/OFFENE_PUNKTE.md`. Reine Logik ZUERST node-getestet, dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen).
+(Falls ein Schritt zu groß ist: feiner schneiden und Plan fortschreiben — nie „halb" mergen.)
 
 MEHRERE PRs ERLAUBT: Wenn sich mehrere Plan-Punkte **sauber und in sich abgeschlossen** in einer
 Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener PR**, jeder einzeln grün und gemergt.
@@ -82,10 +78,10 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach **R4-Rest Zahlungs-/Teilzahlungs-Übernahme** (Abschnitt A Mehrmandanten +
-Abschnitt B Bilanzierung + R1–R5 + R5c-Rest abgeschlossen + gemergt; R6/P1 PR #99; R6/P2 Feature-Gates ansichtsintern;
-**R4-Rest:** `rechnung.zahlungen[]` (Austauschformat v3) → je Zahlung ein Zahlungseingang-Entwurf Bank an Forderung +
-(Teil-)Zahlung am Auftrag, Auto-„bezahlt" bei Ausgleich) · Tests **1001/1001** · SW **v97** · 97 JS-Module ·
-**R bis R5 + R5c-Rest + R4-Rest komplett, R6/P1 ✅, R6/P2 ✅** · nächster Schritt: **R6/Rest blockiert (Umgebung/Mensch)**
-→ **R5a-Rest** (Bank-Schema-Validierung, letzter build-freier Korb) bzw. **Browser-Sichttest**. (Diese Zeile bei jeder
-Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach **R5a-Rest SWIFT/ISO-20022-Schema-Validierung** (Abschnitt A Mehrmandanten +
+Abschnitt B Bilanzierung + R1–R5 inkl. R4-Rest/R5a-Rest/R5c-Rest abgeschlossen + gemergt; R6/P1 PR #99; R6/P2
+Feature-Gates ansichtsintern; **R5a-Rest:** `src/domain/bankschema.js` — `validiereMT940`/`validiereCAMT`/
+`validiereBankauszug` prüfen die SWIFT-Feldformate bzw. die ISO-20022-Nachrichten-Struktur, UI-Hinweis im Bankimport;
+**KEINE** zertifizierte XSD-/SWIFT-Netzwerk-Validierung) · Tests **1029/1029** · SW **v98** · 98 JS-Module ·
+**build-freier Rest-Korb LEER** · nächster Schritt: **mit dem Nutzer abstimmen** (R6/Rest blockiert / Browser-Sichttest
+/ neue Feature-Idee). (Diese Zeile bei jeder Sitzung aktualisieren.)
