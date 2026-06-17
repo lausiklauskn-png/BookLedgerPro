@@ -22,6 +22,7 @@ const DEFAULTS = Object.freeze({
   verzugBasiszinsProzent: 3.37, // Basiszinssatz §247 BGB — REGELMÄSSIG AKTUALISIEREN
   firma: { name: '', anschrift: '', steuernummer: '', ustId: '', iban: '' }, // Aussteller-Stammdaten (Rechnung §14)
   datev: { beraterNr: '', mandantNr: '', sachkontenlaenge: 4 }, // für DATEV-EXTF-Header (Berater/Mandant)
+  partnerAppUrl: '', // verbundene App (z.B. Mein-WorkFloh) — reziproke Verlinkung
 });
 
 const _state = { settings: { ...DEFAULTS }, route: 'dashboard' };

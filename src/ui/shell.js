@@ -228,6 +228,8 @@ function viewSettings() {
 
     geschaeftsjahrSection(s),
 
+    partnerSection(s),
+
     buchungssperreSection(),
 
     passwortSection(),
@@ -310,6 +312,24 @@ function datevSection(s) {
       status,
     ]),
     el('p', { class: 'muted small', text: t('settings.datev.hint') }),
+  ]);
+}
+
+// Verbundene App (z.B. Mein-WorkFloh, public) — reziproke Verlinkung + offenes Austauschformat.
+function partnerSection(s) {
+  const status = el('span', { class: 'muted small' });
+  const input = el('input', { type: 'text', value: s.partnerAppUrl || '', placeholder: 'https://…' });
+  const openBtn = el('a', { class: 'btn btn-sm', target: '_blank', rel: 'noopener noreferrer', text: t('settings.partnerOpen') });
+  const syncOpen = () => { const u = input.value.trim(); if (/^https?:\/\//.test(u)) { openBtn.href = u; openBtn.style.display = ''; } else { openBtn.style.display = 'none'; } };
+  input.addEventListener('input', syncOpen); syncOpen();
+  return el('div', { class: 'setting' }, [
+    el('div', { class: 'setting-label', text: t('settings.partner') }),
+    el('div', { class: 'btn-row' }, [
+      input,
+      el('button', { class: 'btn btn-sm', text: t('common.save'), onClick: async () => { await updateSettings({ partnerAppUrl: input.value.trim() }); status.textContent = t('settings.saved'); } }),
+      openBtn, status,
+    ]),
+    el('p', { class: 'muted small', text: t('settings.partnerHint') }),
   ]);
 }
 

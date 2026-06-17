@@ -34,9 +34,10 @@ Mehrmandanten **JA** · Bilanzierung (GmbH) **JA** · AVV-Verträge **umsetzen**
 5. ✅ **erledigt:** Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (`domain/aufbewahrung.js`, belegRef).
 6. ✅ **erledigt:** ZUGFeRD-**Empfang** (PDF→CII, `zugferd.js`, native Flate-Entpackung) +
    **KoSIT-orientierter Pflichtfeld-Precheck**. (ZUGFeRD-**Erzeugen** offen — braucht PDF-Lib.)
-7. **A4 Anbindung (erweitert)** — **als Nächstes**: WorkFloh ist **public** → **beidseitige Verlinkung** + **generische
-   Anbindung an andere Buchhaltungssoftware** (offene Import/Export-Schnittstellen). — groß.
-8. **Mehrmandantenfähigkeit** — groß (Mandanten-Namespace im Tresor; DB-Suffix unverändert!).
+7. ✅ **erledigt (Stufe 1):** A4 offene Anbindung — `domain/connect.js` (Austauschformat Import+Export,
+   abwärtskompatibel WorkFloh), Export-Knopf in Aufträge, verbundene-App-Link in Einstellungen,
+   `docs/CONNECT.md`. Offen: API/Push, Rechnungs-Übernahme.
+8. **Mehrmandantenfähigkeit** — **als Nächstes** (groß; Mandanten-Namespace im Tresor; DB-Suffix unverändert!).
 9. **Bilanzierung / V-Bilanz** (GuV + Bilanz, §4 Abs.1/§5) — groß.
 10. Restpunkte B/C nach Bedarf (Bankformate härten, NER, dreistufiger Briefkasten, Lighthouse,
     lokales OCR, Privat-/Bürger-Modus, Sage 5b–d).
@@ -117,10 +118,10 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 **Letzte Aktualisierung:** 2026-06-17 · **Branch:** `claude/v2-ox8bu7`
 · **Tests:** `node tests/run.mjs` → **618/618 grün**
-· **SW-Cache:** `v78` · **87 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅**
+· **SW-Cache:** `v79` · **88 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅**
 · **Entscheidungen 17.06.:** ELSTER-Link ✅ · AVV-Links ✅ · §19-Onboarding ✅ · Wirtschaftsjahr ✅ ·
-  Übergabe-Datenblatt ✅ · Beleg-Verknüpfung/GoBD-Aufbewahrung ✅ · ZUGFeRD-Empfang + KoSIT-Precheck ✅;
-  **nächste (groß):** A4 (WorkFloh public, beidseitige Verlinkung + generische Buchhaltungs-Anbindung) → Mehrmandanten → Bilanz.
+  Übergabe-Datenblatt ✅ · Beleg-Verknüpfung/GoBD-Aufbewahrung ✅ · ZUGFeRD-Empfang+KoSIT ✅ ·
+  A4 offene Anbindung (Import/Export + Partner-Link) ✅; **nächste (groß):** Mehrmandanten → Bilanzierung.
 · **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
 · **V3 ✅:** Anlagevermögen + AfA (GWG/Sammelposten/linear pro rata), Ansicht „Anlagen",
   Anlagenverzeichnis + AfA-Buchung-Entwurf + AVEÜR-CSV (`domain/anlagen.js`, `anlagen-store.js`).
