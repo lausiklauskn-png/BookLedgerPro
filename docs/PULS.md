@@ -30,9 +30,8 @@ Mehrmandanten **JA** · Bilanzierung (GmbH) **JA** · AVV-Verträge **umsetzen**
 2. ✅ **erledigt:** §19-Kleinunternehmer-Abfrage im Onboarding (`lock.js stepProfil`).
 3. ✅ **erledigt:** Abweichendes Wirtschaftsjahr (`domain/geschaeftsjahr.js`, Setting
    `wirtschaftsjahrBeginn`, Dashboard + DATEV-WJ; USt-VA bleibt kalendarisch).
-4. **Steuerberater-Übergabe-Datenblatt** (Punkt 31) — **als Nächstes** — kompaktes „so importieren" + Kennzahlen
-   (baut auf `TESTDATEN.md`/`DATEV_IMPORT.md`); evtl. als druckbare Ansicht.
-5. **Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung** (Punkt 29) — mittel.
+4. ✅ **erledigt:** Steuerberater-Übergabe-Datenblatt (`export.buildUebergabeText`, Karte in „Berichte").
+5. **Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung** (Punkt 29) — **als Nächstes** (mittel).
 6. **ZUGFeRD (PDF/A-3) + KoSIT-Validierung** — groß.
 7. **A4 WorkFloh-Anbindung** (`importworkfloh.js`-Seam ausbauen, Rechnung statt nur Auftrag) — groß.
 8. **Mehrmandantenfähigkeit** — groß (Mandanten-Namespace im Tresor; DB-Suffix unverändert!).
@@ -116,8 +115,8 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 **Letzte Aktualisierung:** 2026-06-17 · **Branch:** `claude/v2-ox8bu7`
 · **Tests:** `node tests/run.mjs` → **618/618 grün**
-· **SW-Cache:** `v75` · **84 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅**
-· **Entscheidungen 17.06.:** ELSTER (Link) ✅ + AVV-Links ✅ + §19-Onboarding ✅ + Wirtschaftsjahr ✅; nächste: Übergabe-Datenblatt (31).
+· **SW-Cache:** `v76` · **84 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅**
+· **Entscheidungen 17.06.:** ELSTER-Link ✅ · AVV-Links ✅ · §19-Onboarding ✅ · Wirtschaftsjahr ✅ · Übergabe-Datenblatt ✅; nächste: Beleg-Verknüpfung/Aufbewahrung (29), dann ZUGFeRD/A4/Mehrmandanten/Bilanz.
 · **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
 · **V3 ✅:** Anlagevermögen + AfA (GWG/Sammelposten/linear pro rata), Ansicht „Anlagen",
   Anlagenverzeichnis + AfA-Buchung-Entwurf + AVEÜR-CSV (`domain/anlagen.js`, `anlagen-store.js`).

@@ -27,8 +27,8 @@ ein PR, bei grüner CI selbstständig mergen**):
 1. ✅ ELSTER-Weiterleitungs-Link + AVV-Anbieterlinks (klein) — *diese Sitzung*.
 2. ✅ §19-Kleinunternehmer-Abfrage im Onboarding (Punkt 27) — *erledigt*.
 3. ✅ Abweichendes Wirtschaftsjahr (Punkt 28) — *erledigt*.
-4. Steuerberater-Übergabe-/Datenblatt (Punkt 31, klein) — **als Nächstes**.
-5. Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (Punkt 29, mittel).
+4. ✅ Steuerberater-Übergabe-/Datenblatt (Punkt 31) — *erledigt*.
+5. Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (Punkt 29, mittel) — **als Nächstes**.
 6. ZUGFeRD (PDF/A-3) + KoSIT-Validierung (groß).
 7. A4 WorkFloh-Anbindung (groß).
 8. Mehrmandantenfähigkeit (groß).
@@ -42,7 +42,8 @@ ein PR, bei grüner CI selbstständig mergen**):
       `wirtschaftsjahrVon`/`wjBeginnYYYYMMDD`; Setting `wirtschaftsjahrBeginn` MM-TT; Dashboard +
       DATEV-EXTF-WJ-Beginn nutzen es; USt-VA bleibt bewusst kalendarisch). 10 Tests. [erledigt]
 - [ ] **29 — Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung** (Belegnummer, Original-Archiv, 10-J.-Frist-Hinweis). [SOLL]
-- [ ] **31 — Steuerberater-Übergabe-Datenblatt** (kompaktes „so importieren" + Kennzahlen, baut auf TESTDATEN/DATEV_IMPORT). [SOLL]
+- [x] **31 — Steuerberater-Übergabe-Datenblatt** ✅ (`export.buildUebergabeText`; Karte „Übergabe an
+      den Steuerberater" in „Berichte": Firmenprofil/Zeitraum/USt-VA/EÜR + mitzugebende Dateien; Druck→PDF / TXT). [erledigt]
 
 ---
 

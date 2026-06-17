@@ -5,7 +5,8 @@ import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
 import { loadAccounts, listBuchungen } from '../../domain/store.js';
 import { summenSaldenliste, kontenblatt, anlageEUR } from '../../domain/berichte.js';
-import { buildSusaCsv, buildKontenblattCsv, buildAnlageEURCsv } from '../../domain/export.js';
+import { computeEUR } from '../../domain/taxes.js';
+import { buildSusaCsv, buildKontenblattCsv, buildAnlageEURCsv, buildUstVa, buildUebergabeText } from '../../domain/export.js';
 import { buildGdpduPaket } from '../../domain/gdpdu.js';
 import { demoMandant, demoExportDateien } from '../../domain/demodaten.js';
 import { zipFiles } from '../../core/zip.js';
@@ -48,9 +49,27 @@ async function repaint() {
     anlageEURCard(eur),
     susaCard(susa),
     kontenblattCard(konten, blatt),
+    uebergabeCard(buchungen, idx, p),
     gdpduCard(buchungen, konten, idx, p),
     demoCard(),
   ]));
+}
+
+function uebergabeCard(buchungen, idx, p) {
+  const s = getSettings();
+  const f = s.firma || {}, d = s.datev || {};
+  const periodeLabel = p ? `${p.von || '…'} – ${p.bis || '…'}` : t('berichte.uebergabeAll');
+  const meta = { firma: f.name, steuernummer: f.steuernummer, ustId: f.ustId, beraterNr: d.beraterNr, mandantNr: d.mandantNr, periodeLabel };
+  const text = buildUebergabeText(meta, buildUstVa(buchungen, idx, p), computeEUR(buchungen, idx, p));
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('berichte.uebergabeTitle') }),
+    el('p', { class: 'muted small no-print', text: t('berichte.uebergabeHint') }),
+    el('pre', { class: 'mono small', style: 'white-space:pre-wrap;overflow-wrap:anywhere' }, text),
+    el('div', { class: 'btn-row no-print' }, [
+      el('button', { class: 'btn btn-sm', text: t('reports.print'), onClick: () => window.print() }),
+      el('button', { class: 'btn btn-sm', text: t('berichte.uebergabeTxt'), onClick: () => downloadText('uebergabe-steuerberater.txt', text, 'text/plain') }),
+    ]),
+  ]);
 }
 
 function demoCard() {
