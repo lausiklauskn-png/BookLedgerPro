@@ -5,6 +5,40 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R2b: Sammelzahlungen (eine Bankzahlung auf mehrere Rechnungen) [Branch `claude/batch-payments-r2b-mcmdwg`]
+
+**Was getan** (NACHFOLGE_PLAN.md, Schritt **R2b** — A3-Rest, schließt das Zahlungsabgleich-Soll „Sammelzahlung" ab)
+- **Reine Logik zuerst (`src/domain/zahlungsabgleich.js`, node-getestet, +22 Tests):**
+  - `findeSammelzuordnung(umsatz, posten, opts)` → schlägt **Kombinationen** gleichgerichteter offener Posten vor,
+    deren Summe der Zahlung **± Toleranz** (Rundungs-Cent) entspricht. **Tiefen-/Kandidatenbeschränkung**
+    (`maxTeile=4`, `maxKandidaten=12`, Überschuss-Pruning) verhindert kombinatorische Explosion; **mindestens zwei
+    Posten** je Kombination (Einzeltreffer deckt `findeKandidaten` ab). Score: exakte Summe + Referenz/Name im
+    Verwendungszweck + Datumsnähe; weniger Teile bevorzugt → die UI nutzt das als **Score-Schwelle** und lässt den
+    Nutzer **explizit** bestätigen.
+  - `verteileSammelzahlung(zahlungCent, postenListe)` → verteilt den Zahlbetrag **der Reihe nach** auf die explizit
+    gewählten Posten: jeder erhält `min(Restzahlung, offen)`, der letzte kann **teilbezahlt** werden (Rest bleibt
+    offen). Übersteigt die Zahlung die Summe, bleibt der Überschuss `unverteiltCent` (UI warnt — keine erzwungene
+    Überzahlung).
+  - `sammelBuchungZeilen(umsatz, zuordnung, opts)` → **eine Zeile je Rechnung**: Einnahme = Soll Bank (Summe) /
+    je Posten Haben Forderung; Ausgabe = je Posten Soll Verbindlichkeit / Haben Bank. Ausgeglichen (S = H).
+- **UI (statisch geprüft, kein Headless-Browser):** Knopf **„◫ Sammelzahlung (mehrere Rechnungen)"** im Bankimport
+  (`ui/views/documents.js`), wenn eine Kombination gefunden wird → **Auswahl-Panel** mit Checkboxen je offenem Posten
+  (Vorschlag vorausgewählt), **laufende Summe** vs. Zahlbetrag mit Status (passt/über/unter), „Sammelzahlung verbuchen"
+  → `verteileSammelzahlung` + `sammelBuchungZeilen` → **ein** `saveEntwurf` (manuell, **kein Auto-Festschreiben**, GoBD)
+  + je Posten den zugeordneten (Teil-)Betrag als Zahlung erfasst. i18n de+en (`docs.bankSammel*`), CSS `.sammel-*`,
+  SW `v89` (Logik im bereits precachten `zahlungsabgleich.js`, kein neues Modul).
+
+**Stand:** `node tests/run.mjs` **838/838 grün** (+22). Reine Sammel-Logik node-getestet (Subset-Summe exakt/Toleranz/
+≥2-Teile/Richtung/Ranking/Drei-Posten, Verteilung voll/Restbildung/Überzahlung, Buchungszeilen S=H je Richtung, leere
+Fälle → null). UI/Glue statisch geprüft.
+
+**Offen/Nächstes:** **R3** — Verbindlichkeiten aus **Foto/PDF-Belegen** + eigene Verbindlichkeiten-Ansicht (A2-Rest);
+Zahlungsziel je Rechnung (A1-Rest). **Grenze (ehrlich):** Subset-Summe ist heuristisch (max. 4 Teile, 12 Kandidaten) —
+sehr viele Klein-Posten mit identischen Beträgen könnten mehrdeutige Kombinationen liefern; deshalb **explizite
+Nutzerauswahl** statt Auto-Buchung. Klickpfad nicht headless E2E getestet.
+
+---
+
 ## 2026-06-17 — R2a: Skonto-Buchung mit USt-/Vorsteuer-Korrektur (§17 UStG) [Branch `claude/r2-skonto-ust-korrektur-iwybxg`]
 
 **Was getan** (NACHFOLGE_PLAN.md, Schritt **R2a** — A3-Rest, „R2" feiner geschnitten in R2a Skonto / R2b Sammelzahlung)

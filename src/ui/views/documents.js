@@ -9,7 +9,7 @@ import { pickFile, formatBytes, readFileText, readFileBytes } from '../../core/f
 import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
 import { extrahiereZugferdXml, kostPflichtfelder } from '../../domain/zugferd.js';
 import { parseBankauszug, umsatzExtraktion } from '../../domain/bankimport.js';
-import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen } from '../../domain/zahlungsabgleich.js';
+import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen, findeSammelzuordnung, verteileSammelzahlung, sammelBuchungZeilen } from '../../domain/zahlungsabgleich.js';
 import { skontoEntwurf } from '../../domain/skonto.js';
 import { offeneVerbindlichkeiten, eingangsrechnungZeilen } from '../../domain/payables.js';
 import { saveEingangsrechnung, listEingangsrechnungen, zahlungHinzufuegen } from '../../domain/payables-store.js';
@@ -300,6 +300,68 @@ async function zahlungVerbuchen(p, u, datum, extra = {}) {
   else await auftragZahlungHinzufuegen(p.id, zahlung);
 }
 
+// Sammelzahlungs-Panel (R2b): listet alle gleichgerichteten offenen Posten mit
+// Checkboxen, die vorgeschlagene Kombination ist vorausgewählt. Die laufende Summe
+// wird gegen den Zahlbetrag geprüft (passt / über / unter); beim Verbuchen wird der
+// Betrag der Reihe nach verteilt (Restbildung beim letzten Posten) und EIN Entwurf
+// mit je einer Zeile pro Rechnung erzeugt — manuell festschreiben (GoBD).
+function sammelPanel(u, posten, vorschlag, slot) {
+  const wrap = el('div', { class: 'sammel-panel' });
+  const kandidaten = posten.filter((p) => p.richtung === u.richtung && (p.betragCent || 0) > 0);
+  const gewaehlt = new Set((vorschlag.posten || []).map((p) => p.id));
+  const status = el('p', { class: 'muted small' });
+
+  const aktualisiere = () => {
+    const auswahl = kandidaten.filter((p) => gewaehlt.has(p.id));
+    const sum = auswahl.reduce((s, p) => s + (p.betragCent || 0), 0);
+    const diff = sum - u.betragCent;
+    let txt = `${t('docs.bankSammelSum')}: ${formatEuro(sum)} / ${formatEuro(u.betragCent)}`;
+    if (Math.abs(diff) <= 2) txt += ` · ${t('docs.bankSammelFits')}`;
+    else if (diff > 0) txt += ` · ${t('docs.bankSammelOver').replace('{betrag}', formatEuro(diff))}`;
+    else txt += ` · ${t('docs.bankSammelUnder').replace('{betrag}', formatEuro(-diff))}`;
+    status.textContent = txt;
+  };
+
+  const liste = el('div', { class: 'sammel-liste' }, kandidaten.map((p) => {
+    const cb = el('input', { type: 'checkbox' });
+    cb.checked = gewaehlt.has(p.id);
+    cb.addEventListener('change', () => { if (cb.checked) gewaehlt.add(p.id); else gewaehlt.delete(p.id); aktualisiere(); });
+    return el('label', { class: 'sammel-zeile' }, [
+      cb,
+      el('span', { class: 'mono small', text: `${p.referenz || p.id} · ${formatEuro(p.betragCent)} · ${(p.name || '').slice(0, 30)}` }),
+    ]);
+  }));
+
+  const verbuchen = el('button', {
+    class: 'btn btn-sm btn-primary', type: 'button', text: t('docs.bankSammelBook'),
+    onClick: async () => {
+      const auswahl = kandidaten.filter((p) => gewaehlt.has(p.id));
+      if (auswahl.length < 2) { status.textContent = t('docs.bankSammelMin'); return; }
+      const datum = u.valuta || new Date().toISOString().slice(0, 10);
+      const { zuordnung, unverteiltCent } = verteileSammelzahlung(u.betragCent, auswahl);
+      const bk = sammelBuchungZeilen({ richtung: u.richtung, valuta: datum }, zuordnung);
+      if (!bk) { status.textContent = t('docs.bankSammelMin'); return; }
+      slot.replaceChildren();
+      try {
+        await saveEntwurf({ datum: bk.datum, beschreibung: bk.beschreibung, zeilen: bk.zeilen });
+        // Je Posten den zugeordneten (Teil-)Betrag als Zahlung erfassen.
+        for (const z of zuordnung) {
+          await zahlungVerbuchen(z.posten, u, bk.datum, { betragCent: z.betragCent, ref: u.zweck || null });
+        }
+        slot.appendChild(el('p', { class: 'muted small', text: t('docs.bankSammelDone').replace('{anzahl}', String(zuordnung.length)).replace('{betrag}', formatEuro(bk.summeCent)) }));
+        if (unverteiltCent > 0) slot.appendChild(el('p', { class: 'muted small', text: t('docs.bankSammelRest').replace('{betrag}', formatEuro(unverteiltCent)) }));
+      } catch (e) { slot.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
+    },
+  });
+
+  aktualisiere();
+  wrap.appendChild(el('p', { class: 'muted small', text: t('docs.bankSammelHint') }));
+  wrap.appendChild(liste);
+  wrap.appendChild(status);
+  wrap.appendChild(el('div', { class: 'btn-row' }, [verbuchen]));
+  return wrap;
+}
+
 function umsatzRow(u, posten = []) {
   const slot = el('div', {});
   const vz = (u.gegen || u.zweck || '').slice(0, 80);
@@ -376,6 +438,16 @@ function umsatzRow(u, posten = []) {
         },
       }));
     }
+  }
+
+  // Sammelzahlung (R2b): deckt eine Zahlung mehrere offene Rechnungen ab? Dann eine
+  // Mehrfach-Auswahl anbieten (explizite Bestätigung statt automatischer Zuordnung).
+  const sammel = findeSammelzuordnung(u, posten);
+  if (sammel.length) {
+    knoepfe.push(el('button', {
+      class: 'btn btn-sm', type: 'button', text: t('docs.bankSammel'),
+      onClick: () => { slot.replaceChildren(); slot.appendChild(sammelPanel(u, posten, sammel[0], slot)); },
+    }));
   }
 
   // Fallback / Alternative: normaler Buchungsvorschlag über Kategorisierung.

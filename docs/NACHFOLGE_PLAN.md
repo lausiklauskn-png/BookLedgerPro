@@ -3,8 +3,8 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **816/816 grün**, SW `v88`.
-> Nächster Schritt: **R2b — Sammelzahlungen** (eine Zahlung auf mehrere Rechnungen). A+B fertig; R1 ✅; R2a ✅ (Skonto §17 UStG).
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **838/838 grün**, SW `v89`.
+> Nächster Schritt: **R3 — Verbindlichkeiten aus Foto/PDF-Belegen** + eigene Verbindlichkeiten-Ansicht (A2-Rest); Zahlungsziel je Rechnung (A1-Rest). A+B fertig; R1 ✅; R2a ✅ (Skonto §17 UStG); R2b ✅ (Sammelzahlung).
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -115,8 +115,16 @@
   `payables.offeneVerbindlichkeiten`). UI: der Skonto-Hinweis im Bankimport (`documents.js`) wird zum Knopf
   **„Skonto buchen (§17 UStG)"** → `saveEntwurf` (manuell, **kein** Auto-Festschreiben, GoBD) + Posten
   ausgeglichen. i18n de+en, SW `v88`, **+33 Tests (816/816)**. UI/Glue statisch geprüft. (PR R2a.)
-- [ ] **R2b** Sammelzahlungen (eine Bankzahlung auf **mehrere** offene Rechnungen → Mehrfach-Zuordnung in der UI,
-  Score-Schwelle mit expliziter Auswahl).
+- [x] **R2b** Sammelzahlungen (eine Bankzahlung auf **mehrere** offene Rechnungen → Mehrfach-Zuordnung in der UI,
+  Score-Schwelle mit expliziter Auswahl). ✅ `domain/zahlungsabgleich.js` (rein, node-getestet): `findeSammelzuordnung`
+  (tiefen-/kandidatenbeschränkte **Subset-Summe** über gleichgerichtete offene Posten, Summe == Zahlung ± Toleranz,
+  **≥2 Teile**, Score nach Referenz/Name im Verwendungszweck + Datumsnähe, weniger Teile bevorzugt), `verteileSammelzahlung`
+  (Zahlbetrag der Reihe nach auf die **explizit gewählten** Posten verteilen → letzter teilbar, **Restbildung**; Überschuss
+  bleibt `unverteiltCent`), `sammelBuchungZeilen` (**eine Zeile je Rechnung**: Einnahme Soll Bank/Haben Forderung je Posten;
+  Ausgabe Soll Verbindlichkeit je Posten/Haben Bank — ausgeglichen). UI (`documents.js`): Knopf **„◫ Sammelzahlung
+  (mehrere Rechnungen)"** im Bankimport → Auswahl-Panel mit Checkboxen (Vorschlag vorausgewählt, laufende Summe + Status
+  passt/über/unter) → `saveEntwurf` (manuell, **kein Auto-Festschreiben**, GoBD) + Zahlung je Posten erfasst. i18n de+en,
+  CSS `.sammel-*`, SW `v89`, **+22 Tests (838/838)**. UI/Glue statisch geprüft. (PR R2b.)
 - [ ] **R3** Verbindlichkeiten aus **Foto/PDF-Belegen** + eigene Verbindlichkeiten-Ansicht (A2-Rest); Zahlungsziel je Rechnung (A1-Rest).
 - [ ] **R4** A4 **Stufe 2**: Rechnungs-Übernahme (statt nur Auftrag) + optional API/Push; reziproke WorkFloh-Verlinkung schärfen.
 - [ ] **R5** Bankformate härten (CAMT .052/.054, SWIFT-Validierung), NER (PII über Anker hinaus), dreistufiger Briefkasten (P7).
