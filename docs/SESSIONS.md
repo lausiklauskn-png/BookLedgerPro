@@ -5,6 +5,41 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R6/P2: Feature-Gates ansichtsintern konsumieren [Branch `claude/bookledgerpro-feature-gates-ixswxu`]
+
+**Was getan** (Schritt **R6/P2** — die in R6/P1 definierten Gates jetzt in den Views lesen)
+- **Reine Politik unverändert** (`domain/nutzungsmodus.js` bleibt wie node-getestet, 972/972). P2 ist reine
+  **UI-Konsumption** der bestehenden `zeigeFeature`/`zeigeAnsicht`-Politik in den Ansichten, die im Privat-/
+  Verein-Kontext sichtbar bleiben (dashboard/journal/documents/reports).
+- **journal.js:** USt-Satz + Umsatzart (Reverse-Charge/innergem. Erwerb) + Bewirtungs-Split (70/30 inkl. USt)
+  nur bei `FEATURE.UMSATZSTEUER`; Kostenstelle nur bei `FEATURE.KOSTENSTELLEN`. Submit erzwingt im Privat-Modus
+  **0 %/Inland** (Felder ausgeblendet → keine versehentliche USt). Elemente werden weiter erzeugt (Closures intakt),
+  nur nicht gemountet.
+- **reports.js:** USt-Karten (USt-VA/Verprobung/Steuer-Assistent), Mahnwesen-Karte, Kreditoren-OP-Karte,
+  Kostenstellen-Karte sowie der **DATEV-EXTF**-Export (`BERATER_EXPORT`) und **USt-VA-CSV** (`UMSATZSTEUER`)
+  in der Export-Leiste je nach Modus ausgeblendet.
+- **documents.js:** Kreditoren-OP „auf Ziel" (Verbindlichkeit) aus E-Rechnung-Empfang und OCR-Beleg nur bei
+  `FEATURE.VERBINDLICHKEITEN`.
+- **dashboard.js:** USt-Zahllast-KPI nur bei `UMSATZSTEUER`; Kunden-/Aufträge-KPI nur, wenn die jeweilige
+  Ansicht im Modus sichtbar ist (`zeigeAnsicht('customers'|'orders')` → Privat blendet beide aus, Verein zeigt
+  Kunden=Mitglieder).
+- **Implementierungs-Detail:** `el()` filtert nur `null`-Kinder (nicht `false`) → durchgehend Ternär-Form
+  `bedingung ? karte : null`. SW-Cache **v94 → v95** (keine neuen Module → Precache unverändert).
+
+**Stand:** `node tests/run.mjs` **972/972 grün** (keine neue reine Logik). Vier View-Dateien `node --check`-sauber.
+
+**Offen / Grenzen (ehrlich)**
+- UI/Glue **statisch geprüft** (kein Headless-Browser) — der tatsächliche Modus-Wechsel + Ausblenden ist als
+  **Browser-Sichttest** durch den Nutzer zu bestätigen.
+- Gating = **Anzeige-Vereinfachung, keine rechtliche Sperre**; Routing/Buchungs-Engine unverändert.
+- **Verein** behält per Politik USt/Verbindlichkeiten/Anlagen als Feature (nur deren NAV-Ansichten sind aus) —
+  Policy bewusst nicht geändert (node-getestet/dokumentiert in `tests/run.mjs`).
+
+**Nächstes:** R6/Rest (Lighthouse/Perf — Headless; lokales OCR — build-frei prüfen; ZUGFeRD-Erzeugen — PDF-Lib;
+Sage 5b–d — fremde Repos) **oder** Browser-Sichttest — siehe `docs/NACHFOLGE_PLAN.md`.
+
+---
+
 ## 2026-06-17 — R6/P1: Privat-/Bürger-Modus (Nutzungskontext firma/privat/verein) [Branch `claude/p1-privat-buerger-modus`, PR #99]
 
 **Was getan** (Schritt **R6/P1** — erste, build-freie Scheibe aus dem R6-Korb)

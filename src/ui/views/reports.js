@@ -19,6 +19,7 @@ import { anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, 
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { offeneVerbindlichkeiten, anreichereVerbindlichkeiten, verbindlichkeitenSummen } from '../../domain/payables.js';
 import { getSettings, updateSettings } from '../../state.js';
+import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
@@ -81,24 +82,29 @@ async function repaint() {
     offenVerb = anreichereVerbindlichkeiten(offeneVerbindlichkeiten(await listEingangsrechnungen()));
   } catch { offenVerb = []; }
 
+  // R6/P2: fachliche Feature-Gates ansichtsintern konsumieren. Im Privat-Modus die
+  // USt-Karten (VA/Verprobung/Assistent), Mahnwesen, Kreditoren-OP, Kostenstellen und
+  // den Berater-Export ausblenden; im Verein-Modus nur Mahnwesen (USt bleibt).
+  const fs = getSettings();
+  const zUst = zeigeFeature(fs, FEATURE.UMSATZSTEUER);
   mount(_host, el('section', { class: 'view', id: 'report-view' }, [
     el('h1', { text: t('reports.title') }),
     periodeControls(),
-    exportBar(buchungen, idx, eur, va),
-    offen.length ? mahnungenCard(offen) : null,
-    offenVerb.length ? verbindlichkeitenCard(offenVerb) : null,
+    exportBar(buchungen, idx, eur, va, fs),
+    (zeigeFeature(fs, FEATURE.MAHNWESEN) && offen.length) ? mahnungenCard(offen) : null,
+    (zeigeFeature(fs, FEATURE.VERBINDLICHKEITEN) && offenVerb.length) ? verbindlichkeitenCard(offenVerb) : null,
     el('div', { class: 'report-grid' }, [
-      ustCard(ust),
+      zUst ? ustCard(ust) : null,
       eurCard(eur),
     ]),
     guv ? guvCard(guv) : null,
     bilanzReport ? bilanzCard(bilanzReport) : null,
     eurIstCard(eurIst),
-    vaCard(va),
-    vaPeriodeCard(buchungen, idx),
-    verprobungCard(verprobung),
-    claudeBereit ? assistentCard(va, eur, p) : null,
-    ks.length ? kostenstellenCard(ks) : null,
+    zUst ? vaCard(va) : null,
+    zUst ? vaPeriodeCard(buchungen, idx) : null,
+    zUst ? verprobungCard(verprobung) : null,
+    (claudeBereit && zUst) ? assistentCard(va, eur, p) : null,
+    (zeigeFeature(fs, FEATURE.KOSTENSTELLEN) && ks.length) ? kostenstellenCard(ks) : null,
     auditCard(audit),
   ]));
 }
@@ -290,14 +296,16 @@ function datevOpts() {
   };
 }
 
-function exportBar(buchungen, idx, eur, va) {
+function exportBar(buchungen, idx, eur, va, settings) {
   const stamp = new Date().toISOString().slice(0, 10);
   const dl = (name, text) => downloadText(name, BOM + text, 'text/csv');
+  // R6/P2: DATEV-EXTF nur bei Berater-Export, USt-VA-CSV nur bei USt-Ausweis.
+  const s = settings || getSettings();
   return el('div', { class: 'card export-bar no-print' }, [
     el('span', { class: 'muted small', text: t('reports.export') + ':' }),
     el('button', { class: 'btn btn-sm', text: t('reports.exportJournal'), onClick: () => dl(`journal-${stamp}.csv`, buildLedgerCsv(buchungen, idx)) }),
-    el('button', { class: 'btn btn-sm', text: t('reports.exportDatev'), onClick: () => dl(`EXTF_Buchungsstapel_${stamp}.csv`, buildDatevExtf(buchungen, idx, datevOpts())) }),
-    el('button', { class: 'btn btn-sm', text: t('reports.exportUstVa'), onClick: () => dl(`ust-va-${stamp}.csv`, ustVaToCsv(va)) }),
+    zeigeFeature(s, FEATURE.BERATER_EXPORT) ? el('button', { class: 'btn btn-sm', text: t('reports.exportDatev'), onClick: () => dl(`EXTF_Buchungsstapel_${stamp}.csv`, buildDatevExtf(buchungen, idx, datevOpts())) }) : null,
+    zeigeFeature(s, FEATURE.UMSATZSTEUER) ? el('button', { class: 'btn btn-sm', text: t('reports.exportUstVa'), onClick: () => dl(`ust-va-${stamp}.csv`, ustVaToCsv(va)) }) : null,
     el('button', { class: 'btn btn-sm', text: t('reports.exportEur'), onClick: () => dl(`euer-${stamp}.csv`, eurToCsv(eur)) }),
     el('button', { class: 'btn btn-sm', text: t('reports.print'), onClick: () => window.print() }),
   ]);

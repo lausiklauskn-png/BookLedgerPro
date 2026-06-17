@@ -4,6 +4,7 @@ import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
 import { navigate, getSettings } from '../../state.js';
+import { zeigeFeature, FEATURE, zeigeAnsicht } from '../../domain/nutzungsmodus.js';
 import { getMandantId } from '../../core/vault.js';
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
 import { listBelege } from '../../domain/documents.js';
@@ -15,7 +16,8 @@ import { MycelDivider } from '../mycel.js';
 export async function mountDashboard(host) {
   mount(host, el('section', { class: 'view' }, [el('h1', { text: t('dashboard.welcome') }), el('p', { class: 'muted', text: '…' })]));
 
-  const wjBeginn = getSettings().wirtschaftsjahrBeginn || '01-01';
+  const s = getSettings();
+  const wjBeginn = s.wirtschaftsjahrBeginn || '01-01';
   const heute = new Date().toISOString().slice(0, 10);
   const jahr = wirtschaftsjahrVon(heute, wjBeginn);
   const [konten, buchungen, belege, kunden, auftraege, audit] = await Promise.all([
@@ -39,9 +41,11 @@ export async function mountDashboard(host) {
     ]),
     el('p', { class: 'muted', text: t('app.tagline') }),
 
+    // R6/P2: USt-Zahllast-KPI nur bei USt-Ausweis; Kunden/Aufträge-KPIs nur, wenn die
+    // jeweilige Ansicht im Nutzungskontext sichtbar ist (Privat blendet beide aus).
     el('div', { class: 'kpi-grid' }, [
       kpi(t('reports.surplus'), formatEuro(k.ueberschuss), k.ueberschuss >= 0 ? 'kpi-pos' : 'kpi-neg'),
-      kpi(t('reports.zahllast'), formatEuro(k.ustZahllast)),
+      zeigeFeature(s, FEATURE.UMSATZSTEUER) ? kpi(t('reports.zahllast'), formatEuro(k.ustZahllast)) : null,
       kpi(t('reports.income'), formatEuro(k.ertrag)),
       kpi(t('reports.expense'), formatEuro(k.aufwand)),
     ]),
@@ -50,8 +54,8 @@ export async function mountDashboard(host) {
       kpi(t('dashboard.posted'), String(k.festgeschrieben)),
       kpi(t('dashboard.drafts'), String(k.entwuerfe)),
       kpi(t('nav.documents'), String(belege.length)),
-      kpi(t('nav.customers'), String(kunden.length)),
-      kpi(t('nav.orders'), String(auftraege.length)),
+      zeigeAnsicht(s, 'customers') ? kpi(t('nav.customers'), String(kunden.length)) : null,
+      zeigeAnsicht(s, 'orders') ? kpi(t('nav.orders'), String(auftraege.length)) : null,
     ]),
 
     MycelDivider(),

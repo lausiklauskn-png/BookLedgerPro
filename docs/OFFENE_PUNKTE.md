@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R6/P1).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R6/P2).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -373,13 +373,19 @@ Rechnung/USt-Buchung erfolgt in BLP). Damit ist der **Datei-Import** bereits der
 - **[BESCHLOSSEN 2026-06-17] ELSTER:** Datenpaket-Download **+ Weiterleitungs-Link** zur Anbieter-Seite
   (elster.de) — **kein** ERiC-Direktversand (nicht build-frei). Stufe 1 (Link) ✅ umgesetzt.
 - **[KANN] Lokales Offline-OCR** (z. B. Tesseract.js) als Vision-Alternative/Fallback.
-- **[TEILWEISE 2026-06-17] Privat-/Bürger-Modus** (vereinfachte Oberfläche für Privatpersonen/Vereine):
+- **[ERLEDIGT 2026-06-17] Privat-/Bürger-Modus** (vereinfachte Oberfläche für Privatpersonen/Vereine):
   ✅ **R6/P1 (PR #99)** — `domain/nutzungsmodus.js` (rein, node-getestet) führt den Nutzungskontext
   `firma|privat|verein` (Default `firma`) ein und blendet geschäftliche NAV-Ansichten je Kontext aus
   (`zeigeAnsicht`/`sichtbareAnsichten`, in `shell.js` konsumiert; Setting `nutzungsmodus`, Schalter
-  „Nutzungskontext"). **Offen (P2):** die ebenfalls definierten **fachlichen Feature-Gates** (`zeigeFeature`)
-  noch **ansichtsintern** lesen (USt-Felder/Rechnungs-/Mahn-Knöpfe je Modus ausblenden). Gating ist eine
-  Anzeige-Vereinfachung, keine rechtliche Sperre.
+  „Nutzungskontext"). ✅ **R6/P2** — die **fachlichen Feature-Gates** (`zeigeFeature`) werden jetzt
+  **ansichtsintern** gelesen: `journal.js` (USt-Satz/Umsatzart/Reverse-Charge + Bewirtungs-Split nur bei
+  `UMSATZSTEUER`, Kostenstelle nur bei `KOSTENSTELLEN`, Submit erzwingt im Privat-Modus 0 %/Inland),
+  `reports.js` (USt-Karten/Mahnwesen/Kreditoren-OP/Kostenstellen + DATEV-/USt-VA-Export je Modus),
+  `documents.js` (Kreditoren-OP aus E-Rechnung/OCR nur bei `VERBINDLICHKEITEN`), `dashboard.js`
+  (USt-Zahllast-KPI nur bei USt; Kunden-/Aufträge-KPI nach Ansichts-Sichtbarkeit). SW `v95`, 972/972.
+  Gating ist eine **Anzeige-Vereinfachung, keine rechtliche Sperre** (im Zweifel „Firma" zeigt alles).
+  **Bewusst belassen:** Verein behält per Politik USt/Verbindlichkeiten/Anlagen als Feature (nur deren
+  dedizierte NAV-Ansichten sind im Verein ausgeblendet) — Policy unverändert, da node-getestet/gewollt.
 - **[KANN] Sage-Mycel 5b–d:** echte Spore deployen, Hub-Registrierung, Handshake, Symbiose-Import.
 - **[KANN] Performance/Lighthouse** messen.
 - **[BESCHLOSSEN 2026-06-17] Mehrmandantenfähigkeit** (mehrere Firmen je Installation) — eigener großer PR.
