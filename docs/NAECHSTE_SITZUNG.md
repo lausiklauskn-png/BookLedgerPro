@@ -19,26 +19,27 @@ OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
 abarbeiten. **Abschnitt R bis R5 ist komplett** (R1–R4 ✅; R5a/R5b/R5c ✅); **R6/P1 (Privat-/Bürger-Modus:
-`domain/nutzungsmodus.js`, NAV-Gating, Setting `nutzungsmodus`) ✅ + gemergt (PR #99)**. **Aktueller nächster
-Schritt: R6-Rest [KANN]** — **Empfehlung R6/P2: die Feature-Gates ansichtsintern konsumieren** (`zeigeFeature`
-aus `domain/nutzungsmodus.js` ist bereits definiert + node-getestet, wird aber noch NICHT in den Views gelesen
-→ im Privat-/Verein-Modus USt-Felder im Journal, Rechnungs-/Mahn-Knöpfe, Anlagen-/Lohn-Bezüge je Modus
-ausblenden; reine Politik liegt schon node-getestet vor, also UI/Glue + ggf. kleine Helfer-Logik). Alternativ
-weiterhin offen im R6-Korb: **Lighthouse/Perf** (braucht Headless-Browser), **lokales OCR** (nur build-frei-
-sauber), ZUGFeRD-Erzeugen (PDF-Lib → nicht build-frei), **Sage 5b–d** (fremde Repos, menschlich vermittelt).
-**Alternativ/zuerst sinnvoll: Browser-Sichttest** — (a) eine WorkFloh-Austauschdatei MIT `rechnung`-Block
-importieren (Aufträge → „Aus WorkFloh importieren") → Buchungsentwurf (Forderung an Erlöse + USt) prüfen,
-Auftrag „berechnet"; (b) OCR→Verbindlichkeit-Klickpfad (Foto/PDF → Google Vision EU → „Verbindlichkeit aus
+`domain/nutzungsmodus.js`, NAV-Gating, Setting `nutzungsmodus`) ✅ + gemergt (PR #99)**; **R6/P2 (Feature-Gates
+ansichtsintern konsumiert: journal/reports/documents/dashboard lesen `zeigeFeature`/`zeigeAnsicht`) ✅**.
+**Aktueller nächster Schritt: R6/Rest [KANN]** — die Restoptionen brauchen jeweils etwas, das in dieser Umgebung
+fehlt: **Lighthouse/Perf** (Headless-Browser), **lokales OCR** (nur build-frei-sauber — Tesseract ist wasm/npm-
+Runtime → genau prüfen, ob build-frei machbar), **ZUGFeRD-Erzeugen** (XML in PDF/A-3 einbetten → PDF-Lib, nicht
+build-frei), **Sage 5b–d** (fremde Repos, menschlich vermittelt). **Daher praktischer nächster Schritt: ein
+Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier): (a) eine WorkFloh-Austauschdatei MIT
+`rechnung`-Block importieren (Aufträge → „Aus WorkFloh importieren") → Buchungsentwurf (Forderung an Erlöse + USt)
+prüfen, Auftrag „berechnet"; (b) OCR→Verbindlichkeit-Klickpfad (Foto/PDF → Google Vision EU → „Verbindlichkeit aus
 diesem Beleg erfassen" → Zahlungsabgleich); (c) **Pseudonym-Modus mit dreistufigem Briefkasten** (Einstellungen
 → „Dreistufiger Briefkasten" an) → Belegtext an die KI → Maskierung/Token prüfen; (d) **Privat-/Verein-Modus**
-(Einstellungen → „Nutzungskontext") → prüfen, dass die NAV die geschäftlichen Ansichten ausblendet — kein
-Headless-Browser hier, daher echter Nutzer-Sichttest.
+(Einstellungen → „Nutzungskontext") → prüfen, dass die NAV die geschäftlichen Ansichten ausblendet **und (P2)
+zusätzlich USt-Felder im Journal, Mahn-/Kreditoren-Knöpfe und KPIs je Modus verschwinden**. Wenn der Nutzer
+stattdessen einen Code-Schritt wünscht: zuerst prüfen, ob lokales OCR wirklich build-frei lösbar ist; sonst R6/Rest
+als „blockiert (Umgebung/Mensch)" dokumentieren und mit dem Nutzer den nächsten sinnvollen Korb abstimmen.
 Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
 **Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** (B1/B2/B3); **R1–R4 ✅** (Verzugszinsen/
 Mahngebühren · Skonto §17 UStG · Sammelzahlungen · Verbindlichkeiten aus Foto/PDF · Rechnungs-Übernahme
 aus WorkFloh, PR #95); **R5a/R5b/R5c ✅** (Bankformate härten · NER · dreistufiger Briefkasten);
-**R6/P1 ✅** (Privat-/Bürger-Modus). **Bewusst offen** (eigene Schritte, falls gewünscht): R6/P2
-(Feature-Gates ansichtsintern); R4-Rest **API/Push** (Echtzeit) + Übernahme von **Zahlungsstatus/Teilzahlungen**;
+**R6/P1 ✅** (Privat-/Bürger-Modus); **R6/P2 ✅** (Feature-Gates ansichtsintern). **Bewusst offen** (eigene
+Schritte, falls gewünscht): R4-Rest **API/Push** (Echtzeit) + Übernahme von **Zahlungsstatus/Teilzahlungen**;
 R5a-Rest **echte SWIFT-/ISO-20022-Schema-Validierung**; R5c-Rest **Person-Attribut-Bindung pro Personen-Token**
 + **NER-Scoping**. Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`. Reine Logik
 **ZUERST node-getestet**, dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen). (Falls ein Schritt zu
@@ -79,8 +80,9 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach **R6/P1** (Abschnitt A Mehrmandanten + Abschnitt B Bilanzierung +
-R1–R5 abgeschlossen + gemergt; **R6/P1 Privat-/Bürger-Modus** — Nutzungskontext `firma|privat|verein`,
-`domain/nutzungsmodus.js`, NAV-Gating in `shell.js`, Setting `nutzungsmodus`, PR #99) · Tests **972/972** ·
-SW **v94** · 97 JS-Module · **R bis R5 komplett, R6/P1 ✅** · nächster Schritt **R6/P2** (Feature-Gates
-ansichtsintern) bzw. R6-Rest/Browser-Sichttest. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach **R6/P2** (Abschnitt A Mehrmandanten + Abschnitt B Bilanzierung +
+R1–R5 abgeschlossen + gemergt; **R6/P1 Privat-/Bürger-Modus** PR #99; **R6/P2 Feature-Gates ansichtsintern** —
+`journal/reports/documents/dashboard` lesen `zeigeFeature`/`zeigeAnsicht`, reine Politik unverändert) ·
+Tests **972/972** · SW **v95** · 97 JS-Module · **R bis R5 komplett, R6/P1 ✅, R6/P2 ✅** · nächster Schritt
+**R6/Rest** (Lighthouse/OCR/ZUGFeRD/Sage 5b–d — meist Headless/PDF-Lib/fremde Repos) bzw. **Browser-Sichttest**.
+(Diese Zeile bei jeder Sitzung aktualisieren.)

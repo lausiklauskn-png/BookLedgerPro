@@ -4,7 +4,7 @@
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
 > `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **885/885 grün**, SW `v91`.
-> Nächster Schritt: **R6-Rest** [KANN] (P2: Feature-Gates ansichtsintern konsumieren) oder **Browser-Sichttest** nach Bedarf. A+B fertig; R1–R5 ✅ (R5a Bankformate härten · R5b NER · R5c dreistufiger Briefkasten); **R6/P1 ✅ (Privat-/Bürger-Modus: `domain/nutzungsmodus.js`, NAV-Gating, Setting `nutzungsmodus`, PR #99)**. Tests **972/972**, SW `v94`.
+> Nächster Schritt: **R6/Rest** [KANN] — Lighthouse/Perf (braucht Headless-Browser), lokales OCR (nur build-frei-sauber), ZUGFeRD-Erzeugen (PDF-Lib → nicht build-frei), Sage 5b–d (fremde Repos, menschlich vermittelt) — **oder Browser-Sichttest** nach Bedarf. A+B fertig; R1–R5 ✅; **R6/P1 ✅** (Privat-/Bürger-Modus, PR #99); **R6/P2 ✅** (Feature-Gates ansichtsintern konsumiert: journal/reports/documents/dashboard). Tests **972/972**, SW `v95`.
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -183,9 +183,16 @@
     Setting `nutzungsmodus` in `state.js`; i18n de+en; SW `v94` + Modul precached. **Grenze:** Anzeige-
     Vereinfachung (keine rechtliche Sperre), Routing bleibt intakt; Feature-Gates definiert/getestet, aber
     noch NICHT ansichtsintern konsumiert (→ P2). (PR #99.)
-  - [ ] **R6/P2 [KANN] — Feature-Gates ansichtsintern konsumieren.** `zeigeFeature(settings, FEATURE.*)` in
-    den Views lesen: im Privat-/Verein-Modus USt-Felder (Journal), Rechnungs-/Mahn-Knöpfe, Anlagen-/Lohn-
-    Bezüge etc. ausblenden. Reine Politik liegt schon node-getestet in `domain/nutzungsmodus.js`.
+  - [x] **R6/P2 [KANN] — Feature-Gates ansichtsintern konsumieren.** ✅ `zeigeFeature(settings, FEATURE.*)`
+    (und `zeigeAnsicht` für view-spiegelnde KPIs) jetzt in den Ansichten gelesen, die im Privat-/Verein-
+    Kontext sichtbar bleiben: **journal.js** (USt-Satz + Umsatzart/Reverse-Charge + Bewirtungs-Split nur bei
+    `UMSATZSTEUER`; Kostenstelle nur bei `KOSTENSTELLEN`; Submit erzwingt im Privat-Modus 0 %/Inland),
+    **reports.js** (USt-Karten VA/Verprobung/Assistent, Mahnwesen, Kreditoren-OP, Kostenstellen, DATEV-/
+    USt-VA-Export je Modus ausgeblendet), **documents.js** (Kreditoren-OP aus E-Rechnung/OCR nur bei
+    `VERBINDLICHKEITEN`), **dashboard.js** (USt-Zahllast-KPI nur bei USt; Kunden-/Aufträge-KPI nur, wenn die
+    Ansicht im Modus sichtbar ist). Reine Politik unverändert (bereits node-getestet, 972/972 grün);
+    UI/Glue statisch geprüft. SW `v95`. **Grenze:** Anzeige-Vereinfachung, keine rechtliche Sperre;
+    `el()` filtert nur `null`-Kinder → durchgehend Ternär-Form (`? card : null`). (PR R6/P2.)
   - [ ] **R6/Rest [KANN]** Lighthouse/Perf (braucht Headless-Browser), lokales OCR (nur build-frei-sauber),
     ZUGFeRD-Erzeugen (PDF-Lib → nicht build-frei), Sage 5b–d (fremde Repos, menschlich vermittelt).
 

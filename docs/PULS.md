@@ -36,16 +36,23 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R6" [KANN] — Rest** (R6/P1 Privat-/Bürger-Modus **erledigt + gemergt**, PR #99).
-Empfehlung: **R6/P2 — die Feature-Gates ansichtsintern konsumieren** (im Privat-/Verein-Modus USt-Felder/Rechnungs-/
-Mahn-Knöpfe etc. ausblenden; `zeigeFeature` aus `domain/nutzungsmodus.js` ist bereits definiert + node-getestet,
-wird aber noch nicht in den Views gelesen). Alternativ weiterhin offen im R6-Korb: Lighthouse/Perf, lokales OCR
-(nur build-frei-sauber), Sage 5b–d — **oder Browser-Sichttest** (WorkFloh-Datei mit Rechnung importieren →
-Buchungsentwurf prüfen; OCR→Verbindlichkeit-Klickpfad, Vision EU; Pseudonym-Briefkasten). Reihenfolge nach Bedarf;
-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R6/Rest" [KANN]** — die verbleibenden R6-Optionen brauchen jeweils
+etwas, das hier fehlt: **Lighthouse/Perf** (Headless-Browser), **lokales OCR** (nur build-frei-sauber, Tesseract ist
+wasm/npm-Runtime → genau prüfen), **ZUGFeRD-Erzeugen** (PDF/A-3-Lib → nicht build-frei), **Sage 5b–d** (fremde Repos,
+menschlich vermittelt). **Daher praktischer nächster Schritt: Browser-Sichttest** (echter Nutzer, kein Headless hier):
+(a) WorkFloh-Datei mit `rechnung`-Block importieren → Buchungsentwurf prüfen; (b) OCR→Verbindlichkeit-Klickpfad
+(Vision EU); (c) Pseudonym-Briefkasten; (d) **Privat-/Verein-Modus** → NAV blendet geschäftliche Ansichten aus **und
+jetzt (P2) zusätzlich USt-Felder/Mahn-/Kreditoren-Knöpfe/KPIs**. Reihenfolge nach Bedarf; Details in
+`docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**R6/P2 erledigt (diese Sitzung):** Feature-Gates ansichtsintern konsumiert — `zeigeFeature`/`zeigeAnsicht` jetzt in
+`journal.js` (USt-Satz/Umsatzart/Bewirtung nur bei `UMSATZSTEUER`, Kostenstelle nur bei `KOSTENSTELLEN`, Submit
+erzwingt im Privat-Modus 0 %/Inland), `reports.js` (USt-Karten/Mahnwesen/Kreditoren-OP/Kostenstellen/DATEV-/USt-VA-
+Export je Modus), `documents.js` (Kreditoren-OP aus E-Rechnung/OCR nur bei `VERBINDLICHKEITEN`), `dashboard.js`
+(USt-Zahllast-KPI nur bei USt; Kunden-/Aufträge-KPI nach Ansichts-Sichtbarkeit). Reine Politik unverändert
+(972/972), UI/Glue statisch geprüft. SW `v95`.
 **R6/P1 erledigt:** `domain/nutzungsmodus.js` (rein, node-getestet) — Nutzungskontext `firma|privat|verein` (Default
 `firma`, Bestand unverändert) neben dem UI-Komplexitäts-`mode`; `zeigeAnsicht`/`sichtbareAnsichten` (NAV-Gating, in
-`shell.js` konsumiert) + `zeigeFeature`/`FEATURE` (Grundlage für P2); Setting `nutzungsmodus`, Schalter „Nutzungskontext", i18n de+en. +30 Tests.
+`shell.js` konsumiert) + `zeigeFeature`/`FEATURE`; Setting `nutzungsmodus`, Schalter „Nutzungskontext", i18n de+en. +30 Tests.
 **R5c (dreistufiger Briefkasten Mandant ⊃ Firma ⊃ Person für Pseudonymisierung/CRM, `ai/briefkasten.js`, Setting `briefkastenScopes`) ist abgeschlossen + gemergt → Abschnitt R bis R5 komplett.**
 **R5a (Bankformate härten: CAMT .052/.054 + Saldo-Integritätsprüfung + strukturierte RmtInf) ist abgeschlossen + gemergt.**
 **R5b (NER: PII Dritter — E-Mail/IBAN/USt-IdNr/Steuernr/Telefon — über die Anker hinaus maskieren, `ai/ner.js`, Setting `nerPii`) ist abgeschlossen + gemergt.**
@@ -57,9 +64,9 @@ Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach R6/P1):** SW **v94** · Tests **972/972** grün · 97 JS-Module.
-**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1–R5 ✅; R6/P1 ✅ (Privat-/Bürger-Modus).** Reihenfolge im Plan:
-~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → ~~R5a~~ → ~~R5b~~ → ~~R5c~~ → ~~R6/P1~~ → R6-Rest (P2 …).
+**Kopf-Status (Stand nach R6/P2):** SW **v95** · Tests **972/972** grün · 97 JS-Module.
+**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1–R5 ✅; R6/P1 ✅ (Privat-/Bürger-Modus); R6/P2 ✅ (Feature-Gates ansichtsintern).** Reihenfolge im Plan:
+~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → ~~R5a~~ → ~~R5b~~ → ~~R5c~~ → ~~R6/P1~~ → ~~R6/P2~~ → R6/Rest (Lighthouse/OCR/ZUGFeRD/Sage 5b–d) bzw. Browser-Sichttest.
 **R5c erledigt:** `ai/briefkasten.js` (rein, node-getestet) — `baueBriefkasten({mandant,firma,kunden,mitarbeiter})`
 ordnet die exakten Stammdaten-Anker in **Mandant ⊃ Firma ⊃ Person** ein (eigene Firma = `FIRMA_1`/eigen,
 Mitarbeiter = deren Personen; Firmenkunden = weitere `FIRMA_n` mit ihren E-Mail/USt-IdNr/Adresse-Ankern;
