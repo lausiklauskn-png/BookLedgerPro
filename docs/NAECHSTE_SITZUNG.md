@@ -18,15 +18,18 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Aktueller nächster Schritt: B1 — Bilanzierung: Modus + Kontengrundlage.**
-Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`).
-B1 startet Abschnitt B (zweite Gewinnermittlungsart neben EÜR, für GmbH/OHG — §4 Abs.1/§5 EStG):
-Setting **`gewinnermittlung: 'euer' | 'bilanz'`** einführen (Default `'euer'` → **bestehende Nutzer
-bleiben unverändert**), den **Konten-Seed** bei Bedarf um **Bilanz-Grundkonten** ergänzen
-(Saldenvortrag/Eröffnungsbilanzkonto 9000 ist bereits vorhanden — prüfen), und eine **minimale UI**
-(Modus-Schalter in den Einstellungen). **Reine Klassifikations-/Konten-Logik ZUERST node-getestet**,
-dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen). Die eigentliche GuV (B2) und Bilanz (B3)
-folgen in eigenen PRs — B1 legt nur die Grundlage. Ehrlich bleiben: keine Konzernabschlüsse/
+abarbeiten. **Aktueller nächster Schritt: B2 — Bilanzierung: GuV (Gewinn- und Verlustrechnung).**
+Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
+**B1 (Modus + Kontengrundlage) ist abgeschlossen + gemergt** (PR #87, siehe `docs/SESSIONS.md` oben).
+B2 baut auf der B1-Grundlage auf (`src/domain/bilanzierung.js`: Konten-Klassifikation
+`istErfolgskonto`/`guvSeite`/`klassifiziereKonto`, Setting `gewinnermittlung: 'euer' | 'bilanz'`).
+Neu: **`src/domain/bilanz.js`** (rein, node-getestet) mit `gewinnUndVerlust(buchungen, idx, periode)` →
+Erträge/Aufwendungen aus den **Erfolgskonten** je Periode aggregiert (Salden über `accounts.js saldo`/
+`mehrungsSeite`), gegliedert nach `guvSeite`, **Jahresüberschuss/-fehlbetrag = Erträge − Aufwendungen**;
+dazu eine **Ansicht** (z. B. in „Berichte" oder eigene GuV-Karte) + **CSV-Export** (Muster: `domain/export.js`,
+`domain/berichte.js`). Der B1-Modus-Schalter (`gewinnermittlung`) kann die GuV-Ansicht/-Navigation gaten.
+**Reine Logik ZUERST node-getestet**, dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen).
+**B3 (Bilanz)** folgt danach in eigenem PR. Ehrlich bleiben: **keine** Konzernabschlüsse, **keine**
 E-Bilanz-Taxonomie behaupten. Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt B.
 
 MEHRERE PRs ERLAUBT (NEU): Wenn sich mehrere Plan-Punkte **sauber und in sich
@@ -64,5 +67,6 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach M3 (Abschnitt A Mehrmandanten abgeschlossen) · Tests
-**699/699** · SW **v83** · 90 JS-Module · nächster Schritt **B1**. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach B1 (Abschnitt A Mehrmandanten abgeschlossen; B1 Modus +
+Kontengrundlage gemergt, PR #87) · Tests **726/726** · SW **v84** · 91 JS-Module · nächster Schritt
+**B2 (GuV)**. (Diese Zeile bei jeder Sitzung aktualisieren.)

@@ -5,6 +5,34 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — B1: Bilanzierung Modus + Kontengrundlage [Branch `claude/bilanzierung-b1-setup-4cx6s3`] (PR #87, gemergt)
+
+**Was getan** (NACHFOLGE_PLAN.md, Schritt **B1** — startet Abschnitt B Bilanzierung)
+- **Reine Logik zuerst (`src/domain/bilanzierung.js`, node-getestet):** Gewinnermittlungsart
+  `GEWINNERMITTLUNG` (`euer` | `bilanz`) + `GEWINNERMITTLUNG_LISTE`, `istGewinnermittlung`,
+  `normalizeGewinnermittlung` (Fallback EÜR), `istBilanzierung(settings)`. **Konten-Klassifikation**
+  als Grundlage für B2/B3: `istBestandskonto`/`istErfolgskonto`, `abschlussBereich` (+`BEREICH`),
+  `bilanzSeite` (aktiva/passiva), `guvSeite` (aufwand/ertrag), `klassifiziereKonto`. Konstante
+  `BILANZ_GRUNDKONTO_NUMMERN`.
+- **`accounts.js`:** Bilanz-Grundkonten **0800** (Gezeichnetes Kapital), **0840** (Kapitalrücklage),
+  **0860** (Gewinn-/Verlustvortrag), **0970** (Sonstige Rückstellungen) in den SKR03-Seed ergänzt.
+  **Saldenvortrag/Eröffnung 9000** war bereits vorhanden (geprüft).
+- **`state.js`:** Setting `gewinnermittlung` mit **Default `'euer'`** → **Bestandsnutzer unverändert**.
+- **`shell.js`:** Modus-Schalter „Gewinnermittlung" in den Einstellungen; Wechsel auf **Bilanz**
+  zieht die Grundkonten in älteren Tresoren via `ensureSeedKonten` nach (neue Tresore haben sie im Seed).
+- **i18n** (de+en) `settings.gewinn*`. **SW-Cache `v84`** + `bilanzierung.js` precached.
+- **Tests 726/726** grün (+27 neue: Modus-Logik, Konten-Klassifikation, Seed-Grundkonten).
+
+**Stand:** B1 vollständig + gemergt. Reine Logik node-getestet; UI/Glue (Settings-Schalter,
+`ensureSeedKonten` über IndexedDB) **statisch geprüft** (kein Headless-Browser hier).
+**Offen/Nächstes:** **B2 — GuV.** `domain/bilanz.js` (rein, node-getestet):
+`gewinnUndVerlust(buchungen, idx, periode)` → Erträge/Aufwendungen gegliedert, Jahresüberschuss;
+Ansicht + CSV. Dann B3 (Bilanz).
+**Grenze (ehrlich):** Der Modus-Schalter setzt aktuell **nur Modus + Kontengrundlage** und ändert
+**noch keine Berichte** — GuV/Bilanz folgen in B2/B3. **Keine** Konzernabschlüsse, **keine** E-Bilanz-Taxonomie.
+
+---
+
 ## 2026-06-17 — M3: Shell-Mandanten-Indikator + Verwaltung [Branch `claude/m3-shell-tenant-mgmt-d13v6s`]
 
 **Was getan** (NACHFOLGE_PLAN.md, Schritt **M3** — schließt Abschnitt A Mehrmandanten ab)
