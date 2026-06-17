@@ -7,29 +7,52 @@
 
 ---
 
-## ⏭ START HIER — Profi-Readiness-Fahrplan V1–V10 KOMPLETT ✅
+## ⏭ START HIER — Nachfolge-Brief (Stand 2026-06-17): Entscheidungen umsetzen, je 1 PR
 
-> **Lies das zuerst und vollständig. Danach kannst du ohne Rückfragen loslegen.**
+> **Lies das zuerst und vollständig. Danach OHNE Rückfragen loslegen.**
+>
+> **🟢 FREIBRIEF (vom Nutzer ausdrücklich übergeben):** Pro Punkt **ein** PR, **bei grüner CI
+> selbstständig mergen** (Draft anlegen → ready → CI abwarten → squash-merge), danach lokal
+> `git reset --hard origin/main`. Arbeitsweise wie die letzten 11 PRs: **reine Logik zuerst
+> node-getestet** (`tests/run.mjs`), dann UI (statisch geprüft kennzeichnen). **SW-Cache** in
+> `sw.js` erhöhen, neue Module precachen. **DB-Suffix `bookledgerpro` NIE ändern.**
 
-**✅ V10 erledigt (Browser-E2E: In-App-Selbstdiagnose + Abnahme-Checkliste) — diese Sitzung, in `claude/v2-ox8bu7`:**
-`domain/selbsttest.js` + Ansicht **„Selbsttest"**: prüft die Kern-Engine OFFLINE (Krypto-Roundtrip,
-Shamir, GoBD-Hash-Kette + Manipulationserkennung, Geldrundung, Buchhaltung/USt-VA/EÜR/GDPdU an
-Demo-Daten, Export-ZIP) → ✓/✗; `docs/ABNAHME_CHECKLISTE.md` (manueller Klickpfad).
-**Tests 618/618, SW `v72`.**
+**✅ Profi-Readiness-Fahrplan V1–V10 KOMPLETT** (gemergt: V2 #64, V3 #65, V4 #66, V5 #67, V6 #68,
+V7 #69, V9 #70, V8 #71, V10 #72; Doku-HTML #73; Entscheidungen-Teil-1 als nächster PR).
+**Tests 618/618, SW `v73`.**
 
-**🎉 Damit ist der gesamte Profi-Readiness-Fahrplan V1–V10 abgeschlossen** (diese Sitzung gemergt:
-V2 #64, V3 #65, V4 #66, V5 #67, V6 #68, V7 #69, V9 #70, V8 #71, V10 als nächster PR).
-Alle MUSS- und SOLL-Punkte erledigt.
+**★ Nutzer-Entscheidungen (2026-06-17) — verbindlich (Details: `OFFENE_PUNKTE.md` ganz oben):**
+ELSTER **JA** (Datenpaket-Download **+ Link** auf elster.de, KEIN ERiC-Direktversand) ·
+Mehrmandanten **JA** · Bilanzierung (GmbH) **JA** · AVV-Verträge **umsetzen** (In-App-Links da).
 
-**Was als Nächstes (offene Optionen, KEIN Pflicht-Fahrplan mehr):**
-- **A4 — WorkFloh-/App-Anbindung** (Angebote/Arbeiten → Rechnung → BLP; Seam `importworkfloh.js`).
-- **Sage Phase 5b–d** (Spore/Hub/Symbiose — menschlich vermittelt, fremde Repos).
-- **Echter Praxistest** durch den Nutzer (1–2 Wochen): Foto-OCR → App → Finanzamt; DATEV-Testimport
-  via Steuerberater. Abweichungen in `docs/TESTDATEN.md` notieren → Mappings nachziehen.
-- Optionale große Spuren nur bei Bedarf: V-Bilanz (GmbH), V-Lohn, V-Multi (Mehrmandanten).
+**Festgelegte Bau-Reihenfolge (je eigener PR, Freibrief-Merge):**
+1. ✅ **erledigt (diese Sitzung):** ELSTER-Weiterleitungs-Link in „USt-VA je Zeitraum" + AVV-Anbieter-
+   links (Google/Mistral DPA) in „Recht & Doku".
+2. **§19-Kleinunternehmer-Abfrage im Onboarding** (Punkt 27) — klein. Onboarding-Flow in
+   `src/ui/lock.js`/Onboarding; Setting `kleinunternehmer` existiert bereits (nur Abfrage ergänzen).
+3. **Abweichendes Wirtschaftsjahr** (Punkt 28) — Setting `wirtschaftsjahrBeginn` (MM-TT, Default 01-01);
+   in `domain/umsatzsteuer.js` (Perioden) + EXTF-WJ-Beginn nutzen. Node-testbar.
+4. **Steuerberater-Übergabe-Datenblatt** (Punkt 31) — kompaktes „so importieren" + Kennzahlen
+   (baut auf `TESTDATEN.md`/`DATEV_IMPORT.md`); evtl. als druckbare Ansicht.
+5. **Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung** (Punkt 29) — mittel.
+6. **ZUGFeRD (PDF/A-3) + KoSIT-Validierung** — groß.
+7. **A4 WorkFloh-Anbindung** (`importworkfloh.js`-Seam ausbauen, Rechnung statt nur Auftrag) — groß.
+8. **Mehrmandantenfähigkeit** — groß (Mandanten-Namespace im Tresor; DB-Suffix unverändert!).
+9. **Bilanzierung / V-Bilanz** (GuV + Bilanz, §4 Abs.1/§5) — groß.
+10. Restpunkte B/C nach Bedarf (Bankformate härten, NER, dreistufiger Briefkasten, Lighthouse,
+    lokales OCR, Privat-/Bürger-Modus, Sage 5b–d).
 
-**Nutzer-Kontext:** App ist **auch ganz ohne DATEV** voll nutzbar (Belege/Kunden/Rechnungen/EÜR/
-USt-VA); DATEV-EXTF/GDPdU/CSV/Voll-Backup = portabel, kein Lock-in.
+**Nutzer-Kontext:** macht „heute durch" + plant 1–2-Wochen-Praxistest (Foto-OCR → App → Finanzamt;
+DATEV-Testimport via Steuerberater). App ist **auch ganz ohne DATEV** voll nutzbar; alle Exporte
+portabel (kein Lock-in).
+
+**Was „Vx" bedeutet:** „Vx" = **Punkt aus dem Master-Plan** (`OFFENE_PUNKTE.md`), **KEINE** neue
+Programm-Version/Redesign. Branchname (`claude/v2-…`) ist bedeutungslos.
+
+**Projektzustand (nichts davon neu bauen — fertig & gemergt):** reife Buchhaltungs-PWA, Phasen 0–6,
+EU-KI (Vision EU + Mistral EU), A1–A3 (Mahnwesen/Verbindlichkeiten/Zahlungsabgleich), **V1–V10**
+(Kontenrahmen, §13b, AfA/Anlagen, Kassenbuch, USt-VA komplett, Berichte/SuSa, GoBD/GDPdU, DATEV-EXTF,
+Kleinfälle, Selbstdiagnose). → **Nicht** A1–A3 / V1–V10 wiederholen, **kein** Redesign.
 
 **Was „Vx" bedeutet — WICHTIG, nicht missverstehen:**
 „Vx" ist **KEINE** neue Programm-Version, **KEIN** Redesign, **KEIN** Major-Umbau. Falls dein
@@ -93,9 +116,10 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-16 · **Branch:** `claude/v2-ox8bu7`
+**Letzte Aktualisierung:** 2026-06-17 · **Branch:** `claude/v2-ox8bu7`
 · **Tests:** `node tests/run.mjs` → **618/618 grün**
-· **SW-Cache:** `v72` · **83 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅**
+· **SW-Cache:** `v73` · **83 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅**
+· **Entscheidungen 17.06.:** ELSTER (Link) ✅ + AVV-Links ✅; nächste PRs lt. Bau-Reihenfolge oben.
 · **V2 ✅:** §13b/Reverse-Charge + EU/Ausland (Kz 41/43/46/47/61/67/89/93, Umsatzart im Journal).
 · **V3 ✅:** Anlagevermögen + AfA (GWG/Sammelposten/linear pro rata), Ansicht „Anlagen",
   Anlagenverzeichnis + AfA-Buchung-Entwurf + AVEÜR-CSV (`domain/anlagen.js`, `anlagen-store.js`).

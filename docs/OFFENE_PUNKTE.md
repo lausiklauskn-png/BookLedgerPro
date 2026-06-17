@@ -10,6 +10,39 @@ Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlic
 
 ---
 
+## ★ Nutzer-Entscheidungen (2026-06-17) — verbindlich für den weiteren Bau
+Der Profi-Readiness-Fahrplan **V1–V10 ist abgeschlossen.** Folgende Richtungs-Entscheidungen
+gelten ab jetzt (Reihenfolge der Umsetzung legt die jeweilige Sitzung fest; **Freibrief: je Punkt
+ein PR, bei grüner CI selbstständig mergen**):
+- **ELSTER: JA — „Download oder Weiterleiten per Link".** Kein eingebauter ERiC-Direktversand
+  (nicht build-frei). Stattdessen: ELSTER-Datenpaket herunterladen **+ Weiterleitungs-Link auf die
+  Anbieter-Seite (elster.de)**. ✅ erste Stufe umgesetzt (Link in „USt-VA je Zeitraum").
+- **Mehrmandantenfähigkeit: JA** — eigener großer PR (DB-Suffix `bookledgerpro` NICHT ändern →
+  Mandanten-Namespace innerhalb des Tresors / pro Tresor; sauber trennen).
+- **Bilanzierung (GmbH/OHG, GuV + Bilanz): JA** — eigener großer PR (V-Bilanz).
+- **AVV-Verträge: abschließen/umsetzen** — ✅ In-App-Links zu Google-/Mistral-DPA in „Recht & Doku"
+  (Vertragsabschluss selbst bleibt organisatorische Nutzer-Aufgabe).
+
+**Festgelegte Bau-Reihenfolge (je eigener PR, Freibrief-Merge):**
+1. ✅ ELSTER-Weiterleitungs-Link + AVV-Anbieterlinks (klein) — *diese Sitzung*.
+2. §19-Kleinunternehmer-Abfrage im Onboarding (Punkt 27, klein).
+3. Abweichendes Wirtschaftsjahr (Punkt 28, klein/mittel).
+4. Steuerberater-Übergabe-/Datenblatt (Punkt 31, klein).
+5. Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (Punkt 29, mittel).
+6. ZUGFeRD (PDF/A-3) + KoSIT-Validierung (groß).
+7. A4 WorkFloh-Anbindung (groß).
+8. Mehrmandantenfähigkeit (groß).
+9. Bilanzierung / V-Bilanz (groß).
+10. ELSTER-Stufe 2 / Restpunkte B/C nach Bedarf.
+
+### Neu aufgenommene Klein-/Folgepunkte (aus Brainstorming-Abgleich)
+- [ ] **27 — §19-Kleinunternehmer-Abfrage im Onboarding** (heute nur in Einstellungen). [SOLL, klein]
+- [ ] **28 — Abweichendes Wirtschaftsjahr** (nicht nur Kalenderjahr) in USt-VA-Perioden + EXTF-WJ. [SOLL]
+- [ ] **29 — Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung** (Belegnummer, Original-Archiv, 10-J.-Frist-Hinweis). [SOLL]
+- [ ] **31 — Steuerberater-Übergabe-Datenblatt** (kompaktes „so importieren" + Kennzahlen, baut auf TESTDATEN/DATEV_IMPORT). [SOLL]
+
+---
+
 ## V. PROFI-READINESS — Vollständigkeits-Fahrplan (echte Buchhaltung)
 
 > **Ziel (Nutzer 16.06.):** Die Buchhaltung soll für eine **echte Firma** taugen, ohne dass ein
@@ -112,7 +145,7 @@ verschlüsselt (`state.js firma`).
       (DOM/IndexedDB-Pfade, da kein Headless-Browser in der Bau-Umgebung).
 
 ### Bewusst eigene große Spuren (nur falls Rechtsform es verlangt)
-- [ ] **V-Bilanz — Bilanzierung (GmbH/OHG, GuV + Bilanz, §4 Abs.1/§5) [KANN/abhängig].**
+- [ ] **V-Bilanz — Bilanzierung (GmbH/OHG, GuV + Bilanz, §4 Abs.1/§5) [BESCHLOSSEN 2026-06-17].** Eigener großer PR.
 - [ ] **V-Lohn — Lohnbuchhaltung [KANN/extern].** Heute nur Zeiterfassung (`employees.js`); echte
       Lohnabrechnung/SV/Lohnsteuer ist eigenes Produkt — i. d. R. separate Software/Berater.
 - [ ] **V-Multi — Mehrmandantenfähigkeit [KANN].**
@@ -264,14 +297,14 @@ Rechnung/USt-Buchung erfolgt in BLP). Damit ist der **Datei-Import** bereits der
 
 ## C. NIEDRIG / SPÄTER
 
-- **[KANN] ELSTER/ERiC-Einreichung** der USt-VA (heute nur Datenpaket; nicht build-frei →
-  Architekturentscheidung).
+- **[BESCHLOSSEN 2026-06-17] ELSTER:** Datenpaket-Download **+ Weiterleitungs-Link** zur Anbieter-Seite
+  (elster.de) — **kein** ERiC-Direktversand (nicht build-frei). Stufe 1 (Link) ✅ umgesetzt.
 - **[KANN] Lokales Offline-OCR** (z. B. Tesseract.js) als Vision-Alternative/Fallback.
 - **[KANN] Privat-/Bürger-Modus** (vereinfachte Oberfläche für Privatpersonen/Vereine) — baut auf
   dem Pseudonymisierungs-Enabler auf.
 - **[KANN] Sage-Mycel 5b–d:** echte Spore deployen, Hub-Registrierung, Handshake, Symbiose-Import.
 - **[KANN] Performance/Lighthouse** messen.
-- **[KANN] Mehrmandantenfähigkeit** (mehrere Firmen je Installation).
+- **[BESCHLOSSEN 2026-06-17] Mehrmandantenfähigkeit** (mehrere Firmen je Installation) — eigener großer PR.
 
 ---
 
