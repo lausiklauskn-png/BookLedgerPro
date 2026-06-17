@@ -45,6 +45,8 @@ import { runSelbsttest } from '../src/domain/selbsttest.js';
 import { wjPeriode, wirtschaftsjahrVon, wjBeginnYYYYMMDD, validateWjBeginn } from '../src/domain/geschaeftsjahr.js';
 import { aufbewahrungBis, istAufbewahrungspflichtig, darfBelegLoeschen, AUFBEWAHRUNG_JAHRE } from '../src/domain/aufbewahrung.js';
 import { hashedFields } from '../src/domain/audit.js';
+import { extrahiereZugferdXml, kostPflichtfelder } from '../src/domain/zugferd.js';
+import { deflateSync } from 'node:zlib';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -1957,6 +1959,31 @@ await section('Punkt 29: Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung', () =
   // belegRef ist Teil der Hash-Felder (Belegprinzip in der Kette) — nur wenn gesetzt.
   const hf = hashedFields({ datum: '2026-01-01', zeilen: [], belegRef: 'beleg:1' });
   ok('belegRef in hashedFields', hf.belegRef === 'beleg:1');
+});
+
+await section('Punkt 6: ZUGFeRD-Extraktion + KoSIT-Pflichtfeld-Precheck', async () => {
+  const cii = '<?xml version="1.0"?><rsm:CrossIndustryInvoice xmlns:rsm="x"><rsm:Foo>1</rsm:Foo></rsm:CrossIndustryInvoice>';
+  const enc = (s) => new TextEncoder().encode(s);
+  const cat = (...arrs) => { let n = 0; for (const a of arrs) n += a.length; const o = new Uint8Array(n); let i = 0; for (const a of arrs) { o.set(a, i); i += a.length; } return o; };
+
+  // (a) Roh eingebettete XML im PDF-Text.
+  const roh = cat(enc('%PDF-1.7\n'), enc(cii), enc('\n%%EOF'));
+  const x1 = await extrahiereZugferdXml(roh);
+  ok('ZUGFeRD: rohe eingebettete CII gefunden', !!x1 && x1.includes('CrossIndustryInvoice'));
+
+  // (b) FlateDecode-komprimierte XML in einem stream-Objekt.
+  const def = new Uint8Array(deflateSync(Buffer.from(cii)));
+  const flate = cat(enc('%PDF-1.7\n7 0 obj<<>>stream\n'), def, enc('\nendstream endobj\n%%EOF'));
+  const x2 = await extrahiereZugferdXml(flate);
+  ok('ZUGFeRD: Flate-komprimierte CII entpackt + gefunden', !!x2 && x2.includes('CrossIndustryInvoice'));
+
+  // (c) kein eingebettetes XML → null.
+  ok('ZUGFeRD: ohne XML → null', (await extrahiereZugferdXml(enc('%PDF nur text'))) === null);
+
+  // KoSIT-orientierter Pflichtfeld-Precheck.
+  ok('KoSIT: vollständige Felder ok', kostPflichtfelder({ nummer: 'R1', datum: '2026-01-01', lieferant: 'X GmbH', brutto: 11900 }).ok);
+  const fehlt = kostPflichtfelder({ nummer: '', datum: '', lieferant: '', brutto: 0 });
+  ok('KoSIT: fehlende Felder erkannt', !fehlt.ok && fehlt.fehlende.length === 4);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

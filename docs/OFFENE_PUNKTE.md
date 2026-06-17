@@ -29,8 +29,8 @@ ein PR, bei grüner CI selbstständig mergen**):
 3. ✅ Abweichendes Wirtschaftsjahr (Punkt 28) — *erledigt*.
 4. ✅ Steuerberater-Übergabe-/Datenblatt (Punkt 31) — *erledigt*.
 5. ✅ Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (Punkt 29) — *erledigt*.
-6. ZUGFeRD (PDF/A-3) + KoSIT-Validierung (groß).
-7. A4 Anbindung **erweitert (Nutzer 17.06.)**: WorkFloh ist **public** → **beidseitige Verlinkung**
+6. ✅ ZUGFeRD-Empfang (PDF→CII) + KoSIT-Pflichtfeld-Precheck — *erledigt* (ZUGFeRD-Erzeugen offen, PDF-Lib).
+7. A4 Anbindung **erweitert (Nutzer 17.06.)** — **als Nächstes**: WorkFloh ist **public** → **beidseitige Verlinkung**
    (WorkFloh ↔ BookLedgerPro) **und generische Anbindung an andere Buchhaltungssoftware**
    (Import/Export-Schnittstellen, offene Formate). (groß).
 8. Mehrmandantenfähigkeit (groß).
@@ -286,11 +286,12 @@ Rechnung/USt-Buchung erfolgt in BLP). Damit ist der **Datei-Import** bereits der
 
 ## B. MITTEL — Mehrwert / Härtung
 
-- **[SOLL] E-Rechnung gegen KoSIT validieren:** aktuell „XRechnung-/EN16931-**orientiert**", nicht
-  validiert. Vor produktivem Versand extern (KoSIT-Validator/Schematron) prüfen; ggf. Validierung
-  in CI/als Hinweis verankern. **Keine** Konformität behaupten, die nicht belegt ist.
-- **[SOLL] ZUGFeRD:** eingebettete CII-XML aus **PDF/A-3** auspacken (Empfang) bzw. einbetten
-  (Versand). Braucht PDF-Handling → prüfen, ob build-frei machbar.
+- **[TEILWEISE 2026-06-17] E-Rechnung KoSIT:** ✅ **KoSIT-orientierter Pflichtfeld-Precheck**
+  (`zugferd.kostPflichtfelder`, EN16931-Kernfelder) beim Empfang. **Offen:** echter KoSIT-Validator
+  (Java) ist nicht build-frei → externer/CI-Check; keine Konformität behaupten, die nicht belegt ist.
+- **[TEILWEISE 2026-06-17] ZUGFeRD:** ✅ **Empfang** — eingebettete CII/UBL aus **PDF** best-effort
+  auspacken (`zugferd.extrahiereZugferdXml`, native `DecompressionStream` für FlateDecode) → bestehender
+  Buchungsvorschlag. **Offen:** ZUGFeRD *erzeugen* (XML in PDF/A-3 einbetten) braucht PDF-Lib → nicht build-frei.
 - **[SOLL] Bankformate härten:** keine vollständige **SWIFT-(MT940)/ISO-20022-(CAMT)**-Validierung;
   reale Bank-Dialekte testen; weitere CAMT-Varianten (.052/.054), Strukturierte RmtInf.
 - **[SOLL] DATEV-EXTF:** „EXTF-orientiert", **nicht** das zertifizierte 116-Spalten-Format;

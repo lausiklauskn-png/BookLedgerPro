@@ -37,6 +37,25 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-17 — Punkt 6: ZUGFeRD-Empfang + KoSIT-Pflichtfeld-Precheck [Branch `claude/v2-ox8bu7`]
+
+**Was getan**
+- **`domain/zugferd.js`** (rein, node-getestet): `extrahiereZugferdXml(pdfBytes)` — best-effort-
+  Extraktion der eingebetteten CII/UBL-XML aus PDF; FlateDecode-Streams werden **build-frei** über
+  natives `DecompressionStream('deflate')` entpackt. `kostPflichtfelder(parsed)` — KoSIT-orientierter
+  EN16931-Pflichtfeld-Precheck (BT-1/2/27/112).
+- **Belege → E-Rechnung-Empfang** akzeptiert jetzt zusätzlich **ZUGFeRD/Factur-X-PDF**: extrahiert die
+  XML, nutzt den bestehenden CII/UBL-Parser, zeigt den **KoSIT-Precheck** (✓/⚠ fehlende Felder). i18n de/en.
+  SW `v78` (+zugferd.js precached).
+- Tests **644/644** (5 neu: rohe + Flate-komprimierte CII-Extraktion, kein-XML→null, KoSIT ok/fehlend).
+
+**Stand:** Punkt 6 erledigt (Empfang). **Offen/Ehrlich:** ZUGFeRD-*Erzeugen* (XML in PDF/A-3 einbetten)
+braucht eine PDF-Lib → nicht build-frei, bleibt offen; KoSIT-Precheck ist KEIN amtlicher Validator.
+**Nächstes (groß):** A4 (WorkFloh public, beidseitige Verlinkung + generische Buchhaltungs-Anbindung)
+→ Mehrmandanten → Bilanzierung.
+
+---
+
 ## 2026-06-17 — Punkt 29: Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung [Branch `claude/v2-ox8bu7`]
 
 **Was getan**
