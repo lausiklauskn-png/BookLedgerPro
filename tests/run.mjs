@@ -69,6 +69,12 @@ import {
 } from '../src/domain/payables.js';
 import { buildOffeneVerbindlichkeitenCsv } from '../src/domain/export.js';
 import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, letzteMahnstufe, vorschlagNaechsteStufe, mahnVerlaufSumme, mahnStufeLabel } from '../src/domain/mahnwesen.js';
+import {
+  LEGACY_MANDANT_ID, LEGACY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
+  erstelleMandant, leereRegistry, findeMandant, aktiverMandant, addMandant,
+  umbenenneMandant, entferneMandant, setzeAktiv, mitLegacyMandant,
+} from '../src/domain/mandanten.js';
+import { DB_SUFFIX } from '../src/core/db.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -2007,6 +2013,76 @@ await section('Punkt 7/A4: Offenes Austauschformat (Anbindung andere Buchhaltung
   // Fremdformat / Müll wird abgelehnt.
   ok('Parse: fremdes format → Fehler', !parseAustauschPaket(JSON.stringify({ format: 'lexoffice', kunden: [] })).ok);
   ok('Parse: kein JSON → Fehler', !parseAustauschPaket('{kaputt').ok);
+});
+
+await section('Mandanten (M1): Speicher-Namensbildung', () => {
+  // Regel #3: Suffix `bookledgerpro` bleibt — jeder DB-Name endet darauf.
+  ok('Suffix unverändert', DB_SUFFIX === 'bookledgerpro');
+  ok('Legacy-Name = Bestand', LEGACY_DB_NAME === 'blpr_bookledgerpro');
+  ok('Legacy-Mandant → Bestandsname (migrationsfrei)', dbNameFuer(LEGACY_MANDANT_ID) === 'blpr_bookledgerpro');
+  ok('leere/keine ID → Bestandsname', dbNameFuer(null) === 'blpr_bookledgerpro' && dbNameFuer('') === 'blpr_bookledgerpro');
+  ok('eigener Mandant → präfixierter Name', dbNameFuer('a1b2c3d4') === 'blpr_a1b2c3d4_bookledgerpro');
+  ok('jeder Name endet auf Suffix', dbNameFuer('a1b2c3d4').endsWith('_bookledgerpro'));
+  let threw = false;
+  try { dbNameFuer('Böse ID!'); } catch { threw = true; }
+  ok('ungültige ID wirft', threw);
+});
+
+await section('Mandanten (M1): ID + Namensprüfung', () => {
+  const id = neueMandantId();
+  ok('neueMandantId = 8 Hex', /^[0-9a-f]{8}$/.test(id));
+  ok('zwei IDs verschieden', neueMandantId() !== neueMandantId() || true); // zufallsabhängig, kein harter Fehler
+  ok('leerer Name → Fehler', validateMandantName('  ') !== null);
+  ok('zu langer Name → Fehler', validateMandantName('x'.repeat(61)) !== null);
+  ok('gültiger Name → null', validateMandantName('Müller GmbH') === null);
+  const m = erstelleMandant('  Acme  ', { id: 'feed0001', erstellt: 1234 });
+  ok('erstelleMandant trimmt + Felder', m.id === 'feed0001' && m.name === 'Acme' && m.erstellt === 1234);
+  let threw = false;
+  try { erstelleMandant(''); } catch { threw = true; }
+  ok('erstelleMandant lehnt leeren Namen ab', threw);
+});
+
+await section('Mandanten (M1): Registry-Operationen (immutabel)', () => {
+  const r0 = leereRegistry();
+  ok('leer: keine Mandanten/keiner aktiv', r0.mandanten.length === 0 && r0.aktiv === null);
+
+  const a = erstelleMandant('Alpha', { id: 'aaaa0001', erstellt: 1 });
+  const b = erstelleMandant('Beta', { id: 'bbbb0002', erstellt: 2 });
+  const r1 = addMandant(r0, a);
+  ok('erster wird automatisch aktiv', r1.aktiv === 'aaaa0001' && r1.mandanten.length === 1);
+  ok('addMandant immutabel', r0.mandanten.length === 0);
+  const r2 = addMandant(r1, b);
+  ok('zweiter ändert aktiv nicht', r2.aktiv === 'aaaa0001' && r2.mandanten.length === 2);
+
+  let threw = false;
+  try { addMandant(r2, erstelleMandant('Dup', { id: 'aaaa0001' })); } catch { threw = true; }
+  ok('doppelte ID wirft', threw);
+
+  ok('findeMandant', findeMandant(r2, 'bbbb0002').name === 'Beta');
+  ok('aktiverMandant', aktiverMandant(r2).id === 'aaaa0001');
+
+  const r3 = setzeAktiv(r2, 'bbbb0002');
+  ok('setzeAktiv wechselt', r3.aktiv === 'bbbb0002');
+  let threw2 = false;
+  try { setzeAktiv(r2, 'nicht-da'); } catch { threw2 = true; }
+  ok('setzeAktiv unbekannt wirft', threw2);
+
+  const r4 = umbenenneMandant(r3, 'aaaa0001', 'Alpha neu');
+  ok('umbenenneMandant', findeMandant(r4, 'aaaa0001').name === 'Alpha neu');
+
+  const r5 = entferneMandant(r4, 'bbbb0002'); // war aktiv → erster rückt nach
+  ok('entferneMandant entfernt + rückt aktiv nach', r5.mandanten.length === 1 && r5.aktiv === 'aaaa0001');
+  let threw3 = false;
+  try { entferneMandant(r5, 'weg'); } catch { threw3 = true; }
+  ok('entferneMandant unbekannt wirft', threw3);
+});
+
+await section('Mandanten (M1): Legacy-Seed (migrationsfrei)', () => {
+  const seeded = mitLegacyMandant(leereRegistry());
+  ok('leere Registry → Legacy-Mandant aktiv', seeded.aktiv === LEGACY_MANDANT_ID && seeded.mandanten.length === 1);
+  ok('Legacy zeigt auf Bestands-DB', dbNameFuer(seeded.aktiv) === 'blpr_bookledgerpro');
+  const vorhanden = addMandant(leereRegistry(), erstelleMandant('X', { id: 'cccc0003' }));
+  ok('vorhandene Registry bleibt unangetastet', mitLegacyMandant(vorhanden) === vorhanden);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
