@@ -3,8 +3,8 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **863/863 grün**, SW `v90`.
-> Nächster Schritt: **R4** (A4 Stufe 2: Rechnungs-Übernahme) oder Rest-SOLL/Sichttest nach Bedarf. A+B fertig; R1 ✅; R2a ✅ (Skonto §17 UStG); R2b ✅ (Sammelzahlung); **R3 ✅ (Verbindlichkeiten aus Foto/PDF + eigene Ansicht + Zahlungsziel je Rechnung)**.
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **885/885 grün**, SW `v91`.
+> Nächster Schritt: **R5** (Bankformate härten / NER / dreistufiger Briefkasten) oder Sichttest nach Bedarf. A+B fertig; R1 ✅; R2a ✅ (Skonto §17 UStG); R2b ✅ (Sammelzahlung); R3 ✅ (Verbindlichkeiten aus Foto/PDF); **R4 ✅ (Rechnungs-Übernahme aus WorkFloh: fertige Rechnung → Forderung/Buchung; Austauschformat v2; API/Push bewusst offen)**.
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -132,7 +132,14 @@
   UI (statisch): **neue Ansicht „Verbindlichkeiten"** (`ui/views/payables.js`, Nav nach „Belege") — Liste + manuelles Anlegen/Bearbeiten/
   Stornieren/Löschen + optional „auf Ziel" buchen; **Foto/PDF-Beleg → Verbindlichkeit** im Beleg-OCR (`documents.js`). i18n de+en,
   SW `v90`, **+25 Tests (863/863)**. UI/Glue statisch geprüft. (PR R3.)
-- [ ] **R4** A4 **Stufe 2**: Rechnungs-Übernahme (statt nur Auftrag) + optional API/Push; reziproke WorkFloh-Verlinkung schärfen.
+- [x] **R4** A4 **Stufe 2**: Rechnungs-Übernahme (statt nur Auftrag). ✅ `importworkfloh.normalizeImport` nimmt je Auftrag
+  einen optionalen `rechnung`-Block `{nummer,datum,leistungsdatum?}` (unvollständig → verworfen + Warnung, nichts erfunden);
+  `invoicing.rechnungsUebernahmeEntwurf`/`validateRechnungsUebernahme` (rein, node-getestet) bauen den Buchungs-Entwurf
+  (Forderung an Erlöse + USt) mit der **WorkFloh-Nummer/-Datum** — **keine neue BLP-Nummer**; `crm-store.importWorkFloh`
+  erzeugt bei gültiger Rechnung direkt den Entwurf + setzt den Auftrag „berechnet" (Festschreiben manuell, GoBD) und meldet
+  `rechnungenUebernommen`; `connect.buildAustauschPaket` → **Format v2** (abwärtskompatibel), berechnete Aufträge tragen ihre
+  Rechnung reziprok mit. UI: Import-Banner zählt übernommene Rechnungen; i18n de+en, SW `v91`, **+22 Tests (885/885)**.
+  UI/Glue statisch geprüft. **Bewusst offen:** API/Push (Echtzeit), Übernahme von Zahlungsstatus/Teilzahlungen. (PR #95.)
 - [ ] **R5** Bankformate härten (CAMT .052/.054, SWIFT-Validierung), NER (PII über Anker hinaus), dreistufiger Briefkasten (P7).
 - [ ] **R6 [KANN]** ZUGFeRD-**Erzeugen** (nur falls build-frei lösbar), Lighthouse, lokales OCR, Privat-/Bürger-Modus, Sage 5b–d.
 

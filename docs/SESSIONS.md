@@ -5,6 +5,37 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R4 Stufe 2: Rechnungs-Übernahme aus WorkFloh [Branch `claude/r4-workfloh-invoice-import-jc3yd7`, PR #95]
+
+**Was getan** (Schritt **R4** — A4 Stufe 2: bereits gestellte Rechnung statt nur Auftrag übernehmen)
+- **Reine Logik zuerst (node-getestet, +22 Tests):**
+  - `domain/importworkfloh.js` — `normalizeImport` normalisiert je Auftrag einen optionalen
+    `rechnung`-Block `{nummer, datum, leistungsdatum?}`. Unvollständig/ungültig → verworfen
+    (Auftrag bleibt „angelegt") + Warnung. Nichts wird erfunden.
+  - `domain/invoicing.js` — `rechnungsUebernahmeEntwurf(auftrag, rechnung)` baut den Buchungs-
+    Entwurf (Forderung 1400 an Erlöse 8xxx + USt 177x) mit der **WorkFloh-Nummer/-Datum**
+    (keine neue BLP-Rechnungsnummer); `validateRechnungsUebernahme` prüft Nummer + ISO-Datum.
+  - `domain/connect.js` — `buildAustauschPaket` jetzt **Format-Version 2** (abwärtskompatibel):
+    berechnete Aufträge (`rechnungNummer`/`rechnungDatum`) tragen ihren `rechnung`-Block reziprok mit.
+- **Glue/UI (statisch geprüft):** `crm-store.importWorkFloh` erzeugt bei gültiger Rechnung direkt
+  einen Buchungs-Entwurf (`saveEntwurf`), setzt den Auftrag auf „berechnet" (Festschreiben bleibt
+  manuell, GoBD) und meldet `rechnungenUebernommen`. `ui/views/orders.js`-Import-Banner zeigt die
+  Zahl übernommener Rechnungen; i18n de+en (`import.invoices`).
+- SW-Cache **v91**; Doku `docs/WORKFLOH_IMPORT.md` + `docs/CONNECT.md`.
+
+**Stand:** `node tests/run.mjs` **885/885 grün** (+22). CI grün, PR #95 squash-gemergt.
+
+**Nächstes:** R5 (Bankformate härten CAMT .052/.054 / SWIFT-Validierung, NER über Anker hinaus,
+dreistufiger Briefkasten) **oder** Browser-Sichttest (WorkFloh-Datei mit Rechnung importieren →
+Buchungsentwurf prüfen; OCR→Verbindlichkeit-Klickpfad). Details: `docs/NACHFOLGE_PLAN.md` (R).
+
+**Offene Grenzen (ehrlich):** UI/IndexedDB nicht headless E2E-getestet (kein Headless-Browser) —
+nur statisch geprüft; reine Logik node-getestet. **API/Push** (Echtzeit) und Übernahme von
+**Zahlungsstatus/Teilzahlungen** einer übernommenen Rechnung bewusst noch offen (heute nur die
+offene Forderung; Zahlungsabgleich erfolgt in BLP über den Bankimport).
+
+---
+
 ## 2026-06-17 — R3: Verbindlichkeiten aus Foto/PDF + eigene Ansicht + Zahlungsziel je Rechnung [Branch `claude/payables-photo-pdf-r3-80rs6p`]
 
 **Was getan** (Schritt **R3** — A2-Rest „eigene Verbindlichkeiten-Ansicht" + R3 „Foto/PDF-Beleg → Verbindlichkeit" + A1-Rest „Zahlungsziel je Rechnung")

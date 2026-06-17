@@ -18,24 +18,26 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Aktueller nächster Schritt: R4 — A4 Stufe 2: Rechnungs-Übernahme** (statt nur Auftrag,
-WorkFloh-Symbiose) + optional API/Push; reziproke WorkFloh-Verlinkung schärfen. **Alternativ/zuerst
-sinnvoll, falls bevorzugt:** **Sichttest des OCR→Verbindlichkeit-Klickpfads** im Browser (Foto/PDF →
-Google Vision EU → „Verbindlichkeit aus diesem Beleg erfassen" → Zahlungsabgleich) — kein Headless-Browser
-hier, daher echter Nutzer-Sichttest.
+abarbeiten. **Aktueller nächster Schritt: R5 — Bankformate härten** (CAMT .052/.054, SWIFT-/MT940-
+Validierung), **NER** (PII über die Anker hinaus erkennen), **dreistufiger Briefkasten** (Mandant ⊃
+Firma ⊃ Person, P7). **Alternativ/zuerst sinnvoll, falls bevorzugt:** **Browser-Sichttest** — (a) eine
+WorkFloh-Austauschdatei MIT `rechnung`-Block importieren (Aufträge → „Aus WorkFloh importieren") →
+Buchungsentwurf (Forderung an Erlöse + USt) prüfen, Auftrag „berechnet"; (b) OCR→Verbindlichkeit-
+Klickpfad (Foto/PDF → Google Vision EU → „Verbindlichkeit aus diesem Beleg erfassen" → Zahlungsabgleich)
+— kein Headless-Browser hier, daher echter Nutzer-Sichttest.
 Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
 **Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** (B1/B2/B3); **R1 (Verzugszinsen/Mahngebühren
-buchen) ist abgeschlossen + gemergt**; **R2a (Skonto-Buchung §17 UStG) ist abgeschlossen + gemergt**;
-**R2b (Sammelzahlungen) ist abgeschlossen + gemergt**; **R3 (Verbindlichkeiten aus Foto/PDF-Belegen +
-eigene Verbindlichkeiten-Ansicht + Zahlungsziel je Rechnung) ist abgeschlossen + gemergt**
-(`domain/payables.js`: `extraktionZuEingangsrechnung`/`berechneFaelligAm`/Feld `zahlungszielTage`;
-neue Ansicht `ui/views/payables.js`, Nav „Verbindlichkeiten"; OCR-Knopf „Verbindlichkeit aus diesem
-Beleg erfassen" in `documents.js` — siehe `docs/SESSIONS.md` oben).
-R4: Heute wird aus WorkFloh nur der **Auftrag** übernommen; Ziel Stufe 2 ist die **Rechnungs-Übernahme**
-(fertige Rechnung → Buchung/Forderung) + ggf. Push/API-Anbindung. Plan-Details in `docs/NACHFOLGE_PLAN.md`
-Abschnitt R (R4) + `docs/CONNECT.md`/`docs/WORKFLOH_IMPORT.md`. Reine Logik (Übernahme/Validierung)
-**ZUERST node-getestet**, dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen). (Falls R4 zu groß
-ist: feiner schneiden und Plan fortschreiben — nie „halb" mergen.)
+buchen) ✅**; **R2a (Skonto §17 UStG) ✅**; **R2b (Sammelzahlungen) ✅**; **R3 (Verbindlichkeiten aus
+Foto/PDF + eigene Ansicht + Zahlungsziel je Rechnung) ✅**; **R4 (Rechnungs-Übernahme aus WorkFloh:
+fertige Rechnung → Forderung/Buchung; Austauschformat v2; reziproker Export) ✅ + gemergt (PR #95)**
+(`importworkfloh.normalizeImport` `rechnung`-Block; `invoicing.rechnungsUebernahmeEntwurf`/
+`validateRechnungsUebernahme`; `crm-store.importWorkFloh` → Buchungsentwurf + „berechnet"; `connect`
+Format v2 — siehe `docs/SESSIONS.md` oben + `docs/WORKFLOH_IMPORT.md`/`docs/CONNECT.md`).
+R4-Rest **bewusst offen** (eigener Schritt, falls gewünscht): **API/Push** (Echtzeit statt Datei) +
+Übernahme von **Zahlungsstatus/Teilzahlungen**. Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R
+(R5/R6) + `docs/OFFENE_PUNKTE.md`. Reine Logik **ZUERST node-getestet**, dann UI (DOM/IndexedDB als
+„statisch geprüft" kennzeichnen). (Falls ein Schritt zu groß ist: feiner schneiden und Plan
+fortschreiben — nie „halb" mergen.)
 
 MEHRERE PRs ERLAUBT (NEU): Wenn sich mehrere Plan-Punkte **sauber und in sich
 abgeschlossen** in einer Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener
@@ -72,9 +74,9 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach R3 (Abschnitt A Mehrmandanten abgeschlossen; Abschnitt B
-Bilanzierung B1+B2+B3 abgeschlossen; R1 Verzugszinsen/Mahngebühren abgeschlossen; R2a Skonto-Buchung §17 UStG
-abgeschlossen; R2b Sammelzahlungen abgeschlossen; R3 Verbindlichkeiten aus Foto/PDF + eigene Ansicht +
-Zahlungsziel je Rechnung abgeschlossen) · Tests **863/863** · SW **v90** · 94 JS-Module · nächster
-Schritt **R4 (A4 Stufe 2: Rechnungs-Übernahme)** bzw. Sichttest OCR→Verbindlichkeit.
-(Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach R4 (Abschnitt A Mehrmandanten abgeschlossen; Abschnitt B
+Bilanzierung B1+B2+B3 abgeschlossen; R1 Verzugszinsen/Mahngebühren; R2a Skonto §17 UStG; R2b
+Sammelzahlungen; R3 Verbindlichkeiten aus Foto/PDF; **R4 Rechnungs-Übernahme aus WorkFloh** — alle
+abgeschlossen + gemergt) · Tests **885/885** · SW **v91** · 94 JS-Module · nächster Schritt **R5
+(Bankformate härten / NER / dreistufiger Briefkasten)** bzw. Browser-Sichttest (WorkFloh-Rechnung-Import,
+OCR→Verbindlichkeit). (Diese Zeile bei jeder Sitzung aktualisieren.)
