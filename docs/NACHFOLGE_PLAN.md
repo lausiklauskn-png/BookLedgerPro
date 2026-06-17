@@ -44,9 +44,13 @@
   Bei genau 1 Mandant verhaltensneutral (direktes Entsperren) + diskreter „+ Neuer Mandant"-Link als Bootstrap
   bis zum Shell-Trigger in M3. DSGVO-Hinweis im UI: Mandanten-Namen liegen unverschlüsselt. Reine Logik
   (`brauchtMandantenAuswahl`, `mandantenAuswahlListe`) in `domain/mandanten.js`, +10 Tests. (PR M2b.)
-- [ ] **M3 — Shell-Indikator + Verwaltung.** Aktiver Mandant sichtbar (Header), „Mandant wechseln" + in
-  Einstellungen „Mandanten verwalten" (umbenennen/entfernen — Entfernen nur mit Bestätigung, Daten bleiben
-  im jeweiligen Tresor). Doku `docs/MANDANTEN.md`.
+- [x] **M3 — Shell-Indikator + Verwaltung.** ✅ `ui/shell.js`: aktiver Mandanten-**Name** im Header
+  (`ladeRegistry`/`aktiverMandant`, async via `refreshMandant`; Fallback `getMandantId()`), „Mandant
+  wechseln" (>1 Mandant; `lockVault`+Reboot → Auswahl). Einstellungen „Mandanten verwalten"
+  (`mandantenSection`/`mandantRow`): **umbenennen** (`umbenenneMandant`+`speichereRegistry`) + **entfernen**
+  (`entferneMandant`, nur mit `confirm`; Tresor-DB bleibt — kein Datenverlust; aktiver Mandant nicht
+  entfernbar). i18n de+en, CSS `.mandant-admin`, SW `v83`, Doku `docs/MANDANTEN.md`. Reine Logik war
+  node-getestet; Glue/UI statisch geprüft. **→ Abschnitt A abgeschlossen.** (PR M3.)
 
 ### Design-Abschnitt Mehrmandanten (entstanden in M1, verbindlich für M2/M3)
 - **1 Mandant = 1 getrennter, eigenständig verschlüsselter Tresor.** Kein Record-Namespacing →

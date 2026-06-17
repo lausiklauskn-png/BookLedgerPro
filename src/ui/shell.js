@@ -9,6 +9,8 @@ import { applyTheme } from './theme.js';
 import { MycelMark } from './mycel.js';
 import { getSettings, updateSettings, navigate, getRoute, subscribe, MODES, AI_LEVELS } from '../state.js';
 import { getMandantId, lockVault, changePassword } from '../core/vault.js';
+import { ladeRegistry, speichereRegistry } from '../core/mandantenStore.js';
+import { aktiverMandant, mandantenAuswahlListe, umbenenneMandant, entferneMandant, validateMandantName } from '../domain/mandanten.js';
 import { durabilityStatus } from '../core/durability.js';
 import { exportBackupFile, readBackup, importSnapshot } from '../core/backup.js';
 import { pickFile, readFileText } from '../core/files.js';
@@ -55,6 +57,9 @@ const NAV = [
 
 let _container = null;
 let _onLock = () => {};
+// Aktiver Mandant für den Header (Name + Gesamtzahl) — aus der unverschlüsselten
+// Registry-kv-DB nachgeladen (vor dem Entsperren lesbar; getrennt von den Tresoren).
+let _mandant = { name: null, count: 0 };
 
 export function renderShell(container, { onLock } = {}) {
   _container = container;
@@ -62,6 +67,18 @@ export function renderShell(container, { onLock } = {}) {
   subscribe(() => paint());
   paint();
   refreshDurability();
+  refreshMandant();
+}
+
+// Lädt den aktiven Mandanten-Namen + die Mandantenzahl nach und zeichnet den Header neu.
+// (DOM/IndexedDB-Pfad — statisch geprüft; die reine Registry-Logik ist node-getestet.)
+async function refreshMandant() {
+  try {
+    const registry = await ladeRegistry();
+    const akt = aktiverMandant(registry);
+    _mandant = { name: akt?.name || null, count: registry.mandanten.length };
+  } catch { _mandant = { name: null, count: 0 }; }
+  paint();
 }
 
 function paint() {
@@ -78,20 +95,36 @@ function paint() {
 }
 
 function header(s) {
-  const mandant = getMandantId();
+  // Bevorzugt den Mandanten-Namen aus der Registry; fällt auf die DB-ID zurück, solange
+  // der asynchrone Nachlade-Schritt (refreshMandant) noch nicht zurück ist.
+  const label = _mandant.name || getMandantId();
   return el('header', { class: 'app-header' }, [
     el('div', { class: 'brand' }, [MycelMark(28), el('span', { class: 'brand-name', text: t('app.name') })]),
     el('div', { class: 'header-right' }, [
-      mandant ? el('span', { class: 'mandant', title: t('dashboard.mandant') }, [
+      label ? el('span', { class: 'mandant', title: t('dashboard.mandant') }, [
         el('span', { class: 'mandant-dot' }),
-        el('span', { class: 'mandant-id', text: mandant }),
+        el('span', { class: 'mandant-id', text: label }),
       ]) : null,
+      // „Mandant wechseln" nur, wenn es mehr als einen Mandanten gibt (sonst wäre der
+      // Wechsel ein reines Sperren auf denselben Tresor).
+      _mandant.count > 1 ? el('button', {
+        class: 'btn btn-ghost btn-sm', text: t('mandant.switch'),
+        onClick: mandantWechseln,
+      }) : null,
       el('button', {
         class: 'btn btn-ghost btn-sm', text: t('settings.lock'),
         onClick: () => { lockVault(); _onLock(); },
       }),
     ]),
   ]);
+}
+
+// Mandant wechseln: Sitzungs-Key (DEK) verwerfen und neu booten. Der Boot zeigt bei
+// mehr als einem Mandanten die Auswahl vor dem Entsperren (showLockScreen) — von dort
+// wird der Ziel-Mandant gewählt und entsperrt.
+function mandantWechseln() {
+  lockVault();
+  _onLock();
 }
 
 function nav() {
@@ -232,6 +265,8 @@ function viewSettings() {
 
     buchungssperreSection(),
 
+    mandantenSection(),
+
     passwortSection(),
 
     el('div', { class: 'setting' }, [
@@ -247,6 +282,75 @@ function viewSettings() {
 // Merkt sich kurz, dass das Firmenprofil gespeichert wurde (überlebt das Re-Render
 // nach updateSettings, das sonst die „Gespeichert ✓"-Meldung sofort verwerfen würde).
 let _firmaSaved = false;
+
+// Mehrmandanten-Verwaltung (M3): umbenennen + entfernen. Die Registry liegt in einer
+// eigenen, UNVERSCHLÜSSELTEN kv-DB (siehe core/mandantenStore.js) — daher async geladen.
+// Reine Registry-Logik (umbenenneMandant/entferneMandant/…) ist node-getestet; dieser
+// Glue-Pfad (DOM/IndexedDB) ist statisch geprüft (kein Headless-Browser).
+function mandantenSection() {
+  const host = el('div', { class: 'setting' });
+  const render = async () => {
+    let registry;
+    try { registry = await ladeRegistry(); }
+    catch {
+      host.replaceChildren(
+        el('div', { class: 'setting-label', text: t('settings.mandanten') }),
+        el('p', { class: 'muted small', text: '—' }),
+      );
+      return;
+    }
+    const rows = mandantenAuswahlListe(registry).map((m) => mandantRow(m, registry, render));
+    host.replaceChildren(
+      el('div', { class: 'setting-label', text: t('settings.mandanten') }),
+      el('p', { class: 'muted small', text: t('settings.mandantenHint') }),
+      el('div', { class: 'mandant-admin' }, rows),
+    );
+  };
+  render();
+  return host;
+}
+
+// Eine Zeile der Mandanten-Verwaltung: Name bearbeiten + speichern, entfernen (nur mit
+// Bestätigung; die Tresor-DB bleibt erhalten — kein Datenverlust). Der aktuell geöffnete
+// Mandant kann nicht entfernt werden (man arbeitet gerade in ihm → erst wechseln).
+function mandantRow(m, registry, rerender) {
+  const status = el('span', { class: 'muted small' });
+  const input = el('input', { type: 'text', value: m.name, maxlength: '60' });
+  input.addEventListener('input', () => { status.textContent = ''; status.classList.remove('form-error'); });
+
+  const save = el('button', {
+    class: 'btn btn-sm', text: t('common.save'),
+    onClick: async () => {
+      const fehler = validateMandantName(input.value);
+      if (fehler) { status.textContent = fehler; status.classList.add('form-error'); return; }
+      try {
+        await speichereRegistry(umbenenneMandant(registry, m.id, input.value));
+        status.classList.remove('form-error');
+        status.textContent = t('settings.saved');
+        if (m.aktiv) refreshMandant(); // Header sofort mitziehen
+      } catch (e) { status.textContent = String(e.message || e); status.classList.add('form-error'); }
+    },
+  });
+
+  const remove = el('button', {
+    class: 'btn btn-sm btn-danger', text: t('common.delete'),
+    onClick: async () => {
+      if (!confirm(t('mandant.confirmRemove').replace('{name}', m.name))) return;
+      try {
+        await speichereRegistry(entferneMandant(registry, m.id));
+        refreshMandant(); // Header (Mandantenzahl) aktualisieren
+        rerender();       // Liste neu zeichnen
+      } catch (e) { status.textContent = String(e.message || e); status.classList.add('form-error'); }
+    },
+  });
+  if (m.aktiv) { remove.setAttribute('disabled', ''); remove.title = t('mandant.removeActiveHint'); }
+
+  return el('div', { class: 'mandant-admin-row' }, [
+    input,
+    m.aktiv ? el('span', { class: 'mandant-badge', text: t('mandant.current') }) : null,
+    save, remove, status,
+  ]);
+}
 
 // Passwort ändern (Envelope: wickelt nur den Daten-Schlüssel neu ein).
 function passwortSection() {
