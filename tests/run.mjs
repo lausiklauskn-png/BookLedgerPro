@@ -68,6 +68,7 @@ import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domai
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
 import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat } from '../src/domain/bankimport.js';
 import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen } from '../src/domain/zahlungsabgleich.js';
+import { skontoSplit, skontoBuchungZeilen, skontoEntwurf, skontoSaetze, SKONTO_KONTEN } from '../src/domain/skonto.js';
 import {
   eingangsrechnungZeilen, eingangsrechnungSummen, bruttoVonPositionen, rechnungBrutto,
   offenerBetrag, rechnungStatus, offeneVerbindlichkeiten, summeOffeneVerbindlichkeiten,
@@ -1281,6 +1282,83 @@ await section('A3: Forderungs-Teilzahlung (offener Rest bei Aufträgen)', () => 
   // Eine weitere Teilzahlung (3000) wird als Teilzahlung erkannt, Rest 3900.
   const teil = findeKandidaten({ richtung: 'einnahme', betragCent: 3000, zweck: 'R-1' }, posten);
   ok('Forderungs-Teilzahlung erkannt, Rest 3900', teil[0].art === 'teilzahlung' && teil[0].restCent === 3900);
+});
+
+await section('R2a: Skonto-Buchung mit USt-/Vorsteuer-Korrektur (§17 UStG)', () => {
+  // Hilfen: Soll-/Haben-Summen einer Buchung.
+  const summe = (zeilen, seite) => zeilen.filter((z) => z.seite === seite).reduce((s, z) => s + z.betrag, 0);
+  const hat = (zeilen, konto, seite, betrag) => zeilen.some((z) => z.konto === konto && z.seite === seite && z.betrag === betrag);
+
+  // --- skontoSplit (Brutto → Netto + USt) ---
+  const s19 = skontoSplit(1500, 19);
+  ok('skontoSplit 1500@19 → 1261/239 (Summe 1500)', s19.nettoCent === 1261 && s19.ustCent === 239 && s19.nettoCent + s19.ustCent === 1500);
+  const s7 = skontoSplit(1070, 7);
+  ok('skontoSplit 1070@7 → 1000/70', s7.nettoCent === 1000 && s7.ustCent === 70);
+  const s0 = skontoSplit(500, 0);
+  ok('skontoSplit 0% → keine USt', s0.nettoCent === 500 && s0.ustCent === 0);
+
+  // --- Einnahme (Forderung, Skonto gewährt), einzelner Satz 19% ---
+  // Forderung 50000 brutto, gezahlt 48500 → Skonto 1500 (netto 1261 + USt 239).
+  const ein = skontoBuchungZeilen({ richtung: 'einnahme', offenCent: 50000, zahlungCent: 48500, ustProzent: 19 });
+  ok('Einnahme: Bank 48500 Soll', hat(ein.zeilen, '1200', 'S', 48500));
+  ok('Einnahme: gewährte Skonti 8736 netto 1261 Soll', hat(ein.zeilen, '8736', 'S', 1261));
+  ok('Einnahme: USt-Korrektur 1776 239 Soll', hat(ein.zeilen, '1776', 'S', 239));
+  ok('Einnahme: Forderung 1400 50000 Haben', hat(ein.zeilen, '1400', 'H', 50000));
+  ok('Einnahme: ausgeglichen (S=H=50000)', summe(ein.zeilen, 'S') === 50000 && summe(ein.zeilen, 'H') === 50000);
+  ok('Einnahme: Meta Skonto 1500/1261/239', ein.skontoBruttoCent === 1500 && ein.nettoSkontoCent === 1261 && ein.ustSkontoCent === 239);
+
+  // --- Ausgabe (Verbindlichkeit, Skonto erhalten), einzelner Satz 19% ---
+  // Verbindlichkeit 11900 brutto, gezahlt 11662 → Skonto 238 (netto 200 + VSt 38).
+  const aus = skontoBuchungZeilen({ richtung: 'ausgabe', offenCent: 11900, zahlungCent: 11662, ustProzent: 19 });
+  ok('Ausgabe: Verbindlichkeit 1600 11900 Soll', hat(aus.zeilen, '1600', 'S', 11900));
+  ok('Ausgabe: Bank 11662 Haben', hat(aus.zeilen, '1200', 'H', 11662));
+  ok('Ausgabe: erhaltene Skonti 3736 netto 200 Haben', hat(aus.zeilen, '3736', 'H', 200));
+  ok('Ausgabe: Vorsteuer-Korrektur 1576 38 Haben', hat(aus.zeilen, '1576', 'H', 38));
+  ok('Ausgabe: ausgeglichen (S=H=11900)', summe(aus.zeilen, 'S') === 11900 && summe(aus.zeilen, 'H') === 11900);
+
+  // --- Gemischte USt-Sätze: proportionale Aufteilung des Skontos ---
+  // Rechnung netto 1000@19 (brutto 1190) + netto 1000@7 (brutto 1070) = 2260 brutto.
+  // gezahlt 2034 → Skonto 226 → 119@19 (100/19) + 107@7 (100/7).
+  const mix = skontoBuchungZeilen({
+    richtung: 'einnahme', offenCent: 2260, zahlungCent: 2034,
+    saetze: [{ ustProzent: 19, bruttoCent: 1190 }, { ustProzent: 7, bruttoCent: 1070 }],
+  });
+  ok('Mix: 8736 netto 100 Soll', hat(mix.zeilen, '8736', 'S', 100));
+  ok('Mix: USt 19% 1776 19 Soll', hat(mix.zeilen, '1776', 'S', 19));
+  ok('Mix: 8731 netto 100 Soll', hat(mix.zeilen, '8731', 'S', 100));
+  ok('Mix: USt 7% 1771 7 Soll', hat(mix.zeilen, '1771', 'S', 7));
+  ok('Mix: ausgeglichen (S=H=2260)', summe(mix.zeilen, 'S') === 2260 && summe(mix.zeilen, 'H') === 2260);
+  ok('Mix: Skonto-Meta 226/200/26', mix.skontoBruttoCent === 226 && mix.nettoSkontoCent === 200 && mix.ustSkontoCent === 26);
+
+  // --- Guards: kein gültiger Skonto-Fall → null ---
+  ok('kein Abzug (zahlung == offen) → null', skontoBuchungZeilen({ richtung: 'einnahme', offenCent: 50000, zahlungCent: 50000 }) === null);
+  ok('Überzahlung → null', skontoBuchungZeilen({ richtung: 'einnahme', offenCent: 50000, zahlungCent: 51000 }) === null);
+  ok('keine Zahlung → null', skontoBuchungZeilen({ richtung: 'ausgabe', offenCent: 11900, zahlungCent: 0 }) === null);
+
+  // --- skontoEntwurf: vollständiger Entwurf mit Begründung ---
+  const ent = skontoEntwurf({ richtung: 'einnahme', offenCent: 50000, zahlungCent: 48500, ustProzent: 19, referenz: 'R-9', name: 'Beta AG', datum: '2026-06-17' });
+  ok('Entwurf: Datum/Referenz/Name in Beschreibung', ent.datum === '2026-06-17' && ent.beschreibung.includes('R-9') && ent.beschreibung.includes('Beta AG'));
+  ok('Entwurf: §17-Begründung', ent.begruendung.includes('§ 17') && ent.begruendung.includes('Umsatzsteuer'));
+  ok('Entwurf: Zeilen ausgeglichen', summe(ent.zeilen, 'S') === summe(ent.zeilen, 'H'));
+  ok('Entwurf null bei Nicht-Skonto', skontoEntwurf({ richtung: 'einnahme', offenCent: 100, zahlungCent: 100 }) === null);
+
+  // --- Konten existieren im SKR03-Seed ---
+  const nummern = new Set(SKR03_SEED.map((k) => k.nummer));
+  ok('Seed enthält 8730/8731/8736 (gewährte Skonti)', nummern.has('8730') && nummern.has('8731') && nummern.has('8736'));
+  ok('Seed enthält 3730/3731/3736 (erhaltene Skonti)', nummern.has('3730') && nummern.has('3731') && nummern.has('3736'));
+
+  // --- Integration: offenePosten trägt saetze → Entwurf direkt aus Posten ---
+  const auftraege = [{ id: 'a9', status: 'berechnet', rechnungNummer: 'R-9', rechnungDatum: '2026-06-01', kundeId: 'k1',
+    positionen: [{ menge: 1, einzelpreisCent: 100000, ustSatz: 19 }] }]; // brutto 119000
+  const op = offenePosten(auftraege, { nameById: { k1: 'Beta AG' } })[0];
+  ok('offenePosten trägt saetze (19%/119000)', op.saetze.length === 1 && op.saetze[0].ustProzent === 19 && op.saetze[0].bruttoCent === 119000);
+  const entAusPosten = skontoEntwurf({ richtung: op.richtung, offenCent: op.betragCent, zahlungCent: 115430, saetze: op.saetze, referenz: op.referenz });
+  // Skonto 3570 brutto → netto 3000, USt 570.
+  ok('Posten-Entwurf: Skonto 3570/3000/570', entAusPosten.skontoBruttoCent === 3570 && entAusPosten.nettoSkontoCent === 3000 && entAusPosten.ustSkontoCent === 570);
+  ok('Posten-Entwurf: ausgeglichen', summe(entAusPosten.zeilen, 'S') === summe(entAusPosten.zeilen, 'H'));
+
+  // skontoSaetze normalisiert/filtert.
+  ok('skontoSaetze filtert 0-Anteile', skontoSaetze([{ ustProzent: 19, bruttoCent: 100 }, { ustProzent: 7, bruttoCent: 0 }]).length === 1);
 });
 
 // ===== A2: Eingangsrechnungen als offene Verbindlichkeiten (Kreditoren) =====

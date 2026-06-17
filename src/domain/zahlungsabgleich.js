@@ -9,7 +9,7 @@
 // Lieferantenrechnungen (Verbindlichkeiten) sind als Posten-Quelle noch nicht erfasst —
 // die Matching-/Buchungslogik ist aber richtungsneutral und dafür vorbereitet.
 
-import { auftragOffen } from './orders.js';
+import { auftragOffen, auftragSummen } from './orders.js';
 import { AUFTRAG_STATUS } from './orders.js';
 
 // Tagesabstand zwischen zwei ISO-Daten (oder null).
@@ -35,6 +35,11 @@ export function offenePosten(auftraege = [], opts = {}) {
     // auf eine Restzahlung; vollständig bezahlte „berechnet"-Aufträge fallen heraus.
     const offen = auftragOffen(a);
     if (offen <= 0) continue;
+    // Brutto-Anteile je USt-Satz (für die spätere § 17-Skonto-Korrektur mit gemischten Sätzen).
+    const summen = auftragSummen(a.positionen);
+    const saetze = Object.entries(summen.perSatz)
+      .map(([satz, g]) => ({ ustProzent: Number(satz), bruttoCent: g.netto + g.ust }))
+      .filter((s) => s.bruttoCent > 0);
     out.push({
       id: a.id,
       betragCent: offen,
@@ -43,6 +48,7 @@ export function offenePosten(auftraege = [], opts = {}) {
       name: nameById[a.kundeId] || '',
       kundeId: a.kundeId || null,
       richtung: 'einnahme',
+      saetze,
     });
   }
   return out;

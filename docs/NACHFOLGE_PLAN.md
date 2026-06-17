@@ -3,8 +3,8 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **783/783 grün**, SW `v87`.
-> Nächster Schritt: **R2 — Skonto-Buchung §17 UStG + Sammelzahlungen** (A+B fertig; R1 ✅ Verzugszinsen/Mahngebühren buchen).
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **816/816 grün**, SW `v88`.
+> Nächster Schritt: **R2b — Sammelzahlungen** (eine Zahlung auf mehrere Rechnungen). A+B fertig; R1 ✅; R2a ✅ (Skonto §17 UStG).
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -105,7 +105,18 @@
   Beschreibung/Begründung aus den `mahnschreibenDaten`). UI: Knopf **„Als Buchungsentwurf übernehmen"** im
   Mahnschreiben (`reports.js`) → `saveEntwurf` (manuell, **kein** Auto-Festschreiben, GoBD); Standardkonten via
   `ensureSeedKonten` sichergestellt. i18n de+en, SW `v87`, **+23 Tests (783/783)**. UI/Glue statisch geprüft. (PR R1.)
-- [ ] **R2** Skonto-Buchung mit **USt-/Vorsteuer-Korrektur §17 UStG** (A3-Rest); Sammelzahlungen (eine Zahlung, mehrere Rechnungen).
+- [x] **R2a** Skonto-Buchung mit **USt-/Vorsteuer-Korrektur §17 UStG** (A3-Rest): ✅ `domain/skonto.js` (rein,
+  node-getestet): `SKONTO_KONTEN` (SKR03: gewährte Skonti **8730/8731/8736**, erhaltene Skonti **3730/3731/3736**,
+  USt-Korrektur 1776/1771, Vorsteuer-Korrektur 1576/1571), `skontoSplit` (Brutto→Netto+USt je Satz),
+  `skontoBuchungZeilen`/`skontoEntwurf` — gleichen den offenen Posten **komplett** aus (Bank + Skonto-Netto +
+  USt-/Vorsteuer-Korrektur = offener Brutto) und korrigieren bei Zahlung **das Entgelt nach §17 UStG**
+  (Einnahme: USt mindern; Ausgabe: Vorsteuer mindern); **gemischte USt-Sätze** werden proportional je
+  Brutto-Anteil aufgeteilt (über `posten.saetze`, neu angereichert in `zahlungsabgleich.offenePosten` +
+  `payables.offeneVerbindlichkeiten`). UI: der Skonto-Hinweis im Bankimport (`documents.js`) wird zum Knopf
+  **„Skonto buchen (§17 UStG)"** → `saveEntwurf` (manuell, **kein** Auto-Festschreiben, GoBD) + Posten
+  ausgeglichen. i18n de+en, SW `v88`, **+33 Tests (816/816)**. UI/Glue statisch geprüft. (PR R2a.)
+- [ ] **R2b** Sammelzahlungen (eine Bankzahlung auf **mehrere** offene Rechnungen → Mehrfach-Zuordnung in der UI,
+  Score-Schwelle mit expliziter Auswahl).
 - [ ] **R3** Verbindlichkeiten aus **Foto/PDF-Belegen** + eigene Verbindlichkeiten-Ansicht (A2-Rest); Zahlungsziel je Rechnung (A1-Rest).
 - [ ] **R4** A4 **Stufe 2**: Rechnungs-Übernahme (statt nur Auftrag) + optional API/Push; reziproke WorkFloh-Verlinkung schärfen.
 - [ ] **R5** Bankformate härten (CAMT .052/.054, SWIFT-Validierung), NER (PII über Anker hinaus), dreistufiger Briefkasten (P7).

@@ -275,11 +275,18 @@ liefert den **offenen Rest** (statt Brutto). `crm-store.auftragZahlungHinzufuege
 „◑ Teilzahlung verbuchen"-Aktion gilt jetzt **auch für Forderungen** (Bank an Forderung, Rest
 bleibt offen); exakte Zahlungen werden ebenfalls als Zahlung erfasst (Zahlungshistorie).
 
+**Skonto-Buchung mit USt-/Vorsteuer-Korrektur (§17 UStG) erledigt (R2a, 2026-06-17):**
+`domain/skonto.js` (rein, node-getestet): `skontoSplit`/`skontoBuchungZeilen`/`skontoEntwurf` +
+`SKONTO_KONTEN` (SKR03 8730/8731/8736 gewährt, 3730/3731/3736 erhalten, USt 1776/1771,
+Vorsteuer 1576/1571). Gleicht den offenen Posten **komplett** aus und korrigiert das **Entgelt nach
+§17 UStG** (Einnahme→USt mindern; Ausgabe→Vorsteuer mindern); **gemischte USt-Sätze** proportional je
+Brutto-Anteil (`posten.saetze` in `offenePosten`/`offeneVerbindlichkeiten`). UI: Knopf **„Skonto buchen
+(§17 UStG)"** im Bankimport (`documents.js`) → `saveEntwurf` (manuell, GoBD). SW `v88`, 816/816 Tests.
+**Bewusst manuell** (kein Auto-Festschreiben — Korrektheit vor Bequemlichkeit).
+
 **Noch offen [SOLL]:**
-- **Skonto-Buchung mit USt-/Vorsteuer-Korrektur (§17 UStG)** — bewusst NICHT automatisiert
-  (Korrektheit vor Bequemlichkeit); heute nur Hinweis, manuelle Buchung.
 - **Sammelzahlungen** (eine Zahlung auf mehrere Rechnungen), Score-Schwelle mit expliziter
-  Mehrfach-Auswahl in der UI.
+  Mehrfach-Auswahl in der UI. → R2b.
 
 ### A4. App-Anbindung / WorkFloh-Integration **[SOLL] — spätere Sitzung, sauber als Option vorbereiten**
 **Vision (Nutzer):** Funktionierende Apps sollen sich an BookLedgerPro **anbinden** können bzw.
