@@ -5,8 +5,9 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
-import { pickFile, formatBytes, readFileText } from '../../core/files.js';
+import { pickFile, formatBytes, readFileText, readFileBytes } from '../../core/files.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
+import { extrahiereZugferdXml, kostPflichtfelder } from '../../domain/zugferd.js';
 import { parseBankauszug, umsatzExtraktion } from '../../domain/bankimport.js';
 import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen } from '../../domain/zahlungsabgleich.js';
 import { offeneVerbindlichkeiten, eingangsrechnungZeilen } from '../../domain/payables.js';
@@ -184,16 +185,26 @@ function eRechnungKarte() {
     class: 'btn', text: t('docs.eInvoiceImport'),
     onClick: async () => {
       out.replaceChildren();
-      const file = await pickFile('application/xml,text/xml,.xml', null);
+      const file = await pickFile('application/xml,text/xml,.xml,application/pdf,.pdf', null);
       if (!file) return;
       try {
-        const p = parseEingangsrechnung(await readFileText(file));
+        const istPdf = /pdf$/i.test(file.type) || /\.pdf$/i.test(file.name || '');
+        let xml;
+        if (istPdf) {
+          xml = await extrahiereZugferdXml(await readFileBytes(file));
+          if (!xml) { out.appendChild(el('p', { class: 'form-error', text: t('docs.zugferdNone') })); return; }
+        } else {
+          xml = await readFileText(file);
+        }
+        const p = parseEingangsrechnung(xml);
         if (!p.format) { out.appendChild(el('p', { class: 'form-error', text: p.fehler })); return; }
         const ex = eingangsrechnungExtraktion(p);
         const kat = await categorizeAI(p.lieferant || '', _idx, { anker: await kiAnker() });
         const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
         if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
-        out.appendChild(el('div', { class: 'muted small', text: `${p.format} · ${t('docs.eInvoiceFrom')} ${p.lieferant || '—'} · ${p.nummer || '—'}` }));
+        out.appendChild(el('div', { class: 'muted small', text: `${p.format}${istPdf ? ' (ZUGFeRD/PDF)' : ''} · ${t('docs.eInvoiceFrom')} ${p.lieferant || '—'} · ${p.nummer || '—'}` }));
+        const kosit = kostPflichtfelder(p);
+        out.appendChild(el('div', { class: kosit.ok ? 'muted small' : 'form-error', text: kosit.ok ? `✓ ${t('docs.kositOk')}` : `⚠ ${t('docs.kositMissing')}: ${kosit.fehlende.join(', ')}` }));
         out.appendChild(verbindlichkeitErfassenZeile(p, kat));
         out.appendChild(await vorschlagKarte(res.vorschlag, null, p.lieferant || ''));
       } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
