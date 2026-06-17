@@ -10,17 +10,115 @@ import { exportBackupFile } from '../core/backup.js';
 import { updateSettings } from '../state.js';
 import { MycelMark } from './mycel.js';
 import { createMycelBackground } from './mycelCanvas.js';
+import { ladeRegistry, registriereMandant, wechsleAktivenMandant } from '../core/mandantenStore.js';
+import { brauchtMandantenAuswahl, mandantenAuswahlListe, validateMandantName } from '../domain/mandanten.js';
 
 /**
  * Rendert Lock/Onboarding in `container`.
  * @returns {Promise<void>} löst auf, sobald der Tresor entsperrt ist.
+ *
+ * Mehrmandanten (M2b): Liegen MEHRERE Mandanten vor, erscheint VOR dem Entsperren eine
+ * Auswahlliste (jeder Mandant = eigener verschlüsselter Tresor). Bei genau einem (oder
+ * keinem) Mandanten bleibt es beim direkten Entsperren/Onboarding — verhaltensneutral für
+ * Bestandsnutzer. Die reine Entscheidungs-/Sortierlogik liegt node-getestet in
+ * `domain/mandanten.js`; die Tresor-Umschaltung kapselt `core/mandantenStore.js`.
  */
 export async function showLockScreen(container) {
-  const exists = await vaultExists();
+  const registry = await ladeRegistry();
   return new Promise((resolve) => {
-    if (exists) renderUnlock(container, resolve);
-    else renderOnboarding(container, resolve);
+    if (brauchtMandantenAuswahl(registry)) {
+      renderMandantenAuswahl(container, resolve);
+    } else {
+      // 0 Mandanten (frische Installation) oder genau 1 (Bestand): auf der aktiven DB
+      // entweder entsperren oder onboarden. Bei 1 registriertem Mandanten kann von hier
+      // aus auch ein weiterer angelegt werden (Bootstrap bis zum Shell-Trigger in M3).
+      enterAktivenMandant(container, resolve, { kannHinzufuegen: registry.mandanten.length > 0 });
+    }
   });
+}
+
+/** Entsperrt den aktiven Mandanten oder startet dessen Onboarding (frische Tresor-DB). */
+async function enterAktivenMandant(container, resolve, opts = {}) {
+  const exists = await vaultExists();
+  if (exists) renderUnlock(container, resolve, opts);
+  else renderOnboarding(container, resolve, opts);
+}
+
+// ---- Mandanten-Auswahl (M2b) ------------------------------------------------
+
+function renderMandantenAuswahl(container, resolve) {
+  ladeRegistry().then((registry) => {
+    const zurueck = () => renderMandantenAuswahl(container, resolve);
+
+    const onSelect = async (id) => {
+      // DEK verwerfen + DB-Wechsel sind in wechsleAktivenMandant gekapselt.
+      await wechsleAktivenMandant(id);
+      await enterAktivenMandant(container, resolve, { zurueck });
+    };
+
+    const items = mandantenAuswahlListe(registry).map((m) => el('button', {
+      class: 'btn mandant-item' + (m.aktiv ? ' is-active' : ''),
+      type: 'button',
+      onClick: () => onSelect(m.id),
+    }, [
+      el('span', { class: 'mandant-name', text: m.name }),
+      m.aktiv ? el('span', { class: 'mandant-badge', text: t('mandant.active') }) : null,
+    ]));
+
+    const neu = el('button', {
+      class: 'btn', type: 'button', text: t('mandant.new'),
+      onClick: () => renderNeuerMandant(container, resolve, zurueck),
+    });
+
+    mount(container, shell([
+      el('h1', { text: t('mandant.selectTitle') }),
+      el('p', { class: 'muted', text: t('mandant.selectIntro') }),
+      el('div', { class: 'mandant-list' }, items),
+      neu,
+      el('p', { class: 'muted small', text: t('mandant.dsgvo') }),
+    ]));
+  });
+}
+
+/**
+ * Legt einen NEUEN Mandanten an: Name erfassen → Registry-Eintrag (`registriereMandant`)
+ * → auf die neue, leere Tresor-DB umschalten (`wechsleAktivenMandant`) → Onboarding-Fluss
+ * (eigenes Passwort/Shamir/Backup) in dieser DB. `zurueck` (optional) führt zur Auswahl.
+ */
+function renderNeuerMandant(container, resolve, zurueck) {
+  const err = el('p', { class: 'form-error', role: 'alert' });
+  const name = el('input', { type: 'text', placeholder: t('mandant.name'), autocomplete: 'organization' });
+  const btn = el('button', { class: 'btn btn-primary', type: 'submit', text: t('mandant.create') });
+
+  const form = el('form', {
+    class: 'lock-form',
+    onSubmit: async (e) => {
+      e.preventDefault();
+      err.textContent = '';
+      const fehler = validateMandantName(name.value);
+      if (fehler) { err.textContent = fehler; return; }
+      btn.setAttribute('disabled', '');
+      try {
+        const { mandant } = await registriereMandant(name.value);
+        await wechsleAktivenMandant(mandant.id); // DEK verwerfen + auf neue, leere DB schalten
+        // Die neue DB hat noch keinen Tresor → Onboarding legt Passwort/Shamir/Backup an.
+        renderOnboarding(container, resolve, { mandantName: mandant.name });
+      } catch (ex) {
+        err.textContent = ex?.message || String(ex);
+        btn.removeAttribute('disabled');
+      }
+    },
+  }, [
+    el('h1', { text: t('mandant.newTitle') }),
+    el('p', { class: 'muted', text: t('mandant.newIntro') }),
+    el('label', { class: 'field' }, [el('span', { text: t('mandant.name') }), name]),
+    err, btn,
+    el('p', { class: 'muted small', text: t('mandant.dsgvo') }),
+    zurueck ? el('button', { class: 'btn btn-link', type: 'button', text: t('common.back'), onClick: zurueck }) : null,
+  ]);
+
+  mount(container, shell([form], './assets/img/onboard-key.png'));
+  name.focus();
 }
 
 function shell(children, hero = './assets/img/hero-lock.png') {
@@ -36,7 +134,7 @@ function shell(children, hero = './assets/img/hero-lock.png') {
 
 // ---- Entsperren -------------------------------------------------------------
 
-function renderUnlock(container, resolve) {
+function renderUnlock(container, resolve, opts = {}) {
   const err = el('p', { class: 'form-error', role: 'alert' });
   const pwd = el('input', { type: 'password', id: 'pwd', autocomplete: 'current-password', placeholder: t('lock.password') });
   const btn = el('button', { class: 'btn btn-primary', type: 'submit', text: t('lock.unlock') });
@@ -60,6 +158,14 @@ function renderUnlock(container, resolve) {
     el('h1', { text: t('lock.title') }),
     el('label', { class: 'field' }, [el('span', { text: t('lock.password') }), pwd]),
     err, btn,
+    // Zur Mandanten-Auswahl zurück (wenn aus der Auswahl gekommen) bzw. weiteren
+    // Mandanten anlegen (Bootstrap bei genau einem Mandanten, bis M3 den Shell-Trigger bringt).
+    opts.zurueck
+      ? el('button', { class: 'btn btn-link', type: 'button', text: t('mandant.switch'), onClick: opts.zurueck })
+      : (opts.kannHinzufuegen
+        ? el('button', { class: 'btn btn-link', type: 'button', text: t('mandant.new'),
+            onClick: () => renderNeuerMandant(container, resolve, () => enterAktivenMandant(container, resolve, opts)) })
+        : null),
   ]);
 
   mount(container, shell([form]));
@@ -68,8 +174,13 @@ function renderUnlock(container, resolve) {
 
 // ---- Onboarding -------------------------------------------------------------
 
-function renderOnboarding(container, resolve) {
+function renderOnboarding(container, resolve, opts = {}) {
   const state = { password: null, backupDone: false };
+  // Beim Anlegen eines weiteren Mandanten zeigt eine Kopfzeile, für welchen Mandanten
+  // dieser eigene Tresor (Passwort/Shamir/Backup) gerade eingerichtet wird.
+  const mandantNote = opts.mandantName
+    ? el('p', { class: 'muted small mandant-context', text: t('mandant.onboardFor').replace('{name}', opts.mandantName) })
+    : null;
 
   function stepPassword() {
     const err = el('p', { class: 'form-error', role: 'alert' });
@@ -90,6 +201,7 @@ function renderOnboarding(container, resolve) {
         stepShamir(shares);
       },
     }, [
+      mandantNote,
       el('h1', { text: t('onboard.title') }),
       el('p', { class: 'muted', text: t('onboard.intro') }),
       el('label', { class: 'field' }, [el('span', { text: t('onboard.password') }), p1]),

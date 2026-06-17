@@ -73,6 +73,7 @@ import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
   erstelleMandant, leereRegistry, findeMandant, aktiverMandant, addMandant,
   umbenenneMandant, entferneMandant, setzeAktiv, mitLegacyMandant,
+  brauchtMandantenAuswahl, mandantenAuswahlListe,
 } from '../src/domain/mandanten.js';
 import { DB_SUFFIX, getActiveDbName, setActiveDbName, closeDb, LEGACY_DB_NAME as DB_LEGACY_NAME } from '../src/core/db.js';
 
@@ -2083,6 +2084,32 @@ await section('Mandanten (M1): Legacy-Seed (migrationsfrei)', () => {
   ok('Legacy zeigt auf Bestands-DB', dbNameFuer(seeded.aktiv) === 'blpr_bookledgerpro');
   const vorhanden = addMandant(leereRegistry(), erstelleMandant('X', { id: 'cccc0003' }));
   ok('vorhandene Registry bleibt unangetastet', mitLegacyMandant(vorhanden) === vorhanden);
+});
+
+await section('Mandanten (M2b): Sperrbildschirm-Auswahl (reine Logik)', () => {
+  // brauchtMandantenAuswahl: erst ab >1 Mandant.
+  ok('leere Registry → keine Auswahl', brauchtMandantenAuswahl(leereRegistry()) === false);
+  ok('null/undefined → keine Auswahl (kein Wurf)', brauchtMandantenAuswahl(null) === false && brauchtMandantenAuswahl(undefined) === false);
+  const r1 = mitLegacyMandant(leereRegistry()); // genau 1 Mandant
+  ok('genau 1 Mandant → keine Auswahl (verhaltensneutral)', brauchtMandantenAuswahl(r1) === false);
+  const r2 = addMandant(r1, erstelleMandant('Zweite Firma', { id: 'bbbb0002', erstellt: 5 }));
+  ok('2 Mandanten → Auswahl nötig', brauchtMandantenAuswahl(r2) === true);
+
+  // mandantenAuswahlListe: stabil sortiert (ältester zuerst), aktiv markiert, immutabel.
+  const a = erstelleMandant('Beta', { id: 'aaaa0001', erstellt: 200 });
+  const b = erstelleMandant('Alpha', { id: 'bbbb0002', erstellt: 100 });
+  const reg = setzeAktiv(addMandant(addMandant(leereRegistry(), a), b), 'bbbb0002');
+  const liste = mandantenAuswahlListe(reg);
+  ok('Liste sortiert nach erstellt (ältester zuerst)', liste.map((m) => m.id).join(',') === 'bbbb0002,aaaa0001');
+  ok('aktiver Mandant markiert', liste.find((m) => m.id === 'bbbb0002').aktiv === true && liste.find((m) => m.id === 'aaaa0001').aktiv === false);
+  ok('Felder durchgereicht', liste[0].name === 'Alpha' && liste[0].erstellt === 100);
+  ok('immutabel (Registry unverändert)', reg.mandanten[0].id === 'aaaa0001');
+  ok('leere Registry → leere Liste', mandantenAuswahlListe(leereRegistry()).length === 0 && mandantenAuswahlListe(null).length === 0);
+  // Tiebreak bei gleichem erstellt: Name.
+  const c1 = erstelleMandant('Zeta', { id: 'cccc0001', erstellt: 50 });
+  const c2 = erstelleMandant('Anna', { id: 'cccc0002', erstellt: 50 });
+  const regT = addMandant(addMandant(leereRegistry(), c1), c2);
+  ok('Tiebreak nach Name', mandantenAuswahlListe(regT).map((m) => m.name).join(',') === 'Anna,Zeta');
 });
 
 await section('Mandanten (M2a): Registry-DB-Name', () => {

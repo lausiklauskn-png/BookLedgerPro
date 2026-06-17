@@ -5,6 +5,31 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — M2b: Sperrbildschirm Mandanten-Auswahl/-Anlage/-Wechsel [Branch `claude/lock-screen-tenant-selection-9uhoh8`]
+
+**Was getan** (NACHFOLGE_PLAN.md, Schritt **M2b** — Sperrbildschirm-UI, nutzt fertige M2a-Core)
+- **Reine Logik zuerst (`domain/mandanten.js`, node-getestet):** `brauchtMandantenAuswahl(registry)`
+  (Auswahl erst ab **>1** Mandant → verhaltensneutral für Bestandsnutzer) + `mandantenAuswahlListe(registry)`
+  (stabil sortiert: ältester zuerst, Name als Tiebreak; aktiv markiert; immutabel).
+- **`ui/lock.js`:** `showLockScreen` lädt die Registry und zeigt bei >1 Mandant **`renderMandantenAuswahl`**
+  (Liste + „+ Neuer Mandant" + DSGVO-Hinweis). Auswahl → `wechsleAktivenMandant(id)` (DEK verwerfen +
+  DB-Wechsel gekapselt) → entsperren. **`renderNeuerMandant`**: Name → `registriereMandant` →
+  `wechsleAktivenMandant` → Onboarding (eigenes Passwort/Shamir/Backup) in der neuen, leeren Tresor-DB.
+  Bei genau 1 Mandant direktes Entsperren + diskreter „+ Neuer Mandant"-Link (Bootstrap bis M3).
+  `renderOnboarding` zeigt optional, für welchen Mandanten der Tresor eingerichtet wird.
+- **i18n** (de+en) `mandant.*`-Keys inkl. DSGVO-Hinweis (Namen unverschlüsselt). **CSS** `.mandant-list/
+  -item/-badge`, `.btn-link`. **SW-Cache `v82`** (betroffene Module waren bereits precached).
+- **Tests 699/699** (+10: `brauchtMandantenAuswahl`-Schwelle, Sortierung/Tiebreak/aktiv-Markierung,
+  Immutabilität, null-Sicherheit). `node tests/run.mjs` grün.
+
+**Stand:** M2b vollständig. Reine Entscheid-/Sortierlogik node-getestet; die DOM-/IndexedDB-Pfade
+(`lock.js`, Tresor-Umschaltung) sind **statisch geprüft** (kein Headless-Browser hier).
+**Offen/Nächstes:** **M3** — Shell-Indikator: aktiver Mandant (Name aus Registry) im Header sichtbar,
+„Mandant wechseln" + Verwaltung (umbenennen/entfernen, Bestätigung) in Einstellungen, Doku `docs/MANDANTEN.md`.
+**Grenze:** Der 1→2-Bootstrap geht aktuell nur über den Lock-Link; der reguläre Shell-Trigger kommt in M3.
+
+---
+
 ## 2026-06-17 — M2a: Mehrmandanten Core-Verdrahtung [Branch `claude/m2a-mandanten-core`]
 
 **Was getan** (NACHFOLGE_PLAN.md, M2 gesplittet → **M2a** = Core, M2b = UI)
