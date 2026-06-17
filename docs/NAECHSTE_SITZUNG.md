@@ -18,30 +18,31 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Abschnitt R bis R5 ist komplett** (R1–R4 ✅; R5a/R5b/R5c ✅). **Aktueller nächster Schritt:
-R6 [KANN]** — ZUGFeRD-**Erzeugen** (nur falls build-frei lösbar), Lighthouse, lokales OCR (Tesseract als
-Fallback), Privat-/Bürger-Modus, Sage 5b–d. **Falls R6 zu groß/heikel: feiner schneiden** (je Teil 1 PR) —
-z. B. zuerst der **Privat-/Bürger-Modus** (baut auf dem Pseudonymisierungs-Enabler + Briefkasten auf) oder
-**Lighthouse/Perf-Messung**. **Alternativ/zuerst sinnvoll: Browser-Sichttest** — (a) eine WorkFloh-
-Austauschdatei MIT `rechnung`-Block importieren (Aufträge → „Aus WorkFloh importieren") → Buchungsentwurf
-(Forderung an Erlöse + USt) prüfen, Auftrag „berechnet"; (b) OCR→Verbindlichkeit-Klickpfad (Foto/PDF →
-Google Vision EU → „Verbindlichkeit aus diesem Beleg erfassen" → Zahlungsabgleich); (c) **Pseudonym-Modus
-mit dreistufigem Briefkasten** (Einstellungen → „Dreistufiger Briefkasten" an) → Belegtext an die KI →
-Maskierung/Token prüfen — kein Headless-Browser hier, daher echter Nutzer-Sichttest.
+abarbeiten. **Abschnitt R bis R5 ist komplett** (R1–R4 ✅; R5a/R5b/R5c ✅); **R6/P1 (Privat-/Bürger-Modus:
+`domain/nutzungsmodus.js`, NAV-Gating, Setting `nutzungsmodus`) ✅ + gemergt (PR #99)**. **Aktueller nächster
+Schritt: R6-Rest [KANN]** — **Empfehlung R6/P2: die Feature-Gates ansichtsintern konsumieren** (`zeigeFeature`
+aus `domain/nutzungsmodus.js` ist bereits definiert + node-getestet, wird aber noch NICHT in den Views gelesen
+→ im Privat-/Verein-Modus USt-Felder im Journal, Rechnungs-/Mahn-Knöpfe, Anlagen-/Lohn-Bezüge je Modus
+ausblenden; reine Politik liegt schon node-getestet vor, also UI/Glue + ggf. kleine Helfer-Logik). Alternativ
+weiterhin offen im R6-Korb: **Lighthouse/Perf** (braucht Headless-Browser), **lokales OCR** (nur build-frei-
+sauber), ZUGFeRD-Erzeugen (PDF-Lib → nicht build-frei), **Sage 5b–d** (fremde Repos, menschlich vermittelt).
+**Alternativ/zuerst sinnvoll: Browser-Sichttest** — (a) eine WorkFloh-Austauschdatei MIT `rechnung`-Block
+importieren (Aufträge → „Aus WorkFloh importieren") → Buchungsentwurf (Forderung an Erlöse + USt) prüfen,
+Auftrag „berechnet"; (b) OCR→Verbindlichkeit-Klickpfad (Foto/PDF → Google Vision EU → „Verbindlichkeit aus
+diesem Beleg erfassen" → Zahlungsabgleich); (c) **Pseudonym-Modus mit dreistufigem Briefkasten** (Einstellungen
+→ „Dreistufiger Briefkasten" an) → Belegtext an die KI → Maskierung/Token prüfen; (d) **Privat-/Verein-Modus**
+(Einstellungen → „Nutzungskontext") → prüfen, dass die NAV die geschäftlichen Ansichten ausblendet — kein
+Headless-Browser hier, daher echter Nutzer-Sichttest.
 Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
 **Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** (B1/B2/B3); **R1–R4 ✅** (Verzugszinsen/
 Mahngebühren · Skonto §17 UStG · Sammelzahlungen · Verbindlichkeiten aus Foto/PDF · Rechnungs-Übernahme
-aus WorkFloh, PR #95); **R5a (Bankformate härten: CAMT .052/.054 + Saldo-Integritätsprüfung
-`pruefeBankauszug` + strukturierte RmtInf, `domain/bankimport.js`) ✅**; **R5b (NER: PII Dritter — E-Mail/
-IBAN/USt-IdNr/Steuernr/Telefon — über die Anker hinaus maskieren, `ai/ner.js` + Setting `nerPii`) ✅**;
-**R5c (dreistufiger Briefkasten Mandant ⊃ Firma ⊃ Person, `ai/briefkasten.js` + Setting `briefkastenScopes`,
-scope-präfixierte Token wie `[[FIRMA_2_IBAN_1]]`/`[[FIRMA_1_PERSON_1]]`) ✅** (siehe `docs/SESSIONS.md` oben).
-**Bewusst offen** (eigene Schritte, falls gewünscht): R4-Rest **API/Push** (Echtzeit) + Übernahme von
-**Zahlungsstatus/Teilzahlungen**; R5a-Rest **echte SWIFT-/ISO-20022-Schema-Validierung**; R5c-Rest
-**Person-Attribut-Bindung pro Personen-Token** + **NER-Scoping**. Plan-Details in `docs/NACHFOLGE_PLAN.md`
-Abschnitt R + `docs/OFFENE_PUNKTE.md`. Reine Logik **ZUERST node-getestet**, dann UI (DOM/IndexedDB als
-„statisch geprüft" kennzeichnen). (Falls ein Schritt zu groß ist: feiner schneiden und Plan fortschreiben —
-nie „halb" mergen.)
+aus WorkFloh, PR #95); **R5a/R5b/R5c ✅** (Bankformate härten · NER · dreistufiger Briefkasten);
+**R6/P1 ✅** (Privat-/Bürger-Modus). **Bewusst offen** (eigene Schritte, falls gewünscht): R6/P2
+(Feature-Gates ansichtsintern); R4-Rest **API/Push** (Echtzeit) + Übernahme von **Zahlungsstatus/Teilzahlungen**;
+R5a-Rest **echte SWIFT-/ISO-20022-Schema-Validierung**; R5c-Rest **Person-Attribut-Bindung pro Personen-Token**
++ **NER-Scoping**. Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`. Reine Logik
+**ZUERST node-getestet**, dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen). (Falls ein Schritt zu
+groß ist: feiner schneiden und Plan fortschreiben — nie „halb" mergen.)
 
 MEHRERE PRs ERLAUBT: Wenn sich mehrere Plan-Punkte **sauber und in sich abgeschlossen** in einer
 Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener PR**, jeder einzeln grün und gemergt.
@@ -78,9 +79,8 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach R5c (Abschnitt A Mehrmandanten + Abschnitt B Bilanzierung +
-R1–R4 abgeschlossen + gemergt; **R5a Bankformate härten** — CAMT .052/.054, Saldo-Integritätsprüfung,
-strukturierte RmtInf; **R5b NER** — PII Dritter über die Anker hinaus maskieren; **R5c dreistufiger
-Briefkasten** — Mandant ⊃ Firma ⊃ Person, scope-präfixierte Token, Setting `briefkastenScopes`) · Tests
-**942/942** · SW **v93** · 96 JS-Module · **Abschnitt R bis R5 komplett** · nächster Schritt **R6 [KANN]**
-bzw. Browser-Sichttest. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach **R6/P1** (Abschnitt A Mehrmandanten + Abschnitt B Bilanzierung +
+R1–R5 abgeschlossen + gemergt; **R6/P1 Privat-/Bürger-Modus** — Nutzungskontext `firma|privat|verein`,
+`domain/nutzungsmodus.js`, NAV-Gating in `shell.js`, Setting `nutzungsmodus`, PR #99) · Tests **972/972** ·
+SW **v94** · 97 JS-Module · **R bis R5 komplett, R6/P1 ✅** · nächster Schritt **R6/P2** (Feature-Gates
+ansichtsintern) bzw. R6-Rest/Browser-Sichttest. (Diese Zeile bei jeder Sitzung aktualisieren.)
