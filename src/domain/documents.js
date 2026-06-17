@@ -61,6 +61,9 @@ export async function deleteBeleg(id) {
   await fileDel(id);
 }
 
+// GoBD-Aufbewahrung: reine Helfer in aufbewahrung.js (ohne Speicher-Abhängigkeit), hier re-exportiert.
+export { AUFBEWAHRUNG_JAHRE, aufbewahrungBis, istAufbewahrungspflichtig, darfBelegLoeschen } from './aufbewahrung.js';
+
 /** Wandelt Bytes in Standard-Base64 (für die Vision-API). */
 export function bytesToBase64(bytes) {
   let bin = '';

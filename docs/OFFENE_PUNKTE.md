@@ -28,9 +28,11 @@ ein PR, bei grüner CI selbstständig mergen**):
 2. ✅ §19-Kleinunternehmer-Abfrage im Onboarding (Punkt 27) — *erledigt*.
 3. ✅ Abweichendes Wirtschaftsjahr (Punkt 28) — *erledigt*.
 4. ✅ Steuerberater-Übergabe-/Datenblatt (Punkt 31) — *erledigt*.
-5. Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (Punkt 29, mittel) — **als Nächstes**.
+5. ✅ Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (Punkt 29) — *erledigt*.
 6. ZUGFeRD (PDF/A-3) + KoSIT-Validierung (groß).
-7. A4 WorkFloh-Anbindung (groß).
+7. A4 Anbindung **erweitert (Nutzer 17.06.)**: WorkFloh ist **public** → **beidseitige Verlinkung**
+   (WorkFloh ↔ BookLedgerPro) **und generische Anbindung an andere Buchhaltungssoftware**
+   (Import/Export-Schnittstellen, offene Formate). (groß).
 8. Mehrmandantenfähigkeit (groß).
 9. Bilanzierung / V-Bilanz (groß).
 10. ELSTER-Stufe 2 / Restpunkte B/C nach Bedarf.
@@ -41,7 +43,10 @@ ein PR, bei grüner CI selbstständig mergen**):
 - [x] **28 — Abweichendes Wirtschaftsjahr** ✅ (`domain/geschaeftsjahr.js`: `wjPeriode`/
       `wirtschaftsjahrVon`/`wjBeginnYYYYMMDD`; Setting `wirtschaftsjahrBeginn` MM-TT; Dashboard +
       DATEV-EXTF-WJ-Beginn nutzen es; USt-VA bleibt bewusst kalendarisch). 10 Tests. [erledigt]
-- [ ] **29 — Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung** (Belegnummer, Original-Archiv, 10-J.-Frist-Hinweis). [SOLL]
+- [x] **29 — Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung** ✅ (`domain/aufbewahrung.js`:
+      `aufbewahrungBis`/`istAufbewahrungspflichtig`/`darfBelegLoeschen`, §147 AO 10 J.; `belegRef`
+      wird beim Beleg→Entwurf in die Buchung (Hash-Kette) gesetzt + `linkBeleg` rückwärts; Belege-
+      Liste zeigt „aufbewahren bis", Löschen verknüpfter Belege blockiert, Frist-Warnung). 7 Tests. [erledigt]
 - [x] **31 — Steuerberater-Übergabe-Datenblatt** ✅ (`export.buildUebergabeText`; Karte „Übergabe an
       den Steuerberater" in „Berichte": Firmenprofil/Zeitraum/USt-VA/EÜR + mitzugebende Dateien; Druck→PDF / TXT). [erledigt]
 
