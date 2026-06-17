@@ -6,7 +6,9 @@ import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
 import { computeUStVoranmeldung, computeEUR, computeEURIst, verprobeUSt } from '../../domain/taxes.js';
 import { kostenstellenAuswertung } from '../../domain/costcenters.js';
-import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv, buildOffeneVerbindlichkeitenCsv, buildElsterVaPaket } from '../../domain/export.js';
+import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv, buildOffeneVerbindlichkeitenCsv, buildElsterVaPaket, buildGuvCsv } from '../../domain/export.js';
+import { gewinnUndVerlust } from '../../domain/bilanz.js';
+import { istBilanzierung } from '../../domain/bilanzierung.js';
 import { VA_ZEITRAUM, voranmeldungsperioden, periodeIndexFuer, sondervorauszahlung, jahresZahllast } from '../../domain/umsatzsteuer.js';
 import { downloadText } from '../../core/files.js';
 import { isMistralConfigured } from '../../ai/aiConfig.js';
@@ -50,6 +52,9 @@ async function repaint() {
   const verprobung = verprobeUSt(buchungen, idx, p);
   const eur = computeEUR(buchungen, idx, p);
   const eurIst = computeEURIst(buchungen, idx, p);
+  // GuV nur im Bilanzierungs-Modus (B1-Schalter gewinnermittlung) — gatet die Ansicht.
+  const bilanzModus = istBilanzierung(getSettings());
+  const guv = bilanzModus ? gewinnUndVerlust(buchungen, idx, p) : null;
   const va = buildUstVa(buchungen, idx, p);
   const ks = kostenstellenAuswertung(buchungen, idx, p);
   const audit = await verifyAuditChain();
@@ -82,6 +87,7 @@ async function repaint() {
       ustCard(ust),
       eurCard(eur),
     ]),
+    guv ? guvCard(guv) : null,
     eurIstCard(eurIst),
     vaCard(va),
     vaPeriodeCard(buchungen, idx),
@@ -458,6 +464,38 @@ function eurCard(eur) {
     el('div', { class: 'mycel-divider' }),
     zeile(t('reports.surplus'), eur.ueberschuss, { strong: true }),
     el('p', { class: 'muted small', text: t('reports.eurNote') }),
+  ]);
+}
+
+// GuV (Bilanzierung, B2): Erträge/Aufwendungen je Konto + Jahresüberschuss/-fehlbetrag.
+function guvCard(guv) {
+  const stamp = new Date().toISOString().slice(0, 10);
+  const kontoZeile = (z) => el('div', { class: 'report-line' }, [
+    el('span', {}, [el('span', { class: 'mono small', text: z.nummer + ' ' }), el('span', { text: z.name })]),
+    el('span', { class: 'num', text: formatEuro(z.wert) }),
+  ]);
+  const ueberschuss = guv.jahresueberschuss >= 0;
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.guv') }),
+    el('h3', { class: 'small muted', text: t('reports.ertrag') }),
+    ...guv.ertraege.map(kontoZeile),
+    el('div', { class: 'report-line strong' }, [
+      el('span', { text: t('reports.guvSumErtraege') }), el('span', { class: 'num', text: formatEuro(guv.summeErtraege) }),
+    ]),
+    el('h3', { class: 'small muted', text: t('reports.aufwand') }),
+    ...guv.aufwendungen.map(kontoZeile),
+    el('div', { class: 'report-line strong' }, [
+      el('span', { text: t('reports.guvSumAufwendungen') }), el('span', { class: 'num', text: formatEuro(guv.summeAufwendungen) }),
+    ]),
+    el('div', { class: 'mycel-divider' }),
+    zeile(ueberschuss ? t('reports.guvUeberschuss') : t('reports.guvFehlbetrag'), Math.abs(guv.jahresueberschuss), { strong: true }),
+    el('div', { class: 'btn-row no-print' }, [
+      el('button', {
+        class: 'btn btn-sm', text: t('reports.guvExport'),
+        onClick: () => downloadText(`guv-${stamp}.csv`, BOM + buildGuvCsv(guv), 'text/csv'),
+      }),
+    ]),
+    el('p', { class: 'muted small', text: t('reports.guvNote') }),
   ]);
 }
 

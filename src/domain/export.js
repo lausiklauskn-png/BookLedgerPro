@@ -438,3 +438,18 @@ export function eurToCsv(eur) {
   rows.push(['', '', 'Überschuss', centsToComma(eur.ueberschuss)]);
   return csv(rows);
 }
+
+/**
+ * Gewinn- und Verlustrechnung (GuV, Bilanzierung) als CSV. Erwartet
+ * bilanz.gewinnUndVerlust(...). EHRLICHER HINWEIS: GuV im Konten-Sinn, KEINE
+ * amtliche §275-HGB-Gliederung.
+ */
+export function buildGuvCsv(guv) {
+  const rows = [['Art', 'Konto', 'Bezeichnung', 'Betrag']];
+  for (const e of guv.ertraege || []) rows.push(['Ertrag', e.nummer, e.name, centsToComma(e.wert)]);
+  for (const a of guv.aufwendungen || []) rows.push(['Aufwand', a.nummer, a.name, centsToComma(a.wert)]);
+  rows.push(['', '', 'Summe Erträge', centsToComma(guv.summeErtraege)]);
+  rows.push(['', '', 'Summe Aufwendungen', centsToComma(guv.summeAufwendungen)]);
+  rows.push(['', '', guv.jahresueberschuss >= 0 ? 'Jahresüberschuss' : 'Jahresfehlbetrag', centsToComma(guv.jahresueberschuss)]);
+  return csv(rows);
+}

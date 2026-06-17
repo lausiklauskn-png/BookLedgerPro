@@ -157,9 +157,11 @@ verschlüsselt (`state.js firma`).
 - [ ] **V-Bilanz — Bilanzierung (GmbH/OHG, GuV + Bilanz, §4 Abs.1/§5) [BESCHLOSSEN 2026-06-17].** In Teil-PRs (B1/B2/B3).
       **B1 ✅ (2026-06-17, PR #87):** Modus `gewinnermittlung` (euer|bilanz, Default euer) + Konten-Klassifikation
       (`src/domain/bilanzierung.js`, node-getestet) + Bilanz-Grundkonten 0800/0840/0860/0970 im SKR03-Seed +
-      Modus-Schalter in den Einstellungen (zieht Grundkonten via `ensureSeedKonten` nach). **Offen: B2 (GuV)
-      `domain/bilanz.js gewinnUndVerlust` + Ansicht/CSV → B3 (Bilanz, Aktiva=Passiva).** Grenze: keine
-      Konzernabschlüsse/E-Bilanz-Taxonomie.
+      Modus-Schalter in den Einstellungen (zieht Grundkonten via `ensureSeedKonten` nach).
+      **B2 ✅ (2026-06-17):** `domain/bilanz.js gewinnUndVerlust(buchungen, idx, periode)` (rein, node-getestet) +
+      `buildGuvCsv` + GuV-Karte in „Auswertung" (nur Bilanz-Modus, Perioden-Filter, CSV/Druck), SW `v85`, 739/739.
+      **Offen: B3 (Bilanz, Aktiva=Passiva)** — `bilanz(buchungen, idx, stichtag, eröffnungssalden)` aus den
+      Bestandskonten-Salden + Ansicht/CSV. Grenze: keine Konzernabschlüsse/E-Bilanz-Taxonomie.
 - [ ] **V-Lohn — Lohnbuchhaltung [KANN/extern].** Heute nur Zeiterfassung (`employees.js`); echte
       Lohnabrechnung/SV/Lohnsteuer ist eigenes Produkt — i. d. R. separate Software/Berater.
 - [x] **V-Multi — Mehrmandantenfähigkeit ✅ abgeschlossen (2026-06-17).** M1 ✅ (reine Schicht

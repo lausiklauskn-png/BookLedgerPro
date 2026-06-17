@@ -3,8 +3,8 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **726/726 grün**, SW `v84`.
-> Nächster Schritt: **B2 — GuV** (A abgeschlossen, B1 ✅).
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **739/739 grün**, SW `v85`.
+> Nächster Schritt: **B3 — Bilanz** (A abgeschlossen, B1 ✅, B2 ✅).
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -81,8 +81,12 @@
   SKR03-Seed ergänzt (Saldenvortrag/Eröffnung **9000** war vorhanden). Minimaler Modus-Schalter in den
   Einstellungen (`shell.js`), Wechsel auf Bilanz zieht Grundkonten via `ensureSeedKonten` nach. i18n de+en,
   SW `v84`, **+27 Tests (726/726)**. UI/Glue statisch geprüft. (PR #87.)
-- [ ] **B2 — GuV.** `domain/bilanz.js` (rein, node-getestet): `gewinnUndVerlust(buchungen, idx, periode)`
-  → Erträge/Aufwendungen gegliedert, Jahresüberschuss; Ansicht + CSV.
+- [x] **B2 — GuV.** ✅ `src/domain/bilanz.js` (rein, node-getestet): `gewinnUndVerlust(buchungen, idx, periode)`
+  → Erträge/Aufwendungen aus den Erfolgskonten je Periode (Salden über `accounts.js saldo`/`mehrungsSeite`),
+  gegliedert nach `guvSeite`, **Jahresüberschuss/-fehlbetrag = Σ Erträge − Σ Aufwendungen**. `buildGuvCsv` in
+  `domain/export.js`. GuV-Karte in „Auswertung" (`ui/views/reports.js`), **nur im Bilanz-Modus** sichtbar
+  (B1-Schalter `gewinnermittlung` gatet die Ansicht), inkl. CSV-Export + Druck. i18n de+en, SW `v85`, **+13 Tests
+  (739/739)**. UI/Glue statisch geprüft. EHRLICH: GuV im Konten-Sinn, KEINE amtliche §275-HGB-Gliederung. (PR B2.)
 - [ ] **B3 — Bilanz.** `bilanz(buchungen, idx, stichtag, eröffnungssalden)` → Aktiva/Passiva aus den
   Bestandskonten-Salden, Summengleichheit (Aktiva = Passiva), Eröffnungs-/Schlussbilanzkonto; Ansicht + CSV.
   Ehrlich: keine Konzernabschlüsse/E-Bilanz-Taxonomie — als Grenze dokumentieren.
