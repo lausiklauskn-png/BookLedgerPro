@@ -28,7 +28,7 @@ import { baueRechnung, pflichtangaben, formatRechnungsnummer } from '../src/doma
 import { findeRechtsregeln, onDeviceBegruendung } from '../src/domain/rechtsregeln.js';
 import { buildBegruendungMessages, parseBegruendung, begruendeBuchung } from '../src/ai/berater.js';
 import { auftragSummen, darfWechseln, validateAuftrag, auftragOffen, auftragGezahlt } from '../src/domain/orders.js';
-import { rechnungZeilen } from '../src/domain/invoicing.js';
+import { rechnungZeilen, rechnungsUebernahmeEntwurf, validateRechnungsUebernahme } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
 import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, istEinfacherSatz, buildUstVa, centsToComma, ustVaToCsv, buildAnlagenverzeichnisCsv, buildUebergabeText } from '../src/domain/export.js';
@@ -612,6 +612,46 @@ await section('WorkFloh-Import: Normalisierung (Kunden, Aufträge, USt-Ergänzun
   ok('Position 2: USt-Satz ergänzt (19)', r.auftraege[0].positionen[1].ustSatz === 19);
   ok('Warnungen vorhanden (Name + USt)', r.warnungen.length >= 2);
   ok('ungültiges JSON wirft', (() => { try { parseImportText('kein json'); return false; } catch { return true; } })());
+  ok('Auftrag ohne Rechnung → rechnung null', r.auftraege[0].rechnung === null);
+});
+
+await section('R4 Stufe 2: Rechnungs-Übernahme — Normalisierung + Buchungsentwurf', () => {
+  // Auftrag MIT gültiger, bereits gestellter Rechnung (von WorkFloh).
+  const norm = normalizeImport({
+    auftraege: [
+      { externNummer: 'A-9', titel: 'Webseite', positionen: [{ menge: 1, einzelpreisCent: 100000, ustSatz: 19 }],
+        rechnung: { nummer: '2026-0042', datum: '2026-06-10', leistungsdatum: '2026-06-09' } },
+      { externNummer: 'A-10', titel: 'Wartung', positionen: [{ menge: 1, einzelpreisCent: 5000, ustSatz: 19 }],
+        rechnung: { nummer: '', datum: '2026-06-10' } }, // Nummer fehlt → verworfen
+      { externNummer: 'A-11', titel: 'Beratung', positionen: [{ menge: 1, einzelpreisCent: 5000, ustSatz: 19 }],
+        rechnung: { nummer: 'X', datum: '10.06.2026' } }, // Datum ungültig → verworfen
+    ],
+  });
+  ok('gültige Rechnung normalisiert', norm.auftraege[0].rechnung && norm.auftraege[0].rechnung.nummer === '2026-0042');
+  ok('Leistungsdatum übernommen', norm.auftraege[0].rechnung.leistungsdatum === '2026-06-09');
+  ok('Rechnung ohne Nummer → null + Warnung', norm.auftraege[1].rechnung === null);
+  ok('Rechnung mit ungültigem Datum → null', norm.auftraege[2].rechnung === null);
+  ok('zwei Warnungen für unvollständige Rechnungen', norm.warnungen.filter((w) => /Rechnungsangaben unvollständig/.test(w)).length === 2);
+
+  // Validierung der Übernahme.
+  ok('Validierung: vollständig ok', validateRechnungsUebernahme({ nummer: 'R-1', datum: '2026-06-10' }).length === 0);
+  ok('Validierung: fehlende Nummer erkannt', validateRechnungsUebernahme({ nummer: '', datum: '2026-06-10' }).length === 1);
+  ok('Validierung: ungültiges Datum erkannt', validateRechnungsUebernahme({ nummer: 'R-1', datum: '2026/06/10' }).length === 1);
+
+  // Buchungsentwurf aus Auftrag + übernommener Rechnung (kein neuer Nummern-Lauf).
+  const auftrag = { titel: 'Webseite', kostenstelle: '2000', positionen: [{ menge: 1, einzelpreisCent: 100000, ustSatz: 19 }] };
+  const e = rechnungsUebernahmeEntwurf(auftrag, { nummer: '2026-0042', datum: '2026-06-10' });
+  ok('Nummer aus WorkFloh übernommen', e.nummer === '2026-0042');
+  ok('Datum aus WorkFloh übernommen', e.datum === '2026-06-10');
+  ok('Leistungsdatum default = Rechnungsdatum', e.leistungsdatum === '2026-06-10');
+  ok('Beschreibung nennt Nummer + WorkFloh + Titel', /2026-0042 \(WorkFloh\): Webseite/.test(e.beschreibung));
+  ok('Kostenstelle durchgereicht', e.kostenstelle === '2000');
+  ok('Soll Forderung 1400 = 119000 (brutto)', zeile(e.zeilen, '1400', 'S')?.betrag === 119000);
+  ok('Haben Erlöse 8400 = 100000', zeile(e.zeilen, '8400', 'H')?.betrag === 100000);
+  ok('Haben USt 1776 = 19000', zeile(e.zeilen, '1776', 'H')?.betrag === 19000);
+  ok('Übernahme-Buchung ausgeglichen', istAusgeglichen(e.zeilen));
+  // Ohne Titel: Beschreibung ohne Doppelpunkt-Rest.
+  ok('Beschreibung ohne Titel sauber', rechnungsUebernahmeEntwurf({ positionen: [] }, { nummer: 'R-7', datum: '2026-01-01' }).beschreibung === 'Rechnung R-7 (WorkFloh)');
 });
 
 await section('Rechtsregeln (Grounding) + KI-Berater (Begründung mit §-Bezug)', () => {
@@ -2270,14 +2310,21 @@ await section('Punkt 7/A4: Offenes Austauschformat (Anbindung andere Buchhaltung
   const kunden = [{ id: 'kunde:1', name: 'Beispiel GmbH', anschrift: 'Weg 2', email: 'a@b.de', ustId: 'DE123' }];
   const auftraege = [{ id: 'A-1', kundeId: 'kunde:1', titel: 'Auftrag X', positionen: [{ beschreibung: 'Leistung', menge: 1, einzelpreisCent: 100000, ustSatz: 19 }] }];
   const paket = buildAustauschPaket({ kunden, auftraege });
-  ok('Export: Format/Version-Header', paket.format === AUSTAUSCH_FORMAT && paket.version === 1);
+  ok('Export: Format/Version-Header (v2)', paket.format === AUSTAUSCH_FORMAT && paket.version === 2);
   ok('Export: Kunde + Auftrag übernommen', paket.kunden[0].name === 'Beispiel GmbH' && paket.auftraege[0].positionen[0].einzelpreisCent === 100000);
+  ok('Export: Auftrag ohne Rechnung trägt kein rechnung-Feld', paket.auftraege[0].rechnung === undefined);
 
   // Round-trip: Export → JSON → parse → normalizeImport.
   const res = parseAustauschPaket(JSON.stringify(paket));
   ok('Parse: ok + Inhalt', res.ok && res.obj.kunden.length === 1 && res.obj.auftraege.length === 1);
   const norm = normalizeImport(res.obj);
   ok('Round-trip → normalizeImport', norm.kunden[0].name === 'Beispiel GmbH' && norm.auftraege[0].positionen[0].einzelpreisCent === 100000);
+
+  // R4 Stufe 2: berechneter Auftrag exportiert seine Rechnung → andere Seite kann sie übernehmen.
+  const paket2 = buildAustauschPaket({ kunden, auftraege: [{ ...auftraege[0], rechnungNummer: '2026-0001', rechnungDatum: '2026-06-01' }] });
+  ok('Export: berechneter Auftrag trägt rechnung-Block', paket2.auftraege[0].rechnung && paket2.auftraege[0].rechnung.nummer === '2026-0001');
+  const norm2 = normalizeImport(parseAustauschPaket(JSON.stringify(paket2)).obj);
+  ok('Round-trip: Rechnung übernommen', norm2.auftraege[0].rechnung && norm2.auftraege[0].rechnung.datum === '2026-06-01');
 
   // Abwärtskompatibel: „bare" WorkFloh-Format ohne format/version.
   const bare = parseAustauschPaket(JSON.stringify({ kunden: [{ name: 'X' }], auftraege: [] }));
