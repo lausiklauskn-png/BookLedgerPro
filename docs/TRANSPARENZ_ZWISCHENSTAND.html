@@ -216,6 +216,17 @@ Export-Wege (kein Anbieter-Lock-in).</div>
 <tr><td>Aufklärung Kleinunternehmer / KI-Autonomie</td><td>Klarstellen, welche Pflichten beim Weiterleiten von Kundendaten gelten.</td><td><span class="plan">◐ P3/P4</span></td></tr>
 </table>
 
+<div class="note"><strong>Nebengedanke — strenger als das gesetzliche Minimum:</strong> Unsere
+Krypto-Hausregel (Goldene Regel&nbsp;#4: Daten ruhen verschlüsselt, der Klartext verlässt das
+Gerät nie ohne ausdrückliche Bestätigung) geht <strong>bewusst über die DSGVO-Pflicht hinaus</strong>.
+Beispiel: Ein Datentransfer <em>innerhalb desselben Systems/derselben Firma</em> — etwa von einer
+eigenen App in eine andere — ist rechtlich unkritisch und bräuchte weder einen
+Auftragsverarbeitungsvertrag (AVV/DPA) noch eine Transportverschlüsselung (kein Dritter dazwischen).
+Wir behandeln solche Daten trotzdem nach Regel&nbsp;#4 verschlüsselt — als Eigen-Anspruch, nicht
+weil das Gesetz es verlangt. AVV bzw. Ende-zu-Ende-Verschlüsselung werden erst dann zum Thema, wenn
+tatsächlich eine <strong>dritte Stelle</strong> mitwirkt (z.&nbsp;B. die EU-KI als Auftragsverarbeiter
+nach Art.&nbsp;28, oder ein fremder Vermittler/Hub im Transportweg).</div>
+
 <h2>4. GoBD — Ordnungsmäßige Buchführung</h2>
 <p><span class="ok">✓ FERTIG</span> (nachprüfbar in <code>src/domain/audit.js</code>, <code>journal.js</code>).</p>
 <ul>
