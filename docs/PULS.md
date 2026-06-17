@@ -36,10 +36,11 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R4"** (Rest-SOLL): A4 **Stufe 2** — Rechnungs-Übernahme (statt nur
-Auftrag) + optional API/Push; reziproke WorkFloh-Verlinkung schärfen. **Alternativ/zuerst sinnvoll:** **Sichttest
-des OCR→Verbindlichkeit-Klickpfads** im Browser (Vision EU). Reihenfolge im Rest-SOLL nach Bedarf (R4…R6);
-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R5"** (Rest-SOLL): Bankformate härten (CAMT .052/.054, SWIFT-
+Validierung), NER (PII über Anker hinaus), dreistufiger Briefkasten. **Alternativ/zuerst sinnvoll:** **Browser-
+Sichttest** (WorkFloh-Datei mit Rechnung importieren → Buchungsentwurf prüfen; OCR→Verbindlichkeit-Klickpfad,
+Vision EU). Reihenfolge im Rest-SOLL nach Bedarf (R5/R6); Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**R4 (Rechnungs-Übernahme aus WorkFloh: fertige Rechnung → Forderung/Buchung; Austauschformat v2; API/Push bewusst offen) ist abgeschlossen + gemergt (PR #95).**
 **R3 (Verbindlichkeiten aus Foto/PDF + eigene Verbindlichkeiten-Ansicht + Zahlungsziel je Rechnung) ist abgeschlossen + gemergt.**
 **R2b (Sammelzahlungen — eine Bankzahlung auf mehrere offene Rechnungen) ist abgeschlossen + gemergt.**
 **R2a (Skonto-Buchung mit USt-/Vorsteuer-Korrektur §17 UStG) ist abgeschlossen + gemergt.**
@@ -47,9 +48,9 @@ Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach R3):** SW **v90** · Tests **863/863** grün · 94 JS-Module.
-**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1 ✅; R2a ✅; R2b ✅; R3 ✅.** Reihenfolge im Plan:
-~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → R4 → Rest-SOLL.
+**Kopf-Status (Stand nach R4):** SW **v91** · Tests **885/885** grün · 94 JS-Module.
+**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1 ✅; R2a ✅; R2b ✅; R3 ✅; R4 ✅.** Reihenfolge im Plan:
+~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → Rest-SOLL (R5/R6).
 **R2b erledigt:** `domain/zahlungsabgleich.js` — `findeSammelzuordnung` (tiefenbeschränkte Subset-Summe: Kombinationen
 gleichgerichteter offener Posten, deren Summe der Zahlung ± Toleranz entspricht, ≥2 Teile, Score nach Referenz/Name/
 Datumsnähe), `verteileSammelzahlung` (Zahlbetrag der Reihe nach verteilen, Restbildung/Überzahlung sauber),

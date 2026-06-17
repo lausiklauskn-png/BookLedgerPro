@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-16**.
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R4).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -30,9 +30,11 @@ ein PR, bei grüner CI selbstständig mergen**):
 4. ✅ Steuerberater-Übergabe-/Datenblatt (Punkt 31) — *erledigt*.
 5. ✅ Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (Punkt 29) — *erledigt*.
 6. ✅ ZUGFeRD-Empfang (PDF→CII) + KoSIT-Pflichtfeld-Precheck — *erledigt* (ZUGFeRD-Erzeugen offen, PDF-Lib).
-7. ✅ A4 (erweitert) **Stufe 1 erledigt:** offenes Austauschformat (`domain/connect.js`) — **Import UND
-   Export** (Aufträge-Ansicht) + **verbundene-App-Link** (Einstellungen, reziprok zu WorkFloh) +
-   `docs/CONNECT.md`. **Offen:** API/Push-Echtzeit, Rechnungs-Übernahme (statt nur Auftrag).
+7. ✅ A4 (erweitert) **Stufe 1 + Stufe 2 erledigt:** offenes Austauschformat (`domain/connect.js`) —
+   **Import UND Export** (Aufträge-Ansicht) + **verbundene-App-Link** (Einstellungen, reziprok zu
+   WorkFloh) + `docs/CONNECT.md`. **Stufe 2 (R4, PR #95):** **Rechnungs-Übernahme** (fertige Rechnung →
+   Forderung/Buchung) über `rechnung`-Block (Format v2), `invoicing.rechnungsUebernahmeEntwurf`.
+   **Offen:** API/Push-Echtzeit, Übernahme von Zahlungsstatus/Teilzahlungen.
 8. Mehrmandantenfähigkeit (groß).
 9. Bilanzierung / V-Bilanz (groß).
 10. ELSTER-Stufe 2 / Restpunkte B/C nach Bedarf.
@@ -304,7 +306,16 @@ Rechnungen)"** im Bankimport (`documents.js`) → Checkbox-Auswahl (Vorschlag vo
 
 **Noch offen [SOLL]:** —
 
-### A4. App-Anbindung / WorkFloh-Integration **[SOLL] — spätere Sitzung, sauber als Option vorbereiten**
+### A4. App-Anbindung / WorkFloh-Integration **[SOLL] — Stufe 1 + Stufe 2 erledigt ✓, API/Push offen**
+**Stufe 2 erledigt (R4, 2026-06-17, PR #95):** Rechnungs-Übernahme — ein Auftrag im Austauschformat
+darf einen `rechnung`-Block `{nummer, datum, leistungsdatum?}` tragen (Format **v2**, abwärtskompatibel).
+`importworkfloh.normalizeImport` normalisiert/verwirft unvollständige Rechnungen; `invoicing.rechnungs-
+UebernahmeEntwurf`/`validateRechnungsUebernahme` (rein, node-getestet) bauen den Buchungs-Entwurf
+(Forderung an Erlöse + USt) mit der **WorkFloh-Nummer/-Datum** (keine neue BLP-Nummer);
+`crm-store.importWorkFloh` bucht ihn als Entwurf + setzt den Auftrag „berechnet" (Festschreiben manuell,
+GoBD); `connect.buildAustauschPaket` trägt die Rechnung reziprok mit. SW `v91`, +22 Tests (885/885).
+**Noch offen [SOLL/KANN]:** API/Push (Echtzeit) statt Datei; Übernahme von Zahlungsstatus/Teilzahlungen.
+
 **Vision (Nutzer):** Funktionierende Apps sollen sich an BookLedgerPro **anbinden** können bzw.
 BookLedgerPro bietet die Anbindung an. Konkretes Beispiel **Mein-WorkFloh**: Angebote → umgesetzte
 Arbeiten werden dort in eine **Rechnung** übergeführt; diese Rechnung wird dann **kombiniert in
