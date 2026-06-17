@@ -11,6 +11,15 @@
 
 > **Lies das zuerst und vollständig. Danach OHNE Rückfragen loslegen.**
 
+> **📨 Selbstfortschreibende Nachfolge-Kette (verbindlich, vom Nutzer gewünscht):**
+> Der **paste-fertige Brief** für die jeweils nächste Sitzung steht in
+> `docs/NAECHSTE_SITZUNG.md` (Block zwischen `>>> COPY <<<` / `>>> END COPY <<<`). **Jede
+> Sitzung MUSS** diesen Brief am Ende neu auf den dann nächsten Schritt setzen **und** die
+> Selbst-Fortschreibungs-Anweisung darin behalten (Kette darf nie abreißen) — und den
+> COPY-Block am Sitzungsende im Chat ausgeben. **Mehrere saubere, in sich abgeschlossene
+> PRs pro Sitzung sind erlaubt** (pro Punkt 1 PR, jeder einzeln grün + gemergt; nie halb
+> mergen, im Zweifel feiner schneiden).
+
 **🟢 FREIBRIEF + Sitzungs-Ritual (vom Nutzer ausdrücklich so gewünscht):**
 - **Genau EINE PR pro Sitzung.** Die Sitzung ist nur so lang, bis **diese eine PR abgeschlossen** ist.
 - **Sauber & fehlerfrei vor schnell:** keine unschlüssigen/halben Codepfade, die später Probleme machen.
