@@ -59,6 +59,7 @@ function importKarte() {
           `${r.auftraegeNeu} ${t('import.orders')}`,
         ];
         if (r.rechnungenUebernommen) teile.push(`${r.rechnungenUebernommen} ${t('import.invoices')}`);
+        if (r.zahlungenUebernommen) teile.push(`${r.zahlungenUebernommen} ${t('import.payments')}`);
         if (r.auftraegeUebersprungen) teile.push(`${r.auftraegeUebersprungen} ${t('import.skipped')}`);
         if (parsed.warnungen.length) teile.push(`${parsed.warnungen.length} ${t('import.notes')}`);
         await repaint(el('div', { class: 'banner banner-warn', text: t('import.done') + ' ' + teile.join(' · ') }));

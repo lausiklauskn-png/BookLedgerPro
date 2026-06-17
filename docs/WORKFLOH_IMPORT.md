@@ -26,14 +26,21 @@ WorkFloh exportiert genau dieses Format, BookLedgerPro liest es.
       "positionen": [
         { "beschreibung": "Beratung", "menge": 10, "einzelpreisCent": 10000, "ustSatz": 19 }
       ],
-      "rechnung": { "nummer": "2026-0042", "datum": "2026-06-10", "leistungsdatum": "2026-06-09" }
+      "rechnung": {
+        "nummer": "2026-0042", "datum": "2026-06-10", "leistungsdatum": "2026-06-09",
+        "zahlungen": [
+          { "datum": "2026-06-15", "betragCent": 50000, "ref": "VZ-2026-0042" },
+          { "datum": "2026-06-20", "betrag": "690,00" }
+        ]
+      }
     }
   ]
 }
 ```
 
 `rechnung` ist **optional** (R4 Stufe 2 — Rechnungs-Übernahme). Fehlt der Block, kommt der
-Auftrag wie bisher als „angelegt" herein (Rechnung wird in BLP gestellt).
+Auftrag wie bisher als „angelegt" herein (Rechnung wird in BLP gestellt). `rechnung.zahlungen`
+ist **ebenfalls optional** (R4-Rest — Zahlungs-/Teilzahlungs-Übernahme, Austauschformat v3).
 
 ## Felder
 
@@ -58,6 +65,12 @@ Auftrag wie bisher als „angelegt" herein (Rechnung wird in BLP gestellt).
   - `leistungsdatum` (optional, Default = `datum`).
   - Sind `nummer`/`datum` unvollständig oder ungültig, wird der **Rechnungsblock verworfen**
     (der Auftrag kommt als „angelegt" herein) und als Hinweis gezählt — nichts wird erfunden.
+  - `zahlungen[]` (optional, **R4-Rest — Zahlungs-/Teilzahlungs-Übernahme, v3**): in WorkFloh
+    bereits erfasste Zahlungseingänge auf diese Rechnung.
+    - `datum` (Pflicht, `JJJJ-MM-TT`): Zahlungsdatum.
+    - **Betrag:** `betragCent` (Ganzzahl Cent) **oder** `betrag` (Euro-String, z. B. `"690,00"`).
+    - `ref` (optional): Verwendungszweck/Referenz.
+    - Unvollständige Einträge (Datum/Betrag) werden **verworfen** + als Hinweis gezählt.
 
 ## Verhalten beim Import
 
@@ -68,6 +81,10 @@ Auftrag wie bisher als „angelegt" herein (Rechnung wird in BLP gestellt).
 - Aufträge **mit** gültiger `rechnung` (R4 Stufe 2): BLP erzeugt direkt einen **Buchungs-Entwurf**
   (Forderung an Erlöse + USt) mit der **WorkFloh-Nummer/-Datum** und setzt den Auftrag auf
   **„berechnet"**. **Festschreiben bleibt manuell** (GoBD). Die Vorsteuer/USt wird in BLP geführt.
+- Trägt die `rechnung` gültige `zahlungen[]` (R4-Rest): BLP erzeugt je Zahlung einen
+  **Zahlungseingang-Buchungs-Entwurf** (Bank an Forderung) und vermerkt die (Teil-)Zahlung am
+  Auftrag. Ist die Forderung danach ausgeglichen, wird der Auftrag automatisch **„bezahlt"**.
+  Festschreiben bleibt manuell (GoBD).
 - Tolerant: Euro- oder Cent-Preise, fehlende USt-Sätze werden ergänzt; fehlerhafte
   Einträge werden übersprungen und als Hinweis gezählt.
 
@@ -76,6 +93,9 @@ Auftrag wie bisher als „angelegt" herein (Rechnung wird in BLP gestellt).
 - **Rechnungs-Übernahme (R4 Stufe 2) ✅** umgesetzt: `rechnung`-Block → Buchungs-Entwurf/Forderung
   (`invoicing.rechnungsUebernahmeEntwurf`/`validateRechnungsUebernahme`). Export trägt den Block
   reziprok mit (`connect.buildAustauschPaket`, Format-Version 2, abwärtskompatibel).
-- **Offen:** API/Push (Echtzeit) statt Datei; Übernahme von **Zahlungsstatus** (bezahlt/Teilzahlung)
-  aus WorkFloh (heute nur Forderung/Buchung). Automatischer Sage-Mycel-Sync (Briefkasten/SBKIM):
+- **Zahlungs-/Teilzahlungs-Übernahme (R4-Rest) ✅** umgesetzt: `rechnung.zahlungen[]` → je Zahlung
+  ein Zahlungseingang-Entwurf (Bank an Forderung) + (Teil-)Zahlung am Auftrag, Auto-„bezahlt" bei
+  Ausgleich (`invoicing.zahlungsUebernahmeEntwurf`/`validateZahlungsUebernahme`). Export trägt die
+  Zahlungen reziprok mit (`connect.buildAustauschPaket`, **Format-Version 3**, abwärtskompatibel).
+- **Offen:** API/Push (Echtzeit) statt Datei. Automatischer Sage-Mycel-Sync (Briefkasten/SBKIM):
   späterer Ausbau (Phase 5d).

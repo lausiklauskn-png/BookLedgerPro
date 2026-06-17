@@ -8,8 +8,10 @@
 
 export const AUSTAUSCH_FORMAT = 'bookledgerpro-austausch';
 // v2 (R4 Stufe 2): Aufträge dürfen optional eine bereits gestellte `rechnung` tragen
-// (Rechnungs-Übernahme). Abwärtskompatibel — v1-Pakete ohne `rechnung` bleiben gültig.
-export const AUSTAUSCH_VERSION = 2;
+// (Rechnungs-Übernahme). v3 (R4-Rest): die `rechnung` darf zusätzlich ein `zahlungen`-Array
+// `[{datum, betragCent, ref?}]` tragen (Zahlungs-/Teilzahlungs-Übernahme). Abwärtskompatibel —
+// v1/v2-Pakete ohne `zahlungen` bleiben gültig.
+export const AUSTAUSCH_VERSION = 3;
 
 /** BLP-Daten → offenes Austauschpaket (für Fremdsoftware / WorkFloh). */
 export function buildAustauschPaket({ kunden = [], auftraege = [] } = {}) {
@@ -44,6 +46,15 @@ export function buildAustauschPaket({ kunden = [], auftraege = [] } = {}) {
           datum: a.rechnungDatum,
           leistungsdatum: a.leistungsdatum || a.rechnungDatum,
         };
+        // v3: bereits erfasste (Teil-)Zahlungen reziprok mitgeben (gültige Einträge).
+        const zahlungen = (a.zahlungen || [])
+          .filter((z) => z && Math.round(Number(z.betragCent) || 0) > 0 && /^\d{4}-\d{2}-\d{2}$/.test(String(z.datum || '')))
+          .map((z) => {
+            const e = { datum: z.datum, betragCent: Math.round(Number(z.betragCent) || 0) };
+            if (z.ref) e.ref = String(z.ref);
+            return e;
+          });
+        if (zahlungen.length) out.rechnung.zahlungen = zahlungen;
       }
       return out;
     }),

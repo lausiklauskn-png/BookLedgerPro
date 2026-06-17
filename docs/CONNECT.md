@@ -9,11 +9,11 @@ Damit kann **Mein-WorkFloh** (public) ebenso andocken wie **andere Buchhaltungss
 - **Import:** „Austausch-Datei wählen" (akzeptiert das Format unten **und** das alte WorkFloh-`{kunden,auftraege}`).
 - **Export:** „Austausch-Datei exportieren" — lädt Kunden + Aufträge im offenen Format herunter.
 
-## Format (Version 2)
+## Format (Version 3)
 ```json
 {
   "format": "bookledgerpro-austausch",
-  "version": 2,
+  "version": 3,
   "erzeugt": "2026-06-17T00:00:00.000Z",
   "kunden": [
     { "externId": "K-1001", "name": "Beispiel GmbH", "adresse": "Weg 2, 50667 Köln", "email": "a@b.de", "ustId": "DE123456789" }
@@ -21,7 +21,8 @@ Damit kann **Mein-WorkFloh** (public) ebenso andocken wie **andere Buchhaltungss
   "auftraege": [
     { "externNummer": "A-2026-1", "kundeExternId": "K-1001", "titel": "Auftrag X",
       "positionen": [ { "beschreibung": "Leistung", "menge": 1, "einzelpreisCent": 100000, "ustSatz": 19 } ],
-      "rechnung": { "nummer": "2026-0001", "datum": "2026-06-01", "leistungsdatum": "2026-06-01" } }
+      "rechnung": { "nummer": "2026-0001", "datum": "2026-06-01", "leistungsdatum": "2026-06-01",
+        "zahlungen": [ { "datum": "2026-06-05", "betragCent": 60000, "ref": "VZ-2026-0001" } ] } }
   ]
 }
 ```
@@ -30,8 +31,13 @@ Damit kann **Mein-WorkFloh** (public) ebenso andocken wie **andere Buchhaltungss
   **gelieferten** Nummer/Datum (keine neue BLP-Nummer) und setzt den Auftrag auf „berechnet"
   (Festschreiben bleibt manuell, GoBD). Beim Export trägt ein **berechneter** Auftrag seine Rechnung
   reziprok mit.
+- **`rechnung.zahlungen[]` (optional, R4-Rest — Zahlungs-/Teilzahlungs-Übernahme, v3):** in der
+  Quelle bereits erfasste Zahlungseingänge `{ datum, betragCent|betrag, ref? }`. Beim Import erzeugt
+  BLP je Zahlung einen Zahlungseingang-Buchungs-Entwurf (Bank an Forderung) + vermerkt die
+  (Teil-)Zahlung am Auftrag (Auto-„bezahlt" bei Ausgleich; Festschreiben manuell, GoBD). Beim Export
+  trägt ein berechneter Auftrag seine erfassten Zahlungen reziprok mit.
 - **Abwärtskompatibel:** Ein „bare" `{ "kunden": [...], "auftraege": [...] }` ohne `format/version`
-  wird ebenso akzeptiert wie Version 1 (ohne `rechnung`).
+  wird ebenso akzeptiert wie Version 1/2 (ohne `rechnung`/`zahlungen`).
 - `einzelpreisCent` (Integer) **oder** `einzelpreis` (Euro-String) sind erlaubt; fehlender `ustSatz` wird beim Import ergänzt (Default, editierbar).
 - `externId`/`externNummer` dienen der **Idempotenz/Dedupe** (Mehrfach-Import erzeugt keine Dubletten).
 
@@ -42,8 +48,7 @@ Damit kann **Mein-WorkFloh** (public) ebenso andocken wie **andere Buchhaltungss
 
 ## Ehrliche Grenzen
 - Aktuell Datei-basiert (Import **und** Export). Eine **API/Push**-Anbindung (Echtzeit) ist noch nicht gebaut.
-- Übertragen werden **Kunden + Aufträge** (inkl. Positionen) und optional eine **bereits gestellte
-  Rechnung** (R4 Stufe 2 → Buchungs-Entwurf/Forderung). **Festschreiben** bleibt in BLP (GoBD).
-- **Noch nicht** übertragen: Zahlungsstatus/Teilzahlungen einer übernommenen Rechnung (nur die
-  offene Forderung wird gebucht; der Zahlungsabgleich erfolgt in BLP über den Bankimport).
+- Übertragen werden **Kunden + Aufträge** (inkl. Positionen), optional eine **bereits gestellte
+  Rechnung** (R4 Stufe 2 → Buchungs-Entwurf/Forderung) und optional deren **(Teil-)Zahlungen**
+  (R4-Rest → Zahlungseingang-Entwurf/Bank an Forderung). **Festschreiben** bleibt in BLP (GoBD).
 - Offline-first/Krypto-Disziplin gewahrt; Anbindung ist **opt-in**, kein Zwang.

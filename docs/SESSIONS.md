@@ -5,6 +5,43 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R4-Rest: Zahlungs-/Teilzahlungs-Übernahme aus WorkFloh (Austauschformat v3) [Branch `claude/bookledgerpro-next-steps-k8bcp8`]
+
+**Ausgangslage / Auswahl** (Schritt nach R5c-Rest, gemäß `docs/NACHFOLGE_PLAN.md`)
+- Zwei gleichwertige Wege standen offen: **(A) Browser-Sichttest** (verlangt den menschlichen Nutzer mit echtem
+  Browser — hier keiner) oder **(B) build-freier Code-Korb**. Der Plan **empfiehlt B / R4-Rest** (höherer
+  Geschäftswert) → autonome Code-Sitzung, R4-Rest sauber umgesetzt.
+
+**Was getan** (reine Logik zuerst, node-getestet — **+18 → 1001/1001**)
+- **`src/domain/importworkfloh.js`:** `normalizeRechnung` nimmt jetzt ein optionales `zahlungen[]` je Rechnung;
+  neuer Helfer `normalizeZahlungen` (rein): gültiges ISO-Datum + positiver Betrag (Cent **oder** Euro-String),
+  optionale `ref`; unvollständige Einträge werden verworfen + als Warnung gezählt (nichts erfunden).
+- **`src/domain/invoicing.js`:** `validateZahlungsUebernahme(zahlung)` + `zahlungsUebernahmeEntwurf(rechnung, zahlung)`
+  (rein): Zahlungseingang als Buchungs-ENTWURF **Soll Bank 1200 / Haben Forderung 1400** (gleicht die Forderung der
+  Rechnungs-Übernahme cent-genau aus → korrekte Ist-EÜR §4 Abs.3 EStG). `BANK_KONTO` in `INVOICING_KONTEN` ergänzt.
+- **`src/domain/crm-store.js` `importWorkFloh`:** nach der Rechnungs-Übernahme je gültiger Zahlung einen
+  Zahlungseingang-Entwurf (`saveEntwurf`) + (Teil-)Zahlung am Auftrag (`zahlungen[]`); ist die Forderung danach
+  ausgeglichen (`auftragOffen <= 0`), wird der Auftrag **„bezahlt"**. Rückgabe um `zahlungenUebernommen` erweitert.
+- **`src/domain/connect.js`:** Austauschformat **v2 → v3**; ein berechneter Auftrag exportiert seine erfassten
+  (gültigen) `zahlungen` reziprok im `rechnung`-Block (abwärtskompatibel — v1/v2 ohne `zahlungen` bleiben gültig).
+- **UI (statisch geprüft):** `ui/views/orders.js` Import-Banner zählt übernommene Zahlungen; i18n `import.payments`
+  de+en. **SW-Cache** `v96 → v97` (keine neuen Module → Precache unverändert, alle vier Module waren bereits gelistet).
+- **Doku:** `docs/WORKFLOH_IMPORT.md` + `docs/CONNECT.md` auf v3 (Beispiel + Felder + Verhalten + Grenzen).
+
+**Stand:** `node tests/run.mjs` **1001/1001 grün**. Alle berührten Dateien `node --check`-sauber.
+
+**Offen / Grenzen (ehrlich)**
+- **Festschreiben bleibt manuell** (GoBD) — die übernommenen Zahlungen sind Buchungs-Entwürfe.
+- **Überzahlung** wird nicht gesondert behandelt: gemeldete Zahlungen werden faithfully gebucht/vermerkt (wie der
+  bestehende manuelle Teilzahlungs-Pfad); summieren sie über Brutto, wird der Auftrag „bezahlt" und der Nutzer kann
+  das manuell korrigieren.
+- UI/Glue (`orders.js`) **statisch geprüft** (kein Headless-Browser): der reale Import-Lauf mit Zahlungs-Entwürfen
+  ist als **Browser-Sichttest** zu bestätigen.
+- **Weiterhin offen (R4-Familie):** API/Push (Echtzeit) statt Datei. **R5a-Rest** (echte SWIFT/ISO-20022-Schema-
+  Validierung) bleibt der nächste build-freie Code-Korb.
+
+---
+
 ## 2026-06-17 — R5c-Rest: NER-Scoping (Fremd-PII unter EXTERN-Scope) [Branch `claude/r5c-ner-scoping`]
 
 **Ausgangslage / Auswahl** (Schritt nach R6/P2)
