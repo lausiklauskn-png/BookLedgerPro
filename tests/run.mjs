@@ -69,7 +69,7 @@ import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
 import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/ai/mistral.js';
 import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, ANKER_TYP, maskierungsBericht } from '../src/ai/pseudonym.js';
 import { baueAnker } from '../src/ai/anker.js';
-import { erkennePII, piiAnker, kombiniereAnker, NER_TYP } from '../src/ai/ner.js';
+import { erkennePII, piiAnker, kombiniereAnker, NER_TYP, EXTERN_SCOPE } from '../src/ai/ner.js';
 import { baueBriefkasten, briefkastenAnker, briefkastenBericht, tokenizeBriefkasten, EBENE } from '../src/ai/briefkasten.js';
 import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
@@ -1357,6 +1357,37 @@ await section('NER: piiAnker entdoppelt + kombiniereAnker (exakt hat Vorrang)', 
   const k2 = kombiniereAnker([{ wert: 'kunde@x.de', typ: ANKER_TYP.PERSON }], 'Mail kunde@x.de');
   const r2 = tokenize('Mail kunde@x.de', k2);
   ok('Stammdaten-Typ gewinnt (PERSON statt EMAIL)', r2.map[0].typ === ANKER_TYP.PERSON);
+});
+
+await section('NER-Scoping: Fremd-PII trägt im Briefkasten-Modus den EXTERN-Scope', () => {
+  const text = 'Lieferant zahlbar auf IBAN DE89 3704 0044 0532 0130 00, Rückfragen fremd@extern.de, Tel +49 30 1234567.';
+
+  // Konstante + Rückwärtskompatibilität: ohne Scope bleiben die Typen flach.
+  ok('EXTERN_SCOPE = "EXTERN"', EXTERN_SCOPE === 'EXTERN');
+  const flach = piiAnker(text);
+  ok('flach: E-Mail-Typ unverändert EMAIL', flach.find((a) => a.wert === 'fremd@extern.de').typ === ANKER_TYP.EMAIL);
+  ok('flach: Telefon-Typ unverändert TELEFON', flach.find((a) => a.typ === NER_TYP.TELEFON) !== undefined);
+
+  // Mit Scope: jeder NER-Typ trägt das Scope-Präfix.
+  const scoped = piiAnker(text, { scope: EXTERN_SCOPE });
+  ok('scoped: E-Mail → EXTERN_EMAIL', scoped.find((a) => a.wert === 'fremd@extern.de').typ === 'EXTERN_EMAIL');
+  ok('scoped: IBAN → EXTERN_IBAN', scoped.find((a) => a.wert.replace(/\s/g, '') === 'DE89370400440532013000').typ === 'EXTERN_IBAN');
+  ok('scoped: Telefon → EXTERN_TELEFON', scoped.some((a) => a.typ === 'EXTERN_TELEFON'));
+  ok('gleiche Werte erkannt wie flach', scoped.length === flach.length);
+
+  // Token tragen den Scope → die KI sieht Fremd-PII getrennt von der eigenen Firma.
+  const quelle = 'Meine Firma GmbH überweist an fremd@extern.de.';
+  const exakt = [{ wert: 'Meine Firma GmbH', typ: 'FIRMA_1' }]; // Briefkasten-Scope der eigenen Firma
+  const anker = kombiniereAnker(exakt, quelle, { scope: EXTERN_SCOPE });
+  const { text: pseudo, map } = tokenize(quelle, anker, { wortgrenze: true });
+  ok('eigene Firma bleibt im FIRMA_1-Scope', /\[\[FIRMA_1_\d+\]\]/.test(pseudo) && !pseudo.includes('Meine Firma GmbH'));
+  ok('Fremd-E-Mail als EXTERN_EMAIL maskiert', /\[\[EXTERN_EMAIL_1\]\]/.test(pseudo) && !pseudo.includes('fremd@extern.de'));
+  ok('verlustfreie Re-Identifizierung', reidentify(pseudo, map) === quelle);
+
+  // Stammdaten-Vorrang bleibt: ein bekannter (gescopter) Anker schlägt den EXTERN-NER-Typ.
+  const k = kombiniereAnker([{ wert: 'bekannt@firma.de', typ: 'FIRMA_1_EMAIL' }], 'Mail bekannt@firma.de', { scope: EXTERN_SCOPE });
+  const r = tokenize('Mail bekannt@firma.de', k);
+  ok('Stammdaten-Scope gewinnt (FIRMA_1_EMAIL statt EXTERN_EMAIL)', r.map[0].typ === 'FIRMA_1_EMAIL');
 });
 
 await section('Briefkasten: Hierarchie Mandant ⊃ Firma ⊃ Person (baueBriefkasten)', () => {

@@ -86,8 +86,12 @@ export async function ladeAnker(text) {
       exakt = baueAnker({ kunden, mitarbeiter, firma });
     }
     if (text && settings.nerPii !== false) {
-      const { kombiniereAnker } = await import('./ner.js');
-      return kombiniereAnker(exakt, text);
+      const { kombiniereAnker, EXTERN_SCOPE } = await import('./ner.js');
+      // Im Briefkasten-Modus tragen die exakten Anker Hierarchie-Scopes → die Fremd-PII
+      // wird unter dem externen Scope (EXTERN_*) gruppiert, damit sie sich sichtbar von
+      // den bekannten Mandant-/Firmen-Entitäten abhebt. Im flachen Modus bleibt sie flach.
+      const scope = settings.briefkastenScopes === true ? EXTERN_SCOPE : undefined;
+      return kombiniereAnker(exakt, text, { scope });
     }
     return exakt;
   } catch {

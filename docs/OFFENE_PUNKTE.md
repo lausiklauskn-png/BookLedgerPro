@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R6/P2).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R5c-Rest NER-Scoping).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -362,7 +362,17 @@ Rechnung/USt-Buchung erfolgt in BLP). Damit ist der **Datei-Import** bereits der
   vergibt **scope-präfixierte** Typen → `tokenize` erzeugt gruppierende Token (`[[FIRMA_2_IBAN_1]]`,
   `[[FIRMA_1_PERSON_1]]`). Setting `briefkastenScopes` (Default aus, opt-in), `ladeAnker` routet dann darüber + liest
   den aktiven Mandanten aus der Registry; node-getestet (+26), SW `v93`. **Grenze:** Person-Attribute hängen am
-  Parent-Scope (Firma/Mandant), nicht am einzelnen Personen-Token; NER-Anker bleiben flach.
+  Parent-Scope (Firma/Mandant), nicht am einzelnen Personen-Token.
+- **[ERLEDIGT 2026-06-17] NER-Scoping (R5c-Rest):** ✅ Im Briefkasten-Modus (`briefkastenScopes`) tragen jetzt auch
+  die im Belegtext erkannten **Fremd-PII** (NER: IBAN/E-Mail/USt-IdNr/Steuernr/Telefon Dritter) einen Scope —
+  den externen Scope **`EXTERN`** (`EXTERN_IBAN`, `EXTERN_EMAIL` … → Token `[[EXTERN_IBAN_1]]`) statt flacher Typen.
+  So sieht die KI sie als externe, gruppierte Dritt-Identifikatoren, sichtbar getrennt von den bekannten Mandant-/
+  Firmen-Entitäten; exakte (gescopte) Stammdaten-Anker behalten bei gleichem Wert weiter Typ-Vorrang. `ai/ner.js`
+  (`piiAnker(text,{scope})`/`kombiniereAnker(…,{scope})`, `EXTERN_SCOPE`), `ai/anker.js` reicht den Scope nur im
+  Briefkasten-Modus durch; flacher Pseudonym-Modus unverändert. Plus: Transparenz-Badge (`documents.js`) zeigt
+  scope-präfixierte Typen jetzt lesbar (i18n-`tOpt`-Fallback statt roher Schlüssel). node-getestet (+11), SW `v96`.
+  **Grenze:** EIN gemeinsamer `EXTERN`-Scope — verschiedene Drittparteien werden NICHT geclustert (aus flachem
+  Belegtext nur heuristisch/FP-riskant trennbar → bewusst konservativ).
 - **[SOLL] UI end-to-end testen:** kein Headless-Browser in der Bau-Umgebung → DOM-/IndexedDB-Pfade
   sind nur statisch geprüft. Manuelle Sichttests dokumentieren oder Headless-E2E einführen.
 

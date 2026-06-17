@@ -1322,4 +1322,11 @@ export function t(key) {
   return (STRINGS[_lang] && STRINGS[_lang][key]) || STRINGS.de[key] || key;
 }
 
+// Wie t(), liefert aber `null` statt des Schlüssels, wenn keine Übersetzung existiert —
+// für Aufrufer, die einen eigenen Fallback brauchen (z.B. scope-präfixierte Token-Typen
+// wie `EXTERN_IBAN`/`FIRMA_2_IBAN`, die kein festes Label haben → Roh-Typ anzeigen).
+export function tOpt(key) {
+  return (STRINGS[_lang] && STRINGS[_lang][key]) || STRINGS.de[key] || null;
+}
+
 export const LANGS = ['de', 'en'];

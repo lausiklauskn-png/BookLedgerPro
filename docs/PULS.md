@@ -36,20 +36,25 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R6/Rest" [KANN]** — die verbleibenden R6-Optionen brauchen jeweils
-etwas, das hier fehlt: **Lighthouse/Perf** (Headless-Browser), **lokales OCR** (nur build-frei-sauber, Tesseract ist
-wasm/npm-Runtime → genau prüfen), **ZUGFeRD-Erzeugen** (PDF/A-3-Lib → nicht build-frei), **Sage 5b–d** (fremde Repos,
-menschlich vermittelt). **Daher praktischer nächster Schritt: Browser-Sichttest** (echter Nutzer, kein Headless hier):
-(a) WorkFloh-Datei mit `rechnung`-Block importieren → Buchungsentwurf prüfen; (b) OCR→Verbindlichkeit-Klickpfad
-(Vision EU); (c) Pseudonym-Briefkasten; (d) **Privat-/Verein-Modus** → NAV blendet geschäftliche Ansichten aus **und
-jetzt (P2) zusätzlich USt-Felder/Mahn-/Kreditoren-Knöpfe/KPIs**. Reihenfolge nach Bedarf; Details in
-`docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
-**R6/P2 erledigt (diese Sitzung):** Feature-Gates ansichtsintern konsumiert — `zeigeFeature`/`zeigeAnsicht` jetzt in
-`journal.js` (USt-Satz/Umsatzart/Bewirtung nur bei `UMSATZSTEUER`, Kostenstelle nur bei `KOSTENSTELLEN`, Submit
-erzwingt im Privat-Modus 0 %/Inland), `reports.js` (USt-Karten/Mahnwesen/Kreditoren-OP/Kostenstellen/DATEV-/USt-VA-
-Export je Modus), `documents.js` (Kreditoren-OP aus E-Rechnung/OCR nur bei `VERBINDLICHKEITEN`), `dashboard.js`
-(USt-Zahllast-KPI nur bei USt; Kunden-/Aufträge-KPI nach Ansichts-Sichtbarkeit). Reine Politik unverändert
-(972/972), UI/Glue statisch geprüft. SW `v95`.
+**Nächste PR = nächsten build-freien Rest-Korb abstimmen/umsetzen.** **R6/Rest [KANN] bleibt blockiert** (Umgebung/
+Mensch): **Lighthouse/Perf** (Headless-Browser fehlt), **lokales OCR** (Tesseract = wasm/npm-Runtime → **nicht
+build-frei**, verifiziert: nichts vendored, Regel #1 verbietet CDNs/npm-Runtime), **ZUGFeRD-Erzeugen** (PDF/A-3-Lib →
+nicht build-frei), **Sage 5b–d** (fremde Repos, menschlich vermittelt) — **oder Browser-Sichttest** (echter Nutzer,
+kein Headless hier). **Build-freie Rest-Körbe für eine Code-Sitzung:** **R4-Rest** (Zahlungsstatus/Teilzahlungen aus
+WorkFloh übernehmen, Austauschformat v3 — höherer Geschäftswert) · **R5a-Rest** (echte SWIFT/ISO-20022-Schema-
+Validierung — schwerer/spröder). Browser-Sichttest-Punkte unverändert: (a) WorkFloh-`rechnung`-Block → Buchungsentwurf;
+(b) OCR→Verbindlichkeit (Vision EU); (c) Pseudonym-Briefkasten; (d) Privat-/Verein-Modus (NAV + USt/Mahn/Kreditoren/KPIs).
+Details: `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**R5c-Rest NER-Scoping erledigt (diese Sitzung):** Im Briefkasten-Modus (`briefkastenScopes`) tragen jetzt auch die im
+Belegtext erkannten **Fremd-PII** (NER: IBAN/E-Mail/USt-IdNr/Steuernr/Telefon Dritter) den externen Scope **`EXTERN`**
+(`ai/ner.js`: `piiAnker(text,{scope})`/`kombiniereAnker(…,{scope})`/`EXTERN_SCOPE`; `ai/anker.js` reicht den Scope **nur**
+im Briefkasten-Modus durch) → `tokenize()` erzeugt gruppierende, sichtbar externe Token (`[[EXTERN_IBAN_1]]`) statt
+flacher `[[IBAN_1]]`; exakte (gescopte) Stammdaten behalten Typ-Vorrang; flacher Modus unverändert. Nebenbei:
+Transparenz-Badge (`documents.js`) zeigt scope-präfixierte Typen lesbar (neuer `tOpt`-i18n-Fallback). +11 Tests
+(**983/983**), SW `v96`. UI/Glue statisch geprüft. **Grenze:** EIN `EXTERN`-Scope — keine Clusterung verschiedener
+Drittparteien (aus flachem Belegtext nur heuristisch/FP-riskant → konservativ).
+**R6/P2 erledigt:** Feature-Gates ansichtsintern konsumiert (`zeigeFeature`/`zeigeAnsicht` in journal/reports/documents/
+dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. SW `v95`.
 **R6/P1 erledigt:** `domain/nutzungsmodus.js` (rein, node-getestet) — Nutzungskontext `firma|privat|verein` (Default
 `firma`, Bestand unverändert) neben dem UI-Komplexitäts-`mode`; `zeigeAnsicht`/`sichtbareAnsichten` (NAV-Gating, in
 `shell.js` konsumiert) + `zeigeFeature`/`FEATURE`; Setting `nutzungsmodus`, Schalter „Nutzungskontext", i18n de+en. +30 Tests.
@@ -64,9 +69,9 @@ Export je Modus), `documents.js` (Kreditoren-OP aus E-Rechnung/OCR nur bei `VERB
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach R6/P2):** SW **v95** · Tests **972/972** grün · 97 JS-Module.
+**Kopf-Status (Stand nach R5c-Rest NER-Scoping):** SW **v96** · Tests **983/983** grün · 97 JS-Module.
 **Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1–R5 ✅; R6/P1 ✅ (Privat-/Bürger-Modus); R6/P2 ✅ (Feature-Gates ansichtsintern).** Reihenfolge im Plan:
-~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → ~~R5a~~ → ~~R5b~~ → ~~R5c~~ → ~~R6/P1~~ → ~~R6/P2~~ → R6/Rest (Lighthouse/OCR/ZUGFeRD/Sage 5b–d) bzw. Browser-Sichttest.
+~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → ~~R5a~~ → ~~R5b~~ → ~~R5c~~ → ~~R5c-Rest (NER-Scoping)~~ → ~~R6/P1~~ → ~~R6/P2~~ → R6/Rest (Lighthouse/OCR/ZUGFeRD/Sage 5b–d, blockiert) bzw. R4-Rest/R5a-Rest/Browser-Sichttest.
 **R5c erledigt:** `ai/briefkasten.js` (rein, node-getestet) — `baueBriefkasten({mandant,firma,kunden,mitarbeiter})`
 ordnet die exakten Stammdaten-Anker in **Mandant ⊃ Firma ⊃ Person** ein (eigene Firma = `FIRMA_1`/eigen,
 Mitarbeiter = deren Personen; Firmenkunden = weitere `FIRMA_n` mit ihren E-Mail/USt-IdNr/Adresse-Ankern;
