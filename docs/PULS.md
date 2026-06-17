@@ -36,22 +36,21 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „B3"** (Bilanzierung — Bilanz): in **`src/domain/bilanz.js`**
-(rein, node-getestet) `bilanz(buchungen, idx, stichtag, eröffnungssalden)` → Aktiva/Passiva aus den
-**Bestandskonten-Salden**, Summengleichheit (Aktiva = Passiva), Eröffnungs-/Schlussbilanzkonto; Ansicht + CSV.
-Baut auf der B1-Klassifikation auf (`domain/bilanzierung.js`: `istBestandskonto`/`bilanzSeite`/`klassifiziereKonto`)
-und auf der B2-GuV (Jahresüberschuss fließt ins Eigenkapital). **EHRLICH:** keine Konzernabschlüsse/E-Bilanz-Taxonomie.
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R1"** (Rest-SOLL): Verzugszinsen/Mahngebühren **buchen**
+(A1-Rest) — Konto-Mapping + USt-Behandlung (manuell, kein Auto-Buchen). Reihenfolge im Rest-SOLL nach
+Bedarf (R1…R6); Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
-**B1 (Modus + Kontengrundlage) + B2 (GuV) sind abgeschlossen + gemergt** — siehe `docs/SESSIONS.md` (oberster Eintrag).
 
-**Kopf-Status (Stand nach B2):** SW **v85** · Tests **739/739** grün · 92 JS-Module.
-**Abschnitt A komplett (M1/M2a/M2b/M3); B1 + B2 erledigt.** Reihenfolge im Plan:
-~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → **B3** (Bilanzierung) · danach Rest-SOLL (R1…).
-**Wichtig für B3:** Die GuV (`domain/bilanz.js gewinnUndVerlust`) ist node-getestet + als Karte in „Auswertung"
-(nur Bilanz-Modus). B3 ergänzt dort die **Bilanz**: Bestandskonten (Aktiv/Passiv) je Stichtag salieren
-(`accounts.js saldo`/`mehrungsSeite`, `bilanzSeite`), Aktiva = Passiva prüfen, Eröffnungsbilanz/Eröffnungssalden
-einbeziehen. **Reine Logik ZUERST node-getestet**, dann Ansicht + CSV (DOM als „statisch geprüft"). Modus-Schalter
-`gewinnermittlung` (B1) gatet die Ansicht. **EHRLICH:** keine E-Bilanz-Taxonomie behaupten.
+**Kopf-Status (Stand nach B3):** SW **v86** · Tests **760/760** grün · 92 JS-Module.
+**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3).** Reihenfolge im Plan:
+~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · danach Rest-SOLL (R1…).
+**B3 erledigt:** `domain/bilanz.js bilanz(buchungen, idx, stichtag, eröffnungssalden)` saldiert die Bestandskonten
+(`accounts.js saldo`/`mehrungsSeite`, `bilanzSeite`) zum Stichtag, gliedert in Aktiva/Passiva, lässt den
+Jahresüberschuss/-fehlbetrag (Erfolgskonten) als Ergebnis ins Eigenkapital fließen und prüft **Aktiva = Passiva
+(inkl. Ergebnis)**; Eröffnungssalden via gebuchtem Saldenvortrag (9000) ODER Parameter. Bilanz-Karte in „Auswertung"
+(neben GuV, beide gatet `gewinnermittlung`) + CSV (`buildBilanzCsv`). **EHRLICH:** keine §266-HGB-Gliederung,
+keine Konzernabschlüsse, keine E-Bilanz-Taxonomie; Konten nach Kontoart, nicht nach Saldovorzeichen umgegliedert.
 
 **✅ Bereits fertig & gemergt (NICHT wiederholen):** Profi-Readiness **V1–V10** (Kontenrahmen, §13b,
 AfA/Anlagen, Kassenbuch, USt-VA komplett, Berichte/SuSa, GoBD/GDPdU, DATEV-EXTF, Kleinfälle,
@@ -109,12 +108,17 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-17 (B1) · **Branch (letzte PR):** `claude/bilanzierung-b1-setup-4cx6s3`
-· **Tests:** `node tests/run.mjs` → **726/726 grün**
-· **SW-Cache:** `v84` · **91 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B1 ✅**
-· **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (je 1 PR/Sitzung; nächste = **B2 — GuV**).
+**Letzte Aktualisierung:** 2026-06-17 (B3) · **Branch (letzte PR):** `claude/balance-sheet-b3-56djmn`
+· **Tests:** `node tests/run.mjs` → **760/760 grün**
+· **SW-Cache:** `v86` · **92 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅**
+· **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (je 1 PR/Sitzung; nächste = **R1 — Verzugszinsen buchen**).
 · **B1 ✅:** Bilanzierung-Modus (`gewinnermittlung` euer|bilanz, Default euer) + Konten-Klassifikation
   (`domain/bilanzierung.js`) + Bilanz-Grundkonten 0800/0840/0860/0970 im Seed + Modus-Schalter (PR #87).
+· **B2 ✅:** GuV (`domain/bilanz.js gewinnUndVerlust`) — Erträge/Aufwendungen je Erfolgskonto, Jahresüberschuss;
+  GuV-Karte in „Auswertung" (nur Bilanz-Modus) + `buildGuvCsv` (PR #89).
+· **B3 ✅:** Bilanz (`domain/bilanz.js bilanz`) — Aktiva/Passiva aus Bestandskonten zum Stichtag, Ergebnis ins
+  Eigenkapital, **Aktiva = Passiva (inkl. Ergebnis)** geprüft, Eröffnungssalden (Saldenvortrag 9000 ODER Parameter);
+  Bilanz-Karte in „Auswertung" + `buildBilanzCsv`; +21 Tests (760/760), SW `v86`.
 · **Entscheidungen 17.06.:** ELSTER-Link ✅ · AVV-Links ✅ · §19-Onboarding ✅ · Wirtschaftsjahr ✅ ·
   Übergabe-Datenblatt ✅ · Beleg-Verknüpfung/GoBD-Aufbewahrung ✅ · ZUGFeRD-Empfang+KoSIT ✅ ·
   A4 offene Anbindung (Import/Export + Partner-Link) ✅; **nächste (groß):** Mehrmandanten → Bilanzierung.

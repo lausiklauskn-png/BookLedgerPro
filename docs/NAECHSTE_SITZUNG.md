@@ -18,19 +18,18 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Aktueller nächster Schritt: B3 — Bilanzierung: Bilanz (Aktiva = Passiva).**
+abarbeiten. **Aktueller nächster Schritt: R1 — Verzugszinsen/Mahngebühren buchen (A1-Rest).**
 Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
-**B1 (Modus + Kontengrundlage) und B2 (GuV) sind abgeschlossen + gemergt** (siehe `docs/SESSIONS.md` oben).
-B3 baut auf der B1-Grundlage auf (`src/domain/bilanzierung.js`: Konten-Klassifikation
-`istBestandskonto`/`bilanzSeite`/`klassifiziereKonto`) und auf der B2-GuV (`src/domain/bilanz.js`
-`gewinnUndVerlust`; Jahresüberschuss fließt ins Eigenkapital). In **`src/domain/bilanz.js`** (rein, node-getestet)
-neu: `bilanz(buchungen, idx, stichtag, eröffnungssalden)` → **Aktiva/Passiva** aus den **Bestandskonten-Salden**
-(Salden über `accounts.js saldo`/`mehrungsSeite`, gegliedert nach `bilanzSeite`), **Summengleichheit (Aktiva =
-Passiva)**, Eröffnungs-/Schlussbilanzkonto bzw. Eröffnungssalden einbeziehen; dazu eine **Ansicht** (Bilanz-Karte
-in „Auswertung", neben der GuV-Karte — beide gatet der B1-Modus-Schalter `gewinnermittlung`) + **CSV-Export**
-(Muster: `domain/export.js buildGuvCsv`/`eurToCsv`). **Reine Logik ZUERST node-getestet**, dann UI (DOM/IndexedDB
-als „statisch geprüft" kennzeichnen). Ehrlich bleiben: **keine** Konzernabschlüsse, **keine** E-Bilanz-Taxonomie
-behaupten. Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt B.
+**Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** — B1 (Modus + Kontengrundlage), B2 (GuV),
+B3 (Bilanz) (siehe `docs/SESSIONS.md` oben). R1: Verzugszinsen (§ 288 BGB: B2B 9 %-Punkte über Basiszins,
+B2C 5 %-Punkte; Pauschale 40 € § 288 Abs. 5 BGB bei B2B) und Mahngebühren als **Buchung** abbildbar machen —
+Konto-Mapping (z. B. Zinserträge 2650 / sonstige Erträge 2700) + USt-Behandlung (Verzugszinsen/Mahngebühren
+sind i. d. R. **nicht steuerbarer Schadensersatz** → ohne USt; ehrlich dokumentieren). **Manuell, KEIN
+Auto-Buchen** (GoBD-Disziplin). Die Berechnung existiert bereits im Mahnwesen (`domain/mahnwesen.js`,
+`mahnschreibenDaten`/Verzugszins-Logik) — R1 ergänzt den **Buchungs-Entwurf** daraus. **Reine Logik ZUERST
+node-getestet**, dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen). Plan-Details in
+`docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`. (Falls R1 doch unscharf/zu groß ist:
+feiner schneiden und Plan fortschreiben — nie „halb" mergen.)
 
 MEHRERE PRs ERLAUBT (NEU): Wenn sich mehrere Plan-Punkte **sauber und in sich
 abgeschlossen** in einer Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener
@@ -67,6 +66,6 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach B2 (Abschnitt A Mehrmandanten abgeschlossen; B1 Modus +
-Kontengrundlage + B2 GuV erledigt) · Tests **739/739** · SW **v85** · 92 JS-Module · nächster Schritt
-**B3 (Bilanz)**. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach B3 (Abschnitt A Mehrmandanten abgeschlossen; Abschnitt B
+Bilanzierung B1+B2+B3 abgeschlossen) · Tests **760/760** · SW **v86** · 92 JS-Module · nächster Schritt
+**R1 (Verzugszinsen/Mahngebühren buchen)**. (Diese Zeile bei jeder Sitzung aktualisieren.)

@@ -40,8 +40,8 @@ import { kassenbuchEintraege, kassenbericht, anfangsbestandZeilen, SALDENVORTRAG
 import { buildKassenbuchCsv, buildElsterVaPaket } from '../src/domain/export.js';
 import { VA_ZEITRAUM, voranmeldungsperioden, periodeIndexFuer, sondervorauszahlung, jahresZahllast } from '../src/domain/umsatzsteuer.js';
 import { summenSaldenliste, kontenblatt, anlageEUR, eurGruppeFuer, EUR_GRUPPE } from '../src/domain/berichte.js';
-import { buildSusaCsv, buildKontenblattCsv, buildAnlageEURCsv, buildGuvCsv } from '../src/domain/export.js';
-import { gewinnUndVerlust } from '../src/domain/bilanz.js';
+import { buildSusaCsv, buildKontenblattCsv, buildAnlageEURCsv, buildGuvCsv, buildBilanzCsv } from '../src/domain/export.js';
+import { gewinnUndVerlust, bilanz } from '../src/domain/bilanz.js';
 import { crc32, zipFiles } from '../src/core/zip.js';
 import { gdpduCsvBuchungen, gdpduCsvKonten, buildGdpduIndexXml, buildGdpduPaket } from '../src/domain/gdpdu.js';
 import { kleinbetragsrechnung, geschenkAbzug, bewirtungAufteilung, KLEINBETRAG_GRENZE_CENT, GESCHENK_GRENZE_CENT } from '../src/domain/kleinfaelle.js';
@@ -2226,6 +2226,62 @@ await section('Bilanzierung (B2): Gewinn- und Verlustrechnung', () => {
   ok('GuV-CSV: Jahresfehlbetrag (negativ)', csvOut.includes('Jahresfehlbetrag') && csvOut.includes('-350,00'));
   const guvPlus = gewinnUndVerlust([buchungen[0], buchungen[1]], idx); // nur Erträge
   ok('GuV-CSV: Jahresüberschuss (positiv)', buildGuvCsv(guvPlus).includes('Jahresüberschuss'));
+});
+
+await section('Bilanzierung (B3): Bilanz (Aktiva = Passiva)', () => {
+  const idx = indexFromSeed();
+  // Ausgeglichene Eröffnungsbilanz: 1000 € Bank (Aktiv) = 1000 € Eigenkapital (Passiv).
+  const eb = { '1200': 100000, '0880': 100000 };
+  const buchungen = [
+    // Verkauf 238 (200 Erlös 8400 + 38 USt 1776) auf Bank
+    { seq: 1, datum: '2026-02-10', beschreibung: 'Verkauf', zeilen: [{ konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+    // Miete 500 (4210) per Bank
+    { seq: 2, datum: '2026-02-15', beschreibung: 'Miete', zeilen: [{ konto: '4210', seite: 'S', betrag: 50000 }, { konto: '1200', seite: 'H', betrag: 50000 }] },
+    // Wareneinkauf auf Ziel 357 (300 Ware 3400 + 57 VSt 1576) gegen Verbindlichkeiten 1600
+    { seq: 3, datum: '2026-03-05', beschreibung: 'Ware', zeilen: [{ konto: '3400', seite: 'S', betrag: 30000 }, { konto: '1576', seite: 'S', betrag: 5700 }, { konto: '1600', seite: 'H', betrag: 35700 }] },
+    // Entwurf (seq null) zählt nicht
+    { seq: null, datum: '2026-03-06', zeilen: [{ konto: '1200', seite: 'S', betrag: 1 }, { konto: '8200', seite: 'H', betrag: 1 }] },
+  ];
+
+  const b = bilanz(buchungen, idx, '2026-12-31', eb);
+  // Aktiva: Bank 100000−26200=73800, VSt 1576 = 5700 → Σ 79500.
+  // Passiva: USt 1776 = 3800, Verb. 1600 = 35700, EK 0880 = 100000 → Σ 139500.
+  // JÜ = Erträge 20000 − Aufwendungen (50000+30000) = −60000 (Fehlbetrag).
+  // Σ Passiva inkl. Ergebnis = 139500 − 60000 = 79500 = Σ Aktiva.
+  ok('Bilanz: Summe Aktiva 79500', b.summeAktiva === 79500);
+  ok('Bilanz: Summe Passiva 139500', b.summePassiva === 139500);
+  ok('Bilanz: Jahresfehlbetrag -60000', b.jahresueberschuss === -60000);
+  ok('Bilanz: Passiva inkl. Ergebnis = Aktiva', b.summePassivaMitErgebnis === 79500);
+  ok('Bilanz: Bilanzsumme = Aktiva', b.bilanzsumme === 79500);
+  ok('Bilanz: ausgeglichen (Aktiva = Passiva)', b.ausgeglichen === true && b.differenz === 0);
+  ok('Bilanz: Bank inkl. Eröffnungssaldo 73800', b.aktiva.find((z) => z.nummer === '1200').wert === 73800);
+  ok('Bilanz: EK aus reinem Eröffnungssaldo 100000', b.passiva.find((z) => z.nummer === '0880').wert === 100000);
+  ok('Bilanz: Aktiva nach Nummer sortiert', b.aktiva[0].nummer === '1200' && b.aktiva[1].nummer === '1576');
+  // Erfolgskonten erscheinen NICHT als Bilanzposten.
+  ok('Bilanz: keine Erfolgskonten', !b.aktiva.concat(b.passiva).some((z) => ['8400', '4210', '3400'].includes(z.nummer)));
+  ok('Bilanz: Entwurf ausgeschlossen', b.aktiva.find((z) => z.nummer === '1200').wert === 73800);
+
+  // Stichtag grenzt ein: nur bis Februar → Wareneinkauf (März) fällt raus.
+  const feb = bilanz(buchungen, idx, '2026-02-28', eb);
+  ok('Bilanz-Stichtag: ohne März-Verbindlichkeit', !feb.passiva.some((z) => z.nummer === '1600'));
+  ok('Bilanz-Stichtag: weiterhin ausgeglichen', feb.ausgeglichen === true);
+
+  // Ohne Eröffnungssalden (greenfield) ist die Bilanz trotzdem ausgeglichen.
+  const ohneEB = bilanz(buchungen, idx, '2026-12-31');
+  ok('Bilanz ohne EB: ausgeglichen', ohneEB.ausgeglichen === true);
+  ok('Bilanz ohne EB: Aktiva 100000 weniger', ohneEB.summeAktiva === -20500);
+
+  // Unausgeglichene Eröffnungsbilanz → ausgeglichen=false, Differenz ≠ 0.
+  const schief = bilanz(buchungen, idx, '2026-12-31', { '1200': 100000 });
+  ok('Bilanz schief: nicht ausgeglichen', schief.ausgeglichen === false && schief.differenz === 100000);
+
+  // CSV.
+  const csvOut = buildBilanzCsv(b);
+  ok('Bilanz-CSV: Stichtag', csvOut.includes('2026-12-31'));
+  ok('Bilanz-CSV: Summe Aktiva', csvOut.includes('Summe Aktiva') && csvOut.includes('795,00'));
+  ok('Bilanz-CSV: Jahresfehlbetrag-Ergebnis', csvOut.includes('Jahresfehlbetrag (Ergebnis)') && csvOut.includes('-600,00'));
+  ok('Bilanz-CSV: ausgeglichen → keine Differenz-Zeile', !csvOut.includes('NICHT ausgeglichen'));
+  ok('Bilanz-CSV schief: Differenz-Zeile', buildBilanzCsv(schief).includes('NICHT ausgeglichen'));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

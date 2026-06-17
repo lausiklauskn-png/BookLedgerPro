@@ -5,6 +5,40 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — B3: Bilanzierung — Bilanz (Aktiva = Passiva) [Branch `claude/balance-sheet-b3-56djmn`]
+
+**Was getan** (NACHFOLGE_PLAN.md, Schritt **B3** — Abschnitt B Bilanzierung, schließt Abschnitt B ab)
+- **Reine Logik zuerst (`src/domain/bilanz.js`, node-getestet):** `bilanz(buchungen, idx, stichtag, eröffnungssalden)`
+  saldiert die **Bestandskonten** (Aktiv/Passiv) aus den **festgeschriebenen** Buchungen bis einschließlich Stichtag
+  (`taxes.kontoBewegungen({bis: stichtag})`, Bestand kumulativ → kein `von`), Salden über die Mehrungsseite
+  (`accounts.saldo`/`mehrungsSeite`), gegliedert nach `bilanzSeite` (B1) in **Aktiva**/**Passiva** (je {nummer,name,wert},
+  nach Nummer sortiert, Null-Salden raus). Der **Jahresüberschuss/-fehlbetrag** der Erfolgskonten (Σ Erträge − Σ
+  Aufwendungen über denselben Zeitraum) fließt als **Ergebnis ins Eigenkapital (Passiva)** → Grundgleichung
+  **Aktiva = Passiva (inkl. Ergebnis)** mit `summePassivaMitErgebnis`, `bilanzsumme`, `differenz`, `ausgeglichen`.
+  **Eröffnungssalden** via gebuchtem Saldenvortrag (Konto 9000) ODER über den Parameter `eröffnungssalden`
+  (Kontonummer→Cent, Mehrungsseite-positiv; ausgeglichene Eröffnungsbilanz vorausgesetzt). Entwürfe (`seq==null`)
+  zählen nicht.
+- **`domain/export.js`:** `buildBilanzCsv(bilanz)` (Spalten Seite/Konto/Bezeichnung/Betrag, Stichtag-Kopf, Summe
+  Aktiva, Passiva-Posten + Ergebnis, Summe Passiva inkl. Ergebnis, bei Unausgeglichenheit Differenz-Zeile).
+- **UI (`ui/views/reports.js`, statisch geprüft):** **Bilanz-Karte** in „Auswertung" neben der GuV-Karte — **nur im
+  Bilanz-Modus** (`istBilanzierung(getSettings())` gatet, B1-Schalter `gewinnermittlung`), Stichtag = Perioden-`bis`,
+  Aktiva-/Passiva-Listen, Ergebnis-Posten, Ausgeglichen-Status (✓ oder Differenz), CSV-Export-Knopf + Druck.
+- **i18n** (de+en) `reports.bilanz*`. **SW-Cache `v86`** (`bilanz.js`/`bilanzierung.js` bereits precached).
+- **Tests 760/760** grün (+21 neue: Summengleichheit, Ergebnis ins EK, Eröffnungssalden (gebucht + reiner Bestand),
+  Stichtag-Eingrenzung, greenfield-Ausgleich, unausgeglichene Eröffnungsbilanz → `ausgeglichen=false`/`differenz`,
+  Erfolgskonten-Ausschluss, Entwurf-Ausschluss, CSV inkl. Differenz-Zeile).
+
+**Stand:** B3 vollständig → **Abschnitt B (Bilanzierung) abgeschlossen** (B1+B2+B3). Reine Logik node-getestet
+(760/760); UI/Glue (Bilanz-Karte, Modus-Gate über IndexedDB-Settings) **statisch geprüft** (kein Headless-Browser hier).
+**Offen/Nächstes:** **R1 — Verzugszinsen/Mahngebühren buchen** (A1-Rest): Konto-Mapping + USt-Behandlung
+(manuell, kein Auto-Buchen). Danach R2…R6 nach Bedarf (siehe NACHFOLGE_PLAN.md Abschnitt R).
+**Grenze (ehrlich):** Bilanz im **Konten-Sinn** (Salden je Konto), **KEINE** amtliche §266-HGB-Gliederung, **kein**
+Konzernabschluss, **keine** E-Bilanz-Taxonomie. Konten werden nach **Kontoart** zugeordnet, **nicht** nach
+Saldovorzeichen umgegliedert (ein Bankkonto im Haben-Saldo bleibt negativ auf der Aktivseite). Eine separate
+**Eröffnungsbilanz-Eingabemaske** gibt es noch nicht — Eröffnungssalden kommen aus gebuchten Saldenvorträgen (9000).
+
+---
+
 ## 2026-06-17 — B2: Bilanzierung — GuV (Gewinn- und Verlustrechnung) [Branch `claude/bookledgerpro-b2-guv-n3r6or`]
 
 **Was getan** (NACHFOLGE_PLAN.md, Schritt **B2** — Abschnitt B Bilanzierung)

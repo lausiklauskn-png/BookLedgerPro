@@ -6,8 +6,8 @@ import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
 import { computeUStVoranmeldung, computeEUR, computeEURIst, verprobeUSt } from '../../domain/taxes.js';
 import { kostenstellenAuswertung } from '../../domain/costcenters.js';
-import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv, buildOffeneVerbindlichkeitenCsv, buildElsterVaPaket, buildGuvCsv } from '../../domain/export.js';
-import { gewinnUndVerlust } from '../../domain/bilanz.js';
+import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv, buildOffeneVerbindlichkeitenCsv, buildElsterVaPaket, buildGuvCsv, buildBilanzCsv } from '../../domain/export.js';
+import { gewinnUndVerlust, bilanz } from '../../domain/bilanz.js';
 import { istBilanzierung } from '../../domain/bilanzierung.js';
 import { VA_ZEITRAUM, voranmeldungsperioden, periodeIndexFuer, sondervorauszahlung, jahresZahllast } from '../../domain/umsatzsteuer.js';
 import { downloadText } from '../../core/files.js';
@@ -52,9 +52,13 @@ async function repaint() {
   const verprobung = verprobeUSt(buchungen, idx, p);
   const eur = computeEUR(buchungen, idx, p);
   const eurIst = computeEURIst(buchungen, idx, p);
-  // GuV nur im Bilanzierungs-Modus (B1-Schalter gewinnermittlung) — gatet die Ansicht.
+  // GuV + Bilanz nur im Bilanzierungs-Modus (B1-Schalter gewinnermittlung) — gatet die Ansicht.
   const bilanzModus = istBilanzierung(getSettings());
   const guv = bilanzModus ? gewinnUndVerlust(buchungen, idx, p) : null;
+  // Bilanz zum Stichtag: nur das Periodenende (`bis`) zählt; Bestand ist kumulativ.
+  // Eröffnungssalden kommen aus gebuchten Saldenvorträgen (Konto 9000) — eine
+  // separate Eröffnungsbilanz-Eingabe gibt es (noch) nicht.
+  const bilanzReport = bilanzModus ? bilanz(buchungen, idx, p && p.bis ? p.bis : undefined) : null;
   const va = buildUstVa(buchungen, idx, p);
   const ks = kostenstellenAuswertung(buchungen, idx, p);
   const audit = await verifyAuditChain();
@@ -88,6 +92,7 @@ async function repaint() {
       eurCard(eur),
     ]),
     guv ? guvCard(guv) : null,
+    bilanzReport ? bilanzCard(bilanzReport) : null,
     eurIstCard(eurIst),
     vaCard(va),
     vaPeriodeCard(buchungen, idx),
@@ -496,6 +501,42 @@ function guvCard(guv) {
       }),
     ]),
     el('p', { class: 'muted small', text: t('reports.guvNote') }),
+  ]);
+}
+
+// Bilanz (Bilanzierung, B3): Aktiva/Passiva aus den Bestandskonten zum Stichtag;
+// der Jahresüberschuss/-fehlbetrag fließt als Ergebnis ins Eigenkapital (Passiva).
+function bilanzCard(b) {
+  const stamp = new Date().toISOString().slice(0, 10);
+  const kontoZeile = (z) => el('div', { class: 'report-line' }, [
+    el('span', {}, [el('span', { class: 'mono small', text: z.nummer + ' ' }), el('span', { text: z.name })]),
+    el('span', { class: 'num', text: formatEuro(z.wert) }),
+  ]);
+  const summenZeile = (label, cents) => el('div', { class: 'report-line strong' }, [
+    el('span', { text: label }), el('span', { class: 'num', text: formatEuro(cents) }),
+  ]);
+  const ueberschuss = b.jahresueberschuss >= 0;
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.bilanz') + (b.stichtag ? ` (${b.stichtag})` : '') }),
+    el('h3', { class: 'small muted', text: t('reports.bilanzAktiva') }),
+    ...b.aktiva.map(kontoZeile),
+    summenZeile(t('reports.bilanzSumAktiva'), b.summeAktiva),
+    el('h3', { class: 'small muted', text: t('reports.bilanzPassiva') }),
+    ...b.passiva.map(kontoZeile),
+    zeile(ueberschuss ? t('reports.guvUeberschuss') : t('reports.guvFehlbetrag'), b.jahresueberschuss),
+    summenZeile(t('reports.bilanzSumPassiva'), b.summePassivaMitErgebnis),
+    el('div', { class: 'mycel-divider' }),
+    el('div', { class: 'report-line' + (b.ausgeglichen ? '' : ' strong') }, [
+      el('span', { text: b.ausgeglichen ? t('reports.bilanzAusgeglichen') : t('reports.bilanzUnausgeglichen') }),
+      el('span', { class: 'num', text: b.ausgeglichen ? '✓' : formatEuro(b.differenz) }),
+    ]),
+    el('div', { class: 'btn-row no-print' }, [
+      el('button', {
+        class: 'btn btn-sm', text: t('reports.bilanzExport'),
+        onClick: () => downloadText(`bilanz-${stamp}.csv`, BOM + buildBilanzCsv(b), 'text/csv'),
+      }),
+    ]),
+    el('p', { class: 'muted small', text: t('reports.bilanzNote') }),
   ]);
 }
 

@@ -3,8 +3,8 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **739/739 grün**, SW `v85`.
-> Nächster Schritt: **B3 — Bilanz** (A abgeschlossen, B1 ✅, B2 ✅).
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **760/760 grün**, SW `v86`.
+> Nächster Schritt: **R1 — Verzugszinsen/Mahngebühren buchen** (A abgeschlossen, B1/B2/B3 ✅ → Abschnitt B fertig).
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -87,9 +87,15 @@
   `domain/export.js`. GuV-Karte in „Auswertung" (`ui/views/reports.js`), **nur im Bilanz-Modus** sichtbar
   (B1-Schalter `gewinnermittlung` gatet die Ansicht), inkl. CSV-Export + Druck. i18n de+en, SW `v85`, **+13 Tests
   (739/739)**. UI/Glue statisch geprüft. EHRLICH: GuV im Konten-Sinn, KEINE amtliche §275-HGB-Gliederung. (PR B2.)
-- [ ] **B3 — Bilanz.** `bilanz(buchungen, idx, stichtag, eröffnungssalden)` → Aktiva/Passiva aus den
-  Bestandskonten-Salden, Summengleichheit (Aktiva = Passiva), Eröffnungs-/Schlussbilanzkonto; Ansicht + CSV.
-  Ehrlich: keine Konzernabschlüsse/E-Bilanz-Taxonomie — als Grenze dokumentieren.
+- [x] **B3 — Bilanz.** ✅ `src/domain/bilanz.js` (rein, node-getestet): `bilanz(buchungen, idx, stichtag, eröffnungssalden)`
+  → Aktiva/Passiva aus den **Bestandskonten-Salden** zum Stichtag (`accounts.saldo`/`mehrungsSeite`, gegliedert nach
+  `bilanzSeite`), der **Jahresüberschuss/-fehlbetrag** der Erfolgskonten fließt als Ergebnis ins **Eigenkapital
+  (Passiva)** → **Summengleichheit Aktiva = Passiva (inkl. Ergebnis)** (`ausgeglichen`/`differenz`). Eröffnungssalden
+  über gebuchten **Saldenvortrag (9000)** ODER den Parameter `eröffnungssalden`. `buildBilanzCsv` in `domain/export.js`.
+  Bilanz-Karte in „Auswertung" (`ui/views/reports.js`), **nur im Bilanz-Modus** (B1-Schalter `gewinnermittlung` gatet,
+  neben der GuV-Karte), inkl. CSV-Export + Druck; Stichtag = Perioden-`bis`. i18n de+en, SW `v86`, **+21 Tests
+  (760/760)**. UI/Glue statisch geprüft. EHRLICH: Bilanz im Konten-Sinn, KEINE §266-HGB-Gliederung, kein
+  Konzernabschluss, keine E-Bilanz-Taxonomie; Konten nach Kontoart, nicht nach Saldovorzeichen umgegliedert. (PR B3.)
 
 ## R) Rest-SOLL (nach A+B, Reihenfolge nach Bedarf)
 - [ ] **R1** Verzugszinsen/Mahngebühren **buchen** (A1-Rest): Konto-Mapping + USt-Behandlung (manuell, kein Auto-Buchen).
