@@ -25,8 +25,8 @@ ein PR, bei grüner CI selbstständig mergen**):
 
 **Festgelegte Bau-Reihenfolge (je eigener PR, Freibrief-Merge):**
 1. ✅ ELSTER-Weiterleitungs-Link + AVV-Anbieterlinks (klein) — *diese Sitzung*.
-2. §19-Kleinunternehmer-Abfrage im Onboarding (Punkt 27, klein).
-3. Abweichendes Wirtschaftsjahr (Punkt 28, klein/mittel).
+2. ✅ §19-Kleinunternehmer-Abfrage im Onboarding (Punkt 27) — *erledigt*.
+3. Abweichendes Wirtschaftsjahr (Punkt 28, klein/mittel) — **als Nächstes**.
 4. Steuerberater-Übergabe-/Datenblatt (Punkt 31, klein).
 5. Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (Punkt 29, mittel).
 6. ZUGFeRD (PDF/A-3) + KoSIT-Validierung (groß).
@@ -36,7 +36,8 @@ ein PR, bei grüner CI selbstständig mergen**):
 10. ELSTER-Stufe 2 / Restpunkte B/C nach Bedarf.
 
 ### Neu aufgenommene Klein-/Folgepunkte (aus Brainstorming-Abgleich)
-- [ ] **27 — §19-Kleinunternehmer-Abfrage im Onboarding** (heute nur in Einstellungen). [SOLL, klein]
+- [x] **27 — §19-Kleinunternehmer-Abfrage im Onboarding** ✅ (Schritt zwischen Shamir &amp; Backup,
+      `lock.js stepProfil`, speichert `kleinunternehmer`; in Einstellungen weiter änderbar). [erledigt]
 - [ ] **28 — Abweichendes Wirtschaftsjahr** (nicht nur Kalenderjahr) in USt-VA-Perioden + EXTF-WJ. [SOLL]
 - [ ] **29 — Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung** (Belegnummer, Original-Archiv, 10-J.-Frist-Hinweis). [SOLL]
 - [ ] **31 — Steuerberater-Übergabe-Datenblatt** (kompaktes „so importieren" + Kennzahlen, baut auf TESTDATEN/DATEV_IMPORT). [SOLL]
