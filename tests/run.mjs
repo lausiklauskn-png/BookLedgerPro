@@ -33,7 +33,8 @@ import { baueRechnung, pflichtangaben, formatRechnungsnummer } from '../src/doma
 import { findeRechtsregeln, onDeviceBegruendung } from '../src/domain/rechtsregeln.js';
 import { buildBegruendungMessages, parseBegruendung, begruendeBuchung } from '../src/ai/berater.js';
 import { auftragSummen, darfWechseln, validateAuftrag, auftragOffen, auftragGezahlt } from '../src/domain/orders.js';
-import { rechnungZeilen, rechnungsUebernahmeEntwurf, validateRechnungsUebernahme } from '../src/domain/invoicing.js';
+import { rechnungZeilen, rechnungsUebernahmeEntwurf, validateRechnungsUebernahme,
+  zahlungsUebernahmeEntwurf, validateZahlungsUebernahme } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
 import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, istEinfacherSatz, buildUstVa, centsToComma, ustVaToCsv, buildAnlagenverzeichnisCsv, buildUebergabeText } from '../src/domain/export.js';
@@ -659,6 +660,46 @@ await section('R4 Stufe 2: Rechnungs-Übernahme — Normalisierung + Buchungsent
   ok('Übernahme-Buchung ausgeglichen', istAusgeglichen(e.zeilen));
   // Ohne Titel: Beschreibung ohne Doppelpunkt-Rest.
   ok('Beschreibung ohne Titel sauber', rechnungsUebernahmeEntwurf({ positionen: [] }, { nummer: 'R-7', datum: '2026-01-01' }).beschreibung === 'Rechnung R-7 (WorkFloh)');
+});
+
+await section('R4-Rest: Zahlungs-/Teilzahlungs-Übernahme (Austauschformat v3)', () => {
+  // Normalisierung: gültige Zahlungen übernehmen, unvollständige verwerfen, Euro→Cent.
+  const norm = normalizeImport({
+    auftraege: [
+      { externNummer: 'A-20', titel: 'Webseite', positionen: [{ menge: 1, einzelpreisCent: 100000, ustSatz: 19 }],
+        rechnung: { nummer: '2026-0100', datum: '2026-06-10', zahlungen: [
+          { datum: '2026-06-15', betragCent: 50000, ref: 'VZ-1' },   // gültig (Cent)
+          { datum: '2026-06-20', betrag: '690,00' },                  // gültig (Euro-String → 69000)
+          { datum: 'kaputt', betragCent: 1000 },                      // ungültiges Datum → verworfen
+          { datum: '2026-06-21', betragCent: 0 },                     // Betrag 0 → verworfen
+        ] } },
+    ],
+  });
+  const z = norm.auftraege[0].rechnung.zahlungen;
+  ok('zwei gültige Zahlungen normalisiert', z.length === 2);
+  ok('Zahlung 1: Cent + ref übernommen', z[0].betragCent === 50000 && z[0].ref === 'VZ-1');
+  ok('Zahlung 2: Euro→Cent (69000), ohne ref', z[1].betragCent === 69000 && z[1].ref === undefined);
+  ok('zwei Warnungen für unvollständige Zahlungen', norm.warnungen.filter((w) => /Zahlung \d+ unvollständig/.test(w)).length === 2);
+
+  // Validierung der Zahlungs-Übernahme.
+  ok('Validierung: vollständig ok', validateZahlungsUebernahme({ datum: '2026-06-15', betragCent: 100 }).length === 0);
+  ok('Validierung: ungültiges Datum erkannt', validateZahlungsUebernahme({ datum: '15.06.2026', betragCent: 100 }).length === 1);
+  ok('Validierung: nicht-positiver Betrag erkannt', validateZahlungsUebernahme({ datum: '2026-06-15', betragCent: 0 }).length === 1);
+
+  // Buchungsentwurf Zahlungseingang: Soll Bank 1200 / Haben Forderung 1400, ausgeglichen.
+  const e = zahlungsUebernahmeEntwurf({ nummer: '2026-0100' }, { datum: '2026-06-15', betragCent: 50000, ref: 'VZ-1' });
+  ok('Datum aus Zahlung', e.datum === '2026-06-15');
+  ok('Beschreibung nennt Rechnung + WorkFloh', /Zahlungseingang Rechnung 2026-0100 \(WorkFloh\)/.test(e.beschreibung));
+  ok('Soll Bank 1200 = 50000', zeile(e.zeilen, '1200', 'S')?.betrag === 50000);
+  ok('Haben Forderung 1400 = 50000', zeile(e.zeilen, '1400', 'H')?.betrag === 50000);
+  ok('Zahlungseingang ausgeglichen', istAusgeglichen(e.zeilen));
+  ok('ref übernommen', e.ref === 'VZ-1');
+  ok('ref-Fallback = Rechnungsnummer', zahlungsUebernahmeEntwurf({ nummer: 'R-9' }, { datum: '2026-06-15', betragCent: 100 }).ref === 'R-9');
+
+  // Abwärtskompatibel: Rechnung ohne zahlungen trägt kein Feld.
+  const ohne = normalizeImport({ auftraege: [{ externNummer: 'A-21', titel: 'X', positionen: [{ menge: 1, einzelpreisCent: 100, ustSatz: 0 }],
+    rechnung: { nummer: 'R-1', datum: '2026-06-10' } }] });
+  ok('Rechnung ohne zahlungen → Feld fehlt', ohne.auftraege[0].rechnung.zahlungen === undefined);
 });
 
 await section('Rechtsregeln (Grounding) + KI-Berater (Begründung mit §-Bezug)', () => {
@@ -2549,7 +2590,7 @@ await section('Punkt 7/A4: Offenes Austauschformat (Anbindung andere Buchhaltung
   const kunden = [{ id: 'kunde:1', name: 'Beispiel GmbH', anschrift: 'Weg 2', email: 'a@b.de', ustId: 'DE123' }];
   const auftraege = [{ id: 'A-1', kundeId: 'kunde:1', titel: 'Auftrag X', positionen: [{ beschreibung: 'Leistung', menge: 1, einzelpreisCent: 100000, ustSatz: 19 }] }];
   const paket = buildAustauschPaket({ kunden, auftraege });
-  ok('Export: Format/Version-Header (v2)', paket.format === AUSTAUSCH_FORMAT && paket.version === 2);
+  ok('Export: Format/Version-Header (v3)', paket.format === AUSTAUSCH_FORMAT && paket.version === 3);
   ok('Export: Kunde + Auftrag übernommen', paket.kunden[0].name === 'Beispiel GmbH' && paket.auftraege[0].positionen[0].einzelpreisCent === 100000);
   ok('Export: Auftrag ohne Rechnung trägt kein rechnung-Feld', paket.auftraege[0].rechnung === undefined);
 
@@ -2564,6 +2605,16 @@ await section('Punkt 7/A4: Offenes Austauschformat (Anbindung andere Buchhaltung
   ok('Export: berechneter Auftrag trägt rechnung-Block', paket2.auftraege[0].rechnung && paket2.auftraege[0].rechnung.nummer === '2026-0001');
   const norm2 = normalizeImport(parseAustauschPaket(JSON.stringify(paket2)).obj);
   ok('Round-trip: Rechnung übernommen', norm2.auftraege[0].rechnung && norm2.auftraege[0].rechnung.datum === '2026-06-01');
+
+  // R4-Rest (v3): berechneter Auftrag MIT (Teil-)Zahlungen exportiert sie reziprok.
+  const paket3 = buildAustauschPaket({ kunden, auftraege: [{ ...auftraege[0], rechnungNummer: '2026-0002', rechnungDatum: '2026-06-01',
+    zahlungen: [{ datum: '2026-06-05', betragCent: 60000, ref: 'VZ' }, { datum: 'kaputt', betragCent: 100 }] }] });
+  ok('Export: Rechnung trägt zahlungen-Block (nur gültige)', paket3.auftraege[0].rechnung.zahlungen.length === 1 && paket3.auftraege[0].rechnung.zahlungen[0].betragCent === 60000);
+  const norm3 = normalizeImport(parseAustauschPaket(JSON.stringify(paket3)).obj);
+  ok('Round-trip: Zahlung übernommen', norm3.auftraege[0].rechnung.zahlungen[0].ref === 'VZ');
+  // Auftrag ohne Rechnung trägt keine zahlungen.
+  const paket4 = buildAustauschPaket({ kunden, auftraege: [{ ...auftraege[0], zahlungen: [{ datum: '2026-06-05', betragCent: 100 }] }] });
+  ok('Export: ohne Rechnung kein zahlungen-Block', paket4.auftraege[0].rechnung === undefined);
 
   // Abwärtskompatibel: „bare" WorkFloh-Format ohne format/version.
   const bare = parseAustauschPaket(JSON.stringify({ kunden: [{ name: 'X' }], auftraege: [] }));

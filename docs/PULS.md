@@ -36,23 +36,28 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = nächsten build-freien Rest-Korb abstimmen/umsetzen.** **R6/Rest [KANN] bleibt blockiert** (Umgebung/
-Mensch): **Lighthouse/Perf** (Headless-Browser fehlt), **lokales OCR** (Tesseract = wasm/npm-Runtime → **nicht
-build-frei**, verifiziert: nichts vendored, Regel #1 verbietet CDNs/npm-Runtime), **ZUGFeRD-Erzeugen** (PDF/A-3-Lib →
-nicht build-frei), **Sage 5b–d** (fremde Repos, menschlich vermittelt) — **oder Browser-Sichttest** (echter Nutzer,
-kein Headless hier). **Build-freie Rest-Körbe für eine Code-Sitzung:** **R4-Rest** (Zahlungsstatus/Teilzahlungen aus
-WorkFloh übernehmen, Austauschformat v3 — höherer Geschäftswert) · **R5a-Rest** (echte SWIFT/ISO-20022-Schema-
-Validierung — schwerer/spröder). Browser-Sichttest-Punkte unverändert: (a) WorkFloh-`rechnung`-Block → Buchungsentwurf;
-(b) OCR→Verbindlichkeit (Vision EU); (c) Pseudonym-Briefkasten; (d) Privat-/Verein-Modus (NAV + USt/Mahn/Kreditoren/KPIs).
+**Nächste PR = letzten build-freien Rest-Korb umsetzen: R5a-Rest** (echte SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-
+Validierung — schwerer/spröder; heute nur Plausibilitäts-/Integritätsprüfung in `domain/bankimport.js`). **R6/Rest
+[KANN] bleibt blockiert** (Umgebung/Mensch): **Lighthouse/Perf** (Headless-Browser fehlt), **lokales OCR** (Tesseract =
+wasm/npm-Runtime → **nicht build-frei**, verifiziert: nichts vendored, Regel #1 verbietet CDNs/npm-Runtime),
+**ZUGFeRD-Erzeugen** (PDF/A-3-Lib → nicht build-frei), **Sage 5b–d** (fremde Repos, menschlich vermittelt) — **oder
+Browser-Sichttest** (echter Nutzer, kein Headless hier). Browser-Sichttest-Punkte unverändert: (a) WorkFloh-`rechnung`-
+Block (jetzt inkl. `zahlungen[]`) → Buchungsentwurf + Zahlungseingang; (b) OCR→Verbindlichkeit (Vision EU);
+(c) Pseudonym-Briefkasten; (d) Privat-/Verein-Modus (NAV + USt/Mahn/Kreditoren/KPIs).
 Details: `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
-**R5c-Rest NER-Scoping erledigt (diese Sitzung):** Im Briefkasten-Modus (`briefkastenScopes`) tragen jetzt auch die im
-Belegtext erkannten **Fremd-PII** (NER: IBAN/E-Mail/USt-IdNr/Steuernr/Telefon Dritter) den externen Scope **`EXTERN`**
-(`ai/ner.js`: `piiAnker(text,{scope})`/`kombiniereAnker(…,{scope})`/`EXTERN_SCOPE`; `ai/anker.js` reicht den Scope **nur**
-im Briefkasten-Modus durch) → `tokenize()` erzeugt gruppierende, sichtbar externe Token (`[[EXTERN_IBAN_1]]`) statt
-flacher `[[IBAN_1]]`; exakte (gescopte) Stammdaten behalten Typ-Vorrang; flacher Modus unverändert. Nebenbei:
-Transparenz-Badge (`documents.js`) zeigt scope-präfixierte Typen lesbar (neuer `tOpt`-i18n-Fallback). +11 Tests
-(**983/983**), SW `v96`. UI/Glue statisch geprüft. **Grenze:** EIN `EXTERN`-Scope — keine Clusterung verschiedener
-Drittparteien (aus flachem Belegtext nur heuristisch/FP-riskant → konservativ).
+**R4-Rest Zahlungs-/Teilzahlungs-Übernahme erledigt (diese Sitzung):** Eine `rechnung` darf im Austauschformat **v3**
+ein optionales `zahlungen[]` `{datum, betragCent|betrag, ref?}` tragen. `importworkfloh.normalizeZahlungen` (rein)
+normalisiert konservativ (ISO-Datum + positiver Betrag, Euro/Cent; unvollständig → verworfen + Warnung);
+`invoicing.zahlungsUebernahmeEntwurf`/`validateZahlungsUebernahme` (rein) bauen je Zahlung einen Zahlungseingang-ENTWURF
+**Soll Bank 1200 / Haben Forderung 1400**; `crm-store.importWorkFloh` bucht je Zahlung den Entwurf + vermerkt die
+(Teil-)Zahlung am Auftrag (Auto-„bezahlt" bei `auftragOffen <= 0`) und meldet `zahlungenUebernommen`;
+`connect.buildAustauschPaket` trägt die Zahlungen reziprok mit (**v3**, abwärtskompatibel). Import-Banner zählt sie;
+i18n de+en. +18 Tests (**1001/1001**), SW `v97`. UI/Glue statisch geprüft. **Grenze:** Überzahlung nicht gesondert
+behandelt (faithful gebucht, manuell korrigierbar); Festschreiben bleibt manuell (GoBD).
+**R5c-Rest NER-Scoping erledigt:** Im Briefkasten-Modus (`briefkastenScopes`) tragen die im Belegtext erkannten
+**Fremd-PII** den externen Scope **`EXTERN`** (`ai/ner.js`/`ai/anker.js`) → gruppierende, sichtbar externe Token
+(`[[EXTERN_IBAN_1]]`); Transparenz-Badge zeigt scope-präfixierte Typen lesbar (`tOpt`-i18n-Fallback). **Grenze:** EIN
+`EXTERN`-Scope — keine Clusterung verschiedener Drittparteien (FP-riskant → konservativ).
 **R6/P2 erledigt:** Feature-Gates ansichtsintern konsumiert (`zeigeFeature`/`zeigeAnsicht` in journal/reports/documents/
 dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. SW `v95`.
 **R6/P1 erledigt:** `domain/nutzungsmodus.js` (rein, node-getestet) — Nutzungskontext `firma|privat|verein` (Default
@@ -61,6 +66,7 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **R5c (dreistufiger Briefkasten Mandant ⊃ Firma ⊃ Person für Pseudonymisierung/CRM, `ai/briefkasten.js`, Setting `briefkastenScopes`) ist abgeschlossen + gemergt → Abschnitt R bis R5 komplett.**
 **R5a (Bankformate härten: CAMT .052/.054 + Saldo-Integritätsprüfung + strukturierte RmtInf) ist abgeschlossen + gemergt.**
 **R5b (NER: PII Dritter — E-Mail/IBAN/USt-IdNr/Steuernr/Telefon — über die Anker hinaus maskieren, `ai/ner.js`, Setting `nerPii`) ist abgeschlossen + gemergt.**
+**R4-Rest (Zahlungs-/Teilzahlungs-Übernahme aus WorkFloh: `rechnung.zahlungen[]` → Zahlungseingang-Entwurf Bank an Forderung + (Teil-)Zahlung am Auftrag; Austauschformat v3; API/Push bewusst offen) ist abgeschlossen + gemergt.**
 **R4 (Rechnungs-Übernahme aus WorkFloh: fertige Rechnung → Forderung/Buchung; Austauschformat v2; API/Push bewusst offen) ist abgeschlossen + gemergt (PR #95).**
 **R3 (Verbindlichkeiten aus Foto/PDF + eigene Verbindlichkeiten-Ansicht + Zahlungsziel je Rechnung) ist abgeschlossen + gemergt.**
 **R2b (Sammelzahlungen — eine Bankzahlung auf mehrere offene Rechnungen) ist abgeschlossen + gemergt.**
@@ -69,7 +75,7 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach R5c-Rest NER-Scoping):** SW **v96** · Tests **983/983** grün · 97 JS-Module.
+**Kopf-Status (Stand nach R4-Rest Zahlungs-/Teilzahlungs-Übernahme):** SW **v97** · Tests **1001/1001** grün · 97 JS-Module.
 **Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1–R5 ✅; R6/P1 ✅ (Privat-/Bürger-Modus); R6/P2 ✅ (Feature-Gates ansichtsintern).** Reihenfolge im Plan:
 ~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → ~~R5a~~ → ~~R5b~~ → ~~R5c~~ → ~~R5c-Rest (NER-Scoping)~~ → ~~R6/P1~~ → ~~R6/P2~~ → R6/Rest (Lighthouse/OCR/ZUGFeRD/Sage 5b–d, blockiert) bzw. R4-Rest/R5a-Rest/Browser-Sichttest.
 **R5c erledigt:** `ai/briefkasten.js` (rein, node-getestet) — `baueBriefkasten({mandant,firma,kunden,mitarbeiter})`

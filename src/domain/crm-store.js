@@ -5,7 +5,8 @@
 import { encPut, encGet, encList, encDel, neueId } from './encstore.js';
 import { recAll, recPut, recDel, kvGet, kvSet } from '../core/db.js';
 import { AUFTRAG_STATUS, auftragOffen } from './orders.js';
-import { rechnungZeilen, rechnungsUebernahmeEntwurf, validateRechnungsUebernahme } from './invoicing.js';
+import { rechnungZeilen, rechnungsUebernahmeEntwurf, validateRechnungsUebernahme,
+  zahlungsUebernahmeEntwurf, validateZahlungsUebernahme } from './invoicing.js';
 import { formatRechnungsnummer } from './rechnung.js';
 import { saveEntwurf } from './store.js';
 
@@ -80,7 +81,12 @@ export const deleteAuftrag = (id) => encDel(id);
  * Erlöse + USt) erzeugt und der Auftrag als „berechnet" markiert. Nummer/Datum stammen aus
  * WorkFloh — es wird KEINE neue BLP-Rechnungsnummer vergeben. Festschreiben bleibt manuell
  * (GoBD). Ist die Rechnung ungültig, wird der Auftrag normal als „angelegt" übernommen.
- * @returns {Promise<{kundenNeu:number, auftraegeNeu:number, auftraegeUebersprungen:number, rechnungenUebernommen:number}>}
+ *
+ * R4-Rest — ZAHLUNGS-/TEILZAHLUNGS-ÜBERNAHME (v3): Trägt die übernommene Rechnung ein gültiges
+ * `zahlungen`-Array, wird je Zahlung ein Zahlungseingang als Buchungs-ENTWURF (Bank an Forderung)
+ * erzeugt und am Auftrag als (Teil-)Zahlung vermerkt. Ist die Forderung danach ausgeglichen, wird
+ * der Auftrag „bezahlt". Festschreiben bleibt manuell (GoBD).
+ * @returns {Promise<{kundenNeu:number, auftraegeNeu:number, auftraegeUebersprungen:number, rechnungenUebernommen:number, zahlungenUebernommen:number}>}
  */
 export async function importWorkFloh(parsed) {
   const vorhandeneKunden = await listKunden();
@@ -105,7 +111,7 @@ export async function importWorkFloh(parsed) {
 
   const vorhandeneAuftraege = await listAuftraege();
   const externNummern = new Set(vorhandeneAuftraege.filter((a) => a.externNummer).map((a) => a.externNummer));
-  let auftraegeNeu = 0, auftraegeUebersprungen = 0, rechnungenUebernommen = 0;
+  let auftraegeNeu = 0, auftraegeUebersprungen = 0, rechnungenUebernommen = 0, zahlungenUebernommen = 0;
   for (const a of (parsed.auftraege || [])) {
     if (a.externNummer && externNummern.has(a.externNummer)) { auftraegeUebersprungen++; continue; }
     const kundeId = a.kundeExternId ? (externIdToId[a.kundeExternId] || null) : null;
@@ -129,11 +135,23 @@ export async function importWorkFloh(parsed) {
       auftrag.rechnungNummer = entwurf.nummer;
       auftrag.rechnungDatum = entwurf.datum;
       auftrag.status = AUFTRAG_STATUS.BERECHNET;
+
+      // R4-Rest: bereits in WorkFloh erfasste (Teil-)Zahlungen mit übernehmen — je Zahlung ein
+      // Zahlungseingang-Entwurf (Bank an Forderung) + (Teil-)Zahlung am Auftrag. Festschreiben manuell (GoBD).
+      for (const z of (Array.isArray(a.rechnung.zahlungen) ? a.rechnung.zahlungen : [])) {
+        if (validateZahlungsUebernahme(z).length) continue;
+        const zEntwurf = zahlungsUebernahmeEntwurf(a.rechnung, z);
+        await saveEntwurf({ datum: zEntwurf.datum, beschreibung: zEntwurf.beschreibung, zeilen: zEntwurf.zeilen });
+        auftrag.zahlungen = [...(auftrag.zahlungen || []), { datum: z.datum, betragCent: z.betragCent, ref: z.ref || zEntwurf.ref }];
+        zahlungenUebernommen++;
+      }
+      if ((auftrag.zahlungen || []).length && auftragOffen(auftrag) <= 0) auftrag.status = AUFTRAG_STATUS.BEZAHLT;
+
       await encPut(auftrag);
       rechnungenUebernommen++;
     }
   }
-  return { kundenNeu, auftraegeNeu, auftraegeUebersprungen, rechnungenUebernommen };
+  return { kundenNeu, auftraegeNeu, auftraegeUebersprungen, rechnungenUebernommen, zahlungenUebernommen };
 }
 
 export async function setAuftragStatus(id, status) {

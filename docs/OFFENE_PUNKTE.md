@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R5c-Rest NER-Scoping).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (R4-Rest Zahlungs-/Teilzahlungs-Übernahme).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -34,7 +34,8 @@ ein PR, bei grüner CI selbstständig mergen**):
    **Import UND Export** (Aufträge-Ansicht) + **verbundene-App-Link** (Einstellungen, reziprok zu
    WorkFloh) + `docs/CONNECT.md`. **Stufe 2 (R4, PR #95):** **Rechnungs-Übernahme** (fertige Rechnung →
    Forderung/Buchung) über `rechnung`-Block (Format v2), `invoicing.rechnungsUebernahmeEntwurf`.
-   **Offen:** API/Push-Echtzeit, Übernahme von Zahlungsstatus/Teilzahlungen.
+   **R4-Rest ✅:** **Zahlungs-/Teilzahlungs-Übernahme** über `rechnung.zahlungen[]` (Format v3),
+   `invoicing.zahlungsUebernahmeEntwurf` (Bank an Forderung) + (Teil-)Zahlung am Auftrag. **Offen:** API/Push-Echtzeit.
 8. Mehrmandantenfähigkeit (groß).
 9. Bilanzierung / V-Bilanz (groß).
 10. ELSTER-Stufe 2 / Restpunkte B/C nach Bedarf.
@@ -306,7 +307,7 @@ Rechnungen)"** im Bankimport (`documents.js`) → Checkbox-Auswahl (Vorschlag vo
 
 **Noch offen [SOLL]:** —
 
-### A4. App-Anbindung / WorkFloh-Integration **[SOLL] — Stufe 1 + Stufe 2 erledigt ✓, API/Push offen**
+### A4. App-Anbindung / WorkFloh-Integration **[SOLL] — Stufe 1 + 2 + R4-Rest erledigt ✓, nur API/Push offen**
 **Stufe 2 erledigt (R4, 2026-06-17, PR #95):** Rechnungs-Übernahme — ein Auftrag im Austauschformat
 darf einen `rechnung`-Block `{nummer, datum, leistungsdatum?}` tragen (Format **v2**, abwärtskompatibel).
 `importworkfloh.normalizeImport` normalisiert/verwirft unvollständige Rechnungen; `invoicing.rechnungs-
@@ -314,7 +315,16 @@ UebernahmeEntwurf`/`validateRechnungsUebernahme` (rein, node-getestet) bauen den
 (Forderung an Erlöse + USt) mit der **WorkFloh-Nummer/-Datum** (keine neue BLP-Nummer);
 `crm-store.importWorkFloh` bucht ihn als Entwurf + setzt den Auftrag „berechnet" (Festschreiben manuell,
 GoBD); `connect.buildAustauschPaket` trägt die Rechnung reziprok mit. SW `v91`, +22 Tests (885/885).
-**Noch offen [SOLL/KANN]:** API/Push (Echtzeit) statt Datei; Übernahme von Zahlungsstatus/Teilzahlungen.
+**R4-Rest erledigt (2026-06-17):** Zahlungs-/Teilzahlungs-Übernahme — die `rechnung` darf zusätzlich ein
+`zahlungen[]` `{datum, betragCent|betrag, ref?}` tragen (Format **v3**, abwärtskompatibel).
+`importworkfloh.normalizeZahlungen` (rein, node-getestet) normalisiert konservativ (ISO-Datum + positiver
+Betrag, Euro/Cent; unvollständig → verworfen + Warnung); `invoicing.zahlungsUebernahmeEntwurf`/
+`validateZahlungsUebernahme` bauen je Zahlung einen Zahlungseingang-ENTWURF (**Soll Bank 1200 / Haben
+Forderung 1400**); `crm-store.importWorkFloh` bucht je Zahlung den Entwurf + vermerkt die (Teil-)Zahlung am
+Auftrag (Auto-„bezahlt" bei `auftragOffen <= 0`) und meldet `zahlungenUebernommen`; `connect.buildAustauschPaket`
+trägt die Zahlungen reziprok mit. SW `v97`, +18 Tests (1001/1001). UI/Glue statisch geprüft.
+**Noch offen [SOLL/KANN]:** API/Push (Echtzeit) statt Datei. **Grenze:** Überzahlung nicht gesondert behandelt
+(faithful gebucht, manuell korrigierbar); Festschreiben bleibt manuell (GoBD).
 
 **Vision (Nutzer):** Funktionierende Apps sollen sich an BookLedgerPro **anbinden** können bzw.
 BookLedgerPro bietet die Anbindung an. Konkretes Beispiel **Mein-WorkFloh**: Angebote → umgesetzte

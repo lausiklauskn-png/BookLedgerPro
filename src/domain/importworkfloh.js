@@ -17,6 +17,13 @@
 // Buchung erfolgt in crm-store.importWorkFloh (Nummer/Datum stammen aus WorkFloh, es wird
 // KEINE neue BLP-Rechnungsnummer vergeben). Unvollständige Rechnungsangaben werden verworfen
 // (der Auftrag kommt dann als „angelegt" herein) und als Warnung gezählt — nichts wird erfunden.
+//
+// R4-Rest — ZAHLUNGS-/TEILZAHLUNGS-ÜBERNAHME (Austauschformat v3): Eine `rechnung` darf ein
+// optionales `zahlungen`-Array `[{ datum, betragCent|betrag, ref? }]` tragen (in WorkFloh bereits
+// erfasste Zahlungseingänge). Hier wird es konservativ normalisiert; die eigentliche Übernahme als
+// (Teil-)Zahlung am Auftrag + Zahlungseingang-Buchungsentwurf (Bank an Forderung) erfolgt in
+// crm-store.importWorkFloh. Unvollständige Zahlungen (Datum/Betrag) werden verworfen + als Warnung
+// gezählt — nichts wird erfunden, der Festschreibe-Schritt bleibt manuell (GoBD).
 
 import { parseEuroToCents } from './money.js';
 
@@ -49,7 +56,35 @@ function normalizeRechnung(raw, label, warnungen) {
   const r = { nummer, datum };
   const ld = String(raw.leistungsdatum || '').trim();
   if (ld && ISO_DATUM.test(ld)) r.leistungsdatum = ld;
+  const zahlungen = normalizeZahlungen(raw.zahlungen, nummer, warnungen);
+  if (zahlungen.length) r.zahlungen = zahlungen;
   return r;
+}
+
+/**
+ * Normalisiert das optionale `zahlungen`-Array einer übernommenen Rechnung (R4-Rest, v3).
+ * Jede Zahlung braucht ein gültiges ISO-Datum und einen positiven Betrag (Cent oder Euro-String).
+ * Unvollständige Einträge werden verworfen + als Warnung gezählt (nichts wird erfunden).
+ * @returns {{datum:string, betragCent:number, ref?:string}[]}
+ */
+function normalizeZahlungen(raw, label, warnungen) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  raw.forEach((z, i) => {
+    if (!z || typeof z !== 'object') { warnungen.push(`Rechnung „${label || '?'}": Zahlung ${i + 1} ungültig → übersprungen.`); return; }
+    const datum = String(z.datum || '').trim();
+    const betrag = Number.isInteger(z.betragCent) ? z.betragCent : (z.betrag != null ? parseEuroToCents(String(z.betrag)) : 0);
+    const betragCent = Math.round(Number(betrag) || 0);
+    if (!ISO_DATUM.test(datum) || !(betragCent > 0)) {
+      warnungen.push(`Rechnung „${label || '?'}": Zahlung ${i + 1} unvollständig (Datum/Betrag) → übersprungen.`);
+      return;
+    }
+    const eintrag = { datum, betragCent };
+    const ref = String(z.ref || '').trim();
+    if (ref) eintrag.ref = ref;
+    out.push(eintrag);
+  });
+  return out;
 }
 
 /** Parst den Import-Text zu einem Objekt (wirft bei ungültigem JSON). */

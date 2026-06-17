@@ -3,13 +3,13 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **983/983 grün**, SW `v96`.
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **1001/1001 grün**, SW `v97`.
 > Nächster Schritt: **R6/Rest** [KANN] bleibt **umgebungs-/menschen-blockiert** (Lighthouse/Perf → Headless-Browser;
 > lokales OCR → Tesseract ist wasm/npm-Runtime, NICHT build-frei; ZUGFeRD-Erzeugen → PDF-Lib, nicht build-frei;
-> Sage 5b–d → fremde Repos, menschlich vermittelt) **oder Browser-Sichttest** (echter Nutzer). Build-freie
-> Rest-Körbe für Code-Sitzungen: **R4-Rest** (Zahlungsstatus/Teilzahlungen aus WorkFloh übernehmen),
-> **R5a-Rest** (echte SWIFT/ISO-20022-Schema-Validierung). A+B fertig; R1–R5 ✅ inkl. **R5c-Rest NER-Scoping ✅**
-> (Fremd-PII unter `EXTERN`-Scope im Briefkasten); **R6/P1 ✅**; **R6/P2 ✅**. Tests **983/983**, SW `v96`.
+> Sage 5b–d → fremde Repos, menschlich vermittelt) **oder Browser-Sichttest** (echter Nutzer). Verbleibender
+> build-freier Rest-Korb für Code-Sitzungen: **R5a-Rest** (echte SWIFT/ISO-20022-Schema-Validierung).
+> A+B fertig; R1–R5 ✅ inkl. **R5c-Rest NER-Scoping ✅**; **R4-Rest Zahlungs-/Teilzahlungs-Übernahme ✅**
+> (Austauschformat v3); **R6/P1 ✅**; **R6/P2 ✅**. Tests **1001/1001**, SW `v97`.
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -145,6 +145,15 @@
   `rechnungenUebernommen`; `connect.buildAustauschPaket` → **Format v2** (abwärtskompatibel), berechnete Aufträge tragen ihre
   Rechnung reziprok mit. UI: Import-Banner zählt übernommene Rechnungen; i18n de+en, SW `v91`, **+22 Tests (885/885)**.
   UI/Glue statisch geprüft. **Bewusst offen:** API/Push (Echtzeit), Übernahme von Zahlungsstatus/Teilzahlungen. (PR #95.)
+- [x] **R4-Rest** Zahlungsstatus/Teilzahlungen aus WorkFloh übernehmen (Austauschformat **v3**). ✅ Eine `rechnung` darf ein
+  optionales `zahlungen[]` `{datum, betragCent|betrag, ref?}` tragen. `importworkfloh.normalizeZahlungen` (rein, node-getestet)
+  normalisiert konservativ (ISO-Datum + positiver Betrag, Euro/Cent, unvollständig → verworfen + Warnung); `invoicing.zahlungs-
+  UebernahmeEntwurf`/`validateZahlungsUebernahme` (rein) bauen je Zahlung einen Zahlungseingang-ENTWURF **Soll Bank 1200 / Haben
+  Forderung 1400** (gleicht die Forderung der Rechnungs-Übernahme aus → Ist-EÜR); `crm-store.importWorkFloh` bucht je Zahlung den
+  Entwurf + vermerkt die (Teil-)Zahlung am Auftrag (Auto-„bezahlt" bei `auftragOffen <= 0`) und meldet `zahlungenUebernommen`;
+  `connect.buildAustauschPaket` → **Format v3** (abwärtskompatibel), berechnete Aufträge tragen ihre Zahlungen reziprok mit. UI:
+  Import-Banner zählt übernommene Zahlungen; i18n de+en, SW `v97`, **+18 Tests (1001/1001)**. UI/Glue statisch geprüft.
+  **Bewusst offen:** API/Push (Echtzeit); Überzahlung wird nicht gesondert behandelt (faithful gebucht, manuell korrigierbar). (PR R4-Rest.)
 - [x] **R5** Bankformate härten + NER + dreistufiger Briefkasten — **in Teil-PRs (alle ✅):**
   - [x] **R5a — Bankformate härten.** ✅ `domain/bankimport.js`: CAMT-Container **.052 (`<Rpt>`)** und
     **.054 (`<Ntfctn>`)** zusätzlich zu .053 (`<Stmt>`); **Saldo-Parsing** (MT940 `:60F/M:`/`:62F/M:`, CAMT
