@@ -4,28 +4,38 @@
 // der BUCHUNG (invoicing.js → Soll/Haben). Reine, testbare Funktionen.
 
 import { auftragSummen, positionNetto } from './orders.js';
+import { faelligAmVon } from './mahnwesen.js';
 
 /**
  * Baut ein strukturiertes Rechnungs-Dokument aus Auftrag + Stammdaten.
- * @param p.auftrag  {titel, positionen:[{beschreibung?,menge,einzelpreisCent,ustSatz}]}
+ * @param p.auftrag  {titel, positionen:[{beschreibung?,menge,einzelpreisCent,ustSatz}], zahlungszielTage?}
  * @param p.kunde    {name, adresse, ustId, email}
  * @param p.firma    {name, anschrift, steuernummer, ustId, iban}
  * @param p.nummer   fortlaufende Rechnungsnummer (oder leer = Entwurf)
  * @param p.datum    Rechnungsdatum YYYY-MM-DD
  * @param p.leistungsdatum  Liefer-/Leistungsdatum (Default: Rechnungsdatum)
  * @param p.kleinunternehmer  §19 UStG (kein USt-Ausweis)
+ * @param p.defaultZielTage  Standard-Zahlungsziel (Tage) aus den Einstellungen, falls
+ *   der Auftrag kein eigenes `zahlungszielTage` trägt (Default 14). Steuert „zahlbar bis".
  */
-export function baueRechnung({ auftrag = {}, kunde = {}, firma = {}, nummer = '', datum = '', leistungsdatum = '', kleinunternehmer = false } = {}) {
+export function baueRechnung({ auftrag = {}, kunde = {}, firma = {}, nummer = '', datum = '', leistungsdatum = '', kleinunternehmer = false, defaultZielTage = 14 } = {}) {
   const summen = auftragSummen(auftrag.positionen);
   const saetze = Object.keys(summen.perSatz).map(Number).sort((a, b) => b - a);
   const steuerzeilen = saetze
     .filter((s) => summen.perSatz[s].netto > 0)
     .map((s) => ({ satz: s, netto: summen.perSatz[s].netto, ust: kleinunternehmer ? 0 : summen.perSatz[s].ust }));
   const ust = kleinunternehmer ? 0 : summen.ust;
+  // Fälligkeit „zahlbar bis": auftragseigenes Zahlungsziel (A1-Rest) vor globalem Default.
+  // Spiegelt mahnwesen.faelligAmVon — ohne Rechnungsdatum bleibt das Feld leer.
+  const zielTage = auftrag.zahlungszielTage != null && auftrag.zahlungszielTage !== ''
+    ? auftrag.zahlungszielTage : null;
+  const zahlbarBis = faelligAmVon({ datum: datum || '', zahlungszielTage: zielTage }, defaultZielTage);
   return {
     nummer: nummer || '',
     datum: datum || '',
     leistungsdatum: leistungsdatum || datum || '',
+    zahlbarBis,
+    zahlungszielTage: zielTage,
     firma, kunde,
     titel: auftrag.titel || '',
     positionen: (auftrag.positionen || []).map((p) => ({

@@ -17,13 +17,14 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles.
 
 AUFGABE DIESER SITZUNG: **Mit dem Nutzer abstimmen (AskUserQuestion), womit es weitergeht** — denn der
-**build-freie Code-Korb ist LEER**: A+B fertig; **R1–R5 ✅** inkl. **R4-Rest ✅** (Austauschformat v3),
+**build-freie Code-Korb ist im Wesentlichen LEER**: A+B fertig; **R1–R5 ✅** inkl. **R4-Rest ✅** (Austauschformat v3),
 **R5a-Rest ✅** (SWIFT-(MT940)/ISO-20022-(CAMT)-Schema-/Struktur-Validierung, `domain/bankschema.js`),
 **R5c-Rest ✅** (NER-Scoping); **R6/P1 ✅** (Privat-/Bürger-Modus, PR #99); **R6/P2 ✅** (Feature-Gates ansichtsintern);
-**A1-Rest ✅** (Zahlungsziel je Forderung — `mahnwesen.faelligAmVon`, Feld im Auftragsformular, SW v99, 1045 Tests).
+**A1-Rest ✅** (Zahlungsziel je Forderung — `mahnwesen.faelligAmVon`); **„zahlbar bis" ✅** (Fälligkeitsdatum auf der
+gedruckten §14-Rechnung — `rechnung.baueRechnung` Feld `zahlbarBis`, SW v100, 1051 Tests).
 **Verbleibend nur noch umgebungs-/menschen-blockierte [KANN]-Punkte ODER ein Browser-Sichttest ODER eine neue,
-mit dem Nutzer vereinbarte Feature-Idee.** Mögliche kleine build-freie Folge-Ideen (mit dem Nutzer abstimmen): „zahlbar
-bis" auf dem gedruckten §14-Dokument, Edit bestehender Aufträge, WorkFloh-`rechnung`-Block überträgt das Zahlungsziel,
+mit dem Nutzer vereinbarte Feature-Idee.** Mögliche kleine build-freie Folge-Ideen (mit dem Nutzer abstimmen):
+Edit bestehender Aufträge, WorkFloh-`rechnung`-Block überträgt das Zahlungsziel,
 Eingangsrechnungs-Verzug (Gegenseite). Konkret:
 (A) **R6/Rest [KANN] — umgebungs-/menschen-blockiert** (verifiziert): **Lighthouse/Perf** braucht Headless-Browser
 (keiner hier); **lokales OCR** = Tesseract (wasm/npm-Runtime) ist **nicht build-frei** (Goldene Regel #1 verbietet
@@ -81,10 +82,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach **A1-Rest Zahlungsziel je Forderung** (Abschnitt A Mehrmandanten +
-Abschnitt B Bilanzierung + R1–R5 inkl. R4-Rest/R5a-Rest/R5c-Rest + R6/P1 PR #99 + R6/P2 abgeschlossen + gemergt;
-**A1-Rest:** `mahnwesen.faelligAmVon` macht das auftragsindividuelle `zahlungszielTage` in Mahnwesen/Fälligkeit
-wirksam, `payables.berechneFaelligAm` delegiert daran, Feld „Zahlungsziel (Tage)" im Auftragsformular) ·
-Tests **1045/1045** · SW **v99** · 98 JS-Module · **build-freier Rest-Korb LEER** · nächster Schritt:
-**mit dem Nutzer abstimmen** (R6/Rest blockiert / Browser-Sichttest / neue Feature-Idee). (Diese Zeile bei jeder
-Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach **„zahlbar bis" auf der §14-Rechnung** (Abschnitt A Mehrmandanten +
+Abschnitt B Bilanzierung + R1–R5 inkl. R4-Rest/R5a-Rest/R5c-Rest + R6/P1 PR #99 + R6/P2 + A1-Rest abgeschlossen + gemergt;
+**„zahlbar bis":** `rechnung.baueRechnung` bekam Parameter `defaultZielTage` + Feld `zahlbarBis`
+(= `mahnwesen.faelligAmVon`, auftragseigenes Ziel vor globalem Default; ohne Rechnungsdatum leer), die Rechnungs-Kopfzeile
+zeigt „zahlbar bis JJJJ-MM-TT", i18n `orders.payableUntil` de+en) · Tests **1051/1051** · SW **v100** · 98 JS-Module ·
+**build-freier Rest-Korb im Wesentlichen LEER** · nächster Schritt: **mit dem Nutzer abstimmen** (kleine Folge-Ideen:
+Edit bestehender Aufträge / WorkFloh überträgt Zahlungsziel / Eingangsrechnungs-Verzug · ODER Browser-Sichttest ·
+ODER umgebungs-blockierte KANN-Punkte). (Diese Zeile bei jeder Sitzung aktualisieren.)

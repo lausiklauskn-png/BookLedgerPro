@@ -243,6 +243,16 @@
   (ganzzahlig ≥ 0). UI: Feld **„Zahlungsziel (Tage)"** im Auftragsformular (`ui/views/orders.js`), i18n de+en.
   SW `v99`, **+16 Tests (1045/1045)**. UI/Glue statisch geprüft. **Grenze:** kein Edit bestehender Aufträge, kein
   Ziel auf dem gedruckten §14-Dokument, WorkFloh-`rechnung`-Block überträgt (noch) kein Ziel. (PR A1-Rest.)
+- [x] **„zahlbar bis" auf der §14-Rechnung** (mit dem Nutzer abgestimmt, build-freier Rest-Korb leer). ✅
+  Folgeschritt zu A1-Rest: das auftragseigene `zahlungszielTage` erscheint jetzt als **Fälligkeitsdatum** auf dem
+  gedruckten Rechnungsdokument. `rechnung.baueRechnung` bekam Parameter **`defaultZielTage`** + Feld **`zahlbarBis`**
+  (= `mahnwesen.faelligAmVon({datum, zahlungszielTage}, defaultZielTage)`; auftragseigenes Ziel vor globalem Default;
+  ohne Rechnungsdatum leer → Entwurf ohne Fälligkeit) + mitgeführtes `zahlungszielTage`; `pflichtangaben`
+  **unverändert** (Fälligkeit ist KEINE §14-Pflichtangabe). UI (`ui/views/orders.js`): `rechnungAnzeigen` reicht
+  `defaultZielTage: s.zahlungszielTage` durch, die Rechnungs-Kopfzeile zeigt **„zahlbar bis JJJJ-MM-TT"** neben
+  Datum/Leistungsdatum (nur wenn vorhanden). i18n `orders.payableUntil` de+en. SW `v100`, **+6 Tests (1051/1051)**.
+  UI/Glue statisch geprüft. **Grenze:** kein Edit bestehender Aufträge; WorkFloh-`rechnung`-Block überträgt weiter
+  kein Ziel; Eingangsrechnungs-Verzug der Gegenseite weiter offen. (PR „zahlbar bis".)
 
 ---
 
