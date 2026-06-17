@@ -93,6 +93,24 @@ Offen, mit dem Nutzer zu entscheiden, BEVOR gebaut wird:
   (hängt an DATEVs Importfähigkeit/Rechnungsdatenservice) → **am Zielprogramm real testen**, keine
   Konformität behaupten, die nicht belegt ist.
 
+### 7a. Gewählter Mechanismus — Hoheit als Onboarding-Setting `rechnungsstelle` (Nutzer-Entscheidung 2026-06-17)
+Die Nummernkreis-Hoheit wird **nicht hartcodiert**, sondern als **Einstellung** geführt — analog zu den
+bestehenden Modus-Schaltern (`gewinnermittlung`, `nutzungsmodus`, `kleinunternehmer`). BLP **passt sein
+Verhalten automatisch an**:
+- **Setting `rechnungsstelle: 'blp' | 'extern'`**, **Default `blp`** (additiv/sicher; Bestand unverändert),
+  abgefragt beim **Onboarding** („Wer stellt eure Rechnungen aus — BookLedgerPro selbst, oder ein anderes
+  Programm/der Steuerberater?"), in den Einstellungen jederzeit sichtbar.
+- **`blp`:** BLP vergibt echte **§14-Nummern** (`naechsteRechnungsnummer`, lückenlos), Rechnung geht so zum
+  Kunden; DATEV verbucht nur (EXTF-Export).
+- **`extern`:** BLP erzeugt nur eine **vorläufige Rechnung/Vorlage** mit **interner** Nummer (z. B.
+  `ENT-JJJJ-NNNN`), vergibt **keine** §14-Nummer, kennzeichnet das Dokument klar als „vorläufig — endgültige
+  Nummer vom externen System"; Export auf Übernahme ausgelegt.
+- **Steuert automatisch:** Nummernvergabe, Dokument-Beschriftung („Rechnung" vs. „Vorlage/vorläufig"), Export.
+- **Ehrliche Grenzen:** (1) **Späterer Wechsel ist heikel** — sind im `blp`-Modus bereits §14-Nummern im
+  Zeitraum vergeben, darf nicht ungeprüft auf `extern` gewechselt werden (Lückenlosigkeit) → Wechsel **mit
+  Warnung/Sperre**. (2) Das Setting steuert **nur BLP**, es zwingt das externe Programm nicht — reine
+  Koordinations-Weiche gegen doppelte Nummernkreise.
+
 ## 8. BLP auf mehreren Rechnern (Mehrrechner/Sync)
 BLP ist **offline-first, verschlüsselt, IndexedDB pro Gerät** — **kein** Client-Server-Mehrbenutzer-DB.
 - Mehrere PCs = getrennte Tresore, außer man synchronisiert (Datei/Backup, privater synchronisierter
