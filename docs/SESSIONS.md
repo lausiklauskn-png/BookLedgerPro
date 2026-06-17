@@ -37,6 +37,19 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-17 — Punkt 27: §19-Kleinunternehmer-Abfrage im Onboarding [Branch `claude/v2-ox8bu7`]
+
+**Was getan**
+- **`lock.js`**: neuer Onboarding-Schritt `stepProfil()` zwischen Shamir-Sicherung und Pflicht-Backup —
+  fragt „Kleinunternehmer §19?" (Ja/Nein) und speichert `kleinunternehmer` via `updateSettings`
+  (Backup bleibt der erzwungene Gate-Schritt; Auswahl später in Einstellungen änderbar). i18n de/en.
+- SW-Cache `v74`. Tests **618/618** (reine UI-Ergänzung, Onboarding nicht headless-E2E → Selbsttest/
+  Checkliste decken Engine ab).
+
+**Stand:** Punkt 27 erledigt. **Nächstes:** Punkt 28 (abweichendes Wirtschaftsjahr).
+
+---
+
 ## 2026-06-17 — Entscheidungen Teil 1 (ELSTER-Link + AVV) + Nachfolge-Brief mit Freibrief [Branch `claude/v2-ox8bu7`]
 
 **Was getan**

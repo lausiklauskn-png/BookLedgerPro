@@ -7,6 +7,7 @@ import { el, mount } from './dom.js';
 import { t } from './i18n.js';
 import { setupVault, unlockVault, vaultExists } from '../core/vault.js';
 import { exportBackupFile } from '../core/backup.js';
+import { updateSettings } from '../state.js';
 import { MycelMark } from './mycel.js';
 import { createMycelBackground } from './mycelCanvas.js';
 
@@ -106,13 +107,30 @@ function renderOnboarding(container, resolve) {
         el('code', { class: 'share-code', text: s }),
       ]))
     );
-    const next = el('button', { class: 'btn btn-primary', text: t('common.save'), onClick: () => stepBackup() });
+    const next = el('button', { class: 'btn btn-primary', text: t('common.save'), onClick: () => stepProfil() });
     mount(container, shell([
       el('h1', { text: t('onboard.shamirTitle') }),
       el('p', { class: 'muted', text: t('onboard.shamirIntro') }),
       list,
       next,
     ], './assets/img/onboard-shamir.png'));
+  }
+
+  // §19-Kleinunternehmer-Abfrage (steuert global, ob USt ausgewiesen wird).
+  function stepProfil() {
+    const waehle = async (klein) => {
+      try { await updateSettings({ kleinunternehmer: klein }); } catch { /* Backup-Schritt bleibt der Gate */ }
+      stepBackup();
+    };
+    mount(container, shell([
+      el('h1', { text: t('onboard.kleinTitle') }),
+      el('p', { class: 'muted', text: t('onboard.kleinIntro') }),
+      el('div', { class: 'btn-row' }, [
+        el('button', { class: 'btn btn-primary', text: t('onboard.kleinJa'), onClick: () => waehle(true) }),
+        el('button', { class: 'btn', text: t('onboard.kleinNein'), onClick: () => waehle(false) }),
+      ]),
+      el('p', { class: 'muted small', text: t('onboard.kleinHint') }),
+    ], './assets/img/onboard-key.png'));
   }
 
   function stepBackup() {
