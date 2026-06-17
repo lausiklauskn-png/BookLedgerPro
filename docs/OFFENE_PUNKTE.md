@@ -27,7 +27,14 @@ ein PR, bei grüner CI selbstständig mergen**):
   (Kostentreiber-Matrix, Rechenformel, adaptiver Baukasten-UX, Nummernkreis-Bridge Angebot→Rechnung,
   selbstlernende Vor-/Nachkalkulation, BLP als Vorbereitungs-/Kontrollschicht für DATEV, Mehrrechner/Sync).
   **Prime Directive:** Kalkulation rein intern, Angebot/Rechnung neutral nach außen. Offene Entscheidung
-  vor Baubeginn: **Nummernkreis-Hoheit** (stellt BLP die Rechnung aus oder DATEV/Steuerberater?).
+  vor Baubeginn: **Nummernkreis-Hoheit** (stellt BLP die Rechnung aus oder DATEV/Steuerberater?) — gelöst
+  als **Onboarding-Setting `rechnungsstelle` `blp|extern`** (Default `blp`), Katalog §7a.
+- **Datensicherung — wählbare 3-2-1-Strategie (Pflicht #1): JA, Anforderung steht.** Verbindliches Doku:
+  **`docs/DATENSICHERUNG.md`** (Stellen: BLP intern · verschlüsselter gewählter Ordner re-importierbar ·
+  Server/Offsite; **freie Nutzer-Wahl `backupStrategie`** beim Onboarding + in Einstellungen änderbar;
+  **Backup→Restore-Roundtrip-Selbsttest** als beweisbare Prüfung). Backup-Kern existiert bereits
+  (`core/backup.js`, verschlüsselte `.blpr.json`, Shamir, persist). **Vorschlag:** Roundtrip-Selbsttest
+  als früher build-freier PR (vor der Kalkulation).
 
 **Festgelegte Bau-Reihenfolge (je eigener PR, Freibrief-Merge):**
 1. ✅ ELSTER-Weiterleitungs-Link + AVV-Anbieterlinks (klein) — *diese Sitzung*.
