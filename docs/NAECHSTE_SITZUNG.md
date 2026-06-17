@@ -18,18 +18,19 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Aktueller nächster Schritt: R1 — Verzugszinsen/Mahngebühren buchen (A1-Rest).**
-Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
-**Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** — B1 (Modus + Kontengrundlage), B2 (GuV),
-B3 (Bilanz) (siehe `docs/SESSIONS.md` oben). R1: Verzugszinsen (§ 288 BGB: B2B 9 %-Punkte über Basiszins,
-B2C 5 %-Punkte; Pauschale 40 € § 288 Abs. 5 BGB bei B2B) und Mahngebühren als **Buchung** abbildbar machen —
-Konto-Mapping (z. B. Zinserträge 2650 / sonstige Erträge 2700) + USt-Behandlung (Verzugszinsen/Mahngebühren
-sind i. d. R. **nicht steuerbarer Schadensersatz** → ohne USt; ehrlich dokumentieren). **Manuell, KEIN
-Auto-Buchen** (GoBD-Disziplin). Die Berechnung existiert bereits im Mahnwesen (`domain/mahnwesen.js`,
-`mahnschreibenDaten`/Verzugszins-Logik) — R1 ergänzt den **Buchungs-Entwurf** daraus. **Reine Logik ZUERST
-node-getestet**, dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen). Plan-Details in
-`docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`. (Falls R1 doch unscharf/zu groß ist:
-feiner schneiden und Plan fortschreiben — nie „halb" mergen.)
+abarbeiten. **Aktueller nächster Schritt: R2 — Skonto-Buchung mit USt-/Vorsteuer-Korrektur (§17 UStG)
++ Sammelzahlungen (A3-Rest).** Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen**
+(siehe `docs/MANDANTEN.md`); **Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** (B1/B2/B3);
+**R1 (Verzugszinsen/Mahngebühren buchen) ist abgeschlossen + gemergt** (siehe `docs/SESSIONS.md` oben).
+R2: Bei Zahlung mit **Skonto** den Zahlungsabzug buchen UND die **USt/Vorsteuer nachträglich korrigieren**
+(§17 UStG) — beim Ausgangsumsatz mindert sich die USt, beim Eingangsumsatz die Vorsteuer; Konto-Mapping
+(Skontoaufwand/-ertrag + USt-Korrektur) sauber, **manuell, kein Auto-Buchen** (Korrektheit vor Bequemlichkeit).
+Zusätzlich **Sammelzahlungen** (eine Bankzahlung auf mehrere offene Rechnungen → Mehrfach-Zuordnung).
+Die Skonto-Erkennung existiert bereits als Hinweis (`zahlungsabgleich.findeKandidaten`, Art `skonto`) — R2
+ergänzt die **Buchung** daraus. **Reine Logik ZUERST node-getestet**, dann UI (DOM/IndexedDB als „statisch
+geprüft" kennzeichnen). Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`
+(A3). (Falls R2 doch unscharf/zu groß ist: feiner schneiden — z. B. R2a Skonto, R2b Sammelzahlung — und
+Plan fortschreiben — nie „halb" mergen.)
 
 MEHRERE PRs ERLAUBT (NEU): Wenn sich mehrere Plan-Punkte **sauber und in sich
 abgeschlossen** in einer Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener
@@ -66,6 +67,7 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach B3 (Abschnitt A Mehrmandanten abgeschlossen; Abschnitt B
-Bilanzierung B1+B2+B3 abgeschlossen) · Tests **760/760** · SW **v86** · 92 JS-Module · nächster Schritt
-**R1 (Verzugszinsen/Mahngebühren buchen)**. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach R1 (Abschnitt A Mehrmandanten abgeschlossen; Abschnitt B
+Bilanzierung B1+B2+B3 abgeschlossen; R1 Verzugszinsen/Mahngebühren buchen abgeschlossen) · Tests **783/783**
+· SW **v87** · 92 JS-Module · nächster Schritt **R2 (Skonto-Buchung §17 UStG + Sammelzahlungen)**.
+(Diese Zeile bei jeder Sitzung aktualisieren.)

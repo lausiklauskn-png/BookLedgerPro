@@ -197,9 +197,12 @@ bei Unternehmern. Default konservativ B2B. SW `v60`.
 node-getestet). UI: Karte zeigt „zuletzt gemahnt: …", die nächste Stufe zählt hoch (nicht nur aus
 Tagen abgeleitet); im Mahnschreiben **editierbare** Verzugszinsen/Mahngebühren (vorbelegt mit §288)
 + „Als gesendet vermerken". `crm-store.mahnungErfassen()`. SW `v62`.
-**Noch offen [SOLL]:** **Buchung** von Zinsen/Gebühren als Ertrag (Konto-Mapping + USt-Behandlung)
-— bewusst manuell/separat im Journal, kein Auto-Buchen; Eingangsrechnungs-Verzug (Gegenseite);
-Zahlungsziel je Rechnung statt global.
+**Buchung von Zinsen/Gebühren erledigt (R1, 2026-06-17):** `mahnwesen.mahnbuchungZeilen`/`mahnbuchungEntwurf`
+(rein, node-getestet) buchen **Forderung 1400 an Zinserträge 2650 / sonstige betr. Erträge 2700 — ohne USt**
+(nicht steuerbarer Schadensersatz §288 BGB / Abschn. 1.3 UStAE, ehrlich dokumentiert). Knopf
+**„Als Buchungsentwurf übernehmen"** im Mahnschreiben (`reports.js`) → `saveEntwurf`, **manuell/kein
+Auto-Festschreiben** (GoBD). SW `v87`, 783/783 Tests.
+**Noch offen [SOLL]:** Eingangsrechnungs-Verzug (Gegenseite); Zahlungsziel je Rechnung statt global.
 
 **Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,
 damit man nachmahnen kann — siehe jetzt Auswertungen.

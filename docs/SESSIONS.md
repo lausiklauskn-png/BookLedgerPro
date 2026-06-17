@@ -5,6 +5,34 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R1: Verzugszinsen/Mahngebühren buchen [Branch `claude/r1-delayed-interest-dunning-ckk0bb`]
+
+**Was getan** (NACHFOLGE_PLAN.md, Schritt **R1** — A1-Rest, schließt das Mahnwesen-Soll „Buchung" ab)
+- **Reine Logik zuerst (`src/domain/mahnwesen.js`, node-getestet):**
+  - `MAHN_KONTEN` — SKR03-Kontenzuordnung: Forderungen **1400** (Soll) an Zinserträge **2650** /
+    sonstige betriebliche Erträge **2700** (Haben).
+  - `mahnbuchungZeilen({zinsenCent, gebuehrenCent, konten?})` → ausgeglichene Buchungszeilen
+    (Soll Forderung an Haben Zinsertrag + Gebührenertrag), **ohne USt-Zeile**, mit Summe;
+    nur Zinsen ODER nur Gebühren → 2 Zeilen; 0/0 → keine Zeilen.
+  - `mahnbuchungEntwurf(...)` → vollständiger Buchungs-**Entwurf** (Datum/Beschreibung/Begründung)
+    aus den `mahnschreibenDaten`; gibt `null` zurück, wenn nichts anfällt.
+- **USt-Behandlung (ehrlich dokumentiert):** Verzugszinsen UND Mahngebühren sind nach h. M.
+  (Abschn. 1.3 UStAE) **nicht steuerbarer echter Schadensersatz** → **keine Umsatzsteuer**; die
+  Forderung gegen den Schuldner erhöht sich um den Betrag. Begründungstext + Hinweis „im Zweifel Berater".
+- **UI (statisch geprüft, kein Headless-Browser):** Knopf **„Als Buchungsentwurf übernehmen"** im
+  Mahnschreiben (`ui/views/reports.js zeigeMahnung`) nutzt die editierbaren Zinsen/Gebühren-Felder →
+  `saveEntwurf` (manuell, **kein Auto-Festschreiben** — GoBD); `ensureSeedKonten` stellt 1400/2650/2700
+  sicher. i18n de+en (`mahnBook`/`mahnBooked`/`mahnBookNone`, `mahnBookHint` aktualisiert). SW `v87`.
+
+**Stand:** `node tests/run.mjs` **783/783 grün** (+23). Reine Buchungslogik node-getestet (Ausgeglichenheit,
+keine USt-Zeile, Konto-Override, Entwurf aus §288-Mahnschreiben, `validateBuchung` leer). UI/Glue statisch geprüft.
+
+**Offen/Nächstes:** **R2** — Skonto-Buchung mit USt-/Vorsteuer-Korrektur (§17 UStG) + Sammelzahlungen
+(eine Zahlung, mehrere Rechnungen). **Grenze (ehrlich):** USt-Freiheit gilt für echten Schadensersatz;
+vertraglich vereinbarte Bearbeitungsgebühren können abweichen → Berater. Klickpfad nicht headless E2E getestet.
+
+---
+
 ## 2026-06-17 — B3: Bilanzierung — Bilanz (Aktiva = Passiva) [Branch `claude/balance-sheet-b3-56djmn`]
 
 **Was getan** (NACHFOLGE_PLAN.md, Schritt **B3** — Abschnitt B Bilanzierung, schließt Abschnitt B ab)

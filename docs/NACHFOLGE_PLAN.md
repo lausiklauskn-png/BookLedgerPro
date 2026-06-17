@@ -3,8 +3,8 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **760/760 grün**, SW `v86`.
-> Nächster Schritt: **R1 — Verzugszinsen/Mahngebühren buchen** (A abgeschlossen, B1/B2/B3 ✅ → Abschnitt B fertig).
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **783/783 grün**, SW `v87`.
+> Nächster Schritt: **R2 — Skonto-Buchung §17 UStG + Sammelzahlungen** (A+B fertig; R1 ✅ Verzugszinsen/Mahngebühren buchen).
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -98,7 +98,13 @@
   Konzernabschluss, keine E-Bilanz-Taxonomie; Konten nach Kontoart, nicht nach Saldovorzeichen umgegliedert. (PR B3.)
 
 ## R) Rest-SOLL (nach A+B, Reihenfolge nach Bedarf)
-- [ ] **R1** Verzugszinsen/Mahngebühren **buchen** (A1-Rest): Konto-Mapping + USt-Behandlung (manuell, kein Auto-Buchen).
+- [x] **R1** Verzugszinsen/Mahngebühren **buchen** (A1-Rest): ✅ `domain/mahnwesen.js` (rein, node-getestet):
+  `MAHN_KONTEN` (SKR03: Forderung **1400** an Zinserträge **2650** / sonstige betr. Erträge **2700**),
+  `mahnbuchungZeilen` (Soll Forderung an Haben Zinsertrag+Gebührenertrag, **ohne USt** — nicht steuerbarer
+  Schadensersatz §288 BGB / Abschn. 1.3 UStAE) + `mahnbuchungEntwurf` (vollständiger Buchungs-Entwurf mit
+  Beschreibung/Begründung aus den `mahnschreibenDaten`). UI: Knopf **„Als Buchungsentwurf übernehmen"** im
+  Mahnschreiben (`reports.js`) → `saveEntwurf` (manuell, **kein** Auto-Festschreiben, GoBD); Standardkonten via
+  `ensureSeedKonten` sichergestellt. i18n de+en, SW `v87`, **+23 Tests (783/783)**. UI/Glue statisch geprüft. (PR R1.)
 - [ ] **R2** Skonto-Buchung mit **USt-/Vorsteuer-Korrektur §17 UStG** (A3-Rest); Sammelzahlungen (eine Zahlung, mehrere Rechnungen).
 - [ ] **R3** Verbindlichkeiten aus **Foto/PDF-Belegen** + eigene Verbindlichkeiten-Ansicht (A2-Rest); Zahlungsziel je Rechnung (A1-Rest).
 - [ ] **R4** A4 **Stufe 2**: Rechnungs-Übernahme (statt nur Auftrag) + optional API/Push; reziproke WorkFloh-Verlinkung schärfen.

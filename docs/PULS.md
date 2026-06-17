@@ -36,21 +36,21 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R1"** (Rest-SOLL): Verzugszinsen/Mahngebühren **buchen**
-(A1-Rest) — Konto-Mapping + USt-Behandlung (manuell, kein Auto-Buchen). Reihenfolge im Rest-SOLL nach
-Bedarf (R1…R6); Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „R2"** (Rest-SOLL): **Skonto-Buchung mit USt-/Vorsteuer-Korrektur
+(§17 UStG)** (A3-Rest) + **Sammelzahlungen** (eine Zahlung, mehrere Rechnungen). Reihenfolge im Rest-SOLL nach
+Bedarf (R2…R6); Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R + `docs/OFFENE_PUNKTE.md`.
+**R1 (Verzugszinsen/Mahngebühren buchen) ist abgeschlossen + gemergt.**
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach B3):** SW **v86** · Tests **760/760** grün · 92 JS-Module.
-**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3).** Reihenfolge im Plan:
-~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · danach Rest-SOLL (R1…).
-**B3 erledigt:** `domain/bilanz.js bilanz(buchungen, idx, stichtag, eröffnungssalden)` saldiert die Bestandskonten
-(`accounts.js saldo`/`mehrungsSeite`, `bilanzSeite`) zum Stichtag, gliedert in Aktiva/Passiva, lässt den
-Jahresüberschuss/-fehlbetrag (Erfolgskonten) als Ergebnis ins Eigenkapital fließen und prüft **Aktiva = Passiva
-(inkl. Ergebnis)**; Eröffnungssalden via gebuchtem Saldenvortrag (9000) ODER Parameter. Bilanz-Karte in „Auswertung"
-(neben GuV, beide gatet `gewinnermittlung`) + CSV (`buildBilanzCsv`). **EHRLICH:** keine §266-HGB-Gliederung,
-keine Konzernabschlüsse, keine E-Bilanz-Taxonomie; Konten nach Kontoart, nicht nach Saldovorzeichen umgegliedert.
+**Kopf-Status (Stand nach R1):** SW **v87** · Tests **783/783** grün · 92 JS-Module.
+**Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1 ✅.** Reihenfolge im Plan:
+~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → Rest-SOLL (R2…).
+**R1 erledigt:** `domain/mahnwesen.js` bucht Verzugszinsen/Mahngebühren als **Forderung 1400 an Zinserträge 2650 /
+sonstige betr. Erträge 2700 — ohne USt** (nicht steuerbarer Schadensersatz §288 BGB / Abschn. 1.3 UStAE):
+`mahnbuchungZeilen`/`mahnbuchungEntwurf` (rein, node-getestet) + Knopf **„Als Buchungsentwurf übernehmen"** im
+Mahnschreiben (`reports.js` → `saveEntwurf`, **manuell/kein Auto-Festschreiben**, GoBD). **EHRLICH:** USt-Freiheit
+gilt für echten Schadensersatz; vertraglich vereinbarte Bearbeitungsgebühren ggf. anders → im Zweifel Berater.
 
 **✅ Bereits fertig & gemergt (NICHT wiederholen):** Profi-Readiness **V1–V10** (Kontenrahmen, §13b,
 AfA/Anlagen, Kassenbuch, USt-VA komplett, Berichte/SuSa, GoBD/GDPdU, DATEV-EXTF, Kleinfälle,
