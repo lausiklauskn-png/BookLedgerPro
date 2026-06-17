@@ -23,6 +23,7 @@ import { mountBerichte } from './views/berichte.js';
 import { mountSelbsttest } from './views/selbsttest.js';
 import { getBuchungssperre, setBuchungssperre, ensureSeedKonten } from '../domain/store.js';
 import { GEWINNERMITTLUNG, normalizeGewinnermittlung, BILANZ_GRUNDKONTO_NUMMERN } from '../domain/bilanzierung.js';
+import { NUTZUNGSMODUS_LISTE, normalizeNutzungsmodus, zeigeAnsicht } from '../domain/nutzungsmodus.js';
 import { mountDocuments } from './views/documents.js';
 import { mountPayables } from './views/payables.js';
 import { mountCustomers } from './views/customers.js';
@@ -132,8 +133,12 @@ function mandantWechseln() {
 
 function nav() {
   const route = getRoute();
+  const s = getSettings();
+  // Privat-/Bürger-Modus (P1): geschäftliche Ansichten je Nutzungsmodus ausblenden.
+  // Firma (Default) zeigt alles → Bestandsverhalten unverändert. Reine Gating-Politik
+  // liegt node-getestet in domain/nutzungsmodus.js; hier nur die NAV-Filterung.
   return el('nav', { class: 'app-nav', 'aria-label': t('a11y.nav') },
-    NAV.map(([key, label]) => el('button', {
+    NAV.filter(([key]) => zeigeAnsicht(s, key)).map(([key, label]) => el('button', {
       class: 'nav-item' + (route === key ? ' active' : ''),
       text: t(label),
       'aria-current': route === key ? 'page' : null,
@@ -234,6 +239,14 @@ function viewSettings() {
     seg(t('settings.mode'), 'mode',
       MODES.map((m) => [m, t('settings.mode.' + m)]), s.mode,
       (v) => updateSettings({ mode: v }), t('settings.mode.hint')),
+
+    // Privat-/Bürger-Modus (P1): Nutzungskontext (Firma/Privat/Verein). Steuert,
+    // welche Ansichten in der Navigation erscheinen. paint() → NAV neu filtern.
+    seg(t('settings.nutzung'), 'nutzungsmodus',
+      NUTZUNGSMODUS_LISTE.map((m) => [m, t('settings.nutzung.' + m)]),
+      normalizeNutzungsmodus(s.nutzungsmodus),
+      async (v) => { await updateSettings({ nutzungsmodus: v }); paint(); },
+      t('settings.nutzung.hint')),
 
     seg(t('settings.ai'), 'aiAutonomy',
       AI_LEVELS.map((a) => [a, t('settings.ai.' + a)]), s.aiAutonomy,
