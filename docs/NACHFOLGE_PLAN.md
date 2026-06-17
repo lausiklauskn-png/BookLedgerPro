@@ -3,7 +3,7 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **651/651 grün**, SW `v79`.
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **699/699 grün**, SW `v82`.
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -37,10 +37,13 @@
   `mandanten.js` um `REGISTRY_DB_NAME` ergänzt; `main.js`-Boot ruft `initMandanten()` (registriert den
   Alt-Tresor migrationsfrei, richtet aktive DB aus — **verhaltensneutral** bei einem Mandanten). 9 neue
   Tests. (PR M2a.)
-- [ ] **M2b — Sperrbildschirm: Auswahl/Anlegen/Wechsel (UI, statisch geprüft).** `lock.js`: bei >1 Mandant
-  Auswahlliste vor dem Entsperren; „Neuer Mandant" → Onboarding in **eigener** DB (eigenes Passwort/Shamir/
-  Backup); Wechsel über `wechsleAktivenMandant` (DEK verwerfen ist bereits dort gekapselt). DSGVO-Hinweis:
-  Mandanten-Namen liegen unverschlüsselt. Nutzt die in M2a fertige Core-Schicht.
+- [x] **M2b — Sperrbildschirm: Auswahl/Anlegen/Wechsel (UI, statisch geprüft).** ✅ `lock.js`: bei >1 Mandant
+  Auswahlliste vor dem Entsperren (`renderMandantenAuswahl`, sortiert/aktiv markiert); „Neuer Mandant" →
+  `registriereMandant` + `wechsleAktivenMandant` → Onboarding in **eigener** leerer Tresor-DB (eigenes Passwort/
+  Shamir/Backup); Auswahl/Wechsel über `wechsleAktivenMandant` (DEK verwerfen + DB-Wechsel dort gekapselt).
+  Bei genau 1 Mandant verhaltensneutral (direktes Entsperren) + diskreter „+ Neuer Mandant"-Link als Bootstrap
+  bis zum Shell-Trigger in M3. DSGVO-Hinweis im UI: Mandanten-Namen liegen unverschlüsselt. Reine Logik
+  (`brauchtMandantenAuswahl`, `mandantenAuswahlListe`) in `domain/mandanten.js`, +10 Tests. (PR M2b.)
 - [ ] **M3 — Shell-Indikator + Verwaltung.** Aktiver Mandant sichtbar (Header), „Mandant wechseln" + in
   Einstellungen „Mandanten verwalten" (umbenennen/entfernen — Entfernen nur mit Bestätigung, Daten bleiben
   im jeweiligen Tresor). Doku `docs/MANDANTEN.md`.

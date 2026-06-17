@@ -36,21 +36,25 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „M2b"** (Sperrbildschirm: Mandant auswählen/anlegen/wechseln, UI).
-**M1 + M2a sind erledigt.** M2 wurde gesplittet: **M2a** = Core-Verdrahtung (PR M2a: `core/db.js` aktive DB
-konfigurierbar, neue `core/mandantenStore.js` mit Registry + `initMandanten`/`wechsleAktivenMandant`, Boot
-verhaltensneutral verdrahtet, +9 Tests). **M2b** = die eigentliche Sperrbildschirm-UI.
-Reihenfolge dort: ~~M1~~ → ~~M2a~~ → **M2b** → M3 (Mehrmandanten) · B1 → B2 → B3 (Bilanzierung) · danach Rest-SOLL (R1…).
-**Wichtig für M2b:** Core ist fertig — `lock.js` nutzt `ladeRegistry`/`registriereMandant`/`wechsleAktivenMandant`
-aus `core/mandantenStore.js` (DEK-Verwerfen + DB-Wechsel sind dort gekapselt). DSGVO-Hinweis: Mandanten-Namen
-liegen unverschlüsselt. Design-Abschnitt in `NACHFOLGE_PLAN.md` Abschnitt A bleibt verbindlich.
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „M3"** (Shell-Indikator + Mandanten-Verwaltung: aktiver Mandant
+im Header sichtbar, „Mandant wechseln", in Einstellungen umbenennen/entfernen; Doku `docs/MANDANTEN.md`).
+**M1 + M2a + M2b sind erledigt.** M2 wurde gesplittet: **M2a** = Core-Verdrahtung (`core/db.js` aktive DB
+konfigurierbar, `core/mandantenStore.js` mit Registry + `initMandanten`/`wechsleAktivenMandant`, +9 Tests);
+**M2b** = Sperrbildschirm-UI (Auswahlliste bei >1 Mandant, „Neuer Mandant" → eigener Tresor-Onboarding,
+Wechsel über `wechsleAktivenMandant`, DSGVO-Hinweis; +10 Tests).
+Reihenfolge dort: ~~M1~~ → ~~M2a~~ → ~~M2b~~ → **M3** (Mehrmandanten) · B1 → B2 → B3 (Bilanzierung) · danach Rest-SOLL (R1…).
+**Wichtig für M3:** Core+Lock sind fertig. M3 macht den aktiven Mandanten in der **Shell** sichtbar
+(`ui/shell.js`, Header zeigt heute `getMandantId()` — jetzt den Mandanten-NAMEN aus der Registry zeigen) und
+ergänzt „Mandant wechseln" (→ `location.reload()` nach `lockVault`/Auswahl) + Verwaltung (umbenennen/entfernen
+über `umbenenneMandant`/`entferneMandant`; Entfernen nur mit Bestätigung, Tresor-DB bleibt erhalten).
+Design-Abschnitt in `NACHFOLGE_PLAN.md` Abschnitt A bleibt verbindlich.
 
 **✅ Bereits fertig & gemergt (NICHT wiederholen):** Profi-Readiness **V1–V10** (Kontenrahmen, §13b,
 AfA/Anlagen, Kassenbuch, USt-VA komplett, Berichte/SuSa, GoBD/GDPdU, DATEV-EXTF, Kleinfälle,
 Selbstdiagnose) · A1–A3 (Mahnwesen/Verbindlichkeiten/Zahlungsabgleich) · Entscheidungen 2026-06-17
 (ELSTER-Link, AVV-Links, §19-Onboarding, abw. Wirtschaftsjahr, Übergabe-Datenblatt, GoBD-Aufbewahrung,
-ZUGFeRD-Empfang+KoSIT-Precheck, A4 offene Anbindung Stufe 1) · **M1 + M2a Mehrmandanten (Fundament + Core-Verdrahtung).**
-**PRs #64–#83 + M1/M2a, Tests 689/689, SW `v81`.**
+ZUGFeRD-Empfang+KoSIT-Precheck, A4 offene Anbindung Stufe 1) · **M1 + M2a + M2b Mehrmandanten (Fundament + Core + Sperrbildschirm-UI).**
+**PRs #64–#84 + M1/M2a/M2b, Tests 699/699, SW `v82`.**
 → **Nicht** Erledigtes neu bauen, **kein** Redesign. „Vx/Mx/Bx" = Schritt aus dem Plan, keine Programm-Version.
 
 ### V2 — was genau zu bauen ist (§13b/Reverse-Charge + EU/Ausland)

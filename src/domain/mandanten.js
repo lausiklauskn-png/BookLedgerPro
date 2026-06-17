@@ -129,6 +129,27 @@ export function setzeAktiv(registry, id) {
 }
 
 /**
+ * Entscheidet, ob am Sperrbildschirm eine Mandanten-Auswahl VOR dem Entsperren nötig
+ * ist (M2b). Reine Funktion (node-getestet). Bei genau einem (oder keinem) Mandanten
+ * bleibt es beim direkten Entsperren/Onboarding — verhaltensneutral für Bestandsnutzer.
+ */
+export function brauchtMandantenAuswahl(registry) {
+  return (registry?.mandanten?.length ?? 0) > 1;
+}
+
+/**
+ * Liefert die Mandanten als anzeige-fertige, stabil sortierte Liste (ältester zuerst,
+ * Name als Tiebreak) inkl. `aktiv`-Markierung. Reine Funktion (immutabel, node-getestet)
+ * — die UI am Sperrbildschirm baut daraus die Auswahlliste.
+ */
+export function mandantenAuswahlListe(registry) {
+  const aktiv = registry?.aktiv ?? null;
+  return [...(registry?.mandanten ?? [])]
+    .sort((a, b) => (a.erstellt - b.erstellt) || a.name.localeCompare(b.name))
+    .map((m) => ({ id: m.id, name: m.name, erstellt: m.erstellt, aktiv: m.id === aktiv }));
+}
+
+/**
  * Stellt sicher, dass der vorhandene Einzel-Tresor als Legacy-Mandant registriert ist
  * (migrationsfrei). Ist die Registry leer, wird der Bestand als „Mandant 1" mit der
  * festen Legacy-ID aufgenommen und aktiv gesetzt. Vorhandene Registries bleiben
