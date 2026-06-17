@@ -36,8 +36,13 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = mit dem Nutzer abstimmen (AskUserQuestion).** Der **build-freie Rest-Korb war leer**; in dieser Sitzung
-wurde mit dem Nutzer ein neues build-freies Feature vereinbart und umgesetzt: **A1-Rest — Zahlungsziel je Forderung**
+**Nächste PR = mit dem Nutzer abstimmen (AskUserQuestion).** Der **build-freie Rest-Korb ist leer**; in dieser Sitzung
+wurde (Nutzer: „keine Präferenz" → empfohlene Folge-Idee) **„Edit bestehender Aufträge"** umgesetzt: ein noch nicht
+berechneter Auftrag ist nachträglich editierbar (`orders.darfAuftragBearbeiten`/`anwendeAuftragEdit` rein/node-getestet,
+`crm-store.updateAuftrag`, UI-„Bearbeiten"-Knopf; GoBD-gesperrt sobald berechnet/bezahlt/Zahlung erfasst). SW `v102`,
+**1080/1080**. **Verbleibend (für die nächste Sitzung erneut mit dem Nutzer abstimmen):** kleine Folge-Idee
+**Eingangsrechnungs-Verzug (Gegenseite)**, Browser-Sichttest, oder umgebungs-/menschen-blockierte [KANN]-Punkte.
+Frühere build-freie Folge-Ideen waren ebenfalls: **A1-Rest — Zahlungsziel je Forderung**
 (✅ siehe Kopf-Status). R4-Rest und **R5a-Rest** (SWIFT-(MT940)/ISO-20022-(CAMT)-**Schema-/Struktur-Validierung**,
 `domain/bankschema.js`) sind ebenfalls **erledigt + gemergt**. Verbleibend sind nur noch **umgebungs-/menschen-blockierte** [KANN]-Punkte **oder ein
 Browser-Sichttest** — beides braucht eine Nutzer-Entscheidung. **R6/Rest [KANN] bleibt blockiert** (Umgebung/Mensch):
@@ -90,7 +95,7 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Zahlungsziel durabel + v4"):** SW **v101** · Tests **1059/1059** grün · 98 JS-Module.
+**Kopf-Status (Stand nach „Edit bestehender Aufträge"):** SW **v102** · Tests **1080/1080** grün · 98 JS-Module.
 **Zahlungsziel je Auftrag durabel + im Austauschformat (v4) erledigt (diese Sitzung, „nach Empfehlung"):**
 Zwei eng gekoppelte Teile in EINEM PR. **(1) Bugfix:** `crm-store.saveAuftrag` ließ das A1-Rest-Feld
 `zahlungszielTage` aus seiner Whitelist **fallen** → Mahnwesen-Fälligkeit und gedruckte „zahlbar bis"-Zeile fielen

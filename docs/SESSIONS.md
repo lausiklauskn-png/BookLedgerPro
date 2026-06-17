@@ -5,6 +5,42 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — Edit bestehender Aufträge (GoBD-Guard) [Branch `claude/edit-auftraege`]
+
+**Ausgangslage / Auswahl** (build-freier Rest-Korb leer → mit dem Nutzer abgestimmt, AskUserQuestion)
+- Optionen: kleine Folge-Idee „Edit bestehender Aufträge" / „Eingangsrechnungs-Verzug" · Browser-Sichttest ·
+  umgebungs-blockierte KANN-Punkte · neue Feature-Idee. Nutzer: **„keine Präferenz"** → empfohlene, am
+  saubersten abgegrenzte Option umgesetzt: **Edit bestehender Aufträge**.
+- Problem vorher: ein einmal angelegter Auftrag war **nicht mehr bearbeitbar** (Tippfehler/falscher Kunde/
+  vergessene Position erzwangen Löschen + Neuanlage). Lücke seit Phase 3.
+
+**Was getan** (reine Logik zuerst, node-getestet — **+21 → 1080/1080**)
+- **`src/domain/orders.js` (rein):** `darfAuftragBearbeiten(auftrag)` — GoBD-Guard: editierbar nur solange
+  **keine Rechnung gebucht** (`rechnungBuchungId`/`rechnungNummer` leer) **und keine (Teil-)Zahlung erfasst**
+  und Status ∈ {angelegt, in_arbeit, erledigt}; sonst gesperrt (würde die gebuchte Forderung verfälschen).
+  `anwendeAuftragEdit(bestehend, patch)` übernimmt **nur** die freigegebenen Felder `AUFTRAG_EDIT_FELDER`
+  (Titel, Kunde, Kostenstelle, Zahlungsziel, Positionen) — Status/Zahlungen/Mahnungen/Rechnungsbezug/
+  createdAt/id bleiben unveränderlich (per-Feld `hasOwnProperty`, `null` löscht das Zahlungsziel).
+- **`src/domain/crm-store.js`:** `updateAuftrag(id, patch)` — lädt, prüft den Guard (wirft bei gesperrt),
+  merged via `anwendeAuftragEdit`, validiert wie beim Anlegen (`validateAuftrag`), persistiert (`encPut`).
+- **UI `src/ui/views/orders.js` (statisch geprüft):** „Bearbeiten"-Knopf je Auftrag **nur wenn**
+  `darfAuftragBearbeiten`; Klick lädt den Auftrag in das (prefill-fähige) Formular (`_editAuftrag`), Überschrift
+  „Auftrag bearbeiten", Submit „Speichern" + „Abbrechen", `updateAuftrag` statt `saveAuftrag`; Fehler werden im
+  Formular angezeigt. `positionsRow(init)` prefillt Beschreibung/Menge/Preis/USt; `formatCents` für den Preis.
+- **i18n** `orders.edit` de+en (übrige Knopf-Texte über bestehende `common.save/cancel/edit`).
+- **SW-Cache** `v101 → v102` (kein neues Modul — nur bestehende, bereits precachte Dateien geändert).
+
+**Stand:** `node tests/run.mjs` **1080/1080 grün**. Berührte Module `node --check`-sauber.
+
+**Offen / Grenzen (ehrlich)**
+- UI/Glue (`updateAuftrag`-Aufruf, Prefill, IndexedDB `encPut`) **statisch geprüft** — kein Headless-Browser.
+  **Browser-Sichttest empfohlen:** Auftrag anlegen → „Bearbeiten" → Titel/Kunde/Position/Zahlungsziel ändern →
+  „Speichern" → Werte stimmen; dann denselben Auftrag „berechnen" → „Bearbeiten" verschwindet (GoBD).
+- Bewusst gesperrt: **berechnete/bezahlte Aufträge** sind nicht editierbar (Storno-Pfad bleibt der korrekte Weg).
+- Eingangsrechnungs-Verzug der Gegenseite weiter offen [SOLL].
+
+---
+
 ## 2026-06-17 — Zahlungsziel je Auftrag durabel + im Austauschformat (v4) [Branch `claude/bookledgerpro-next-steps-o185d5`]
 
 **Ausgangslage / Auswahl** (build-freier Rest-Korb leer → mit dem Nutzer abgestimmt, AskUserQuestion)

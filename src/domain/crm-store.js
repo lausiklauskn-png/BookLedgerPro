@@ -4,7 +4,7 @@
 
 import { encPut, encGet, encList, encDel, neueId } from './encstore.js';
 import { recAll, recPut, recDel, kvGet, kvSet } from '../core/db.js';
-import { AUFTRAG_STATUS, auftragOffen } from './orders.js';
+import { AUFTRAG_STATUS, auftragOffen, darfAuftragBearbeiten, anwendeAuftragEdit, validateAuftrag } from './orders.js';
 import { rechnungZeilen, rechnungsUebernahmeEntwurf, validateRechnungsUebernahme,
   zahlungsUebernahmeEntwurf, validateZahlungsUebernahme } from './invoicing.js';
 import { formatRechnungsnummer } from './rechnung.js';
@@ -52,6 +52,22 @@ export async function saveAuftrag(a) {
     createdAt: a.createdAt || new Date().toISOString(),
   };
   return encPut(auftrag);
+}
+
+/**
+ * Bearbeitet einen bestehenden Auftrag — nur die freigegebenen Felder (AUFTRAG_EDIT_FELDER:
+ * Titel, Kunde, Kostenstelle, Zahlungsziel, Positionen). GoBD: ein bereits berechneter
+ * Auftrag (Rechnung gebucht) bzw. einer mit erfassten (Teil-)Zahlungen ist gesperrt —
+ * sonst würde die gebuchte Forderung verfälscht. Validiert wie beim Anlegen.
+ */
+export async function updateAuftrag(id, patch) {
+  const a = await getAuftrag(id);
+  if (!a) throw new Error('Auftrag nicht gefunden');
+  if (!darfAuftragBearbeiten(a)) throw new Error('Berechneter Auftrag kann nicht mehr bearbeitet werden (GoBD).');
+  const next = anwendeAuftragEdit(a, patch);
+  const fehler = validateAuftrag(next);
+  if (fehler.length) throw new Error(fehler.join(' '));
+  return encPut(next);
 }
 
 /**

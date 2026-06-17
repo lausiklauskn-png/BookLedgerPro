@@ -32,7 +32,8 @@ import { parseImportText, normalizeImport } from '../src/domain/importworkfloh.j
 import { baueRechnung, pflichtangaben, formatRechnungsnummer } from '../src/domain/rechnung.js';
 import { findeRechtsregeln, onDeviceBegruendung } from '../src/domain/rechtsregeln.js';
 import { buildBegruendungMessages, parseBegruendung, begruendeBuchung } from '../src/ai/berater.js';
-import { auftragSummen, darfWechseln, validateAuftrag, auftragOffen, auftragGezahlt } from '../src/domain/orders.js';
+import { auftragSummen, darfWechseln, validateAuftrag, auftragOffen, auftragGezahlt,
+  darfAuftragBearbeiten, anwendeAuftragEdit, AUFTRAG_EDIT_FELDER } from '../src/domain/orders.js';
 import { rechnungZeilen, rechnungsUebernahmeEntwurf, validateRechnungsUebernahme,
   zahlungsUebernahmeEntwurf, validateZahlungsUebernahme } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
@@ -766,6 +767,41 @@ await section('Aufträge: Summen über mehrere USt-Sätze', () => {
   ok('Status-Flow angelegt->in_arbeit erlaubt', darfWechseln('angelegt', 'in_arbeit'));
   ok('Status-Flow berechnet->x gesperrt', !darfWechseln('berechnet', 'angelegt'));
   ok('Auftrag ohne Position ungültig', validateAuftrag({ titel: 'x', positionen: [] }).length > 0);
+});
+
+await section('Auftrag bearbeiten: GoBD-Guard + Edit-Merge (rein)', () => {
+  const basis = { id: 'A-1', type: 'auftrag', titel: 'Alt', kundeId: 'k1', status: 'angelegt',
+    kostenstelle: '1000', zahlungszielTage: 14, positionen: [{ menge: 1, einzelpreisCent: 5000, ustSatz: 19 }],
+    zahlungen: [], mahnungen: [], createdAt: '2026-01-01T00:00:00.000Z' };
+  // Guard: vor dem Berechnen editierbar, danach gesperrt.
+  ok('angelegt editierbar', darfAuftragBearbeiten(basis));
+  ok('in_arbeit editierbar', darfAuftragBearbeiten({ ...basis, status: 'in_arbeit' }));
+  ok('erledigt editierbar', darfAuftragBearbeiten({ ...basis, status: 'erledigt' }));
+  ok('berechnet gesperrt', !darfAuftragBearbeiten({ ...basis, status: 'berechnet' }));
+  ok('bezahlt gesperrt', !darfAuftragBearbeiten({ ...basis, status: 'bezahlt' }));
+  ok('mit Rechnungsbuchung gesperrt', !darfAuftragBearbeiten({ ...basis, rechnungBuchungId: 'b1' }));
+  ok('mit Rechnungsnummer gesperrt', !darfAuftragBearbeiten({ ...basis, rechnungNummer: '2026-0001' }));
+  ok('mit erfasster Zahlung gesperrt', !darfAuftragBearbeiten({ ...basis, zahlungen: [{ betragCent: 100 }] }));
+  ok('null/undefined nicht editierbar', !darfAuftragBearbeiten(null) && !darfAuftragBearbeiten(undefined));
+  // Merge: nur freigegebene Felder ändern, der Rest bleibt unverändert.
+  const next = anwendeAuftragEdit(basis, { titel: 'Neu', kundeId: 'k2', kostenstelle: '2000',
+    zahlungszielTage: 30, positionen: [{ menge: 2, einzelpreisCent: 9000, ustSatz: 7 }],
+    status: 'berechnet', id: 'HACK', zahlungen: [{ betragCent: 999 }] });
+  ok('Titel übernommen', next.titel === 'Neu');
+  ok('Kunde übernommen', next.kundeId === 'k2');
+  ok('Kostenstelle übernommen', next.kostenstelle === '2000');
+  ok('Zahlungsziel übernommen', next.zahlungszielTage === 30);
+  ok('Positionen übernommen', next.positionen.length === 1 && next.positionen[0].einzelpreisCent === 9000);
+  ok('Status NICHT überschreibbar', next.status === 'angelegt');
+  ok('id NICHT überschreibbar', next.id === 'A-1');
+  ok('Zahlungen NICHT überschreibbar', next.zahlungen.length === 0);
+  ok('createdAt bleibt', next.createdAt === '2026-01-01T00:00:00.000Z');
+  // Patch nur mit einem Feld lässt die anderen unangetastet (hasOwnProperty-Logik).
+  const teil = anwendeAuftragEdit(basis, { titel: 'NurTitel' });
+  ok('Teil-Patch: nur Titel geändert', teil.titel === 'NurTitel' && teil.kundeId === 'k1' && teil.zahlungszielTage === 14);
+  ok('zahlungszielTage löschbar (null)', anwendeAuftragEdit(basis, { zahlungszielTage: null }).zahlungszielTage === null);
+  ok('AUFTRAG_EDIT_FELDER enthält keine Rechnungs-/Status-Felder',
+    !AUFTRAG_EDIT_FELDER.includes('status') && !AUFTRAG_EDIT_FELDER.includes('rechnungBuchungId') && !AUFTRAG_EDIT_FELDER.includes('zahlungen'));
 });
 
 await section('Rechnung → Buchung (Ausgangsrechnung, mehrere Sätze)', () => {

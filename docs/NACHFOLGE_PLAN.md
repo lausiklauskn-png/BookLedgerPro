@@ -3,14 +3,14 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **1029/1029 grün**, SW `v98`.
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **1080/1080 grün**, SW `v102`.
 > Nächster Schritt: **mit dem Nutzer abstimmen** (AskUserQuestion) — der **build-freie Rest-Korb ist leer**
 > (R4-Rest ✅, **R5a-Rest SWIFT/ISO-20022-Schema-Validierung ✅**). Verbleibend nur noch **umgebungs-/menschen-
 > blockierte** [KANN]-Punkte (**R6/Rest**: Lighthouse/Perf → Headless-Browser; lokales OCR → Tesseract ist wasm/
 > npm-Runtime, NICHT build-frei; ZUGFeRD-Erzeugen → PDF-Lib, nicht build-frei; Sage 5b–d → fremde Repos, menschlich
 > vermittelt) **oder Browser-Sichttest** (echter Nutzer) **oder eine neue, mit dem Nutzer vereinbarte Feature-Idee**.
 > A+B fertig; R1–R5 ✅ inkl. **R5a-Rest ✅** + **R5c-Rest NER-Scoping ✅**; **R4-Rest Zahlungs-/Teilzahlungs-Übernahme ✅**
-> (Austauschformat v3); **R6/P1 ✅**; **R6/P2 ✅**. Tests **1029/1029**, SW `v98`.
+> (Austauschformat v3); **R6/P1 ✅**; **R6/P2 ✅**; **A1-Rest/„zahlbar bis"/Zahlungsziel durabel v4 ✅**; **Edit bestehender Aufträge ✅**. Tests **1080/1080**, SW `v102`.
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -265,6 +265,16 @@
   WORKFLOH_IMPORT.md auf v4. **Grenze:** `saveAuftrag`-Persistenz ist IndexedDB → **statisch geprüft** (kein
   Headless-Browser); reine Logik (Export/Normalisierung) node-getestet. Edit bestehender Aufträge + Eingangs-
   rechnungs-Verzug der Gegenseite weiter offen. (PR „Zahlungsziel durabel + v4".)
+- [x] **Edit bestehender Aufträge** (mit dem Nutzer abgestimmt „keine Präferenz" → empfohlene Folge-Idee). ✅
+  Ein noch **nicht berechneter** Auftrag ist nachträglich editierbar (Titel/Kunde/Kostenstelle/Zahlungsziel/
+  Positionen). Reine Logik (`orders.js`): **`darfAuftragBearbeiten`** (GoBD-Guard — gesperrt sobald
+  `rechnungBuchungId`/`rechnungNummer` gesetzt oder (Teil-)Zahlung erfasst bzw. Status berechnet/bezahlt) +
+  **`anwendeAuftragEdit`** (übernimmt nur `AUFTRAG_EDIT_FELDER`, lässt Status/Zahlungen/Mahnungen/Rechnungsbezug/
+  createdAt/id unverändert; per-Feld `hasOwnProperty`). Store: **`crm-store.updateAuftrag`** (Guard + Validierung
+  + `encPut`). UI (`ui/views/orders.js`, statisch geprüft): „Bearbeiten"-Knopf nur wenn editierbar →
+  prefill-fähiges Formular (`_editAuftrag`, `positionsRow(init)`, „Speichern"/„Abbrechen"). i18n `orders.edit`
+  de+en. SW `v102`, **+21 Tests (1080/1080)**. **Grenze:** berechnete/bezahlte Aufträge bewusst nicht editierbar
+  (Storno-Pfad); UI/IndexedDB statisch geprüft. (PR „Edit Aufträge".)
 
 ---
 
