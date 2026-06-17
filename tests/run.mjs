@@ -19,6 +19,11 @@ import {
   istBilanzierung, istBestandskonto, istErfolgskonto, abschlussBereich, bilanzSeite, guvSeite,
   klassifiziereKonto, BEREICH, BILANZ_GRUNDKONTO_NUMMERN,
 } from '../src/domain/bilanzierung.js';
+import {
+  NUTZUNGSMODUS, NUTZUNGSMODUS_LISTE, istNutzungsmodus, normalizeNutzungsmodus, nutzungsmodusVon,
+  istFirmenmodus, istPrivatmodus, istVereinsmodus, zeigeAnsicht, sichtbareAnsichten,
+  FEATURE, FEATURE_LISTE, zeigeFeature,
+} from '../src/domain/nutzungsmodus.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
@@ -2798,6 +2803,78 @@ await section('Bilanzierung (B3): Bilanz (Aktiva = Passiva)', () => {
   ok('Bilanz-CSV: Jahresfehlbetrag-Ergebnis', csvOut.includes('Jahresfehlbetrag (Ergebnis)') && csvOut.includes('-600,00'));
   ok('Bilanz-CSV: ausgeglichen → keine Differenz-Zeile', !csvOut.includes('NICHT ausgeglichen'));
   ok('Bilanz-CSV schief: Differenz-Zeile', buildBilanzCsv(schief).includes('NICHT ausgeglichen'));
+});
+
+// ===== R6/P1: Privat-/Bürger-Modus (Nutzungskontext) =====
+await section('Nutzungsmodus (P1): Modus-Werte + Normalisierung', () => {
+  ok('drei Modi', NUTZUNGSMODUS_LISTE.length === 3 &&
+    NUTZUNGSMODUS_LISTE.join(',') === 'firma,privat,verein');
+  ok('istNutzungsmodus erkennt gültige', istNutzungsmodus('privat') && istNutzungsmodus('verein') && istNutzungsmodus('firma'));
+  ok('istNutzungsmodus lehnt ungültige ab', !istNutzungsmodus('xxx') && !istNutzungsmodus('') && !istNutzungsmodus(undefined));
+  ok('normalize Default firma', normalizeNutzungsmodus(undefined) === 'firma' && normalizeNutzungsmodus('quatsch') === 'firma');
+  ok('normalize lässt gültige durch', normalizeNutzungsmodus('privat') === 'privat' && normalizeNutzungsmodus('verein') === 'verein');
+  ok('nutzungsmodusVon liest Settings', nutzungsmodusVon({ nutzungsmodus: 'verein' }) === 'verein');
+  ok('nutzungsmodusVon Default firma', nutzungsmodusVon({}) === 'firma' && nutzungsmodusVon(null) === 'firma');
+  // Prädikate
+  ok('istFirmenmodus Default true', istFirmenmodus({}) === true && istFirmenmodus({ nutzungsmodus: 'firma' }) === true);
+  ok('istPrivatmodus', istPrivatmodus({ nutzungsmodus: 'privat' }) === true && istPrivatmodus({}) === false);
+  ok('istVereinsmodus', istVereinsmodus({ nutzungsmodus: 'verein' }) === true && istVereinsmodus({ nutzungsmodus: 'privat' }) === false);
+});
+
+await section('Nutzungsmodus (P1): NAV-Ansichten-Gating', () => {
+  const NAV_KEYS = ['dashboard', 'journal', 'kassenbuch', 'accounts', 'anlagen', 'documents',
+    'payables', 'orders', 'customers', 'employees', 'reports', 'berichte', 'network', 'legal',
+    'anleitung', 'selbsttest', 'about', 'settings'];
+  // Firma zeigt ALLES.
+  ok('Firma: alle Ansichten sichtbar', sichtbareAnsichten({ nutzungsmodus: 'firma' }, NAV_KEYS).length === NAV_KEYS.length);
+  ok('Firma: zeigeAnsicht stets true', NAV_KEYS.every((k) => zeigeAnsicht({ nutzungsmodus: 'firma' }, k)));
+  ok('Default (kein Modus) = Firma-Verhalten', sichtbareAnsichten({}, NAV_KEYS).length === NAV_KEYS.length);
+
+  // Privat: geschäftliche Ansichten ausgeblendet.
+  const privatSichtbar = sichtbareAnsichten({ nutzungsmodus: 'privat' }, NAV_KEYS);
+  ok('Privat blendet Anlagen aus', !zeigeAnsicht({ nutzungsmodus: 'privat' }, 'anlagen'));
+  ok('Privat blendet Aufträge/Kunden/Mitarbeiter aus',
+    !privatSichtbar.includes('orders') && !privatSichtbar.includes('customers') && !privatSichtbar.includes('employees'));
+  ok('Privat blendet Kreditoren/Berichte/Netz aus',
+    !privatSichtbar.includes('payables') && !privatSichtbar.includes('berichte') && !privatSichtbar.includes('network'));
+  ok('Privat behält Kern (Journal/Belege/Auswertung/Kassenbuch/Konten)',
+    ['dashboard', 'journal', 'kassenbuch', 'accounts', 'documents', 'reports', 'legal', 'settings'].every((k) => privatSichtbar.includes(k)));
+
+  // Verein: wie Privat, aber MIT Berichten/Kunden(Mitglieder)/Netz; ohne Anlagen/Kreditoren/Aufträge/Lohn.
+  const vereinSichtbar = sichtbareAnsichten({ nutzungsmodus: 'verein' }, NAV_KEYS);
+  ok('Verein zeigt Berichte + Kunden + Netz',
+    vereinSichtbar.includes('berichte') && vereinSichtbar.includes('customers') && vereinSichtbar.includes('network'));
+  ok('Verein blendet Anlagen/Kreditoren/Aufträge/Mitarbeiter aus',
+    !vereinSichtbar.includes('anlagen') && !vereinSichtbar.includes('payables') &&
+    !vereinSichtbar.includes('orders') && !vereinSichtbar.includes('employees'));
+  ok('Verein sichtbar > Privat sichtbar', vereinSichtbar.length > privatSichtbar.length);
+
+  // Unbekannte Schlüssel werden nicht versehentlich ausgeblendet (sicher additiv).
+  ok('unbekannter Key bleibt sichtbar', zeigeAnsicht({ nutzungsmodus: 'privat' }, 'irgendwas-neues'));
+  ok('sichtbareAnsichten verträgt leere/fehlende Liste', sichtbareAnsichten({ nutzungsmodus: 'privat' }, undefined).length === 0);
+});
+
+await section('Nutzungsmodus (P1): fachliche Feature-Gates', () => {
+  ok('FEATURE_LISTE vollständig', FEATURE_LISTE.length === 8 && FEATURE_LISTE.includes(FEATURE.UMSATZSTEUER));
+  // Firma: alle Features an.
+  ok('Firma: alle Features sichtbar', FEATURE_LISTE.every((f) => zeigeFeature({ nutzungsmodus: 'firma' }, f)));
+  ok('Default: alle Features sichtbar', FEATURE_LISTE.every((f) => zeigeFeature({}, f)));
+  // Privat: keine geschäftlichen Features.
+  ok('Privat: keine USt', !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.UMSATZSTEUER));
+  ok('Privat: keine Rechnungen/Mahnwesen/Anlagen',
+    !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.RECHNUNGEN) &&
+    !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.MAHNWESEN) &&
+    !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.ANLAGEN));
+  ok('Privat: kein Berater-Export/keine Verbindlichkeiten',
+    !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.BERATER_EXPORT) &&
+    !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.VERBINDLICHKEITEN));
+  // Verein: USt/Verbindlichkeiten/Anlagen/Berater-Export bleiben möglich; Rechnungs-/Mahnwesen/Lohn aus.
+  ok('Verein: USt + Berater-Export an', zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.UMSATZSTEUER) &&
+    zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.BERATER_EXPORT));
+  ok('Verein: Rechnungen/Mahnwesen/Mitarbeiter aus',
+    !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.RECHNUNGEN) &&
+    !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.MAHNWESEN) &&
+    !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.MITARBEITER));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

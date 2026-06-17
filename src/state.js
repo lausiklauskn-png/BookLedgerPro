@@ -9,7 +9,8 @@ export const AI_LEVELS = ['suggest', 'draft', 'auto'];
 export const DATENSCHUTZ_MODI = ['aus', 'pseudonym']; // KI-Datensparsamkeit
 
 const DEFAULTS = Object.freeze({
-  mode: 'profi',        // Einfach / Profi / Berater
+  mode: 'profi',        // Einfach / Profi / Berater (UI-Komplexität)
+  nutzungsmodus: 'firma', // firma | privat | verein — Nutzungskontext (blendet Ansichten je Kontext)
   theme: 'system',      // system / light / dark
   lang: 'de',
   aiAutonomy: 'suggest', // suggest / draft / auto
