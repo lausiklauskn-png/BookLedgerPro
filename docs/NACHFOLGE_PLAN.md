@@ -4,7 +4,7 @@
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
 > `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **885/885 grün**, SW `v91`.
-> Nächster Schritt: **R6** [KANN] oder **Browser-Sichttest** nach Bedarf. A+B fertig; R1–R4 ✅; **R5a ✅ (Bankformate härten: CAMT .052/.054 + Saldo-Prüfung + strukturierte RmtInf); R5b ✅ (NER: PII Dritter über die Anker hinaus maskieren); R5c ✅ (dreistufiger Briefkasten Mandant ⊃ Firma ⊃ Person, `ai/briefkasten.js`, Setting `briefkastenScopes`)** → Abschnitt R bis R5 komplett. Tests **942/942**, SW `v93`.
+> Nächster Schritt: **R6-Rest** [KANN] (P2: Feature-Gates ansichtsintern konsumieren) oder **Browser-Sichttest** nach Bedarf. A+B fertig; R1–R5 ✅ (R5a Bankformate härten · R5b NER · R5c dreistufiger Briefkasten); **R6/P1 ✅ (Privat-/Bürger-Modus: `domain/nutzungsmodus.js`, NAV-Gating, Setting `nutzungsmodus`, PR #99)**. Tests **972/972**, SW `v94`.
 
 ## Sitzungs-Ritual (verbindlich, jede Sitzung)
 1. `git fetch origin main && git reset --hard origin/main` (Branch `claude/v2-ox8bu7`).
@@ -171,7 +171,23 @@
     Mandanten aus der Registry; UI-Schalter im Pseudonym-Modus (`shell.js`), i18n de+en, SW `v93`, **+26 Tests
     (942/942)**. UI/Glue statisch geprüft. **Grenze:** Person-Attribute (E-Mail/USt-IdNr) sind dem Parent-Scope
     (Firma/Mandant) zugeordnet, nicht dem einzelnen Personen-Token; kein NER-Scoping (NER-Anker bleiben flach). (PR R5c.)
-- [ ] **R6 [KANN]** ZUGFeRD-**Erzeugen** (nur falls build-frei lösbar), Lighthouse, lokales OCR, Privat-/Bürger-Modus, Sage 5b–d.
+- [ ] **R6 [KANN]** ZUGFeRD-**Erzeugen** (nur falls build-frei lösbar), Lighthouse, lokales OCR, Privat-/Bürger-Modus, Sage 5b–d. **In Teil-PRs (fein geschnitten):**
+  - [x] **R6/P1 — Privat-/Bürger-Modus (Grundlage + NAV-Gating).** ✅ `src/domain/nutzungsmodus.js` (rein,
+    node-getestet, +30 → 972/972): Nutzungskontext **`firma|privat|verein`** (Default `firma`, Bestand
+    unverändert) NEBEN dem UI-Komplexitäts-`mode` (einfach/profi/berater); `normalizeNutzungsmodus`/
+    `nutzungsmodusVon` + Prädikate; **NAV-Ansichten-Gating** `zeigeAnsicht`/`sichtbareAnsichten`
+    (Allowlist-Komplement, unbekannte Keys bleiben sichtbar → sicher additiv) + **fachliche Feature-Gates**
+    `zeigeFeature`/`FEATURE`/`FEATURE_LISTE`. Privat blendet `anlagen/payables/orders/customers/employees/
+    berichte/network` aus; Verein blendet `anlagen/payables/orders/employees` aus (mit Berichten/Mitgliedern/
+    Netz). UI (statisch geprüft): `shell.js` filtert die NAV über `zeigeAnsicht` + Schalter „Nutzungskontext";
+    Setting `nutzungsmodus` in `state.js`; i18n de+en; SW `v94` + Modul precached. **Grenze:** Anzeige-
+    Vereinfachung (keine rechtliche Sperre), Routing bleibt intakt; Feature-Gates definiert/getestet, aber
+    noch NICHT ansichtsintern konsumiert (→ P2). (PR #99.)
+  - [ ] **R6/P2 [KANN] — Feature-Gates ansichtsintern konsumieren.** `zeigeFeature(settings, FEATURE.*)` in
+    den Views lesen: im Privat-/Verein-Modus USt-Felder (Journal), Rechnungs-/Mahn-Knöpfe, Anlagen-/Lohn-
+    Bezüge etc. ausblenden. Reine Politik liegt schon node-getestet in `domain/nutzungsmodus.js`.
+  - [ ] **R6/Rest [KANN]** Lighthouse/Perf (braucht Headless-Browser), lokales OCR (nur build-frei-sauber),
+    ZUGFeRD-Erzeugen (PDF-Lib → nicht build-frei), Sage 5b–d (fremde Repos, menschlich vermittelt).
 
 ---
 

@@ -5,6 +5,41 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — R6/P1: Privat-/Bürger-Modus (Nutzungskontext firma/privat/verein) [Branch `claude/p1-privat-buerger-modus`, PR #99]
+
+**Was getan** (Schritt **R6/P1** — erste, build-freie Scheibe aus dem R6-Korb)
+- **Auswahl begründet:** R6 bündelt mehrere KANN-Optionen. Nach der Build-frei-Regel fallen ZUGFeRD-Erzeugen
+  (PDF-Lib), Lighthouse (kein Headless-Browser), lokales Tesseract-OCR (npm/wasm-Runtime) und Sage 5b–d
+  (fremde Repos) als saubere Einzelsitzung aus → der **Privat-/Bürger-Modus** ist die passende fein
+  geschnittene Scheibe (analog M1/B1: erst reine Logik, dann minimal verdrahtet).
+- **Reine Logik zuerst (node-getestet, +30 → 972/972):** `src/domain/nutzungsmodus.js`
+  - Nutzungskontext **`firma|privat|verein`** (Default `firma` → Bestand unverändert) NEBEN dem bestehenden
+    UI-Komplexitäts-`mode` (einfach/profi/berater) — bewusst getrennte Achsen.
+  - `normalizeNutzungsmodus`/`nutzungsmodusVon` + Prädikate (`istFirmenmodus`/`istPrivatmodus`/`istVereinsmodus`).
+  - **NAV-Ansichten-Gating** `zeigeAnsicht`/`sichtbareAnsichten` (Allowlist-Komplement; Firma = alles, Privat
+    blendet `anlagen/payables/orders/customers/employees/berichte/network` aus, Verein blendet
+    `anlagen/payables/orders/employees` aus → mit Berichten/Mitgliedern/Netz). Unbekannte Keys bleiben
+    sichtbar (sicher additiv).
+  - **Fachliche Feature-Gates** `zeigeFeature` + `FEATURE`/`FEATURE_LISTE` (umsatzsteuer/rechnungen/mahnwesen/
+    anlagen/mitarbeiter/kostenstellen/verbindlichkeiten/beraterExport) — Grundlage für P2.
+- **UI/Glue (statisch geprüft, kein Headless-Browser):** `ui/shell.js` filtert die NAV über `zeigeAnsicht`;
+  neuer Einstellungs-Schalter „Nutzungskontext" (paint → NAV neu filtern); Setting `nutzungsmodus` in
+  `state.js`; i18n de+en. SW-Cache **v94** (+ `src/domain/nutzungsmodus.js` precached).
+
+**Stand:** `node tests/run.mjs` **972/972 grün** (+30). R6/P1 ✅, gemergt (PR #99, CI #342/#343 grün, squash).
+
+**Offen / Grenzen (ehrlich)**
+- Gating ist eine **kuratierte Anzeige-Vereinfachung, KEINE rechtliche Sperre** — im Zweifel „Firma" (zeigt alles).
+- Routing bleibt intakt; ausgeblendete Ansichten sind nur nicht in der NAV (kein toter Pfad).
+- **Feature-Gates** (`zeigeFeature`) sind definiert + getestet, werden aber noch **nicht** ansichtsintern
+  konsumiert (USt-Felder, Rechnungs-/Mahn-Knöpfe …) → das ist **P2**.
+- UI/Glue (NAV-Filter, Settings-Schalter) statisch geprüft; reine Gating-Politik node-getestet.
+
+**Nächstes:** R6/P2 (Feature-Gates in den Views lesen) **oder** R6-Rest (Lighthouse/Perf, lokales OCR
+build-frei-sauber, Sage 5b–d) **oder** Browser-Sichttest — siehe `docs/NACHFOLGE_PLAN.md`.
+
+---
+
 ## 2026-06-17 — R5c: Dreistufiger Briefkasten (Mandant ⊃ Firma ⊃ Person) [Branch `claude/r5c-three-level-mailbox-twzjko`]
 
 **Was getan** (Schritt **R5c** — Pseudonymisierung/CRM in die fachliche Hierarchie ordnen)
