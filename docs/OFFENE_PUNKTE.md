@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (Zahlungsziel durabel + Austauschformat v4 inkl. saveAuftrag-Persistenz-Bugfix).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (Edit bestehender Aufträge — GoBD-Guard `darfAuftragBearbeiten` + `updateAuftrag`).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -225,8 +225,14 @@ hatte `zahlungszielTage` aus seiner Feld-Whitelist **fallen gelassen**, sodass A
 Speichern faktisch wirkungslos waren (immer globaler Default); jetzt persistiert. **(2)** `connect.buildAustauschPaket`
 trägt `rechnung.zahlungszielTage` reziprok mit (v4), `importworkfloh.normalizeRechnung` übernimmt es konservativ,
 `crm-store.importWorkFloh` setzt es auf den Auftrag → Gegenstelle erbt die Fälligkeit. +8 Tests (1059/1059), SW `v101`.
-**Noch offen [SOLL]:** Eingangsrechnungs-Verzug (Gegenseite, Mahnung erhalten/prüfen); Edit bestehender Aufträge.
-**[Sichttest]** `saveAuftrag`-Persistenz (IndexedDB) ist nur statisch geprüft → im Browser bestätigen.
+**Edit bestehender Aufträge erledigt (2026-06-17):** ein noch nicht berechneter Auftrag (Status angelegt/
+in_arbeit/erledigt, keine Rechnung gebucht, keine Zahlung erfasst) ist jetzt **nachträglich editierbar**
+(Titel/Kunde/Kostenstelle/Zahlungsziel/Positionen). `orders.darfAuftragBearbeiten` (GoBD-Guard) +
+`orders.anwendeAuftragEdit` (nur freigegebene Felder, `AUFTRAG_EDIT_FELDER`) rein/node-getestet;
+`crm-store.updateAuftrag` (Guard + Validierung + `encPut`); UI: „Bearbeiten"-Knopf + prefill-fähiges Formular
+(`_editAuftrag`). +21 Tests (1080/1080), SW `v102`.
+**Noch offen [SOLL]:** Eingangsrechnungs-Verzug (Gegenseite, Mahnung erhalten/prüfen).
+**[Sichttest]** `saveAuftrag`/`updateAuftrag`-Persistenz (IndexedDB) ist nur statisch geprüft → im Browser bestätigen.
 
 **Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,
 damit man nachmahnen kann — siehe jetzt Auswertungen.

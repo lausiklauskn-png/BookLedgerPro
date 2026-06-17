@@ -2,11 +2,11 @@
 
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
-import { formatEuro, parseEuroToCents } from '../../domain/money.js';
-import { AUFTRAG_STATUS, STATUS_FLOW, auftragSummen, validateAuftrag } from '../../domain/orders.js';
+import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js';
+import { AUFTRAG_STATUS, STATUS_FLOW, auftragSummen, validateAuftrag, darfAuftragBearbeiten } from '../../domain/orders.js';
 import { UST_SAETZE } from '../../domain/taxes.js';
 import {
-  listAuftraege, saveAuftrag, deleteAuftrag, setAuftragStatus, rechnungAusAuftrag,
+  listAuftraege, saveAuftrag, updateAuftrag, deleteAuftrag, setAuftragStatus, rechnungAusAuftrag,
   listKunden, getKunde, listKostenstellen, ensureKostenstellenSeeded, importWorkFloh,
 } from '../../domain/crm-store.js';
 import { normalizeImport } from '../../domain/importworkfloh.js';
@@ -20,6 +20,7 @@ import { emptyState } from '../empty.js';
 let _host = null;
 let _kunden = [];
 let _kostenstellen = [];
+let _editAuftrag = null; // Auftrag im Bearbeiten-Modus (null = Neuanlage)
 
 export async function mountOrders(host) {
   _host = host;
@@ -85,11 +86,12 @@ function importKarte() {
 
 const field = (label, input) => el('label', { class: 'field' }, [el('span', { text: label }), input]);
 
-function positionsRow() {
-  const desc = el('input', { type: 'text', placeholder: t('orders.posDesc') });
-  const menge = el('input', { type: 'text', value: '1' });
-  const preis = el('input', { type: 'text', placeholder: '0,00' });
+function positionsRow(init) {
+  const desc = el('input', { type: 'text', placeholder: t('orders.posDesc'), value: (init && init.beschreibung) || '' });
+  const menge = el('input', { type: 'text', value: init ? String(init.menge) : '1' });
+  const preis = el('input', { type: 'text', placeholder: '0,00', value: init && init.einzelpreisCent ? formatCents(init.einzelpreisCent) : '' });
   const ust = el('select', {}, UST_SAETZE.map((s) => el('option', { value: String(s) }, `${s} %`)));
+  if (init && init.ustSatz != null) ust.value = String(init.ustSatz);
   const remove = el('button', {
     class: 'btn btn-sm btn-danger pos-remove', type: 'button', text: '✕', title: t('orders.removePos'),
     onClick: () => { const box = row.parentElement; if (box && box.querySelectorAll('.pos-row').length > 1) row.remove(); },
@@ -105,17 +107,30 @@ function positionsRow() {
 }
 
 function form() {
-  const titel = el('input', { type: 'text', placeholder: t('orders.titel') });
+  const bearbeiten = _editAuftrag;
+  const titel = el('input', { type: 'text', placeholder: t('orders.titel'), value: bearbeiten ? (bearbeiten.titel || '') : '' });
   const kunde = el('select', {}, [el('option', { value: '' }, t('orders.none')),
     ..._kunden.map((k) => el('option', { value: k.id }, k.name))]);
+  if (bearbeiten) kunde.value = bearbeiten.kundeId || '';
   const ks = el('select', {}, [el('option', { value: '' }, t('journal.noKostenstelle')),
     ..._kostenstellen.map((k) => el('option', { value: k.nummer }, `${k.nummer} · ${k.name}`))]);
+  if (bearbeiten) ks.value = bearbeiten.kostenstelle || '';
   const defaultZiel = getSettings().zahlungszielTage;
-  const ziel = el('input', { type: 'number', min: '0', step: '1', placeholder: String(defaultZiel != null ? defaultZiel : 14) });
-  const posBox = el('div', { class: 'pos-box' }, [positionsRow()]);
+  const ziel = el('input', { type: 'number', min: '0', step: '1',
+    placeholder: String(defaultZiel != null ? defaultZiel : 14),
+    value: bearbeiten && bearbeiten.zahlungszielTage != null ? String(bearbeiten.zahlungszielTage) : '' });
+  const startRows = (bearbeiten && Array.isArray(bearbeiten.positionen) && bearbeiten.positionen.length)
+    ? bearbeiten.positionen.map((p) => positionsRow(p)) : [positionsRow()];
+  const posBox = el('div', { class: 'pos-box' }, startRows);
   const addPos = el('button', { class: 'btn btn-sm', type: 'button', text: t('orders.addPos'),
     onClick: () => posBox.appendChild(positionsRow()) });
   const err = el('p', { class: 'form-error' });
+
+  const submitBtns = [el('button', { class: 'btn btn-primary', type: 'submit', text: bearbeiten ? t('common.save') : t('orders.create') })];
+  if (bearbeiten) submitBtns.push(el('button', {
+    class: 'btn', type: 'button', text: t('common.cancel'),
+    onClick: async () => { _editAuftrag = null; await repaint(); },
+  }));
 
   return el('form', {
     class: 'card', onSubmit: async (e) => {
@@ -124,21 +139,24 @@ function form() {
       const positionen = Array.from(posBox.children).map((r) => r._read()).filter((p) => p.einzelpreisCent > 0);
       const zielRoh = String(ziel.value).trim();
       const zahlungszielTage = zielRoh === '' ? null : Math.trunc(Number(zielRoh));
-      const auftrag = { titel: titel.value, kundeId: kunde.value || null, kostenstelle: ks.value || null, zahlungszielTage, positionen };
-      const fehler = validateAuftrag(auftrag);
+      const daten = { titel: titel.value, kundeId: kunde.value || null, kostenstelle: ks.value || null, zahlungszielTage, positionen };
+      const fehler = validateAuftrag(daten);
       if (fehler.length) { err.textContent = fehler.join(' '); return; }
-      await saveAuftrag(auftrag);
+      try {
+        if (bearbeiten) { await updateAuftrag(bearbeiten.id, daten); _editAuftrag = null; }
+        else { await saveAuftrag(daten); }
+      } catch (ex) { err.textContent = String(ex.message || ex); return; }
       await repaint();
     },
   }, [
-    el('h2', { class: 'card-title', text: t('orders.new') }),
+    el('h2', { class: 'card-title', text: bearbeiten ? t('orders.edit') : t('orders.new') }),
     el('div', { class: 'form-grid' }, [field(t('orders.titel'), titel), field(t('orders.customer'), kunde), field(t('orders.kostenstelle'), ks), field(t('orders.zahlungsziel'), ziel)]),
     el('p', { class: 'muted small', text: t('orders.zahlungsziel.hint') }),
     el('div', { class: 'pos-head' }, [el('span', { text: t('orders.posDesc') }), el('span', { text: t('orders.qty') }), el('span', { text: t('orders.price') }), el('span', { text: t('orders.vat') }), el('span', {})]),
     posBox,
     el('div', { class: 'btn-row' }, [addPos]),
     err,
-    el('div', { class: 'btn-row' }, [el('button', { class: 'btn btn-primary', type: 'submit', text: t('orders.create') })]),
+    el('div', { class: 'btn-row' }, submitBtns),
   ]);
 }
 
@@ -248,6 +266,16 @@ function aktionen(a) {
     if (next === AUFTRAG_STATUS.BERECHNET) continue; // über Rechnung-Button
     wrap.appendChild(el('button', { class: 'btn btn-sm', text: t('orders.status.' + next),
       onClick: async () => { await setAuftragStatus(a.id, next); await repaint(); } }));
+  }
+  if (darfAuftragBearbeiten(a)) {
+    wrap.appendChild(el('button', {
+      class: 'btn btn-sm', text: t('common.edit'),
+      onClick: async () => {
+        _editAuftrag = a;
+        await repaint();
+        if (typeof window !== 'undefined' && window.scrollTo) window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+    }));
   }
   if (!a.rechnungBuchungId && a.positionen.length) {
     wrap.appendChild(el('button', {

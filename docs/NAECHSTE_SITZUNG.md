@@ -24,10 +24,13 @@ AUFGABE DIESER SITZUNG: **Mit dem Nutzer abstimmen (AskUserQuestion), womit es w
 gedruckten §14-Rechnung — `rechnung.baueRechnung` Feld `zahlbarBis`); **Zahlungsziel durabel + Austauschformat v4 ✅**
 (Bugfix: `crm-store.saveAuftrag` persistiert `zahlungszielTage` jetzt — vorher fiel es aus der Whitelist, A1-Rest +
 „zahlbar bis" waren faktisch wirkungslos; + `connect`/`importworkfloh`/`importWorkFloh` übertragen `rechnung.zahlungszielTage`
-reziprok, **SW v101, 1059 Tests**).
+reziprok, SW v101, 1059 Tests); **Edit bestehender Aufträge ✅** (ein noch nicht berechneter Auftrag ist nachträglich
+editierbar — `orders.darfAuftragBearbeiten` GoBD-Guard + `orders.anwendeAuftragEdit` rein/node-getestet,
+`crm-store.updateAuftrag`, UI-„Bearbeiten"-Knopf + prefill-Formular; gesperrt sobald berechnet/bezahlt/Zahlung erfasst;
+**SW v102, 1080 Tests**).
 **Verbleibend nur noch umgebungs-/menschen-blockierte [KANN]-Punkte ODER ein Browser-Sichttest ODER eine neue,
-mit dem Nutzer vereinbarte Feature-Idee.** Mögliche kleine build-freie Folge-Ideen (mit dem Nutzer abstimmen):
-Edit bestehender Aufträge, Eingangsrechnungs-Verzug (Gegenseite). Konkret:
+mit dem Nutzer vereinbarte Feature-Idee.** Verbleibende kleine build-freie Folge-Idee (mit dem Nutzer abstimmen):
+Eingangsrechnungs-Verzug (Gegenseite). Konkret:
 (A) **R6/Rest [KANN] — umgebungs-/menschen-blockiert** (verifiziert): **Lighthouse/Perf** braucht Headless-Browser
 (keiner hier); **lokales OCR** = Tesseract (wasm/npm-Runtime) ist **nicht build-frei** (Goldene Regel #1 verbietet
 CDNs/npm-Runtime); **ZUGFeRD-Erzeugen** braucht PDF/A-3-Lib (nicht build-frei); **Sage 5b–d** sind fremde Repos
@@ -45,6 +48,10 @@ KPIs je Modus verschwinden; (e) Bankauszug einlesen (Belege → „Bankauszug ei
 Mahnwesen die Fälligkeit + auf der gedruckten Rechnung „zahlbar bis" prüfen (vor dem Bugfix ging das Ziel beim
 Speichern verloren); danach eine WorkFloh-Austauschdatei mit `rechnung.zahlungszielTage` importieren → der Auftrag
 soll dieselbe Fälligkeit erben (statt des globalen Defaults).
+(g) **NEU: Edit bestehender Aufträge** — einen noch nicht berechneten Auftrag (Aufträge-Liste → „Bearbeiten")
+öffnen, Titel/Kunde/Kostenstelle/Zahlungsziel/Positionen ändern → „Speichern" → Werte stimmen in Liste/Rechnung;
+dann den Auftrag „berechnen" → der „Bearbeiten"-Knopf verschwindet (GoBD-Sperre); bei einem Auftrag mit erfasster
+(Teil-)Zahlung ebenfalls kein „Bearbeiten".
 (C) **Neue Feature-Idee** — falls der Nutzer eine Richtung vorgibt: sauber/fein schneiden, reine Logik ZUERST
 node-getestet, dann UI, EINEN sauberen PR.
 **Bewusst offen (keine reinen Code-Körbe mehr):** R4-Familie **API/Push** (Echtzeit) statt Datei; **echte XSD-/
@@ -88,11 +95,12 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach **Zahlungsziel je Auftrag durabel + im Austauschformat (v4)**
+**Stand dieses Briefes:** 2026-06-17 nach **Edit bestehender Aufträge**
 (Abschnitt A Mehrmandanten + Abschnitt B Bilanzierung + R1–R5 inkl. R4-Rest/R5a-Rest/R5c-Rest + R6/P1 PR #99 + R6/P2 +
-A1-Rest + „zahlbar bis" abgeschlossen + gemergt; **diese Sitzung:** Bugfix `crm-store.saveAuftrag` persistiert
-`zahlungszielTage` (vorher aus der Whitelist gefallen → A1-Rest/„zahlbar bis" faktisch wirkungslos) +
-`connect`/`importworkfloh`/`importWorkFloh` übertragen `rechnung.zahlungszielTage` reziprok, `AUSTAUSCH_VERSION` 3→4) ·
-Tests **1059/1059** · SW **v101** · 98 JS-Module · **build-freier Rest-Korb im Wesentlichen LEER** · nächster Schritt:
-**mit dem Nutzer abstimmen** (kleine Folge-Ideen: Edit bestehender Aufträge / Eingangsrechnungs-Verzug · ODER
-Browser-Sichttest · ODER umgebungs-blockierte KANN-Punkte). (Diese Zeile bei jeder Sitzung aktualisieren.)
+A1-Rest + „zahlbar bis" + Zahlungsziel durabel v4 abgeschlossen + gemergt; **diese Sitzung:** ein noch nicht berechneter
+Auftrag ist nachträglich editierbar — `orders.darfAuftragBearbeiten` (GoBD-Guard) + `orders.anwendeAuftragEdit`
+(nur freigegebene Felder) rein/node-getestet, `crm-store.updateAuftrag`, UI-„Bearbeiten"-Knopf + prefill-Formular;
+gesperrt sobald berechnet/bezahlt/Zahlung erfasst) ·
+Tests **1080/1080** · SW **v102** · 98 JS-Module · **build-freier Rest-Korb LEER** · nächster Schritt:
+**mit dem Nutzer abstimmen** (verbleibende kleine Folge-Idee: Eingangsrechnungs-Verzug der Gegenseite · ODER
+Browser-Sichttest · ODER umgebungs-blockierte KANN-Punkte · ODER neue Feature-Idee). (Diese Zeile bei jeder Sitzung aktualisieren.)

@@ -77,3 +77,38 @@ export function validateAuftrag(a) {
   }
   return errors;
 }
+
+// Felder eines bestehenden Auftrags, die nachträglich editierbar sind (vor dem Berechnen).
+// Bewusst NICHT editierbar: id/type/status/createdAt/externNummer/zahlungen/mahnungen sowie
+// rechnungBuchungId/-Nummer/-Datum — sie würden den Workflow bzw. eine bereits gebuchte
+// Forderung verfälschen.
+export const AUFTRAG_EDIT_FELDER = ['titel', 'kundeId', 'kostenstelle', 'zahlungszielTage', 'positionen'];
+
+/**
+ * Darf ein bestehender Auftrag noch bearbeitet werden? GoBD-Disziplin: sobald aus dem
+ * Auftrag eine Rechnung erzeugt wurde (`rechnungBuchungId`/`rechnungNummer` gesetzt bzw.
+ * Status „berechnet"/„bezahlt") oder bereits (Teil-)Zahlungen erfasst sind, würden
+ * Änderungen an Positionen/Beträgen die gebuchte Forderung (Forderung an Erlöse + USt)
+ * verfälschen → bearbeiten gesperrt. Davor (angelegt/in_arbeit/erledigt) frei editierbar.
+ */
+export function darfAuftragBearbeiten(auftrag) {
+  if (!auftrag) return false;
+  if (auftrag.rechnungBuchungId || auftrag.rechnungNummer) return false;
+  if ((auftrag.zahlungen || []).length) return false;
+  return auftrag.status === AUFTRAG_STATUS.ANGELEGT
+      || auftrag.status === AUFTRAG_STATUS.IN_ARBEIT
+      || auftrag.status === AUFTRAG_STATUS.ERLEDIGT;
+}
+
+/**
+ * Wendet einen Edit-Patch auf einen bestehenden Auftrag an: nur die freigegebenen Felder
+ * (AUFTRAG_EDIT_FELDER) werden übernommen; alle übrigen (Status/Zahlungen/Mahnungen/
+ * Rechnungsbezug/Herkunft/createdAt) bleiben unverändert. Rein (kein I/O).
+ */
+export function anwendeAuftragEdit(bestehend, patch) {
+  const next = { ...bestehend };
+  for (const f of AUFTRAG_EDIT_FELDER) {
+    if (patch && Object.prototype.hasOwnProperty.call(patch, f)) next[f] = patch[f];
+  }
+  return next;
+}

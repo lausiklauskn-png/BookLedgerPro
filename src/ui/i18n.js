@@ -486,6 +486,7 @@ const STRINGS = {
 
     'orders.title': 'Aufträge',
     'orders.new': 'Neuer Auftrag',
+    'orders.edit': 'Auftrag bearbeiten',
     'orders.titel': 'Titel',
     'orders.customer': 'Kunde',
     'orders.none': '— keiner —',
@@ -1141,6 +1142,7 @@ const STRINGS = {
     'crm.newCustomer': 'New customer',
     'orders.title': 'Orders',
     'orders.new': 'New order',
+    'orders.edit': 'Edit order',
     'orders.titel': 'Title',
     'orders.customer': 'Customer',
     'orders.none': '— none —',
