@@ -90,13 +90,15 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach A1-Rest Zahlungsziel je Forderung):** SW **v99** · Tests **1045/1045** grün · 98 JS-Module.
-**A1-Rest erledigt (diese Sitzung, mit dem Nutzer abgestimmt):** Zahlungsziel je Forderung — Aufträge tragen ein
-optionales `zahlungszielTage`; neuer Helfer `mahnwesen.faelligAmVon` (explizites `faelligAm` → Rechnungsdatum +
-posten-eigenes Ziel → Default) wird von `anreicherePosten`/`mahnschreibenDaten` genutzt; `payables.berechneFaelligAm`
-delegiert daran (Duplikat weg). `zahlungsabgleich.offenePosten` reicht `faelligAm`/`zahlungszielTage` durch;
-`orders.validateAuftrag` prüft das Ziel; UI-Feld „Zahlungsziel (Tage)" im Auftragsformular, i18n de+en. +16 Tests, SW `v99`.
-**Grenze:** kein Edit bestehender Aufträge, kein Ziel auf dem gedruckten §14-Dokument, WorkFloh-`rechnung`-Block ohne Ziel.
+**Kopf-Status (Stand nach „zahlbar bis" auf der §14-Rechnung):** SW **v100** · Tests **1051/1051** grün · 98 JS-Module.
+**„zahlbar bis" erledigt (diese Sitzung, mit dem Nutzer abgestimmt):** Das auftragseigene Zahlungsziel (A1-Rest)
+erscheint jetzt als **Fälligkeitsdatum „zahlbar bis JJJJ-MM-TT"** auf dem gedruckten §14-Rechnungsdokument.
+`rechnung.baueRechnung` bekam Parameter `defaultZielTage` + Feld `zahlbarBis` (spiegelt `mahnwesen.faelligAmVon`:
+auftragseigenes Ziel vor globalem Default; ohne Rechnungsdatum leer); `pflichtangaben` **unverändert** (Fälligkeit ist
+keine §14-Pflichtangabe). UI: Kopfzeile der Rechnung zeigt die Zeile neben Datum/Leistungsdatum, i18n `orders.payableUntil`
+de+en. +6 Tests, SW `v100`. **Grenze:** UI statisch geprüft (Browser-Sichttest offen); kein Edit bestehender Aufträge,
+WorkFloh-`rechnung`-Block überträgt weiter kein Ziel, Eingangsrechnungs-Verzug der Gegenseite weiter offen.
+**Build-freier Rest-Korb damit im Wesentlichen leer → nächste Sitzung wieder mit dem Nutzer abstimmen.**
 **Abschnitt A komplett (M1/M2a/M2b/M3); Abschnitt B komplett (B1/B2/B3); R1–R5 ✅ inkl. R5a-Rest; R6/P1 ✅ (Privat-/Bürger-Modus); R6/P2 ✅ (Feature-Gates ansichtsintern).** Reihenfolge im Plan:
 ~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → ~~B3~~ (Bilanzierung) · ~~R1~~ → ~~R2a~~ → ~~R2b~~ → ~~R3~~ → ~~R4~~ → ~~R4-Rest~~ → ~~R5a~~ → ~~R5a-Rest~~ → ~~R5b~~ → ~~R5c~~ → ~~R5c-Rest (NER-Scoping)~~ → ~~R6/P1~~ → ~~R6/P2~~ → R6/Rest (Lighthouse/OCR/ZUGFeRD/Sage 5b–d, blockiert) bzw. Browser-Sichttest. **Build-freier Rest-Korb leer.**
 **R5c erledigt:** `ai/briefkasten.js` (rein, node-getestet) — `baueBriefkasten({mandant,firma,kunden,mitarbeiter})`

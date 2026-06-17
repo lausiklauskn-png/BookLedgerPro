@@ -597,6 +597,21 @@ await section('Rechnungs-Dokument: Aufbau + §14-Pflichtangaben', () => {
   ok('Kleinunternehmer: USt 0', ku.ust === 0 && ku.brutto === ku.netto);
   ok('Kleinunternehmer: kein USt-Pflichtmangel', !pflichtangaben(ku).some((m) => /Steuersatz/.test(m)));
 
+  // „zahlbar bis" (Fälligkeit auf dem §14-Dokument) — A1-Rest auf die Rechnung gespiegelt.
+  // Auftragseigenes Zahlungsziel hat Vorrang vor dem globalen Default.
+  const rZiel = baueRechnung({ auftrag: { ...auftrag, zahlungszielTage: 30 }, kunde, firma, nummer: '2026-0003', datum: '2026-06-14', defaultZielTage: 14 });
+  ok('zahlbar bis: auftragseigenes Ziel (30 Tage) → 2026-07-14', rZiel.zahlbarBis === '2026-07-14');
+  ok('zahlbar bis: Zahlungsziel mitgeführt', rZiel.zahlungszielTage === 30);
+  // Ohne auftragseigenes Ziel: globaler Default (hier 7 Tage).
+  const rDef = baueRechnung({ auftrag, kunde, firma, nummer: '2026-0004', datum: '2026-06-14', defaultZielTage: 7 });
+  ok('zahlbar bis: Default-Ziel (7 Tage) → 2026-06-21', rDef.zahlbarBis === '2026-06-21');
+  ok('zahlbar bis: ohne eigenes Ziel zahlungszielTage null', rDef.zahlungszielTage === null);
+  // Leeres Ziel ('' aus dem Formular) zählt als „kein eigenes Ziel" → Default greift.
+  const rLeer = baueRechnung({ auftrag: { ...auftrag, zahlungszielTage: '' }, kunde, firma, nummer: '2026-0005', datum: '2026-06-14', defaultZielTage: 14 });
+  ok('zahlbar bis: leeres Ziel → Default → 2026-06-28', rLeer.zahlbarBis === '2026-06-28');
+  // Ohne Rechnungsdatum (Entwurf): kein Fälligkeitsdatum.
+  ok('zahlbar bis: ohne Datum leer', baueRechnung({ auftrag, kunde, firma, nummer: '', datum: '' }).zahlbarBis === '');
+
   ok('Rechnungsnummer-Format', formatRechnungsnummer(7, 2026) === '2026-0007');
 });
 

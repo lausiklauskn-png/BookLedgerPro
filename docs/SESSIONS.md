@@ -5,6 +5,44 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — „zahlbar bis" auf der §14-Rechnung (Fälligkeitsdatum auf dem Druckdokument) [Branch `claude/bookledgerpro-next-steps-tshhqz`]
+
+**Ausgangslage / Auswahl** (build-freier Rest-Korb leer → mit dem Nutzer abgestimmt, AskUserQuestion)
+- Drei Wege standen offen (neues kleines build-freies Feature / Browser-Sichttest / umgebungs-blockierte
+  KANN-Punkte). Der Nutzer wählte **neues Feature** und priorisierte die empfohlene Folge-Idee
+  **„zahlbar bis" auf dem gedruckten §14-Rechnungsdokument** — der natürliche Folgeschritt nach A1-Rest
+  (das auftragsindividuelle Zahlungsziel existiert seit A1-Rest, war aber auf der Rechnung nicht sichtbar).
+- **Warum:** Das seit A1-Rest erfasste `zahlungszielTage` je Auftrag steuerte bisher nur die
+  Mahnwesen-Fälligkeit; das gedruckte §14-Dokument zeigte kein Fälligkeitsdatum. Genuin build-frei,
+  autonom, node-testbar → ein sauberer, in sich abgeschlossener PR.
+
+**Was getan** (reine Logik zuerst, node-getestet — **+6 → 1051/1051**)
+- **`src/domain/rechnung.js` `baueRechnung`:** neuer Parameter `defaultZielTage` (Default 14) + berechnetes
+  Feld **`zahlbarBis`** (und mitgeführtes `zahlungszielTage`). Spiegelt **`mahnwesen.faelligAmVon`**
+  (auftragseigenes `zahlungszielTage` vor globalem Default; ohne Rechnungsdatum bleibt das Feld leer →
+  Entwurf ohne Fälligkeit). Import von `faelligAmVon` aus `mahnwesen.js` (kein Zyklus — mahnwesen importiert
+  nichts). `pflichtangaben` **unverändert** (Fälligkeit ist KEINE §14-Pflichtangabe → bewusst nicht als
+  Mangel geführt).
+- **`src/ui/views/orders.js`:** `rechnungAnzeigen` reicht `defaultZielTage: s.zahlungszielTage` durch;
+  das Druckdokument zeigt im Kopf neben Datum/Leistungsdatum eine Zeile **„zahlbar bis JJJJ-MM-TT"**
+  (nur wenn vorhanden → Ternär `? span : null`).
+- **i18n** `orders.payableUntil` de („zahlbar bis") + en („payable until").
+- **Tests:** +6 Fälle in `tests/run.mjs` (auftragseigenes Ziel 30 → Datum; Default-Ziel; leeres Ziel ''
+  zählt als „kein eigenes Ziel"; `zahlungszielTage`-Mitführung; ohne Datum leer).
+- **SW-Cache** `v99 → v100` (kein neues Modul — nur bestehende Dateien geändert; rechnung.js bereits precached).
+
+**Stand:** `node tests/run.mjs` **1051/1051 grün**. Alle berührten Dateien `node --check`-sauber.
+
+**Offen / Grenzen (ehrlich)**
+- UI/Glue **statisch geprüft** (kein Headless-Browser) → die neue „zahlbar bis"-Zeile auf der gedruckten
+  Rechnung ist als **Browser-Sichttest** zu bestätigen.
+- **Kein Edit** bestehender Aufträge (weiterhin offene Folge-Idee); **WorkFloh-`rechnung`-Block** überträgt
+  weiterhin kein Zahlungsziel (Folge-Idee); **Eingangsrechnungs-Verzug (Gegenseite)** weiterhin offen.
+- Build-freier Rest-Korb damit weiter im Wesentlichen leer → nächste Sitzung erneut **mit dem Nutzer
+  abstimmen** (verbleibende kleine Folge-Ideen / Browser-Sichttest / umgebungs-blockierte KANN-Punkte).
+
+---
+
 ## 2026-06-17 — A1-Rest: Zahlungsziel je Forderung (Fälligkeit aus auftragsindividuellem Ziel) [Branch `claude/bookledgerpro-next-steps-9v3kaz`]
 
 **Ausgangslage / Auswahl** (build-freier Rest-Korb leer → mit dem Nutzer abgestimmt, AskUserQuestion)

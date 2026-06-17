@@ -215,8 +215,13 @@ posten-eigenes Ziel → Default) wird von `anreicherePosten`/`mahnschreibenDaten
 delegiert daran (Duplikat entfernt). `zahlungsabgleich.offenePosten` reicht `faelligAm`/`zahlungszielTage` des Auftrags
 durch; `orders.validateAuftrag` validiert das Ziel; UI-Feld „Zahlungsziel (Tage)" im Auftragsformular. node-getestet
 (+16 → 1045/1045), SW `v99`.
-**Noch offen [SOLL]:** Eingangsrechnungs-Verzug (Gegenseite, Mahnung erhalten/prüfen); Ziel auf dem gedruckten
-§14-Dokument („zahlbar bis"); WorkFloh-`rechnung`-Block überträgt (noch) kein Zahlungsziel; Edit bestehender Aufträge.
+**„zahlbar bis" auf der §14-Rechnung erledigt (2026-06-17):** Das auftragseigene `zahlungszielTage` erscheint jetzt als
+Fälligkeitsdatum **„zahlbar bis JJJJ-MM-TT"** auf dem gedruckten Rechnungsdokument. `rechnung.baueRechnung` bekam
+Parameter `defaultZielTage` + Feld `zahlbarBis` (= `mahnwesen.faelligAmVon`, auftragseigenes Ziel vor globalem Default;
+ohne Rechnungsdatum leer), `pflichtangaben` unverändert (Fälligkeit ist keine §14-Pflichtangabe); UI-Kopfzeile +
+i18n `orders.payableUntil`. SW `v100`, +6 Tests (1051/1051).
+**Noch offen [SOLL]:** Eingangsrechnungs-Verzug (Gegenseite, Mahnung erhalten/prüfen); WorkFloh-`rechnung`-Block
+überträgt (noch) kein Zahlungsziel; Edit bestehender Aufträge.
 
 **Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,
 damit man nachmahnen kann — siehe jetzt Auswertungen.

@@ -176,7 +176,7 @@ async function rechnungAnzeigen(a) {
   const rechnung = baueRechnung({
     auftrag: a, kunde, firma: s.firma || {},
     nummer: a.rechnungNummer, datum: a.rechnungDatum, leistungsdatum: a.rechnungDatum,
-    kleinunternehmer: s.kleinunternehmer,
+    kleinunternehmer: s.kleinunternehmer, defaultZielTage: s.zahlungszielTage,
   });
   mount(_host, rechnungView(rechnung));
 }
@@ -225,6 +225,7 @@ function rechnungView(r) {
       el('div', { class: 'muted small' }, [
         el('span', { text: `${t('journal.date')}: ${r.datum || '—'}` }),
         el('span', { text: `   ·   ${t('orders.serviceDate')}: ${r.leistungsdatum || '—'}` }),
+        r.zahlbarBis ? el('span', { text: `   ·   ${t('orders.payableUntil')}: ${r.zahlbarBis}` }) : null,
       ]),
       r.titel ? el('p', { text: r.titel }) : null,
       el('table', { class: 'table' }, [
