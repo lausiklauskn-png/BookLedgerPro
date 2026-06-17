@@ -37,6 +37,24 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-17 — Punkt 7/A4: Offene Anbindung an andere Buchhaltungssoftware (Stufe 1) [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (A4 erweitert: WorkFloh public + generischer Konnektor)
+- **`domain/connect.js`** (rein, node-getestet): versioniertes, offenes **Austauschformat**
+  (`bookledgerpro-austausch` v1) — `buildAustauschPaket` (Export BLP→offen), `parseAustauschPaket`
+  (Import, **abwärtskompatibel** zum bare WorkFloh-`{kunden,auftraege}`, lehnt Fremdformate ab).
+- **Aufträge-Ansicht:** Import läuft jetzt über `parseAustauschPaket`→`normalizeImport` (akzeptiert
+  beide Formate) + neuer **„Austausch-Datei exportieren"**-Knopf (Kunden+Aufträge offen herausgeben).
+- **Einstellungen:** „Verbundene App"-URL (reziproke Verlinkung zu WorkFloh/anderer Software) + Öffnen-Link.
+- **`docs/CONNECT.md`**: Format-Spezifikation + „so bindet andere Software an". i18n de/en. SW `v79`.
+- Tests **651/651** (7 neu: Export-Header/Inhalt, Round-trip→normalizeImport, bare-Format, Fremdformat/Müll abgelehnt).
+
+**Stand:** A4 Stufe 1 (datei-basiert, Import+Export+Link) erledigt. **Offen:** API/Push-Echtzeit,
+Rechnungs-Übernahme statt nur Auftrag. **Nächste (groß):** Mehrmandantenfähigkeit → Bilanzierung.
+> Hinweis: Mehrmandanten + Bilanzierung sind große Architektur-Brocken — je dedizierter PR.
+
+---
+
 ## 2026-06-17 — Punkt 6: ZUGFeRD-Empfang + KoSIT-Pflichtfeld-Precheck [Branch `claude/v2-ox8bu7`]
 
 **Was getan**

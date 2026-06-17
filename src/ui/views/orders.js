@@ -9,7 +9,8 @@ import {
   listAuftraege, saveAuftrag, deleteAuftrag, setAuftragStatus, rechnungAusAuftrag,
   listKunden, getKunde, listKostenstellen, ensureKostenstellenSeeded, importWorkFloh,
 } from '../../domain/crm-store.js';
-import { parseImportText, normalizeImport } from '../../domain/importworkfloh.js';
+import { normalizeImport } from '../../domain/importworkfloh.js';
+import { buildAustauschPaket, parseAustauschPaket, austauschDateiname } from '../../domain/connect.js';
 import { pickFile, readFileText, downloadText } from '../../core/files.js';
 import { baueRechnung, pflichtangaben } from '../../domain/rechnung.js';
 import { baueXRechnungCII, xRechnungDateiname } from '../../domain/erechnung.js';
@@ -49,7 +50,9 @@ function importKarte() {
         const file = await pickFile('application/json,.json', null);
         if (!file) return;
         const text = await readFileText(file);
-        const parsed = normalizeImport(parseImportText(text));
+        const res = parseAustauschPaket(text);
+        if (!res.ok) { status.textContent = t('import.error') + ' ' + res.fehler; return; }
+        const parsed = normalizeImport(res.obj);
         const r = await importWorkFloh(parsed);
         const teile = [
           `${r.kundenNeu} ${t('import.customers')}`,
@@ -61,10 +64,20 @@ function importKarte() {
       } catch (e) { status.textContent = t('import.error') + ' ' + String(e.message || e); }
     },
   });
+  const exportBtn = el('button', {
+    class: 'btn btn-sm', type: 'button', text: t('connect.export'),
+    onClick: async () => {
+      try {
+        const paket = buildAustauschPaket({ kunden: await listKunden(), auftraege: await listAuftraege() });
+        downloadText(austauschDateiname(), JSON.stringify(paket, null, 2), 'application/json');
+      } catch (e) { status.textContent = t('import.error') + ' ' + String(e.message || e); }
+    },
+  });
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('import.title') }),
     el('p', { class: 'muted small', text: t('import.hint') }),
-    el('div', { class: 'btn-row' }, [btn, status]),
+    el('div', { class: 'btn-row' }, [btn, exportBtn, status]),
+    el('p', { class: 'muted small', text: t('connect.hint') }),
   ]);
 }
 

@@ -47,6 +47,7 @@ import { aufbewahrungBis, istAufbewahrungspflichtig, darfBelegLoeschen, AUFBEWAH
 import { hashedFields } from '../src/domain/audit.js';
 import { extrahiereZugferdXml, kostPflichtfelder } from '../src/domain/zugferd.js';
 import { deflateSync } from 'node:zlib';
+import { buildAustauschPaket, parseAustauschPaket, AUSTAUSCH_FORMAT } from '../src/domain/connect.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
@@ -1984,6 +1985,28 @@ await section('Punkt 6: ZUGFeRD-Extraktion + KoSIT-Pflichtfeld-Precheck', async 
   ok('KoSIT: vollständige Felder ok', kostPflichtfelder({ nummer: 'R1', datum: '2026-01-01', lieferant: 'X GmbH', brutto: 11900 }).ok);
   const fehlt = kostPflichtfelder({ nummer: '', datum: '', lieferant: '', brutto: 0 });
   ok('KoSIT: fehlende Felder erkannt', !fehlt.ok && fehlt.fehlende.length === 4);
+});
+
+await section('Punkt 7/A4: Offenes Austauschformat (Anbindung andere Buchhaltungssoftware)', () => {
+  const kunden = [{ id: 'kunde:1', name: 'Beispiel GmbH', anschrift: 'Weg 2', email: 'a@b.de', ustId: 'DE123' }];
+  const auftraege = [{ id: 'A-1', kundeId: 'kunde:1', titel: 'Auftrag X', positionen: [{ beschreibung: 'Leistung', menge: 1, einzelpreisCent: 100000, ustSatz: 19 }] }];
+  const paket = buildAustauschPaket({ kunden, auftraege });
+  ok('Export: Format/Version-Header', paket.format === AUSTAUSCH_FORMAT && paket.version === 1);
+  ok('Export: Kunde + Auftrag übernommen', paket.kunden[0].name === 'Beispiel GmbH' && paket.auftraege[0].positionen[0].einzelpreisCent === 100000);
+
+  // Round-trip: Export → JSON → parse → normalizeImport.
+  const res = parseAustauschPaket(JSON.stringify(paket));
+  ok('Parse: ok + Inhalt', res.ok && res.obj.kunden.length === 1 && res.obj.auftraege.length === 1);
+  const norm = normalizeImport(res.obj);
+  ok('Round-trip → normalizeImport', norm.kunden[0].name === 'Beispiel GmbH' && norm.auftraege[0].positionen[0].einzelpreisCent === 100000);
+
+  // Abwärtskompatibel: „bare" WorkFloh-Format ohne format/version.
+  const bare = parseAustauschPaket(JSON.stringify({ kunden: [{ name: 'X' }], auftraege: [] }));
+  ok('Parse: bare WorkFloh-Format akzeptiert', bare.ok && bare.obj.kunden[0].name === 'X');
+
+  // Fremdformat / Müll wird abgelehnt.
+  ok('Parse: fremdes format → Fehler', !parseAustauschPaket(JSON.stringify({ format: 'lexoffice', kunden: [] })).ok);
+  ok('Parse: kein JSON → Fehler', !parseAustauschPaket('{kaputt').ok);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

@@ -30,9 +30,9 @@ ein PR, bei grüner CI selbstständig mergen**):
 4. ✅ Steuerberater-Übergabe-/Datenblatt (Punkt 31) — *erledigt*.
 5. ✅ Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (Punkt 29) — *erledigt*.
 6. ✅ ZUGFeRD-Empfang (PDF→CII) + KoSIT-Pflichtfeld-Precheck — *erledigt* (ZUGFeRD-Erzeugen offen, PDF-Lib).
-7. A4 Anbindung **erweitert (Nutzer 17.06.)** — **als Nächstes**: WorkFloh ist **public** → **beidseitige Verlinkung**
-   (WorkFloh ↔ BookLedgerPro) **und generische Anbindung an andere Buchhaltungssoftware**
-   (Import/Export-Schnittstellen, offene Formate). (groß).
+7. ✅ A4 (erweitert) **Stufe 1 erledigt:** offenes Austauschformat (`domain/connect.js`) — **Import UND
+   Export** (Aufträge-Ansicht) + **verbundene-App-Link** (Einstellungen, reziprok zu WorkFloh) +
+   `docs/CONNECT.md`. **Offen:** API/Push-Echtzeit, Rechnungs-Übernahme (statt nur Auftrag).
 8. Mehrmandantenfähigkeit (groß).
 9. Bilanzierung / V-Bilanz (groß).
 10. ELSTER-Stufe 2 / Restpunkte B/C nach Bedarf.
