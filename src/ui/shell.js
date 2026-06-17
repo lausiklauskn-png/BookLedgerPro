@@ -24,6 +24,7 @@ import { mountSelbsttest } from './views/selbsttest.js';
 import { getBuchungssperre, setBuchungssperre, ensureSeedKonten } from '../domain/store.js';
 import { GEWINNERMITTLUNG, normalizeGewinnermittlung, BILANZ_GRUNDKONTO_NUMMERN } from '../domain/bilanzierung.js';
 import { mountDocuments } from './views/documents.js';
+import { mountPayables } from './views/payables.js';
 import { mountCustomers } from './views/customers.js';
 import { mountOrders } from './views/orders.js';
 import { mountEmployees } from './views/employees.js';
@@ -43,6 +44,7 @@ const NAV = [
   ['accounts', 'nav.accounts'],
   ['anlagen', 'nav.anlagen'],
   ['documents', 'nav.documents'],
+  ['payables', 'nav.payables'],
   ['orders', 'nav.orders'],
   ['customers', 'nav.customers'],
   ['employees', 'nav.employees'],
@@ -154,6 +156,7 @@ function renderRoute() {
   if (route === 'berichte') return void mountBerichte(content);
   if (route === 'selbsttest') return void mountSelbsttest(content);
   if (route === 'documents') return void mountDocuments(content);
+  if (route === 'payables') return void mountPayables(content);
   if (route === 'orders') return void mountOrders(content);
   if (route === 'customers') return void mountCustomers(content);
   if (route === 'employees') return void mountEmployees(content);

@@ -11,7 +11,7 @@ import { extrahiereZugferdXml, kostPflichtfelder } from '../../domain/zugferd.js
 import { parseBankauszug, umsatzExtraktion } from '../../domain/bankimport.js';
 import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen, findeSammelzuordnung, verteileSammelzahlung, sammelBuchungZeilen } from '../../domain/zahlungsabgleich.js';
 import { skontoEntwurf } from '../../domain/skonto.js';
-import { offeneVerbindlichkeiten, eingangsrechnungZeilen } from '../../domain/payables.js';
+import { offeneVerbindlichkeiten, eingangsrechnungZeilen, extraktionZuEingangsrechnung, validateEingangsrechnung } from '../../domain/payables.js';
 import { saveEingangsrechnung, listEingangsrechnungen, zahlungHinzufuegen } from '../../domain/payables-store.js';
 import { listAuftraege, listKunden, auftragZahlungHinzufuegen } from '../../domain/crm-store.js';
 import { loadAccounts, saveEntwurf } from '../../domain/store.js';
@@ -252,6 +252,42 @@ function verbindlichkeitErfassenZeile(p, kat) {
   return el('div', { class: 'bank-row' }, [
     el('div', { class: 'btn-row' }, [
       el('span', { class: 'small muted', text: t('docs.payableHint') }), btn,
+    ]),
+    slot,
+  ]);
+}
+
+// R3: Erfasst aus einem Foto/PDF-Beleg (OCR-Extraktion ai/extract) eine offene
+// VERBINDLICHKEIT „auf Ziel" (Aufwand + Vorsteuer an 1600, Entwurf). Fehlende Felder
+// werden nicht erfunden: ohne Lieferant/Datum wird ein Platzhalter/heute gesetzt — die
+// Feinheiten lassen sich danach in der Verbindlichkeiten-Ansicht nacharbeiten.
+function verbindlichkeitAusExtraktionZeile(ex, kat) {
+  const slot = el('div', {});
+  const aufwand = (kat && /^[34]/.test(String(kat.konto)) && _idx[kat.konto]) ? kat.konto : '4980';
+  const btn = el('button', {
+    class: 'btn btn-sm', type: 'button', text: t('docs.payableFromOcr'),
+    onClick: async () => {
+      slot.replaceChildren();
+      try {
+        const rechnung = extraktionZuEingangsrechnung(ex, { aufwandKonto: aufwand });
+        if (!rechnung.kreditor) rechnung.kreditor = '—';
+        if (!rechnung.datum) rechnung.datum = new Date().toISOString().slice(0, 10);
+        const fehler = validateEingangsrechnung(rechnung);
+        if (fehler.length) { slot.appendChild(el('p', { class: 'form-error', text: fehler.join(' ') })); return; }
+        const { zeilen } = eingangsrechnungZeilen(rechnung);
+        const entwurf = await saveEntwurf({
+          datum: rechnung.datum,
+          beschreibung: `${t('docs.payable')}: ${rechnung.kreditor} ${rechnung.rechnungsnr}`.trim(),
+          zeilen,
+        });
+        await saveEingangsrechnung({ ...rechnung, buchungRef: entwurf.id });
+        slot.appendChild(el('p', { class: 'muted small', text: t('docs.payableDone') }));
+      } catch (e) { slot.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
+    },
+  });
+  return el('div', { class: 'bank-row' }, [
+    el('div', { class: 'btn-row' }, [
+      el('span', { class: 'small muted', text: t('docs.payableFromOcr') }), btn,
     ]),
     slot,
   ]);
@@ -538,7 +574,12 @@ async function visionExtraktion(b) {
     const kat = await categorizeAI(text, _idx, { anker: await kiAnker() });   // Mistral EU, sonst Heuristik
     const res = buildVorschlag(ex, kat, _idx);
     if (!res.ok) { alert(res.fehler); return; }
-    await repaint(await vorschlagKarte(res.vorschlag, b.id, text));
+    // R3: Aus dem OCR-Beleg lässt sich entweder direkt buchen (Buchungsvorschlag) ODER eine
+    // offene VERBINDLICHKEIT „auf Ziel" erfassen (Kreditor, erscheint im Zahlungsabgleich).
+    await repaint(el('div', {}, [
+      verbindlichkeitAusExtraktionZeile(ex, kat),
+      await vorschlagKarte(res.vorschlag, b.id, text),
+    ]));
   } catch (e) {
     alert(t('docs.ocrError') + ' ' + String(e.message || e));
   }

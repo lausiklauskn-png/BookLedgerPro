@@ -18,21 +18,24 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Aktueller nächster Schritt: R3 — Verbindlichkeiten aus Foto/PDF-Belegen** + eigene
-Verbindlichkeiten-Ansicht (A2-Rest); **Zahlungsziel je Rechnung** (A1-Rest).
+abarbeiten. **Aktueller nächster Schritt: R4 — A4 Stufe 2: Rechnungs-Übernahme** (statt nur Auftrag,
+WorkFloh-Symbiose) + optional API/Push; reziproke WorkFloh-Verlinkung schärfen. **Alternativ/zuerst
+sinnvoll, falls bevorzugt:** **Sichttest des OCR→Verbindlichkeit-Klickpfads** im Browser (Foto/PDF →
+Google Vision EU → „Verbindlichkeit aus diesem Beleg erfassen" → Zahlungsabgleich) — kein Headless-Browser
+hier, daher echter Nutzer-Sichttest.
 Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
 **Abschnitt B (Bilanzierung) ist abgeschlossen + gemergt** (B1/B2/B3); **R1 (Verzugszinsen/Mahngebühren
 buchen) ist abgeschlossen + gemergt**; **R2a (Skonto-Buchung §17 UStG) ist abgeschlossen + gemergt**;
-**R2b (Sammelzahlungen — eine Bankzahlung auf mehrere offene Rechnungen) ist abgeschlossen + gemergt**
-(`domain/zahlungsabgleich.js`: `findeSammelzuordnung`/`verteileSammelzahlung`/`sammelBuchungZeilen`, Knopf
-„◫ Sammelzahlung (mehrere Rechnungen)" im Bankimport — siehe `docs/SESSIONS.md` oben).
-R3: Heute werden Verbindlichkeiten nur aus **E-Rechnung-XML** erfasst (`payables.js`/`payables-store.js`).
-Ziel: Verbindlichkeiten auch aus **Foto/PDF-Belegen** anlegen (Vision-OCR → `eingangsrechnungZeilen`) +
-eine **eigene Verbindlichkeiten-Ansicht** zum manuellen Anlegen/Bearbeiten; dazu **Zahlungsziel je Rechnung**
-(statt global, A1-Rest). Reine Logik (Erfassung/Validierung) **ZUERST node-getestet**, dann UI
-(DOM/IndexedDB als „statisch geprüft" kennzeichnen). Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt R
-(R3) + `docs/OFFENE_PUNKTE.md` (A1/A2). (Falls R3 zu groß ist: feiner schneiden und Plan fortschreiben —
-nie „halb" mergen.)
+**R2b (Sammelzahlungen) ist abgeschlossen + gemergt**; **R3 (Verbindlichkeiten aus Foto/PDF-Belegen +
+eigene Verbindlichkeiten-Ansicht + Zahlungsziel je Rechnung) ist abgeschlossen + gemergt**
+(`domain/payables.js`: `extraktionZuEingangsrechnung`/`berechneFaelligAm`/Feld `zahlungszielTage`;
+neue Ansicht `ui/views/payables.js`, Nav „Verbindlichkeiten"; OCR-Knopf „Verbindlichkeit aus diesem
+Beleg erfassen" in `documents.js` — siehe `docs/SESSIONS.md` oben).
+R4: Heute wird aus WorkFloh nur der **Auftrag** übernommen; Ziel Stufe 2 ist die **Rechnungs-Übernahme**
+(fertige Rechnung → Buchung/Forderung) + ggf. Push/API-Anbindung. Plan-Details in `docs/NACHFOLGE_PLAN.md`
+Abschnitt R (R4) + `docs/CONNECT.md`/`docs/WORKFLOH_IMPORT.md`. Reine Logik (Übernahme/Validierung)
+**ZUERST node-getestet**, dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen). (Falls R4 zu groß
+ist: feiner schneiden und Plan fortschreiben — nie „halb" mergen.)
 
 MEHRERE PRs ERLAUBT (NEU): Wenn sich mehrere Plan-Punkte **sauber und in sich
 abgeschlossen** in einer Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener
@@ -69,8 +72,9 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach R2b (Abschnitt A Mehrmandanten abgeschlossen; Abschnitt B
+**Stand dieses Briefes:** 2026-06-17 nach R3 (Abschnitt A Mehrmandanten abgeschlossen; Abschnitt B
 Bilanzierung B1+B2+B3 abgeschlossen; R1 Verzugszinsen/Mahngebühren abgeschlossen; R2a Skonto-Buchung §17 UStG
-abgeschlossen; R2b Sammelzahlungen abgeschlossen) · Tests **838/838** · SW **v89** · 93 JS-Module · nächster
-Schritt **R3 (Verbindlichkeiten aus Foto/PDF-Belegen + eigene Ansicht; Zahlungsziel je Rechnung)**.
+abgeschlossen; R2b Sammelzahlungen abgeschlossen; R3 Verbindlichkeiten aus Foto/PDF + eigene Ansicht +
+Zahlungsziel je Rechnung abgeschlossen) · Tests **863/863** · SW **v90** · 94 JS-Module · nächster
+Schritt **R4 (A4 Stufe 2: Rechnungs-Übernahme)** bzw. Sichttest OCR→Verbindlichkeit.
 (Diese Zeile bei jeder Sitzung aktualisieren.)

@@ -25,6 +25,7 @@ export async function saveEingangsrechnung(rechnung) {
     rechnungsnr: rechnung.rechnungsnr || '',
     datum: rechnung.datum,
     faelligAm: rechnung.faelligAm || '',
+    zahlungszielTage: rechnung.zahlungszielTage != null ? rechnung.zahlungszielTage : null,
     positionen: rechnung.positionen || [],
     bruttoCent: rechnungBrutto(rechnung),
     zahlungen: rechnung.zahlungen || [],
