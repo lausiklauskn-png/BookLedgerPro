@@ -5,6 +5,32 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — B2: Bilanzierung — GuV (Gewinn- und Verlustrechnung) [Branch `claude/bookledgerpro-b2-guv-n3r6or`]
+
+**Was getan** (NACHFOLGE_PLAN.md, Schritt **B2** — Abschnitt B Bilanzierung)
+- **Reine Logik zuerst (`src/domain/bilanz.js`, NEU, node-getestet):** `gewinnUndVerlust(buchungen, idx, periode)`
+  aggregiert die **Erfolgskonten** (Aufwand/Ertrag) aus den **festgeschriebenen** Buchungen je Periode
+  (`taxes.kontoBewegungen`), bildet die Salden über die Mehrungsseite (`accounts.saldo`/`mehrungsSeite`),
+  gliedert nach `guvSeite` (B1, `domain/bilanzierung.js`) in **Erträge**/**Aufwendungen** (je {nummer,name,wert},
+  nach Nummer sortiert, Null-Salden raus), Summen, **Jahresüberschuss/-fehlbetrag = Σ Erträge − Σ Aufwendungen**.
+  Bestands-/Steuerkonten (Bank, USt, VSt) bleiben außen vor; Entwürfe (`seq==null`) zählen nicht.
+- **`domain/export.js`:** `buildGuvCsv(guv)` (Spalten Art/Konto/Bezeichnung/Betrag, Summen + Jahresüberschuss/
+  -fehlbetrag je nach Vorzeichen).
+- **UI (`ui/views/reports.js`, statisch geprüft):** GuV-Karte in „Auswertung" — **nur im Bilanz-Modus**
+  sichtbar (`istBilanzierung(getSettings())` gatet die Ansicht, B1-Schalter `gewinnermittlung`), respektiert
+  den Perioden-Filter, mit CSV-Export-Knopf + Druck.
+- **i18n** (de+en) `reports.guv*`. **SW-Cache `v85`** + `bilanz.js` precached.
+- **Tests 739/739** grün (+13 neue: Summen/Gliederung, Periodengrenze, Bestandskonten-Ausschluss, Entwurf-Ausschluss,
+  CSV Überschuss/Fehlbetrag).
+
+**Stand:** B2 vollständig. Reine Logik node-getestet (739/739); UI/Glue (GuV-Karte, Modus-Gate über
+IndexedDB-Settings) **statisch geprüft** (kein Headless-Browser hier).
+**Offen/Nächstes:** **B3 — Bilanz.** `bilanz(buchungen, idx, stichtag, eröffnungssalden)` → Aktiva/Passiva aus den
+Bestandskonten-Salden, Summengleichheit (Aktiva = Passiva), Eröffnungs-/Schlussbilanzkonto; Ansicht + CSV.
+EHRLICH: keine Konzernabschlüsse/E-Bilanz-Taxonomie.
+
+---
+
 ## 2026-06-17 — B1: Bilanzierung Modus + Kontengrundlage [Branch `claude/bilanzierung-b1-setup-4cx6s3`] (PR #87, gemergt)
 
 **Was getan** (NACHFOLGE_PLAN.md, Schritt **B1** — startet Abschnitt B Bilanzierung)

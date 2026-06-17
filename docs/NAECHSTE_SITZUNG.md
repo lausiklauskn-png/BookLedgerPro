@@ -18,19 +18,19 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Aktueller nächster Schritt: B2 — Bilanzierung: GuV (Gewinn- und Verlustrechnung).**
+abarbeiten. **Aktueller nächster Schritt: B3 — Bilanzierung: Bilanz (Aktiva = Passiva).**
 Mehrmandantenfähigkeit (Abschnitt A: M1/M2a/M2b/M3) ist **abgeschlossen** (siehe `docs/MANDANTEN.md`);
-**B1 (Modus + Kontengrundlage) ist abgeschlossen + gemergt** (PR #87, siehe `docs/SESSIONS.md` oben).
-B2 baut auf der B1-Grundlage auf (`src/domain/bilanzierung.js`: Konten-Klassifikation
-`istErfolgskonto`/`guvSeite`/`klassifiziereKonto`, Setting `gewinnermittlung: 'euer' | 'bilanz'`).
-Neu: **`src/domain/bilanz.js`** (rein, node-getestet) mit `gewinnUndVerlust(buchungen, idx, periode)` →
-Erträge/Aufwendungen aus den **Erfolgskonten** je Periode aggregiert (Salden über `accounts.js saldo`/
-`mehrungsSeite`), gegliedert nach `guvSeite`, **Jahresüberschuss/-fehlbetrag = Erträge − Aufwendungen**;
-dazu eine **Ansicht** (z. B. in „Berichte" oder eigene GuV-Karte) + **CSV-Export** (Muster: `domain/export.js`,
-`domain/berichte.js`). Der B1-Modus-Schalter (`gewinnermittlung`) kann die GuV-Ansicht/-Navigation gaten.
-**Reine Logik ZUERST node-getestet**, dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen).
-**B3 (Bilanz)** folgt danach in eigenem PR. Ehrlich bleiben: **keine** Konzernabschlüsse, **keine**
-E-Bilanz-Taxonomie behaupten. Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt B.
+**B1 (Modus + Kontengrundlage) und B2 (GuV) sind abgeschlossen + gemergt** (siehe `docs/SESSIONS.md` oben).
+B3 baut auf der B1-Grundlage auf (`src/domain/bilanzierung.js`: Konten-Klassifikation
+`istBestandskonto`/`bilanzSeite`/`klassifiziereKonto`) und auf der B2-GuV (`src/domain/bilanz.js`
+`gewinnUndVerlust`; Jahresüberschuss fließt ins Eigenkapital). In **`src/domain/bilanz.js`** (rein, node-getestet)
+neu: `bilanz(buchungen, idx, stichtag, eröffnungssalden)` → **Aktiva/Passiva** aus den **Bestandskonten-Salden**
+(Salden über `accounts.js saldo`/`mehrungsSeite`, gegliedert nach `bilanzSeite`), **Summengleichheit (Aktiva =
+Passiva)**, Eröffnungs-/Schlussbilanzkonto bzw. Eröffnungssalden einbeziehen; dazu eine **Ansicht** (Bilanz-Karte
+in „Auswertung", neben der GuV-Karte — beide gatet der B1-Modus-Schalter `gewinnermittlung`) + **CSV-Export**
+(Muster: `domain/export.js buildGuvCsv`/`eurToCsv`). **Reine Logik ZUERST node-getestet**, dann UI (DOM/IndexedDB
+als „statisch geprüft" kennzeichnen). Ehrlich bleiben: **keine** Konzernabschlüsse, **keine** E-Bilanz-Taxonomie
+behaupten. Plan-Details in `docs/NACHFOLGE_PLAN.md` Abschnitt B.
 
 MEHRERE PRs ERLAUBT (NEU): Wenn sich mehrere Plan-Punkte **sauber und in sich
 abgeschlossen** in einer Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener
@@ -67,6 +67,6 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach B1 (Abschnitt A Mehrmandanten abgeschlossen; B1 Modus +
-Kontengrundlage gemergt, PR #87) · Tests **726/726** · SW **v84** · 91 JS-Module · nächster Schritt
-**B2 (GuV)**. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach B2 (Abschnitt A Mehrmandanten abgeschlossen; B1 Modus +
+Kontengrundlage + B2 GuV erledigt) · Tests **739/739** · SW **v85** · 92 JS-Module · nächster Schritt
+**B3 (Bilanz)**. (Diese Zeile bei jeder Sitzung aktualisieren.)

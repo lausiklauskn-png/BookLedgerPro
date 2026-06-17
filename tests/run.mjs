@@ -40,7 +40,8 @@ import { kassenbuchEintraege, kassenbericht, anfangsbestandZeilen, SALDENVORTRAG
 import { buildKassenbuchCsv, buildElsterVaPaket } from '../src/domain/export.js';
 import { VA_ZEITRAUM, voranmeldungsperioden, periodeIndexFuer, sondervorauszahlung, jahresZahllast } from '../src/domain/umsatzsteuer.js';
 import { summenSaldenliste, kontenblatt, anlageEUR, eurGruppeFuer, EUR_GRUPPE } from '../src/domain/berichte.js';
-import { buildSusaCsv, buildKontenblattCsv, buildAnlageEURCsv } from '../src/domain/export.js';
+import { buildSusaCsv, buildKontenblattCsv, buildAnlageEURCsv, buildGuvCsv } from '../src/domain/export.js';
+import { gewinnUndVerlust } from '../src/domain/bilanz.js';
 import { crc32, zipFiles } from '../src/core/zip.js';
 import { gdpduCsvBuchungen, gdpduCsvKonten, buildGdpduIndexXml, buildGdpduPaket } from '../src/domain/gdpdu.js';
 import { kleinbetragsrechnung, geschenkAbzug, bewirtungAufteilung, KLEINBETRAG_GRENZE_CENT, GESCHENK_GRENZE_CENT } from '../src/domain/kleinfaelle.js';
@@ -2185,6 +2186,46 @@ await section('Bilanzierung (B1): Bilanz-Grundkonten im Seed', () => {
   // Saldenvortrag/Eröffnung (9000) ist bereits im Basis-Seed (B1 prüft nur).
   ok('Saldenvortrag 9000 vorhanden', nummern.has('9000'));
   ok('Saldenvortrag-Rolle', seed.find((k) => k.nummer === '9000').rolle === 'saldenvortrag');
+});
+
+await section('Bilanzierung (B2): Gewinn- und Verlustrechnung', () => {
+  const idx = indexFromSeed();
+  const buchungen = [
+    // Verkauf 238 (200 Erlös 8400 + 38 USt 1776) auf Bank
+    { seq: 1, datum: '2026-02-10', beschreibung: 'Verkauf', zeilen: [{ konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+    // Zinsertrag 50 (2650) auf Bank
+    { seq: 2, datum: '2026-03-01', beschreibung: 'Zinsen', zeilen: [{ konto: '1200', seite: 'S', betrag: 5000 }, { konto: '2650', seite: 'H', betrag: 5000 }] },
+    // Miete 500 (4210) per Bank
+    { seq: 3, datum: '2026-02-15', beschreibung: 'Miete', zeilen: [{ konto: '4210', seite: 'S', betrag: 50000 }, { konto: '1200', seite: 'H', betrag: 50000 }] },
+    // Bürobedarf 119 (100 4930 + 19 VSt 1576) per Bank
+    { seq: 4, datum: '2026-02-20', beschreibung: 'Büro', zeilen: [{ konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }] },
+    // Entwurf zählt nicht
+    { seq: null, datum: '2026-02-21', zeilen: [{ konto: '1200', seite: 'S', betrag: 1 }, { konto: '8200', seite: 'H', betrag: 1 }] },
+  ];
+
+  const guv = gewinnUndVerlust(buchungen, idx);
+  // Erträge: 8400 (20000) + 2650 (5000) = 25000; Aufwendungen: 4210 (50000) + 4930 (10000) = 60000.
+  ok('GuV: Summe Erträge 25000', guv.summeErtraege === 25000);
+  ok('GuV: Summe Aufwendungen 60000', guv.summeAufwendungen === 60000);
+  ok('GuV: Jahresfehlbetrag -35000', guv.jahresueberschuss === -35000);
+  ok('GuV: 2 Ertragskonten', guv.ertraege.length === 2);
+  ok('GuV: 2 Aufwandskonten', guv.aufwendungen.length === 2);
+  ok('GuV: Erträge nach Nummer sortiert', guv.ertraege[0].nummer === '2650' && guv.ertraege[1].nummer === '8400');
+  ok('GuV: Erlös 8400 = 20000 (netto, ohne USt)', guv.ertraege.find((e) => e.nummer === '8400').wert === 20000);
+  // Bestands-/Steuerkonten (Bank 1200, VSt 1576, USt 1776) gehören NICHT in die GuV.
+  ok('GuV: keine Bestandskonten', !guv.ertraege.concat(guv.aufwendungen).some((z) => ['1200', '1576', '1776'].includes(z.nummer)));
+  ok('GuV: Entwurf ausgeschlossen (8200 fehlt)', !guv.ertraege.some((e) => e.nummer === '8200'));
+
+  // Periode grenzt ein: nur Februar → Zinsertrag (März) fällt raus.
+  const feb = gewinnUndVerlust(buchungen, idx, { von: '2026-02-01', bis: '2026-02-28' });
+  ok('GuV-Periode: Februar ohne Zinsertrag', feb.summeErtraege === 20000 && !feb.ertraege.some((e) => e.nummer === '2650'));
+
+  // CSV.
+  const csvOut = buildGuvCsv(guv);
+  ok('GuV-CSV: Erträge-Summe', csvOut.includes('Summe Erträge'));
+  ok('GuV-CSV: Jahresfehlbetrag (negativ)', csvOut.includes('Jahresfehlbetrag') && csvOut.includes('-350,00'));
+  const guvPlus = gewinnUndVerlust([buchungen[0], buchungen[1]], idx); // nur Erträge
+  ok('GuV-CSV: Jahresüberschuss (positiv)', buildGuvCsv(guvPlus).includes('Jahresüberschuss'));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

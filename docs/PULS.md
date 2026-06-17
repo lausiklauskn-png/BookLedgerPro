@@ -36,21 +36,22 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „B2"** (Bilanzierung — GuV): neue **`src/domain/bilanz.js`**
-(rein, node-getestet) mit `gewinnUndVerlust(buchungen, idx, periode)` → Erträge/Aufwendungen gegliedert,
-**Jahresüberschuss/-fehlbetrag**; Ansicht + CSV-Export. Baut auf der B1-Klassifikation auf
-(`domain/bilanzierung.js`: `istErfolgskonto`/`guvSeite`/`klassifiziereKonto`). **B3 (Bilanz)** folgt danach.
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „B3"** (Bilanzierung — Bilanz): in **`src/domain/bilanz.js`**
+(rein, node-getestet) `bilanz(buchungen, idx, stichtag, eröffnungssalden)` → Aktiva/Passiva aus den
+**Bestandskonten-Salden**, Summengleichheit (Aktiva = Passiva), Eröffnungs-/Schlussbilanzkonto; Ansicht + CSV.
+Baut auf der B1-Klassifikation auf (`domain/bilanzierung.js`: `istBestandskonto`/`bilanzSeite`/`klassifiziereKonto`)
+und auf der B2-GuV (Jahresüberschuss fließt ins Eigenkapital). **EHRLICH:** keine Konzernabschlüsse/E-Bilanz-Taxonomie.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
-**B1 (Modus + Kontengrundlage) ist abgeschlossen + gemergt** (PR #87) — siehe `docs/SESSIONS.md` (oberster Eintrag).
+**B1 (Modus + Kontengrundlage) + B2 (GuV) sind abgeschlossen + gemergt** — siehe `docs/SESSIONS.md` (oberster Eintrag).
 
-**Kopf-Status (Stand nach B1):** SW **v84** · Tests **726/726** grün · 91 JS-Module.
-**Abschnitt A komplett (M1/M2a/M2b/M3); B1 erledigt.** Reihenfolge im Plan:
-~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → **B2** → B3 (Bilanzierung) · danach Rest-SOLL (R1…).
-**Wichtig für B2:** Die reine Klassifikation steht (`domain/bilanzierung.js`, node-getestet). B2 baut darauf eine
-**GuV** auf: Erfolgskonten (Aufwand/Ertrag) aus den festgeschriebenen Buchungen je Periode aggregieren
-(Salden über `accounts.js saldo`/`mehrungsSeite`), gegliedert nach `guvSeite`, Jahresüberschuss = Erträge −
-Aufwendungen. **Reine Logik ZUERST node-getestet**, dann Ansicht + CSV (DOM als „statisch geprüft"). Modus-Schalter
-`gewinnermittlung` (B1) kann die GuV-Ansicht/-Navigation gaten. **EHRLICH:** keine E-Bilanz-Taxonomie behaupten.
+**Kopf-Status (Stand nach B2):** SW **v85** · Tests **739/739** grün · 92 JS-Module.
+**Abschnitt A komplett (M1/M2a/M2b/M3); B1 + B2 erledigt.** Reihenfolge im Plan:
+~~M1~~ → ~~M2a~~ → ~~M2b~~ → ~~M3~~ (Mehrmandanten) · ~~B1~~ → ~~B2~~ → **B3** (Bilanzierung) · danach Rest-SOLL (R1…).
+**Wichtig für B3:** Die GuV (`domain/bilanz.js gewinnUndVerlust`) ist node-getestet + als Karte in „Auswertung"
+(nur Bilanz-Modus). B3 ergänzt dort die **Bilanz**: Bestandskonten (Aktiv/Passiv) je Stichtag salieren
+(`accounts.js saldo`/`mehrungsSeite`, `bilanzSeite`), Aktiva = Passiva prüfen, Eröffnungsbilanz/Eröffnungssalden
+einbeziehen. **Reine Logik ZUERST node-getestet**, dann Ansicht + CSV (DOM als „statisch geprüft"). Modus-Schalter
+`gewinnermittlung` (B1) gatet die Ansicht. **EHRLICH:** keine E-Bilanz-Taxonomie behaupten.
 
 **✅ Bereits fertig & gemergt (NICHT wiederholen):** Profi-Readiness **V1–V10** (Kontenrahmen, §13b,
 AfA/Anlagen, Kassenbuch, USt-VA komplett, Berichte/SuSa, GoBD/GDPdU, DATEV-EXTF, Kleinfälle,
