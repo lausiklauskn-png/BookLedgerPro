@@ -36,8 +36,12 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „M3"** (Shell-Indikator + Mandanten-Verwaltung: aktiver Mandant
-im Header sichtbar, „Mandant wechseln", in Einstellungen umbenennen/entfernen; Doku `docs/MANDANTEN.md`).
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „B1"** (Bilanzierung — Modus + Kontengrundlage: Setting
+`gewinnermittlung: 'euer'|'bilanz'`, Default `euer` → Bestandsnutzer unverändert; Bilanz-Grundkonten/
+Saldenvortrag-Eröffnungskonto ergänzen falls nötig; reine Klassifikation node-getestet; minimale UI-Schalter).
+**Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
+
+**Kopf-Status (Stand nach M3):** SW **v83** · Tests **699/699** grün · 90 JS-Module.
 **M1 + M2a + M2b sind erledigt.** M2 wurde gesplittet: **M2a** = Core-Verdrahtung (`core/db.js` aktive DB
 konfigurierbar, `core/mandantenStore.js` mit Registry + `initMandanten`/`wechsleAktivenMandant`, +9 Tests);
 **M2b** = Sperrbildschirm-UI (Auswahlliste bei >1 Mandant, „Neuer Mandant" → eigener Tresor-Onboarding,

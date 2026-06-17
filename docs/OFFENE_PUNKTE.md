@@ -157,13 +157,13 @@ verschlüsselt (`state.js firma`).
 - [ ] **V-Bilanz — Bilanzierung (GmbH/OHG, GuV + Bilanz, §4 Abs.1/§5) [BESCHLOSSEN 2026-06-17].** Eigener großer PR.
 - [ ] **V-Lohn — Lohnbuchhaltung [KANN/extern].** Heute nur Zeiterfassung (`employees.js`); echte
       Lohnabrechnung/SV/Lohnsteuer ist eigenes Produkt — i. d. R. separate Software/Berater.
-- [ ] **V-Multi — Mehrmandantenfähigkeit [in Arbeit].** M1 ✅ (reine Schicht `src/domain/mandanten.js`).
-      M2a ✅ (Core: `core/db.js` aktive DB konfigurierbar + `core/mandantenStore.js` Registry/`initMandanten`/
-      `wechsleAktivenMandant`, Boot verhaltensneutral verdrahtet). M2b ✅ (Sperrbildschirm-UI: Auswahlliste bei
-      >1 Mandant, „Neuer Mandant" → eigener Tresor-Onboarding, Wechsel über `wechsleAktivenMandant`,
-      DSGVO-Hinweis; reine Logik `brauchtMandantenAuswahl`/`mandantenAuswahlListe` node-getestet). Offen:
-      **M3** (Shell-Indikator: aktiver Mandant im Header sichtbar + „Mandant wechseln" + Verwaltung
-      umbenennen/entfernen, Doku `docs/MANDANTEN.md`).
+- [x] **V-Multi — Mehrmandantenfähigkeit ✅ abgeschlossen (2026-06-17).** M1 ✅ (reine Schicht
+      `src/domain/mandanten.js`). M2a ✅ (Core: `core/db.js` aktive DB konfigurierbar + `core/mandantenStore.js`
+      Registry/`initMandanten`/`wechsleAktivenMandant`). M2b ✅ (Sperrbildschirm-UI: Auswahlliste, „Neuer
+      Mandant" → eigener Tresor-Onboarding, Wechsel, DSGVO-Hinweis). **M3 ✅** (`ui/shell.js`: aktiver
+      Mandanten-Name im Header + „Mandant wechseln"; Einstellungen „Mandanten verwalten": umbenennen/entfernen
+      — Entfernen nur mit Bestätigung, Tresor-DB bleibt; Doku **`docs/MANDANTEN.md`**). **Grenze:** Entfernen =
+      aus Liste nehmen, kein Löschen + keine Re-Import-UI; Glue/UI statisch geprüft (kein Headless-Browser).
 
 ---
 

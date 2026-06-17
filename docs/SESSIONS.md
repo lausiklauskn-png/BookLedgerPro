@@ -5,6 +5,33 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — M3: Shell-Mandanten-Indikator + Verwaltung [Branch `claude/m3-shell-tenant-mgmt-d13v6s`]
+
+**Was getan** (NACHFOLGE_PLAN.md, Schritt **M3** — schließt Abschnitt A Mehrmandanten ab)
+- **`ui/shell.js` Header:** zeigt jetzt den **aktiven Mandanten-Namen** (aus der Registry via
+  `ladeRegistry`/`aktiverMandant`, async nachgeladen in `refreshMandant`, Fallback `getMandantId()`)
+  statt der DB-ID. **„Mandant wechseln"**-Knopf (nur bei >1 Mandant): `lockVault()` + Reboot →
+  der Boot zeigt die Auswahl (showLockScreen).
+- **Einstellungen „Mandanten verwalten"** (`mandantenSection`/`mandantRow`): pro Mandant
+  **umbenennen** (`validateMandantName` → `umbenenneMandant` → `speichereRegistry`, Header zieht
+  bei aktivem Mandanten via `refreshMandant` mit) und **entfernen** (`entferneMandant` →
+  `speichereRegistry`, **nur mit `confirm`**; Tresor-DB bleibt erhalten — kein Datenverlust).
+  Der **aktuell geöffnete** Mandant ist nicht entfernbar (Button disabled + Hinweis).
+- **i18n** (de+en): `mandant.current/confirmRemove/removeActiveHint`, `settings.mandanten(+Hint)`.
+  **CSS** `.mandant-admin(-row)`. **SW-Cache `v83`** (Module bereits precached). Doku **`docs/MANDANTEN.md`** neu.
+- **Tests 699/699** unverändert grün — reine Registry-Logik (`umbenenneMandant`/`entferneMandant`/
+  `mandantenAuswahlListe`/`aktiverMandant`) war schon node-getestet; M3 ist reiner Glue/UI.
+
+**Stand:** M3 vollständig → **Abschnitt A (Mehrmandantenfähigkeit) abgeschlossen** (M1✅ M2a✅ M2b✅ M3✅).
+Reine Logik node-getestet; die neuen DOM-/IndexedDB-Pfade (Header-Nachladen, Verwaltungs-Sektion)
+sind **statisch geprüft** (kein Headless-Browser hier).
+**Offen/Nächstes:** **B1 — Bilanzierung Modus + Kontengrundlage** (Setting `gewinnermittlung:'euer'|'bilanz'`,
+Default `euer`, Bilanz-Grundkonten/Saldenvortrag, minimale UI; reine Klassifikation node-getestet).
+**Grenze:** „Entfernen" = aus der Liste nehmen, kein Löschen + keine Re-Import-UI für eine entfernte,
+aber vorhandene Tresor-DB (in `docs/MANDANTEN.md` als Grenze dokumentiert).
+
+---
+
 ## 2026-06-17 — M2b: Sperrbildschirm Mandanten-Auswahl/-Anlage/-Wechsel [Branch `claude/lock-screen-tenant-selection-9uhoh8`]
 
 **Was getan** (NACHFOLGE_PLAN.md, Schritt **M2b** — Sperrbildschirm-UI, nutzt fertige M2a-Core)
