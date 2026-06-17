@@ -18,12 +18,14 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/NACHFOLGE_PLAN.md` + ob
 OHNE Rückfragen loslegen.
 
 AUFGABE DIESER SITZUNG: Den/die nächsten offenen Schritt(e) aus `docs/NACHFOLGE_PLAN.md`
-abarbeiten. **Aktueller nächster Schritt: M2 — Tresor je Mandant + Auswahl am
-Sperrbildschirm** (Design-Abschnitt in `NACHFOLGE_PLAN.md` Abschnitt A ist verbindlich:
-`core/db.js` DB-Namen konfigurierbar machen, Bestand migrationsfrei als „Mandant 1"/ID
-`standard` registrieren, Wechsel mit sauberem DEK-Verwerfen, unverschlüsselte Mandanten-
-Registry für die Sperrbildschirm-Auswahl). Nutze die fertige reine Schicht
-`src/domain/mandanten.js` (`dbNameFuer`, `mitLegacyMandant`, Registry-Ops).
+abarbeiten. **Aktueller nächster Schritt: M2b — Sperrbildschirm: Mandant auswählen/
+anlegen/wechseln (UI, nur statisch prüfbar).** Die Core-Schicht ist fertig: nutze
+`src/core/mandantenStore.js` (`ladeRegistry`, `registriereMandant`, `wechsleAktivenMandant`,
+`initMandanten`) und `src/domain/mandanten.js` (`dbNameFuer`, Registry-Ops). In `src/ui/lock.js`:
+bei >1 Mandant Auswahlliste VOR dem Entsperren; „Neuer Mandant" → Onboarding-Fluss in der
+**eigenen** Mandanten-DB (eigenes Passwort/Shamir/Backup); Wechsel über `wechsleAktivenMandant`
+(DEK-Verwerfen + DB-Wechsel sind dort bereits gekapselt). DSGVO-Hinweis im UI: Mandanten-Namen
+liegen unverschlüsselt. Design-Abschnitt in `NACHFOLGE_PLAN.md` Abschnitt A bleibt verbindlich.
 
 MEHRERE PRs ERLAUBT (NEU): Wenn sich mehrere Plan-Punkte **sauber und in sich
 abgeschlossen** in einer Sitzung erledigen lassen, dann tu das — **pro Punkt ein eigener
@@ -60,5 +62,5 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-17 nach M1 · main-Tip `59ed0d5` · Tests **680/680** · SW **v80**
-· nächster Schritt **M2**. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-17 nach M2a · Tests **689/689** · SW **v81** · 90 JS-Module
+· nächster Schritt **M2b**. (Diese Zeile bei jeder Sitzung aktualisieren.)

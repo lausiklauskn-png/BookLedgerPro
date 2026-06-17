@@ -157,9 +157,10 @@ verschlüsselt (`state.js firma`).
 - [ ] **V-Bilanz — Bilanzierung (GmbH/OHG, GuV + Bilanz, §4 Abs.1/§5) [BESCHLOSSEN 2026-06-17].** Eigener großer PR.
 - [ ] **V-Lohn — Lohnbuchhaltung [KANN/extern].** Heute nur Zeiterfassung (`employees.js`); echte
       Lohnabrechnung/SV/Lohnsteuer ist eigenes Produkt — i. d. R. separate Software/Berater.
-- [ ] **V-Multi — Mehrmandantenfähigkeit [in Arbeit].** M1 ✅ (reine Schicht `src/domain/mandanten.js`:
-      Registry + `dbNameFuer`, migrationsfreier Legacy-Mandant, Design-Abschnitt in `NACHFOLGE_PLAN.md`).
-      Offen: **M2** (Tresor je Mandant + Auswahl am Sperrbildschirm), **M3** (Shell-Indikator + Verwaltung).
+- [ ] **V-Multi — Mehrmandantenfähigkeit [in Arbeit].** M1 ✅ (reine Schicht `src/domain/mandanten.js`).
+      M2a ✅ (Core: `core/db.js` aktive DB konfigurierbar + `core/mandantenStore.js` Registry/`initMandanten`/
+      `wechsleAktivenMandant`, Boot verhaltensneutral verdrahtet). Offen: **M2b** (Sperrbildschirm-UI:
+      auswählen/anlegen/wechseln), **M3** (Shell-Indikator + Verwaltung).
 
 ---
 
