@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <title>BookLedgerPro — Technische Transparenz- und Zwischenstands-Dokumentation</title>
 <style>
-  body { font-family: 'Liberation Serif', Georgia, serif; font-size: 11.5pt; line-height: 1.45; color: #1a1a1a; }
+  body { font-family: 'Liberation Serif', Georgia, serif; font-size: 11.5pt; line-height: 1.45; color: #1a1a1a;
+         -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   h1 { font-size: 22pt; color: #1d3a5f; margin-bottom: 2pt; }
   h2 { font-size: 15pt; color: #1d3a5f; border-bottom: 1.5pt solid #1d3a5f; padding-bottom: 2pt; margin-top: 22pt; }
   h3 { font-size: 12.5pt; color: #25506b; margin-top: 14pt; margin-bottom: 2pt; }
@@ -61,7 +62,7 @@
 <h1>BookLedgerPro</h1>
 <p class="sub"><strong>Technische Transparenz- und Zwischenstands-Dokumentation</strong><br>
 Wie die App Ihre Daten schützt, verschlüsselt und Recht (DSGVO &amp; GoBD) einhält.</p>
-<p class="foot">Stand: 17. Juni 2026 (aktualisiert) · Arbeitsdokument (wird fortgeschrieben) · Endpoint: https://lausiklauskn-png.github.io/bookledgerpro/ · Automatisierte Tests: <strong>983/983 grün</strong> · Service-Worker-Cache <code>v96</code></p>
+<p class="foot">Stand: 17. Juni 2026 (aktualisiert) · Arbeitsdokument (wird fortgeschrieben) · Endpoint: https://lausiklauskn-png.github.io/bookledgerpro/ · Automatisierte Tests: <strong>1080/1080 grün</strong> · Service-Worker-Cache <code>v102</code></p>
 
 <div class="good no-break">
 <strong>Aktualisierung 17.06.2026 — Mehrmandanten, Bilanzierung, Forderungs-/Datenschutz-Ausbau (R1–R6) abgeschlossen:</strong>
@@ -71,7 +72,9 @@ Wie die App Ihre Daten schützt, verschlüsselt und Recht (DSGVO &amp; GoBD) ein
 <li><span class="ok">✓</span> <strong>Datenschutz-Ausbau:</strong> automatische PII-Erkennung (NER) für Dritt-Daten, <strong>dreistufiger Briefkasten</strong> (Mandant ⊃ Firma ⊃ Person) — beides früher „geplant", jetzt real (§ 6).</li>
 <li><span class="ok">✓</span> <strong>Privat-/Bürger-Modus</strong> (Nutzungskontext Firma/Privat/Verein): blendet je Kontext geschäftliche Ansichten <em>und</em> USt-/Mahn-/Kreditoren-Felder aus (Anzeige-Vereinfachung, keine rechtliche Sperre).</li>
 <li><span class="ok">✓</span> Zuvor (16.06.): kompletter <strong>Profi-Readiness-Fahrplan V1–V10</strong> (§13b, AfA, Kassenbuch, USt-VA, Berichte, GDPdU, DATEV-EXTF, Kleinfälle, Selbstdiagnose — Detail-Statustabelle § 0b).</li>
-<li>Testumfang von 618 auf <strong>983</strong> erhöht (alle grün), Service-Worker-Cache <code>v96</code>.</li>
+<li><span class="ok">✓</span> <strong>Auftrags-Bearbeitung:</strong> ein noch nicht berechneter Auftrag ist nachträglich editierbar (GoBD-Sperre, sobald berechnet/bezahlt).</li>
+<li><span class="plan">◐ GEPLANT (Design steht):</span> <strong>Angebote &amp; Kalkulation</strong> für Werbetechnik (interne Vor-/Nachkalkulation, neutrale Angebote/Rechnungen), <strong>wählbare Datensicherungs-Strategie</strong> (3-2-1) und ein <strong>Test-Modus</strong> (Sandbox) — Bau-Grundlagen dokumentiert (siehe Repo: <code>BAUPLAN.md</code>, <code>KALKULATION_KATALOG.md</code>, <code>DATENSICHERUNG.md</code>, <code>TEST_MODUS.md</code>).</li>
+<li>Testumfang von 618 auf <strong>1080</strong> erhöht (alle grün), Service-Worker-Cache <code>v102</code>.</li>
 </ul>
 </div>
 
@@ -116,7 +119,7 @@ Entscheidung; bis dahin bleibt sie geschlossen.</p>
 <h2>0b. Funktions-Fahrplan „Profi-Readiness" V1–V10 — Stand offen/erledigt</h2>
 <p class="lead">Der Fahrplan zur vollwertigen Buchhaltung (für Klein- <em>und</em> Normalbetriebe) ist
 <strong>vollständig abgeschlossen</strong> — alle MUSS- und SOLL-Punkte. Stand 17.06.2026,
-automatisierte Tests <strong>983/983 grün</strong>.</p>
+automatisierte Tests <strong>1080/1080 grün</strong>.</p>
 <table>
 <tr><th>Punkt</th><th>Inhalt</th><th>Status</th></tr>
 <tr><td>V1</td><td>Kontenrahmen erweitert (57 SKR03-Konten) + Konten anlegen/bearbeiten/löschen</td><td><span class="ok">✓ erledigt</span></td></tr>
@@ -332,6 +335,10 @@ Ist-EÜR (§ 4 Abs. 3) erlebbar.</div>
 <tr><td>P8</td><td>Datei-Kanal (Masse) + QR (Einzel-Teilen, lokal erzeugt)</td><td><span class="plan">◐ geplant</span></td></tr>
 <tr><td>P9</td><td>Datei-Import-Ablauf mit exaktem Schlüssel-Abgleich</td><td><span class="plan">◐ geplant</span></td></tr>
 <tr><td>P10</td><td>Auftrag/Rechnung führt handelnde Person als Besteller mit</td><td><span class="idea">○ vorgemerkt</span></td></tr>
+<tr><td>K1</td><td><strong>Angebote &amp; Kalkulation</strong> (Werbetechnik): interne Vor-/Nachkalkulation (m²/Stück/Zeit/Material/Zukauf), <strong>neutrale</strong> Angebote/Rechnungen nach außen, selbstlernende Korrekturfaktoren</td><td><span class="plan">◐ geplant</span> (Design steht: <code>KALKULATION_KATALOG.md</code>)</td></tr>
+<tr><td>K2</td><td><strong>Datensicherung — wählbare 3-2-1-Strategie</strong> (BLP intern · verschlüsselter gewählter Ordner · Server/Offsite), frei wählbar beim Onboarding + in den Einstellungen, mit Backup→Restore-Roundtrip-Selbsttest</td><td><span class="plan">◐ geplant</span> (Kern existiert; Design: <code>DATENSICHERUNG.md</code>)</td></tr>
+<tr><td>K3</td><td><strong>Test-Modus</strong> (Sandbox-Tresor): ganze App gefahrlos ausprobieren, echte Daten unberührt, danach behalten oder spurlos verwerfen</td><td><span class="plan">◐ geplant</span> (Design: <code>TEST_MODUS.md</code>)</td></tr>
+<tr><td>K4</td><td><strong>Rechnungs-Hoheit wählbar</strong> (<code>rechnungsstelle</code>): BLP stellt selbst aus <em>oder</em> bereitet nur vor (externes Programm/Steuerberater, z. B. DATEV)</td><td><span class="plan">◐ geplant</span></td></tr>
 </table>
 
 <h2>9. Was heute schon steht — und was noch nicht (ehrlich)</h2>
@@ -346,7 +353,7 @@ EU-KI (Vision + Mistral) mit On-Device-Fallback, <strong>Datenschutz-Modus „Ps
 Zahlungsabgleich</strong> (inkl. Mahnwesen-Buchung, Skonto §17 UStG, Sammelzahlungen, WorkFloh-Rechnungs-Übernahme),
 Dashboard mit echten Kennzahlen. <strong>Plus der komplette Profi-Readiness-Fahrplan V1–V10</strong>
 (§13b, AfA/Anlagen, Kassenbuch, USt-VA mit ELSTER-Paket, SuSa/Kontenblätter/Anlage-EÜR, GoBD/GDPdU-Export,
-DATEV-EXTF, Kleinfälle, Selbstdiagnose). <strong>Automatisierte Tests: 983 von 983 grün.</strong></div>
+DATEV-EXTF, Kleinfälle, Selbstdiagnose). <strong>Automatisierte Tests: 1080 von 1080 grün.</strong></div>
 <div class="note"><strong>Noch offen / noch nicht geprüft:</strong> voller KoSIT-Validator &amp; ZUGFeRD-PDF
 <em>erzeugen</em>; zertifiziertes 116-Spalten-DATEV-EXTF und ELSTER-Direktversand (bewusst nur Datenpaket);
 lokale Offline-Texterkennung; WorkFloh-Echtzeit (API/Push) + Übernahme von Zahlungsstatus/Teilzahlungen;
@@ -358,7 +365,7 @@ Abnahme-Checkliste. <strong>Der echte Praxistest (Foto→App→Finanzamt, DATEV-
 <ul>
 <li><strong>Quelloffen und build-frei:</strong> Der Code ist lesbarer Klartext — kein verstecktes, kompiliertes Paket. Was die App tut, steht offen da.</li>
 <li><strong>Kein Server, kein Konto:</strong> Es gibt keine Betreiber-Datenbank, in der Ihre Daten landen könnten.</li>
-<li><strong>Automatisierte Tests:</strong> Die Rechenkerne (Krypto, Beträge, Buchungslogik, Hash-Kette, Pseudonymisierung/NER/Briefkasten, E-Rechnung, Bankimport, Bilanz) sind durch Tests abgesichert — reproduzierbar mit <code>node tests/run.mjs</code> (983/983) und in der App über <strong>„Selbsttest"</strong> sichtbar.</li>
+<li><strong>Automatisierte Tests:</strong> Die Rechenkerne (Krypto, Beträge, Buchungslogik, Hash-Kette, Pseudonymisierung/NER/Briefkasten, E-Rechnung, Bankimport, Bilanz) sind durch Tests abgesichert — reproduzierbar mit <code>node tests/run.mjs</code> (1080/1080) und in der App über <strong>„Selbsttest"</strong> sichtbar.</li>
 <li><strong>Dieses Dokument trennt Fertiges von Geplantem</strong> — Sie sehen den echten Stand, nicht ein Wunschbild.</li>
 </ul>
 
