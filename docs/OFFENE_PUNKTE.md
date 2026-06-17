@@ -26,8 +26,8 @@ ein PR, bei grüner CI selbstständig mergen**):
 **Festgelegte Bau-Reihenfolge (je eigener PR, Freibrief-Merge):**
 1. ✅ ELSTER-Weiterleitungs-Link + AVV-Anbieterlinks (klein) — *diese Sitzung*.
 2. ✅ §19-Kleinunternehmer-Abfrage im Onboarding (Punkt 27) — *erledigt*.
-3. Abweichendes Wirtschaftsjahr (Punkt 28, klein/mittel) — **als Nächstes**.
-4. Steuerberater-Übergabe-/Datenblatt (Punkt 31, klein).
+3. ✅ Abweichendes Wirtschaftsjahr (Punkt 28) — *erledigt*.
+4. Steuerberater-Übergabe-/Datenblatt (Punkt 31, klein) — **als Nächstes**.
 5. Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (Punkt 29, mittel).
 6. ZUGFeRD (PDF/A-3) + KoSIT-Validierung (groß).
 7. A4 WorkFloh-Anbindung (groß).
@@ -38,7 +38,9 @@ ein PR, bei grüner CI selbstständig mergen**):
 ### Neu aufgenommene Klein-/Folgepunkte (aus Brainstorming-Abgleich)
 - [x] **27 — §19-Kleinunternehmer-Abfrage im Onboarding** ✅ (Schritt zwischen Shamir &amp; Backup,
       `lock.js stepProfil`, speichert `kleinunternehmer`; in Einstellungen weiter änderbar). [erledigt]
-- [ ] **28 — Abweichendes Wirtschaftsjahr** (nicht nur Kalenderjahr) in USt-VA-Perioden + EXTF-WJ. [SOLL]
+- [x] **28 — Abweichendes Wirtschaftsjahr** ✅ (`domain/geschaeftsjahr.js`: `wjPeriode`/
+      `wirtschaftsjahrVon`/`wjBeginnYYYYMMDD`; Setting `wirtschaftsjahrBeginn` MM-TT; Dashboard +
+      DATEV-EXTF-WJ-Beginn nutzen es; USt-VA bleibt bewusst kalendarisch). 10 Tests. [erledigt]
 - [ ] **29 — Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung** (Belegnummer, Original-Archiv, 10-J.-Frist-Hinweis). [SOLL]
 - [ ] **31 — Steuerberater-Übergabe-Datenblatt** (kompaktes „so importieren" + Kennzahlen, baut auf TESTDATEN/DATEV_IMPORT). [SOLL]
 

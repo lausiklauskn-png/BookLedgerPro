@@ -226,6 +226,8 @@ function viewSettings() {
 
     datevSection(s),
 
+    geschaeftsjahrSection(s),
+
     buchungssperreSection(),
 
     passwortSection(),
@@ -308,6 +310,28 @@ function datevSection(s) {
       status,
     ]),
     el('p', { class: 'muted small', text: t('settings.datev.hint') }),
+  ]);
+}
+
+// Wirtschaftsjahr-Beginn (MM-TT) — Kalenderjahr (01-01) oder abweichend.
+function geschaeftsjahrSection(s) {
+  const status = el('span', { class: 'muted small' });
+  const input = el('input', { type: 'text', value: s.wirtschaftsjahrBeginn || '01-01', placeholder: 'MM-TT' });
+  return el('div', { class: 'setting' }, [
+    el('div', { class: 'setting-label', text: t('settings.wj') }),
+    el('div', { class: 'btn-row' }, [
+      input,
+      el('button', {
+        class: 'btn btn-sm', text: t('common.save'),
+        onClick: async () => {
+          const v = input.value.trim();
+          if (!/^\d{2}-\d{2}$/.test(v)) { status.textContent = t('settings.wjError'); return; }
+          await updateSettings({ wirtschaftsjahrBeginn: v }); status.textContent = t('settings.saved');
+        },
+      }),
+      status,
+    ]),
+    el('p', { class: 'muted small', text: t('settings.wjHint') }),
   ]);
 }
 

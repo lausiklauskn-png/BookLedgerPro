@@ -159,7 +159,8 @@ function pad2(n) { return String(n).padStart(2, '0'); }
 function extfHeaderZeile(opts, jahr) {
   const d = new Date();
   const ts = `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}000`;
-  const wjBeginn = opts.wjBeginn || `${jahr}0101`;
+  const wjBeginn = opts.wjBeginn
+    || (opts.wjBeginnMMDD ? `${jahr}${String(opts.wjBeginnMMDD).replace('-', '')}` : `${jahr}0101`);
   const skl = String(opts.sachkontenlaenge || 4);
   const felder = [
     '"EXTF"', '700', '21', '"Buchungsstapel"', '13', ts, '', '"RE"', '', '',
