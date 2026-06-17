@@ -21,7 +21,8 @@ import { mountJournal } from './views/journal.js';
 import { mountReports } from './views/reports.js';
 import { mountBerichte } from './views/berichte.js';
 import { mountSelbsttest } from './views/selbsttest.js';
-import { getBuchungssperre, setBuchungssperre } from '../domain/store.js';
+import { getBuchungssperre, setBuchungssperre, ensureSeedKonten } from '../domain/store.js';
+import { GEWINNERMITTLUNG, normalizeGewinnermittlung, BILANZ_GRUNDKONTO_NUMMERN } from '../domain/bilanzierung.js';
 import { mountDocuments } from './views/documents.js';
 import { mountCustomers } from './views/customers.js';
 import { mountOrders } from './views/orders.js';
@@ -240,6 +241,8 @@ function viewSettings() {
       async (v) => { await updateSettings({ kleinunternehmer: v === 'ja' }); paint(); },
       t('settings.kleinunternehmer.hint')),
 
+    gewinnermittlungSection(s),
+
     seg(t('settings.datenschutz'), 'datenschutzModus',
       [['aus', t('settings.datenschutz.aus')], ['pseudonym', t('settings.datenschutz.pseudonym')]],
       s.datenschutzModus || 'aus',
@@ -434,6 +437,39 @@ function partnerSection(s) {
       openBtn, status,
     ]),
     el('p', { class: 'muted small', text: t('settings.partnerHint') }),
+  ]);
+}
+
+// Gewinnermittlungsart (B1): EÜR (§4 Abs.3) oder Bilanzierung (§4 Abs.1/§5 EStG).
+// Beim Wechsel auf „Bilanz" werden die Bilanz-Grundkonten (Eigenkapital/Rückstellungen)
+// in älteren Tresoren nachgezogen (ensureSeedKonten); neue Tresore haben sie schon im Seed.
+// Reine Logik (bilanzierung.js) ist node-getestet; dieser Glue-/UI-Pfad ist statisch geprüft.
+// EHRLICH: GuV/Bilanz-Auswertungen folgen (B2/B3) — hier wird nur Modus + Kontengrundlage gesetzt.
+function gewinnermittlungSection(s) {
+  const aktuell = normalizeGewinnermittlung(s.gewinnermittlung);
+  const status = el('p', { class: 'muted small' });
+  const segmented = el('div', { class: 'segmented' },
+    [[GEWINNERMITTLUNG.EUER, t('settings.gewinn.euer')], [GEWINNERMITTLUNG.BILANZ, t('settings.gewinn.bilanz')]]
+      .map(([val, lab]) => el('button', {
+        class: 'seg' + (aktuell === val ? ' active' : ''),
+        text: lab,
+        onClick: async () => {
+          if (val === aktuell) return;
+          await updateSettings({ gewinnermittlung: val });
+          if (val === GEWINNERMITTLUNG.BILANZ) {
+            try {
+              const n = await ensureSeedKonten([...BILANZ_GRUNDKONTO_NUMMERN]);
+              status.textContent = n > 0 ? t('settings.gewinn.seeded').replace('{n}', String(n)) : t('settings.saved');
+            } catch (e) { status.textContent = String(e.message || e); }
+          }
+          paint();
+        },
+      })));
+  return el('div', { class: 'setting' }, [
+    el('div', { class: 'setting-label', text: t('settings.gewinn') }),
+    segmented,
+    el('p', { class: 'muted small', text: t('settings.gewinn.hint') }),
+    status,
   ]);
 }
 

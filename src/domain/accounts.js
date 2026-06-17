@@ -37,7 +37,14 @@ export const SKR03_SEED = [
   { nummer: '0480', name: 'Geringwertige Wirtschaftsgüter (GWG)', art: KONTOART.AKTIV },
   { nummer: '0485', name: 'Wirtschaftsgüter Sammelposten', art: KONTOART.AKTIV },
   // ---- Eigenkapital / Privat (Klasse 0/1, Passiva) ----
+  // Für die Bilanzierung (Betriebsvermögensvergleich) nötige Eigenkapital-/Rückstellungs-
+  // Konten (0800/0840/0860/0970, vgl. domain/bilanzierung.js BILANZ_GRUNDKONTO_NUMMERN);
+  // für die reine EÜR ohne Belang.
+  { nummer: '0800', name: 'Gezeichnetes Kapital', art: KONTOART.PASSIV },
+  { nummer: '0840', name: 'Kapitalrücklage', art: KONTOART.PASSIV },
+  { nummer: '0860', name: 'Gewinnvortrag / Verlustvortrag vor Verwendung', art: KONTOART.PASSIV },
   { nummer: '0880', name: 'Eigenkapital', art: KONTOART.PASSIV },
+  { nummer: '0970', name: 'Sonstige Rückstellungen', art: KONTOART.PASSIV },
   { nummer: '1800', name: 'Privatentnahmen allgemein', art: KONTOART.PASSIV },
   { nummer: '1890', name: 'Privateinlagen', art: KONTOART.PASSIV },
   { nummer: '9000', name: 'Saldenvorträge / Anfangsbestände', art: KONTOART.PASSIV, rolle: 'saldenvortrag' },

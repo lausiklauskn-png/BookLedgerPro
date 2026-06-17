@@ -15,6 +15,7 @@ const DEFAULTS = Object.freeze({
   aiAutonomy: 'suggest', // suggest / draft / auto
   taxProfile: 'DE',     // Deutschland zuerst
   kleinunternehmer: false, // §19 UStG — unterdrückt USt-Hinweise
+  gewinnermittlung: 'euer', // euer (§4 Abs.3) | bilanz (§4 Abs.1/§5 EStG) — Default EÜR (Bestand unverändert)
   datenschutzModus: 'aus', // aus | pseudonym — ersetzt bekannte Identifikatoren vor KI-Versand
   zahlungszielTage: 14,    // Standard-Zahlungsziel für Fälligkeit/Mahnwesen
   vaZeitraum: 'vierteljaehrlich', // USt-Voranmeldungszeitraum: monatlich/vierteljaehrlich/jaehrlich

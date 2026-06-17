@@ -14,6 +14,11 @@ import { baueBuchungZeilen, baueReverseChargeZeilen, UMSATZART, istAusgeglichen,
 import { hashBuchung, verifyChain, GENESIS, canonicalize } from '../src/domain/audit.js';
 import { computeEUR, computeEURIst, computeUStVoranmeldung, saldenliste, verprobeUSt } from '../src/domain/taxes.js';
 import { seedAccounts } from '../src/domain/accounts.js';
+import {
+  GEWINNERMITTLUNG, GEWINNERMITTLUNG_LISTE, istGewinnermittlung, normalizeGewinnermittlung,
+  istBilanzierung, istBestandskonto, istErfolgskonto, abschlussBereich, bilanzSeite, guvSeite,
+  klassifiziereKonto, BEREICH, BILANZ_GRUNDKONTO_NUMMERN,
+} from '../src/domain/bilanzierung.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
@@ -2137,6 +2142,49 @@ await section('Mandanten (M2a): aktive Tresor-DB konfigurierbar (core/db.js)', (
   closeDb();
   setActiveDbName(DB_LEGACY_NAME);
   ok('zurück auf Legacy', getActiveDbName() === 'blpr_bookledgerpro');
+});
+
+await section('Bilanzierung (B1): Gewinnermittlungsart', () => {
+  ok('Konstanten', GEWINNERMITTLUNG.EUER === 'euer' && GEWINNERMITTLUNG.BILANZ === 'bilanz');
+  ok('Liste enthält beide', GEWINNERMITTLUNG_LISTE.length === 2 && GEWINNERMITTLUNG_LISTE.includes('euer') && GEWINNERMITTLUNG_LISTE.includes('bilanz'));
+  ok('istGewinnermittlung gültig', istGewinnermittlung('euer') && istGewinnermittlung('bilanz'));
+  ok('istGewinnermittlung ungültig', !istGewinnermittlung('foo') && !istGewinnermittlung('') && !istGewinnermittlung(undefined));
+  ok('normalize Default = euer', normalizeGewinnermittlung(undefined) === 'euer' && normalizeGewinnermittlung('foo') === 'euer' && normalizeGewinnermittlung(null) === 'euer');
+  ok('normalize behält bilanz', normalizeGewinnermittlung('bilanz') === 'bilanz');
+  ok('istBilanzierung Default false', istBilanzierung({}) === false && istBilanzierung(null) === false);
+  ok('istBilanzierung bei bilanz true', istBilanzierung({ gewinnermittlung: 'bilanz' }) === true);
+  ok('istBilanzierung bei euer false', istBilanzierung({ gewinnermittlung: 'euer' }) === false);
+});
+
+await section('Bilanzierung (B1): Konten-Klassifikation', () => {
+  ok('Aktiv = Bestandskonto', istBestandskonto(KONTOART.AKTIV) && istBestandskonto(KONTOART.PASSIV));
+  ok('Aufwand/Ertrag = kein Bestandskonto', !istBestandskonto(KONTOART.AUFWAND) && !istBestandskonto(KONTOART.ERTRAG));
+  ok('Aufwand/Ertrag = Erfolgskonto', istErfolgskonto(KONTOART.AUFWAND) && istErfolgskonto(KONTOART.ERTRAG));
+  ok('Aktiv/Passiv = kein Erfolgskonto', !istErfolgskonto(KONTOART.AKTIV) && !istErfolgskonto(KONTOART.PASSIV));
+  ok('Bereich Bestand → Bilanz', abschlussBereich(KONTOART.AKTIV) === BEREICH.BILANZ && abschlussBereich(KONTOART.PASSIV) === BEREICH.BILANZ);
+  ok('Bereich Erfolg → GuV', abschlussBereich(KONTOART.AUFWAND) === BEREICH.GUV && abschlussBereich(KONTOART.ERTRAG) === BEREICH.GUV);
+  ok('bilanzSeite Aktiv/Passiv', bilanzSeite(KONTOART.AKTIV) === 'aktiva' && bilanzSeite(KONTOART.PASSIV) === 'passiva');
+  ok('bilanzSeite Erfolg = null', bilanzSeite(KONTOART.AUFWAND) === null && bilanzSeite(KONTOART.ERTRAG) === null);
+  ok('guvSeite Aufwand/Ertrag', guvSeite(KONTOART.AUFWAND) === 'aufwand' && guvSeite(KONTOART.ERTRAG) === 'ertrag');
+  ok('guvSeite Bestand = null', guvSeite(KONTOART.AKTIV) === null && guvSeite(KONTOART.PASSIV) === null);
+  const kBank = klassifiziereKonto({ art: KONTOART.AKTIV });
+  ok('klassifiziere Bank (Aktiv)', kBank.bereich === BEREICH.BILANZ && kBank.bilanzSeite === 'aktiva' && kBank.guvSeite === null && kBank.mehrung === 'S');
+  const kErlös = klassifiziereKonto({ art: KONTOART.ERTRAG });
+  ok('klassifiziere Erlöse (Ertrag)', kErlös.bereich === BEREICH.GUV && kErlös.guvSeite === 'ertrag' && kErlös.bilanzSeite === null && kErlös.mehrung === 'H');
+});
+
+await section('Bilanzierung (B1): Bilanz-Grundkonten im Seed', () => {
+  const seed = seedAccounts();
+  const nummern = new Set(seed.map((k) => k.nummer));
+  ok('alle Grundkonto-Nummern definiert', BILANZ_GRUNDKONTO_NUMMERN.length === 4);
+  ok('Grundkonten im Seed vorhanden', BILANZ_GRUNDKONTO_NUMMERN.every((n) => nummern.has(n)));
+  // Grundkonten sind Bilanz-Bestandskonten (Passiva: Eigenkapital/Rückstellungen).
+  const grund = seed.filter((k) => BILANZ_GRUNDKONTO_NUMMERN.includes(k.nummer));
+  ok('Grundkonten sind Bestandskonten', grund.every((k) => istBestandskonto(k.art)));
+  ok('Grundkonten sind Passiva', grund.every((k) => bilanzSeite(k.art) === 'passiva'));
+  // Saldenvortrag/Eröffnung (9000) ist bereits im Basis-Seed (B1 prüft nur).
+  ok('Saldenvortrag 9000 vorhanden', nummern.has('9000'));
+  ok('Saldenvortrag-Rolle', seed.find((k) => k.nummer === '9000').rolle === 'saldenvortrag');
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
