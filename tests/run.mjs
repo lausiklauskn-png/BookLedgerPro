@@ -26,7 +26,7 @@ import { auftragSummen, darfWechseln, validateAuftrag, auftragOffen, auftragGeza
 import { rechnungZeilen } from '../src/domain/invoicing.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
-import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, istEinfacherSatz, buildUstVa, centsToComma, ustVaToCsv, buildAnlagenverzeichnisCsv } from '../src/domain/export.js';
+import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, istEinfacherSatz, buildUstVa, centsToComma, ustVaToCsv, buildAnlagenverzeichnisCsv, buildUebergabeText } from '../src/domain/export.js';
 import {
   AFA_METHODE, klassifiziere, sammelpostenZulaessig, afaPlanGwg, afaPlanLinear, afaPlanSammelposten,
   afaPlan, anlageStatus, anlagenverzeichnis, afaBuchungZeilen, normalizeAnlage, validateAnlage,
@@ -1924,6 +1924,22 @@ await section('Punkt 28: Abweichendes Wirtschaftsjahr', () => {
   const b = [{ seq: 1, datum: '2026-08-01', zeilen: [{ konto: '1200', seite: 'S', betrag: 100 }, { konto: '8200', seite: 'H', betrag: 100 }] }];
   const extf = buildDatevExtf(b, idx, { jahr: 2026, wjBeginnMMDD: '07-01' });
   ok('EXTF-Header WJ-Beginn 20260701', extf.split('\r\n')[0].includes(';20260701;'));
+});
+
+await section('Punkt 31: Steuerberater-Übergabe-Datenblatt', () => {
+  const idx = indexFromSeed();
+  const buchungen = [
+    { seq: 1, datum: '2026-01-15', zeilen: [{ konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+    { seq: 2, datum: '2026-02-10', zeilen: [{ konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }] },
+  ];
+  const p = { von: '2026-01-01', bis: '2026-12-31' };
+  const va = buildUstVa(buchungen, idx, p);
+  const eur = computeEUR(buchungen, idx, p);
+  const txt = buildUebergabeText({ firma: 'Muster GmbH', steuernummer: '12/345/67890', ustId: 'DE123', beraterNr: '111', mandantNr: '222', periodeLabel: '2026' }, va, eur);
+  ok('Übergabe: Firma + Steuernummer', txt.includes('Muster GmbH') && txt.includes('12/345/67890'));
+  ok('Übergabe: DATEV Berater/Mandant', txt.includes('Berater 111') && txt.includes('Mandant 222'));
+  ok('Übergabe: Kz 83 + Überschuss', txt.includes('Kz 83 Zahllast') && txt.includes('Überschuss'));
+  ok('Übergabe: nennt DATEV/GoBD-Dateien', txt.includes('DATEV-CSV') && txt.includes('GoBD-Datenpaket'));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

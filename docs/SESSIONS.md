@@ -37,6 +37,21 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-17 — Punkt 31: Steuerberater-Übergabe-Datenblatt [Branch `claude/v2-ox8bu7`]
+
+**Was getan**
+- **`export.buildUebergabeText`** (rein, node-getestet): Klartext-Datenblatt mit Firmenprofil,
+  Steuernummer/USt-IdNr., DATEV Berater/Mandant, Zeitraum, USt-VA-Kennzahlen, EÜR-Überschuss und
+  Liste der **mitzugebenden Dateien** (DATEV-CSV, GoBD-ZIP, SuSa/Kontenblätter, USt-VA/ELSTER).
+- **Karte „Übergabe an den Steuerberater"** in „Berichte" (`berichte.js`): zeigt das Datenblatt für
+  den gewählten Zeitraum (echte Daten) + **Drucken→PDF** + **TXT-Download**. i18n de/en. SW `v76`.
+- Tests **632/632** (4 neu). 
+
+**Stand:** Punkt 31 erledigt. **Nächstes:** Punkt 29 (Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung),
+danach die großen Optionen (ZUGFeRD/KoSIT, A4-WorkFloh, Mehrmandanten, Bilanzierung) je eigener PR.
+
+---
+
 ## 2026-06-17 — Punkt 28: Abweichendes Wirtschaftsjahr [Branch `claude/v2-ox8bu7`]
 
 **Was getan**

@@ -387,6 +387,48 @@ export function buildAnlageEURCsv(eur) {
   return csv(rows);
 }
 
+/**
+ * Übergabe-Datenblatt für den Steuerberater (Klartext, druck-/downloadbar). Fasst Firmenprofil,
+ * Zeitraum, USt-VA-Kennzahlen und EÜR-Überschuss zusammen + nennt die mitzugebenden Dateien.
+ * Reine Funktion. @param meta {firma, steuernummer, ustId, beraterNr, mandantNr, periodeLabel}
+ */
+export function buildUebergabeText(meta, va, eur) {
+  const e = (c) => centsToComma(c) + ' EUR';
+  const z = [];
+  z.push('BookLedgerPro — Übergabe an den Steuerberater');
+  z.push('='.repeat(46));
+  z.push(`Firma:        ${meta.firma || '—'}`);
+  z.push(`Steuernummer: ${meta.steuernummer || '—'}    USt-IdNr.: ${meta.ustId || '—'}`);
+  if (meta.beraterNr || meta.mandantNr) z.push(`DATEV:        Berater ${meta.beraterNr || '—'} · Mandant ${meta.mandantNr || '—'}`);
+  z.push(`Zeitraum:     ${meta.periodeLabel || '—'}`);
+  z.push('');
+  z.push('USt-Voranmeldung (Kennzahlen):');
+  z.push(`  Kz 81 Umsätze 19 %:        ${e(va.kz81)}   (USt ${e(va.kz81Steuer)})`);
+  z.push(`  Kz 86 Umsätze 7 %:         ${e(va.kz86)}   (USt ${e(va.kz86Steuer)})`);
+  if (va.kz41) z.push(`  Kz 41 steuerfr. ig Lief.:  ${e(va.kz41)}`);
+  if (va.kz43) z.push(`  Kz 43 steuerfr. Ausfuhr:   ${e(va.kz43)}`);
+  if (va.kz46 || va.kz47) z.push(`  Kz 46/47 §13b:             ${e(va.kz46)} / USt ${e(va.kz47)}`);
+  if (va.kz89 || va.kz93) z.push(`  Kz 89/93 ig Erwerb:        ${e(va.kz89)} / USt ${e(va.kz93)}`);
+  z.push(`  Kz 66 Vorsteuer:           ${e(va.kz66)}`);
+  if (va.kz61) z.push(`  Kz 61 Vorsteuer ig Erwerb: ${e(va.kz61)}`);
+  if (va.kz67) z.push(`  Kz 67 Vorsteuer §13b:      ${e(va.kz67)}`);
+  z.push(`  Kz 83 Zahllast:            ${e(va.kz83)}`);
+  z.push('');
+  z.push('EÜR (vereinfacht, netto Erfolgskonten):');
+  z.push(`  Einnahmen:  ${e(eur.einnahmen)}`);
+  z.push(`  Ausgaben:   ${e(eur.ausgaben)}`);
+  z.push(`  Überschuss: ${e(eur.ueberschuss)}`);
+  z.push('');
+  z.push('Mitzugebende Dateien (Export in „Auswertung"/„Berichte"):');
+  z.push('  • DATEV-CSV (EXTF-Buchungsstapel)      → DATEV-Import (siehe docs/DATEV_IMPORT.md)');
+  z.push('  • GoBD-Datenpaket (ZIP, GDPdU „Z3")    → digitale Betriebsprüfung (IDEA)');
+  z.push('  • SuSa / Kontenblätter / Anlage-EÜR    → Plausibilität/Abgleich');
+  z.push('  • USt-VA-CSV bzw. ELSTER-Datenpaket    → USt-Voranmeldung');
+  z.push('');
+  z.push('Hinweis: orientierende Aufbereitung; vor Einreichung mit Berater/ELSTER/DATEV abgleichen.');
+  return z.join('\r\n');
+}
+
 export function eurToCsv(eur) {
   const rows = [['Art', 'Konto', 'Bezeichnung', 'Betrag']];
   for (const e of eur.einnahmenKonten || []) rows.push(['Einnahme', e.nummer, e.name, centsToComma(e.wert)]);
