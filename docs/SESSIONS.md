@@ -37,6 +37,22 @@ erkennt die Umsatzart noch nicht automatisch (manuelle Wahl). **Nächstes:** V3 
 
 ---
 
+## 2026-06-17 — Nachfolge-Brief: Mehr-Sitzungs-Plan (je 1 PR/Sitzung) [Branch `claude/v2-ox8bu7`]
+
+**Was getan** (reine Doku/Planung, kein Code — auf Nutzerwunsch)
+- **`docs/NACHFOLGE_PLAN.md`** neu: geordneter Mehr-Sitzungs-Plan mit **Sitzungs-Ritual**
+  (genau 1 PR pro Sitzung, sauber/fehlerfrei vor schnell, Abschlussbrief am Ende jeder Sitzung →
+  konfliktfreier Start der nächsten). Reihenfolge: **A) Mehrmandanten M1→M2→M3** (Architektur
+  „mehrere getrennte Tresore", DB-Suffix unverändert), **B) Bilanzierung B1→B2→B3** (GuV+Bilanz),
+  **R) Rest-SOLL R1…R6**. Jeder Schritt mit konkretem Scope + Splitting-Hinweis.
+- **`docs/PULS.md` „START HIER"** neu geschrieben: verweist auf den Plan, **nächste PR = M1**,
+  Freibrief + Ritual ausdrücklich übergeben; veraltete/doppelte Blöcke entfernt.
+- Tests **651/651** (unverändert; Doku-only). SW bleibt `v79`.
+
+**Stand:** Plan steht. **Nächste Sitzung:** **M1** (Mehrmandanten-Fundament) — siehe NACHFOLGE_PLAN.md.
+
+---
+
 ## 2026-06-17 — Punkt 7/A4: Offene Anbindung an andere Buchhaltungssoftware (Stufe 1) [Branch `claude/v2-ox8bu7`]
 
 **Was getan** (A4 erweitert: WorkFloh public + generischer Konnektor)

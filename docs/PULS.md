@@ -7,66 +7,35 @@
 
 ---
 
-## ⏭ START HIER — Nachfolge-Brief (Stand 2026-06-17): Entscheidungen umsetzen, je 1 PR
+## ⏭ START HIER — Nachfolge-Brief (Stand 2026-06-17): **eine PR pro Sitzung**, Plan in NACHFOLGE_PLAN.md
 
 > **Lies das zuerst und vollständig. Danach OHNE Rückfragen loslegen.**
->
-> **🟢 FREIBRIEF (vom Nutzer ausdrücklich übergeben):** Pro Punkt **ein** PR, **bei grüner CI
-> selbstständig mergen** (Draft anlegen → ready → CI abwarten → squash-merge), danach lokal
-> `git reset --hard origin/main`. Arbeitsweise wie die letzten 11 PRs: **reine Logik zuerst
-> node-getestet** (`tests/run.mjs`), dann UI (statisch geprüft kennzeichnen). **SW-Cache** in
-> `sw.js` erhöhen, neue Module precachen. **DB-Suffix `bookledgerpro` NIE ändern.**
 
-**✅ Profi-Readiness-Fahrplan V1–V10 KOMPLETT** (gemergt: V2 #64, V3 #65, V4 #66, V5 #67, V6 #68,
-V7 #69, V9 #70, V8 #71, V10 #72; Doku-HTML #73; Entscheidungen-Teil-1 als nächster PR).
-**Tests 618/618, SW `v73`.**
+**🟢 FREIBRIEF + Sitzungs-Ritual (vom Nutzer ausdrücklich so gewünscht):**
+- **Genau EINE PR pro Sitzung.** Die Sitzung ist nur so lang, bis **diese eine PR abgeschlossen** ist.
+- **Sauber & fehlerfrei vor schnell:** keine unschlüssigen/halben Codepfade, die später Probleme machen.
+  Lieber kleiner schneiden als überstürzen. Reine Logik **zuerst node-getestet** (`node tests/run.mjs`),
+  dann UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen — kein Headless-Browser hier).
+- **Ablauf je PR:** Branch `claude/v2-ox8bu7` auf `origin/main` setzen → bauen → Tests grün →
+  `CACHE_VERSION` in `sw.js` erhöhen + neue Module precachen → **Draft-PR** → ready → CI abwarten →
+  **bei grün squash-mergen** → lokal `git reset --hard origin/main`.
+- **Abschlussbrief am Ende JEDER Sitzung (Pflicht):** in `docs/PULS.md` diesen „START HIER"-Block auf
+  die **nächste** PR zeigen lassen (Kopf-Status v-Nummer/Tests aktualisieren), `docs/NACHFOLGE_PLAN.md`
+  die erledigte Zeile abhaken, obersten `docs/SESSIONS.md`-Eintrag schreiben, `OFFENE_PUNKTE.md` pflegen.
+  So startet die Folgesitzung **konfliktfrei** allein aus diesen Dateien.
+- **Unverrückbar:** DB-Suffix `bookledgerpro` NIE ändern · build-frei (keine Bundler/CDNs/npm-Runtime) ·
+  Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
-**★ Nutzer-Entscheidungen (2026-06-17) — verbindlich (Details: `OFFENE_PUNKTE.md` ganz oben):**
-ELSTER **JA** (Datenpaket-Download **+ Link** auf elster.de, KEIN ERiC-Direktversand) ·
-Mehrmandanten **JA** · Bilanzierung (GmbH) **JA** · AVV-Verträge **umsetzen** (In-App-Links da).
+**📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „M1"** (Mehrmandanten-Fundament). Reihenfolge dort:
+M1 → M2 → M3 (Mehrmandanten) · B1 → B2 → B3 (Bilanzierung) · danach Rest-SOLL (R1…).
 
-**Festgelegte Bau-Reihenfolge (je eigener PR, Freibrief-Merge):**
-1. ✅ **erledigt:** ELSTER-Weiterleitungs-Link + AVV-Anbieterlinks.
-2. ✅ **erledigt:** §19-Kleinunternehmer-Abfrage im Onboarding (`lock.js stepProfil`).
-3. ✅ **erledigt:** Abweichendes Wirtschaftsjahr (`domain/geschaeftsjahr.js`, Setting
-   `wirtschaftsjahrBeginn`, Dashboard + DATEV-WJ; USt-VA bleibt kalendarisch).
-4. ✅ **erledigt:** Steuerberater-Übergabe-Datenblatt (`export.buildUebergabeText`, Karte in „Berichte").
-5. ✅ **erledigt:** Beleg↔Buchung-Verknüpfung + GoBD-Aufbewahrung (`domain/aufbewahrung.js`, belegRef).
-6. ✅ **erledigt:** ZUGFeRD-**Empfang** (PDF→CII, `zugferd.js`, native Flate-Entpackung) +
-   **KoSIT-orientierter Pflichtfeld-Precheck**. (ZUGFeRD-**Erzeugen** offen — braucht PDF-Lib.)
-7. ✅ **erledigt (Stufe 1):** A4 offene Anbindung — `domain/connect.js` (Austauschformat Import+Export,
-   abwärtskompatibel WorkFloh), Export-Knopf in Aufträge, verbundene-App-Link in Einstellungen,
-   `docs/CONNECT.md`. Offen: API/Push, Rechnungs-Übernahme.
-8. **Mehrmandantenfähigkeit** — **als Nächstes** (groß; Mandanten-Namespace im Tresor; DB-Suffix unverändert!).
-9. **Bilanzierung / V-Bilanz** (GuV + Bilanz, §4 Abs.1/§5) — groß.
-10. Restpunkte B/C nach Bedarf (Bankformate härten, NER, dreistufiger Briefkasten, Lighthouse,
-    lokales OCR, Privat-/Bürger-Modus, Sage 5b–d).
-
-**Nutzer-Kontext:** macht „heute durch" + plant 1–2-Wochen-Praxistest (Foto-OCR → App → Finanzamt;
-DATEV-Testimport via Steuerberater). App ist **auch ganz ohne DATEV** voll nutzbar; alle Exporte
-portabel (kein Lock-in).
-
-**Was „Vx" bedeutet:** „Vx" = **Punkt aus dem Master-Plan** (`OFFENE_PUNKTE.md`), **KEINE** neue
-Programm-Version/Redesign. Branchname (`claude/v2-…`) ist bedeutungslos.
-
-**Projektzustand (nichts davon neu bauen — fertig & gemergt):** reife Buchhaltungs-PWA, Phasen 0–6,
-EU-KI (Vision EU + Mistral EU), A1–A3 (Mahnwesen/Verbindlichkeiten/Zahlungsabgleich), **V1–V10**
-(Kontenrahmen, §13b, AfA/Anlagen, Kassenbuch, USt-VA komplett, Berichte/SuSa, GoBD/GDPdU, DATEV-EXTF,
-Kleinfälle, Selbstdiagnose). → **Nicht** A1–A3 / V1–V10 wiederholen, **kein** Redesign.
-
-**Was „Vx" bedeutet — WICHTIG, nicht missverstehen:**
-„Vx" ist **KEINE** neue Programm-Version, **KEIN** Redesign, **KEIN** Major-Umbau. Falls dein
-Branch zufällig `claude/v2-…` heißt: **ignoriere den Branchnamen als Bedeutungsträger.**
-„Vx" = **Punkt Vx aus dem Master-Fahrplan** in `docs/OFFENE_PUNKTE.md`, Abschnitt **„V. PROFI-
-READINESS"**. Mehr nicht.
-
-**Projektzustand (nichts davon neu bauen — ist fertig & gemergt):** reife Buchhaltungs-PWA,
-Phasen 0–6 ✅, EU-KI (Vision EU + Mistral EU) ✅, A1–A3 (Mahnwesen/Verbindlichkeiten/
-Zahlungsabgleich), **V1 Kontenrahmen** (57 Konten + CRUD), **V2 §13b/Reverse-Charge**,
-**V3 Anlagevermögen+AfA**, **V4 Kassenbuch/Anfangsbestände**, **V5 USt-VA komplett**,
-**V6 Berichte**, **V7 GoBD/GDPdU-Export**, **V8 DATEV-EXTF berater-fest**, **V9 Kleinfälle +
-Simulations-Testharness**, **V10 Selbstdiagnose + Abnahme-Checkliste** (s.o.). → **Nicht**
-A1–A3 / V1–V10 wiederholen, **kein** Redesign.
+**✅ Bereits fertig & gemergt (NICHT wiederholen):** Profi-Readiness **V1–V10** (Kontenrahmen, §13b,
+AfA/Anlagen, Kassenbuch, USt-VA komplett, Berichte/SuSa, GoBD/GDPdU, DATEV-EXTF, Kleinfälle,
+Selbstdiagnose) · A1–A3 (Mahnwesen/Verbindlichkeiten/Zahlungsabgleich) · Entscheidungen 2026-06-17
+(ELSTER-Link, AVV-Links, §19-Onboarding, abw. Wirtschaftsjahr, Übergabe-Datenblatt, GoBD-Aufbewahrung,
+ZUGFeRD-Empfang+KoSIT-Precheck, A4 offene Anbindung Stufe 1). **PRs #64–#80, Tests 651/651, SW `v79`.**
+→ **Nicht** Erledigtes neu bauen, **kein** Redesign. „Vx/Mx/Bx" = Schritt aus dem Plan, keine Programm-Version.
 
 ### V2 — was genau zu bauen ist (§13b/Reverse-Charge + EU/Ausland)
 Ziel: Die Firma bezieht selbst Leistungen mit **Steuerschuldumkehr** — z. B. **Google Cloud
@@ -119,6 +88,7 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 **Letzte Aktualisierung:** 2026-06-17 · **Branch:** `claude/v2-ox8bu7`
 · **Tests:** `node tests/run.mjs` → **618/618 grün**
 · **SW-Cache:** `v79` · **88 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅**
+· **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (je 1 PR/Sitzung; nächste = **M1**).
 · **Entscheidungen 17.06.:** ELSTER-Link ✅ · AVV-Links ✅ · §19-Onboarding ✅ · Wirtschaftsjahr ✅ ·
   Übergabe-Datenblatt ✅ · Beleg-Verknüpfung/GoBD-Aufbewahrung ✅ · ZUGFeRD-Empfang+KoSIT ✅ ·
   A4 offene Anbindung (Import/Export + Partner-Link) ✅; **nächste (groß):** Mehrmandanten → Bilanzierung.
