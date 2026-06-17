@@ -36,18 +36,21 @@
   Krypto-/Durabilitäts-Disziplin (Regel #2) · GoBD/DSGVO · EU-KI opt-in.
 
 **📋 Der vollständige, geordnete Mehr-Sitzungs-Plan steht in `docs/NACHFOLGE_PLAN.md`.**
-**Nächste PR = NACHFOLGE_PLAN.md, Schritt „M2"** (Tresor je Mandant + Auswahl am Sperrbildschirm).
-**M1 ist erledigt** (PR M1: reine Schicht `src/domain/mandanten.js` + 29 Tests; Design-Abschnitt im Plan).
-Reihenfolge dort: ~~M1~~ → **M2** → M3 (Mehrmandanten) · B1 → B2 → B3 (Bilanzierung) · danach Rest-SOLL (R1…).
-**Wichtig für M2:** der Design-Abschnitt in `NACHFOLGE_PLAN.md` (Abschnitt A) ist verbindlich —
-`dbNameFuer`/`mitLegacyMandant` nutzen, unverschlüsselte Mandanten-Registry, Sitzungs-DEK beim Wechsel verwerfen.
+**Nächste PR = NACHFOLGE_PLAN.md, Schritt „M2b"** (Sperrbildschirm: Mandant auswählen/anlegen/wechseln, UI).
+**M1 + M2a sind erledigt.** M2 wurde gesplittet: **M2a** = Core-Verdrahtung (PR M2a: `core/db.js` aktive DB
+konfigurierbar, neue `core/mandantenStore.js` mit Registry + `initMandanten`/`wechsleAktivenMandant`, Boot
+verhaltensneutral verdrahtet, +9 Tests). **M2b** = die eigentliche Sperrbildschirm-UI.
+Reihenfolge dort: ~~M1~~ → ~~M2a~~ → **M2b** → M3 (Mehrmandanten) · B1 → B2 → B3 (Bilanzierung) · danach Rest-SOLL (R1…).
+**Wichtig für M2b:** Core ist fertig — `lock.js` nutzt `ladeRegistry`/`registriereMandant`/`wechsleAktivenMandant`
+aus `core/mandantenStore.js` (DEK-Verwerfen + DB-Wechsel sind dort gekapselt). DSGVO-Hinweis: Mandanten-Namen
+liegen unverschlüsselt. Design-Abschnitt in `NACHFOLGE_PLAN.md` Abschnitt A bleibt verbindlich.
 
 **✅ Bereits fertig & gemergt (NICHT wiederholen):** Profi-Readiness **V1–V10** (Kontenrahmen, §13b,
 AfA/Anlagen, Kassenbuch, USt-VA komplett, Berichte/SuSa, GoBD/GDPdU, DATEV-EXTF, Kleinfälle,
 Selbstdiagnose) · A1–A3 (Mahnwesen/Verbindlichkeiten/Zahlungsabgleich) · Entscheidungen 2026-06-17
 (ELSTER-Link, AVV-Links, §19-Onboarding, abw. Wirtschaftsjahr, Übergabe-Datenblatt, GoBD-Aufbewahrung,
-ZUGFeRD-Empfang+KoSIT-Precheck, A4 offene Anbindung Stufe 1) · **M1 Mehrmandanten-Fundament (reine Schicht).**
-**PRs #64–#81 + M1, Tests 680/680, SW `v80`.**
+ZUGFeRD-Empfang+KoSIT-Precheck, A4 offene Anbindung Stufe 1) · **M1 + M2a Mehrmandanten (Fundament + Core-Verdrahtung).**
+**PRs #64–#83 + M1/M2a, Tests 689/689, SW `v81`.**
 → **Nicht** Erledigtes neu bauen, **kein** Redesign. „Vx/Mx/Bx" = Schritt aus dem Plan, keine Programm-Version.
 
 ### V2 — was genau zu bauen ist (§13b/Reverse-Charge + EU/Ausland)
@@ -98,9 +101,9 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-17 (M1) · **Branch:** `claude/v2-ox8bu7`
-· **Tests:** `node tests/run.mjs` → **680/680 grün**
-· **SW-Cache:** `v80` · **89 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · M1 ✅**
+**Letzte Aktualisierung:** 2026-06-17 (M2a) · **Branch:** `claude/v2-ox8bu7`
+· **Tests:** `node tests/run.mjs` → **689/689 grün**
+· **SW-Cache:** `v81` · **90 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · M1 ✅ · M2a ✅**
 · **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (je 1 PR/Sitzung; nächste = **M1**).
 · **Entscheidungen 17.06.:** ELSTER-Link ✅ · AVV-Links ✅ · §19-Onboarding ✅ · Wirtschaftsjahr ✅ ·
   Übergabe-Datenblatt ✅ · Beleg-Verknüpfung/GoBD-Aufbewahrung ✅ · ZUGFeRD-Empfang+KoSIT ✅ ·

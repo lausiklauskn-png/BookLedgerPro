@@ -70,11 +70,11 @@ import {
 import { buildOffeneVerbindlichkeitenCsv } from '../src/domain/export.js';
 import { faelligkeit, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, letzteMahnstufe, vorschlagNaechsteStufe, mahnVerlaufSumme, mahnStufeLabel } from '../src/domain/mahnwesen.js';
 import {
-  LEGACY_MANDANT_ID, LEGACY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
+  LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
   erstelleMandant, leereRegistry, findeMandant, aktiverMandant, addMandant,
   umbenenneMandant, entferneMandant, setzeAktiv, mitLegacyMandant,
 } from '../src/domain/mandanten.js';
-import { DB_SUFFIX } from '../src/core/db.js';
+import { DB_SUFFIX, getActiveDbName, setActiveDbName, closeDb, LEGACY_DB_NAME as DB_LEGACY_NAME } from '../src/core/db.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -2083,6 +2083,33 @@ await section('Mandanten (M1): Legacy-Seed (migrationsfrei)', () => {
   ok('Legacy zeigt auf Bestands-DB', dbNameFuer(seeded.aktiv) === 'blpr_bookledgerpro');
   const vorhanden = addMandant(leereRegistry(), erstelleMandant('X', { id: 'cccc0003' }));
   ok('vorhandene Registry bleibt unangetastet', mitLegacyMandant(vorhanden) === vorhanden);
+});
+
+await section('Mandanten (M2a): Registry-DB-Name', () => {
+  ok('Registry-DB getrennt + Suffix erhalten', REGISTRY_DB_NAME === 'blpr_mandanten_bookledgerpro');
+  ok('Registry-DB ≠ Tresor-Legacy-DB', REGISTRY_DB_NAME !== LEGACY_DB_NAME);
+  ok('endet auf Suffix', REGISTRY_DB_NAME.endsWith(`_${DB_SUFFIX}`));
+});
+
+await section('Mandanten (M2a): aktive Tresor-DB konfigurierbar (core/db.js)', () => {
+  ok('Default = Legacy-Tresor', getActiveDbName() === DB_LEGACY_NAME && DB_LEGACY_NAME === 'blpr_bookledgerpro');
+  // Wechsel auf einen anderen Mandanten
+  setActiveDbName(dbNameFuer('a1b2c3d4'));
+  ok('setActiveDbName wechselt', getActiveDbName() === 'blpr_a1b2c3d4_bookledgerpro');
+  // Leerer Name = No-op
+  setActiveDbName('');
+  ok('leerer Name = No-op', getActiveDbName() === 'blpr_a1b2c3d4_bookledgerpro');
+  // Gleicher Name = No-op (kein Wurf)
+  setActiveDbName('blpr_a1b2c3d4_bookledgerpro');
+  ok('gleicher Name = No-op', getActiveDbName() === 'blpr_a1b2c3d4_bookledgerpro');
+  // Name ohne Suffix wird abgelehnt (Regel #3)
+  let threw = false;
+  try { setActiveDbName('blpr_fremd_andereapp'); } catch { threw = true; }
+  ok('Name ohne Suffix wirft', threw && getActiveDbName() === 'blpr_a1b2c3d4_bookledgerpro');
+  // closeDb() ohne offene Verbindung wirft nicht; danach zurück auf Legacy für saubere Folge.
+  closeDb();
+  setActiveDbName(DB_LEGACY_NAME);
+  ok('zurück auf Legacy', getActiveDbName() === 'blpr_bookledgerpro');
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

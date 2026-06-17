@@ -5,6 +5,31 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-17 — M2a: Mehrmandanten Core-Verdrahtung [Branch `claude/m2a-mandanten-core`]
+
+**Was getan** (NACHFOLGE_PLAN.md, M2 gesplittet → **M2a** = Core, M2b = UI)
+- **`core/db.js`:** aktive Tresor-DB ist jetzt **konfigurierbar** — `getActiveDbName`,
+  `setActiveDbName` (mit Suffix-Schutz/No-op-Logik), `closeDb` (Verbindung schließen +
+  Cache verwerfen), Export `LEGACY_DB_NAME`. Default bleibt der Legacy-Tresor → **kein
+  Verhalten ändert sich**, solange nur ein Mandant existiert. `openDb` öffnet die aktive DB.
+- **Neu `core/mandantenStore.js`:** unverschlüsselte Registry-DB `blpr_mandanten_bookledgerpro`
+  (getrennt von Tresor-DBs, muss vor dem Entsperren lesbar sein). `ladeRegistry`/
+  `speichereRegistry`; **`initMandanten`** (Boot: Alt-Tresor migrationsfrei als „Mandant 1"/
+  ID `standard` registrieren, aktive DB ausrichten); `registriereMandant`; **`wechsleAktivenMandant`**
+  (verwirft DEK via `lockVault`, schließt DB, richtet Ziel-DB aus, persistiert).
+- **`mandanten.js`:** `REGISTRY_DB_NAME` ergänzt. **`main.js`:** Boot ruft `initMandanten()`
+  vor dem Sperrbildschirm.
+- **Tests 689/689** (+9: Registry-DB-Name/Suffix, aktive-DB-Umschaltung inkl. Suffix-Schutz/
+  No-op). `node tests/run.mjs` grün. **SW-Cache `v81`**, neues Modul precached.
+
+**Stand:** M2a vollständig (Core node-getestet/verhaltensneutral verdrahtet). IndexedDB-Glue
+in `mandantenStore.js` statisch geprüft (kein Headless-Browser).
+**Offen/Nächstes:** **M2b** — Sperrbildschirm-UI: bei >1 Mandant Auswahlliste, „Neuer Mandant"
+(Onboarding in eigener DB), Wechsel über `wechsleAktivenMandant`; DSGVO-Hinweis (Namen
+unverschlüsselt). Core dafür ist fertig nutzbar.
+
+---
+
 ## 2026-06-17 — M1: Mehrmandanten-Fundament (reine Schicht) [Branch `claude/m1-mehrmandanten-fundament-0k6qiu`]
 
 **Was getan** (NACHFOLGE_PLAN.md, Schritt M1 — „Fundament rein + Design")

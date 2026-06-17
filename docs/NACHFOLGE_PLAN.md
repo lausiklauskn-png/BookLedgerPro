@@ -30,9 +30,17 @@
   (`addMandant`/`umbenenneMandant`/`entferneMandant`/`setzeAktiv`/`findeMandant`), `validateMandantName`,
   `neueMandantId`, **Speicher-Namensbildung** `dbNameFuer(id)` ohne das DB-Suffix `bookledgerpro` zu
   ändern, sowie `mitLegacyMandant` (migrationsfreier Seed). **Keine** Tresor-Umverdrahtung. (PR M1.)
-- [ ] **M2 — Tresor je Mandant + Auswahl am Sperrbildschirm.** `lock.js`/`vault.js`: bestehenden Einzel-
-  Tresor **migrationsfrei** als „Mandant 1" registrieren; Mandant **anlegen** (eigenes Passwort/Shamir/Backup)
-  und **auswählen/wechseln**. Sorgfältig: Sitzungs-Key beim Wechsel sauber verwerfen. UI statisch geprüft.
+- [x] **M2a — Core-Verdrahtung (rein + glue, node-getestet).** ✅ `core/db.js`: aktive Tresor-DB
+  konfigurierbar (`getActiveDbName`/`setActiveDbName`/`closeDb`, Default = Legacy, Suffix-Schutz);
+  neue `core/mandantenStore.js` (unverschlüsselte Registry-DB `blpr_mandanten_bookledgerpro`:
+  `ladeRegistry`/`speichereRegistry`/`initMandanten`/`registriereMandant`/`wechsleAktivenMandant`);
+  `mandanten.js` um `REGISTRY_DB_NAME` ergänzt; `main.js`-Boot ruft `initMandanten()` (registriert den
+  Alt-Tresor migrationsfrei, richtet aktive DB aus — **verhaltensneutral** bei einem Mandanten). 9 neue
+  Tests. (PR M2a.)
+- [ ] **M2b — Sperrbildschirm: Auswahl/Anlegen/Wechsel (UI, statisch geprüft).** `lock.js`: bei >1 Mandant
+  Auswahlliste vor dem Entsperren; „Neuer Mandant" → Onboarding in **eigener** DB (eigenes Passwort/Shamir/
+  Backup); Wechsel über `wechsleAktivenMandant` (DEK verwerfen ist bereits dort gekapselt). DSGVO-Hinweis:
+  Mandanten-Namen liegen unverschlüsselt. Nutzt die in M2a fertige Core-Schicht.
 - [ ] **M3 — Shell-Indikator + Verwaltung.** Aktiver Mandant sichtbar (Header), „Mandant wechseln" + in
   Einstellungen „Mandanten verwalten" (umbenennen/entfernen — Entfernen nur mit Bestätigung, Daten bleiben
   im jeweiligen Tresor). Doku `docs/MANDANTEN.md`.

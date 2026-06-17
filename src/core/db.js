@@ -7,8 +7,18 @@
 // Deshalb trägt JEDE Datenbank das Suffix `bookledgerpro`.
 
 export const DB_SUFFIX = 'bookledgerpro';
-const DB_NAME = `blpr_${DB_SUFFIX}`;
+// Legacy-/Default-Name des Einzel-Tresors. Bleibt unverändert (Regel #3) und ist
+// die DB, auf die zeigt, solange kein anderer Mandant aktiviert wurde.
+export const LEGACY_DB_NAME = `blpr_${DB_SUFFIX}`;
 const DB_VERSION = 1;
+
+// Mehrmandanten (M2): Die aktive Tresor-DB ist konfigurierbar. Jeder Mandant hat
+// eine eigene DB (Name via domain/mandanten.js `dbNameFuer`). Beim Wechsel wird
+// `setActiveDbName` aufgerufen; eine offene Verbindung wird dann geschlossen, damit
+// der nächste `openDb()` die Ziel-DB öffnet. Default = Legacy-Tresor (kein Verhalten
+// ändert sich, solange niemand wechselt).
+let _activeDbName = LEGACY_DB_NAME;
+let _db = null;           // offene IDBDatabase (zum Schließen beim Wechsel)
 
 // Object-Stores:
 //  kv       — kleine Schlüssel/Wert-Paare (Settings, verschlüsselter Meta-Blob)
@@ -18,10 +28,34 @@ export const STORES = { KV: 'kv', RECORDS: 'records', FILES: 'files' };
 
 let _dbPromise = null;
 
+/** Name der aktuell aktiven Tresor-DB. */
+export function getActiveDbName() { return _activeDbName; }
+
+/**
+ * Schließt eine offene DB-Verbindung und verwirft den Cache, sodass der nächste
+ * `openDb()` neu (ggf. eine andere DB) öffnet. Beim Mandantenwechsel zwingend.
+ */
+export function closeDb() {
+  if (_db) { try { _db.close(); } catch { /* egal */ } _db = null; }
+  _dbPromise = null;
+}
+
+/**
+ * Setzt die aktive Tresor-DB (pro Mandant). Ändert sich der Name, wird eine offene
+ * Verbindung geschlossen. No-op bei leerem/gleichem Namen. Das DB-Suffix bleibt Teil
+ * des Namens (Regel #3) — geprüft wird nur, dass es nicht versehentlich entfällt.
+ */
+export function setActiveDbName(name) {
+  if (!name || name === _activeDbName) return;
+  if (!name.endsWith(DB_SUFFIX)) throw new Error(`DB-Name ohne Suffix ${DB_SUFFIX}: ${name}`);
+  closeDb();
+  _activeDbName = name;
+}
+
 export function openDb() {
   if (_dbPromise) return _dbPromise;
   _dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    const req = indexedDB.open(_activeDbName, DB_VERSION);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(STORES.KV)) {
@@ -35,7 +69,7 @@ export function openDb() {
         db.createObjectStore(STORES.FILES, { keyPath: 'id' });
       }
     };
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => { _db = req.result; resolve(req.result); };
     req.onerror = () => reject(req.error);
     req.onblocked = () => console.warn('[db] open blocked — anderer Tab hält eine ältere Version');
   });

@@ -20,8 +20,13 @@ import { DB_SUFFIX } from '../core/db.js';
 // behält exakt seinen alten DB-Namen (siehe `dbNameFuer`).
 export const LEGACY_MANDANT_ID = 'standard';
 
-// Basis-/Legacy-Name — identisch mit `DB_NAME` aus core/db.js. Nicht verändern.
+// Basis-/Legacy-Name — identisch mit `LEGACY_DB_NAME` aus core/db.js. Nicht verändern.
 export const LEGACY_DB_NAME = `blpr_${DB_SUFFIX}`;
+
+// Eigene, UNVERSCHLÜSSELTE kv-DB für die Mandanten-Registry. Muss vor dem Entsperren
+// lesbar sein (Auswahl am Sperrbildschirm) und ist von den Tresor-DBs getrennt. Das
+// Suffix bleibt erhalten (Regel #3 → keine Origin-Kollision mit Geschwister-Apps).
+export const REGISTRY_DB_NAME = `blpr_mandanten_${DB_SUFFIX}`;
 
 // Erlaubte Mandant-IDs: kurze, URL-/DB-sichere Kennungen.
 const ID_RE = /^[a-z0-9][a-z0-9-]{0,39}$/;

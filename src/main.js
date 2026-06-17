@@ -3,6 +3,7 @@
 // Sperrbildschirm/Onboarding → App-Shell.
 
 import { requestPersistence } from './core/durability.js';
+import { initMandanten } from './core/mandantenStore.js';
 import { showLockScreen } from './ui/lock.js';
 import { showIntro } from './ui/intro.js';
 import { renderShell } from './ui/shell.js';
@@ -32,6 +33,11 @@ async function boot() {
 
   // Öffentliches Deckblatt/Datenblatt VOR der Anmeldung (zum Informieren).
   await showIntro(root);
+
+  // Mehrmandanten (M2a): Registry laden, Alt-Tresor migrationsfrei registrieren und die
+  // aktive Tresor-DB ausrichten (Default = Legacy). Behält das bisherige Verhalten bei,
+  // solange nur ein Mandant existiert.
+  await initMandanten();
 
   // Sperrbildschirm/Onboarding bis entsperrt.
   await showLockScreen(root);
