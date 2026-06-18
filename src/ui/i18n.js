@@ -292,6 +292,8 @@ const STRINGS = {
     'dashboard.liquidityReserveLabel': 'Mindestreserve (Puffer)',
     'dashboard.liquidityReservePlaceholder': '0,00',
     'dashboard.liquidityReserveGapHint': 'Reserve unterschritten: Um die Mindestreserve von {reserve} zu halten, fehlen bis zum {datum} voraussichtlich {betrag}. Hinweis, keine Finanzberatung.',
+    'dashboard.liquidityRunwayOk': 'Das Geld reicht nach dieser Planung über die nächsten {tage} Tage.',
+    'dashboard.liquidityRunwayUntil': 'Das Geld reicht nach dieser Planung voraussichtlich bis zum {datum}.',
     'a11y.skip': 'Zum Inhalt springen',
     'a11y.nav': 'Hauptnavigation',
 
@@ -1212,6 +1214,8 @@ const STRINGS = {
     'dashboard.liquidityReserveLabel': 'Minimum reserve (buffer)',
     'dashboard.liquidityReservePlaceholder': '0.00',
     'dashboard.liquidityReserveGapHint': 'Reserve breached: to keep the minimum reserve of {reserve}, an estimated {betrag} is missing by {datum}. A hint, not financial advice.',
+    'dashboard.liquidityRunwayOk': 'On this projection your cash covers the next {tage} days.',
+    'dashboard.liquidityRunwayUntil': 'On this projection your cash is expected to last until {datum}.',
     'a11y.skip': 'Skip to content',
     'a11y.nav': 'Main navigation',
     'common.cancel': 'Cancel',

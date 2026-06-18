@@ -148,7 +148,7 @@ import {
   LIQUIDITAET_HORIZONT_DEFAULT, baldFaellig, liquiditaetsVorschau,
   GELDKONTO_BEREICHE, LIQUIDITAET_AMPEL, istGeldkonto, geldbestand, liquiditaetsAmpel,
   LIQUIDITAET_HORIZONT_OPTIONEN, normalizeHorizont, liquiditaetsVerlauf, deckungsluecke,
-  normalizeReserveCent,
+  normalizeReserveCent, liquiditaetsReichweite,
 } from '../src/domain/liquiditaet.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
@@ -2585,6 +2585,50 @@ await section('Liquidität: deckungsluecke mit Mindestreserve (Puffer)', () => {
   // Reserve aber kein Engpass → keine Lücke.
   const heil = liquiditaetsVerlauf({ forderungen: [{ betragCent: 5000, faelligAm: '2026-06-22' }], heute, horizontTage: 14, geldbestandCent: 50000 });
   ok('Bestand über Reserve → keine Lücke', deckungsluecke(heil, { reserveCent: 40000 }).unterdeckung === false);
+});
+
+await section('Liquidität: liquiditaetsReichweite (bis wann reicht das Geld?)', () => {
+  const heute = '2026-06-18';
+
+  // Engpass VOR dem Tiefpunkt: Saldo rutscht früh (Tag 3) unter die Schwelle, erholt sich kurz
+  // (Forderung Tag 10), fällt dann noch tiefer (große Verbindlichkeit Tag 20). Reichweite muss
+  // den FRÜHEN Tag melden — anders als der Tiefpunkt, der den spätesten/tiefsten Tag nennt.
+  const forderungen = [{ betragCent: 60000, faelligAm: '2026-06-28' }];      // +10 Tage
+  const verbindlichkeiten = [
+    { offenCent: 70000, faelligAm: '2026-06-21' }, // +3 Tage → Saldo 50000→−20000 (unter 0)
+    { offenCent: 90000, faelligAm: '2026-07-08' }, // +20 Tage → Saldo 40000→−50000 (tiefer)
+  ];
+  const v = liquiditaetsVerlauf({ forderungen, verbindlichkeiten, heute, horizontTage: 30, geldbestandCent: 50000 });
+  ok('Tiefpunkt liegt spät', v.tiefpunktDatum === '2026-07-08' && v.tiefpunktCent === -50000);
+  const r = liquiditaetsReichweite(v, { heute });
+  ok('Reichweite erschöpft am frühen Tag (vor Tiefpunkt)', r.reicht === false && r.datum === '2026-06-21');
+  ok('Reichweite-Datum ≠ Tiefpunkt-Datum', r.datum !== v.tiefpunktDatum);
+  ok('tageBis aus heute berechnet', r.tageBis === 3);
+  ok('erster Engpass ist echtes Minus', r.negativ === true && r.sofort === false && r.bekannt === true);
+
+  // Hält die Schwelle über das ganze Fenster → reicht.
+  const heil = liquiditaetsVerlauf({ forderungen: [{ betragCent: 5000, faelligAm: '2026-06-22' }], heute, horizontTage: 14, geldbestandCent: 50000 });
+  const rHeil = liquiditaetsReichweite(heil, { heute });
+  ok('kein Engpass → reicht', rHeil.reicht === true && rHeil.datum === null && rHeil.tageBis === null && rHeil.negativ === false);
+
+  // Mindestreserve als Schwelle: Saldo bleibt positiv, unterschreitet aber die Reserve → Engpass
+  // (nicht negativ). Erster Tag unter der Reserve wird gemeldet.
+  const vRes = liquiditaetsVerlauf({ verbindlichkeiten: [{ offenCent: 20000, faelligAm: '2026-06-21' }], heute, horizontTage: 30, geldbestandCent: 50000 });
+  const rRes = liquiditaetsReichweite(vRes, { heute, reserveCent: 40000 });
+  ok('Reserve unterschritten → reicht false, nicht negativ', rRes.reicht === false && rRes.datum === '2026-06-21' && rRes.negativ === false && rRes.reserveCent === 40000);
+  ok('ohne Reserve bleibt derselbe Verlauf gedeckt', liquiditaetsReichweite(vRes, { heute }).reicht === true);
+
+  // Schon heute unter der Schwelle (Bestand < Reserve) → sofort erschöpft, kein künftiges Datum.
+  const rSofort = liquiditaetsReichweite(vRes, { heute, reserveCent: 60000 });
+  ok('heute schon unter Schwelle → sofort', rSofort.sofort === true && rSofort.datum === null && rSofort.tageBis === 0 && rSofort.reicht === false);
+
+  // Ohne Geldbestand → keine Aussage (abwärtskompatibel).
+  const ohne = liquiditaetsVerlauf({ forderungen, verbindlichkeiten, heute, horizontTage: 14 });
+  ok('ohne Bestand → nicht bekannt, reicht (neutral)', liquiditaetsReichweite(ohne, { heute }).bekannt === false);
+  // Defensiv: leeres Argument.
+  ok('leeres Argument → nicht bekannt', liquiditaetsReichweite().bekannt === false && liquiditaetsReichweite({}).reicht === true);
+  // Ohne heute → datum gesetzt, tageBis null (nur datum nötig).
+  ok('ohne heute → datum ja, tageBis null', liquiditaetsReichweite(v).datum === '2026-06-21' && liquiditaetsReichweite(v).tageBis === null);
 });
 
 await section('Mahnwesen: persistenter Verlauf (Stufe/Zins-/Gebührenverlauf)', () => {
