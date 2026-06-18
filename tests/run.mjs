@@ -152,6 +152,9 @@ import {
   LIQUIDITAET_TREIBER_DEFAULT, groessteFaellige,
 } from '../src/domain/liquiditaet.js';
 import {
+  LOHN_KONTEN, LOHN_AUSZAHLUNG, lohnNettoCent, validateLohnlauf, lohnBuchungZeilen, lohnBuchungEntwurf,
+} from '../src/domain/lohnbuchung.js';
+import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
   erstelleMandant, leereRegistry, findeMandant, aktiverMandant, addMandant,
   umbenenneMandant, entferneMandant, setzeAktiv, mitLegacyMandant,
@@ -2954,6 +2957,60 @@ await section('Eingangsverzug: Buchung gezahlter Verzugskosten (Zinsaufwand)', (
   const bk = berechtigteVerzugskosten({ offenCent: 100000, tageUeberfaellig: 365 }, { basiszinsProzent: 0 });
   const aus = verzugAufwandEntwurf({ zinsenCent: bk.zinsenCent, gebuehrenCent: bk.pauschaleCent, referenz: 'ER-9' });
   ok('Entwurf aus berechtigten Kosten', aus.summeCent === bk.gesamtCent && aus.zeilen.length === 3);
+});
+
+await section('Lohnbuchung: Brutto-Methode (ausgeglichen, SKR03)', () => {
+  const idx = indexFromSeed();
+  // Beispiel: Brutto 3.000 €, LSt 400 + SolZ 22 + KiSt 36, SV-AN 600, SV-AG 600.
+  const e = { bruttoCent: 300000, lohnsteuerCent: 40000, solzCent: 2200, kirchensteuerCent: 3600, svAnCent: 60000, svAgCent: 60000 };
+  const r = lohnBuchungZeilen(e);
+  // Netto = 300000 − (40000+2200+3600) − 60000 = 194200.
+  ok('Netto = Brutto − Steuern − SV-AN', r.nettoCent === 194200 && lohnNettoCent(e) === 194200);
+  ok('Steuersumme = LSt+SolZ+KiSt', r.steuerSummeCent === 45800);
+  ok('SV-Summe = AN + AG', r.svSummeCent === 120000);
+  ok('Soll = Brutto + AG-Anteil', r.sollCent === 360000);
+  ok('ausgeglichen (Soll == Haben)', r.ausgeglichen === true && r.habenCent === 360000);
+
+  // Konten korrekt verteilt: Soll 4120 (Brutto) + 4130 (AG-SV); Haben 1200/1741/1742.
+  const soll = r.zeilen.filter((z) => z.seite === 'S');
+  const haben = r.zeilen.filter((z) => z.seite === 'H');
+  ok('Soll: 4120 Brutto + 4130 AG-SV', soll.length === 2
+    && soll.find((z) => z.konto === '4120' && z.betrag === 300000)
+    && soll.find((z) => z.konto === '4130' && z.betrag === 60000));
+  ok('Haben: 1200 Netto', haben.find((z) => z.konto === '1200' && z.betrag === 194200));
+  ok('Haben: 1741 Steuern', haben.find((z) => z.konto === '1741' && z.betrag === 45800));
+  ok('Haben: 1742 SV (AN+AG)', haben.find((z) => z.konto === '1742' && z.betrag === 120000));
+
+  // Auszahlung „auf Ziel" → Netto auf 1740 statt 1200.
+  const ziel = lohnBuchungZeilen(e, { auszahlung: LOHN_AUSZAHLUNG.VERBINDLICHKEIT });
+  ok('Verbindlichkeit: Netto auf 1740', ziel.zeilen.find((z) => z.konto === '1740' && z.seite === 'H' && z.betrag === 194200));
+  ok('Verbindlichkeit weiterhin ausgeglichen', ziel.ausgeglichen === true);
+
+  // Konto-Override (Löhne 4110 statt Gehälter 4120).
+  const loehne = lohnBuchungZeilen(e, { konten: { bruttolohn: '4110' } });
+  ok('Override Bruttolohn-Konto', loehne.zeilen.find((z) => z.konto === '4110' && z.seite === 'S'));
+
+  // Ohne Arbeitgeberanteil (z. B. Pauschalfall) → keine 4130-Zeile, trotzdem ausgeglichen.
+  const ohneAg = lohnBuchungZeilen({ bruttoCent: 100000, lohnsteuerCent: 0, svAnCent: 0, svAgCent: 0 });
+  ok('ohne AG-SV → keine 4130-Zeile', !ohneAg.zeilen.find((z) => z.konto === '4130') && ohneAg.ausgeglichen === true);
+
+  // Entwurf ist gegen die Seed-Kontenliste journal-gültig (balanced, bekannte Konten, positiv).
+  const ent = lohnBuchungEntwurf(e, { monat: '2026-06', name: 'Max Mustermann', datum: '2026-06-30' });
+  ok('Entwurf node-festschreibbar (validateBuchung leer)', validateBuchung(ent, idx).length === 0);
+  ok('Entwurf-Beschreibung trägt Monat + Name', /Lohn\/Gehalt 2026-06 \(Max Mustermann\)/.test(ent.beschreibung));
+  ok('Entwurf trägt Summen-Felder', ent.bruttoCent === 300000 && ent.nettoCent === 194200 && ent.steuerSummeCent === 45800 && ent.svSummeCent === 120000);
+
+  // Lohn-Konten 1740/1741/1742 + 4110 sind im Seed vorhanden.
+  ok('Lohn-Konten im SKR03-Seed', ['1740', '1741', '1742', '4110'].every((nr) => idx[nr]));
+});
+
+await section('Lohnbuchung: validateLohnlauf (Plausibilität)', () => {
+  ok('gültiger Lauf ok', validateLohnlauf({ bruttoCent: 300000, lohnsteuerCent: 40000, svAnCent: 60000 }).ok === true);
+  ok('Brutto 0 → Fehler', validateLohnlauf({ bruttoCent: 0 }).ok === false);
+  ok('Abzüge > Brutto → Fehler', validateLohnlauf({ bruttoCent: 100000, lohnsteuerCent: 80000, svAnCent: 30000 }).ok === false);
+  ok('falsches Netto → Fehler', validateLohnlauf({ bruttoCent: 300000, lohnsteuerCent: 40000, svAnCent: 60000, nettoCent: 999 }).ok === false);
+  ok('passendes Netto → ok', validateLohnlauf({ bruttoCent: 300000, lohnsteuerCent: 40000, svAnCent: 60000, nettoCent: 200000 }).ok === true);
+  ok('ungültige Eingabe → Entwurf null', lohnBuchungEntwurf({ bruttoCent: 0 }) === null);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
