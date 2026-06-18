@@ -5,6 +5,56 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2/Schritt 11b: Adaptiver Baukasten — UI (Angebots-Ansicht + Store-Glue) [Branch `claude/baukasten-logic-step-11a-cbj8s8`]
+
+**Ausgangslage / Auswahl**
+- 11a (reine Logik, PR #132) gemergt; laut `docs/BAUPLAN.md` ist 11b die **UI über** `domain/baukasten.js` +
+  `angebote.js` + `produktschemata.js`. Es existierte **keine Angebots-Ansicht und keine Store-Glue** für Angebote
+  → beides in diesem Schritt gebaut. Die reine Logik darunter ist bereits node-getestet (1427/1427); 11b ist UI/Glue,
+  daher **DOM/IndexedDB ehrlich als „statisch geprüft" gekennzeichnet** (kein Headless-Browser).
+
+**Was getan**
+- **`src/domain/angebote-store.js`** (NEU, verschlüsselte Store-Glue via `encstore`, analog `crm-store.js`):
+  `saveAngebot` (normalisiert über `angebote.js`, vergibt beim ersten Speichern eine freie Angebotsnummer
+  `AN-JJJJ-NNNN` via `vergebeAngebotsnummer`), `listAngebote`/`getAngebot`/`deleteAngebot`, `setzeAngebotStatusStore`
+  (Status-Workflow `setzeAngebotStatus`, beim Verschicken ggf. Nummer nachziehen). **Positionen behalten ihre interne
+  `kalkulation`** (`normalizeAngebotsposition` reicht sie durch) → der Live-Deckungsbeitrag überlebt Speichern/Laden.
+- **`src/ui/views/angebote.js`** (NEU): Angebots-Ansicht mit **adaptivem Baukasten** —
+  - **Karten je Leistungsart** sortiert via `baukastenPalette` + Schnellzeile `haeufigsteSchemata`; Karte tippen →
+    **Schema-Felder** (aus `produktschemata.js`, Geld als €/Cent, sonst Dezimal) + Menge/USt ausfüllen →
+    `positionAusSchema` → Position. **Beim Hinzufügen `zaehleNutzung`** → Nutzungsprofil **gerätelokal** in den
+    (verschlüsselten) Settings (`state.js` `baukastenNutzungsprofil`), sodass häufig Genutztes nach oben rückt.
+  - **Positionsliste mit Drag-and-drop** (`verschiebePosition`) **plus** Pfeil-Knöpfe ↑/↓
+    (`verschiebeNachOben`/`-Unten`; DeX/Touch-tauglich, additiv — kein `cursor`-Trick).
+  - **Live-Deckungsbeitrag** (`interneAuswertung`) neben den neutralen Summen, klar als **„intern — nicht im
+    Angebot"** markiert (Prime Directive).
+  - Status-Workflow (`ANGEBOT_STATUS_FLOW`), Archiv-Liste, **neutrales Angebotsdokument** (Druck) ausschließlich über
+    `externesAngebot` (Whitelist) — Kalkulation/Marge leckt nie nach außen.
+- **`src/ui/shell.js`**: NAV „Angebote" (zwischen Aufträge/Kunden) + Import + Route.
+- **`src/domain/nutzungsmodus.js`**: `angebote` in `privat`/`verein` ausgeblendet (wie `orders`); NAV-Gating-Tests
+  in `tests/run.mjs` entsprechend gestärkt.
+- **`src/state.js`**: Default `baukastenNutzungsprofil: {}` (verschlüsselt im Tresor, gerätelokal).
+- **`src/ui/i18n.js`**: `nav.angebote` + voller `angebote.*`-Strang **de + en** (Status-Namen vs. Aktions-Verben getrennt).
+- **`assets/app.css`**: Stile für Palette/Karten/Schema-Form/Positionszeilen/Summen-Panel.
+- **`sw.js`**: `CACHE_VERSION` `v115 → v116`; `angebote-store.js` + `views/angebote.js` precached.
+
+**Stand**
+- `node tests/run.mjs` → **1427/1427 grün** (reine Logik unverändert grün; Gating-Assertions für `angebote` ergänzt).
+- SW `v116`. Prime Directive gewahrt: Kalkulation rein intern, Außendokument nur über `externesAngebot`-Whitelist.
+
+**Offen / Grenzen (ehrlich)**
+- **DOM/IndexedDB nicht headless E2E-getestet** (kein Headless-Browser) — Ansicht/Store statisch geprüft; die reine
+  Logik darunter ist node-getestet. **Browser-Sichttest durch den Nutzer steht aus.**
+- Globale Zuschläge (Gemeinkosten/Gewinn) wirken auf **neu hinzugefügte** Positionen; bestehende behalten ihre zum
+  Hinzufüge-Zeitpunkt gespeicherte Kalkulation (bewusst — Snapshot; kein Massen-Neurechnen).
+
+**Nächstes**
+- **Block 2/Schritt 8-UI „Rechnung aus Angebot"** (reine Logik `angebotUebernahme.js` steht): Knopf am angenommenen
+  Angebot → Buchungs-Entwurf über bestehenden Pfad, Nummernpolitik je `rechnungsstelle`, Angebot→archiviert.
+- Optional: UI „Nachkalkulation/Kostenträger + Kalibrierung", Demo-Vorbefüllung (`domain/demodaten.js`).
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2/Schritt 11a: Adaptiver Baukasten — reine Sortier-/Zähl-Logik [PR #132, Branch `claude/block2-step11-position-builder-8vxryt`]
 
 **Ausgangslage / Auswahl**

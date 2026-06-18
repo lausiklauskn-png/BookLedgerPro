@@ -3395,7 +3395,7 @@ await section('Nutzungsmodus (P1): Modus-Werte + Normalisierung', () => {
 
 await section('Nutzungsmodus (P1): NAV-Ansichten-Gating', () => {
   const NAV_KEYS = ['dashboard', 'journal', 'kassenbuch', 'accounts', 'anlagen', 'documents',
-    'payables', 'orders', 'customers', 'employees', 'reports', 'berichte', 'network', 'legal',
+    'payables', 'orders', 'angebote', 'customers', 'employees', 'reports', 'berichte', 'network', 'legal',
     'anleitung', 'selbsttest', 'about', 'settings'];
   // Firma zeigt ALLES.
   ok('Firma: alle Ansichten sichtbar', sichtbareAnsichten({ nutzungsmodus: 'firma' }, NAV_KEYS).length === NAV_KEYS.length);
@@ -3405,8 +3405,8 @@ await section('Nutzungsmodus (P1): NAV-Ansichten-Gating', () => {
   // Privat: geschäftliche Ansichten ausgeblendet.
   const privatSichtbar = sichtbareAnsichten({ nutzungsmodus: 'privat' }, NAV_KEYS);
   ok('Privat blendet Anlagen aus', !zeigeAnsicht({ nutzungsmodus: 'privat' }, 'anlagen'));
-  ok('Privat blendet Aufträge/Kunden/Mitarbeiter aus',
-    !privatSichtbar.includes('orders') && !privatSichtbar.includes('customers') && !privatSichtbar.includes('employees'));
+  ok('Privat blendet Aufträge/Angebote/Kunden/Mitarbeiter aus',
+    !privatSichtbar.includes('orders') && !privatSichtbar.includes('angebote') && !privatSichtbar.includes('customers') && !privatSichtbar.includes('employees'));
   ok('Privat blendet Kreditoren/Berichte/Netz aus',
     !privatSichtbar.includes('payables') && !privatSichtbar.includes('berichte') && !privatSichtbar.includes('network'));
   ok('Privat behält Kern (Journal/Belege/Auswertung/Kassenbuch/Konten)',
@@ -3416,9 +3416,9 @@ await section('Nutzungsmodus (P1): NAV-Ansichten-Gating', () => {
   const vereinSichtbar = sichtbareAnsichten({ nutzungsmodus: 'verein' }, NAV_KEYS);
   ok('Verein zeigt Berichte + Kunden + Netz',
     vereinSichtbar.includes('berichte') && vereinSichtbar.includes('customers') && vereinSichtbar.includes('network'));
-  ok('Verein blendet Anlagen/Kreditoren/Aufträge/Mitarbeiter aus',
+  ok('Verein blendet Anlagen/Kreditoren/Aufträge/Angebote/Mitarbeiter aus',
     !vereinSichtbar.includes('anlagen') && !vereinSichtbar.includes('payables') &&
-    !vereinSichtbar.includes('orders') && !vereinSichtbar.includes('employees'));
+    !vereinSichtbar.includes('orders') && !vereinSichtbar.includes('angebote') && !vereinSichtbar.includes('employees'));
   ok('Verein sichtbar > Privat sichtbar', vereinSichtbar.length > privatSichtbar.length);
 
   // Unbekannte Schlüssel werden nicht versehentlich ausgeblendet (sicher additiv).

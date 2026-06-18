@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 2/Schritt 11a — Adaptiver Baukasten reine Sortier-/Zähl-Logik `domain/baukasten.js`, rein, PR #132; SW `v115`, 1427/1427). Davor: Schritt 10 — Kalibrierung + Statistik/Vergleich `domain/kalibrierung.js` (PR #131; SW `v114`, 1394/1394). Davor: Schritt 9 — Auftrags-Kostenträger + Nachkalkulation `domain/nachkalkulation.js` (PR #130, SW `v113`, 1355/1355). Davor: Schritt 8 — Angebot → Rechnung-Übernahme `domain/angebotUebernahme.js` (PR #129, SW `v112`, 1326/1326). Davor: Schritt 7 — Angebote-Kern `domain/angebote.js` (PR #128, SW `v111`, 1298/1298). Davor: Schritt 6 — Produkt-Schemata `domain/produktschemata.js` (PR #127, SW `v110`, 1238/1238). Davor: Schritt 5 — Kalkulations-Kern `domain/kalkulation.js` (PR #126, SW `v109`, 1215/1215). Davor: Block 2/Schritt 4 — Setting `rechnungsstelle` (PR #125, SW `v108`, 1181/1181). Davor: Block 1 komplett — Schritt 3 Datensicherungs-UX + `backupStrategie` (PR #124), 2c Test-Modus UI (PR #122), 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 2/Schritt 11b — Adaptiver Baukasten **UI**: Angebots-Ansicht `ui/views/angebote.js` + Store-Glue `domain/angebote-store.js`; SW `v116`, 1427/1427, DOM statisch geprüft). Davor: Schritt 11a — Adaptiver Baukasten reine Sortier-/Zähl-Logik `domain/baukasten.js` (PR #132; SW `v115`, 1427/1427). Davor: Schritt 10 — Kalibrierung + Statistik/Vergleich `domain/kalibrierung.js` (PR #131; SW `v114`, 1394/1394). Davor: Schritt 9 — Auftrags-Kostenträger + Nachkalkulation `domain/nachkalkulation.js` (PR #130, SW `v113`, 1355/1355). Davor: Schritt 8 — Angebot → Rechnung-Übernahme `domain/angebotUebernahme.js` (PR #129, SW `v112`, 1326/1326). Davor: Schritt 7 — Angebote-Kern `domain/angebote.js` (PR #128, SW `v111`, 1298/1298). Davor: Schritt 6 — Produkt-Schemata `domain/produktschemata.js` (PR #127, SW `v110`, 1238/1238). Davor: Schritt 5 — Kalkulations-Kern `domain/kalkulation.js` (PR #126, SW `v109`, 1215/1215). Davor: Block 2/Schritt 4 — Setting `rechnungsstelle` (PR #125, SW `v108`, 1181/1181). Davor: Block 1 komplett — Schritt 3 Datensicherungs-UX + `backupStrategie` (PR #124), 2c Test-Modus UI (PR #122), 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -73,9 +73,18 @@ ein PR, bei grüner CI selbstständig mergen**):
   (Sortierung häufig → zuletzt → Katalog-Reihenfolge, stabil); **(3)** Umsortieren `verschiebePosition`/
   `verschiebeNachOben`/`verschiebeNachUnten` (immutabel, behält Element-Referenz → interne `kalkulation` unberührt).
   SW `v115`. **Rein, kein UI.**
-  ⏭ **Nächster Schritt: Block 2/Schritt 11b — Adaptiver Baukasten-UI** über `domain/baukasten.js` (Angebots-Ansicht
-  mit Karten je Leistungsart „häufig oben", lokal persistiertes Nutzungsprofil, Positionsliste mit Drag-and-drop,
-  Live-Deckungsbeitrag) — braucht zuvor Angebots-Ansicht + verschlüsselte Store-Glue. Katalog §3.
+  ✅ **Adaptiver Baukasten — UI umgesetzt (BAUPLAN Block 2/Schritt 11b, 2026-06-18):** neue Angebots-Ansicht
+  `ui/views/angebote.js` (NAV „Angebote", in privat/verein ausgeblendet) + verschlüsselte Store-Glue
+  `domain/angebote-store.js` (`saveAngebot`/`listAngebote`/`getAngebot`/`deleteAngebot`/`setzeAngebotStatusStore`;
+  Nummernkreis `AN-JJJJ-NNNN`; Positionen behalten interne `kalkulation` → Live-DB überlebt Speichern). UI: adaptive
+  Karten je Leistungsart (`baukastenPalette`/`haeufigsteSchemata`, Nutzungsprofil gerätelokal in Settings via
+  `zaehleNutzung`), Schema-Felder→`positionAusSchema`, Drag-and-drop-Positionsliste (`verschiebePosition` + ↑/↓),
+  Live-Deckungsbeitrag (`interneAuswertung`, „intern — nicht im Angebot"), Status-Workflow + Archiv, neutrales
+  Angebotsdokument (Druck) nur über `externesAngebot`-Whitelist. SW `v116`, 1427/1427 grün; **DOM/IndexedDB statisch
+  geprüft** (kein Headless-Browser → Browser-Sichttest des Nutzers steht aus). Damit **Block-2-Kernkette (4–11) komplett.**
+  ⏭ **Nächster Schritt: Block 2/Schritt 8-UI „Rechnung aus Angebot"** (reine Logik `angebotUebernahme.js` steht):
+  Knopf am angenommenen Angebot → Buchungs-Entwurf über bestehenden Pfad (`saveEntwurf`), Nummernpolitik je
+  `rechnungsstelle`, danach Angebot→archiviert. Katalog §4/§7a.
   **Nächster Schritt: Schritt 10 Kalibrierung + Statistik/Vergleich** (Korrekturfaktoren aus eigener Historie
   Vor→Nachkalkulation, Trefferquote; optional KI Mistral EU opt-in/pseudonym), dann 11 Baukasten-UX. **Offene
   Folgeschritte:** UI „Rechnung aus Angebot" + Store-Glue (Zähler je Kreis); UI „Nachkalkulation/Kostenträger" +

@@ -28,6 +28,7 @@ const DEFAULTS = Object.freeze({
   firma: { name: '', anschrift: '', steuernummer: '', ustId: '', iban: '' }, // Aussteller-Stammdaten (Rechnung §14)
   datev: { beraterNr: '', mandantNr: '', sachkontenlaenge: 4 }, // für DATEV-EXTF-Header (Berater/Mandant)
   partnerAppUrl: '', // verbundene App (z.B. Mein-WorkFloh) — reziproke Verlinkung
+  baukastenNutzungsprofil: {}, // { schemaId: {anzahl, zuletzt} } — adaptiver Angebots-Baukasten (Katalog §3): häufig genutzte Leistungsarten rutschen nach oben. Gerätelokal (verschlüsselt im Tresor), reines IDs/Zähler-Profil (keine Marge), domain/baukasten.js
 });
 
 const _state = { settings: { ...DEFAULTS }, route: 'dashboard' };
