@@ -51,8 +51,17 @@ ein PR, bei grüner CI selbstständig mergen**):
   Nummern-Politik `uebernahmeNummer` je `rechnungsstelle` (blp → §14-Nummer, extern → vorläufige Vorlage `ENT-…`),
   `angebotUebernahmeEntwurf` referenziert die Angebotsnummer (nicht wiederverwendet, zwei getrennte Kreise/GoBD),
   baut nur auf `externesAngebot` (Prime Directive), `validateAngebotUebernahme`/`darfAngebotUebernehmen`. **Rein, kein UI.**
-  **Nächster Schritt: Schritt 9 Auftrags-Kostenträger + Nachkalkulation** (`payables`/`costcenters`/Belege → Soll/Ist),
-  dann 10 Kalibrierung → 11 Baukasten-UX. **Offener Folgeschritt:** UI „Rechnung aus Angebot" + Store-Glue (Zähler je Kreis).
+  ✅ **Auftrags-Kostenträger + Nachkalkulation umgesetzt (PR #130, BAUPLAN Block 2/Schritt 9):** `domain/nachkalkulation.js`
+  (rein, node-getestet) — Kostenträger = Auftrag über `kostenstelle`; **IST** `istkostenAusBuchungen` (Aufwand
+  festgeschriebener Buchungen je `kostenstelle`, Aggregationsweg wie `costcenters.js`, `belegRef`/`buchungId` mitgeführt,
+  konto→Kostenart über `kontoBlock`) + `istZeitkosten` (`employees.js`-`{dauerMin}` × interner Stundenkostensatz) +
+  `istkosten`; **SOLL** `sollkostenAusAngebot` (interne `kalkulation` je Position × Menge nach Kostenart); **Vergleich**
+  `nachkalkulation` (Abweichung IST−SOLL je Kostenart + Prozent + Deckungsbeitrag Soll/Ist) + `kostentraegerAnalyse`.
+  **Rein, kein UI/Store.**
+  **Nächster Schritt: Schritt 10 Kalibrierung + Statistik/Vergleich** (Korrekturfaktoren aus eigener Historie
+  Vor→Nachkalkulation, Trefferquote; optional KI Mistral EU opt-in/pseudonym), dann 11 Baukasten-UX. **Offene
+  Folgeschritte:** UI „Rechnung aus Angebot" + Store-Glue (Zähler je Kreis); UI „Nachkalkulation/Kostenträger" +
+  Zeiterfassung je Auftrag + Beleg-/Buchungs-Zuordnung (Store-Glue).
 - **Datensicherung — wählbare 3-2-1-Strategie (Pflicht #1): JA, Anforderung steht.** Verbindliches Doku:
   **`docs/DATENSICHERUNG.md`** (Stellen: BLP intern · verschlüsselter gewählter Ordner re-importierbar ·
   Server/Offsite; **freie Nutzer-Wahl `backupStrategie`** beim Onboarding + in Einstellungen änderbar;

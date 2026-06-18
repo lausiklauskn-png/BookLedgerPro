@@ -5,6 +5,49 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2/Schritt 9: Auftrags-Kostenträger + Nachkalkulation (rein) [PR #130, Branch `claude/block2-step9-cost-tracking-6aeqtl`]
+
+**Ausgangslage / Auswahl**
+- Block 1 komplett; Block 2/Schritte 4–8 erledigt. Laut `docs/BAUPLAN.md` ist der nächste Schritt **Auftrags-Kostenträger
+  + Nachkalkulation** (`docs/KALKULATION_KATALOG.md` §5.1 USP „selbstlernende Kalkulation" + §6 Kostenträger) — bewusst
+  **reine Logik, ohne UI/Store** (eigener Folgeschritt).
+- Kern-USP: Vor- gegen Nachkalkulation je fertigem Auftrag → später Korrekturfaktoren aus der eigenen Historie (Schritt 10).
+
+**Was getan** (reine Logik node-getestet — **+29 → 1355/1355**)
+- **`src/domain/nachkalkulation.js`** (rein, node-getestet) — ein **Kostenträger** = Auftrag/Projekt über seine `kostenstelle`:
+  - **`istkostenAusBuchungen(buchungen, kontoIndex, kostenstelle, opts)`** — IST-Material/Fremdleistung aus den
+    Aufwands-Zeilen FESTGESCHRIEBENER Buchungen je `kostenstelle` (Soll mehrt Aufwand, wie `costcenters.js`); `perKonto`/
+    `perBlock` (konto→Kostenart über `opts.kontoBlock`, Default Material); je beteiligte Buchung ein Beleg-Eintrag mit
+    `belegRef`/`buchungId` (Beleg↔Buchung aus `store.js`).
+  - **`istZeitkosten(zeiteintraege, opts)`** — IST-Zeit aus dem `employees.js`-Datenmodell (`{dauerMin}`) × internem
+    Stundenkostensatz (eigener `kostensatzCentProStd` je Eintrag, sonst Default), Arbeit/Maschine getrennt.
+  - **`istkosten({…})`** — Belege + Zeit über alle Kostenarten zusammengeführt.
+  - **`sollkostenAusAngebot(angebot)`** — SOLL aus der Vorkalkulation: interne `kalkulation` je Position × Menge nach
+    Kostenart (Σ Blöcke = Selbstkosten; Netto/DB konsistent mit `angebote.interneAuswertung`).
+  - **`nachkalkulation(soll, ist, {nettoCent?})`** — Soll/Ist je Kostenart + gesamt: Abweichung (IST − SOLL) + Prozent
+    (auf |SOLL|, bei SOLL=0 → null); Deckungsbeitrag SOLL (kalkuliert) gegen IST (Erlös − Ist-Kosten). `kostentraegerAnalyse`
+    als Komfort-Einstieg (Soll+Ist+Vergleich in einem Aufruf, Kostenträger aus `angebot.kostenstelle`).
+- **`sw.js`:** `CACHE_VERSION` → **v113**, Modul `./src/domain/nachkalkulation.js` precached.
+- **`tests/run.mjs`:** +29 Prüfungen (Soll-Aggregation + Identität zu `interneAuswertung`; IST-Buchungen ignoriert
+  Entwürfe/fremde Kostenträger, `belegRef` mitgeführt; IST-Zeit Default-/Eigensatz; IST gesamt; Vergleich je Kostenart +
+  Summen + Prozent + DB; Ist-Netto-Override; `kostentraegerAnalyse` deckungsgleich).
+
+**Stand**
+- `node tests/run.mjs` → **1355/1355 grün**. PR #130 (Draft → ready → CI → merge).
+- Docs fortgeschrieben: BAUPLAN Schritt 9 abgehakt, PULS „START HIER" + Kopf-Status + Footer auf Schritt 10,
+  OFFENE_PUNKTE + NAECHSTE_SITZUNG.
+
+**Offen / Nächstes**
+- **Block 2/Schritt 10 — Kalibrierung + Statistik/Vergleich**: Korrekturfaktoren aus der eigenen Historie
+  (Vor→Nachkalkulation), Angebots-Trefferquote; optional KI-Analyse (Mistral EU, opt-in, pseudonym). Danach Schritt 11
+  (adaptiver Baukasten-UX).
+- **Grenze (ehrlich):** reine Logik, **kein UI/Store** in diesem Schritt; kein Headless-Browser. Buchungen/Konten-Index/
+  Zeiteinträge werden hereingereicht (I/O = `crm-store`, verschlüsselt, Folgeschritt). Die konto→Kostenart-Zuordnung
+  (`kontoBlock`) ist betriebsabhängig → Default „Material", überschreibbar. **Folgeschritt offen:** UI „Nachkalkulation/
+  Kostenträger" + Store-Glue (Zeiterfassung je Auftrag, Beleg-/Buchungs-Zuordnung); UI „Rechnung aus Angebot" (Schritt 8).
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2/Schritt 8: Angebot → Rechnung-Übernahme (rein) [PR #129, Branch `claude/quote-to-invoice-transfer-4gvaof`]
 
 **Ausgangslage / Auswahl**

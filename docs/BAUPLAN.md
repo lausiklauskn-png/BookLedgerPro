@@ -103,8 +103,17 @@
   (Whitelist) → die interne Kalkulation gelangt nie in den Entwurf (Test prüft das JSON). `validateAngebotUebernahme`/
   `darfAngebotUebernehmen` (nur `angenommen` + gültige AN-Nummer + Positionen). SW `v112`. **Rein, kein UI** —
   UI/Store-Glue (Zähler je Kreis, `saveEntwurf`, Angebot→archiviert) sind ein eigener Folgeschritt. (Katalog §4/§7a)
-- [ ] **9. Auftrags-Kostenträger + Nachkalkulation** — Material/Belege/Zeit je Auftrag sammeln (nutzt
-  `payables`/`costcenters`/Belege/`belegRef`) → Soll/Ist-Vergleich.
+- [x] **9. Auftrags-Kostenträger + Nachkalkulation** ✅ (PR #130, 2026-06-18) — `domain/nachkalkulation.js`
+  (rein, node-getestet, +29 → **1355/1355**): ein **Kostenträger** = Auftrag/Projekt über seine `kostenstelle`.
+  **IST** aus den vorhandenen Bausteinen — `istkostenAusBuchungen` (Aufwands-Zeilen FESTGESCHRIEBENER Buchungen je
+  `kostenstelle`, Aggregationsweg wie `costcenters.js`; `belegRef`/`buchungId` je Buchung mitgeführt; konto→Kostenart
+  über `opts.kontoBlock`, Default Material) + `istZeitkosten` (Zeiteinträge `{dauerMin}` aus dem `employees.js`-Modell
+  × interner Stundenkostensatz, Arbeit/Maschine getrennt) + `istkosten` (beides zusammengeführt). **SOLL** aus der
+  Vorkalkulation: `sollkostenAusAngebot` aggregiert die interne `kalkulation` je Position × Menge nach Kostenart
+  (Σ Blöcke = Selbstkosten; Netto/DB wie `interneAuswertung`). **Vergleich** `nachkalkulation(soll, ist, {nettoCent?})`
+  → je Kostenart + gesamt Abweichung (IST − SOLL) + Prozent, Deckungsbeitrag SOLL gegen IST (Erlös − Ist-Kosten);
+  `kostentraegerAnalyse` als Komfort-Einstieg. SW `v113`. **Rein, kein UI/Store** (eigener Folgeschritt). Prime
+  Directive: Nachkalkulation rein intern. (`docs/KALKULATION_KATALOG.md` §5.1/§6)
 - [ ] **10. Kalibrierung + Statistik/Vergleich** — Korrekturfaktoren aus eigener Historie (Vor→Nachkalkulation),
   Angebots-Vergleich/Trefferquote; optional KI-Analyse (Mistral EU, opt-in, pseudonym).
 - [ ] **11. Adaptiver Baukasten-UX** — Positions-Baukasten, **häufig genutzte nach oben** (Nutzungszähler),
