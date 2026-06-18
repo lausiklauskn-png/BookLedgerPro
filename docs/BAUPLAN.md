@@ -259,6 +259,14 @@
   (überfällige Anzahl/Summe + § 288-Zinsrisiko + kritisch), nur sichtbar wenn etwas überfällig ist; **bucht
   nichts**. i18n de+en, SW `v125`. **Ehrliche Grenze:** Hilfs-Einordnung, keine Rechtsberatung; DOM/IndexedDB
   statisch geprüft.
+- [x] **Dashboard-KPI: überfällige Verbindlichkeiten (eigene Zahlungsdisziplin)** [Folgeschritt zu #142] ✅ (2026-06-18,
+  PR #143) — die node-getestete Verzugs-KPI (`verzugReport`/`verzugUebersicht`) war nur in der Verbindlichkeiten-Ansicht
+  sichtbar; jetzt auch **auf dem Dashboard** (Liquiditäts-/Verzugsrisiko auf einen Blick, spiegelt die für die
+  Forderungsseite dokumentierte Dashboard-Intention). Reine Logik `domain/eingangsverzug.js` **`verzugAmpel(uebersicht)`**
+  (+ `VERZUG_AMPEL`, node-getestet, +8 → **1551/1551**): Ampel ok|warnung|kritisch für die KPI-Färbung (kritisch ab einer
+  Verbindlichkeit ≥ 14 Tage überfällig). UI `ui/views/dashboard.js`: Karte „Überfällige Verbindlichkeiten (eigene
+  Zahlungsdisziplin)" am Kopf — nur im Firmen-/Vereins-Kontext (`zeigeAnsicht 'payables'`) UND wenn etwas überfällig ist;
+  Klick → Verbindlichkeiten-Ansicht; **bucht nichts**. i18n de+en, SW `v126` (keine neuen Module). DOM/IndexedDB statisch geprüft.
 - [ ] **WorkFloh-Gegenstücke** (fremdes Repo, über den Nutzer): **Test-Modus** (`docs/TEST_MODUS.md` ⇄-Abschnitt),
   BLP-Format-Exporter für die Rechnungsstelle, optional Symbiose-Import (Sage 5d).
 - [ ] **Bekannt blockiert:** Lighthouse/Perf (Headless), lokales OCR (Tesseract = nicht build-frei),
