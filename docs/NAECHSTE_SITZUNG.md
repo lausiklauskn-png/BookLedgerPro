@@ -29,16 +29,19 @@ Angebot" ✅** (Knopf in `ui/views/angebote.js` + Store-Glue `domain/angebote-st
 reine Logik `domain/angebotUebernahme.js`; Nummernpolitik je `rechnungsstelle` mit getrennten Zählern
 `crm-store.naechsteRechnungSeq` (§14, lückenlos, geteilt mit `rechnungAusAuftrag`) bzw. `naechsteVorlaeufigeSeq`
 (`ENT-…`, extern); Angebotsnummer nur referenziert; Angebot→archiviert; Festschreiben manuell; Prime Directive: nur
-`externesAngebot`; SW `v117`, **1427/1427 grün**, **DOM/IndexedDB/kv-Zähler statisch geprüft**).
-**Damit ist die Block-2-Kernkette komplett inkl. „Rechnung aus Angebot".** Nächste offene Schritte (alle optional):
+`externesAngebot`; SW `v117`). **Zuletzt (2026-06-18): UI „Nachkalkulation/Kostenträger + Kalibrierung" ✅** —
+neue Ansicht `ui/views/nachkalkulation.js` (NAV „Nachkalkulation", privat/verein ausgeblendet) + I/O-Glue
+`domain/nachkalkulation-store.js` über die fertige reine Logik `nachkalkulation.js`/`kalibrierung.js`: Soll/Ist je
+Kostenträger + Deckungsbeitrag + Belege, Korrekturfaktoren-Tabelle + Trefferquote je Preisniveau; neuer reiner Helfer
+`zeiteintraegeAusZeiten` node-getestet (+7 → **1434/1434 grün**); rein anzeigend (kein Druck/Export/KI); SW `v118`,
+**DOM/IndexedDB statisch geprüft**. **Damit ist die Block-2-Kernkette (4–11) inkl. aller UIs komplett.**
+Nächste offene Schritte (alle optional):
 
-1. **NÄCHSTER SCHRITT (optional, reine Logik steht schon — nur UI): „Nachkalkulation/Kostenträger + Kalibrierung"**
-   (Zeiterfassung je Auftrag, Beleg-/Buchungs-Zuordnung, Soll/Ist-Anzeige `nachkalkulation`, Korrekturfaktoren-Pflege/
-   Trefferquote `kalibrierung`) — die reine Logik (`domain/nachkalkulation.js`/`domain/kalibrierung.js`) steht bereits
-   node-getestet. UI dazu bauen; DOM/IndexedDB als „statisch geprüft" kennzeichnen. Prime Directive: Nachkalkulation/
-   Faktoren rein intern.
-2. **Optional, kleiner Folgeschritt zu Schritt 2c:** **Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) — ein
-   neuer Test wahlweise leer **oder** mit Demo-Daten starten.
+1. **NÄCHSTER SCHRITT (optional): Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) — ein neuer Test
+   wahlweise leer **oder** mit Demo-Daten starten (kleiner, in sich abgeschlossener Schritt).
+2. **Optional, Folgeschritt zur Nachkalkulation:** echte **Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag** (heute
+   werden vorhandene Zeiten/Buchungen nur angezeigt) + **kalibrierte Vorwärtskalkulation** (`kalkuliereKalibriert`,
+   reine Logik steht) im Angebots-Editor anbieten. Optional feinere konto→Kostenart-Zuordnung (heute Default Material).
 3. **Optional, Schritt 4 der Datensicherung (`docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server) +
    konfigurierbare Erinnerungs-Kadenz — **blockiert/zurückgestellt**, solange kein eigener Server existiert.
 
@@ -73,11 +76,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 8-UI („Rechnung aus Angebot": Knopf in
-`ui/views/angebote.js` + Store-Glue `domain/angebote-store.js rechnungAusAngebot` über die reine Logik
-`domain/angebotUebernahme.js`; Nummernpolitik je `rechnungsstelle` mit getrennten Zählern
-`crm-store.naechsteRechnungSeq`/`naechsteVorlaeufigeSeq`; Angebot→archiviert)**. Tests **1427/1427** · SW **v117** ·
-112 JS-Module. **Block 1 KOMPLETT**; **Block-2-Kernkette (Schritte 4–11) inkl. „Rechnung aus Angebot" KOMPLETT.**
-**Nächster Schritt (optional): UI „Nachkalkulation/Kostenträger + Kalibrierung"** (über der fertigen reinen Logik
-`domain/nachkalkulation.js`/`domain/kalibrierung.js`); alternativ Demo-Vorbefüllung (`domain/demodaten.js`).
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2 — UI „Nachkalkulation/Kostenträger + Kalibrierung"**
+(neue Ansicht `ui/views/nachkalkulation.js` + I/O-Glue `domain/nachkalkulation-store.js` über die fertige reine Logik
+`nachkalkulation.js`/`kalibrierung.js`; neuer reiner Helfer `zeiteintraegeAusZeiten`; rein anzeigend). Tests
+**1434/1434** · SW **v118** · 114 JS-Module. **Block 1 KOMPLETT**; **Block-2-Kernkette (Schritte 4–11) inkl. aller UIs
+(„Rechnung aus Angebot" + „Nachkalkulation/Kalibrierung") KOMPLETT.**
+**Nächster Schritt (optional): Demo-Vorbefüllung** (`domain/demodaten.js`) für neue Tests; alternativ
+Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag + kalibrierte Vorwärtskalkulation im Angebots-Editor.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

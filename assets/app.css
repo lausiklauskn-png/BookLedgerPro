@@ -241,6 +241,9 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .report-line { display: flex; justify-content: space-between; gap: 1rem; padding: .3rem 0; }
 .report-line.strong { font-weight: 700; font-size: 1.05rem; }
 .report-line .num { font-variant-numeric: tabular-nums; }
+/* Nachkalkulation: Soll/Ist-Abweichung farblich (additiv — Text bleibt ohne Farbe lesbar). */
+.abw-hoch { color: var(--error); }   /* IST über SOLL → Kostenüberschreitung */
+.abw-tief { color: var(--success, var(--accent-strong)); }   /* IST unter SOLL → besser als geplant */
 .period-bar { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .inline-field { display: inline-flex; align-items: center; gap: .35rem; }
 .inline-field input { width: 120px; }
