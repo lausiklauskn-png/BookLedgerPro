@@ -237,6 +237,26 @@ export function liquiditaetsVerlauf(opts = {}) {
 }
 
 /**
+ * Deckungslücke (Unterdeckung) im Fenster: Wenn der laufende Saldo am TIEFPUNKT unter null
+ * fällt, ist das der Betrag, der bis dahin zusätzlich gebraucht wird, damit der Saldo nicht
+ * negativ wird — plus das Datum, bis zu dem er bereitstehen muss.
+ *
+ * Warum eigenständig zum Tiefpunkt-Hinweis: der Tiefpunkt zeigt den tiefsten Stand auch dann,
+ * wenn er positiv bleibt (reine Info „wird es eng"). Die Deckungslücke greift nur, wenn der
+ * Saldo ZWISCHENDURCH tatsächlich ins Minus rutscht — auch, wenn er sich bis zum Fenster-Ende
+ * wieder erholt (große Verbindlichkeit früh, ausgleichende Forderung spät). Genau dieser
+ * Intra-Fenster-Engpass bleibt von der End-Saldo-Ampel (liquiditaetsAmpel, projiziert<0)
+ * unentdeckt. Rein, cent-genau.
+ * @param {{tiefpunktCent:?number, tiefpunktDatum:?string}} verlauf - aus liquiditaetsVerlauf
+ * @returns {{unterdeckung:boolean, lueckeCent:number, datum:?string}}
+ */
+export function deckungsluecke(verlauf = {}) {
+  const tp = verlauf.tiefpunktCent;
+  if (tp == null || tp >= 0) return { unterdeckung: false, lueckeCent: 0, datum: null };
+  return { unterdeckung: true, lueckeCent: -tp, datum: verlauf.tiefpunktDatum || null };
+}
+
+/**
  * Ampel für die projizierte Liquidität: kritisch, wenn der projizierte Saldo negativ wird
  * (nach Plan illiquide); Warnung, wenn der aktuelle Bestand allein die Ausgänge nicht deckt
  * (Liquidität hängt an erwarteten Eingängen); sonst ok. Ohne Bestand → ok (keine Aussage).

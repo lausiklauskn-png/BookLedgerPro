@@ -12,7 +12,7 @@ import { listKunden, listAuftraege } from '../../domain/crm-store.js';
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { verzugReport, verzugAmpel, VERZUG_AMPEL } from '../../domain/eingangsverzug.js';
 import { forderungReport, forderungAmpel, FORDERUNG_AMPEL } from '../../domain/mahnwesen.js';
-import { liquiditaetsVorschau, liquiditaetsVerlauf, liquiditaetsAmpel, geldbestand, normalizeHorizont, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
+import { liquiditaetsVorschau, liquiditaetsVerlauf, liquiditaetsAmpel, deckungsluecke, geldbestand, normalizeHorizont, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
 import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
@@ -118,6 +118,9 @@ export async function mountDashboard(host) {
     // laufende Saldo zwischendurch ins Minus rutscht (Reihenfolge der Fälligkeiten). Der
     // Tiefpunkt macht genau diese sonst unsichtbare Delle sichtbar (node-getestet).
     const verlauf = liquiditaetsVerlauf({ forderungen, verbindlichkeiten, horizontTage, geldbestandCent });
+    // Deckungslücke: rutscht der laufende Saldo zwischendurch unter null, ist das der bis dahin
+    // fehlende Betrag — auch dann, wenn der End-Saldo (und damit die Ampel) wieder positiv ist.
+    const luecke = deckungsluecke(verlauf);
     const ampel = liquiditaetsAmpel(v);
     const projCls = ampel === LIQUIDITAET_AMPEL.KRITISCH ? 'kpi-neg' : ampel === LIQUIDITAET_AMPEL.OK ? 'kpi-pos' : '';
     const kacheln = [];
@@ -155,6 +158,11 @@ export async function mountDashboard(host) {
       // fällt (sonst ist der Endwert bereits das Tiefste — keine neue Information).
       (verlauf.tiefpunktCent != null && verlauf.endeCent != null && verlauf.tiefpunktCent < verlauf.endeCent && verlauf.tiefpunktDatum)
         ? el('p', { class: 'muted small', text: t('dashboard.liquidityLowHint').replace('{datum}', verlauf.tiefpunktDatum).replace('{betrag}', formatEuro(verlauf.tiefpunktCent)) })
+        : null,
+      // Deckungslücke — der konkrete Engpass-Betrag + Stichdatum, prominenter (kpi-neg) als der
+      // reine Tiefpunkt-Hinweis, weil hier echtes Handeln nötig ist. Nur bei echter Unterdeckung.
+      (luecke.unterdeckung && luecke.datum)
+        ? el('p', { class: 'small hint-error', text: t('dashboard.liquidityGapHint').replace('{datum}', luecke.datum).replace('{betrag}', formatEuro(luecke.lueckeCent)) })
         : null,
     ]);
   };

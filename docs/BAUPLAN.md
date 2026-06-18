@@ -230,6 +230,16 @@
   /Beleg-Zuordnung GoBD-fix; alle Zeiten = ARBEIT; DOM/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §6)
 
 ### Block 3 — später / umgebungs-blockiert
+- [x] **Liquiditäts-Deckungslücke (Unterdeckung im Fenster)** [Folgeschritt zu #152] ✅ (2026-06-18) — der Tiefpunkt-Hinweis
+  (#152) zeigt den tiefsten Stand auch dann, wenn er positiv bleibt. Wenn der laufende Saldo aber zwischendurch echt ins
+  Minus rutscht und sich bis zum Fenster-Ende wieder erholt, bleibt der Engpass von der End-Saldo-Ampel
+  (`liquiditaetsAmpel`, projiziert<0) unentdeckt — und es fehlt der konkrete Finanzierungs-Betrag. Reine Logik
+  `domain/liquiditaet.js` **`deckungsluecke(verlauf)`** (node-getestet, +8 → **1646/1646**): nimmt das `liquiditaetsVerlauf`-
+  Ergebnis und liefert `{unterdeckung, lueckeCent, datum}` — greift nur bei `tiefpunktCent < 0` (`lueckeCent` =
+  −`tiefpunktCent`, `datum` = `tiefpunktDatum`), sonst keine Unterdeckung (abwärtskompatibel). UI `ui/views/dashboard.js`:
+  warnfarbener Hinweis (CSS `.hint-error`) „Unterdeckung: Bis zum {datum} fehlen … {betrag}" — unabhängig vom End-Saldo;
+  **bucht nichts**. i18n de+en (`dashboard.liquidityGapHint`), SW `v132` (kein neues Modul). **Ehrliche Grenze:** einfache
+  Planung nach Fälligkeitsdatum, keine Finanzberatung; DOM/IndexedDB statisch geprüft.
 - [x] **Liquiditäts-Tiefpunkt (laufender Saldo im Fenster)** [Folgeschritt zu #149] ✅ (2026-06-18) — die Projektion (#149)
   prüfte nur den Saldo am **Fenster-ENDE**; der kann positiv sein, obwohl der laufende Saldo zwischendurch ins Minus
   rutscht (große Verbindlichkeit früh, ausgleichende Forderung spät). Reine Logik `domain/liquiditaet.js`

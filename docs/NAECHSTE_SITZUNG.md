@@ -21,22 +21,22 @@ AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 202
 (Gegenseite) ✅ #140 + Buchung gezahlter Verzugskosten (Zinsaufwand) ✅ #141 + Verzugsrisiko-Übersicht in der
 Verbindlichkeiten-Ansicht ✅ #142 + Dashboard-KPI überfällige **Verbindlichkeiten** ✅ #143 + Dashboard-KPI überfällige
 **Forderungen (Mahnwesen)** ✅ #145 + **Dashboard-KPI: Liquiditätsvorschau (bald fällig) ✅ #147** + **Liquiditätsvorschau
-um Geldbestand + projizierten Saldo ✅ #149** + **Liquiditätsvorschau: wählbares Zeitfenster ✅** + zuletzt (2026-06-18)
-**Liquiditäts-Tiefpunkt (laufender Saldo im Fenster) ✅** — die Projektion (#149) prüfte nur den Saldo am **Fenster-ENDE**;
-der kann positiv sein, obwohl der laufende Saldo zwischendurch ins Minus rutscht (große Verbindlichkeit früh, ausgleichende
-Forderung spät). Reine Logik `domain/liquiditaet.js` **`liquiditaetsVerlauf({forderungen, verbindlichkeiten, heute,
-horizontTage, geldbestandCent})`** (node-getestet): bündelt bald fällige Bewegungen je Fälligkeits-Tag, addiert sie
-chronologisch ab dem aktuellen Geldbestand auf → `punkte[]` (Saldo nach jedem Bewegungs-Tag) + `startCent`/`endeCent` +
-**`tiefpunktCent`/`tiefpunktDatum`** (tiefster Stand + wann; startet beim heutigen Bestand; ohne `geldbestandCent` → Salden
-`null`, abwärtskompatibel). UI `ui/views/dashboard.js`: Tiefpunkt-Hinweis in der Liquiditäts-Karte — nur, wenn der laufende
-Saldo zwischendurch UNTER den End-Saldo fällt (sonst keine neue Info); **bucht nichts**. i18n de+en
-(`dashboard.liquidityLow`/`…LowHint`), SW `v131` (kein neues Modul), +17 → **1638/1638** grün, DOM/IndexedDB statisch
-geprüft. **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln
-grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden).
+um Geldbestand + projizierten Saldo ✅ #149** + **Liquiditätsvorschau: wählbares Zeitfenster ✅** + **Liquiditäts-Tiefpunkt
+(laufender Saldo im Fenster) ✅ #152** + zuletzt (2026-06-18) **Liquiditäts-Deckungslücke (Unterdeckung im Fenster) ✅** —
+der Tiefpunkt-Hinweis (#152) zeigt den tiefsten Stand auch dann, wenn er positiv bleibt; wenn der laufende Saldo aber
+ZWISCHENDURCH echt ins Minus rutscht und sich bis zum Fenster-Ende wieder erholt (große Verbindlichkeit früh, ausgleichende
+Forderung spät), bleibt der Engpass von der End-Saldo-Ampel (`liquiditaetsAmpel`, projiziert<0) unentdeckt — und es fehlt
+der konkrete Finanzierungs-Betrag. Reine Logik `domain/liquiditaet.js` **`deckungsluecke(verlauf)`** (node-getestet):
+nimmt das `liquiditaetsVerlauf`-Ergebnis und liefert `{unterdeckung, lueckeCent, datum}` — greift nur bei
+`tiefpunktCent < 0` (`lueckeCent` = −`tiefpunktCent`, `datum` = `tiefpunktDatum`), sonst keine Unterdeckung
+(abwärtskompatibel). UI `ui/views/dashboard.js`: warnfarbener Hinweis (CSS `.hint-error`) „Unterdeckung: Bis zum {datum}
+fehlen … {betrag}" — unabhängig vom End-Saldo; **bucht nichts**. i18n de+en (`dashboard.liquidityGapHint`), SW `v132`
+(kein neues Modul), +8 → **1646/1646** grün, DOM/IndexedDB statisch geprüft. **Mehrere saubere, in sich abgeschlossene PRs
+pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden).
 
 Nächste offene Schritte (alle optional):
 1. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen
-   (zuletzt: Dashboard-Karte „Liquiditätsvorschau" mit Tiefpunkt-Hinweis + umschaltbarem Zeitfenster 7/14/30/90 Tage).
+   (zuletzt: Dashboard-Karte „Liquiditätsvorschau" mit Tiefpunkt-Hinweis + Deckungslücken-Warnung + umschaltbarem Zeitfenster 7/14/30/90 Tage).
 2. **Sonst:** umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server;
    WorkFloh-Gegenstücke — fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt
    blockiert:** Lighthouse/Perf, lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
@@ -72,13 +72,13 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditäts-Tiefpunkt (laufender Saldo im Fenster)**: reine
-Logik `domain/liquiditaet.js` `liquiditaetsVerlauf(opts)` → `punkte[]` + `startCent`/`endeCent` + `tiefpunktCent`/
-`tiefpunktDatum`; UI `ui/views/dashboard.js`: Tiefpunkt-Hinweis in der Liquiditäts-Karte (nur bei genuiner Delle unter den
-End-Saldo). Tests **1638/1638** · SW **v131** · 117 JS-Module.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditäts-Deckungslücke (Unterdeckung im Fenster)**: reine
+Logik `domain/liquiditaet.js` `deckungsluecke(verlauf)` → `{unterdeckung, lueckeCent, datum}` (greift nur bei negativem
+Tiefpunkt); UI `ui/views/dashboard.js`: warnfarbener Unterdeckungs-Hinweis in der Liquiditäts-Karte (unabhängig vom
+End-Saldo). Tests **1646/1646** · SW **v132** · 117 JS-Module.
 **Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung + Verzugsrisiko-KPI in
 Verbindlichkeiten-Ansicht + beidseitige Überfälligkeits-KPI #143/#145 + Liquiditätsvorschau #147 + Geldbestand/
-Projektion #149 + wählbares Zeitfenster + Tiefpunkt).**
+Projektion #149 + wählbares Zeitfenster + Tiefpunkt #152 + Deckungslücke).**
 **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
 oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

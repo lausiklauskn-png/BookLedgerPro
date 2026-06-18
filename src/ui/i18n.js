@@ -288,6 +288,7 @@ const STRINGS = {
     'dashboard.liquidityWarnNegative': 'Achtung: Nach dieser einfachen Planung wird der Saldo im Fenster negativ. Hinweis, keine Finanzberatung — Skonto/Teilzahlungen/Steuern sind nicht berücksichtigt.',
     'dashboard.liquidityLow': 'tiefster Stand am {datum}',
     'dashboard.liquidityLowHint': 'Auch wenn der Saldo am Fenster-Ende reicht: zwischenzeitlich (am {datum}) sinkt er voraussichtlich auf {betrag}. Reihenfolge der Fälligkeiten beachten.',
+    'dashboard.liquidityGapHint': 'Unterdeckung: Bis zum {datum} fehlen nach dieser Planung voraussichtlich {betrag}. Sorge bis dahin für Liquidität (z. B. Forderungen eintreiben, Ausgaben verschieben). Hinweis, keine Finanzberatung.',
     'a11y.skip': 'Zum Inhalt springen',
     'a11y.nav': 'Hauptnavigation',
 
@@ -1204,6 +1205,7 @@ const STRINGS = {
     'dashboard.liquidityWarnNegative': 'Warning: on this simple projection the balance turns negative within the window. A hint, not financial advice — discounts/partial payments/taxes are not taken into account.',
     'dashboard.liquidityLow': 'lowest point on {datum}',
     'dashboard.liquidityLowHint': 'Even if the balance is sufficient at the end of the window: in between (on {datum}) it is expected to drop to {betrag}. Mind the order of due dates.',
+    'dashboard.liquidityGapHint': 'Shortfall: by {datum} an estimated {betrag} is missing on this projection. Make sure liquidity is available by then (e.g. collect receivables, defer expenses). A hint, not financial advice.',
     'a11y.skip': 'Skip to content',
     'a11y.nav': 'Main navigation',
     'common.cancel': 'Cancel',

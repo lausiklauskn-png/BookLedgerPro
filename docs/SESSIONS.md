@@ -5,6 +5,41 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Liquiditäts-Deckungslücke (Unterdeckung im Fenster) [Branch `claude/bookledgerpro-block-3-14vdtm`]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 ausgebaut bis zum **Tiefpunkt** (laufender Saldo im Fenster, #152). **Befund:**
+  Der Tiefpunkt-Hinweis zeigt den tiefsten Stand auch dann, wenn er positiv bleibt (reine Info „wird es eng"). Wenn
+  der laufende Saldo aber ZWISCHENDURCH tatsächlich ins Minus rutscht — und sich bis zum Fenster-Ende wieder erholt
+  (große Verbindlichkeit früh, ausgleichende Forderung spät) — bleibt der Engpass von der End-Saldo-Ampel
+  (`liquiditaetsAmpel`, projiziert<0) unentdeckt, und es fehlt der konkrete **Finanzierungs-Betrag**. Sauberer,
+  build-freier Folgeschritt: die **Deckungslücke** (Unterdeckung + Stichdatum) explizit beziffern.
+
+**Was getan**
+- **`src/domain/liquiditaet.js`** (rein, node-getestet, +8 → **1646/1646**): **`deckungsluecke(verlauf)`** — nimmt
+  das Ergebnis von `liquiditaetsVerlauf` und liefert `{unterdeckung, lueckeCent, datum}`. Greift NUR, wenn der
+  Tiefpunkt unter null fällt: `lueckeCent` = −`tiefpunktCent` (wie viel bis dahin zusätzlich gebraucht wird), `datum`
+  = `tiefpunktDatum`. Tiefpunkt ≥ 0 / ohne Geldbestand / leeres Argument → keine Unterdeckung (abwärtskompatibel).
+- **`src/ui/views/dashboard.js`**: Die Liquiditäts-Karte zeigt bei echter Unterdeckung einen **warnfarbenen
+  Hinweis** „Unterdeckung: Bis zum {datum} fehlen … {betrag}" — unabhängig davon, ob der End-Saldo wieder positiv ist.
+  **Bucht nichts.**
+- i18n de+en (`dashboard.liquidityGapHint`), CSS `.hint-error` (additiv, nur Textfarbe), **SW `v132`** (kein neues
+  Modul — alle berührten Dateien bereits precached).
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut. **Tests 1646/1646 grün** (`node tests/run.mjs`). SW `v132`.
+  117 JS-Module.
+
+**Offen / Nächstes / Grenzen**
+- **DOM/IndexedDB statisch geprüft** (kein Headless-Browser) — die reine Logik (`deckungsluecke`) ist node-getestet (+8).
+- **Ehrliche Grenze:** weiterhin einfache Planung nach Fälligkeitsdatum (keine Forecast-Modellierung von Skonto/
+  Teilzahlungen/Steuern); Bündelung je Tag (kein Intraday); Engpass nur innerhalb des gewählten Fensters. Keine
+  Finanzberatung — nur Hinweis.
+- **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte
+  Block-3-Punkte (Server-/Offsite-Backup-Ziel, WorkFloh-Gegenstücke) oder eine neue, abgestimmte Idee.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Liquiditäts-Tiefpunkt (laufender Saldo im Fenster) [Branch `claude/bookledgerpro-block-3-h56a44`]
 
 **Ausgangslage / Auswahl**
