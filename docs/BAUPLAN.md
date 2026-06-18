@@ -391,8 +391,14 @@
   `lohnkontoAggregat(laeufe, {jahr})` (je Mitarbeiter Jahressummen + Monate + Gesamtsumme, nach Brutto sortiert),
   `lohnlaufBuchungsdatum(monat, heute)` (Monatsletzter, schaltjahr-sicher). SW `v137`, neues Modul precached.
   IndexedDB/Krypto statisch geprüft. **Kein UI** (L3).
-- [ ] **L3. UI „Lohn"** — Ansicht: Lohnlauf je Mitarbeiter/Monat erfassen → Buchungs-Entwurf (Festschreiben
-  manuell, GoBD); Lohnkonto-Liste. i18n de+en, nur Firmen-Kontext.
+- [x] **L3. UI „Lohn"** ✅ (2026-06-18) — neue Ansicht `ui/views/lohn.js` (NAV „Lohn", in privat/verein
+  ausgeblendet wie `employees`) über `domain/lohn-store.js` + reiner Logik `domain/lohnbuchung.js`. Formular:
+  Mitarbeiter-Auswahl (aus `crm-store.listMitarbeiter`) + Abrechnungsmonat + Brutto/Lohnsteuer/SolZ/KiSt/
+  SV-AN/SV-AG + Auszahlung (Bank/„auf Ziel") mit **Live-Vorschau** (Netto + Soll=Haben über `lohnBuchungZeilen`,
+  kein Rechnen im DOM). Lohnlauf-Liste mit **„Buchen (Entwurf)"** (`bucheLohnlauf` → `saveEntwurf`, Festschreiben
+  manuell/GoBD, Banner verweist aufs Journal) + Löschen; **Lohnkonto-Karte** je Mitarbeiter (`lohnkontoAggregat`).
+  Ehrlicher Hinweis im UI: „BLP berechnet KEINE Lohnsteuer/SV". i18n de+en, SW `v138`, neues View-Modul precached.
+  NAV-Gating-Assertion ergänzt (+1 → **1735/1735**). DOM/IndexedDB statisch geprüft (kein Headless-Browser).
 - [ ] **L4. Monatliche Lohnsteuer-Anmeldung (Datenpaket)** — aggregiert LSt+SolZ+KiSt je Monat → strukturiertes
   Übergabe-Datenpaket (analog USt-VA `buildElsterVaPaket`); **kein** ERiC-Direktversand.
 - [ ] **L5. SV-/LSt-Zahlungsübersicht** — offene Verbindlichkeiten 1741/1742 als fällige Zahlungsliste

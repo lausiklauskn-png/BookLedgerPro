@@ -58,10 +58,10 @@ export function istVereinsmodus(settings) { return nutzungsmodusVon(settings) ==
 const ANSICHT_AUSGEBLENDET = Object.freeze({
   // Privatperson: nur Buchen/Belege/einfache Auswertung. Kein Anlagevermögen, keine
   // Kreditoren-OP, keine Aufträge/Kunden/Mitarbeiter, keine Berater-Berichte, kein Mycel.
-  privat: new Set(['anlagen', 'payables', 'orders', 'angebote', 'nachkalkulation', 'customers', 'employees', 'berichte', 'network']),
+  privat: new Set(['anlagen', 'payables', 'orders', 'angebote', 'nachkalkulation', 'customers', 'employees', 'lohn', 'berichte', 'network']),
   // Verein: wie Privat, aber MIT Berichten (SuSa/EÜR), „Kunden" als Mitglieder/Spender
   // und Mycel-Anbindung. Ohne Anlagevermögen-AfA, Kreditoren-OP, Aufträge/Angebote, Lohn/Mitarbeiter.
-  verein: new Set(['anlagen', 'payables', 'orders', 'angebote', 'nachkalkulation', 'employees']),
+  verein: new Set(['anlagen', 'payables', 'orders', 'angebote', 'nachkalkulation', 'employees', 'lohn']),
 });
 
 /** Soll die NAV-Ansicht `key` im Modus der Settings sichtbar sein? */
