@@ -223,13 +223,37 @@ export function istkosten({
 // ── IST: Zeiteinträge in die istZeitkosten-Form bringen ──────────────────────
 
 /**
+ * Löst den KOSTENTRÄGER (`kostenstelle`) eines gespeicherten Zeiteintrags auf — die EINE
+ * Wahrheit, die sowohl `zeiteintraegeAusZeiten` (für die IST-Zeitkosten) als auch die
+ * Zuordnungs-UI nutzen:
+ *   1. EXPLIZITE Zuordnung gewinnt: ist `zeit.kostenstelle` gesetzt (über die Zeit-Zuordnungs-
+ *      UI direkt einem Kostenträger zugewiesen), zählt genau diese.
+ *   2. SONST Ableitung über den Auftrag: zeit.auftragId → auftragIndex[..].kostenstelle
+ *      (Alt-Verhalten, rückwärtskompatibel — Zeiten ohne explizite Zuordnung bleiben so
+ *      ihrem Auftrag zugeordnet).
+ *   3. sonst null (zählt keinem Kostenträger zu).
+ * Eine explizite Zuordnung auf den Leer-String '' bedeutet bewusst „keinem Kostenträger"
+ * (überschreibt die Auftrags-Ableitung) → wird zu null normalisiert.
+ *
+ * @param {{kostenstelle?:?string, auftragId?:?string}} zeit
+ * @param {Object} auftragIndex  auftragId → Auftrag (mit `.kostenstelle`)
+ * @returns {?string} Kostenträger-Schlüssel oder null
+ */
+export function aufgeloesteKostenstelle(zeit = {}, auftragIndex = {}) {
+  if (zeit.kostenstelle != null) return zeit.kostenstelle || null;   // '' → null (bewusst keiner)
+  const auftrag = zeit.auftragId != null ? auftragIndex[zeit.auftragId] : null;
+  return (auftrag && auftrag.kostenstelle) || null;
+}
+
+/**
  * I/O-naher reiner Helfer (für die Store-Glue, BAUPLAN Block 2 / Schritt „Nachkalkulation-
  * UI"): macht aus den gespeicherten Zeiteinträgen (crm-store: `{dauerMin, auftragId,
- * mitarbeiterId, datum}`) die von `istZeitkosten` erwartete Form
+ * mitarbeiterId, datum, kostenstelle?}`) die von `istZeitkosten` erwartete Form
  * `{dauerMin, kostenstelle, kostensatzCentProStd, datum, art}`.
- *   - Der Kostenträger (`kostenstelle`) kommt vom zugehörigen Auftrag
- *     (zeit.auftragId → auftragIndex[..].kostenstelle); ohne auflösbaren Auftrag → null
- *     (zählt dann keinem Kostenträger zu).
+ *   - Der Kostenträger (`kostenstelle`) wird über `aufgeloesteKostenstelle` ermittelt:
+ *     EXPLIZITE Zuordnung (`zeit.kostenstelle`, über die Zeit-Zuordnungs-UI) vor der
+ *     Ableitung aus dem Auftrag (zeit.auftragId → auftragIndex[..].kostenstelle); ohne
+ *     beides → null (zählt dann keinem Kostenträger zu).
  *   - Der interne Stundenkostensatz wird aus dem Mitarbeiter (`stundenlohnCent`) genommen;
  *     ohne Mitarbeiter/Satz → 0 (der Eintrag bringt dann keine Zeitkosten ein).
  *
@@ -237,7 +261,8 @@ export function istkosten({
  * Stundenkostensatz verwendet (KEIN Arbeitgeber-Gemeinkostenaufschlag modelliert). Alle
  * Zeiteinträge zählen als ARBEIT (das Datenmodell trennt Arbeit/Maschine nicht je Eintrag).
  *
- * @param {Array<{dauerMin?:number, auftragId?:?string, mitarbeiterId?:?string, datum?:string}>} zeiten
+ * @param {Array<{dauerMin?:number, auftragId?:?string, mitarbeiterId?:?string, datum?:string,
+ *   kostenstelle?:?string}>} zeiten
  * @param {Object} auftragIndex  auftragId → Auftrag (mit `.kostenstelle`)
  * @param {Object} mitarbeiterIndex  mitarbeiterId → Mitarbeiter (mit `.stundenlohnCent`)
  * @returns {Array<{dauerMin:number, datum:string, kostenstelle:?string,
@@ -245,12 +270,11 @@ export function istkosten({
  */
 export function zeiteintraegeAusZeiten(zeiten = [], auftragIndex = {}, mitarbeiterIndex = {}) {
   return (zeiten || []).map((z) => {
-    const auftrag = z.auftragId != null ? auftragIndex[z.auftragId] : null;
     const ma = z.mitarbeiterId != null ? mitarbeiterIndex[z.mitarbeiterId] : null;
     return {
       dauerMin: num(z.dauerMin),
       datum: z.datum || '',
-      kostenstelle: (auftrag && auftrag.kostenstelle) || null,
+      kostenstelle: aufgeloesteKostenstelle(z, auftragIndex),
       kostensatzCentProStd: ma && ma.stundenlohnCent != null ? num(ma.stundenlohnCent) : 0,
       art: KOSTENART.ARBEIT,
     };

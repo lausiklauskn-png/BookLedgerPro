@@ -24,8 +24,10 @@
 
 import { loadAccounts, listBuchungen } from './store.js';
 import { listAngebote } from './angebote-store.js';
-import { listZeiten, listMitarbeiter, listAuftraege } from './crm-store.js';
-import { kostentraegerAnalyse, zeiteintraegeAusZeiten, standardKontoBlock } from './nachkalkulation.js';
+import { listZeiten, listMitarbeiter, listAuftraege, setZeitKostenstelle } from './crm-store.js';
+import {
+  kostentraegerAnalyse, zeiteintraegeAusZeiten, standardKontoBlock, aufgeloesteKostenstelle,
+} from './nachkalkulation.js';
 import {
   korrekturFaktoren, faktorWerte, trefferquote, trefferquoteJePreisniveau,
 } from './kalibrierung.js';
@@ -99,6 +101,54 @@ export async function nachkalkulationUebersicht() {
     anzahlVergleiche: vergleiche.length,
     anzahlAngebote: (angebote || []).length,
   };
+}
+
+/**
+ * Lädt den Kontext für die ZEIT-ZUORDNUNGS-UI (BAUPLAN Block 2 / Folgeschritt „Zeiterfassung-/
+ * Beleg-Zuordnung je Auftrag"): die gespeicherten Zeiteinträge + die Stamm-Indizes, um je
+ * Eintrag Mitarbeiter/aufgelöster Kostenträger anzuzeigen, sowie die Liste der zuordbaren
+ * Kostenträger (Angebote mit Kostenstelle — deduped nach Kostenstelle, da der Kostenträger
+ * über die `kostenstelle` identifiziert wird).
+ *   - `zeiten`: jeder Eintrag um seine `aufgeloesteKostenstelle` (explizit vor Auftrag) und
+ *     ein `explizit`-Flag angereichert (zeigt, ob die Zuordnung explizit gesetzt ist).
+ *   - `kostentraeger`: `{kostenstelle, nummer, titel}` je distinkter Kostenstelle.
+ * @returns {Promise<{zeiten:Array, mitarbeiterIndex:Object, kostentraeger:Array}>}
+ */
+export async function ladeZeitZuordnung() {
+  const [zeiten, mitarbeiter, auftraege, angebote] = await Promise.all([
+    listZeiten(), listMitarbeiter(), listAuftraege(), listAngebote(),
+  ]);
+  const auftragIndex = indexBy(auftraege, (a) => a.id);
+  const mitarbeiterIndex = indexBy(mitarbeiter, (m) => m.id);
+
+  const kostentraeger = [];
+  const gesehen = new Set();
+  for (const a of angebote || []) {
+    if (!a.kostenstelle || gesehen.has(a.kostenstelle)) continue;
+    gesehen.add(a.kostenstelle);
+    kostentraeger.push({ kostenstelle: a.kostenstelle, nummer: a.nummer || '', titel: a.titel || '' });
+  }
+
+  const angereichert = (zeiten || []).map((z) => ({
+    ...z,
+    aufgeloesteKostenstelle: aufgeloesteKostenstelle(z, auftragIndex),
+    explizit: z.kostenstelle != null,
+  }));
+  angereichert.sort((a, b) => (b.datum || '').localeCompare(a.datum || ''));
+
+  return { zeiten: angereichert, mitarbeiterIndex, kostentraeger };
+}
+
+/**
+ * Ordnet einen Zeiteintrag EXPLIZIT einem Kostenträger zu (oder hebt die Zuordnung mit
+ * null/'' auf → Ableitung aus dem Auftrag). Dünne Verdrahtung auf crm-store.setZeitKostenstelle;
+ * Zeiteinträge sind mutable CRM-Records (kein GoBD-Hash) → sauber (neu) zuordbar.
+ * @param {string} zeitId
+ * @param {?string} kostenstelle
+ * @returns {Promise<object>} der gespeicherte Zeiteintrag
+ */
+export function zuordneZeit(zeitId, kostenstelle) {
+  return setZeitKostenstelle(zeitId, kostenstelle);
 }
 
 /**
