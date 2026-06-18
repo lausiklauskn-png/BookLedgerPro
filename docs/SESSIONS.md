@@ -5,6 +5,45 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2: UI „Nachkalkulation/Kostenträger + Kalibrierung" [Branch `claude/bookledgerpro-bauplan-block2-csl88g`]
+
+**Ausgangslage / Auswahl**
+- Nächster offener (optionaler) Schritt laut `docs/BAUPLAN.md`/`docs/NAECHSTE_SITZUNG.md`: die **UI über der bereits
+  fertigen, node-getesteten reinen Logik** `domain/nachkalkulation.js` (#130) + `domain/kalibrierung.js` (#131) —
+  Soll/Ist je Kostenträger, Korrekturfaktoren, Angebots-Trefferquote. UI + I/O-Glue → DOM/IndexedDB ehrlich als
+  **„statisch geprüft"** gekennzeichnet (kein Headless-Browser).
+
+**Was getan**
+- **`src/domain/nachkalkulation.js`** (reine Logik, node-getestet): neuer I/O-naher Helfer
+  **`zeiteintraegeAusZeiten(zeiten, auftragIndex, mitarbeiterIndex)`** — bringt die gespeicherten Zeiteinträge
+  (`{dauerMin, auftragId, mitarbeiterId}`) in die `istZeitkosten`-Form: Kostenträger (`kostenstelle`) aus dem
+  Auftrag, Stundenkostensatz aus dem Mitarbeiter (`stundenlohnCent`); ohne auflösbaren Auftrag → null, ohne Satz → 0,
+  alle Einträge als ARBEIT. +7 Tests (**1434/1434**).
+- **`src/domain/nachkalkulation-store.js`** (neu, I/O-Glue): `ladeNachkalkulationKontext()` (Buchungen + Konten-Index
+  + via Join aufbereitete Zeiteinträge) und **`nachkalkulationUebersicht()`** — je Kostenträger (Angebot mit
+  Kostenstelle) `kostentraegerAnalyse`; daraus `korrekturFaktoren`/`faktorWerte` (konservativ auf 0,5–2,0 gedeckelt)
+  + `trefferquote`/`trefferquoteJePreisniveau` über alle Angebote. Sendet NICHTS (Prime Directive; Digest ungenutzt).
+- **`src/ui/views/nachkalkulation.js`** (neu, NAV „Nachkalkulation", in privat/verein ausgeblendet): Kostenträger-
+  Auswahl → Soll/Ist-Tabelle je Kostenart (Abweichung € + %, rot/grün), Deckungsbeitrag Soll/Ist, zugeordnete
+  Belege/Buchungen + erfasste Stunden; Kalibrierungs-Karte mit Korrekturfaktoren-Tabelle (Faktor/Median/Anzahl/
+  verwendeter Multiplikator) + Trefferquote gesamt und je Preisniveau. Rein anzeigend — kein Druck/Export/KI.
+- **`src/ui/shell.js`** (NAV-Eintrag + Route), **`src/domain/nutzungsmodus.js`** (Gating privat/verein wie `angebote`),
+  **`src/ui/i18n.js`** (`nav.nachkalkulation` + `nachkalk.*`, de+en), **`assets/app.css`** (`.abw-hoch`/`.abw-tief`),
+  **`sw.js`** `CACHE_VERSION` → **v118** + neue Module precached.
+
+**Stand**
+- `node tests/run.mjs` → **1434/1434 grün** (+7: `zeiteintraegeAusZeiten` + NAV-Gating für `nachkalkulation`).
+  Syntax-Checks der neuen Module grün.
+
+**Offen / Nächstes**
+- **Optional, Folgeschritt:** echte **Zeiterfassung-/Beleg-Zuordnungs-UI** je Auftrag (heute werden vorhandene
+  Zeiten/Buchungen nur angezeigt); kalibrierte Vorwärtskalkulation (`kalkuliereKalibriert`) im Angebots-Editor anbieten.
+- **Optional: Demo-Vorbefüllung** (`domain/demodaten.js`) für neue Tests.
+- **Ehrliche Grenzen:** kontoBlock-Default → alle Aufwands-Buchungen zählen als **Material** (feinere konto→Kostenart-
+  Zuordnung später); `stundenlohnCent` als interner Kostensatz (kein AG-Gemeinkostenaufschlag); DOM/IndexedDB statisch geprüft.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2/Schritt 8-UI: „Rechnung aus Angebot" (UI + Store-Glue) [Branch `claude/rechnung-aus-angebot-ui`]
 
 **Ausgangslage / Auswahl**

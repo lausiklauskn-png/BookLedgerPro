@@ -169,6 +169,21 @@
   **1427/1427** grün (NAV-Gating-Assertions für `angebote` ergänzt); **DOM/IndexedDB statisch geprüft** (kein
   Headless-Browser). (Katalog §3/§4/§5.2)
 
+- [x] **9/10-UI. „Nachkalkulation/Kostenträger + Kalibrierung" (UI + I/O-Glue)** ✅ (2026-06-18) — neue Auswertungs-
+  Ansicht `ui/views/nachkalkulation.js` (NAV „Nachkalkulation", in privat/verein ausgeblendet) über der fertigen
+  reinen Logik `domain/nachkalkulation.js` (#130) + `domain/kalibrierung.js` (#131). **I/O-Glue** `domain/nachkalkulation-store.js`
+  sammelt die vorhandenen Daten (festgeschriebene Buchungen + Konten-Index, Zeiteinträge, Angebote) und reicht sie an
+  die Logik durch: je **Kostenträger** (Angebot mit `kostenstelle`) `kostentraegerAnalyse` (Soll aus interner
+  Vorkalkulation, Ist aus Buchungen/Zeit), daraus `korrekturFaktoren`/`faktorWerte` (konservativ 0,5–2,0 gedeckelt)
+  + `trefferquote`/`trefferquoteJePreisniveau`. **Neuer reiner Helfer** `nachkalkulation.zeiteintraegeAusZeiten`
+  (Zeit `{auftragId,mitarbeiterId}` → `{kostenstelle,kostensatzCentProStd}`) node-getestet (+7 → **1434/1434**).
+  **UI:** Kostenträger-Auswahl → Soll/Ist-Tabelle je Kostenart (Abweichung €/%, rot/grün) + Deckungsbeitrag Soll/Ist
+  + Belege/Stunden; Kalibrierungs-Karte (Korrekturfaktoren-Tabelle + Trefferquote gesamt/je Preisniveau). **Prime
+  Directive:** rein anzeigend — kein Druck/Export/KI (Digest ungenutzt). SW `v118`, neue Module precached. **DOM/
+  IndexedDB statisch geprüft.** **Ehrliche Grenzen:** kontoBlock-Default → alle Aufwands-Buchungen zählen als Material;
+  `stundenlohnCent` als interner Kostensatz (kein AG-Gemeinkostenaufschlag); reine Anzeige (Zeiterfassung-/Beleg-
+  Zuordnungs-UND kalibrierte Vorwärtskalkulation im Editor als Folgeschritt). (`docs/KALKULATION_KATALOG.md` §5.1/§5.3/§6)
+
 ### Block 3 — später / umgebungs-blockiert
 - [ ] **Server-Backup-Ziel** (sobald eigener Server existiert) — Stelle 3 der 3-2-1-Sicherung.
 - [ ] **Eingangsrechnungs-Verzug (Gegenseite)** [SOLL] — Spiegel zum Mahnwesen.

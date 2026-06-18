@@ -171,6 +171,43 @@ export function istkosten({
   };
 }
 
+// ── IST: Zeiteinträge in die istZeitkosten-Form bringen ──────────────────────
+
+/**
+ * I/O-naher reiner Helfer (für die Store-Glue, BAUPLAN Block 2 / Schritt „Nachkalkulation-
+ * UI"): macht aus den gespeicherten Zeiteinträgen (crm-store: `{dauerMin, auftragId,
+ * mitarbeiterId, datum}`) die von `istZeitkosten` erwartete Form
+ * `{dauerMin, kostenstelle, kostensatzCentProStd, datum, art}`.
+ *   - Der Kostenträger (`kostenstelle`) kommt vom zugehörigen Auftrag
+ *     (zeit.auftragId → auftragIndex[..].kostenstelle); ohne auflösbaren Auftrag → null
+ *     (zählt dann keinem Kostenträger zu).
+ *   - Der interne Stundenkostensatz wird aus dem Mitarbeiter (`stundenlohnCent`) genommen;
+ *     ohne Mitarbeiter/Satz → 0 (der Eintrag bringt dann keine Zeitkosten ein).
+ *
+ * EHRLICHE GRENZE: `stundenlohnCent` ist der Stundenlohn — er wird hier als interner
+ * Stundenkostensatz verwendet (KEIN Arbeitgeber-Gemeinkostenaufschlag modelliert). Alle
+ * Zeiteinträge zählen als ARBEIT (das Datenmodell trennt Arbeit/Maschine nicht je Eintrag).
+ *
+ * @param {Array<{dauerMin?:number, auftragId?:?string, mitarbeiterId?:?string, datum?:string}>} zeiten
+ * @param {Object} auftragIndex  auftragId → Auftrag (mit `.kostenstelle`)
+ * @param {Object} mitarbeiterIndex  mitarbeiterId → Mitarbeiter (mit `.stundenlohnCent`)
+ * @returns {Array<{dauerMin:number, datum:string, kostenstelle:?string,
+ *   kostensatzCentProStd:number, art:string}>}
+ */
+export function zeiteintraegeAusZeiten(zeiten = [], auftragIndex = {}, mitarbeiterIndex = {}) {
+  return (zeiten || []).map((z) => {
+    const auftrag = z.auftragId != null ? auftragIndex[z.auftragId] : null;
+    const ma = z.mitarbeiterId != null ? mitarbeiterIndex[z.mitarbeiterId] : null;
+    return {
+      dauerMin: num(z.dauerMin),
+      datum: z.datum || '',
+      kostenstelle: (auftrag && auftrag.kostenstelle) || null,
+      kostensatzCentProStd: ma && ma.stundenlohnCent != null ? num(ma.stundenlohnCent) : 0,
+      art: KOSTENART.ARBEIT,
+    };
+  });
+}
+
 // ── SOLL: Vorkalkulation aus dem Angebot ─────────────────────────────────────
 
 /**

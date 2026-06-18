@@ -72,7 +72,7 @@ import {
 } from '../src/domain/angebotUebernahme.js';
 import {
   istkostenAusBuchungen, istZeitkosten, istkosten,
-  sollkostenAusAngebot, nachkalkulation, kostentraegerAnalyse,
+  sollkostenAusAngebot, nachkalkulation, kostentraegerAnalyse, zeiteintraegeAusZeiten,
 } from '../src/domain/nachkalkulation.js';
 import {
   korrekturFaktoren, faktorWerte, kalibriereEingabe, kalkuliereKalibriert,
@@ -3395,7 +3395,7 @@ await section('Nutzungsmodus (P1): Modus-Werte + Normalisierung', () => {
 
 await section('Nutzungsmodus (P1): NAV-Ansichten-Gating', () => {
   const NAV_KEYS = ['dashboard', 'journal', 'kassenbuch', 'accounts', 'anlagen', 'documents',
-    'payables', 'orders', 'angebote', 'customers', 'employees', 'reports', 'berichte', 'network', 'legal',
+    'payables', 'orders', 'angebote', 'nachkalkulation', 'customers', 'employees', 'reports', 'berichte', 'network', 'legal',
     'anleitung', 'selbsttest', 'about', 'settings'];
   // Firma zeigt ALLES.
   ok('Firma: alle Ansichten sichtbar', sichtbareAnsichten({ nutzungsmodus: 'firma' }, NAV_KEYS).length === NAV_KEYS.length);
@@ -3405,8 +3405,8 @@ await section('Nutzungsmodus (P1): NAV-Ansichten-Gating', () => {
   // Privat: geschäftliche Ansichten ausgeblendet.
   const privatSichtbar = sichtbareAnsichten({ nutzungsmodus: 'privat' }, NAV_KEYS);
   ok('Privat blendet Anlagen aus', !zeigeAnsicht({ nutzungsmodus: 'privat' }, 'anlagen'));
-  ok('Privat blendet Aufträge/Angebote/Kunden/Mitarbeiter aus',
-    !privatSichtbar.includes('orders') && !privatSichtbar.includes('angebote') && !privatSichtbar.includes('customers') && !privatSichtbar.includes('employees'));
+  ok('Privat blendet Aufträge/Angebote/Nachkalkulation/Kunden/Mitarbeiter aus',
+    !privatSichtbar.includes('orders') && !privatSichtbar.includes('angebote') && !privatSichtbar.includes('nachkalkulation') && !privatSichtbar.includes('customers') && !privatSichtbar.includes('employees'));
   ok('Privat blendet Kreditoren/Berichte/Netz aus',
     !privatSichtbar.includes('payables') && !privatSichtbar.includes('berichte') && !privatSichtbar.includes('network'));
   ok('Privat behält Kern (Journal/Belege/Auswertung/Kassenbuch/Konten)',
@@ -3416,9 +3416,9 @@ await section('Nutzungsmodus (P1): NAV-Ansichten-Gating', () => {
   const vereinSichtbar = sichtbareAnsichten({ nutzungsmodus: 'verein' }, NAV_KEYS);
   ok('Verein zeigt Berichte + Kunden + Netz',
     vereinSichtbar.includes('berichte') && vereinSichtbar.includes('customers') && vereinSichtbar.includes('network'));
-  ok('Verein blendet Anlagen/Kreditoren/Aufträge/Angebote/Mitarbeiter aus',
+  ok('Verein blendet Anlagen/Kreditoren/Aufträge/Angebote/Nachkalkulation/Mitarbeiter aus',
     !vereinSichtbar.includes('anlagen') && !vereinSichtbar.includes('payables') &&
-    !vereinSichtbar.includes('orders') && !vereinSichtbar.includes('angebote') && !vereinSichtbar.includes('employees'));
+    !vereinSichtbar.includes('orders') && !vereinSichtbar.includes('angebote') && !vereinSichtbar.includes('nachkalkulation') && !vereinSichtbar.includes('employees'));
   ok('Verein sichtbar > Privat sichtbar', vereinSichtbar.length > privatSichtbar.length);
 
   // Unbekannte Schlüssel werden nicht versehentlich ausgeblendet (sicher additiv).
@@ -3986,6 +3986,27 @@ await section('Nachkalkulation: Auftrags-Kostenträger + Soll/Ist (Schritt 9)', 
   // — leeres/kalkulationsloses Angebot → Soll 0 (kein Wurf) —
   const leer = sollkostenAusAngebot(neuesAngebot({ titel: 'x', positionen: [{ beschreibung: 'p', menge: 1, einzelpreisCent: 100, ustSatz: 19 }] }));
   ok('Soll ohne interne Kalkulation = 0', leer.selbstkostenCent === 0 && leer.nettoCent === 0);
+});
+
+await section('Nachkalkulation-Store (UI-Glue): zeiteintraegeAusZeiten', () => {
+  const auftragIndex = { 'auf-1': { id: 'auf-1', kostenstelle: 'KT-1' }, 'auf-2': { id: 'auf-2', kostenstelle: null } };
+  const mitarbeiterIndex = { 'ma-1': { id: 'ma-1', stundenlohnCent: 6000 }, 'ma-2': { id: 'ma-2', stundenlohnCent: null } };
+  const zeiten = [
+    { dauerMin: 120, auftragId: 'auf-1', mitarbeiterId: 'ma-1', datum: '2026-06-01' },
+    { dauerMin: 30, auftragId: 'auf-2', mitarbeiterId: 'ma-1', datum: '2026-06-02' }, // Auftrag ohne Kostenstelle
+    { dauerMin: 60, auftragId: 'unbekannt', mitarbeiterId: 'ma-2', datum: '2026-06-03' }, // kein Auftrag/Satz
+  ];
+  const out = zeiteintraegeAusZeiten(zeiten, auftragIndex, mitarbeiterIndex);
+  ok('Kostenträger aus dem Auftrag übernommen', out[0].kostenstelle === 'KT-1');
+  ok('Stundenkostensatz aus dem Mitarbeiter', out[0].kostensatzCentProStd === 6000);
+  ok('art = arbeit (Default)', out[0].art === KOSTENART.ARBEIT);
+  ok('Auftrag ohne Kostenstelle → null', out[1].kostenstelle === null);
+  ok('unbekannter Auftrag → null, fehlender Satz → 0', out[2].kostenstelle === null && out[2].kostensatzCentProStd === 0);
+
+  // Durchgereicht an istZeitkosten: nur der KT-1-Eintrag zählt zum Kostenträger.
+  const zk = istZeitkosten(out, { kostenstelle: 'KT-1' });
+  ok('istZeitkosten: nur KT-1-Zeit (2h × 60€) = 12000', zk.summeCent === 12000 && zk.minuten === 120);
+  ok('leere Eingabe → leere Liste', zeiteintraegeAusZeiten().length === 0);
 });
 
 await section('Kalibrierung (Block 2/Schritt 10): Korrekturfaktoren', () => {
