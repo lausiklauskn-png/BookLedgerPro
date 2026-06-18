@@ -102,8 +102,23 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Liquiditäts-Mindestreserve"):** SW **v133** · Tests **1663/1663** grün · 117 JS-Module.
-**Liquiditäts-Mindestreserve (Puffer) in der Deckungslücke (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #153, PR #154):**
+**Kopf-Status (Stand nach „Liquiditäts-Reichweite"):** SW **v134** · Tests **1675/1675** grün · 117 JS-Module.
+**Liquiditäts-Reichweite („Runway" — bis wann reicht das Geld?) (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #154):**
+Die Liquiditäts-Karte zeigte Tiefpunkt (tiefster Stand) und Deckungslücke (fehlender Betrag), aber nicht die intuitivste
+Antwort auf die im Karten-Code selbst gestellte Frage „reicht das Geld?": **bis wann**. Der Tiefpunkt nennt den *tiefsten*
+Tag, die Reichweite den *frühesten* Engpass (kann VOR dem Tiefpunkt liegen). Reine Logik `domain/liquiditaet.js`
+(node-getestet, +12 → **1675/1675**): **`liquiditaetsReichweite(verlauf, {reserveCent, heute})`** — erster Tag, an dem der
+laufende Saldo (`liquiditaetsVerlauf.punkte[].saldoCent`) unter die Schwelle (Mindestreserve, Default 0 → echtes Minus;
+konsistent via `normalizeReserveCent`) fällt → `{bekannt, reicht, sofort, datum, tageBis, reserveCent, negativ}` (ohne
+Bestand `bekannt:false` abwärtskompatibel; `sofort` = schon heute unter Schwelle; `negativ` = echtes Minus vs. nur
+Reserve-Unterschreitung). UI `ui/views/dashboard.js`: Klartext-Bilanz „reicht über N Tage" bzw. „reicht bis {datum}" (rot
+bei echtem Minus), nur wenn es Ausgänge gibt und der Bestand bekannt ist; der `sofort`-Fall bleibt Ampel/Deckungslücke.
+i18n de+en (`dashboard.liquidityRunwayOk`/`…RunwayUntil`), SW `v134` (kein neues Modul). **bucht nichts.** **Ehrliche
+Grenze:** einfache Planung nach Fälligkeitsdatum, keine Finanzberatung; nur über bald fällige, bekannte Posten (kein
+Forecast wiederkehrender Kosten); DOM/IndexedDB statisch geprüft. **Nächster Schritt (optional):** Browser-Sichttest durch
+den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte oder eine neue, abgestimmte Idee.
+
+**Liquiditäts-Mindestreserve (Puffer) in der Deckungslücke (vorige Sitzung, BAUPLAN Block 3 — Folgeschritt zu #153, PR #154):**
 Die Deckungslücke (#153) warnte bisher erst, wenn der laufende Saldo im Fenster ECHT unter null rutscht. Viele Betriebe
 wollen ihr Geld aber nicht bis auf null herunterfahren, sondern einen Sicherheitspuffer (Mindestreserve) halten. Reine Logik
 `domain/liquiditaet.js` (node-getestet, +17 → **1663/1663**): `normalizeReserveCent(value)` (klemmt einen persistierten

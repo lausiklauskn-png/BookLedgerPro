@@ -285,6 +285,50 @@ export function deckungsluecke(verlauf = {}, opts = {}) {
 }
 
 /**
+ * Liquiditäts-REICHWEITE („Runway"): bis zu welchem Datum hält der laufende Geldsaldo die
+ * Schwelle? Das ist der ERSTE Tag im Fenster, an dem der projizierte Saldo unter die Schwelle
+ * fällt — die intuitivste Antwort auf „wie lange bin ich sicher?".
+ *
+ * Abgrenzung zu den bestehenden Hinweisen: der Tiefpunkt (liquiditaetsVerlauf) zeigt den
+ * TIEFSTEN Stand, die Deckungslücke den am Tiefpunkt FEHLENDEN Betrag. Die Reichweite zeigt den
+ * FRÜHESTEN Engpass — und der kann VOR dem Tiefpunkt liegen: rutscht der Saldo früh unter die
+ * Schwelle, erholt sich kurz und fällt später noch tiefer, ist die Reichweite trotzdem schon am
+ * ersten Tag erschöpft. Genau dann ist „reicht bis {datum}" eine andere (frühere) Aussage als
+ * „tiefster Stand am {tiefpunktDatum}".
+ *
+ * Schwelle = gewünschte Mindestreserve (`opts.reserveCent`, Default 0 → echtes Minus, konsistent
+ * mit deckungsluecke/normalizeReserveCent). Ohne bekannten Geldbestand (`verlauf.startCent == null`)
+ * keine Aussage (`bekannt:false`). Liegt der Saldo schon HEUTE unter der Schwelle, ist die
+ * Reichweite sofort erschöpft (`sofort:true`, `datum:null`). Hält er die Schwelle über das ganze
+ * Fenster, `reicht:true`. `negativ` zeigt an, ob der erste Engpass echtes Minus ist (Saldo < 0)
+ * statt „nur" Reserve-Unterschreitung. Rein, cent-genau.
+ * @param {{startCent:?number, punkte:Array<{datum:string, saldoCent:?number}>}} verlauf - aus liquiditaetsVerlauf
+ * @param {{reserveCent?:number, heute?:string}} [opts] - heute nur für tageBis (Tage bis Engpass)
+ * @returns {{bekannt:boolean, reicht:boolean, sofort:boolean, datum:?string, tageBis:?number,
+ *   reserveCent:number, negativ:boolean}}
+ */
+export function liquiditaetsReichweite(verlauf = {}, opts = {}) {
+  const schwelle = normalizeReserveCent(opts.reserveCent);
+  const start = verlauf.startCent;
+  if (start == null) {
+    return { bekannt: false, reicht: true, sofort: false, datum: null, tageBis: null, reserveCent: schwelle, negativ: false };
+  }
+  // Schon heute unter der Schwelle? Dann ist die Reichweite sofort erschöpft.
+  if (start < schwelle) {
+    return { bekannt: true, reicht: false, sofort: true, datum: null, tageBis: 0, reserveCent: schwelle, negativ: start < 0 };
+  }
+  // Erster Tag im Fenster, an dem der laufende Saldo die Schwelle reißt.
+  for (const p of verlauf.punkte || []) {
+    if (p.saldoCent != null && p.saldoCent < schwelle) {
+      const tageBis = opts.heute ? tageDiff(opts.heute, p.datum) : null;
+      return { bekannt: true, reicht: false, sofort: false, datum: p.datum, tageBis, reserveCent: schwelle, negativ: p.saldoCent < 0 };
+    }
+  }
+  // Hält die Schwelle über das ganze Fenster.
+  return { bekannt: true, reicht: true, sofort: false, datum: null, tageBis: null, reserveCent: schwelle, negativ: false };
+}
+
+/**
  * Ampel für die projizierte Liquidität: kritisch, wenn der projizierte Saldo negativ wird
  * (nach Plan illiquide); Warnung, wenn der aktuelle Bestand allein die Ausgänge nicht deckt
  * (Liquidität hängt an erwarteten Eingängen); sonst ok. Ohne Bestand → ok (keine Aussage).

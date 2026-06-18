@@ -230,6 +230,20 @@
   /Beleg-Zuordnung GoBD-fix; alle Zeiten = ARBEIT; DOM/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §6)
 
 ### Block 3 — später / umgebungs-blockiert
+- [x] **Liquiditäts-Reichweite („Runway" — bis wann reicht das Geld?)** [Folgeschritt zu #154] ✅ (2026-06-18) — die
+  Liquiditäts-Karte zeigte Tiefpunkt (tiefster Stand) und Deckungslücke (fehlender Betrag), aber nicht die intuitivste
+  Antwort auf die im Karten-Code selbst gestellte Frage „reicht das Geld?": **bis wann**. Der Tiefpunkt nennt den *tiefsten*
+  Tag, die Reichweite den *frühesten* Engpass (kann VOR dem Tiefpunkt liegen: Saldo rutscht früh unter die Schwelle, erholt
+  sich kurz, fällt später noch tiefer). Reine Logik `domain/liquiditaet.js` (node-getestet, +12 → **1675/1675**):
+  **`liquiditaetsReichweite(verlauf, {reserveCent, heute})`** — erster Tag, an dem der laufende Saldo
+  (`liquiditaetsVerlauf.punkte[].saldoCent`) unter die Schwelle (Mindestreserve, Default 0 → echtes Minus; konsistent via
+  `normalizeReserveCent`) fällt → `{bekannt, reicht, sofort, datum, tageBis, reserveCent, negativ}` (ohne Bestand
+  `bekannt:false` abwärtskompatibel; `sofort` = schon heute unter Schwelle; `negativ` = echtes Minus vs. nur
+  Reserve-Unterschreitung). UI `ui/views/dashboard.js`: Klartext-Bilanz „reicht über N Tage" bzw. „reicht bis {datum}"
+  (rot bei echtem Minus), nur wenn es Ausgänge gibt und der Bestand bekannt ist; der `sofort`-Fall bleibt Ampel/Deckungslücke.
+  i18n de+en (`dashboard.liquidityRunwayOk`/`…RunwayUntil`), SW `v134` (kein neues Modul). **bucht nichts.** **Ehrliche
+  Grenze:** einfache Planung nach Fälligkeitsdatum, keine Finanzberatung; nur über bald fällige, bekannte Posten (kein
+  Forecast wiederkehrender Kosten); DOM/IndexedDB statisch geprüft.
 - [x] **Liquiditäts-Mindestreserve (Puffer)** [Folgeschritt zu #153] ✅ (2026-06-18, PR #154) — die Deckungslücke (#153)
   warnte bisher erst bei echtem Minus; viele Betriebe wollen das Geld aber nicht bis auf null herunterfahren, sondern einen
   Sicherheitspuffer halten. Reine Logik `domain/liquiditaet.js` (node-getestet, +17 → **1663/1663**): `normalizeReserveCent`

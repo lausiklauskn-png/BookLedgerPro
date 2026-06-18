@@ -22,23 +22,24 @@ AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 202
 Verbindlichkeiten-Ansicht ✅ #142 + Dashboard-KPI überfällige **Verbindlichkeiten** ✅ #143 + Dashboard-KPI überfällige
 **Forderungen (Mahnwesen)** ✅ #145 + **Dashboard-KPI: Liquiditätsvorschau (bald fällig) ✅ #147** + **Liquiditätsvorschau
 um Geldbestand + projizierten Saldo ✅ #149** + **Liquiditätsvorschau: wählbares Zeitfenster ✅** + **Liquiditäts-Tiefpunkt
-(laufender Saldo im Fenster) ✅ #152** + **Liquiditäts-Deckungslücke (Unterdeckung im Fenster) ✅ #153** + zuletzt
-(2026-06-18) **Liquiditäts-Mindestreserve (Puffer) ✅ #154** — die Deckungslücke (#153) warnte bisher erst, wenn der
-laufende Saldo im Fenster ECHT unter null rutscht; viele Betriebe wollen ihr Geld aber nicht bis auf null herunterfahren,
-sondern einen Sicherheitspuffer halten. Reine Logik `domain/liquiditaet.js` (node-getestet): `normalizeReserveCent(value)`
-(klemmt persistierten Reservebetrag auf ganze, nicht-negative Cent; ungültig/negativ → 0) + `deckungsluecke(verlauf,
-{reserveCent})` mit optionaler **Mindestreserve als Schwelle** — Default 0 → identisch zu vorher (abwärtskompatibel);
-die Lücke greift, sobald der Tiefpunkt unter die Schwelle fällt (`lueckeCent` = Schwelle − Tiefpunkt), neue Felder
-`reserveCent` + `negativ` (Tiefpunkt < 0 = echte Illiquidität vs. nur Reserve-Unterschreitung). Setting
-`liquiditaetReserveCent` (`state.js`, Default 0). UI `ui/views/dashboard.js`: Euro-Eingabefeld „Mindestreserve (Puffer)"
-in der Liquiditäts-Karte; der Lücken-Hinweis warnt rot (`hint-error`) bei echtem Minus und mild (`muted small`) bei reiner
-Reserve-Unterschreitung. **bucht nichts**. i18n de+en, SW `v133` (kein neues Modul), +17 → **1663/1663** grün, DOM/IndexedDB
-statisch geprüft. **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln
-grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden).
+(laufender Saldo im Fenster) ✅ #152** + **Liquiditäts-Deckungslücke (Unterdeckung im Fenster) ✅ #153** + **Liquiditäts-
+Mindestreserve (Puffer) ✅ #154** + zuletzt (2026-06-18) **Liquiditäts-Reichweite („Runway" — bis wann reicht das Geld?) ✅**
+— die Liquiditäts-Karte zeigte Tiefpunkt (tiefster Stand) und Deckungslücke (fehlender Betrag), aber nicht die intuitivste
+Antwort auf die im Karten-Code selbst gestellte Frage „reicht das Geld?": **bis wann**. Der Tiefpunkt nennt den *tiefsten*
+Tag, die Reichweite den *frühesten* Engpass (kann VOR dem Tiefpunkt liegen: Saldo rutscht früh unter die Schwelle, erholt
+sich kurz, fällt später noch tiefer). Reine Logik `domain/liquiditaet.js` (node-getestet): **`liquiditaetsReichweite(verlauf,
+{reserveCent, heute})`** — erster Tag, an dem der laufende Saldo (`liquiditaetsVerlauf.punkte[].saldoCent`) unter die
+Schwelle (Mindestreserve, Default 0 → echtes Minus; konsistent via `normalizeReserveCent`) fällt → `{bekannt, reicht,
+sofort, datum, tageBis, reserveCent, negativ}` (ohne Bestand `bekannt:false` abwärtskompatibel; `sofort` = schon heute unter
+Schwelle; `negativ` = echtes Minus vs. nur Reserve-Unterschreitung). UI `ui/views/dashboard.js`: Klartext-Bilanz „reicht
+über N Tage" bzw. „reicht bis {datum}" (rot bei echtem Minus), nur wenn es Ausgänge gibt und der Bestand bekannt ist; der
+`sofort`-Fall bleibt Ampel/Deckungslücke. **bucht nichts**. i18n de+en, SW `v134` (kein neues Modul), +12 → **1675/1675**
+grün, DOM/IndexedDB statisch geprüft. **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt
+1 PR, jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden).
 
 Nächste offene Schritte (alle optional):
 1. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen
-   (zuletzt: Dashboard-Karte „Liquiditätsvorschau" mit Tiefpunkt-Hinweis + Deckungslücken-Warnung + umschaltbarem Zeitfenster 7/14/30/90 Tage).
+   (zuletzt: Dashboard-Karte „Liquiditätsvorschau" mit Reichweite-Bilanz + Tiefpunkt-Hinweis + Deckungslücken-Warnung + Mindestreserve-Eingabe + umschaltbarem Zeitfenster 7/14/30/90 Tage).
 2. **Sonst:** umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server;
    WorkFloh-Gegenstücke — fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt
    blockiert:** Lighthouse/Perf, lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
@@ -74,14 +75,14 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditäts-Mindestreserve (Puffer)** (PR #154): reine
-Logik `domain/liquiditaet.js` `normalizeReserveCent(value)` + `deckungsluecke(verlauf, {reserveCent})` mit optionaler
-Mindestreserve als Schwelle (Default 0 → abwärtskompatibel; neue Felder `reserveCent` + `negativ`); Setting
-`liquiditaetReserveCent`; UI `ui/views/dashboard.js`: Euro-Eingabefeld „Mindestreserve (Puffer)" + adaptiver Lücken-Hinweis
-(rot bei echtem Minus, mild bei reiner Reserve-Unterschreitung). Tests **1663/1663** · SW **v133** · 117 JS-Module.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditäts-Reichweite („Runway")** (Folgeschritt zu #154):
+reine Logik `domain/liquiditaet.js` **`liquiditaetsReichweite(verlauf, {reserveCent, heute})`** — erster Tag, an dem der
+laufende Saldo unter die Schwelle (Mindestreserve, Default 0) fällt → `{bekannt, reicht, sofort, datum, tageBis,
+reserveCent, negativ}`; UI `ui/views/dashboard.js`: Klartext-Bilanz „reicht über N Tage" / „reicht bis {datum}" (rot bei
+echtem Minus), gated auf Ausgänge + bekannten Bestand. Tests **1675/1675** · SW **v134** · 117 JS-Module.
 **Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung + Verzugsrisiko-KPI in
 Verbindlichkeiten-Ansicht + beidseitige Überfälligkeits-KPI #143/#145 + Liquiditätsvorschau #147 + Geldbestand/
-Projektion #149 + wählbares Zeitfenster + Tiefpunkt #152 + Deckungslücke #153 + Mindestreserve #154).**
+Projektion #149 + wählbares Zeitfenster + Tiefpunkt #152 + Deckungslücke #153 + Mindestreserve #154 + Reichweite).**
 **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
 oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

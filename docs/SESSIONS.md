@@ -5,6 +5,45 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Liquiditäts-Reichweite („Runway" — bis wann reicht das Geld?) [Branch `claude/bookledgerpro-block-3-cv4llc`]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 ausgebaut bis zur **Mindestreserve** (#154). Die Liquiditäts-Karte zeigt schon
+  Bestand/Eingänge/Ausgänge/Netto/Projektion, **Tiefpunkt** (tiefster Stand) und **Deckungslücke** (fehlender Betrag am
+  Tiefpunkt). **Befund:** Es fehlte die intuitivste Antwort auf die im Karten-Code selbst gestellte Frage „reicht das
+  Geld?" — nämlich **bis wann**. Der Tiefpunkt nennt den *tiefsten* Tag, die Reichweite den *frühesten* Engpass; rutscht
+  der Saldo früh unter die Schwelle, erholt sich kurz und fällt später noch tiefer, ist die Reichweite schon früher
+  erschöpft. Sauberer, build-freier Folgeschritt im Liquiditäts-Thema.
+
+**Was getan**
+- **`src/domain/liquiditaet.js`** (rein, node-getestet, +12 → **1675/1675**): **`liquiditaetsReichweite(verlauf, {reserveCent, heute})`**
+  — der ERSTE Tag im Fenster, an dem der laufende Saldo (`liquiditaetsVerlauf.punkte[].saldoCent`) unter die Schwelle
+  (Mindestreserve, Default 0 → echtes Minus; konsistent via `normalizeReserveCent`) fällt. Liefert
+  `{bekannt, reicht, sofort, datum, tageBis, reserveCent, negativ}`: ohne Geldbestand `bekannt:false` (abwärtskompatibel),
+  schon heute unter Schwelle `sofort:true`, hält das ganze Fenster `reicht:true`, `negativ` = echtes Minus vs. nur
+  Reserve-Unterschreitung; `tageBis` nur mit `heute`.
+- **`src/ui/views/dashboard.js`**: Klartext-Bilanz in der Liquiditäts-Karte — „reicht über N Tage" bzw. „reicht bis
+  {datum}" (rot bei echtem Minus). Nur wenn es im Fenster **Ausgänge** gibt (sonst kann das Geld nicht knapp werden) und
+  der Bestand bekannt ist; der „heute schon knapp"-Fall (`sofort`) bleibt der Ampel/Deckungslücke überlassen. **Bucht nichts.**
+- i18n de+en (`dashboard.liquidityRunwayOk`/`…RunwayUntil`), **SW `v134`** (kein neues Modul).
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut. **Tests 1675/1675 grün** (`node tests/run.mjs`). SW `v134`,
+  117 JS-Module. PR offen (Draft → ready → CI → Squash-Merge).
+
+**Offen / Nächstes**
+- Optional: Browser-Sichttest durch den Nutzer (kein Headless-Browser hier) — DOM/IndexedDB-Pfad der Liquiditäts-Karte
+  (jetzt inkl. Reichweite-Bilanz) bestätigen.
+- Sonst: umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel; WorkFloh-Gegenstücke) oder eine neue,
+  mit dem Nutzer abgestimmte Idee. Bekannt blockiert: Lighthouse/Perf, lokales OCR, ZUGFeRD-Erzeugen, Sage 5b–d.
+
+**Offene Grenzen / ungetestet**
+- Reine Logik node-getestet; DOM/IndexedDB/Karten-Pfad **statisch geprüft** (kein Headless-Browser).
+- Inhaltlich: einfache Planung nach Fälligkeitsdatum, keine Finanzberatung; Reichweite gilt nur über die bald fälligen,
+  bekannten Posten (kein Forecast wiederkehrender Kosten).
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Liquiditäts-Mindestreserve (Puffer) in der Deckungslücke [Branch `claude/block3-liquidity-reserve`, PR #154]
 
 **Ausgangslage / Auswahl**

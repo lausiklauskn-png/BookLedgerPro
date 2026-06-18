@@ -12,7 +12,7 @@ import { listKunden, listAuftraege } from '../../domain/crm-store.js';
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { verzugReport, verzugAmpel, VERZUG_AMPEL } from '../../domain/eingangsverzug.js';
 import { forderungReport, forderungAmpel, FORDERUNG_AMPEL } from '../../domain/mahnwesen.js';
-import { liquiditaetsVorschau, liquiditaetsVerlauf, liquiditaetsAmpel, deckungsluecke, geldbestand, normalizeHorizont, normalizeReserveCent, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
+import { liquiditaetsVorschau, liquiditaetsVerlauf, liquiditaetsAmpel, deckungsluecke, liquiditaetsReichweite, geldbestand, normalizeHorizont, normalizeReserveCent, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
 import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
@@ -124,6 +124,12 @@ export async function mountDashboard(host) {
     // Unterdeckung (Saldo < 0). Gerätelokal/verschlüsselt im Setting liquiditaetReserveCent.
     const reserveCent = normalizeReserveCent(s.liquiditaetReserveCent);
     const luecke = deckungsluecke(verlauf, { reserveCent });
+    // Reichweite („Runway"): bis zu welchem Datum hält der laufende Saldo die Schwelle? Der
+    // FRÜHESTE Engpass — die intuitive Antwort auf „reicht das Geld?". Nur aussagekräftig, wenn
+    // es im Fenster überhaupt Ausgänge gibt (sonst kann der Saldo nicht unter die Schwelle
+    // fallen → „reicht" wäre trivial). Der „heute schon unter Schwelle"-Fall (sofort) deckt
+    // bereits die Ampel/Deckungslücke ab.
+    const reichweite = liquiditaetsReichweite(verlauf, { reserveCent, heute });
     const ampel = liquiditaetsAmpel(v);
     const projCls = ampel === LIQUIDITAET_AMPEL.KRITISCH ? 'kpi-neg' : ampel === LIQUIDITAET_AMPEL.OK ? 'kpi-pos' : '';
     const kacheln = [];
@@ -174,6 +180,17 @@ export async function mountDashboard(host) {
         : ampel === LIQUIDITAET_AMPEL.WARNUNG
           ? el('p', { class: 'muted small', text: t('dashboard.liquidityWarnTight') })
           : null,
+      // Reichweite („Runway") als Klartext-Bilanz: „reicht über N Tage" bzw. „reicht bis {datum}".
+      // Nur wenn es Ausgänge gibt (sonst kann das Geld nicht knapp werden) und der Bestand bekannt
+      // ist; der „heute schon knapp"-Fall (sofort) bleibt der Ampel/Deckungslücke überlassen.
+      (v.ausgehendAnzahl > 0 && reichweite.bekannt && !reichweite.sofort)
+        ? (reichweite.reicht
+            ? el('p', { class: 'muted small', text: t('dashboard.liquidityRunwayOk').replace('{tage}', String(v.horizontTage)) })
+            : el('p', {
+                class: reichweite.negativ ? 'small hint-error' : 'muted small',
+                text: t('dashboard.liquidityRunwayUntil').replace('{datum}', reichweite.datum),
+              }))
+        : null,
       // Tiefpunkt-Hinweis nur, wenn der laufende Saldo zwischendurch UNTER den End-Saldo
       // fällt (sonst ist der Endwert bereits das Tiefste — keine neue Information).
       (verlauf.tiefpunktCent != null && verlauf.endeCent != null && verlauf.tiefpunktCent < verlauf.endeCent && verlauf.tiefpunktDatum)
