@@ -230,6 +230,17 @@
   /Beleg-Zuordnung GoBD-fix; alle Zeiten = ARBEIT; DOM/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §6)
 
 ### Block 3 — später / umgebungs-blockiert
+- [x] **Liquiditätsvorschau: Geldbestand + projizierter Saldo** [Folgeschritt zu #147] ✅ (2026-06-18, PR #149) — die
+  reine Eingänge-vs-Ausgänge-Sicht beantwortete noch nicht „reicht das Geld?". Jetzt zieht die Karte den **aktuellen
+  Geldbestand (Kasse + Bank)** heran und projiziert den Saldo am Fenster-Ende (Bestand + Eingänge − Ausgänge). Reine Logik
+  `domain/liquiditaet.js` (node-getestet, +25 → **1610/1610**): `GELDKONTO_BEREICHE`+`istGeldkonto` (AKTIV 1000–1099 Kasse /
+  1200–1299 Bank), `geldbestand(buchungen, konten, {stichtag})` (Saldo je Geldkonto Soll−Haben aus den festgeschriebenen
+  Buchungen, Entwürfe zählen nicht), `liquiditaetsVorschau(opts.geldbestandCent)` → `geldbestandCent`/`projiziertCent`
+  (ohne Bestand `null` → abwärtskompatibel), `LIQUIDITAET_AMPEL`+`liquiditaetsAmpel` (kritisch < 0 / Warnung knapp / ok).
+  UI `ui/views/dashboard.js`: Karte zeigt „Kontostand (Kasse + Bank)" + „voraussichtlich in N Tagen" (ampelgefärbt) +
+  ehrlichen Hinweis; **bucht nichts**. i18n de+en, SW `v129` (kein neues Modul). **Ehrliche Grenze:** einfache Planung nach
+  Fälligkeitsdatum, keine Forecast-Modellierung; Geldkonto-Erkennung über die 4-stelligen SKR03-Bereiche; DOM/IndexedDB
+  statisch geprüft.
 - [x] **Dashboard-KPI: Liquiditätsvorschau (bald fällig)** [Folgeschritt zu #143/#145] ✅ (2026-06-18, PR #147) —
   vorausschauender Gegenpol zu den Überfälligkeits-KPIs: was wird in den **nächsten 7 Tagen fällig** — erwartete
   **Eingänge** (bald fällige Forderungen) gegen **Ausgänge** (bald fällige Verbindlichkeiten) + **Netto**. Reine Logik
