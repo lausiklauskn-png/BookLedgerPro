@@ -83,6 +83,53 @@ export function demoMandant(groesse = 'klein') {
   return { groesse, jahr: DEMO_JAHR, konten, ...s };
 }
 
+// ---- Vorbefüllung eines (Test-)Tresors -------------------------------------
+// Reine Logik UNTER der Store-Glue (domain/demodaten-store.js), die einen frischen
+// Sandbox-Tresor (docs/TEST_MODUS.md) mit den Demo-Daten füttert. Hier wird NICHTS
+// geschrieben — nur die zu schreibenden Records aufbereitet (node-testbar). Die
+// Buchungen werden in die Entwurfs-Form gebracht (ohne seq/status/Hash), damit die
+// Glue sie über den ECHTEN Pfad `saveEntwurf` → `festschreiben` schreiben kann
+// (lückenlose seq + GoBD-Hash-Kette wie im Echtbetrieb).
+
+/**
+ * Bringt die Demo-Buchungen eines Mandanten in die Entwurfs-Form `{datum, beschreibung,
+ * zeilen}` und sortiert sie **chronologisch** (Datum, dann ursprüngliche seq) — die
+ * Reihenfolge, in der die Glue sie festschreibt, damit die lückenlose seq der zeitlichen
+ * Reihenfolge folgt. Rein/immutabel: die Eingabe-Buchungen bleiben unangetastet.
+ * @returns {Array<{datum:string, beschreibung:string, zeilen:Array}>}
+ */
+export function demoEntwuerfe(mandant) {
+  const buchungen = (mandant && mandant.buchungen) || [];
+  return buchungen
+    .map((b) => ({
+      datum: b.datum,
+      beschreibung: b.beschreibung || '',
+      // Zeilen flach kopieren → die Glue/der Store kann sie unbedenklich weiterreichen.
+      zeilen: (b.zeilen || []).map((z) => ({ ...z })),
+      _seq: b.seq == null ? Infinity : b.seq,
+    }))
+    .sort((a, b) => (a.datum.localeCompare(b.datum)) || (a._seq - b._seq))
+    .map(({ _seq, ...e }) => e);
+}
+
+/**
+ * Vollständiger Vorbefüllungs-Plan für einen Test-Tresor: was die Glue der Reihe nach
+ * schreibt. Konten kommen aus dem Standard-Seed (die Glue nutzt `ensureAccountsSeeded`,
+ * daher hier nur informativ als Anzahl/Liste mitgeführt). @param {'klein'|'gross'} groesse
+ * @returns {{groesse, jahr, buchungenEntwuerfe, anlagen, anfangsbestaende, konten}}
+ */
+export function demoBefuellungsplan(groesse = 'klein') {
+  const mandant = demoMandant(groesse);
+  return {
+    groesse: mandant.groesse,
+    jahr: mandant.jahr,
+    konten: mandant.konten,
+    buchungenEntwuerfe: demoEntwuerfe(mandant),
+    anlagen: (mandant.anlagen || []).map((a) => ({ ...a })),
+    anfangsbestaende: (mandant.anfangsbestaende || []).map((a) => ({ ...a })),
+  };
+}
+
 const DEMO_README = [
   'BookLedgerPro — Demo-/Test-Exportpaket (SIMULIERTE Daten, kein Echtbetrieb)',
   '',

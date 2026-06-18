@@ -33,16 +33,19 @@ reine Logik `domain/angebotUebernahme.js`; Nummernpolitik je `rechnungsstelle` m
 neue Ansicht `ui/views/nachkalkulation.js` (NAV „Nachkalkulation", privat/verein ausgeblendet) + I/O-Glue
 `domain/nachkalkulation-store.js` über die fertige reine Logik `nachkalkulation.js`/`kalibrierung.js`: Soll/Ist je
 Kostenträger + Deckungsbeitrag + Belege, Korrekturfaktoren-Tabelle + Trefferquote je Preisniveau; neuer reiner Helfer
-`zeiteintraegeAusZeiten` node-getestet (+7 → **1434/1434 grün**); rein anzeigend (kein Druck/Export/KI); SW `v118`,
-**DOM/IndexedDB statisch geprüft**. **Damit ist die Block-2-Kernkette (4–11) inkl. aller UIs komplett.**
+`zeiteintraegeAusZeiten` node-getestet; rein anzeigend (kein Druck/Export/KI); SW `v118`. **Zuletzt (2026-06-18):
+Demo-Vorbefüllung ✅ (BAUPLAN Schritt 2d)** — beim „Neuer Test" wahlweise leer oder mit Demo-Daten: reine Logik
+`domain/demodaten.js` (`demoEntwuerfe`/`demoBefuellungsplan`, node-getestet), Store-Glue `domain/demodaten-store.js`
+`befuelleMitDemodaten` (schreibt in den aktiven Sandbox-Tresor über den echten GoBD-Pfad `saveEntwurf`+`festschreiben`),
+UI `ui/lock.js renderNeuerTest` (Radio-Wahl); SW `v119`, +10 → **1444/1444 grün**, Glue/DOM/IndexedDB statisch geprüft.
+**Damit ist die Block-2-Kernkette (4–11) inkl. aller UIs + Test-Modus inkl. Demo-Vorbefüllung komplett.**
 Nächste offene Schritte (alle optional):
 
-1. **NÄCHSTER SCHRITT (optional): Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) — ein neuer Test
-   wahlweise leer **oder** mit Demo-Daten starten (kleiner, in sich abgeschlossener Schritt).
-2. **Optional, Folgeschritt zur Nachkalkulation:** echte **Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag** (heute
-   werden vorhandene Zeiten/Buchungen nur angezeigt) + **kalibrierte Vorwärtskalkulation** (`kalkuliereKalibriert`,
-   reine Logik steht) im Angebots-Editor anbieten. Optional feinere konto→Kostenart-Zuordnung (heute Default Material).
-3. **Optional, Schritt 4 der Datensicherung (`docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server) +
+1. **NÄCHSTER SCHRITT (optional), Folgeschritt zur Nachkalkulation:** echte **Zeiterfassung-/Beleg-Zuordnungs-UI je
+   Auftrag** (heute werden vorhandene Zeiten/Buchungen nur angezeigt) + **kalibrierte Vorwärtskalkulation**
+   (`kalkuliereKalibriert`, reine Logik steht) im Angebots-Editor anbieten. Optional feinere konto→Kostenart-Zuordnung
+   (heute Default Material).
+2. **Optional, Schritt 4 der Datensicherung (`docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server) +
    konfigurierbare Erinnerungs-Kadenz — **blockiert/zurückgestellt**, solange kein eigener Server existiert.
 
 RITUAL JE PR (verbindlich, automatisch durchziehen):
@@ -76,11 +79,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2 — UI „Nachkalkulation/Kostenträger + Kalibrierung"**
-(neue Ansicht `ui/views/nachkalkulation.js` + I/O-Glue `domain/nachkalkulation-store.js` über die fertige reine Logik
-`nachkalkulation.js`/`kalibrierung.js`; neuer reiner Helfer `zeiteintraegeAusZeiten`; rein anzeigend). Tests
-**1434/1434** · SW **v118** · 114 JS-Module. **Block 1 KOMPLETT**; **Block-2-Kernkette (Schritte 4–11) inkl. aller UIs
-(„Rechnung aus Angebot" + „Nachkalkulation/Kalibrierung") KOMPLETT.**
-**Nächster Schritt (optional): Demo-Vorbefüllung** (`domain/demodaten.js`) für neue Tests; alternativ
-Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag + kalibrierte Vorwärtskalkulation im Angebots-Editor.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Schritt 2d — Demo-Vorbefüllung für Test-Tresore**
+(reine Logik `domain/demodaten.js` `demoEntwuerfe`/`demoBefuellungsplan` + Store-Glue `domain/demodaten-store.js`
+`befuelleMitDemodaten` über den echten GoBD-Pfad + UI `ui/lock.js renderNeuerTest` Radio leer/Demo). Tests
+**1444/1444** · SW **v119** · 115 JS-Module. **Block 1 KOMPLETT (inkl. Test-Modus 2a–2d)**; **Block-2-Kernkette
+(Schritte 4–11) inkl. aller UIs KOMPLETT.**
+**Nächster Schritt (optional):** Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag + kalibrierte Vorwärtskalkulation
+(`kalkuliereKalibriert`) im Angebots-Editor; oder feinere konto→Kostenart-Zuordnung.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

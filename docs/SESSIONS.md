@@ -5,6 +5,40 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Schritt 2d: Demo-Vorbefüllung für Test-Tresore [Branch `claude/bookledgerpro-block2-next-q7pfe4`]
+
+**Ausgangslage / Auswahl**
+- Nächster offener (optionaler) Schritt laut `docs/BAUPLAN.md`/`docs/NAECHSTE_SITZUNG.md`: die in 2c bewusst
+  zurückgestellte **Demo-Vorbefüllung** (`domain/demodaten.js`) — ein neuer Test wahlweise **leer** oder
+  **mit Demo-Daten**. Kleiner, in sich abgeschlossener Schritt; reine Logik zuerst node-getestet, Glue/UI
+  ehrlich als „statisch geprüft" gekennzeichnet (kein Headless-Browser).
+
+**Was getan**
+- **`src/domain/demodaten.js`** (reine Logik, node-getestet): `demoEntwuerfe(mandant)` bringt die Demo-Buchungen
+  in die chronologisch sortierte Entwurfs-Form `{datum, beschreibung, zeilen}` (immutabel; Zeilen sind Kopien) +
+  `demoBefuellungsplan(groesse)` bündelt Konten/Anfangsbestände/Anlagen/Buchungs-Entwürfe. Test: jede Buchung
+  `validateBuchung`-gültig + ausgeglichen, chronologisch, Eingabe unberührt. +10 Tests (**1444/1444**).
+- **`src/domain/demodaten-store.js`** (neu, Store-Glue): `befuelleMitDemodaten(groesse)` schreibt in den **aktiven**
+  (Sandbox-)Tresor über die bestehenden Stores + den **echten GoBD-Pfad**: `ensureAccountsSeeded` →
+  `setAnfangsbestand` → `addAnlage` → je Buchung `saveEntwurf`+`festschreiben` (chronologisch → lückenlose seq +
+  Hash-Kette wie im Echtbetrieb). Schreibt nur in die aktive DB (Sandbox-Infix; echte Mandanten unberührt).
+- **`src/ui/lock.js`** `renderNeuerTest`: Radio-Wahl „Leer starten / Mit Demo-Daten" (Default leer) → reicht
+  `demo:'klein'` ins Sandbox-Onboarding; nach `setupVault` (DEK aktiv) wird befüllt (Fehler → Test startet leer
+  statt zu blockieren). **`src/ui/i18n.js`** (`test.inhalt`/`test.inhaltLeer`/`test.inhaltDemo`, de+en),
+  **`assets/app.css`** (`.test-inhalt`/`.radio-row`), **`sw.js`** `CACHE_VERSION` → **v119** + Modul precached.
+
+**Stand**
+- `node tests/run.mjs` → **1444/1444 grün** (+10). `node --check` der geänderten Module grün.
+
+**Offen / Nächstes**
+- **Optional:** echte **Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag** + kalibrierte Vorwärtskalkulation
+  (`kalkuliereKalibriert`) im Angebots-Editor; feinere konto→Kostenart-Zuordnung (heute Default Material).
+- **Ehrliche Grenzen:** Demo-Vorbefüllung nur „klein" (deterministischer Demo-Mandant); Glue/DOM/IndexedDB
+  **statisch geprüft** (kein Headless-Browser) — der Schreibpfad selbst (`saveEntwurf`/`festschreiben`) ist
+  node-getestet, das Verdrahten im Browser-Onboarding nicht.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2: UI „Nachkalkulation/Kostenträger + Kalibrierung" [Branch `claude/bookledgerpro-bauplan-block2-csl88g`]
 
 **Ausgangslage / Auswahl**
