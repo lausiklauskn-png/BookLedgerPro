@@ -54,6 +54,55 @@ function abweichung(sollCent, istCent) {
   return { abweichungCent, abweichungProzent };
 }
 
+// ── konto → Kostenart: Standard-Zuordnung (SKR03-Kontenklassen) ──────────────
+
+/**
+ * Standard-Kostenart einer Aufwands-Kontonummer anhand der SKR03-Kontenklasse — damit die
+ * IST-Buchungen je Kostenträger nicht mehr pauschal als MATERIAL zählen (frühere Grenze), wo
+ * die Kontonummer eine eindeutige Zuordnung erlaubt:
+ *   - **3100–3199** Fremdleistungen → ZUKAUF (extern zugekaufte Leistung/Druck-Zukauf).
+ *   - **3000–3999** (sonst) Wareneingang / Roh-, Hilfs- und Betriebsstoffe → MATERIAL.
+ *   - **4100–4199** Personalaufwand (Löhne/Gehälter/soziale Aufwendungen) → ARBEIT.
+ * Alle übrigen Konten → null (die aufrufende `istkostenAusBuchungen` fällt dann auf ihren
+ * konservativen Default MATERIAL zurück — Verhalten wie bisher).
+ *
+ * EHRLICHE GRENZE: Eine Heuristik nach Kontenklasse, KEINE betriebswirtschaftlich exakte
+ * Einzelkosten-Zuordnung. Class-4-Gemeinkosten (Miete/Versicherung/Telefon …) bleiben
+ * absichtlich unklassifiziert (→ Default MATERIAL, falls überhaupt einem Kostenträger
+ * zugeordnet); MASCHINE wird hier NICHT aus Konten abgeleitet (Maschinenzeit kommt über die
+ * Zeiteinträge, `istZeitkosten`). Eine feinere Zuordnung kann jederzeit per `opts.kontoBlock`
+ * überschrieben werden (gewinnt vor dieser Standard-Zuordnung).
+ *
+ * @param {string|number} nummer  Kontonummer
+ * @returns {?string} KOSTENART oder null
+ */
+export function kostenartFuerKonto(nummer) {
+  const n = parseInt(String(nummer == null ? '' : nummer).trim(), 10);
+  if (!Number.isFinite(n)) return null;
+  if (n >= 3100 && n <= 3199) return KOSTENART.ZUKAUF;    // Fremdleistungen
+  if (n >= 3000 && n <= 3999) return KOSTENART.MATERIAL;  // Wareneingang / RHB-Stoffe
+  if (n >= 4100 && n <= 4199) return KOSTENART.ARBEIT;    // Personalaufwand (Löhne/Gehälter)
+  return null;
+}
+
+/**
+ * Baut die `kontoBlock`-Map (konto-Nr → KOSTENART) für `istkostenAusBuchungen` aus dem
+ * Kontenplan — nur für AUFWAND-Konten mit eindeutiger Klassen-Zuordnung (siehe
+ * `kostenartFuerKonto`). Konten ohne sichere Zuordnung tauchen NICHT in der Map auf und
+ * bleiben damit auf dem Default MATERIAL.
+ * @param {Array<{nummer:string, art?:string}>} konten
+ * @returns {Object} konto-Nr → KOSTENART
+ */
+export function standardKontoBlock(konten = []) {
+  const map = {};
+  for (const k of konten || []) {
+    if (!k || k.art !== KONTOART.AUFWAND) continue;
+    const block = kostenartFuerKonto(k.nummer);
+    if (block) map[k.nummer] = block;
+  }
+  return map;
+}
+
 // ── IST: Material/Fremdleistung aus Buchungen/Belegen ────────────────────────
 
 /**

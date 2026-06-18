@@ -38,13 +38,20 @@ Demo-Vorbefüllung ✅ (BAUPLAN Schritt 2d)** — beim „Neuer Test" wahlweise 
 `domain/demodaten.js` (`demoEntwuerfe`/`demoBefuellungsplan`, node-getestet), Store-Glue `domain/demodaten-store.js`
 `befuelleMitDemodaten` (schreibt in den aktiven Sandbox-Tresor über den echten GoBD-Pfad `saveEntwurf`+`festschreiben`),
 UI `ui/lock.js renderNeuerTest` (Radio-Wahl); SW `v119`, +10 → **1444/1444 grün**, Glue/DOM/IndexedDB statisch geprüft.
+**Zuletzt (2026-06-18): Standard-konto→Kostenart-Zuordnung ✅** — die in der Nachkalkulation-UI als Grenze genannte
+pauschale „alles = Material"-Vorbelegung verfeinert: reine Logik `domain/nachkalkulation.js` `kostenartFuerKonto`/
+`standardKontoBlock` (SKR03-Kontenklassen: 3100–3199 Fremdleistungen→Zukauf, 3000–3999 Wareneingang/RHB→Material,
+4100–4199 Personalaufwand→Arbeit; sonst Default Material), automatisch in `domain/nachkalkulation-store.js` aus dem
+Kontenplan gebaut + in `kostentraegerAnalyse` durchgereicht; `opts.kontoBlock` (manuell) gewinnt; SW `v120`, +22 →
+**1466/1466 grün**, Glue/IndexedDB statisch geprüft (Grenze: Heuristik nach Kontenklasse, keine exakte Einzelkosten-
+Zuordnung; Class-4-Gemeinkosten bleiben unklassifiziert; MASCHINE nur über Zeiteinträge).
 **Damit ist die Block-2-Kernkette (4–11) inkl. aller UIs + Test-Modus inkl. Demo-Vorbefüllung komplett.**
 Nächste offene Schritte (alle optional):
 
 1. **NÄCHSTER SCHRITT (optional), Folgeschritt zur Nachkalkulation:** echte **Zeiterfassung-/Beleg-Zuordnungs-UI je
    Auftrag** (heute werden vorhandene Zeiten/Buchungen nur angezeigt) + **kalibrierte Vorwärtskalkulation**
-   (`kalkuliereKalibriert`, reine Logik steht) im Angebots-Editor anbieten. Optional feinere konto→Kostenart-Zuordnung
-   (heute Default Material).
+   (`kalkuliereKalibriert`, reine Logik steht) im Angebots-Editor anbieten. (Die feinere konto→Kostenart-Zuordnung ist
+   inzwischen erledigt — `domain/nachkalkulation.js` `standardKontoBlock`.)
 2. **Optional, Schritt 4 der Datensicherung (`docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server) +
    konfigurierbare Erinnerungs-Kadenz — **blockiert/zurückgestellt**, solange kein eigener Server existiert.
 
@@ -79,11 +86,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Schritt 2d — Demo-Vorbefüllung für Test-Tresore**
-(reine Logik `domain/demodaten.js` `demoEntwuerfe`/`demoBefuellungsplan` + Store-Glue `domain/demodaten-store.js`
-`befuelleMitDemodaten` über den echten GoBD-Pfad + UI `ui/lock.js renderNeuerTest` Radio leer/Demo). Tests
-**1444/1444** · SW **v119** · 115 JS-Module. **Block 1 KOMPLETT (inkl. Test-Modus 2a–2d)**; **Block-2-Kernkette
-(Schritte 4–11) inkl. aller UIs KOMPLETT.**
-**Nächster Schritt (optional):** Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag + kalibrierte Vorwärtskalkulation
-(`kalkuliereKalibriert`) im Angebots-Editor; oder feinere konto→Kostenart-Zuordnung.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2 Folgeschritt — Standard-konto→Kostenart-Zuordnung**
+(reine Logik `domain/nachkalkulation.js` `kostenartFuerKonto`/`standardKontoBlock` nach SKR03-Kontenklassen + Glue
+`domain/nachkalkulation-store.js` baut die Map automatisch aus dem Kontenplan + reicht sie in `kostentraegerAnalyse`
+durch). Tests **1466/1466** · SW **v120** · 115 JS-Module. **Block 1 KOMPLETT (inkl. Test-Modus 2a–2d)**; **Block-2-
+Kernkette (Schritte 4–11) inkl. aller UIs KOMPLETT.**
+**Nächster Schritt (optional, verbleibend):** Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag + kalibrierte
+Vorwärtskalkulation (`kalkuliereKalibriert`) im Angebots-Editor.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

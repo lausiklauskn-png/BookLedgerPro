@@ -193,6 +193,16 @@
   `stundenlohnCent` als interner Kostensatz (kein AG-Gemeinkostenaufschlag); reine Anzeige (Zeiterfassung-/Beleg-
   Zuordnungs-UND kalibrierte Vorwärtskalkulation im Editor als Folgeschritt). (`docs/KALKULATION_KATALOG.md` §5.1/§5.3/§6)
 
+- [x] **Folgeschritt: feinere konto→Kostenart-Zuordnung** ✅ (2026-06-18) — die in der Nachkalkulation-UI als ehrliche
+  Grenze genannte „alles = Material"-Vorbelegung verfeinert. Reine Logik `domain/nachkalkulation.js`
+  **`kostenartFuerKonto(nummer)`** (SKR03-Kontenklasse → Kostenart: **3100–3199 Fremdleistungen → ZUKAUF**,
+  **3000–3999 Wareneingang/RHB → MATERIAL**, **4100–4199 Personalaufwand → ARBEIT**; alles übrige → null →
+  bisheriger Default Material) + **`standardKontoBlock(konten)`** (Map nur aus AUFWAND-Konten mit sicherer Zuordnung);
+  `domain/nachkalkulation-store.js` baut die Map automatisch aus dem Kontenplan und reicht sie in `kostentraegerAnalyse`
+  durch. `opts.kontoBlock` (manuell) gewinnt weiterhin. +22 Tests (**1466/1466**), SW `v120`. **Ehrliche Grenze:**
+  Heuristik nach Kontenklasse (keine exakte Einzelkosten-Zuordnung); Class-4-Gemeinkosten bleiben unklassifiziert;
+  MASCHINE kommt nur über die Zeiteinträge. Glue/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §6)
+
 ### Block 3 — später / umgebungs-blockiert
 - [ ] **Server-Backup-Ziel** (sobald eigener Server existiert) — Stelle 3 der 3-2-1-Sicherung.
 - [ ] **Eingangsrechnungs-Verzug (Gegenseite)** [SOLL] — Spiegel zum Mahnwesen.

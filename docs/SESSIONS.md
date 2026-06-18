@@ -5,6 +5,41 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2: Standard-konto→Kostenart-Zuordnung (Nachkalkulation) [Branch `claude/bookledgerpro-bauplan-s9rjht`]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block-2-Kernkette (4–11) inkl. aller UIs sind komplett. Aus den drei optionalen Folgeschritten
+  (`docs/BAUPLAN.md`/`docs/NAECHSTE_SITZUNG.md`) der **kleinste, voll node-testbare, build-freie**: die **feinere
+  konto→Kostenart-Zuordnung** in der Nachkalkulation (heute zählten alle einem Kostenträger zugeordneten Aufwands-
+  Buchungen pauschal als **Material** — ehrliche Grenze aus der Nachkalkulation-UI). Reine Logik zuerst node-getestet,
+  Glue „statisch geprüft".
+
+**Was getan**
+- **`src/domain/nachkalkulation.js`** (reine Logik, node-getestet): neue Helfer
+  **`kostenartFuerKonto(nummer)`** (SKR03-Kontenklasse → Kostenart: **3100–3199 Fremdleistungen → ZUKAUF**,
+  **3000–3999 Wareneingang/RHB → MATERIAL**, **4100–4199 Personalaufwand → ARBEIT**; alles übrige → null) +
+  **`standardKontoBlock(konten)`** (baut die `kontoBlock`-Map nur aus AUFWAND-Konten mit sicherer Zuordnung).
+  Konten ohne sichere Zuordnung bleiben auf dem bisherigen Default MATERIAL; `opts.kontoBlock` (manuell)
+  **gewinnt** weiterhin vor der Standard-Zuordnung. +22 Tests (**1466/1466**).
+- **`src/domain/nachkalkulation-store.js`** (I/O-Glue): `ladeNachkalkulationKontext` baut `kontoBlock` via
+  `standardKontoBlock(konten)` und reicht es in `kostentraegerAnalyse` durch → die UI klassifiziert Wareneingang/
+  Fremdleistung/Lohn jetzt automatisch korrekt, ohne dass der Nutzer eine Map pflegen muss.
+- **`sw.js`** `CACHE_VERSION` → **v120** (beide Module bereits präcacht, keine neue Datei).
+
+**Stand**
+- `node tests/run.mjs` → **1466/1466 grün** (+22). `node --check` der geänderten Module grün.
+
+**Offen / Nächstes**
+- **Optional (verbleibend):** echte **Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag** (heute werden vorhandene
+  Zeiten/Buchungen nur angezeigt) + **kalibrierte Vorwärtskalkulation** (`kalkuliereKalibriert`, reine Logik steht)
+  im Angebots-Editor.
+- **Ehrliche Grenzen:** Heuristik nach Kontenklasse, **keine** betriebswirtschaftlich exakte Einzelkosten-Zuordnung;
+  Class-4-Gemeinkosten (Miete/Versicherung/…) bleiben absichtlich unklassifiziert (→ Default Material, falls einem
+  Kostenträger zugeordnet); MASCHINE wird NICHT aus Konten abgeleitet (kommt über die Zeiteinträge). Glue/IndexedDB
+  **statisch geprüft** (kein Headless-Browser) — die reine Klassifikation ist node-getestet.
+
+---
+
 ## 2026-06-18 — BAUPLAN Schritt 2d: Demo-Vorbefüllung für Test-Tresore [Branch `claude/bookledgerpro-block2-next-q7pfe4`]
 
 **Ausgangslage / Auswahl**

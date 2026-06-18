@@ -73,6 +73,7 @@ import {
 import {
   istkostenAusBuchungen, istZeitkosten, istkosten,
   sollkostenAusAngebot, nachkalkulation, kostentraegerAnalyse, zeiteintraegeAusZeiten,
+  kostenartFuerKonto, standardKontoBlock,
 } from '../src/domain/nachkalkulation.js';
 import {
   korrekturFaktoren, faktorWerte, kalibriereEingabe, kalkuliereKalibriert,
@@ -4042,6 +4043,61 @@ await section('Nachkalkulation-Store (UI-Glue): zeiteintraegeAusZeiten', () => {
   const zk = istZeitkosten(out, { kostenstelle: 'KT-1' });
   ok('istZeitkosten: nur KT-1-Zeit (2h × 60€) = 12000', zk.summeCent === 12000 && zk.minuten === 120);
   ok('leere Eingabe → leere Liste', zeiteintraegeAusZeiten().length === 0);
+});
+
+await section('Nachkalkulation: Standard-konto→Kostenart (SKR03-Kontenklassen)', () => {
+  // Einzel-Zuordnung nach Kontenklasse.
+  ok('3300 Wareneingang → Material', kostenartFuerKonto('3300') === KOSTENART.MATERIAL);
+  ok('3400 Wareneingang → Material', kostenartFuerKonto('3400') === KOSTENART.MATERIAL);
+  ok('3000 RHB-Stoffe → Material', kostenartFuerKonto('3000') === KOSTENART.MATERIAL);
+  ok('3100 Fremdleistungen → Zukauf', kostenartFuerKonto('3100') === KOSTENART.ZUKAUF);
+  ok('3199 Fremdleistungen (Grenze) → Zukauf', kostenartFuerKonto('3199') === KOSTENART.ZUKAUF);
+  ok('4100 Löhne → Arbeit', kostenartFuerKonto('4100') === KOSTENART.ARBEIT);
+  ok('4130 soziale Aufwendungen → Arbeit', kostenartFuerKonto('4130') === KOSTENART.ARBEIT);
+  ok('4210 Miete → null (Gemeinkosten, unklassifiziert)', kostenartFuerKonto('4210') === null);
+  ok('8400 Erlös → null (kein Aufwand)', kostenartFuerKonto('8400') === null);
+  ok('Müll-Eingabe → null', kostenartFuerKonto('') === null && kostenartFuerKonto(null) === null && kostenartFuerKonto('abc') === null);
+
+  // Map-Bau aus dem Kontenplan: nur AUFWAND-Konten mit sicherer Zuordnung.
+  const map = standardKontoBlock(SKR03_SEED);
+  ok('Map: 3300 → Material', map['3300'] === KOSTENART.MATERIAL);
+  ok('Map: 3400 → Material', map['3400'] === KOSTENART.MATERIAL);
+  ok('Map: 4100 → Arbeit', map['4100'] === KOSTENART.ARBEIT);
+  ok('Map: 4120 → Arbeit', map['4120'] === KOSTENART.ARBEIT);
+  ok('Map: Miete 4210 nicht enthalten (Default Material greift)', !('4210' in map));
+  ok('Map: Bank 1200 (Aktiv) nicht enthalten', !('1200' in map));
+  ok('Map: Erlös 8400 (Ertrag) nicht enthalten', !('8400' in map));
+  // Aufwands-Konto ohne sichere Klassen-Zuordnung bleibt draußen (≙ Default Material).
+  ok('Map: 2100 Zinsaufwand nicht enthalten', !('2100' in map));
+
+  // Durchgereicht an istkostenAusBuchungen: Wareneingang→Material, Fremdleistung→Zukauf,
+  // Lohn→Arbeit — ohne dass der Aufrufer eine kontoBlock-Map von Hand pflegen muss.
+  // (3100 Fremdleistungen ist im SKR03-Seed nicht enthalten, hier als frei angelegtes Konto.)
+  const konten = [
+    { nummer: '3400', art: KONTOART.AUFWAND }, { nummer: '3100', art: KONTOART.AUFWAND },
+    { nummer: '4100', art: KONTOART.AUFWAND }, { nummer: '1200', art: KONTOART.AKTIV },
+  ];
+  const block2 = standardKontoBlock(konten);
+  ok('Map (frei angelegt): 3100 Fremdleistung → Zukauf', block2['3100'] === KOSTENART.ZUKAUF);
+  const kontoIndex = Object.fromEntries(konten.map((k) => [k.nummer, k]));
+  const buchungen = [
+    { id: 'm', seq: 1, datum: '2026-05-02', kostenstelle: 'KT-9',
+      zeilen: [{ konto: '3400', seite: 'S', betrag: 10000 }, { konto: '1200', seite: 'H', betrag: 10000 }] },
+    { id: 'f', seq: 2, datum: '2026-05-03', kostenstelle: 'KT-9',
+      zeilen: [{ konto: '3100', seite: 'S', betrag: 3000 }, { konto: '1200', seite: 'H', betrag: 3000 }] },
+    { id: 'l', seq: 3, datum: '2026-05-04', kostenstelle: 'KT-9',
+      zeilen: [{ konto: '4100', seite: 'S', betrag: 5000 }, { konto: '1200', seite: 'H', betrag: 5000 }] },
+  ];
+  const ist = istkostenAusBuchungen(buchungen, kontoIndex, 'KT-9', { kontoBlock: block2 });
+  ok('Standard-Map: Material 10000 / Zukauf 3000 / Arbeit 5000',
+    ist.perBlock[KOSTENART.MATERIAL] === 10000 && ist.perBlock[KOSTENART.ZUKAUF] === 3000
+    && ist.perBlock[KOSTENART.ARBEIT] === 5000);
+  ok('Standard-Map: Summe 18000', ist.summeCent === 18000);
+
+  // opts.kontoBlock (manuell) gewinnt vor der Standard-Zuordnung.
+  const ueber = istkostenAusBuchungen(
+    [buchungen[0]], kontoIndex, 'KT-9', { kontoBlock: { ...map, '3400': KOSTENART.ZUKAUF } });
+  ok('Manuelle Übersteuerung schlägt Standard: 3400 → Zukauf', ueber.perBlock[KOSTENART.ZUKAUF] === 10000);
 });
 
 await section('Kalibrierung (Block 2/Schritt 10): Korrekturfaktoren', () => {
