@@ -328,6 +328,65 @@ export function liquiditaetsReichweite(verlauf = {}, opts = {}) {
   return { bekannt: true, reicht: true, sofort: false, datum: null, tageBis: null, reserveCent: schwelle, negativ: false };
 }
 
+/** Standard-Anzahl der angezeigten größten Posten („Treiber"). */
+export const LIQUIDITAET_TREIBER_DEFAULT = 3;
+
+/**
+ * Größte bald fällige Bewegungen („Treiber") im Fenster — die einzelnen Posten, die die
+ * Liquiditätsvorschau am stärksten prägen.
+ *
+ * Warum: liquiditaetsVorschau/-Verlauf zeigen nur die SUMMEN/Salden (wie viel, wie tief, bis
+ * wann). Sie beantworten aber nicht die naheliegende Anschlussfrage „WORAN liegt das?" — welche
+ * einzelne Forderung sich einzutreiben lohnt, welche Verbindlichkeit groß ansteht. Diese Schicht
+ * macht genau diese Treiber sichtbar (Drill-down auf dieselbe Datengrundlage).
+ *
+ * Liefert die nach (offenem) Betrag absteigend sortierten Posten aus DEMSELBEN Fenster wie
+ * baldFaellig (Fälligkeit ab heute … heute + Horizont, nicht überfällig), je Eintrag mit Richtung
+ * ('ein' = Forderung/Eingang, 'aus' = Verbindlichkeit/Ausgang), Betrag, Fälligkeit und — sofern
+ * am Posten vorhanden — Name (Kunde/Kreditor) und Referenz (Rechnungsnummer). Auf `limit`
+ * (Default 3) gekürzt; Posten ohne offenen Betrag (≤ 0) fallen heraus. Rein, kein DOM, keine
+ * Wertung — nur Sortierung/Auswahl.
+ * @param {{forderungen?:Array, verbindlichkeiten?:Array, heute?:string, horizontTage?:number,
+ *   limit?:number}} [opts]
+ * @returns {Array<{richtung:'ein'|'aus', betragCent:number, faelligAm:string, name:string,
+ *   referenz:string}>}
+ */
+export function groessteFaellige(opts = {}) {
+  const heute = opts.heute || new Date().toISOString().slice(0, 10);
+  const horizont = opts.horizontTage != null
+    ? Math.max(0, Math.floor(Number(opts.horizontTage) || 0))
+    : LIQUIDITAET_HORIZONT_DEFAULT;
+  const limit = opts.limit != null
+    ? Math.max(0, Math.floor(Number(opts.limit) || 0))
+    : LIQUIDITAET_TREIBER_DEFAULT;
+  const sammle = (posten, richtung) => {
+    const out = [];
+    for (const p of posten || []) {
+      if (!p || !p.faelligAm) continue;
+      const tage = tageDiff(heute, p.faelligAm);
+      if (tage == null || tage < 0 || tage > horizont) continue; // überfällig bzw. außerhalb
+      const betragCent = offenerBetrag(p);
+      if (betragCent <= 0) continue; // nichts mehr offen → kein Treiber
+      out.push({
+        richtung,
+        betragCent,
+        faelligAm: String(p.faelligAm).slice(0, 10),
+        name: p.name ? String(p.name) : '',
+        referenz: p.referenz ? String(p.referenz) : '',
+      });
+    }
+    return out;
+  };
+  const alle = [...sammle(opts.forderungen, 'ein'), ...sammle(opts.verbindlichkeiten, 'aus')];
+  // Größter Betrag zuerst; bei Gleichstand früheste Fälligkeit, dann Name (stabil/deterministisch).
+  alle.sort((a, b) =>
+    b.betragCent - a.betragCent ||
+    (a.faelligAm < b.faelligAm ? -1 : a.faelligAm > b.faelligAm ? 1 : 0) ||
+    a.name.localeCompare(b.name),
+  );
+  return alle.slice(0, limit);
+}
+
 /**
  * Ampel für die projizierte Liquidität: kritisch, wenn der projizierte Saldo negativ wird
  * (nach Plan illiquide); Warnung, wenn der aktuelle Bestand allein die Ausgänge nicht deckt

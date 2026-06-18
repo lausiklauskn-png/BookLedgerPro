@@ -102,8 +102,25 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Liquiditäts-Reichweite"):** SW **v134** · Tests **1675/1675** grün · 117 JS-Module.
-**Liquiditäts-Reichweite („Runway" — bis wann reicht das Geld?) (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #154):**
+**Kopf-Status (Stand nach „Liquiditäts-Treiber"):** SW **v135** · Tests **1689/1689** grün · 117 JS-Module.
+**Liquiditäts-Treiber (größte anstehende Bewegungen) (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zur Reichweite):**
+Die Liquiditäts-Karte zeigte Summen/Salden (wie viel, wie tief, bis wann), aber nicht die naheliegende Anschlussfrage
+„woran liegt das?" — welche einzelne Forderung sich einzutreiben lohnt, welche Verbindlichkeit groß ansteht. Reine Logik
+`domain/liquiditaet.js` (node-getestet, +14 → **1689/1689**): **`groessteFaellige({forderungen, verbindlichkeiten, heute,
+horizontTage, limit})`** — die nach offenem Betrag absteigend sortierten bald fälligen Posten aus DEMSELBEN Fenster wie
+`baldFaellig` (nicht überfällig), je Eintrag `{richtung:'ein'|'aus', betragCent, faelligAm, name, referenz}`, auf `limit`
+(Default 3, Konstante `LIQUIDITAET_TREIBER_DEFAULT`) gekürzt, ≤0-Beträge raus, deterministische Sortierung (Betrag →
+früheste Fälligkeit → Name). UI `ui/views/dashboard.js`: kleine Liste „Größte anstehende Bewegungen" in der Liquiditäts-
+Karte (Wer/Referenz/Datum links, vorzeichenbehafteter Betrag rechts, Eingang +/grün, Ausgang −/rot) über das bestehende
+`report-line`-Layout — gefüttert aus denselben angereicherten Posten. i18n de+en (`dashboard.liquidityDriversLabel`/
+`…DriverIn`/`…DriverOut`), SW `v135` (kein neues Modul). **bucht nichts.** **Ehrliche Grenze:** reine Anzeige/Auswahl,
+keine Finanzberatung; nur über bald fällige, bekannte Posten; DOM/IndexedDB statisch geprüft. **Nächster Schritt
+(optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte oder eine neue,
+abgestimmte Idee.
+
+---
+
+**Davor — Liquiditäts-Reichweite („Runway" — bis wann reicht das Geld?) (BAUPLAN Block 3 — Folgeschritt zu #154):**
 Die Liquiditäts-Karte zeigte Tiefpunkt (tiefster Stand) und Deckungslücke (fehlender Betrag), aber nicht die intuitivste
 Antwort auf die im Karten-Code selbst gestellte Frage „reicht das Geld?": **bis wann**. Der Tiefpunkt nennt den *tiefsten*
 Tag, die Reichweite den *frühesten* Engpass (kann VOR dem Tiefpunkt liegen). Reine Logik `domain/liquiditaet.js`
