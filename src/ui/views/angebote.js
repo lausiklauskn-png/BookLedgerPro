@@ -30,7 +30,8 @@ import {
   baukastenPalette, haeufigsteSchemata, zaehleNutzung, normalizeNutzung,
   verschiebePosition, verschiebeNachOben, verschiebeNachUnten,
 } from '../../domain/baukasten.js';
-import { listAngebote, saveAngebot, getAngebot, deleteAngebot, setzeAngebotStatusStore } from '../../domain/angebote-store.js';
+import { listAngebote, saveAngebot, getAngebot, deleteAngebot, setzeAngebotStatusStore, rechnungAusAngebot } from '../../domain/angebote-store.js';
+import { darfAngebotUebernehmen } from '../../domain/angebotUebernahme.js';
 import { listKunden, listKostenstellen, ensureKostenstellenSeeded } from '../../domain/crm-store.js';
 import { getSettings, updateSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
@@ -347,6 +348,23 @@ function zeile(a) {
 
 function aktionen(a) {
   const wrap = el('div', { class: 'btn-row' });
+  // „Rechnung aus Angebot" — nur an einem ANGENOMMENEN, gültigen Angebot (darfAngebotUebernehmen).
+  // Erzeugt einen Buchungs-Entwurf (Nummernpolitik je rechnungsstelle), referenziert die
+  // Angebotsnummer und archiviert das Angebot. Festschreiben bleibt manuell (GoBD) → Hinweis.
+  if (darfAngebotUebernehmen(a)) {
+    wrap.appendChild(el('button', {
+      class: 'btn btn-sm btn-primary', type: 'button', text: t('angebote.toInvoice'),
+      onClick: async () => {
+        if (!confirm(t('angebote.confirmInvoice'))) return;
+        try {
+          const { entwurf } = await rechnungAusAngebot(a.id);
+          const text = (entwurf.vorlaeufig ? t('angebote.invoiceDoneVorlaeufig') : t('angebote.invoiceDone'))
+            .replace('{nummer}', entwurf.nummer);
+          await repaint(el('div', { class: 'banner banner-warn', text }));
+        } catch (e) { alert(String(e.message || e)); }
+      },
+    }));
+  }
   for (const next of ANGEBOT_STATUS_FLOW[a.status] || []) {
     wrap.appendChild(el('button', {
       class: 'btn btn-sm', type: 'button', text: t('angebote.aktion.' + next),

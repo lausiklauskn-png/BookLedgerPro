@@ -24,29 +24,22 @@ PR, jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schnei
 1 #116 · 2a #118 · 2b #120 · 2c #122 · 3 #124) · **Block 2: Schritt 4 `rechnungsstelle` ✅ #125 · 5 Kalkulations-Kern ✅
 #126 · 6 Produkt-Schemata ✅ #127 · 7 Angebote-Kern ✅ #128 · 8 Angebot→Rechnung-Übernahme (rein) ✅ #129 · 9
 Nachkalkulation ✅ #130 · 10 Kalibrierung ✅ #131 · 11a Adaptiver Baukasten — reine Logik ✅ #132 · 11b Adaptiver
-Baukasten — UI ✅** (`ui/views/angebote.js` Angebots-Ansicht + `domain/angebote-store.js` verschlüsselte Store-Glue;
-adaptive Karten je Leistungsart via `baukastenPalette`/`haeufigsteSchemata` + Nutzungsprofil gerätelokal in Settings
-`baukastenNutzungsprofil` via `zaehleNutzung`; Drag-and-drop-Positionsliste `verschiebePosition` + Pfeile ↑/↓;
-Live-Deckungsbeitrag `interneAuswertung` als „intern — nicht im Angebot"; Status-Workflow + Archiv; neutrales
-Angebotsdokument nur über `externesAngebot`-Whitelist; SW `v116`, 1427/1427 grün, **DOM/IndexedDB statisch geprüft**).
-Nächste offene Schritte:
+Baukasten — UI ✅** (`ui/views/angebote.js` + `domain/angebote-store.js`; SW `v116`) · **Schritt 8-UI „Rechnung aus
+Angebot" ✅** (Knopf in `ui/views/angebote.js` + Store-Glue `domain/angebote-store.js rechnungAusAngebot(id)` über die
+reine Logik `domain/angebotUebernahme.js`; Nummernpolitik je `rechnungsstelle` mit getrennten Zählern
+`crm-store.naechsteRechnungSeq` (§14, lückenlos, geteilt mit `rechnungAusAuftrag`) bzw. `naechsteVorlaeufigeSeq`
+(`ENT-…`, extern); Angebotsnummer nur referenziert; Angebot→archiviert; Festschreiben manuell; Prime Directive: nur
+`externesAngebot`; SW `v117`, **1427/1427 grün**, **DOM/IndexedDB/kv-Zähler statisch geprüft**).
+**Damit ist die Block-2-Kernkette komplett inkl. „Rechnung aus Angebot".** Nächste offene Schritte (alle optional):
 
-1. **NÄCHSTER SCHRITT — Block 2/Schritt 8-UI: „Rechnung aus Angebot"** (`docs/KALKULATION_KATALOG.md` §4/§7a). Die UI
-   über der bereits fertigen reinen Logik `domain/angebotUebernahme.js` (`angebotUebernahmeEntwurf`/
-   `darfAngebotUebernehmen`/`uebernahmeNummer`/`validateAngebotUebernahme`): In der Angebots-Ansicht (`ui/views/angebote.js`)
-   ein Knopf **„Rechnung aus Angebot"** an einem **angenommenen** Angebot → erzeugt einen Buchungs-**Entwurf** über den
-   bestehenden Pfad (`crm-store.saveEntwurf`/`naechsteRechnungsnummer` bzw. analog), **Nummernpolitik je `rechnungsstelle`**
-   (`blp` → echte §14-Nummer; `extern` → vorläufige Vorlage `ENT-JJJJ-NNNN`, keine §14-Nummer), **referenziert** die
-   Angebotsnummer (benutzt sie nie wieder), setzt das Angebot danach auf **archiviert**. Festschreiben bleibt manuell
-   (GoBD). Store-Glue ggf. in `domain/angebote-store.js` ergänzen (z. B. `rechnungAusAngebot(id)`), reine Logik bleibt in
-   `angebotUebernahme.js`. **DOM/IndexedDB als „statisch geprüft" kennzeichnen.** Prime Directive: nur `externesAngebot`,
-   keine interne Kalkulation im Entwurf.
-2. **Optional, Folgeschritt zu Schritt 9/10:** **UI „Nachkalkulation/Kostenträger + Kalibrierung"** (Zeiterfassung je
-   Auftrag, Beleg-/Buchungs-Zuordnung, Soll/Ist-Anzeige `nachkalkulation`, Korrekturfaktoren-Pflege/Trefferquote
-   `kalibrierung`) — die reine Logik (`nachkalkulation.js`/`kalibrierung.js`) steht bereits.
-3. **Optional, kleiner Folgeschritt zu Schritt 2c:** **Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) — ein
+1. **NÄCHSTER SCHRITT (optional, reine Logik steht schon — nur UI): „Nachkalkulation/Kostenträger + Kalibrierung"**
+   (Zeiterfassung je Auftrag, Beleg-/Buchungs-Zuordnung, Soll/Ist-Anzeige `nachkalkulation`, Korrekturfaktoren-Pflege/
+   Trefferquote `kalibrierung`) — die reine Logik (`domain/nachkalkulation.js`/`domain/kalibrierung.js`) steht bereits
+   node-getestet. UI dazu bauen; DOM/IndexedDB als „statisch geprüft" kennzeichnen. Prime Directive: Nachkalkulation/
+   Faktoren rein intern.
+2. **Optional, kleiner Folgeschritt zu Schritt 2c:** **Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) — ein
    neuer Test wahlweise leer **oder** mit Demo-Daten starten.
-4. **Optional, Schritt 4 der Datensicherung (`docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server) +
+3. **Optional, Schritt 4 der Datensicherung (`docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server) +
    konfigurierbare Erinnerungs-Kadenz — **blockiert/zurückgestellt**, solange kein eigener Server existiert.
 
 RITUAL JE PR (verbindlich, automatisch durchziehen):
@@ -80,10 +73,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 11b (Adaptiver Baukasten — UI: Angebots-Ansicht
-`ui/views/angebote.js` + verschlüsselte Store-Glue `domain/angebote-store.js`)**. Tests **1427/1427** · SW **v116** ·
-112 JS-Module. **Block 1 KOMPLETT**; **Block-2-Kernkette (Schritte 4–11) KOMPLETT.**
-**Nächster Schritt: Block 2/Schritt 8-UI — „Rechnung aus Angebot"** (UI/Glue über der fertigen reinen Logik
-`domain/angebotUebernahme.js`; Knopf am angenommenen Angebot → Buchungs-Entwurf, Nummernpolitik je `rechnungsstelle`,
-Angebot→archiviert). Optional: UI „Nachkalkulation/Kostenträger + Kalibrierung"; Demo-Vorbefüllung (`domain/demodaten.js`).
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 8-UI („Rechnung aus Angebot": Knopf in
+`ui/views/angebote.js` + Store-Glue `domain/angebote-store.js rechnungAusAngebot` über die reine Logik
+`domain/angebotUebernahme.js`; Nummernpolitik je `rechnungsstelle` mit getrennten Zählern
+`crm-store.naechsteRechnungSeq`/`naechsteVorlaeufigeSeq`; Angebot→archiviert)**. Tests **1427/1427** · SW **v117** ·
+112 JS-Module. **Block 1 KOMPLETT**; **Block-2-Kernkette (Schritte 4–11) inkl. „Rechnung aus Angebot" KOMPLETT.**
+**Nächster Schritt (optional): UI „Nachkalkulation/Kostenträger + Kalibrierung"** (über der fertigen reinen Logik
+`domain/nachkalkulation.js`/`domain/kalibrierung.js`); alternativ Demo-Vorbefüllung (`domain/demodaten.js`).
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

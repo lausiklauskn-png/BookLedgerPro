@@ -11,12 +11,39 @@ import { formatRechnungsnummer } from './rechnung.js';
 import { saveEntwurf } from './store.js';
 
 const RECHNUNG_SEQ_KEY = 'rechnungSeq';
+// Eigener Zähler für VORLÄUFIGE Vorlagen-Nummern (ENT-JJJJ-NNNN) im extern-Modus
+// (rechnungsstelle === 'extern'). STRIKT getrennt vom lückenlosen §14-Kreis: eine
+// vorläufige Vorlage ist KEINE §14-Rechnung, also darf sie den GoBD-Kreis nicht antasten.
+const VORLAEUFIG_SEQ_KEY = 'vorlaeufigRechnungSeq';
+
+/**
+ * Reserviert die nächste laufende Zahl im lückenlosen §14-Kreis (ein einziger Zähler für
+ * BookLedgerPro). Beide Wege — `rechnungAusAuftrag` und „Rechnung aus Angebot" (blp) —
+ * ziehen aus DIESEM Zähler, damit der §14-Nummernkreis lückenlos und kollisionsfrei bleibt.
+ * @returns {Promise<number>} die reservierte laufende Zahl (1-basiert)
+ */
+export async function naechsteRechnungSeq() {
+  const seq = (Number(await kvGet(RECHNUNG_SEQ_KEY)) || 0) + 1;
+  await kvSet(RECHNUNG_SEQ_KEY, seq);
+  return seq;
+}
 
 /** Vergibt die nächste fortlaufende Rechnungsnummer (§14(4) Nr.4) — Format JAHR-NNNN. */
 export async function naechsteRechnungsnummer() {
-  const seq = (Number(await kvGet(RECHNUNG_SEQ_KEY)) || 0) + 1;
-  await kvSet(RECHNUNG_SEQ_KEY, seq);
+  const seq = await naechsteRechnungSeq();
   return formatRechnungsnummer(seq, new Date().getFullYear());
+}
+
+/**
+ * Reserviert die nächste laufende Zahl im VORLÄUFIGEN Vorlagen-Kreis (ENT-JJJJ-NNNN,
+ * extern-Modus). Eigener Zähler — der §14-Kreis bleibt unberührt. Frei (kein GoBD-Zwang),
+ * dient nur der internen Unterscheidbarkeit der Vorlagen.
+ * @returns {Promise<number>} die reservierte laufende Zahl (1-basiert)
+ */
+export async function naechsteVorlaeufigeSeq() {
+  const seq = (Number(await kvGet(VORLAEUFIG_SEQ_KEY)) || 0) + 1;
+  await kvSet(VORLAEUFIG_SEQ_KEY, seq);
+  return seq;
 }
 
 /**

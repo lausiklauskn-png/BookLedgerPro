@@ -5,6 +5,44 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2/Schritt 8-UI: „Rechnung aus Angebot" (UI + Store-Glue) [Branch `claude/rechnung-aus-angebot-ui`]
+
+**Ausgangslage / Auswahl**
+- Laut `docs/BAUPLAN.md`/`docs/NAECHSTE_SITZUNG.md` ist der nächste Schritt die **UI über der bereits fertigen,
+  node-getesteten reinen Logik** `domain/angebotUebernahme.js` (PR #129): ein Knopf „Rechnung aus Angebot" an einem
+  angenommenen Angebot. Dieser Schritt ist **UI + Store-Glue (I/O)** → DOM/IndexedDB/kv-Zähler ehrlich als
+  **„statisch geprüft"** gekennzeichnet (kein Headless-Browser). Keine neue reine Logik nötig.
+
+**Was getan**
+- **`src/domain/crm-store.js`**: den lückenlosen §14-Zähler refaktoriert — neues `naechsteRechnungSeq()` reserviert
+  die nächste laufende Zahl (1-basiert), `naechsteRechnungsnummer()` baut darauf auf (Verhalten unverändert). So
+  ziehen `rechnungAusAuftrag` **und** „Rechnung aus Angebot" (blp) aus **einem** §14-Kreis → lückenlos/kollisionsfrei.
+  Neuer, **getrennter** Zähler `naechsteVorlaeufigeSeq()` (`vorlaeufigRechnungSeq`) für die vorläufigen
+  Vorlagen-Nummern `ENT-JJJJ-NNNN` im extern-Modus (GoBD-neutral, tastet den §14-Kreis nicht an).
+- **`src/domain/angebote-store.js`**: neue Store-Glue `rechnungAusAngebot(id)` — lädt das Angebot, validiert
+  (`validateAngebotUebernahme`), wählt den Zähler je `rechnungsstelle` (`vergibtBlpNummern` → `naechsteRechnungSeq`
+  bzw. `naechsteVorlaeufigeSeq`), baut den Entwurf über die reine Logik `angebotUebernahmeEntwurf` (Prime Directive:
+  nur `externesAngebot`), speichert ihn als Buchungs-**Entwurf** (`store.saveEntwurf`) und setzt das Angebot
+  **→ archiviert** (`angenommen → archiviert`). Festschreiben bleibt **manuell** (GoBD).
+- **`src/ui/views/angebote.js`**: Knopf **„Rechnung aus Angebot"** in den Zeilen-Aktionen, nur sichtbar wenn
+  `darfAngebotUebernehmen(a)` (angenommen + gültige AN-Nummer + Positionen). Confirm-Dialog → `rechnungAusAngebot` →
+  Banner mit der vergebenen Nummer + Hinweis „im Journal prüfen und festschreiben" (eigener Text für die vorläufige
+  `ENT-…`-Vorlage im extern-Modus). i18n de+en (`angebote.toInvoice`/`confirmInvoice`/`invoiceDone`/
+  `invoiceDoneVorlaeufig`).
+- **`sw.js`**: `CACHE_VERSION` → `v117` (alle Module waren bereits precached).
+
+**Stand**
+- `node tests/run.mjs` → **1427/1427 grün** (reine Logik war #129; dieser Schritt ist UI/Glue, keine neuen Tests).
+  Import-Smoke (`angebote-store.js`) ohne Zyklus geladen. Syntax-Checks grün.
+
+**Offen / Nächstes**
+- **Optional (reine Logik steht): UI „Nachkalkulation/Kostenträger + Kalibrierung"** (Soll/Ist, Trefferquote —
+  `nachkalkulation.js`/`kalibrierung.js`). **Optional: Demo-Vorbefüllung** (`domain/demodaten.js`).
+- **Ehrliche Grenze:** DOM/IndexedDB/kv-Zähler nur statisch geprüft. Der echte Klickpfad (Angebot annehmen →
+  „Rechnung aus Angebot" → Journal → Festschreiben) ist im Browser noch nicht vom Nutzer bestätigt.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2/Schritt 11b: Adaptiver Baukasten — UI (Angebots-Ansicht + Store-Glue) [Branch `claude/baukasten-logic-step-11a-cbj8s8`]
 
 **Ausgangslage / Auswahl**
