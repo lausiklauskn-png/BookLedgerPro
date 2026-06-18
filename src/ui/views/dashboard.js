@@ -9,6 +9,8 @@ import { getMandantId } from '../../core/vault.js';
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
 import { listBelege } from '../../domain/documents.js';
 import { listKunden, listAuftraege } from '../../domain/crm-store.js';
+import { listEingangsrechnungen } from '../../domain/payables-store.js';
+import { verzugReport, verzugAmpel, VERZUG_AMPEL } from '../../domain/eingangsverzug.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
 import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
@@ -21,9 +23,11 @@ export async function mountDashboard(host) {
   const wjBeginn = s.wirtschaftsjahrBeginn || '01-01';
   const heute = new Date().toISOString().slice(0, 10);
   const jahr = wirtschaftsjahrVon(heute, wjBeginn);
-  const [konten, buchungen, belege, kunden, auftraege, audit] = await Promise.all([
+  const zeigePayables = zeigeAnsicht(s, 'payables');
+  const [konten, buchungen, belege, kunden, auftraege, audit, eingangsrechnungen] = await Promise.all([
     loadAccounts(), listBuchungen(), listBelege().catch(() => []),
     listKunden().catch(() => []), listAuftraege().catch(() => []), verifyAuditChain().catch(() => ({ ok: true, count: 0 })),
+    zeigePayables ? listEingangsrechnungen().catch(() => []) : Promise.resolve([]),
   ]);
   const idx = {};
   for (const k of konten) idx[k.nummer] = k;
@@ -34,6 +38,31 @@ export async function mountDashboard(host) {
     el('div', { class: 'kpi-value', text: value }),
     el('div', { class: 'kpi-label', text: label }),
   ]);
+
+  // Block 3 — eigene Zahlungsdisziplin: überfällige Verbindlichkeiten auf einen Blick.
+  // Reine Logik eingangsverzug.verzugReport/verzugAmpel (node-getestet). Nur sichtbar im
+  // Firmen-/Vereins-Kontext (FEATURE/Ansicht „payables") UND wenn etwas überfällig ist —
+  // sonst kein Lärm auf der Übersicht. Klick → Verbindlichkeiten-Ansicht. Bucht nichts.
+  const verzugKarte = () => {
+    if (!zeigePayables) return null;
+    const { uebersicht } = verzugReport(eingangsrechnungen, {
+      basiszinsProzent: s.verzugBasiszinsProzent,
+    });
+    if (!uebersicht.ueberfaelligAnzahl) return null;
+    const ampel = verzugAmpel(uebersicht);
+    const ampelCls = ampel === VERZUG_AMPEL.KRITISCH ? 'kpi-neg' : '';
+    return el('div', { class: 'card' }, [
+      el('h2', { class: 'card-title', text: t('dashboard.overduePayablesTitle') }),
+      el('div', { class: 'kpi-grid small-kpi' }, [
+        kpi(t('dashboard.overduePayablesCount'), `${uebersicht.ueberfaelligAnzahl} / ${uebersicht.anzahl}`, ampelCls),
+        kpi(t('dashboard.overduePayablesSum'), formatEuro(uebersicht.ueberfaelligCent), ampelCls),
+        kpi(t('dashboard.overduePayablesRisk'), formatEuro(uebersicht.zinsRisikoCent)),
+      ]),
+      el('div', { class: 'btn-row' }, [
+        el('button', { class: 'btn', text: t('nav.payables'), onClick: () => navigate('payables') }),
+      ]),
+    ]);
+  };
 
   mount(host, el('section', { class: 'view' }, [
     el('div', { class: 'dash-head' }, [
@@ -58,6 +87,8 @@ export async function mountDashboard(host) {
       zeigeAnsicht(s, 'customers') ? kpi(t('nav.customers'), String(kunden.length)) : null,
       zeigeAnsicht(s, 'orders') ? kpi(t('nav.orders'), String(auftraege.length)) : null,
     ]),
+
+    verzugKarte(),
 
     MycelDivider(),
 
