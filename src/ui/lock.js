@@ -11,7 +11,14 @@ import { updateSettings } from '../state.js';
 import { MycelMark } from './mycel.js';
 import { createMycelBackground } from './mycelCanvas.js';
 import { ladeRegistry, registriereMandant, wechsleAktivenMandant } from '../core/mandantenStore.js';
-import { brauchtMandantenAuswahl, mandantenAuswahlListe, validateMandantName } from '../domain/mandanten.js';
+import {
+  erstelleSandboxTresor, wechsleZuSandbox, leereSandboxTresor,
+  loescheSandboxTresor, loescheAlleSandboxes,
+} from '../core/sandboxStore.js';
+import {
+  brauchtMandantenAuswahl, mandantenAuswahlListe, validateMandantName,
+  aktiverSandbox, echteMandanten, sandboxAuswahlListe, naechsterTestName,
+} from '../domain/mandanten.js';
 
 /**
  * Rendert Lock/Onboarding in `container`.
@@ -26,7 +33,12 @@ import { brauchtMandantenAuswahl, mandantenAuswahlListe, validateMandantName } f
 export async function showLockScreen(container) {
   const registry = await ladeRegistry();
   return new Promise((resolve) => {
-    if (brauchtMandantenAuswahl(registry)) {
+    // Test-Modus (docs/TEST_MODUS.md): steht ein Sandbox-Tresor aktiv (frisch angelegt oder
+    // „behalten" + neu geladen) → direkt dort entsperren/onboarden, damit man im Test
+    // weitermacht, wo man war. Ein klarer Rückweg führt zurück zur echten Welt.
+    if (aktiverSandbox(registry)) {
+      renderSandboxEinstieg(container, resolve, registry);
+    } else if (brauchtMandantenAuswahl(registry)) {
       renderMandantenAuswahl(container, resolve);
     } else {
       // 0 Mandanten (frische Installation) oder genau 1 (Bestand): auf der aktiven DB
@@ -35,6 +47,20 @@ export async function showLockScreen(container) {
       enterAktivenMandant(container, resolve, { kannHinzufuegen: registry.mandanten.length > 0 });
     }
   });
+}
+
+// Wiedereinstieg in den aktiven Test-Tresor (entsperren bzw. onboarden, falls geleert).
+// „Zurück" führt zur echten Welt: bei mehreren echten Mandanten zur Auswahl, bei genau
+// einem direkt dorthin (vorher aktiv umschalten), ohne echte Daten anzufassen.
+function renderSandboxEinstieg(container, resolve, registry) {
+  const sandbox = aktiverSandbox(registry);
+  const zurueck = async () => {
+    const echte = echteMandanten(registry);
+    if (echte.length > 1) { renderMandantenAuswahl(container, resolve); }
+    else if (echte.length === 1) { await wechsleAktivenMandant(echte[0].id); enterAktivenMandant(container, resolve, {}); }
+    else { renderTestsAuswahl(container, resolve, null); }
+  };
+  enterAktivenMandant(container, resolve, { sandbox: true, mandantName: sandbox?.name, zurueck });
 }
 
 /** Entsperrt den aktiven Mandanten oder startet dessen Onboarding (frische Tresor-DB). */
@@ -70,12 +96,18 @@ function renderMandantenAuswahl(container, resolve) {
       onClick: () => renderNeuerMandant(container, resolve, zurueck),
     });
 
+    const tests = el('button', {
+      class: 'btn btn-link test-link', type: 'button', text: t('test.open'),
+      onClick: () => renderTestsAuswahl(container, resolve, zurueck),
+    });
+
     mount(container, shell([
       el('h1', { text: t('mandant.selectTitle') }),
       el('p', { class: 'muted', text: t('mandant.selectIntro') }),
       el('div', { class: 'mandant-list' }, items),
       neu,
       el('p', { class: 'muted small', text: t('mandant.dsgvo') }),
+      tests,
     ]));
   });
 }
@@ -121,6 +153,97 @@ function renderNeuerMandant(container, resolve, zurueck) {
   name.focus();
 }
 
+// ---- Test-Modus (Sandbox-Tresore, docs/TEST_MODUS.md) -----------------------
+// „🧪 Tests"-Bereich am Sperrbildschirm: vorhandene Tests öffnen/leeren/löschen, neuen Test
+// anlegen, „Alle Tests löschen". Die reine Lebenszyklus-Logik liegt node-getestet im Kern
+// (domain/mandanten.js) + der Store-Glue (core/sandboxStore.js); dieser DOM-Pfad ist
+// „statisch geprüft" (kein Headless-Browser). Echte Daten bleiben unberührt (eigene DBs).
+
+function renderTestsAuswahl(container, resolve, zurueck) {
+  ladeRegistry().then((registry) => {
+    const rerender = () => renderTestsAuswahl(container, resolve, zurueck);
+    const tests = sandboxAuswahlListe(registry);
+
+    const oeffne = async (id) => {
+      await wechsleZuSandbox(id);  // DEK verwerfen + auf die Sandbox-DB schalten
+      await enterAktivenMandant(container, resolve, { sandbox: true, zurueck: rerender });
+    };
+    const leeren = async (m) => {
+      if (!confirm(t('test.confirmLeeren').replace('{name}', m.name))) return;
+      await leereSandboxTresor(m.id); rerender();
+    };
+    const loeschen = async (m) => {
+      if (!confirm(t('test.confirmLoeschen').replace('{name}', m.name))) return;
+      await loescheSandboxTresor(m.id); rerender();
+    };
+
+    const rows = tests.map((m) => el('div', { class: 'mandant-admin-row' }, [
+      el('button', { class: 'btn test-open', type: 'button', onClick: () => oeffne(m.id) }, [
+        el('span', { class: 'mandant-name', text: m.name }),
+        m.aktiv ? el('span', { class: 'mandant-badge', text: t('test.active') }) : null,
+      ]),
+      el('button', { class: 'btn btn-sm', type: 'button', text: t('test.leeren'), onClick: () => leeren(m) }),
+      el('button', { class: 'btn btn-sm btn-danger', type: 'button', text: t('common.delete'), onClick: () => loeschen(m) }),
+    ]));
+
+    const alleLoeschen = tests.length ? el('button', {
+      class: 'btn btn-sm btn-danger', type: 'button', text: t('test.alleLoeschen'),
+      onClick: async () => { if (!confirm(t('test.confirmAlle'))) return; await loescheAlleSandboxes(); rerender(); },
+    }) : null;
+
+    mount(container, shell([
+      el('h1', { text: t('test.title') }),
+      el('p', { class: 'muted', text: t('test.intro') }),
+      tests.length
+        ? el('div', { class: 'mandant-admin' }, rows)
+        : el('p', { class: 'muted small', text: t('test.empty') }),
+      el('div', { class: 'btn-row' }, [
+        el('button', { class: 'btn btn-primary', type: 'button', text: t('test.neu'), onClick: () => renderNeuerTest(container, resolve, rerender) }),
+        alleLoeschen,
+      ]),
+      el('p', { class: 'muted small', text: t('test.hinweis') }),
+      zurueck ? el('button', { class: 'btn btn-link', type: 'button', text: t('common.back'), onClick: zurueck }) : null,
+    ], './assets/img/onboard-key.png'));
+  });
+}
+
+// Legt einen NEUEN, leeren Test-Tresor an (eigene Sandbox-DB) und führt anschließend in
+// dessen verschlanktes Onboarding (nur Passwort — ein Test ist kein Backup, vgl. Spec).
+function renderNeuerTest(container, resolve, zurueck) {
+  ladeRegistry().then((registry) => {
+    const err = el('p', { class: 'form-error', role: 'alert' });
+    const name = el('input', { type: 'text', value: naechsterTestName(registry), placeholder: t('test.name') });
+    const btn = el('button', { class: 'btn btn-primary', type: 'submit', text: t('test.create') });
+
+    const form = el('form', {
+      class: 'lock-form',
+      onSubmit: async (e) => {
+        e.preventDefault();
+        err.textContent = '';
+        const fehler = validateMandantName(name.value);
+        if (fehler) { err.textContent = fehler; return; }
+        btn.setAttribute('disabled', '');
+        try {
+          const { mandant } = await erstelleSandboxTresor(name.value);
+          renderOnboarding(container, resolve, { mandantName: mandant.name, sandbox: true });
+        } catch (ex) {
+          err.textContent = ex?.message || String(ex);
+          btn.removeAttribute('disabled');
+        }
+      },
+    }, [
+      el('h1', { text: t('test.newTitle') }),
+      el('p', { class: 'muted', text: t('test.newIntro') }),
+      el('label', { class: 'field' }, [el('span', { text: t('test.name') }), name]),
+      err, btn,
+      el('button', { class: 'btn btn-link', type: 'button', text: t('common.back'), onClick: zurueck }),
+    ]);
+
+    mount(container, shell([form], './assets/img/onboard-key.png'));
+    name.focus(); name.select();
+  });
+}
+
 function shell(children, hero = './assets/img/hero-lock.png') {
   return el('div', { class: 'lock-screen' }, [
     createMycelBackground(),
@@ -155,21 +278,44 @@ function renderUnlock(container, resolve, opts = {}) {
       }
     },
   }, [
+    // Test-Modus: deutlich kennzeichnen, dass hier ein Test-Tresor entsperrt wird (echte Daten unberührt).
+    opts.sandbox
+      ? el('p', { class: 'muted small mandant-context', text: t('test.unlockNote').replace('{name}', opts.mandantName || '') })
+      : null,
     el('h1', { text: t('lock.title') }),
     el('label', { class: 'field' }, [el('span', { text: t('lock.password') }), pwd]),
     err, btn,
-    // Zur Mandanten-Auswahl zurück (wenn aus der Auswahl gekommen) bzw. weiteren
-    // Mandanten anlegen (Bootstrap bei genau einem Mandanten, bis M3 den Shell-Trigger bringt).
+    ...unlockLinks(container, resolve, opts),
+  ]);
+
+  mount(container, shell([form]));
+  pwd.focus();
+}
+
+// Fußzeilen-Links des Entsperr-Bildschirms — je nach Kontext: im Test-Tresor zurück zur
+// echten Welt + Tests verwalten; sonst Mandanten wechseln/anlegen + Einstieg in den Test-Modus.
+function unlockLinks(container, resolve, opts) {
+  if (opts.sandbox) {
+    return [
+      el('button', { class: 'btn btn-link', type: 'button', text: t('test.manage'),
+        onClick: () => renderTestsAuswahl(container, resolve, () => enterAktivenMandant(container, resolve, opts)) }),
+      opts.zurueck
+        ? el('button', { class: 'btn btn-link', type: 'button', text: t('test.backToReal'), onClick: opts.zurueck })
+        : null,
+    ];
+  }
+  // Zur Mandanten-Auswahl zurück (wenn aus der Auswahl gekommen) bzw. weiteren Mandanten
+  // anlegen (Bootstrap bei genau einem Mandanten); zusätzlich Einstieg in den Test-Modus.
+  return [
     opts.zurueck
       ? el('button', { class: 'btn btn-link', type: 'button', text: t('mandant.switch'), onClick: opts.zurueck })
       : (opts.kannHinzufuegen
         ? el('button', { class: 'btn btn-link', type: 'button', text: t('mandant.new'),
             onClick: () => renderNeuerMandant(container, resolve, () => enterAktivenMandant(container, resolve, opts)) })
         : null),
-  ]);
-
-  mount(container, shell([form]));
-  pwd.focus();
+    el('button', { class: 'btn btn-link test-link', type: 'button', text: t('test.open'),
+      onClick: () => renderTestsAuswahl(container, resolve, () => enterAktivenMandant(container, resolve, opts)) }),
+  ];
 }
 
 // ---- Onboarding -------------------------------------------------------------
@@ -177,10 +323,13 @@ function renderUnlock(container, resolve, opts = {}) {
 function renderOnboarding(container, resolve, opts = {}) {
   const state = { password: null, backupDone: false };
   // Beim Anlegen eines weiteren Mandanten zeigt eine Kopfzeile, für welchen Mandanten
-  // dieser eigene Tresor (Passwort/Shamir/Backup) gerade eingerichtet wird.
-  const mandantNote = opts.mandantName
-    ? el('p', { class: 'muted small mandant-context', text: t('mandant.onboardFor').replace('{name}', opts.mandantName) })
-    : null;
+  // dieser eigene Tresor (Passwort/Shamir/Backup) gerade eingerichtet wird. Test-Tresore
+  // bekommen einen eigenen Hinweis (wegwerfbarer Spielplatz, eigenes Test-Passwort).
+  const mandantNote = opts.sandbox
+    ? el('p', { class: 'muted small mandant-context', text: t('test.onboardFor').replace('{name}', opts.mandantName || '') })
+    : (opts.mandantName
+      ? el('p', { class: 'muted small mandant-context', text: t('mandant.onboardFor').replace('{name}', opts.mandantName) })
+      : null);
 
   function stepPassword() {
     const err = el('p', { class: 'form-error', role: 'alert' });
@@ -198,12 +347,15 @@ function renderOnboarding(container, resolve, opts = {}) {
         btn.setAttribute('disabled', '');
         state.password = p1.value;
         const { shares } = await setupVault(state.password);
+        // Test-Tresor: verschlankt — nur ein Test-Passwort, kein Shamir-/Backup-Gate
+        // (ein Test ist ausdrücklich KEIN Backup, docs/TEST_MODUS.md) → direkt in die App.
+        if (opts.sandbox) { resolve(); return; }
         stepShamir(shares);
       },
     }, [
       mandantNote,
-      el('h1', { text: t('onboard.title') }),
-      el('p', { class: 'muted', text: t('onboard.intro') }),
+      el('h1', { text: opts.sandbox ? t('test.onboardTitle') : t('onboard.title') }),
+      el('p', { class: 'muted', text: opts.sandbox ? t('test.onboardIntro') : t('onboard.intro') }),
       el('label', { class: 'field' }, [el('span', { text: t('onboard.password') }), p1]),
       el('label', { class: 'field' }, [el('span', { text: t('onboard.passwordRepeat') }), p2]),
       err, btn,

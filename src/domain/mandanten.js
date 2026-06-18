@@ -200,6 +200,32 @@ export function sandboxAuswahlListe(registry) {
   return sortierteAuswahl(sandboxMandanten(registry), registry?.aktiv ?? null);
 }
 
+/**
+ * Liefert den AKTIVEN Mandanten nur dann, wenn er ein Sandbox-/Test-Tresor ist (sonst
+ * `null`). Grundlage für den dauerhaften TEST-MODUS-Banner und den „behalten/verwerfen"-
+ * Dialog beim Verlassen — die UI muss wissen, ob gerade in einem Test gearbeitet wird.
+ * Reine Funktion (node-getestet).
+ */
+export function aktiverSandbox(registry) {
+  const m = aktiverMandant(registry);
+  return istSandbox(m) ? m : null;
+}
+
+/**
+ * Schlägt einen fortlaufenden Default-Namen für einen NEUEN Test vor („Test 1", „Test 2", …).
+ * Wertet vorhandene „<prefix> N"-Namen aus und nimmt das Maximum + 1, damit nach dem Löschen
+ * einzelner Tests kein unmittelbarer Namens-Doppler entsteht. Reine Funktion (node-getestet).
+ */
+export function naechsterTestName(registry, prefix = 'Test') {
+  const re = new RegExp(`^${prefix} (\\d+)$`);
+  let max = 0;
+  for (const m of sandboxMandanten(registry)) {
+    const treffer = re.exec((m?.name ?? '').trim());
+    if (treffer) max = Math.max(max, Number(treffer[1]));
+  }
+  return `${prefix} ${max + 1}`;
+}
+
 /** Gemeinsame Sortier-/Projektions-Hilfe für die Auswahl-Listen. */
 function sortierteAuswahl(mandanten, aktiv) {
   return [...mandanten]
