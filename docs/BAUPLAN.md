@@ -72,8 +72,15 @@
   **rückwärts** `maxSelbstkosten`/`kalkuliereRueckwaerts` (Zielpreis/-marge → erlaubte Selbstkosten,
   Restbudget, max. Arbeitsstunden — konservativ `floor`, überschreitet das Ziel nie). SW `v109`. Rein —
   KEIN UI/Außendokument (Prime Directive); das kommt in Schritt 6/7. (`docs/KALKULATION_KATALOG.md` §2/§9)
-- [ ] **6. Produkt-Schemata** — Folierung (m²)/Schild/Gravur/Leuchtreklame/Druck-Zukauf/Montage … als
-  kalibrierbare Vorlagen auf dem Kern. (Katalog §1/§2)
+- [x] **6. Produkt-Schemata** ✅ (PR #127, 2026-06-18) — `domain/produktschemata.js` (rein, node-getestet,
+  +23 → **1238/1238**): die 6 Vorlagen Folierung (m²)/Schild/Gravur/Leuchtreklame/Druck-Zukauf/Montage als
+  **kalibrierbare** Schemata, die den Kern (Schritt 5) füttern. Jedes Schema definiert nur seine Felder
+  (`PRODUKT_ART`/`BASIS`/`FELD_TYP`-Enums) + ein `mapping` auf die Kostenarten (`material`/`maschine`/`arbeit`/
+  `zukauf`/`montage`); `kalkuliereSchema` ruft `kalkuliereVorwaerts` — **keine** neue Formel, nur Zuordnung
+  (m²→Material, Gravur-Minuten→Maschinen-Std). „Hotspot"-Felder (Katalog §1: Verschnitt/Verklebezeit/Fräszeit/
+  Elektrik/Montage) sind `kalibrierbar` markiert + via `kalibrierteDefaults` überschreibbar (feste Felder unangetastet)
+  → Andockpunkt für Schritt 9/10. `validateSchema`/`validateAlleSchemata` sichern die Definitionen. SW `v110`.
+  Rein — **kein UI** (eigener Folgeschritt). Test u. a.: `kalkuliereSchema == direkter Kern-Aufruf`. (Katalog §1/§2)
 - [ ] **7. Angebote-Kern in BLP** — Angebots-Dokument (Positionen/Preise/USt) **+ interne Kalkulationsschicht**
   (Prime Directive: intern bleibt intern!), eigener **Angebotsnummernkreis**, Status (Entwurf/offen/angenommen/
   abgelehnt/archiviert), **Archiv**. Nutzt Kern (5) + `rechnungsstelle` (4).
