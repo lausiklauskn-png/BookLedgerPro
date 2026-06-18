@@ -16,7 +16,7 @@ import { setActiveDbName, closeDb } from './db.js';
 import { lockVault, vaultExists } from './vault.js';
 import {
   REGISTRY_DB_NAME, LEGACY_MANDANT_ID, leereRegistry, mitLegacyMandant,
-  dbNameFuer, dbNameVon, findeMandant, addMandant, setzeAktiv, erstelleMandant,
+  dbNameFuer, dbNameVon, aktiveDbName, findeMandant, addMandant, setzeAktiv, erstelleMandant,
 } from '../domain/mandanten.js';
 
 const STORE = 'kv';
@@ -84,7 +84,10 @@ export async function initMandanten() {
     }
   }
 
-  if (registry.aktiv) setActiveDbName(dbNameFuer(registry.aktiv));
+  // `aktiveDbName` beachtet das `sandbox`-Flag des aktiven Mandanten (über `dbNameVon`) →
+  // ein zuvor „behaltener" Test-Tresor wird beim nächsten Start auf seine EIGENE Sandbox-DB
+  // ausgerichtet (nicht versehentlich auf eine echte). Fällt auf Legacy zurück, wenn keiner aktiv.
+  if (registry.aktiv) setActiveDbName(aktiveDbName(registry));
   return { registry, aktiv: registry.aktiv };
 }
 

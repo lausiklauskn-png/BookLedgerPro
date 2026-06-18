@@ -167,6 +167,27 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .banner-text { flex: 1; }
 .banner-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
 .banner-critical { background: var(--critical-bg); border-color: var(--critical-border); color: var(--critical-text); }
+/* Dauerhafter TEST-MODUS-Banner (Sandbox-Tresor aktiv) — deutlich, aber nicht alarmierend. */
+.banner-test { background: var(--accent-soft); color: var(--text); border-bottom: 1px solid var(--accent); }
+.banner-test strong { color: var(--accent-strong); letter-spacing: .02em; }
+
+/* ---- Test-Modus (Sandbox) ------------------------------------------------- */
+.test-open { flex: 1 1 12rem; min-width: 8rem; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.test-link { display: block; margin: .4rem auto 0; }
+
+/* Schlichter modaler Dialog (behalten/verwerfen beim Verlassen eines Tests). */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100; padding: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(16, 24, 40, .45);
+}
+.modal {
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 1.2rem 1.4rem; max-width: 30rem; width: 100%;
+}
+.modal h2 { margin-top: 0; }
+.modal .btn-row { margin-top: 1rem; }
 
 /* Nicht-blockierende Plausibilitäts-Hinweise (Spielraum, kein Haken). */
 .hinweis { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); border-radius: var(--radius-sm, 8px); padding: .6rem .8rem; margin-top: .7rem; }

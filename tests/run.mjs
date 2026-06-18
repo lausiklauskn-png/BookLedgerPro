@@ -95,7 +95,7 @@ import {
   brauchtMandantenAuswahl, mandantenAuswahlListe,
   SANDBOX_INFIX, dbNameVon, istSandboxDbName, istSandbox, erstelleSandbox,
   echteMandanten, sandboxMandanten, sandboxAuswahlListe, entferneAlleSandboxes, verwaisteSandboxDbs,
-  sandboxDbNamen, aktiveDbName,
+  sandboxDbNamen, aktiveDbName, aktiverSandbox, naechsterTestName,
 } from '../src/domain/mandanten.js';
 import { DB_SUFFIX, getActiveDbName, setActiveDbName, closeDb, LEGACY_DB_NAME as DB_LEGACY_NAME } from '../src/core/db.js';
 
@@ -3134,6 +3134,33 @@ await section('Test-Modus (Store-Glue 2b): reine Helfer (DB-Namen je Test, aktiv
   // Nach „Alle Tests löschen" zeigt aktiveDbName auf den nachgerückten echten Mandanten.
   ok('aktiv nach entferneAlleSandboxes (war Sandbox aktiv)',
     aktiveDbName(entferneAlleSandboxes(setzeAktiv(reg, 'dddd0004'))) === 'blpr_bookledgerpro');
+});
+
+await section('Test-Modus (UI-Helfer 2c): aktiverSandbox + naechsterTestName', () => {
+  let reg = mitLegacyMandant(leereRegistry());                    // 1 echter (Legacy, aktiv)
+  reg = addMandant(reg, erstelleMandant('Firma 2', { id: 'bbbb0002', erstellt: 5 }));
+  reg = addMandant(reg, erstelleSandbox('Test 1', { id: 'cccc0003', erstellt: 6 }));
+  reg = addMandant(reg, erstelleSandbox('Test 2', { id: 'dddd0004', erstellt: 7 }));
+
+  // aktiverSandbox: nur, wenn der AKTIVE Mandant ein Test-Tresor ist (sonst null).
+  ok('aktiv = Legacy → kein Sandbox', aktiverSandbox(reg) === null);
+  ok('aktiv = echter Mandant → kein Sandbox', aktiverSandbox(setzeAktiv(reg, 'bbbb0002')) === null);
+  const aktivT = aktiverSandbox(setzeAktiv(reg, 'cccc0003'));
+  ok('aktiv = Sandbox → liefert den Test', aktivT && aktivT.id === 'cccc0003' && istSandbox(aktivT));
+  ok('aktiverSandbox robust', aktiverSandbox(leereRegistry()) === null && aktiverSandbox(null) === null);
+
+  // naechsterTestName: fortlaufend „Test N" über das Maximum vorhandener „Test N"-Namen.
+  ok('erster Vorschlag = Test 1', naechsterTestName(mitLegacyMandant(leereRegistry())) === 'Test 1');
+  ok('Vorschlag = max(Test N)+1', naechsterTestName(reg) === 'Test 3');
+  // Lücken: nach Löschen von „Test 1" bleibt der Vorschlag oberhalb des Maximums (kein Doppler).
+  let mitLuecke = mitLegacyMandant(leereRegistry());
+  mitLuecke = addMandant(mitLuecke, erstelleSandbox('Test 5', { id: 'eeee0005' }));
+  ok('nimmt Maximum, nicht Anzahl', naechsterTestName(mitLuecke) === 'Test 6');
+  // Frei benannte Tests beeinflussen die „Test N"-Zählung nicht.
+  let frei = mitLegacyMandant(leereRegistry());
+  frei = addMandant(frei, erstelleSandbox('Mein Spielplatz', { id: 'ffff0006' }));
+  ok('freie Namen zählen nicht', naechsterTestName(frei) === 'Test 1');
+  ok('eigener Prefix', naechsterTestName(reg, 'Probe') === 'Probe 1');
 });
 
 await section('Mandanten (M2a): Registry-DB-Name', () => {

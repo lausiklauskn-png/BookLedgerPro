@@ -23,6 +23,7 @@ import { ladeRegistry, speichereRegistry } from './mandantenStore.js';
 import {
   erstelleSandbox, dbNameVon, addMandant, setzeAktiv, entferneMandant, findeMandant,
   istSandbox, entferneAlleSandboxes, sandboxDbNamen, verwaisteSandboxDbs, aktiveDbName,
+  echteMandanten,
 } from '../domain/mandanten.js';
 
 // ---- IndexedDB-Primitive (reine Browser-API-Wrapper) -----------------------
@@ -161,6 +162,26 @@ export async function loescheAlleSandboxes() {
   for (const name of dbNamen) await deleteDatabase(name);
   await speichereRegistry(next);
   return { registry: next, geloescht: dbNamen };
+}
+
+/**
+ * „Test behalten und verlassen": schaltet den aktiven Tresor von einem Sandbox-Test zurück
+ * auf einen ECHTEN Mandanten (den ersten registrierten), damit der nächste Start in der
+ * echten Welt landet — der Test selbst BLEIBT erhalten (Listeneintrag + DB) und ist über
+ * den „🧪 Tests"-Bereich wieder erreichbar (weitertesten, wo man war). Existiert kein echter
+ * Mandant (nur Tests), bleibt alles unverändert. Sitzungs-Key + DB-Handle werden verworfen.
+ * @returns {Promise<{registry, aktiv: string|null}>}
+ */
+export async function behalteUndVerlasseSandbox() {
+  const registry = await ladeRegistry();
+  const echte = echteMandanten(registry);
+  if (!echte.length) return { registry, aktiv: registry.aktiv };
+  const next = setzeAktiv(registry, echte[0].id);
+  lockVault();
+  closeDb();
+  setActiveDbName(aktiveDbName(next)); // echter Mandant (Sandbox-Flag in dbNameVon beachtet)
+  await speichereRegistry(next);
+  return { registry: next, aktiv: next.aktiv };
 }
 
 /**

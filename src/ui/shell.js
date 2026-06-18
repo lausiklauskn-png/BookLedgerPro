@@ -10,7 +10,8 @@ import { MycelMark } from './mycel.js';
 import { getSettings, updateSettings, navigate, getRoute, subscribe, MODES, AI_LEVELS } from '../state.js';
 import { getMandantId, lockVault, changePassword } from '../core/vault.js';
 import { ladeRegistry, speichereRegistry } from '../core/mandantenStore.js';
-import { aktiverMandant, mandantenAuswahlListe, umbenenneMandant, entferneMandant, validateMandantName } from '../domain/mandanten.js';
+import { aktiverMandant, mandantenAuswahlListe, umbenenneMandant, entferneMandant, validateMandantName, istSandbox, sandboxAuswahlListe, naechsterTestName } from '../domain/mandanten.js';
+import { erstelleSandboxTresor, wechsleZuSandbox, leereSandboxTresor, loescheSandboxTresor, loescheAlleSandboxes, behalteUndVerlasseSandbox } from '../core/sandboxStore.js';
 import { durabilityStatus } from '../core/durability.js';
 import { exportBackupFile, readBackup, importSnapshot } from '../core/backup.js';
 import { pickFile, readFileText } from '../core/files.js';
@@ -63,7 +64,7 @@ let _container = null;
 let _onLock = () => {};
 // Aktiver Mandant für den Header (Name + Gesamtzahl) — aus der unverschlüsselten
 // Registry-kv-DB nachgeladen (vor dem Entsperren lesbar; getrennt von den Tresoren).
-let _mandant = { name: null, count: 0 };
+let _mandant = { id: null, name: null, count: 0, sandbox: false };
 
 export function renderShell(container, { onLock } = {}) {
   _container = container;
@@ -80,8 +81,8 @@ async function refreshMandant() {
   try {
     const registry = await ladeRegistry();
     const akt = aktiverMandant(registry);
-    _mandant = { name: akt?.name || null, count: registry.mandanten.length };
-  } catch { _mandant = { name: null, count: 0 }; }
+    _mandant = { id: akt?.id || null, name: akt?.name || null, count: registry.mandanten.length, sandbox: istSandbox(akt) };
+  } catch { _mandant = { id: null, name: null, count: 0, sandbox: false }; }
   paint();
 }
 
@@ -90,6 +91,8 @@ function paint() {
   const frame = el('div', { class: 'app', 'data-mode': s.mode }, [
     el('a', { class: 'skip-link', href: '#content' }, t('a11y.skip')),
     header(s),
+    // Dauerhafter TEST-MODUS-Banner, solange ein Sandbox-/Test-Tresor aktiv ist (Spec).
+    _mandant.sandbox ? testModusBanner() : null,
     el('div', { class: 'durability-slot', id: 'durability-slot' }),
     el('div', { class: 'app-body' }, [nav(), el('main', { class: 'content', id: 'content', role: 'main', tabindex: '-1' })]),
   ]);
@@ -117,7 +120,7 @@ function header(s) {
       }) : null,
       el('button', {
         class: 'btn btn-ghost btn-sm', text: t('settings.lock'),
-        onClick: () => { lockVault(); _onLock(); },
+        onClick: sperren,
       }),
     ]),
   ]);
@@ -125,8 +128,18 @@ function header(s) {
 
 // Mandant wechseln: Sitzungs-Key (DEK) verwerfen und neu booten. Der Boot zeigt bei
 // mehr als einem Mandanten die Auswahl vor dem Entsperren (showLockScreen) — von dort
-// wird der Ziel-Mandant gewählt und entsperrt.
+// wird der Ziel-Mandant gewählt und entsperrt. Aus einem Test-Tresor heraus erst der
+// behalten/verwerfen-Dialog (nichts versehentlich liegen lassen).
 function mandantWechseln() {
+  if (_mandant.sandbox) { verlasseSandboxDialog(); return; }
+  lockVault();
+  _onLock();
+}
+
+// Sperren-Knopf: aus einem Test-Tresor heraus zuerst der behalten/verwerfen-Dialog,
+// sonst direkt sperren + neu booten.
+function sperren() {
+  if (_mandant.sandbox) { verlasseSandboxDialog(); return; }
   lockVault();
   _onLock();
 }
@@ -216,6 +229,60 @@ async function doRestore() {
   } catch (e) { alert(String(e.message || e)); }
 }
 
+// ---- Test-Modus (Sandbox-Tresore, docs/TEST_MODUS.md) -----------------------
+
+// Dauerhafter Banner, solange ein Test-Tresor aktiv ist: macht den Test-Modus unübersehbar
+// und bietet den Ausstieg (behalten/verwerfen). „TEST-MODUS · Test „{name}" — echte Daten unberührt."
+function testModusBanner() {
+  return el('div', { class: 'banner banner-test', role: 'status', 'aria-live': 'polite' }, [
+    el('span', { class: 'banner-text' }, [
+      el('strong', { text: t('test.bannerTag') }),
+      el('span', { text: ' ' + t('test.bannerText').replace('{name}', _mandant.name || '') }),
+    ]),
+    el('button', { class: 'btn btn-sm', text: t('test.verlassen'), onClick: verlasseSandboxDialog }),
+  ]);
+}
+
+// „Test behalten oder verwerfen?" beim Verlassen (Sperren/Wechseln). Behalten → Eingaben
+// bleiben für nächstes Mal; Verwerfen → der Test wird spurlos gelöscht (eigene DB). In
+// beiden Fällen wird der Sitzungs-Key verworfen und neu gebootet. Echte Daten unberührt.
+function verlasseSandboxDialog() {
+  const id = _mandant.id;
+  const name = _mandant.name || '';
+  const overlay = el('div', { class: 'modal-overlay', role: 'dialog', 'aria-modal': 'true' });
+  const schliessen = () => overlay.remove();
+
+  const behalten = el('button', {
+    class: 'btn btn-primary', text: t('test.behalten'),
+    onClick: async () => {
+      behalten.setAttribute('disabled', '');
+      // Test bleibt erhalten; aktiver Tresor zurück auf einen echten Mandanten → nächster
+      // Start landet in der echten Welt (der Test ist über „🧪 Tests" wieder erreichbar).
+      try { await behalteUndVerlasseSandbox(); }
+      catch (e) { alert(String(e.message || e)); }
+      lockVault(); _onLock();
+    },
+  });
+  const verwerfen = el('button', {
+    class: 'btn btn-danger', text: t('test.verwerfen'),
+    onClick: async () => {
+      verwerfen.setAttribute('disabled', '');
+      try { await loescheSandboxTresor(id); }
+      catch (e) { alert(String(e.message || e)); }
+      lockVault(); _onLock();
+    },
+  });
+  const abbrechen = el('button', { class: 'btn', text: t('common.cancel'), onClick: schliessen });
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) schliessen(); });
+  overlay.appendChild(el('div', { class: 'modal' }, [
+    el('h2', { text: t('test.verlassenTitle') }),
+    el('p', { class: 'muted', text: t('test.verlassenIntro').replace('{name}', name) }),
+    el('div', { class: 'btn-row' }, [behalten, verwerfen, abbrechen]),
+  ]));
+  document.body.appendChild(overlay);
+}
+
 // ---- Views ------------------------------------------------------------------
 
 function viewSettings() {
@@ -300,6 +367,8 @@ function viewSettings() {
 
     mandantenSection(),
 
+    testModusSection(),
+
     passwortSection(),
 
     el('div', { class: 'setting' }, [
@@ -383,6 +452,68 @@ function mandantRow(m, registry, rerender) {
     m.aktiv ? el('span', { class: 'mandant-badge', text: t('mandant.current') }) : null,
     save, remove, status,
   ]);
+}
+
+// Test-Modus-Verwaltung in den Einstellungen (docs/TEST_MODUS.md). Innerhalb eines Tests:
+// Test verlassen (behalten/verwerfen). Außerhalb (echter Mandant): Tests öffnen/leeren/
+// löschen, neuen Test anlegen, „Alle Tests löschen". Öffnen/Anlegen verwirft den Sitzungs-
+// Key und bootet neu (Passwort des Tests am Sperrbildschirm). Reine Lebenszyklus-Logik ist
+// node-getestet; dieser DOM-/IndexedDB-Pfad ist statisch geprüft. Echte Daten bleiben unberührt.
+function testModusSection() {
+  const host = el('div', { class: 'setting' });
+  const render = async () => {
+    const kopf = [
+      el('div', { class: 'setting-label', text: t('settings.test') }),
+      el('p', { class: 'muted small', text: t('settings.testHint') }),
+    ];
+
+    if (_mandant.sandbox) {
+      host.replaceChildren(
+        ...kopf,
+        el('p', { class: 'muted small', text: t('test.inTestNote').replace('{name}', _mandant.name || '') }),
+        el('div', { class: 'btn-row' }, [
+          el('button', { class: 'btn btn-sm', text: t('test.verlassen'), onClick: verlasseSandboxDialog }),
+        ]),
+      );
+      return;
+    }
+
+    let registry;
+    try { registry = await ladeRegistry(); }
+    catch { host.replaceChildren(...kopf, el('p', { class: 'muted small', text: '—' })); return; }
+
+    const tests = sandboxAuswahlListe(registry);
+    const rows = tests.map((m) => el('div', { class: 'mandant-admin-row' }, [
+      el('span', { class: 'mandant-name', text: m.name }),
+      el('button', { class: 'btn btn-sm', text: t('test.oeffnen'), onClick: async () => { await wechsleZuSandbox(m.id); _onLock(); } }),
+      el('button', { class: 'btn btn-sm', text: t('test.leeren'), onClick: async () => { if (!confirm(t('test.confirmLeeren').replace('{name}', m.name))) return; await leereSandboxTresor(m.id); render(); } }),
+      el('button', { class: 'btn btn-sm btn-danger', text: t('common.delete'), onClick: async () => { if (!confirm(t('test.confirmLoeschen').replace('{name}', m.name))) return; await loescheSandboxTresor(m.id); render(); } }),
+    ]));
+
+    host.replaceChildren(
+      ...kopf,
+      tests.length ? el('div', { class: 'mandant-admin' }, rows) : el('p', { class: 'muted small', text: t('test.empty') }),
+      el('div', { class: 'btn-row' }, [
+        el('button', {
+          class: 'btn btn-sm btn-primary', text: t('test.neu'),
+          onClick: async () => {
+            const name = prompt(t('test.name'), naechsterTestName(registry));
+            if (name == null) return;
+            const fehler = validateMandantName(name);
+            if (fehler) { alert(fehler); return; }
+            await erstelleSandboxTresor(name);
+            _onLock(); // neu booten → Test-Onboarding (Passwort) am Sperrbildschirm
+          },
+        }),
+        tests.length ? el('button', {
+          class: 'btn btn-sm btn-danger', text: t('test.alleLoeschen'),
+          onClick: async () => { if (!confirm(t('test.confirmAlle'))) return; await loescheAlleSandboxes(); render(); },
+        }) : null,
+      ]),
+    );
+  };
+  render();
+  return host;
 }
 
 // Passwort ändern (Envelope: wickelt nur den Daten-Schlüssel neu ein).
