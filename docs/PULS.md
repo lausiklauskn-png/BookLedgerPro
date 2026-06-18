@@ -40,7 +40,7 @@ Nutzer 2026-06-17 vereinbarten Themen: Kalkulation/Angebote + Datensicherung + T
 in `docs/NACHFOLGE_PLAN.md`. **Nächste PRs = BAUPLAN abarbeiten, Block 1 zuerst** (mehrere saubere PRs pro Sitzung wo
 sinnvoll): **1.** Backup→Restore-Roundtrip-Selbsttest ✅ **(PR #116)** → **2.** Test-Modus/Sandbox-Tresor
 (`docs/TEST_MODUS.md`): **2a. Sandbox-Kern ✅ (PR #118)** → **2b. Store-Glue `core/sandboxStore.js` ✅ (PR #120)**
-→ **2c. UI ✅ (PR #122)** („🧪 Tests"-Bereich + TEST-Banner + behalten/verwerfen; optionale Demo-Vorbefüllung bewusst als Folgeschritt offen) → **3. NÄCHSTER SCHRITT: Backup-UX + `backupStrategie`** (`docs/DATENSICHERUNG.md`). Danach **Block 2: Kalkulation/Angebote**
+→ **2c. UI ✅ (PR #122)** („🧪 Tests"-Bereich + TEST-Banner + behalten/verwerfen; optionale Demo-Vorbefüllung bewusst als Folgeschritt offen) → **3. Backup-UX + `backupStrategie` ✅ (PR #124)** (`docs/DATENSICHERUNG.md`; prominente Karte + gemerkter Zielordner/File System Access + Download-Fallback + Drag-and-drop-Restore + Setting `backupStrategie` im Onboarding/Einstellungen) → **Block 1 abgeschlossen. NÄCHSTER SCHRITT: Block 2/Schritt 4 — Setting `rechnungsstelle`**. Danach weiter **Block 2: Kalkulation/Angebote**
 (`docs/KALKULATION_KATALOG.md`; Prime Directive: Kalkulation intern, Angebot/Rechnung neutral). **Vermerk:** auch
 **Mein-WorkFloh** soll einen Test-Modus nach `docs/TEST_MODUS.md` bekommen (fremdes Repo, über den Nutzer).
 **(Frühere Notiz, Kontext):** Der reine „build-freie Rest-Korb" war leer; in der vorigen Sitzung
@@ -102,7 +102,18 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Test-Modus UI", PR #122):** SW **v106** · Tests **1141/1141** grün · 99 JS-Module.
+**Kopf-Status (Stand nach „Datensicherungs-UX + backupStrategie", PR #124):** SW **v107** · Tests **1158/1158** grün · 102 JS-Module.
+**Datensicherungs-UX + backupStrategie erledigt (diese Sitzung, BAUPLAN Block 1/Schritt 3 — Block 1 abgeschlossen):**
+Datendurabilität ist Pflicht #1. Prominente „Datensicherung"-Karte (Dashboard + Durabilitäts-Banner + Einstellungen)
+mit **Drag-and-drop-Restore**; **gemerkter Zielordner** (File System Access, gerätelokal in eigener unverschlüsselter
+kv-DB `core/backupOrdner.js`; Tablet/ohne API/ohne Ordner → **Download-Fallback**, nie blockieren); neues Setting
+**`backupStrategie`** (`download`|`ordner`, Default `download`) im **Onboarding** wählbar + in den Einstellungen
+änderbar. Reine Logik node-getestet: `domain/backupStrategie.js` (`backupZiel`/`normalizeBackupStrategie`/
+`backupDateiname`/`istBackupDatei`), +17 Tests (**1158/1158**). Gemeinsame Aktionen in `ui/datensicherung.js`;
+`core/backup.js exportBackupSmart`; i18n de/en, CSS, SW `v107` + neue Module precachen. **Grenze:** DOM/IndexedDB/
+File-System-Access statisch geprüft (kein Headless-Browser); File System Access nur Desktop-Chromium → sonst Download.
+**Bewusst offen (`docs/DATENSICHERUNG.md` #4):** Server-Ziel + konfigurierbare Erinnerungs-Kadenz (Banner erinnert
+weiterhin wöchentlich). **Nächster Schritt: BAUPLAN Block 2/Schritt 4 — Setting `rechnungsstelle`** (`docs/KALKULATION_KATALOG.md`).
 **Test-Modus UI erledigt (diese Sitzung, BAUPLAN Block 1/Schritt 2c):** Die UI über der Store-Glue + dem Kern
 (Spezifikation `docs/TEST_MODUS.md`). Sperrbildschirm (`ui/lock.js`): „🧪 Tests"-Einstieg + Verwaltung (öffnen/leeren/
 löschen je Test, „Neuer Test", „Alle Tests löschen"); **verschlanktes Test-Onboarding** (nur Test-Passwort, kein
@@ -230,10 +241,10 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-18 (Test-Modus UI) · **Branch (letzte PR):** `claude/test-modus-ui-v71y2l` (PR #122)
-· **Tests:** `node tests/run.mjs` → **1141/1141 grün**
-· **SW-Cache:** `v106` · **99 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1: Schritt 1 ✅, Schritt 2a (Sandbox-Kern) ✅, Schritt 2b (Store-Glue) ✅, Schritt 2c (Test-Modus UI) ✅**
-· **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (je 1 PR/Sitzung; nächste = **R1 — Verzugszinsen buchen**).
+**Letzte Aktualisierung:** 2026-06-18 (Datensicherungs-UX + backupStrategie) · **Branch (letzte PR):** `claude/backup-restore-ux-kd8ft9` (PR #124)
+· **Tests:** `node tests/run.mjs` → **1158/1158 grün**
+· **SW-Cache:** `v107` · **102 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1 KOMPLETT: Schritt 1 ✅, Schritt 2a/2b/2c (Test-Modus) ✅, Schritt 3 (Datensicherungs-UX + backupStrategie) ✅**
+· **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (nächste = **Block 2/Schritt 4 — Setting `rechnungsstelle`**).
 · **B1 ✅:** Bilanzierung-Modus (`gewinnermittlung` euer|bilanz, Default euer) + Konten-Klassifikation
   (`domain/bilanzierung.js`) + Bilanz-Grundkonten 0800/0840/0860/0970 im Seed + Modus-Schalter (PR #87).
 · **B2 ✅:** GuV (`domain/bilanz.js gewinnUndVerlust`) — Erträge/Aufwendungen je Erfolgskonto, Jahresüberschuss;
@@ -440,12 +451,12 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
    lokaler OCR-Fallback (Tesseract).
 
 ## 8. Architektur-Landkarte (wo was liegt)
-- `src/core/` crypto · shamir · db · durability · files · vault · backup
+- `src/core/` crypto · shamir · db · durability · files · vault · backup · **backupOrdner** · mandantenStore · sandboxStore
 - `src/domain/` money · accounts · journal · pruefung · rechtsregeln · audit · taxes · store · documents · orders ·
   invoicing · employees · costcenters · encstore · crm-store · export · summary
 - `src/ai/` extract · categorize · suggest · **aiConfig · vision · mistral** · taxAssist · **pseudonym · anker · ner · briefkasten** (Datenschutz-Modi)
 - `src/sbkim/` spore · identity · domainvector · signal  (+ `tools/verify_remote_spore.mjs`)
-- `src/ui/` dom · i18n · theme · mycel · mycelCanvas · empty · lock · shell ·
+- `src/ui/` dom · i18n · theme · mycel · mycelCanvas · empty · lock · shell · **datensicherung** ·
   `views/` dashboard · accounts · journal · reports · documents · customers · orders ·
   employees · legal · network
 - `assets/` tokens.css · app.css · icon.svg · `icons/` (PWA) · `img/` (Hero/Leerzustände/OG/Onboarding)

@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 1/Schritt 2c — Test-Modus **UI**, PR #122; SW `v106`, 1141/1141; Test-Modus 2a–2c komplett). Davor: Schritt 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 1/Schritt 3 — Datensicherungs-UX + `backupStrategie`, PR #124; SW `v107`, 1158/1158; **Block 1 komplett**). Davor: Schritt 2c Test-Modus UI (PR #122), 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -36,8 +36,14 @@ ein PR, bei grüner CI selbstständig mergen**):
   (`core/backup.js`, verschlüsselte `.blpr.json`, Shamir, persist).
   ✅ **Schritt 1 (Roundtrip-Selbsttest) erledigt + gemergt (PR #116, 2026-06-18):** `core/backup.js`
   `backupRoundtripSelbsttest` (byte-genauer Vergleich Original↔wiederhergestellt), in den „Selbsttest" (V10)
-  gehängt; +15 Node-Tests (1095/1095), SW `v103`. **Verbleibend:** Schritt 2 Test-Modus, Schritt 3 Backup-UX +
-  `backupStrategie`, Schritt 4 Server-/Offsite-Ziel.
+  gehängt; +15 Node-Tests (1095/1095), SW `v103`.
+  ✅ **Schritt 3 (Datensicherungs-UX + `backupStrategie`) erledigt + gemergt (PR #124, 2026-06-18):** prominente
+  „Datensicherung"-Karte (Dashboard + Banner + Einstellungen) mit **Drag-and-drop-Restore**; **gemerkter Zielordner**
+  (File System Access, `core/backupOrdner.js`; Tablet/ohne API/ohne Ordner → **Download-Fallback**); Setting
+  **`backupStrategie`** (`download`|`ordner`) im Onboarding + Einstellungen. `domain/backupStrategie.js` (rein,
+  node-getestet), `core/backup.js exportBackupSmart`, `ui/datensicherung.js`; +17 Tests (1158/1158), SW `v107`.
+  **Verbleibend (Schritt 4, `docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server existiert noch
+  nicht) + konfigurierbare Erinnerungs-Kadenz. **→ BAUPLAN Block 1 komplett (Schritt 1 + 2a–2c + 3).**
 - **Test-Modus (Sandbox-Tresor): JA, Spec steht.** Verbindliches Doku: **`docs/TEST_MODUS.md`** (wegwerfbarer
   Test-Tresor über die Mehrmandanten-Schicht; mehrere getrennte Tests, behalten/verwerfen/aufräumen, optional
   Demo-vorbefüllt; echte Daten unberührt; build-frei/node-testbar). **WICHTIG:** Auch **Mein-WorkFloh** soll
