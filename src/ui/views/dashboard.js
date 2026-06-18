@@ -12,6 +12,7 @@ import { listKunden, listAuftraege } from '../../domain/crm-store.js';
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { verzugReport, verzugAmpel, VERZUG_AMPEL } from '../../domain/eingangsverzug.js';
 import { forderungReport, forderungAmpel, FORDERUNG_AMPEL } from '../../domain/mahnwesen.js';
+import { liquiditaetsVorschau, LIQUIDITAET_HORIZONT_DEFAULT } from '../../domain/liquiditaet.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
 import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
@@ -93,6 +94,32 @@ export async function mountDashboard(host) {
     ]);
   };
 
+  // Liquiditätsvorschau (bald fällig) — vorausschauender Gegenpol zu den Überfälligkeits-
+  // KPIs: erwartete Eingänge (bald fällige Forderungen) gegen Ausgänge (bald fällige
+  // Verbindlichkeiten) in den nächsten Tagen + Netto. Reine Logik liquiditaetsVorschau
+  // (node-getestet), gefüttert aus denselben angereicherten Posten wie die Überfälligkeits-
+  // Karten. Ein reines Firmen-/Vereins-Thema: nur sichtbar, wenn die jeweilige Quelle im
+  // Nutzungskontext sichtbar ist (Privat blendet beide aus). Bucht nichts.
+  const liquiditaetKarte = () => {
+    const zeigeForderungen = zeigeAnsicht(s, 'orders');
+    if (!zeigeForderungen && !zeigePayables) return null;
+    const forderungen = zeigeForderungen
+      ? forderungReport(auftraege, { zielTage: s.zahlungszielTage }).angereichert : [];
+    const verbindlichkeiten = zeigePayables
+      ? verzugReport(eingangsrechnungen, {}).angereichert : [];
+    const v = liquiditaetsVorschau({ forderungen, verbindlichkeiten, horizontTage: LIQUIDITAET_HORIZONT_DEFAULT });
+    if (!v.eingehendAnzahl && !v.ausgehendAnzahl) return null; // nichts bald fällig → kein Lärm
+    const kacheln = [];
+    if (zeigeForderungen) kacheln.push(kpi(t('dashboard.liquidityIncoming'), formatEuro(v.eingehendCent), 'kpi-pos'));
+    if (zeigePayables) kacheln.push(kpi(t('dashboard.liquidityOutgoing'), formatEuro(v.ausgehendCent)));
+    if (zeigeForderungen && zeigePayables) kacheln.push(kpi(t('dashboard.liquidityNet'), formatEuro(v.nettoCent), v.nettoCent >= 0 ? 'kpi-pos' : 'kpi-neg'));
+    return el('div', { class: 'card' }, [
+      el('h2', { class: 'card-title', text: t('dashboard.liquidityTitle') }),
+      el('p', { class: 'muted small', text: t('dashboard.liquidityHint').replace('{tage}', String(v.horizontTage)) }),
+      el('div', { class: 'kpi-grid small-kpi' }, kacheln),
+    ]);
+  };
+
   mount(host, el('section', { class: 'view' }, [
     el('div', { class: 'dash-head' }, [
       el('h1', { text: t('dashboard.welcome') }),
@@ -119,6 +146,7 @@ export async function mountDashboard(host) {
 
     forderungKarte(),
     verzugKarte(),
+    liquiditaetKarte(),
 
     MycelDivider(),
 
