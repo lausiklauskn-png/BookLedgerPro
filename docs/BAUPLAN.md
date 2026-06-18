@@ -230,6 +230,20 @@
   /Beleg-Zuordnung GoBD-fix; alle Zeiten = ARBEIT; DOM/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §6)
 
 ### Block 3 — später / umgebungs-blockiert
+- [x] **Liquiditäts-Treiber (größte anstehende Bewegungen)** [Folgeschritt zur Reichweite] ✅ (2026-06-18) — die
+  Liquiditäts-Karte zeigte bisher nur SUMMEN/Salden (wie viel bald fällig, wie tief der Saldo sinkt, bis wann das Geld
+  reicht), aber nicht die naheliegende Anschlussfrage „woran liegt das?" — welche einzelne Forderung sich einzutreiben
+  lohnt, welche Verbindlichkeit groß ansteht. Reine Logik `domain/liquiditaet.js` (node-getestet, +14 → **1689/1689**):
+  **`groessteFaellige({forderungen, verbindlichkeiten, heute, horizontTage, limit})`** — die nach offenem Betrag
+  absteigend sortierten bald fälligen Posten aus DEMSELBEN Fenster wie `baldFaellig` (Fälligkeit ab heute … heute+Horizont,
+  nicht überfällig), je Eintrag `{richtung:'ein'|'aus', betragCent, faelligAm, name, referenz}`, auf `limit` (Default 3,
+  Konstante `LIQUIDITAET_TREIBER_DEFAULT`) gekürzt; Posten ohne offenen Betrag (≤0) fallen heraus; deterministische
+  Sortierung (Betrag → früheste Fälligkeit → Name). UI `ui/views/dashboard.js`: kleine Liste „Größte anstehende
+  Bewegungen" in der Liquiditäts-Karte (Wer/Referenz/Datum links, vorzeichenbehafteter Betrag rechts — Eingang +/grün,
+  Ausgang −/rot) über das bestehende `report-line`-Layout, gefüttert aus denselben angereicherten Posten wie die Summen.
+  i18n de+en (`dashboard.liquidityDriversLabel`/`…DriverIn`/`…DriverOut`), SW `v135` (kein neues Modul). **bucht nichts.**
+  **Ehrliche Grenze:** reine Anzeige/Auswahl, keine Finanzberatung; nur über bald fällige, bekannte Posten; DOM/IndexedDB
+  statisch geprüft.
 - [x] **Liquiditäts-Reichweite („Runway" — bis wann reicht das Geld?)** [Folgeschritt zu #154] ✅ (2026-06-18) — die
   Liquiditäts-Karte zeigte Tiefpunkt (tiefster Stand) und Deckungslücke (fehlender Betrag), aber nicht die intuitivste
   Antwort auf die im Karten-Code selbst gestellte Frage „reicht das Geld?": **bis wann**. Der Tiefpunkt nennt den *tiefsten*

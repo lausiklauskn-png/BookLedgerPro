@@ -12,7 +12,7 @@ import { listKunden, listAuftraege } from '../../domain/crm-store.js';
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { verzugReport, verzugAmpel, VERZUG_AMPEL } from '../../domain/eingangsverzug.js';
 import { forderungReport, forderungAmpel, FORDERUNG_AMPEL } from '../../domain/mahnwesen.js';
-import { liquiditaetsVorschau, liquiditaetsVerlauf, liquiditaetsAmpel, deckungsluecke, liquiditaetsReichweite, geldbestand, normalizeHorizont, normalizeReserveCent, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
+import { liquiditaetsVorschau, liquiditaetsVerlauf, liquiditaetsAmpel, deckungsluecke, liquiditaetsReichweite, groessteFaellige, geldbestand, normalizeHorizont, normalizeReserveCent, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
 import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
@@ -130,6 +130,10 @@ export async function mountDashboard(host) {
     // fallen → „reicht" wäre trivial). Der „heute schon unter Schwelle"-Fall (sofort) deckt
     // bereits die Ampel/Deckungslücke ab.
     const reichweite = liquiditaetsReichweite(verlauf, { reserveCent, heute });
+    // Treiber: die größten einzelnen Posten hinter den Summen — beantwortet „woran liegt das?"
+    // (welche Forderung lohnt sich einzutreiben, welche Verbindlichkeit steht groß an). Reine
+    // Logik groessteFaellige (node-getestet), gefüttert aus denselben angereicherten Posten.
+    const treiber = groessteFaellige({ forderungen, verbindlichkeiten, horizontTage });
     const ampel = liquiditaetsAmpel(v);
     const projCls = ampel === LIQUIDITAET_AMPEL.KRITISCH ? 'kpi-neg' : ampel === LIQUIDITAET_AMPEL.OK ? 'kpi-pos' : '';
     const kacheln = [];
@@ -212,6 +216,25 @@ export async function mountDashboard(host) {
                   .replace('{datum}', luecke.datum)
                   .replace('{betrag}', formatEuro(luecke.lueckeCent))),
           })
+        : null,
+      // Treiber-Drill-down: die größten anstehenden Bewegungen, je Zeile Wer/Referenz/Datum
+      // links, vorzeichenbehafteter Betrag rechts (Eingang +/grün, Ausgang −/rot). Reine Anzeige
+      // über report-line (bestehendes Layout); bucht nichts.
+      treiber.length
+        ? el('div', {}, [
+            el('p', { class: 'muted small', text: t('dashboard.liquidityDriversLabel') }),
+            ...treiber.map((d) => {
+              const wer = [d.name, d.referenz].filter(Boolean).join(' · ')
+                || t(d.richtung === 'ein' ? 'dashboard.liquidityDriverIn' : 'dashboard.liquidityDriverOut');
+              return el('div', { class: 'report-line' }, [
+                el('span', { class: 'small', text: `${wer} · ${d.faelligAm}` }),
+                el('span', {
+                  class: d.richtung === 'ein' ? 'kpi-pos small' : 'kpi-neg small',
+                  text: (d.richtung === 'ein' ? '+' : '−') + formatEuro(d.betragCent),
+                }),
+              ]);
+            }),
+          ])
         : null,
     ]);
   };

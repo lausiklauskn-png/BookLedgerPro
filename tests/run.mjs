@@ -149,6 +149,7 @@ import {
   GELDKONTO_BEREICHE, LIQUIDITAET_AMPEL, istGeldkonto, geldbestand, liquiditaetsAmpel,
   LIQUIDITAET_HORIZONT_OPTIONEN, normalizeHorizont, liquiditaetsVerlauf, deckungsluecke,
   normalizeReserveCent, liquiditaetsReichweite,
+  LIQUIDITAET_TREIBER_DEFAULT, groessteFaellige,
 } from '../src/domain/liquiditaet.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
@@ -2629,6 +2630,55 @@ await section('Liquidität: liquiditaetsReichweite (bis wann reicht das Geld?)',
   ok('leeres Argument → nicht bekannt', liquiditaetsReichweite().bekannt === false && liquiditaetsReichweite({}).reicht === true);
   // Ohne heute → datum gesetzt, tageBis null (nur datum nötig).
   ok('ohne heute → datum ja, tageBis null', liquiditaetsReichweite(v).datum === '2026-06-21' && liquiditaetsReichweite(v).tageBis === null);
+});
+
+await section('Liquidität: groessteFaellige (größte Treiber im Fenster)', () => {
+  const heute = '2026-06-18';
+  const forderungen = [
+    { betragCent: 60000, faelligAm: '2026-06-25', name: 'Kunde A', referenz: 'AN-2026-0007' },
+    { betragCent: 10000, faelligAm: '2026-06-20', name: 'Kunde B' },
+    { betragCent: 50000, faelligAm: '2026-05-01', name: 'Kunde Überfällig' }, // überfällig → raus
+  ];
+  const verbindlichkeiten = [
+    { offenCent: 80000, faelligAm: '2026-06-22', name: 'Lieferant X', referenz: 'ER-99' },
+    { offenCent: 30000, faelligAm: '2026-08-01', name: 'Lieferant Spät' }, // außerhalb 14-Tage-Fenster
+  ];
+
+  const top = groessteFaellige({ forderungen, verbindlichkeiten, heute, horizontTage: 14 });
+  ok('Default-Limit 3', top.length === 3 && LIQUIDITAET_TREIBER_DEFAULT === 3);
+  ok('größter Posten zuerst (80.000 Ausgang)', top[0].richtung === 'aus' && top[0].betragCent === 80000);
+  ok('zweiter (60.000 Eingang)', top[1].richtung === 'ein' && top[1].betragCent === 60000);
+  ok('dritter (10.000 Eingang)', top[2].richtung === 'ein' && top[2].betragCent === 10000);
+  ok('Name + Referenz durchgereicht', top[0].name === 'Lieferant X' && top[0].referenz === 'ER-99');
+  ok('fehlende Referenz → leerer String', top[2].name === 'Kunde B' && top[2].referenz === '');
+  ok('Fälligkeit auf JJJJ-MM-TT', top[1].faelligAm === '2026-06-25');
+  ok('überfällige + außerhalb-Fenster nicht enthalten', top.every((d) => d.betragCent !== 50000 && d.betragCent !== 30000));
+
+  // Limit greift.
+  const top1 = groessteFaellige({ forderungen, verbindlichkeiten, heute, horizontTage: 14, limit: 1 });
+  ok('limit 1 → ein Posten', top1.length === 1 && top1[0].betragCent === 80000);
+  ok('limit 0 → leer', groessteFaellige({ forderungen, verbindlichkeiten, heute, horizontTage: 14, limit: 0 }).length === 0);
+
+  // offenCent vs betragCent + 0-Betrag wird übersprungen.
+  const gemischt = groessteFaellige({
+    forderungen: [{ betragCent: 0, faelligAm: '2026-06-20', name: 'Null' }],
+    verbindlichkeiten: [{ offenCent: 5000, faelligAm: '2026-06-21', name: 'Rest' }],
+    heute, horizontTage: 14,
+  });
+  ok('0-Betrag übersprungen, offenCent gelesen', gemischt.length === 1 && gemischt[0].name === 'Rest' && gemischt[0].betragCent === 5000);
+
+  // Gleichstand: frühere Fälligkeit zuerst (deterministisch).
+  const gleich = groessteFaellige({
+    forderungen: [
+      { betragCent: 10000, faelligAm: '2026-06-25', name: 'spät' },
+      { betragCent: 10000, faelligAm: '2026-06-20', name: 'früh' },
+    ], heute, horizontTage: 14,
+  });
+  ok('Gleichstand → frühere Fälligkeit zuerst', gleich[0].name === 'früh' && gleich[1].name === 'spät');
+
+  // Leer/defensiv.
+  ok('leeres Argument → []', groessteFaellige().length === 0 && groessteFaellige({}).length === 0);
+  ok('nur eine Seite → nur deren Posten', groessteFaellige({ forderungen, heute, horizontTage: 14 }).every((d) => d.richtung === 'ein'));
 });
 
 await section('Mahnwesen: persistenter Verlauf (Stufe/Zins-/Gebührenverlauf)', () => {

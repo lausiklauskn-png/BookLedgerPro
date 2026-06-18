@@ -5,6 +5,45 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Liquiditäts-Treiber (größte anstehende Bewegungen) [Branch `claude/bookledgerpro-liquidity-runway-0idq3p`]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 ausgebaut bis zur **Reichweite („Runway")** (Vorsitzung). Die Liquiditäts-Karte
+  beantwortet inzwischen *wie viel* bald fällig ist (Summen), *wie tief* der Saldo sinkt (Tiefpunkt), *wie viel fehlt*
+  (Deckungslücke) und *bis wann* das Geld reicht (Reichweite) — alles über **Summen/Salden**. **Befund:** Es fehlte die
+  naheliegende Anschlussfrage „**woran** liegt das?": welche einzelne Forderung sich einzutreiben lohnt, welche
+  Verbindlichkeit groß ansteht. Sauberer, build-freier Drill-down auf dieselbe Datengrundlage.
+
+**Was getan**
+- **`src/domain/liquiditaet.js`** (rein, node-getestet, +14 → **1689/1689**): **`groessteFaellige({forderungen,
+  verbindlichkeiten, heute, horizontTage, limit})`** + Konstante `LIQUIDITAET_TREIBER_DEFAULT` (3). Liefert die nach
+  offenem Betrag absteigend sortierten bald fälligen Posten aus DEMSELBEN Fenster wie `baldFaellig` (Fälligkeit ab heute
+  … heute+Horizont, nicht überfällig), je Eintrag `{richtung:'ein'|'aus', betragCent, faelligAm, name, referenz}`, auf
+  `limit` gekürzt; ≤0-Beträge raus; deterministische Sortierung (Betrag → früheste Fälligkeit → Name). Unterstützt
+  `offenCent` (Verbindlichkeiten) wie `betragCent` (Forderungen).
+- **`src/ui/views/dashboard.js`**: kleine Liste „Größte anstehende Bewegungen" in der Liquiditäts-Karte — Wer/Referenz/
+  Datum links, vorzeichenbehafteter Betrag rechts (Eingang +/grün, Ausgang −/rot) über das bestehende `report-line`-
+  Layout; gefüttert aus denselben angereicherten Posten (`forderungReport`/`verzugReport`). **Bucht nichts.**
+- i18n de+en (`dashboard.liquidityDriversLabel`/`…DriverIn`/`…DriverOut`), **SW `v135`** (kein neues Modul).
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut. **Tests 1689/1689 grün** (`node tests/run.mjs`). SW `v135`,
+  117 JS-Module. PR offen (Draft → ready → CI → Merge). **Hinweis:** entwickelt auf dem für die Sitzung vorgegebenen
+  Branch `claude/bookledgerpro-liquidity-runway-0idq3p` (Feature + Abschlussbrief in einer PR, da die Sitzung an genau
+  diesen Branch gebunden ist).
+
+**Offen / Nächstes**
+- Optional: Browser-Sichttest durch den Nutzer (kein Headless-Browser hier) — DOM/IndexedDB-Pfad der Liquiditäts-Karte
+  (jetzt inkl. Treiber-Liste) bestätigen.
+- Sonst: umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel; WorkFloh-Gegenstücke) oder eine neue,
+  mit dem Nutzer abgestimmte Idee. Bekannt blockiert: Lighthouse/Perf, lokales OCR, ZUGFeRD-Erzeugen, Sage 5b–d.
+
+**Offene Grenzen / ungetestet**
+- Reine Logik node-getestet; DOM/IndexedDB/Karten-Pfad **statisch geprüft** (kein Headless-Browser).
+- Inhaltlich: reine Anzeige/Auswahl der größten Posten, keine Finanzberatung; nur über die bald fälligen, bekannten Posten.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Liquiditäts-Reichweite („Runway" — bis wann reicht das Geld?) [Branch `claude/bookledgerpro-block-3-cv4llc`]
 
 **Ausgangslage / Auswahl**
