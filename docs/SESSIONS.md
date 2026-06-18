@@ -5,6 +5,47 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2/Schritt 11a: Adaptiver Baukasten — reine Sortier-/Zähl-Logik [PR #132, Branch `claude/block2-step11-position-builder-8vxryt`]
+
+**Ausgangslage / Auswahl**
+- Block 1 komplett; Block 2/Schritte 4–10 erledigt. Laut `docs/BAUPLAN.md` ist der nächste Schritt **Adaptiver
+  Baukasten-UX** (`docs/KALKULATION_KATALOG.md` §3). Der Auftrag verlangt **„reine Sortier-/Zähl-Logik ZUERST
+  node-getestet, dann UI"**. Da noch **keine Angebots-UI/-Ansicht** existiert (angebote.js ist rein, ohne UI/Store)
+  und die Sitzungs-Regel „sauber & fehlerfrei, im Zweifel feiner schneiden" lautet, wurde Schritt 11 **sauber
+  geteilt**: **11a = die reine Logik** (dieser PR), **11b = die UI darüber** (eigener Folge-PR, braucht zuvor eine
+  Angebots-Ansicht + verschlüsselte Store-Glue).
+
+**Was getan** (reine Logik node-getestet — **+33 → 1427/1427**)
+- **`src/domain/baukasten.js`** (rein, node-getestet — kein DOM/IndexedDB):
+  - **(1) Nutzungszähler je Leistungsart:** Profil `{ schemaId: {anzahl, zuletzt} }`. `leeresNutzungsprofil`,
+    `normalizeNutzung` (säubert persistierte Profile: nur gültige String-IDs, nicht-negative Ganzzahlen, leere
+    Einträge verworfen), `nutzungVon`/`anzahlVon`/`istGenutzt`, `zaehleNutzung(profil, schemaId, {jetzt, um})`
+    (immutabel; Zeitstempel injizierbar für Determinismus; `um:` erhöht um >1).
+  - **(2) Adaptive Palette:** `baukastenPalette(schemata, profil)` reichert je Schema `{anzahl, zuletzt, genutzt}`
+    an und sortiert **häufig (anzahl↓) → zuletzt (zuletzt↓) → Katalog-Reihenfolge (Index↑, stabil)** — ungenutzte
+    behalten ihre Reihenfolge unten. `sortiereSchemata` (nur die Schema-Objekte) + `haeufigsteSchemata(…, n)`
+    (Schnellzugriffs-Zeile, **nur** genutzte, ≤ n).
+  - **(3) Umsortieren (Drag-and-drop / Pfeile):** `verschiebePosition(positionen, von, nach)` — **immutabel** (neue
+    Liste), klemmt das Ziel in [0, len-1], behält die Element-**Referenz** (keine Normalisierung → interne
+    `kalkulation` unberührt), ungültiger `von` → flache Kopie; `verschiebeNachOben`/`verschiebeNachUnten`.
+- **`tests/run.mjs`** — neuer Abschnitt „Adaptiver Baukasten" (Zähler immutabel/Mehrfach/Normalisierung; Sortierung
+  häufig→zuletzt→Katalog inkl. Immutabilität; Palette-Anreicherung; Umsortieren inkl. Klemmen/Referenz/Grenzfälle).
+- **`sw.js`** — `CACHE_VERSION` → **v115**, `./src/domain/baukasten.js` precached.
+
+**Stand**
+- `node tests/run.mjs` → **1427/1427 grün**. SW `v115`, **110 JS-Module**. Prime Directive gewahrt (Modul kennt nur
+  Schema-IDs/Zähler/Reihenfolge — keine Marge, kein Außendokument).
+
+**Offen / Nächstes**
+- **Block 2/Schritt 11b — die UI** über `domain/baukasten.js` + `angebote.js` + `produktschemata.js`: Angebots-Ansicht
+  mit Karten je Leistungsart (häufig genutzte oben, lokal persistiertes Nutzungsprofil), wachsende Positionsliste mit
+  Drag-and-drop, Live-Deckungsbeitrag (`interneAuswertung`). **Braucht zuvor** eine Angebots-Ansicht + verschlüsselte
+  Store-Glue (crm-store). DOM/IndexedDB werden dann „statisch geprüft" (kein Headless-Browser).
+- Weiterhin optional offen: UI „Rechnung aus Angebot" (Schritt 8) bzw. „Nachkalkulation/Kostenträger + Kalibrierung"
+  (Schritt 9/10); Demo-Vorbefüllung (`domain/demodaten.js`, 2c-Folgeschritt); Server-Backup-Ziel (blockiert).
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2/Schritt 10: Kalibrierung + Statistik/Vergleich (rein) [PR #131, Branch `claude/block2-step10-calibration-kzzatj`]
 
 **Ausgangslage / Auswahl**

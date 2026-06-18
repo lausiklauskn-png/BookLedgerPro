@@ -102,8 +102,19 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Kalibrierung + Statistik/Vergleich", PR #131):** SW **v114** · Tests **1394/1394** grün · 109 JS-Module.
-**Kalibrierung + Statistik/Vergleich erledigt (diese Sitzung, BAUPLAN Block 2/Schritt 10):** Kern-USP „selbstlernende
+**Kopf-Status (Stand nach „Adaptiver Baukasten — reine Logik", PR #132):** SW **v115** · Tests **1427/1427** grün · 110 JS-Module.
+**Adaptiver Baukasten — reine Sortier-/Zähl-Logik erledigt (diese Sitzung, BAUPLAN Block 2/Schritt 11a):** Die
+build-freie, node-testbare Logik UNTER der späteren Angebots-UI (Katalog §3). Reine Logik `src/domain/baukasten.js`
+(node-getestet, +33 → **1427/1427**): **(1) Nutzungszähler je Leistungsart** — Profil `{ schemaId: {anzahl, zuletzt} }`,
+`leeresNutzungsprofil`/`normalizeNutzung` (säubert persistierte Profile)/`nutzungVon`/`anzahlVon`/`istGenutzt`/
+`zaehleNutzung` (immutabel, Zeitstempel injizierbar, `um:` für Mehrfach). **(2) Adaptive Palette** — `baukastenPalette`
+reichert je Schema `{anzahl, zuletzt, genutzt}` an und sortiert **häufig → zuletzt → Katalog-Reihenfolge** (stabil;
+ungenutzte behalten ihre Reihenfolge); `sortiereSchemata` + `haeufigsteSchemata(…, n)` (Schnellzugriff, nur genutzte).
+**(3) Umsortieren (Drag-and-drop)** — `verschiebePosition` (immutabel, klemmt das Ziel, behält Element-Referenz → interne
+`kalkulation` unberührt) + `verschiebeNachOben`/`verschiebeNachUnten`. SW `v115`. **Rein, kein UI** (Schritt 11b sitzt
+darüber, braucht Angebots-Ansicht + verschlüsselte Store-Glue). Prime Directive: kennt nur IDs/Zähler/Reihenfolge, keine
+Marge. **Nächster Schritt: Block 2/Schritt 11b — die UI über `domain/baukasten.js`.**
+**Kalibrierung + Statistik/Vergleich erledigt (vorige Sitzung, BAUPLAN Block 2/Schritt 10):** Kern-USP „selbstlernende
 Kalkulation" (Katalog §5.1/§5.3) — die Korrekturfaktoren aus der eigenen Historie + die Trefferquote. Reine Logik
 `src/domain/kalibrierung.js` (node-getestet, +39 → **1394/1394**): **(1) Korrekturfaktoren je Kostenart** aus den Soll/Ist-
 Vergleichen vieler Aufträge — `korrekturFaktoren(vergleiche)` (Form `nachkalkulation().perBlock`) liefert je Kostenart
@@ -277,10 +288,10 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-18 (Kalibrierung + Statistik/Vergleich) · **Branch (letzte PR):** `claude/block2-step10-calibration-kzzatj` (PR #131)
-· **Tests:** `node tests/run.mjs` → **1394/1394 grün**
-· **SW-Cache:** `v114` · **109 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1 KOMPLETT (Schritt 1 + 2a/2b/2c + 3) · Block 2/Schritt 4 (`rechnungsstelle`) ✅ · Schritt 5 (Kalkulations-Kern) ✅ · Schritt 6 (Produkt-Schemata) ✅ · Schritt 7 (Angebote-Kern) ✅ · Schritt 8 (Angebot → Rechnung-Übernahme) ✅ · Schritt 9 (Auftrags-Kostenträger + Nachkalkulation) ✅ · Schritt 10 (Kalibrierung + Statistik/Vergleich) ✅**
-· **Mehr-Sitzungs-Plan:** `docs/BAUPLAN.md` (nächste = **Block 2/Schritt 11 — Adaptiver Baukasten-UX**).
+**Letzte Aktualisierung:** 2026-06-18 (Adaptiver Baukasten — reine Logik) · **Branch (letzte PR):** `claude/block2-step11-position-builder-8vxryt` (PR #132)
+· **Tests:** `node tests/run.mjs` → **1427/1427 grün**
+· **SW-Cache:** `v115` · **110 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1 KOMPLETT (Schritt 1 + 2a/2b/2c + 3) · Block 2/Schritt 4 (`rechnungsstelle`) ✅ · Schritt 5 (Kalkulations-Kern) ✅ · Schritt 6 (Produkt-Schemata) ✅ · Schritt 7 (Angebote-Kern) ✅ · Schritt 8 (Angebot → Rechnung-Übernahme) ✅ · Schritt 9 (Auftrags-Kostenträger + Nachkalkulation) ✅ · Schritt 10 (Kalibrierung + Statistik/Vergleich) ✅ · Schritt 11a (Adaptiver Baukasten — reine Sortier-/Zähl-Logik) ✅**
+· **Mehr-Sitzungs-Plan:** `docs/BAUPLAN.md` (nächste = **Block 2/Schritt 11b — Adaptiver Baukasten-UI** über `domain/baukasten.js`).
 · **B1 ✅:** Bilanzierung-Modus (`gewinnermittlung` euer|bilanz, Default euer) + Konten-Klassifikation
   (`domain/bilanzierung.js`) + Bilanz-Grundkonten 0800/0840/0860/0970 im Seed + Modus-Schalter (PR #87).
 · **B2 ✅:** GuV (`domain/bilanz.js gewinnUndVerlust`) — Erträge/Aufwendungen je Erfolgskonto, Jahresüberschuss;
