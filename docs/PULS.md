@@ -40,7 +40,7 @@ Nutzer 2026-06-17 vereinbarten Themen: Kalkulation/Angebote + Datensicherung + T
 in `docs/NACHFOLGE_PLAN.md`. **Nächste PRs = BAUPLAN abarbeiten, Block 1 zuerst** (mehrere saubere PRs pro Sitzung wo
 sinnvoll): **1.** Backup→Restore-Roundtrip-Selbsttest ✅ **(PR #116)** → **2.** Test-Modus/Sandbox-Tresor
 (`docs/TEST_MODUS.md`): **2a. Sandbox-Kern ✅ (PR #118)** → **2b. Store-Glue `core/sandboxStore.js` ✅ (PR #120)**
-→ **2c. UI ✅ (PR #122)** („🧪 Tests"-Bereich + TEST-Banner + behalten/verwerfen; optionale Demo-Vorbefüllung bewusst als Folgeschritt offen) → **3. Backup-UX + `backupStrategie` ✅ (PR #124)** (`docs/DATENSICHERUNG.md`; prominente Karte + gemerkter Zielordner/File System Access + Download-Fallback + Drag-and-drop-Restore + Setting `backupStrategie` im Onboarding/Einstellungen) → **Block 1 abgeschlossen. NÄCHSTER SCHRITT: Block 2/Schritt 4 — Setting `rechnungsstelle`**. Danach weiter **Block 2: Kalkulation/Angebote**
+→ **2c. UI ✅ (PR #122)** („🧪 Tests"-Bereich + TEST-Banner + behalten/verwerfen; optionale Demo-Vorbefüllung bewusst als Folgeschritt offen) → **3. Backup-UX + `backupStrategie` ✅ (PR #124)** (`docs/DATENSICHERUNG.md`; prominente Karte + gemerkter Zielordner/File System Access + Download-Fallback + Drag-and-drop-Restore + Setting `backupStrategie` im Onboarding/Einstellungen) → **Block 1 abgeschlossen.** **Block 2/Schritt 4 — Setting `rechnungsstelle` ✅ (PR #125)** (`domain/rechnungsstelle.js`: blp|extern, Default blp, vorläufige interne Nummer `ENT-JJJJ-NNNN`, Wechsel-Hinweis blp→extern→Bestätigung; Onboarding + Einstellungen). **NÄCHSTER SCHRITT: Block 2/Schritt 5 — Kalkulations-Kern (rein)** (`docs/KALKULATION_KATALOG.md` §2/§9: Kostenarten + Zuschlags-/Maschinenstundensatz-/m²-Formel, vorwärts + rückwärts, cent-genau, node-getestet). Danach weiter **Block 2: Kalkulation/Angebote**
 (`docs/KALKULATION_KATALOG.md`; Prime Directive: Kalkulation intern, Angebot/Rechnung neutral). **Vermerk:** auch
 **Mein-WorkFloh** soll einen Test-Modus nach `docs/TEST_MODUS.md` bekommen (fremdes Repo, über den Nutzer).
 **(Frühere Notiz, Kontext):** Der reine „build-freie Rest-Korb" war leer; in der vorigen Sitzung
@@ -102,8 +102,17 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Datensicherungs-UX + backupStrategie", PR #124):** SW **v107** · Tests **1158/1158** grün · 102 JS-Module.
-**Datensicherungs-UX + backupStrategie erledigt (diese Sitzung, BAUPLAN Block 1/Schritt 3 — Block 1 abgeschlossen):**
+**Kopf-Status (Stand nach „Setting `rechnungsstelle`", PR #125):** SW **v108** · Tests **1181/1181** grün · 103 JS-Module.
+**Setting `rechnungsstelle` erledigt (diese Sitzung, BAUPLAN Block 2/Schritt 4 — Block-2-Enabler):** Nummernkreis-Hoheit
+(§14) als Setting `rechnungsstelle` (`blp|extern`, Default `blp`, Katalog §7a). Reine Logik `src/domain/rechnungsstelle.js`
+(node-getestet, +23): `RECHNUNGSSTELLE`/`normalizeRechnungsstelle`/`rechnungsstelleVon`/`istBlp|ExternRechnungsstelle`/
+`vergibtBlpNummern`, **vorläufige interne Nummer** `vorlaeufigeRechnungsnummer`/`istVorlaeufigeNummer` (`ENT-JJJJ-NNNN`,
+KEINE §14-Nummer), **Wechsel-Hinweis** `rechnungsstelleWechselHinweis` (blp→extern mit bereits vergebenen §14-Nummern →
+Warnung/Bestätigung, GoBD-Lückenlosigkeit). Setting in `state.js`; Onboarding-Schritt (`ui/lock.js`, nach §19) +
+Einstellungs-Umschalter mit Bestätigung (`ui/shell.js` via `crm-store.vergebeneRechnungsnummern`). i18n de/en, SW `v108`.
+**Konsumiert** (echte vs. vorläufige Nummernvergabe, Dokument-Beschriftung, Export) wird das erst in Block 2/Schritt 7+8.
+UI/IndexedDB statisch geprüft (kein Headless-Browser). **Nächster Schritt: Block 2/Schritt 5 — Kalkulations-Kern (rein).**
+**Datensicherungs-UX + backupStrategie erledigt (vorige Sitzung, BAUPLAN Block 1/Schritt 3 — Block 1 abgeschlossen):**
 Datendurabilität ist Pflicht #1. Prominente „Datensicherung"-Karte (Dashboard + Durabilitäts-Banner + Einstellungen)
 mit **Drag-and-drop-Restore**; **gemerkter Zielordner** (File System Access, gerätelokal in eigener unverschlüsselter
 kv-DB `core/backupOrdner.js`; Tablet/ohne API/ohne Ordner → **Download-Fallback**, nie blockieren); neues Setting
@@ -241,10 +250,10 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-18 (Datensicherungs-UX + backupStrategie) · **Branch (letzte PR):** `claude/backup-restore-ux-kd8ft9` (PR #124)
-· **Tests:** `node tests/run.mjs` → **1158/1158 grün**
-· **SW-Cache:** `v107` · **102 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1 KOMPLETT: Schritt 1 ✅, Schritt 2a/2b/2c (Test-Modus) ✅, Schritt 3 (Datensicherungs-UX + backupStrategie) ✅**
-· **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (nächste = **Block 2/Schritt 4 — Setting `rechnungsstelle`**).
+**Letzte Aktualisierung:** 2026-06-18 (Setting `rechnungsstelle`) · **Branch (letzte PR):** `claude/block-2-kalkulation-angebote-6z8pht` (PR #125)
+· **Tests:** `node tests/run.mjs` → **1181/1181 grün**
+· **SW-Cache:** `v108` · **103 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1 KOMPLETT (Schritt 1 + 2a/2b/2c + 3) · Block 2/Schritt 4 (`rechnungsstelle`) ✅**
+· **Mehr-Sitzungs-Plan:** `docs/BAUPLAN.md` (nächste = **Block 2/Schritt 5 — Kalkulations-Kern (rein)**).
 · **B1 ✅:** Bilanzierung-Modus (`gewinnermittlung` euer|bilanz, Default euer) + Konten-Klassifikation
   (`domain/bilanzierung.js`) + Bilanz-Grundkonten 0800/0840/0860/0970 im Seed + Modus-Schalter (PR #87).
 · **B2 ✅:** GuV (`domain/bilanz.js gewinnUndVerlust`) — Erträge/Aufwendungen je Erfolgskonto, Jahresüberschuss;

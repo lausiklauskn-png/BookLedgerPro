@@ -28,6 +28,12 @@ import {
   BACKUP_STRATEGIEN, DEFAULT_BACKUP_STRATEGIE, normalizeBackupStrategie,
   backupZiel, backupDateiname, istBackupDatei,
 } from '../src/domain/backupStrategie.js';
+import {
+  RECHNUNGSSTELLE, RECHNUNGSSTELLE_LISTE, RECHNUNGSSTELLE_DEFAULT, istRechnungsstelle,
+  normalizeRechnungsstelle, rechnungsstelleVon, istBlpRechnungsstelle, istExternRechnungsstelle,
+  vergibtBlpNummern, vorlaeufigeRechnungsnummer, istVorlaeufigeNummer, VORLAEUFIG_PREFIX,
+  rechnungsstelleWechselHinweis,
+} from '../src/domain/rechnungsstelle.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
@@ -3438,6 +3444,60 @@ await section('Datensicherung (Schritt 3): backupStrategie', () => {
   ok('istBackupDatei: Fremd-JSON → nein', !istBackupDatei({ name: 'daten.json', text: '{ "foo": 1 }' }));
   ok('istBackupDatei: PDF → nein', !istBackupDatei({ name: 'beleg.pdf', text: '%PDF' }));
   ok('istBackupDatei: leer → nein', !istBackupDatei({}));
+});
+
+await section('Kalkulation Block 2/Schritt 4: rechnungsstelle (§14-Hoheit)', () => {
+  // Werte + Default.
+  ok('Liste = blp + extern', RECHNUNGSSTELLE_LISTE.length === 2 &&
+    RECHNUNGSSTELLE_LISTE.includes('blp') && RECHNUNGSSTELLE_LISTE.includes('extern'));
+  ok('Default = blp (Bestand unverändert)', RECHNUNGSSTELLE_DEFAULT === 'blp');
+  ok('Konstanten korrekt', RECHNUNGSSTELLE.BLP === 'blp' && RECHNUNGSSTELLE.EXTERN === 'extern');
+
+  // Gültigkeit + Normalisierung.
+  ok('istRechnungsstelle: blp/extern ja', istRechnungsstelle('blp') && istRechnungsstelle('extern'));
+  ok('istRechnungsstelle: Unsinn nein', !istRechnungsstelle('quatsch') && !istRechnungsstelle(undefined));
+  ok('normalize: unbekannt → blp', normalizeRechnungsstelle('quatsch') === 'blp');
+  ok('normalize: undefined → blp', normalizeRechnungsstelle(undefined) === 'blp');
+  ok('normalize: extern bleibt extern', normalizeRechnungsstelle('extern') === 'extern');
+
+  // Aus Settings lesen + Prädikate.
+  ok('rechnungsstelleVon: fehlend → blp', rechnungsstelleVon({}) === 'blp');
+  ok('rechnungsstelleVon: extern', rechnungsstelleVon({ rechnungsstelle: 'extern' }) === 'extern');
+  ok('istBlp: Default ja', istBlpRechnungsstelle({}) && !istExternRechnungsstelle({}));
+  ok('istExtern: extern ja', istExternRechnungsstelle({ rechnungsstelle: 'extern' }) &&
+    !istBlpRechnungsstelle({ rechnungsstelle: 'extern' }));
+  ok('vergibtBlpNummern: nur bei blp', vergibtBlpNummern({}) &&
+    !vergibtBlpNummern({ rechnungsstelle: 'extern' }));
+
+  // Vorläufige interne Nummer (extern-Modus) — KEINE §14-Nummer.
+  ok('vorläufige Nummer Format', vorlaeufigeRechnungsnummer(7, 2026) === 'ENT-2026-0007');
+  ok('vorläufige Nummer Präfix', VORLAEUFIG_PREFIX === 'ENT');
+  ok('istVorlaeufigeNummer: ENT-… ja', istVorlaeufigeNummer('ENT-2026-0007'));
+  ok('istVorlaeufigeNummer: §14-Nummer nein', !istVorlaeufigeNummer('2026-0007'));
+  ok('istVorlaeufigeNummer: leer/Nicht-String nein', !istVorlaeufigeNummer(null) && !istVorlaeufigeNummer(undefined));
+
+  // Wechsel-Hinweis (Katalog §7a, ehrliche Grenze 1).
+  ok('Wechsel: gleich → unverändert, keine Warnung', (() => {
+    const h = rechnungsstelleWechselHinweis('blp', 'blp', { vergebeneNummern: 5 });
+    return h.code === 'unveraendert' && h.erlaubt && !h.warnen;
+  })());
+  ok('Wechsel blp→extern MIT vergebenen Nummern → warnen', (() => {
+    const h = rechnungsstelleWechselHinweis('blp', 'extern', { vergebeneNummern: 3 });
+    return h.code === 'blp-nummern-vergeben' && h.erlaubt && h.warnen;
+  })());
+  ok('Wechsel blp→extern OHNE vergebene Nummern → ok, keine Warnung', (() => {
+    const h = rechnungsstelleWechselHinweis('blp', 'extern', { vergebeneNummern: 0 });
+    return h.code === 'ok' && h.erlaubt && !h.warnen;
+  })());
+  ok('Wechsel extern→blp → ok, keine Warnung (sicher)', (() => {
+    const h = rechnungsstelleWechselHinweis('extern', 'blp', { vergebeneNummern: 9 });
+    return h.code === 'ok' && h.erlaubt && !h.warnen;
+  })());
+  ok('Wechsel: ungültige Werte werden normalisiert', (() => {
+    const h = rechnungsstelleWechselHinweis('quatsch', 'extern', { vergebeneNummern: 2 });
+    // 'quatsch' → blp, also blp→extern mit Nummern → warnen
+    return h.code === 'blp-nummern-vergeben' && h.warnen;
+  })());
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

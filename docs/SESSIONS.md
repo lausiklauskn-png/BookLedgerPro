@@ -5,6 +5,40 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2/Schritt 4: Setting `rechnungsstelle` (§14-Nummernkreis-Hoheit) [PR #125, Branch `claude/block-2-kalkulation-angebote-6z8pht`]
+
+**Ausgangslage / Auswahl**
+- Block 1 (Vertrauen/Sicherheit) war komplett (Schritt 1 + 2a–2c + 3). Laut `docs/BAUPLAN.md` ist der nächste Schritt
+  der **erste Block-2-Enabler**: das Onboarding-/Einstellungs-Setting **`rechnungsstelle`** (`docs/KALKULATION_KATALOG.md` §7a).
+- Bewusst klein + in sich abgeschlossen geschnitten: nur Setting + reine Politik + UI-Verdrahtung. Die **Konsumtion**
+  (echte §14- vs. vorläufige Nummernvergabe, Dokument-Beschriftung, Export) gehört zu Block 2/Schritt 7+8 (Angebote/Rechnung).
+
+**Was getan** (reine Logik zuerst node-getestet — **+23 → 1181/1181**)
+- **`src/domain/rechnungsstelle.js`** (rein, node-getestet): `RECHNUNGSSTELLE` (`blp`|`extern`), `RECHNUNGSSTELLE_DEFAULT`
+  = `blp` (additiv/sicher), `istRechnungsstelle`/`normalizeRechnungsstelle`/`rechnungsstelleVon`, Prädikate
+  `istBlp|ExternRechnungsstelle`, `vergibtBlpNummern`; **vorläufige interne Nummer** `vorlaeufigeRechnungsnummer(seq,jahr)`
+  → `ENT-JJJJ-NNNN` (KEINE §14-Nummer) + `istVorlaeufigeNummer`; **`rechnungsstelleWechselHinweis(aktuell,ziel,{vergebeneNummern})`**
+  — blp→extern mit bereits vergebenen §14-Nummern ⇒ `{erlaubt:true, warnen:true, code:'blp-nummern-vergeben'}` (GoBD-
+  Lückenlosigkeit; bestehende Nummern bleiben gültig, BLP vergibt keine neuen mehr), alle anderen Wechsel unkritisch.
+- **`src/state.js`**: neues Setting `rechnungsstelle` (Default `blp`).
+- **`src/domain/crm-store.js`**: `vergebeneRechnungsnummern()` (liest den §14-Zähler `rechnungSeq` → Grundlage für den
+  Wechsel-Hinweis).
+- **`src/ui/lock.js`**: Onboarding-Schritt **`stepRechnungsstelle`** zwischen §19-Profil und Backup („Wer stellt eure
+  Rechnungen aus?").
+- **`src/ui/shell.js`**: Einstellungs-Abschnitt **`rechnungsstelleSection`** (Segment-Umschalter); Wechsel weg von BLP holt
+  `vergebeneRechnungsnummern`, zeigt bei `warnen` ein `confirm` und schaltet nur nach Bestätigung um.
+- i18n de/en (`onboard.rechnungsstelle*`, `settings.rechnungsstelle*` inkl. `warnWechsel`), **SW `v108`** + Modul precached.
+
+**Stand**
+- `node tests/run.mjs` → **1181/1181 grün**; `node --check` für alle geänderten Module ok. PR #125 (Draft → ready → CI → merge).
+- Docs fortgeschrieben: BAUPLAN Schritt 4 abgehakt, PULS „START HIER" + Kopf-Status auf Schritt 5, OFFENE_PUNKTE + NAECHSTE_SITZUNG.
+
+**Offen / Nächstes**
+- **Block 2/Schritt 5 — Kalkulations-Kern (rein)** (`docs/KALKULATION_KATALOG.md` §2/§9): Kostenarten + Zuschlags-/
+  Maschinenstundensatz-/m²-Formel, vorwärts (Preis) **und** rückwärts (erlaubte Zeit/Kosten), cent-genau, node-getestet.
+- **Grenze (ehrlich):** Das Setting steuert nur BLP (zwingt das externe Programm nicht); UI/IndexedDB statisch geprüft
+  (kein Headless-Browser); die Nummernvergabe-/Beschriftungs-Konsumtion folgt erst in Schritt 7+8.
+
 ## 2026-06-18 — BAUPLAN Block 1/Schritt 3: Datensicherungs-UX + `backupStrategie` [PR #124, Branch `claude/backup-restore-ux-kd8ft9`]
 
 **Ausgangslage / Auswahl**

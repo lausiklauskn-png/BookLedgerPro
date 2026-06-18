@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 1/Schritt 3 — Datensicherungs-UX + `backupStrategie`, PR #124; SW `v107`, 1158/1158; **Block 1 komplett**). Davor: Schritt 2c Test-Modus UI (PR #122), 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 2/Schritt 4 — Setting `rechnungsstelle` §14-Nummernkreis-Hoheit, PR #125; SW `v108`, 1181/1181; **Block-2-Enabler**). Davor: Block 1 komplett — Schritt 3 Datensicherungs-UX + `backupStrategie` (PR #124), 2c Test-Modus UI (PR #122), 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -28,7 +28,10 @@ ein PR, bei grüner CI selbstständig mergen**):
   selbstlernende Vor-/Nachkalkulation, BLP als Vorbereitungs-/Kontrollschicht für DATEV, Mehrrechner/Sync).
   **Prime Directive:** Kalkulation rein intern, Angebot/Rechnung neutral nach außen. Offene Entscheidung
   vor Baubeginn: **Nummernkreis-Hoheit** (stellt BLP die Rechnung aus oder DATEV/Steuerberater?) — gelöst
-  als **Onboarding-Setting `rechnungsstelle` `blp|extern`** (Default `blp`), Katalog §7a.
+  als **Onboarding-Setting `rechnungsstelle` `blp|extern`** (Default `blp`), Katalog §7a. ✅ **Setting umgesetzt
+  (PR #125, BAUPLAN Block 2/Schritt 4):** `domain/rechnungsstelle.js` (rein, node-getestet) + Onboarding +
+  Einstellungen (Wechsel-Bestätigung bei vergebenen §14-Nummern). **Konsumtion** (echte vs. vorläufige
+  Nummernvergabe/Beschriftung/Export) folgt in Block 2/Schritt 7+8.
 - **Datensicherung — wählbare 3-2-1-Strategie (Pflicht #1): JA, Anforderung steht.** Verbindliches Doku:
   **`docs/DATENSICHERUNG.md`** (Stellen: BLP intern · verschlüsselter gewählter Ordner re-importierbar ·
   Server/Offsite; **freie Nutzer-Wahl `backupStrategie`** beim Onboarding + in Einstellungen änderbar;

@@ -7,9 +7,10 @@
 > **Aktiver Plan jetzt: `docs/BAUPLAN.md`** (Block 1 Vertrauen/Sicherheit). Schritt 1
 > **Roundtrip-Selbsttest ✅ (PR #116)** · Schritt 2 **Test-Modus komplett**: 2a Sandbox-Kern ✅ (PR #118),
 > 2b Store-Glue ✅ (PR #120), 2c UI ✅ (PR #122) — `docs/TEST_MODUS.md` · **Schritt 3 Datensicherungs-UX +
-> `backupStrategie` ✅ (PR #124)** — `docs/DATENSICHERUNG.md`. **→ Block 1 abgeschlossen.** **Nächster Schritt:
-> Block 2 (Kalkulation/Angebote), Schritt 4: Setting `rechnungsstelle`** (`docs/KALKULATION_KATALOG.md`); optional
-> kleiner 2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`).
+> `backupStrategie` ✅ (PR #124)** — `docs/DATENSICHERUNG.md`. **→ Block 1 abgeschlossen.** **Block 2/Schritt 4: Setting
+> `rechnungsstelle` ✅ (PR #125)** — `domain/rechnungsstelle.js` (blp|extern, Default blp; Onboarding + Einstellungen;
+> `docs/KALKULATION_KATALOG.md` §7a). **Nächster Schritt: Block 2/Schritt 5 — Kalkulations-Kern (rein)** (`docs/KALKULATION_KATALOG.md`
+> §2/§9); optional kleiner 2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`).
 > Nächster Schritt: **mit dem Nutzer abstimmen** (AskUserQuestion) — der **build-freie Rest-Korb ist leer**
 > (R4-Rest ✅, **R5a-Rest SWIFT/ISO-20022-Schema-Validierung ✅**). Verbleibend nur noch **umgebungs-/menschen-
 > blockierte** [KANN]-Punkte (**R6/Rest**: Lighthouse/Perf → Headless-Browser; lokales OCR → Tesseract ist wasm/

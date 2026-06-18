@@ -17,20 +17,19 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/BAUPLAN.md` + `docs/NAC
 obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles.
 
 AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 2026-06-17 vereinbart). Reihenfolge
-steht dort. **Block 1 (Vertrauen/Sicherheit) ist KOMPLETT** — als Nächstes **Block 2 (Kalkulation/Angebote)**.
+steht dort. **Block 1 (Vertrauen/Sicherheit) ist KOMPLETT** — wir sind mitten in **Block 2 (Kalkulation/Angebote)**.
 **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (nicht zwingend 1/Sitzung; pro Schritt 1 PR,
-jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden). Stand Block 1: **Schritt 1 ✅ (PR #116,
-Roundtrip-Selbsttest)** · **Schritt 2 Test-Modus KOMPLETT** (2a #118, 2b #120, 2c #122) · **Schritt 3 Datensicherungs-UX
-+ `backupStrategie` ✅ (PR #124:** prominente „Datensicherung"-Karte + gemerkter Zielordner/File System Access +
-Download-Fallback + Drag-and-drop-Restore + Setting `backupStrategie` im Onboarding/Einstellungen; reine Logik
-`domain/backupStrategie.js` node-getestet; UI/IndexedDB/FS statisch geprüft**).** Nächste offene Schritte:
-1. **NÄCHSTER SCHRITT — Block 2/Schritt 4: Setting `rechnungsstelle`** (`blp|extern`, Default `blp`) —
-   `docs/KALKULATION_KATALOG.md` §7a. Kleiner Enabler für Block 2; im **Onboarding** wählbar + in den **Einstellungen**
-   änderbar; steuert §14-Nummernvergabe (blp) vs. interne Vorlage/vorläufige Nummer (extern). Reine Helfer/Logik
-   ZUERST node-testen; UI/DOM/IndexedDB als „statisch geprüft" kennzeichnen. Danach Block-2-Schritte 5–11 fein
-   geschnitten: Kalkulations-Kern → Produkt-Schemata → Angebote-Kern → Angebot→Rechnung → Auftrags-Kostenträger/
-   Nachkalkulation → Kalibrierung/Statistik → Baukasten-UX. **Prime Directive Angebote:** Kalkulation rein intern,
-   Angebot/Rechnung neutral nach außen.
+jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden). Stand: **Block 1 KOMPLETT** (Schritt 1 #116 ·
+2a #118 · 2b #120 · 2c #122 · 3 #124) · **Block 2/Schritt 4 Setting `rechnungsstelle` ✅ (PR #125:** `domain/rechnungsstelle.js`
+— `blp|extern`, Default `blp`, vorläufige interne Nummer `ENT-JJJJ-NNNN`, Wechsel-Hinweis blp→extern→Bestätigung; Onboarding +
+Einstellungen; node-getestet, UI statisch geprüft**).** Nächste offene Schritte:
+1. **NÄCHSTER SCHRITT — Block 2/Schritt 5: Kalkulations-Kern (rein)** — `docs/KALKULATION_KATALOG.md` §2/§9. Kostenarten
+   + Zuschlags-/Maschinenstundensatz-/m²-Formel, **vorwärts** (Selbstkosten→Preis) **und rückwärts** (erlaubtes Zeit-/
+   Kostenbudget), **cent-genau**, ZUERST node-getestet (reine Logik, kein UI-Zwang in diesem Schritt). Danach Block-2-Schritte
+   6–11 fein geschnitten: Produkt-Schemata → Angebote-Kern → Angebot→Rechnung → Auftrags-Kostenträger/Nachkalkulation →
+   Kalibrierung/Statistik → Baukasten-UX. **Prime Directive Angebote:** Kalkulation rein intern, Angebot/Rechnung neutral
+   nach außen. Hinweis: das Setting `rechnungsstelle` (Schritt 4) ist da — `vergibtBlpNummern`/`vorlaeufigeRechnungsnummer`
+   stehen bereit und werden in Schritt 7+8 konsumiert.
 2. **Optional, kleiner Folgeschritt zu Schritt 2c:** **Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) —
    ein neuer Test wahlweise leer **oder** mit Demo-Daten starten. (Die Test-Modus-UI ist ohne sie bereits
    vollständig nutzbar; daher bewusst abgegrenzt.)
@@ -68,9 +67,9 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 1/Schritt 3 (Datensicherungs-UX + `backupStrategie`, PR #124)**.
-Tests **1158/1158** · SW **v107** · 102 JS-Module. **Block 1 (Vertrauen/Sicherheit) KOMPLETT** (Schritt 1 + 2a–2c + 3).
-**Nächster Schritt: BAUPLAN Block 2/Schritt 4 — Setting `rechnungsstelle`** (`blp|extern`, Onboarding + Einstellungen;
-`docs/KALKULATION_KATALOG.md` §7a); danach Block-2-Schritte 5–11 (Kalkulations-Kern → … → Baukasten-UX). Optional:
-2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`). Mehrere PRs pro Sitzung erlaubt.
-(Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 4 (Setting `rechnungsstelle`, PR #125)**.
+Tests **1181/1181** · SW **v108** · 103 JS-Module. **Block 1 KOMPLETT** (Schritt 1 + 2a–2c + 3); **Block 2/Schritt 4 ✅**.
+**Nächster Schritt: BAUPLAN Block 2/Schritt 5 — Kalkulations-Kern (rein)** (`docs/KALKULATION_KATALOG.md` §2/§9;
+Zuschlags-/Maschinenstundensatz-/m²-Formel, vorwärts + rückwärts, cent-genau, node-getestet); danach Block-2-Schritte
+6–11 (Produkt-Schemata → … → Baukasten-UX). Optional: 2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`).
+Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

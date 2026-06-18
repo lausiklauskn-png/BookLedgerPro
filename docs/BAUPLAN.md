@@ -55,8 +55,14 @@
   Server-Ziel + konfigurierbare Erinnerungs-Kadenz (Banner erinnert weiterhin wöchentlich). (`docs/DATENSICHERUNG.md`)
 
 ### Block 2 — Kalkulation/Angebote (das große Thema, fein geschnitten)
-- [ ] **4. Setting `rechnungsstelle` (`blp|extern`, Default `blp`)** — kleiner Enabler für Block 2; Onboarding
-  + Einstellungen; steuert §14-Nummernvergabe vs. interne Vorlage. (`docs/KALKULATION_KATALOG.md` §7a)
+- [x] **4. Setting `rechnungsstelle` (`blp|extern`, Default `blp`)** ✅ (PR #125, 2026-06-18) — Enabler für Block 2.
+  Reine Logik `domain/rechnungsstelle.js` (node-getestet, +23 → **1181/1181**): `RECHNUNGSSTELLE`/`normalizeRechnungsstelle`/
+  `rechnungsstelleVon`/`istBlp|ExternRechnungsstelle`/`vergibtBlpNummern`, **vorläufige interne Nummer** `vorlaeufige-
+  Rechnungsnummer`/`istVorlaeufigeNummer` (`ENT-JJJJ-NNNN`), **Wechsel-Hinweis** `rechnungsstelleWechselHinweis`
+  (blp→extern mit vergebenen §14-Nummern → Warnung/Bestätigung, GoBD). Setting `rechnungsstelle` in `state.js` (Default
+  `blp`), Onboarding-Schritt (`ui/lock.js`, nach §19) + Einstellungs-Umschalter mit Bestätigung (`ui/shell.js`,
+  `vergebeneRechnungsnummern` aus `crm-store.js`). i18n de/en, SW `v108`. **Konsumiert** (Nummernvergabe/Beschriftung/
+  Export) wird das in Schritt 7/8. UI/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §7a)
 - [ ] **5. Kalkulations-Kern (rein)** — Kostenarten + Zuschlags-/Maschinenstundensatz-/m²-Formel, **vorwärts**
   (Selbstkosten→Preis) **und rückwärts** (erlaubtes Zeit-/Kostenbudget), cent-genau, node-getestet.
 - [ ] **6. Produkt-Schemata** — Folierung (m²)/Schild/Gravur/Leuchtreklame/Druck-Zukauf/Montage … als

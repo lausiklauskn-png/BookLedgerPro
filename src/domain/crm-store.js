@@ -19,6 +19,15 @@ export async function naechsteRechnungsnummer() {
   return formatRechnungsnummer(seq, new Date().getFullYear());
 }
 
+/**
+ * Anzahl der bereits von BLP vergebenen §14-Nummern (Stand des Zählers).
+ * Grundlage für den Rechnungsstelle-Wechsel-Hinweis (Katalog §7a): ein Wechsel
+ * blp→extern ist heikel, sobald BLP schon einen lückenlosen Kreis führt.
+ */
+export async function vergebeneRechnungsnummern() {
+  return Number(await kvGet(RECHNUNG_SEQ_KEY)) || 0;
+}
+
 // ---- Kunden ----------------------------------------------------------------
 
 export async function saveKunde(k) {
