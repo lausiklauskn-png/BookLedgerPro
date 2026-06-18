@@ -45,6 +45,15 @@ import {
   feldDefaults, kalibrierbareFelder, kalibrierteDefaults, werteMitDefaults,
   baueKostenarten, schemaEingabe, kalkuliereSchema, validateSchema, validateAlleSchemata,
 } from '../src/domain/produktschemata.js';
+import {
+  ANGEBOT_STATUS, ANGEBOT_STATUS_LISTE, ANGEBOT_STATUS_DEFAULT, istAngebotStatus,
+  ANGEBOT_STATUS_FLOW, darfAngebotWechseln, setzeAngebotStatus, archiviereAngebot,
+  istArchiviert, istAktivesAngebot, aktiveAngebote, archivierteAngebote, angeboteNachStatus,
+  ANGEBOT_PREFIX, formatAngebotsnummer, parseAngebotsnummer, istAngebotsnummer,
+  naechsteAngebotsSeq, vergebeAngebotsnummer, normalizeAngebotsposition, positionAusSchema,
+  angebotSummen, externePosition, externesAngebot, interneAuswertung, neuesAngebot,
+  validateAngebot,
+} from '../src/domain/angebote.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
@@ -3667,6 +3676,142 @@ await section('Kalkulation Block 2/Schritt 6: Produkt-Schemata (rein, füttert d
 
   // Feld-/Enum-Konstanten exportiert und nicht-leer (für die spätere UI).
   ok('Enums vorhanden', PRODUKT_ART.EIGEN === 'eigen' && BASIS.M2 === 'm2' && FELD_TYP.GELD === 'geld');
+});
+
+// ===== BAUPLAN Block 2 / Schritt 7: Angebote-Kern =====
+
+await section('Angebote: Status-Lebenslauf & Übergänge', () => {
+  ok('Default-Status = entwurf', ANGEBOT_STATUS_DEFAULT === ANGEBOT_STATUS.ENTWURF);
+  ok('5 Status definiert', ANGEBOT_STATUS_LISTE.length === 5);
+  ok('istAngebotStatus prüft', istAngebotStatus('offen') && !istAngebotStatus('quatsch'));
+
+  // Erlaubte Übergänge.
+  ok('entwurf → offen erlaubt', darfAngebotWechseln('entwurf', 'offen'));
+  ok('offen → angenommen erlaubt', darfAngebotWechseln('offen', 'angenommen'));
+  ok('offen → abgelehnt erlaubt', darfAngebotWechseln('offen', 'abgelehnt'));
+  ok('abgelehnt → offen reaktivierbar', darfAngebotWechseln('abgelehnt', 'offen'));
+  ok('jeder aktive Status → archiviert', ['entwurf', 'offen', 'angenommen', 'abgelehnt'].every((s) => darfAngebotWechseln(s, 'archiviert')));
+  // Verbotene Übergänge.
+  ok('entwurf → angenommen verboten', !darfAngebotWechseln('entwurf', 'angenommen'));
+  ok('archiviert ist terminal', ANGEBOT_STATUS_FLOW.archiviert.length === 0);
+  ok('angenommen → offen verboten', !darfAngebotWechseln('angenommen', 'offen'));
+
+  // setzeAngebotStatus liefert NEUES Objekt / Fehler.
+  const a = neuesAngebot({ titel: 'Test', positionen: [{ menge: 1, einzelpreisCent: 1000, ustSatz: 19 }] });
+  const s1 = setzeAngebotStatus(a, 'offen');
+  ok('erlaubter Wechsel ok + neues Objekt', s1.ok && s1.angebot !== a && s1.angebot.status === 'offen' && a.status === 'entwurf');
+  const s2 = setzeAngebotStatus(a, 'angenommen');
+  ok('verbotener Wechsel → ok:false, Angebot unverändert', !s2.ok && s2.angebot.status === 'entwurf' && /nicht erlaubt/.test(s2.fehler));
+  const arch = archiviereAngebot(s1.angebot);
+  ok('archiviereAngebot → archiviert', arch.ok && istArchiviert(arch.angebot));
+  ok('istAktivesAngebot: offen aktiv, archiviert nicht', istAktivesAngebot(s1.angebot) && !istAktivesAngebot(arch.angebot));
+});
+
+await section('Angebote: Filter (aktiv/archiv/nach Status)', () => {
+  const liste = [
+    { status: 'entwurf' }, { status: 'offen' }, { status: 'angenommen' },
+    { status: 'archiviert' }, { status: 'abgelehnt' }, { status: 'archiviert' },
+  ];
+  ok('aktiveAngebote = 4', aktiveAngebote(liste).length === 4);
+  ok('archivierteAngebote = 2', archivierteAngebote(liste).length === 2);
+  ok('angeboteNachStatus(offen) = 1', angeboteNachStatus(liste, 'offen').length === 1);
+  ok('leere Liste robust', aktiveAngebote(null).length === 0 && archivierteAngebote(undefined).length === 0);
+});
+
+await section('Angebote: Nummernkreis (AN-JJJJ-NNNN, frei)', () => {
+  ok('Präfix AN', ANGEBOT_PREFIX === 'AN');
+  ok('Format AN-2026-0007', formatAngebotsnummer(7, 2026) === 'AN-2026-0007');
+  ok('Format vierstellig gepolstert', formatAngebotsnummer(1, 2026) === 'AN-2026-0001');
+  ok('parse korrekt', JSON.stringify(parseAngebotsnummer('AN-2026-0042')) === JSON.stringify({ jahr: 2026, seq: 42 }));
+  ok('parse ungültig → null', parseAngebotsnummer('2026-0001') === null && parseAngebotsnummer('') === null);
+  ok('istAngebotsnummer trennt vom §14-Kreis', istAngebotsnummer('AN-2026-0001') && !istAngebotsnummer('2026-0001'));
+
+  // Nächste Nummer pro Jahr fortlaufend; fremdes Jahr ignoriert.
+  const best = ['AN-2026-0001', 'AN-2026-0003', 'AN-2025-0099', 'kaputt', ''];
+  ok('naechsteAngebotsSeq(2026) = 4', naechsteAngebotsSeq(best, 2026) === 4);
+  ok('naechsteAngebotsSeq(2025) = 100', naechsteAngebotsSeq(best, 2025) === 100);
+  ok('naechsteAngebotsSeq(2027) = 1 (leeres Jahr)', naechsteAngebotsSeq(best, 2027) === 1);
+  // Aus Angebots-Objekten (nicht nur Strings).
+  ok('seq aus Objekten', naechsteAngebotsSeq([{ nummer: 'AN-2026-0005' }], 2026) === 6);
+
+  // Vergabe: setzt freie Nummer, lässt bereits nummerierte unangetastet.
+  const v = vergebeAngebotsnummer(neuesAngebot({ titel: 'X' }), best, 2026);
+  ok('vergebeAngebotsnummer setzt AN-2026-0004', v.nummer === 'AN-2026-0004');
+  const schon = { nummer: 'AN-2026-0001', titel: 'X' };
+  ok('vergebeAngebotsnummer lässt vergebene unverändert', vergebeAngebotsnummer(schon, best, 2026) === schon);
+});
+
+await section('Angebote: Positions-Aggregation (cent-genau, gemeinsamer Kern)', () => {
+  const positionen = [
+    { menge: 2, einzelpreisCent: 5000, ustSatz: 19 },   // 10000 netto, 1900 USt
+    { menge: 1, einzelpreisCent: 3000, ustSatz: 7 },     // 3000 netto, 210 USt
+    { menge: 3, einzelpreisCent: 1000, ustSatz: 19 },    // 3000 netto, 570 USt
+  ];
+  const s = angebotSummen(positionen);
+  ok('Netto 16000', s.netto === 16000);
+  ok('USt 19% = 2470, 7% = 210', s.perSatz[19].ust === 2470 && s.perSatz[7].ust === 210);
+  ok('USt gesamt 2680', s.ust === 2680);
+  ok('Brutto 18680', s.brutto === 18680);
+});
+
+await section('Angebote: Prime Directive — intern bleibt intern', () => {
+  // Position aus Schema: interne Kalkulation gespeichert, extern nur Netto-Preis.
+  const pos = positionAusSchema('folierung', {
+    werte: { flaecheM2: 5, preisProM2Cent: 4000, verschnittProzent: 15, verklebeStunden: 2, arbeitssatzCentProStd: 4500 },
+    zuschlaege: { gemeinkostenProzent: 15, gewinnProzent: 20, ustProzent: 19 },
+    beschreibung: 'Teilfolierung Transporter',
+  });
+  ok('interne kalkulation vorhanden', pos.kalkulation && pos.kalkulation.schemaId === 'folierung');
+  ok('externer Einzelpreis = interner Netto', pos.einzelpreisCent === pos.kalkulation.ergebnis.netto);
+  ok('ustSatz aus zuschlaege.ustProzent', pos.ustSatz === 19);
+  ok('Beschreibung übernommen', pos.beschreibung === 'Teilfolierung Transporter');
+
+  // Angebot mit dieser Position; Außendokument darf NICHTS Internes enthalten.
+  const angebot = neuesAngebot({ titel: 'Folierung', positionen: [pos] });
+  const extern = externesAngebot(angebot);
+  const externJson = JSON.stringify(extern);
+  ok('Außendokument hat keine kalkulation', !/kalkulation/.test(externJson));
+  ok('Außendokument verrät keine Marge/Verschnitt/Maschinensatz', !/(verschnitt|gewinnProzent|maschinensatz|selbstkosten|deckungsbeitrag)/i.test(externJson));
+  ok('externePosition: nur Whitelist-Felder + netto', Object.keys(externePosition(pos)).sort().join(',') === 'beschreibung,einzelpreisCent,menge,netto,ustSatz');
+  ok('Außendokument trägt Positionen + Summen', extern.positionen.length === 1 && extern.netto === pos.einzelpreisCent && extern.brutto > extern.netto);
+  ok('Außendokument-Steuerzeile 19%', extern.steuerzeilen.length === 1 && extern.steuerzeilen[0].satz === 19);
+
+  // normalizeAngebotsposition reicht interne Schicht unverändert durch.
+  const norm = normalizeAngebotsposition(pos);
+  ok('normalize behält interne kalkulation', norm.kalkulation === pos.kalkulation && norm.einzelpreisCent === pos.einzelpreisCent);
+});
+
+await section('Angebote: interne Auswertung (Live-Deckungsbeitrag, intern)', () => {
+  const pos = positionAusSchema('montage', {
+    werte: { arbeitsStunden: 4, arbeitssatzCentProStd: 4500, anfahrtCent: 2000 },
+    zuschlaege: { gemeinkostenProzent: 10, gewinnProzent: 25, ustProzent: 19 },
+  });
+  // Menge 2 → Auswertung × Menge; externes Netto = einzelpreis × menge.
+  const angebot = neuesAngebot({ titel: 'Montage', positionen: [{ ...pos, menge: 2 }] });
+  const intern = interneAuswertung(angebot);
+  const extern = externesAngebot(angebot);
+  ok('interne netto = externes netto', intern.netto === extern.netto);
+  ok('Deckungsbeitrag = netto − selbstkosten', intern.deckungsbeitrag === intern.netto - intern.selbstkosten);
+  ok('Selbstkosten > 0', intern.selbstkosten > 0);
+  // Position ohne Kalkulation zählt mit 0 (kein Absturz).
+  const gemischt = neuesAngebot({ titel: 'Mix', positionen: [{ menge: 1, einzelpreisCent: 5000, ustSatz: 19 }] });
+  ok('ohne kalkulation → alles 0', JSON.stringify(interneAuswertung(gemischt)) === JSON.stringify({ selbstkosten: 0, netto: 0, deckungsbeitrag: 0 }));
+});
+
+await section('Angebote: Factory & Validierung', () => {
+  const a = neuesAngebot({ titel: 'Schild', positionen: [{ menge: '2', einzelpreisCent: 12000, ustSatz: '19' }] });
+  ok('Factory: type/status/leere Nummer', a.type === 'angebot' && a.status === 'entwurf' && a.nummer === '');
+  ok('Factory: Position normalisiert (Zahlen)', a.positionen[0].menge === 2 && a.positionen[0].ustSatz === 19);
+  ok('gültiges Angebot → keine Fehler', validateAngebot(a).length === 0);
+
+  ok('Entwurf ohne Nummer ist gültig', !validateAngebot(a).some((e) => /nummer/i.test(e)));
+  ok('fehlender Titel → Fehler', validateAngebot({ ...a, titel: '  ' }).some((e) => /Titel/.test(e)));
+  ok('keine Positionen → Fehler', validateAngebot({ ...a, positionen: [] }).some((e) => /Position/.test(e)));
+  ok('ungültige Nummer → Fehler', validateAngebot({ ...a, nummer: '2026-0001' }).some((e) => /Angebotsnummer/.test(e)));
+  ok('ungültiger Status → Fehler', validateAngebot({ ...a, status: 'quatsch' }).some((e) => /Status/.test(e)));
+  ok('Menge 0 → Fehler', validateAngebot({ ...a, positionen: [{ menge: 0, einzelpreisCent: 100 }] }).some((e) => /Menge/.test(e)));
+  ok('negativer Preis → Fehler', validateAngebot({ ...a, positionen: [{ menge: 1, einzelpreisCent: -1 }] }).some((e) => /Einzelpreis/.test(e)));
+  ok('kein Angebot → Fehler', validateAngebot(null).length > 0);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

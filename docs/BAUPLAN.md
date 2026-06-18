@@ -81,9 +81,18 @@
   Elektrik/Montage) sind `kalibrierbar` markiert + via `kalibrierteDefaults` überschreibbar (feste Felder unangetastet)
   → Andockpunkt für Schritt 9/10. `validateSchema`/`validateAlleSchemata` sichern die Definitionen. SW `v110`.
   Rein — **kein UI** (eigener Folgeschritt). Test u. a.: `kalkuliereSchema == direkter Kern-Aufruf`. (Katalog §1/§2)
-- [ ] **7. Angebote-Kern in BLP** — Angebots-Dokument (Positionen/Preise/USt) **+ interne Kalkulationsschicht**
-  (Prime Directive: intern bleibt intern!), eigener **Angebotsnummernkreis**, Status (Entwurf/offen/angenommen/
-  abgelehnt/archiviert), **Archiv**. Nutzt Kern (5) + `rechnungsstelle` (4).
+- [x] **7. Angebote-Kern in BLP** ✅ (PR #128, 2026-06-18) — `domain/angebote.js` (rein, node-getestet, +60 →
+  **1298/1298**): Angebots-Datenmodell mit **zwei Schichten** (extern: Positionen/Preise/USt; intern: `kalkulation`
+  je Position) — **Prime Directive** durchgesetzt via `externesAngebot`/`externePosition` (**Whitelist** → nichts
+  Internes kann lecken). Status-Lebenslauf `ANGEBOT_STATUS` (entwurf/offen/angenommen/abgelehnt/archiviert) +
+  `ANGEBOT_STATUS_FLOW`/`darfAngebotWechseln`/`setzeAngebotStatus`/`archiviereAngebot` + Filter `aktiveAngebote`/
+  `archivierteAngebote`/`angeboteNachStatus`. **Freier** Angebotsnummernkreis `AN-JJJJ-NNNN` (klar getrennt vom
+  §14-Kreis): `formatAngebotsnummer`/`parseAngebotsnummer`/`istAngebotsnummer`/`naechsteAngebotsSeq` (pro Jahr
+  fortlaufend)/`vergebeAngebotsnummer`. Positions-Aggregation `angebotSummen` nutzt denselben Kern wie Aufträge/
+  Rechnungen (`orders.auftragSummen`, cent-genau). `positionAusSchema` koppelt die Produkt-Schemata (6) an den Kern
+  (5): interne Kalkulation gespeichert, extern dringt **nur der Netto-Stückpreis**. `interneAuswertung`
+  (Live-Deckungsbeitrag, rein intern). `neuesAngebot`/`validateAngebot`. SW `v111`. **Kein UI** (eigener Folgeschritt).
+  (`docs/KALKULATION_KATALOG.md` §3/§4/§5)
 - [ ] **8. Angebot → Rechnung-Übernahme** — angenommenes Angebot → bestehender Rechnungs-/Buchungspfad;
   je nach `rechnungsstelle` echte §14-Nummer (blp) oder vorläufige Vorlage (extern); referenziert Angebotsnr.
 - [ ] **9. Auftrags-Kostenträger + Nachkalkulation** — Material/Belege/Zeit je Auftrag sammeln (nutzt

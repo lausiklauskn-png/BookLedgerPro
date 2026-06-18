@@ -5,6 +5,53 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2/Schritt 7: Angebote-Kern in BLP (rein, zwei Schichten) [PR #128, Branch `claude/block2-step7-quotation-8wfjxz`]
+
+**Ausgangslage / Auswahl**
+- Block 1 komplett; Block 2/Schritte 4 (`rechnungsstelle`) + 5 (Kalkulations-Kern) + 6 (Produkt-Schemata) erledigt. Laut
+  `docs/BAUPLAN.md` ist der nächste Schritt der **Angebote-Kern** (`docs/KALKULATION_KATALOG.md` §3/§4/§5) — bewusst
+  **ohne UI** in diesem Schritt (eigener Folgeschritt).
+- **Prime Directive** (Katalog §0): Kalkulation rein intern, Angebot/Rechnung neutral nach außen — das Datenmodell speichert
+  **beide** Schichten, druckt/exportiert aber **nur** die externe.
+
+**Was getan** (reine Logik node-getestet — **+60 → 1298/1298**)
+- **`src/domain/angebote.js`** (rein, node-getestet):
+  - **Datenmodell zwei Schichten:** Position trägt externe Felder (`beschreibung`/`menge`/`einzelpreisCent`/`ustSatz`) +
+    optional interne `kalkulation`. **`externesAngebot`/`externePosition`** bauen das Außendokument per **WHITELIST** →
+    selbst neu hinzugefügte interne Felder können nie lecken (Test prüft: keine `kalkulation`/`marge`/`verschnitt`/
+    `maschinensatz`/`selbstkosten`/`deckungsbeitrag` im JSON).
+  - **Status-Lebenslauf** `ANGEBOT_STATUS` (entwurf/offen/angenommen/abgelehnt/archiviert) + `ANGEBOT_STATUS_FLOW`/
+    `darfAngebotWechseln`/`setzeAngebotStatus` (neues Objekt, GoBD-neutral)/`archiviereAngebot` + Filter
+    `aktiveAngebote`/`archivierteAngebote`/`angeboteNachStatus`.
+  - **Freier Angebotsnummernkreis** `AN-JJJJ-NNNN` (klar getrennt vom strikten §14-Kreis): `formatAngebotsnummer`/
+    `parseAngebotsnummer`/`istAngebotsnummer`/`naechsteAngebotsSeq` (pro Jahr fortlaufend, fremde Jahre/ungültige
+    ignoriert)/`vergebeAngebotsnummer` (lässt bereits vergebene unverändert).
+  - **Positions-Aggregation** `angebotSummen` = `orders.auftragSummen` (ein gemeinsamer cent-genauer Kern, keine zweite
+    Rundungslogik); `externePosition` liefert Whitelist + Zeilen-Netto.
+  - **Schema-Kopplung** `positionAusSchema` (verbindet Produkt-Schemata Schritt 6 + Kern Schritt 5): interne Kalkulation
+    gespeichert, nach außen dringt **nur der Netto-Stückpreis**; `ustSatz` = `zuschlaege.ustProzent` (eine Quelle).
+  - **`interneAuswertung`** (Selbstkosten/Netto/Deckungsbeitrag aggregiert × Menge — Live-Deckungsbeitrag, rein intern;
+    Test: `interneAuswertung.netto === externesAngebot.netto`). `neuesAngebot`/`normalizeAngebotsposition`/`validateAngebot`
+    (Entwurf ohne Nummer gültig; Nummer nur geprüft, wenn vorhanden).
+- **`sw.js`:** `CACHE_VERSION` → **v111**, Modul `./src/domain/angebote.js` precached.
+- **`tests/run.mjs`:** +60 Prüfungen über 6 Abschnitte (Status/Übergänge, Filter, Nummernkreis, Aggregation, Prime
+  Directive, interne Auswertung, Factory/Validierung).
+
+**Stand**
+- `node tests/run.mjs` → **1298/1298 grün**. PR #128 (Draft → ready → CI → merge).
+- Docs fortgeschrieben: BAUPLAN Schritt 7 abgehakt, PULS „START HIER" + Kopf-Status + Footer auf Schritt 8,
+  OFFENE_PUNKTE + NAECHSTE_SITZUNG.
+
+**Offen / Nächstes**
+- **Block 2/Schritt 8 — Angebot → Rechnung-Übernahme**: angenommenes Angebot → bestehender Rechnungs-/Buchungspfad
+  (`invoicing.js`/`rechnung.js`); je nach `rechnungsstelle` echte §14-Nummer (blp) oder vorläufige Vorlage `ENT-…`
+  (extern); **referenziert** die Angebotsnummer, benutzt sie nicht wieder.
+- **Grenze (ehrlich):** reine Logik, **kein UI** in diesem Schritt; kein Headless-Browser. Persistenz (verschlüsselt,
+  crm-store) + adaptiver Baukasten (Katalog §3, Schritt 11) kommen später. `positionAusSchema` rechnet pro Stück
+  (Menge default 1); die internen Startsätze bleiben neutrale Platzhalter zum Kalibrieren.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2/Schritt 6: Produkt-Schemata (rein, füttert den Kern) [PR #127, Branch `claude/block2-produkt-schemata`]
 
 **Ausgangslage / Auswahl**

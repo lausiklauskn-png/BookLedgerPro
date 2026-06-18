@@ -22,20 +22,21 @@ steht dort. **Block 1 (Vertrauen/Sicherheit) ist KOMPLETT** — wir sind mitten 
 jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden). Stand: **Block 1 KOMPLETT** (Schritt 1 #116 ·
 2a #118 · 2b #120 · 2c #122 · 3 #124) · **Block 2/Schritt 4 Setting `rechnungsstelle` ✅ (PR #125)** · **Schritt 5
 Kalkulations-Kern ✅ (PR #126:** `domain/kalkulation.js`) · **Schritt 6 Produkt-Schemata ✅ (PR #127:**
-`domain/produktschemata.js` — die 6 kalibrierbaren Vorlagen Folierung (m²)/Schild/Gravur/Leuchtreklame/Druck-Zukauf/Montage,
-die den Kern füttern: `PRODUKT_ART`/`BASIS`/`FELD_TYP`-Enums, `PRODUKT_SCHEMATA`/`schemaNach`, `baueKostenarten`/
-`schemaEingabe`/`kalkuliereSchema` (mappt m²→Material, Gravur-Min→Maschinen-Std), „Hotspots" via `kalibrierteDefaults`
-überschreibbar, `validateAlleSchemata`; rein node-getestet, **kein UI**)**.** Nächste offene Schritte:
-1. **NÄCHSTER SCHRITT — Block 2/Schritt 7: Angebote-Kern in BLP** — `docs/KALKULATION_KATALOG.md` §3/§4/§5. Angebots-Dokument
-   (Positionen/Preise/USt) **+ interne Kalkulationsschicht** (Prime Directive: intern bleibt intern!), eigener
-   **Angebotsnummernkreis** (z. B. `AN-2026-0001`, frei, nicht GoBD-relevant), Status (Entwurf/offen/angenommen/abgelehnt/
-   archiviert) + **Archiv**. Nutzt den Kalkulations-Kern (`domain/kalkulation.js`, Schritt 5) + die Produkt-Schemata
-   (`domain/produktschemata.js`: `kalkuliereSchema`/`PRODUKT_SCHEMATA`, Schritt 6) + `domain/rechnungsstelle.js` (Schritt 4:
-   `vergibtBlpNummern`/`vorlaeufigeRechnungsnummer`). ZUERST reine Logik node-getestet (Angebots-Datenmodell + Positions-
-   Aggregation + Statusübergänge + Nummernkreis), UI ggf. eigener Folgeschritt. Danach Block-2-Schritte 8–11 fein geschnitten:
-   Angebot→Rechnung → Auftrags-Kostenträger/Nachkalkulation → Kalibrierung/Statistik → Baukasten-UX.
-   **Prime Directive Angebote:** Kalkulation rein intern, Angebot/Rechnung neutral nach außen — Datenmodell speichert beide
-   Schichten, druckt/exportiert aber nur die externe.
+`domain/produktschemata.js`) · **Schritt 7 Angebote-Kern ✅ (PR #128:** `domain/angebote.js` — Angebots-Datenmodell mit
+zwei Schichten (extern Positionen/Preise/USt, intern `kalkulation` je Position; Prime Directive via
+`externesAngebot`/`externePosition`-Whitelist), Status entwurf/offen/angenommen/abgelehnt/archiviert
+(`ANGEBOT_STATUS`/`darfAngebotWechseln`/`setzeAngebotStatus`/Archiv-Filter), freier Nummernkreis `AN-JJJJ-NNNN`
+(`formatAngebotsnummer`/`naechsteAngebotsSeq`/`vergebeAngebotsnummer`), Aggregation `angebotSummen` (= `orders.auftragSummen`),
+`positionAusSchema` (koppelt Schemata (6) an Kern (5), nach außen nur Netto-Stückpreis), `interneAuswertung` (Live-DB),
+`neuesAngebot`/`validateAngebot`; rein node-getestet, **kein UI**)**.** Nächste offene Schritte:
+1. **NÄCHSTER SCHRITT — Block 2/Schritt 8: Angebot → Rechnung-Übernahme** — `docs/KALKULATION_KATALOG.md` §4. Ein
+   **angenommenes** Angebot (`domain/angebote.js`, `ANGEBOT_STATUS.ANGENOMMEN`) → bestehender Rechnungs-/Buchungspfad
+   (`domain/invoicing.js`/`domain/rechnung.js`): je nach Setting `rechnungsstelle` (Schritt 4) entweder echte **§14-Nummer**
+   (`blp`, `formatRechnungsnummer`) **oder** vorläufige Vorlage `ENT-JJJJ-NNNN` (`extern`, `vorlaeufigeRechnungsnummer`);
+   das Ergebnis **referenziert** die Angebotsnummer, benutzt sie aber NICHT wieder (zwei getrennte Kreise, GoBD). ZUERST
+   reine Logik node-getestet (Übernahme-Entwurf aus `externesAngebot`-Positionen + Nummern-Politik + Referenz), UI ggf.
+   eigener Folgeschritt. Danach Block-2-Schritte 9–11 fein geschnitten: Auftrags-Kostenträger/Nachkalkulation →
+   Kalibrierung/Statistik → Baukasten-UX. **Prime Directive bleibt:** Kalkulation rein intern, Rechnung neutral nach außen.
 2. **Optional, kleiner Folgeschritt zu Schritt 2c:** **Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) —
    ein neuer Test wahlweise leer **oder** mit Demo-Daten starten. (Die Test-Modus-UI ist ohne sie bereits
    vollständig nutzbar; daher bewusst abgegrenzt.)
@@ -73,9 +74,10 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 6 (Produkt-Schemata, PR #127)**.
-Tests **1238/1238** · SW **v110** · 105 JS-Module. **Block 1 KOMPLETT** (Schritt 1 + 2a–2c + 3); **Block 2/Schritt 4 + 5 + 6 ✅**.
-**Nächster Schritt: BAUPLAN Block 2/Schritt 7 — Angebote-Kern in BLP** (`docs/KALKULATION_KATALOG.md` §3/§4/§5;
-Angebots-Dokument + interne Kalkulationsschicht, Angebotsnummernkreis, Status/Archiv; nutzt Kern (5) + Schemata (6) +
-`rechnungsstelle` (4)); danach Block-2-Schritte 8–11 (Angebot→Rechnung → Nachkalkulation → Kalibrierung → Baukasten-UX).
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 7 (Angebote-Kern, PR #128)**.
+Tests **1298/1298** · SW **v111** · 106 JS-Module. **Block 1 KOMPLETT** (Schritt 1 + 2a–2c + 3); **Block 2/Schritt 4 + 5 + 6 + 7 ✅**.
+**Nächster Schritt: BAUPLAN Block 2/Schritt 8 — Angebot → Rechnung-Übernahme** (`docs/KALKULATION_KATALOG.md` §4;
+angenommenes Angebot → Rechnungs-/Buchungspfad, §14-Nummer (blp) bzw. Vorlage `ENT-…` (extern), referenziert die
+Angebotsnummer; nutzt `domain/angebote.js` (7) + `invoicing.js`/`rechnung.js` + `rechnungsstelle` (4)); danach
+Block-2-Schritte 9–11 (Nachkalkulation → Kalibrierung → Baukasten-UX).
 Optional: 2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`). Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
