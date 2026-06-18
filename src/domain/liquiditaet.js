@@ -172,6 +172,71 @@ export function liquiditaetsVorschau(opts = {}) {
 }
 
 /**
+ * Liquiditäts-VERLAUF über das Fenster: der projizierte Geldsaldo NACH jedem Tag mit
+ * Zahlungsbewegung — und daraus der TIEFPUNKT (tiefster Stand + Datum) innerhalb des Fensters.
+ *
+ * Warum: liquiditaetsVorschau projiziert nur den Saldo am FENSTER-ENDE. Der kann positiv sein,
+ * obwohl der laufende Saldo zwischendurch ins Minus rutscht (z. B. große Verbindlichkeit am
+ * Tag 3, große Forderung erst am Tag 25). Der Tiefpunkt beantwortet das ehrlicher: „wird es
+ * zwischendurch eng — und wann?".
+ *
+ * Bewegungen werden je Fälligkeits-Tag gebündelt und chronologisch aufaddiert (Eingänge +,
+ * Ausgänge −), beginnend beim aktuellen Geldbestand. Ohne `geldbestandCent` bleiben die
+ * Saldo-Felder `null` (nur die Bewegungs-Punkte werden geliefert) — abwärtskompatibel.
+ * @param {{forderungen?:Array, verbindlichkeiten?:Array, heute?:string, horizontTage?:number,
+ *   geldbestandCent?:number}} [opts]
+ * @returns {{horizontTage:number, startCent:?number, endeCent:?number, tiefpunktCent:?number,
+ *   tiefpunktDatum:?string, punkte:Array<{datum:string, eingehendCent:number,
+ *   ausgehendCent:number, saldoCent:?number}>}}
+ */
+export function liquiditaetsVerlauf(opts = {}) {
+  const heute = opts.heute || new Date().toISOString().slice(0, 10);
+  const horizont = opts.horizontTage != null
+    ? Math.max(0, Math.floor(Number(opts.horizontTage) || 0))
+    : LIQUIDITAET_HORIZONT_DEFAULT;
+  const hatBestand = opts.geldbestandCent != null;
+  const startCent = hatBestand ? Math.round(Number(opts.geldbestandCent) || 0) : null;
+
+  // Bewegungen je Fälligkeits-Tag innerhalb des Fensters bündeln (nur bald fällig, nicht überfällig).
+  const perTag = {}; // 'JJJJ-MM-TT' -> {eingehendCent, ausgehendCent}
+  const erfasse = (posten, feld) => {
+    for (const p of posten || []) {
+      if (!p || !p.faelligAm) continue;
+      const tage = tageDiff(heute, p.faelligAm);
+      if (tage == null || tage < 0 || tage > horizont) continue;
+      const d = String(p.faelligAm).slice(0, 10);
+      const t = perTag[d] || (perTag[d] = { eingehendCent: 0, ausgehendCent: 0 });
+      t[feld] += offenerBetrag(p);
+    }
+  };
+  erfasse(opts.forderungen, 'eingehendCent');
+  erfasse(opts.verbindlichkeiten, 'ausgehendCent');
+
+  let lauf = startCent;
+  // Tiefpunkt startet beim aktuellen Bestand (Tag heute) — auch ein heute schon knapper
+  // Bestand soll als Tiefpunkt erkennbar sein.
+  let tiefpunktCent = startCent;
+  let tiefpunktDatum = hatBestand ? heute : null;
+  const punkte = [];
+  for (const d of Object.keys(perTag).sort()) {
+    const t = perTag[d];
+    if (hatBestand) {
+      lauf += t.eingehendCent - t.ausgehendCent;
+      if (lauf < tiefpunktCent) { tiefpunktCent = lauf; tiefpunktDatum = d; }
+    }
+    punkte.push({ datum: d, eingehendCent: t.eingehendCent, ausgehendCent: t.ausgehendCent, saldoCent: hatBestand ? lauf : null });
+  }
+  return {
+    horizontTage: horizont,
+    startCent,
+    endeCent: hatBestand ? lauf : null,
+    tiefpunktCent,
+    tiefpunktDatum,
+    punkte,
+  };
+}
+
+/**
  * Ampel für die projizierte Liquidität: kritisch, wenn der projizierte Saldo negativ wird
  * (nach Plan illiquide); Warnung, wenn der aktuelle Bestand allein die Ausgänge nicht deckt
  * (Liquidität hängt an erwarteten Eingängen); sonst ok. Ohne Bestand → ok (keine Aussage).

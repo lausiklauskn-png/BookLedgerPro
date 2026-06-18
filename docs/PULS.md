@@ -102,7 +102,19 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Liquiditätsvorschau: wählbares Zeitfenster"):** SW **v130** · Tests **1621/1621** grün · 117 JS-Module.
+**Kopf-Status (Stand nach „Liquiditäts-Tiefpunkt"):** SW **v131** · Tests **1638/1638** grün · 117 JS-Module.
+**Liquiditäts-Tiefpunkt (laufender Saldo im Fenster) (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #149):** Die
+Projektion (#149) prüfte nur den Saldo am **Fenster-ENDE** — der kann positiv sein, obwohl der laufende Saldo
+zwischendurch ins Minus rutscht (große Verbindlichkeit früh, ausgleichende Forderung spät). Reine Logik
+`domain/liquiditaet.js` **`liquiditaetsVerlauf(opts)`** (node-getestet, +17 → **1638/1638**): bündelt bald fällige
+Bewegungen je Fälligkeits-Tag, addiert sie chronologisch ab dem aktuellen Geldbestand auf → `punkte[]` (Saldo nach jedem
+Tag) + `startCent`/`endeCent` + **`tiefpunktCent`/`tiefpunktDatum`** (tiefster Stand + wann; startet beim heutigen
+Bestand). Ohne `geldbestandCent` → Saldo-Felder `null` (abwärtskompatibel). UI `ui/views/dashboard.js`: Tiefpunkt-Hinweis
+in der Liquiditäts-Karte — nur, wenn der laufende Saldo zwischendurch UNTER den End-Saldo fällt (sonst keine neue Info);
+**bucht nichts**. i18n de+en (`dashboard.liquidityLow`/`…LowHint`), SW `v131` (kein neues Modul). **Ehrliche Grenze:**
+einfache Planung nach Fälligkeitsdatum (keine Forecast-Modellierung), Bündelung je Tag (kein Intraday); DOM/IndexedDB
+statisch geprüft. **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-
+blockierte Block-3-Punkte oder eine neue, abgestimmte Idee.
 **Liquiditätsvorschau: wählbares Zeitfenster (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #149):** Die Liquiditäts-
 Karte rechnete bisher fest mit 7 Tagen. Jetzt ist das Fenster **7 / 14 / 30 / 90 Tage** umschaltbar (Segment-Wahl in der
 Karte, Setting `liquiditaetHorizontTage`, gerätelokal/verschlüsselt). Reine Logik `domain/liquiditaet.js` (node-getestet,

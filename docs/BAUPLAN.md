@@ -230,6 +230,16 @@
   /Beleg-Zuordnung GoBD-fix; alle Zeiten = ARBEIT; DOM/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §6)
 
 ### Block 3 — später / umgebungs-blockiert
+- [x] **Liquiditäts-Tiefpunkt (laufender Saldo im Fenster)** [Folgeschritt zu #149] ✅ (2026-06-18) — die Projektion (#149)
+  prüfte nur den Saldo am **Fenster-ENDE**; der kann positiv sein, obwohl der laufende Saldo zwischendurch ins Minus
+  rutscht (große Verbindlichkeit früh, ausgleichende Forderung spät). Reine Logik `domain/liquiditaet.js`
+  **`liquiditaetsVerlauf({forderungen, verbindlichkeiten, heute, horizontTage, geldbestandCent})`** (node-getestet, +17 →
+  **1638/1638**): bündelt bald fällige Bewegungen je Fälligkeits-Tag, addiert sie chronologisch ab dem Geldbestand auf →
+  `punkte[]` (Saldo nach jedem Tag) + `startCent`/`endeCent` + **`tiefpunktCent`/`tiefpunktDatum`** (tiefster Stand +
+  wann; startet beim heutigen Bestand). Ohne Bestand → Saldo-Felder `null` (abwärtskompatibel). UI `ui/views/dashboard.js`:
+  Tiefpunkt-Hinweis in der Liquiditäts-Karte — nur, wenn der laufende Saldo zwischendurch UNTER den End-Saldo fällt (sonst
+  keine neue Info); **bucht nichts**. i18n de+en, SW `v131` (kein neues Modul). **Ehrliche Grenze:** einfache Planung nach
+  Fälligkeitsdatum, Bündelung je Tag (kein Intraday); DOM/IndexedDB statisch geprüft.
 - [x] **Liquiditätsvorschau: wählbares Zeitfenster** [Folgeschritt zu #149] ✅ (2026-06-18) — die Liquiditäts-Karte
   rechnete bisher fest mit 7 Tagen. Jetzt kann der Nutzer das Fenster **7 / 14 / 30 / 90 Tage** umschalten (Segment-Wahl
   in der Karte, Setting `liquiditaetHorizontTage`, gerätelokal/verschlüsselt). Reine Logik `domain/liquiditaet.js`

@@ -12,7 +12,7 @@ import { listKunden, listAuftraege } from '../../domain/crm-store.js';
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { verzugReport, verzugAmpel, VERZUG_AMPEL } from '../../domain/eingangsverzug.js';
 import { forderungReport, forderungAmpel, FORDERUNG_AMPEL } from '../../domain/mahnwesen.js';
-import { liquiditaetsVorschau, liquiditaetsAmpel, geldbestand, normalizeHorizont, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
+import { liquiditaetsVorschau, liquiditaetsVerlauf, liquiditaetsAmpel, geldbestand, normalizeHorizont, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
 import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
@@ -114,6 +114,10 @@ export async function mountDashboard(host) {
     const horizontTage = normalizeHorizont(s.liquiditaetHorizontTage);
     const v = liquiditaetsVorschau({ forderungen, verbindlichkeiten, horizontTage, geldbestandCent });
     if (!v.eingehendAnzahl && !v.ausgehendAnzahl) return null; // nichts bald fällig → kein Lärm
+    // Verlauf/Tiefpunkt: der projizierte Saldo am Fenster-ENDE kann reichen, obwohl der
+    // laufende Saldo zwischendurch ins Minus rutscht (Reihenfolge der Fälligkeiten). Der
+    // Tiefpunkt macht genau diese sonst unsichtbare Delle sichtbar (node-getestet).
+    const verlauf = liquiditaetsVerlauf({ forderungen, verbindlichkeiten, horizontTage, geldbestandCent });
     const ampel = liquiditaetsAmpel(v);
     const projCls = ampel === LIQUIDITAET_AMPEL.KRITISCH ? 'kpi-neg' : ampel === LIQUIDITAET_AMPEL.OK ? 'kpi-pos' : '';
     const kacheln = [];
@@ -147,6 +151,11 @@ export async function mountDashboard(host) {
         : ampel === LIQUIDITAET_AMPEL.WARNUNG
           ? el('p', { class: 'muted small', text: t('dashboard.liquidityWarnTight') })
           : null,
+      // Tiefpunkt-Hinweis nur, wenn der laufende Saldo zwischendurch UNTER den End-Saldo
+      // fällt (sonst ist der Endwert bereits das Tiefste — keine neue Information).
+      (verlauf.tiefpunktCent != null && verlauf.endeCent != null && verlauf.tiefpunktCent < verlauf.endeCent && verlauf.tiefpunktDatum)
+        ? el('p', { class: 'muted small', text: t('dashboard.liquidityLowHint').replace('{datum}', verlauf.tiefpunktDatum).replace('{betrag}', formatEuro(verlauf.tiefpunktCent)) })
+        : null,
     ]);
   };
 
