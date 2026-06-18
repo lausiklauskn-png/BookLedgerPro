@@ -19,6 +19,7 @@
 // fällt einmal je Forderung an. Im Zweifel den Steuerberater/Anwalt fragen.
 
 import { faelligAmVon, tageUeberfaellig, verzugszinsenCent, mahnpauschaleCent } from './mahnwesen.js';
+import { offeneVerbindlichkeiten, anreichereVerbindlichkeiten } from './payables.js';
 
 // Standard-Zahlungsziel für Eingangsrechnungen (üblicher als die 14 Tage der
 // Forderungsseite). Spiegelt payables.berechneFaelligAm / ZIEL_DEFAULT.
@@ -260,4 +261,22 @@ export function verzugUebersicht(angereichertePosten = [], opts = {}) {
     zinsRisikoCent,
     kritischAnzahl,
   };
+}
+
+/**
+ * Ein-Aufruf-Einstieg von den GESPEICHERTEN Eingangsrechnungen zum Verzugs-Report:
+ * leitet die offenen Verbindlichkeiten ab (`offeneVerbindlichkeiten`), reichert sie um
+ * Fälligkeit/Überfälligkeit an (`anreichereVerbindlichkeiten`) und verdichtet sie zu den
+ * Kennzahlen der eigenen Zahlungsdisziplin (`verzugUebersicht`). Damit ist der ganze
+ * Pfad von der Roh-Rechnung bis zur KPI node-testbar (die UI ruft nur noch dies auf).
+ *
+ * @param {Array} rechnungen Gespeicherte Eingangsrechnungen (payables-store-Form)
+ * @param {{heute?:string, zielTage?:number, stichtag?:string, basiszinsProzent?:number, b2b?:boolean, pauschaleCent?:number}} [opts]
+ * @returns {{angereichert:Array, uebersicht:{anzahl,ueberfaelligAnzahl,ueberfaelligCent,zinsRisikoCent,kritischAnzahl}}}
+ */
+export function verzugReport(rechnungen = [], opts = {}) {
+  const offene = offeneVerbindlichkeiten(rechnungen, { stichtag: opts.stichtag || null });
+  const angereichert = anreichereVerbindlichkeiten(offene, { heute: opts.heute, zielTage: opts.zielTage });
+  const uebersicht = verzugUebersicht(angereichert, opts);
+  return { angereichert, uebersicht };
 }

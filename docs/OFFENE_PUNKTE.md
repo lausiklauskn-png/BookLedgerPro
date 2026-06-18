@@ -358,6 +358,13 @@ Bank/Verbindlichkeit, **ohne Vorsteuer** — Schadensersatz Abschn. 1.3 UStAE; a
 neuer Abschnitt „Verzugskosten buchen (Zinsaufwand)" — Gegenkonto-Wahl + Knopf → Buchungs-ENTWURF (`ensureSeedKonten`
 +`saveEntwurf`; Festschreiben manuell, GoBD). i18n de+en, SW `v124`. **Grenze:** bucht die eingegebenen geforderten
 Beträge (keine Auto-Deckelung); DOM/IndexedDB statisch geprüft.
+**Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht erledigt (2026-06-18, BAUPLAN Block 3 — Folgeschritt zu #140):**
+Die in #140 angelegte node-getestete KPI-Logik `verzugUebersicht` war in keiner UI sichtbar. Reine Logik
+`src/domain/eingangsverzug.js` **`verzugReport(rechnungen, opts)`** (node-getestet, +7 → **1543/1543**): Ein-Aufruf-
+Einstieg von den gespeicherten Eingangsrechnungen zur KPI (`offeneVerbindlichkeiten` → `anreichereVerbindlichkeiten`
+→ `verzugUebersicht`; Import zyklenfrei). UI `ui/views/payables.js`: Karte „Verzugsrisiko (eigene Zahlungsdisziplin)"
+am Kopf (überfällige Anzahl/Summe + § 288-Zinsrisiko + kritisch ≥ 14 Tage), nur sichtbar wenn etwas überfällig ist;
+bucht nichts. i18n de+en, SW `v125`. **Grenze:** Hilfs-Einordnung, keine Rechtsberatung; DOM/IndexedDB statisch geprüft.
 **[Sichttest]** `saveAuftrag`/`updateAuftrag`-Persistenz (IndexedDB) ist nur statisch geprüft → im Browser bestätigen.
 
 **Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,

@@ -102,7 +102,17 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Buchung gezahlter Verzugskosten — Zinsaufwand"):** SW **v124** · Tests **1536/1536** grün · 116 JS-Module.
+**Kopf-Status (Stand nach „Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht"):** SW **v125** · Tests **1543/1543** grün · 116 JS-Module.
+**Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht erledigt (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #140):**
+Die in #140 angelegte, **node-getestete** KPI-Logik `verzugUebersicht` („eigene Zahlungsdisziplin") war bisher in keiner
+UI sichtbar. Reine Logik `domain/eingangsverzug.js` **`verzugReport(rechnungen, opts)`** (node-getestet, +7 →
+**1543/1543**): Ein-Aufruf-Einstieg von den gespeicherten Eingangsrechnungen zur KPI — `offeneVerbindlichkeiten`
+(`payables.js`) → `anreichereVerbindlichkeiten` → `verzugUebersicht`; damit ist der Pfad Roh-Rechnung → Kennzahl
+node-testbar (Import zyklenfrei). UI `ui/views/payables.js`: Karte „Verzugsrisiko (eigene Zahlungsdisziplin)" am Kopf
+der Ansicht (überfällige Anzahl/Summe + § 288-Zinsrisiko + kritisch ≥ 14 Tage), nur sichtbar wenn etwas überfällig ist;
+**bucht nichts**. i18n de+en, SW `v125` (keine neuen Module). **Ehrliche Grenze:** Hilfs-Einordnung, keine
+Rechtsberatung; DOM/IndexedDB statisch geprüft. **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer;
+sonst umgebungs-/menschen-blockierte Block-3-Punkte oder eine neue, abgestimmte Idee.
 **Buchung gezahlter Verzugskosten (Zinsaufwand) erledigt (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #140, PR #141):**
 Spiegel zu `mahnwesen.mahnbuchungEntwurf` (R1) aus **Schuldnersicht** — zahlt man eine berechtigte Lieferanten-Mahnung,
 entsteht Zins-/Gebühren-**AUFWAND**. Reine Logik `domain/eingangsverzug.js` (node-getestet, +20 → **1536/1536**):

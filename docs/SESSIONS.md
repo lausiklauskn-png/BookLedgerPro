@@ -5,6 +5,37 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht [Branch `claude/bookledgerpro-block3-payables-0i5x2p`]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 ausgebaut (Eingangsrechnungs-Verzug #140 + Buchung gezahlter
+  Verzugskosten #141). Befund: die in #140 angelegte, **node-getestete** KPI-Logik `verzugUebersicht`
+  („eigene Zahlungsdisziplin": überfällige Anzahl/Summe + § 288-Zinsrisiko) war in **keiner UI** sichtbar.
+  Sauberer, build-freier Folgeschritt: diese fertige Logik nutzbar machen.
+
+**Was getan**
+- **`src/domain/eingangsverzug.js`** `verzugReport(rechnungen, opts)` (rein, node-getestet, +7 → **1543/1543**):
+  Ein-Aufruf-Einstieg von den **gespeicherten** Eingangsrechnungen zur KPI — `offeneVerbindlichkeiten`
+  (`payables.js`) → `anreichereVerbindlichkeiten` → `verzugUebersicht`. Damit ist der ganze Pfad
+  Roh-Rechnung → Kennzahl node-testbar; die UI ruft nur noch dies auf. (Import `eingangsverzug → payables`
+  ist zyklenfrei: `payables` importiert nicht aus `eingangsverzug`.)
+- **`src/ui/views/payables.js`**: neue Karte **„Verzugsrisiko (eigene Zahlungsdisziplin)"** am Kopf der
+  Ansicht — KPI-Kacheln überfällige Posten (N/gesamt), überfällige Summe, **Verzugszins-Risiko (§ 288)**,
+  davon kritisch (≥ 14 Tage). Nur sichtbar, wenn überhaupt etwas überfällig ist (sonst kein Lärm). **Bucht nichts.**
+- i18n de+en (`pay.verzug.overview*`), **SW `v125`** (keine neuen Module — beide bereits precached).
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut (Verzugsrisiko-KPI jetzt sichtbar).
+- **Tests 1543/1543 grün** (`node tests/run.mjs`). SW `v125`. 116 JS-Module.
+
+**Offen / Nächstes / Grenzen**
+- **DOM/IndexedDB statisch geprüft** (kein Headless-Browser) — die reine Logik (`verzugReport`) ist node-getestet (+7).
+- **Ehrliche Grenze:** Hilfs-Einordnung nach Tagen überfällig, **keine Rechtsberatung**; Basiszinssatz (§ 247) aktuell halten.
+- **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte
+  Block-3-Punkte (Server-/Offsite-Backup-Ziel, WorkFloh-Gegenstücke) oder eine neue, abgestimmte Idee.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Buchung gezahlter Verzugskosten (Zinsaufwand) [Branch `claude/block3-payables-default-interest-ou6j1d`]
 
 **Ausgangslage / Auswahl**

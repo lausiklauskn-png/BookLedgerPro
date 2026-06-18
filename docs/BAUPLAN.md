@@ -251,6 +251,14 @@
   neuer Abschnitt „Verzugskosten buchen (Zinsaufwand)" — Gegenkonto-Wahl + Knopf → Buchungs-ENTWURF
   (`ensureSeedKonten`+`saveEntwurf`; Festschreiben manuell, GoBD). i18n de+en, SW `v124`. **Ehrliche Grenze:** bucht
   die eingegebenen geforderten Beträge (keine Auto-Deckelung); DOM/IndexedDB statisch geprüft.
+- [x] **Verzugsrisiko-Übersicht (eigene Zahlungsdisziplin)** [Folgeschritt zu #140] ✅ (2026-06-18) — die in #140
+  angelegte, node-getestete KPI-Logik `verzugUebersicht` war in keiner UI sichtbar. Reine Logik
+  `domain/eingangsverzug.js` **`verzugReport(rechnungen, opts)`** (Ein-Aufruf-Einstieg: `offeneVerbindlichkeiten`
+  → `anreichereVerbindlichkeiten` → `verzugUebersicht`; Pfad Roh-Rechnung → Kennzahl node-testbar, +7 →
+  **1543/1543**). UI `ui/views/payables.js`: Karte **„Verzugsrisiko (eigene Zahlungsdisziplin)"** am Kopf
+  (überfällige Anzahl/Summe + § 288-Zinsrisiko + kritisch), nur sichtbar wenn etwas überfällig ist; **bucht
+  nichts**. i18n de+en, SW `v125`. **Ehrliche Grenze:** Hilfs-Einordnung, keine Rechtsberatung; DOM/IndexedDB
+  statisch geprüft.
 - [ ] **WorkFloh-Gegenstücke** (fremdes Repo, über den Nutzer): **Test-Modus** (`docs/TEST_MODUS.md` ⇄-Abschnitt),
   BLP-Format-Exporter für die Rechnungsstelle, optional Symbiose-Import (Sage 5d).
 - [ ] **Bekannt blockiert:** Lighthouse/Perf (Headless), lokales OCR (Tesseract = nicht build-frei),
