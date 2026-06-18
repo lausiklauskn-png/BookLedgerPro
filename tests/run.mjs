@@ -147,6 +147,7 @@ import {
 import {
   LIQUIDITAET_HORIZONT_DEFAULT, baldFaellig, liquiditaetsVorschau,
   GELDKONTO_BEREICHE, LIQUIDITAET_AMPEL, istGeldkonto, geldbestand, liquiditaetsAmpel,
+  LIQUIDITAET_HORIZONT_OPTIONEN, normalizeHorizont,
 } from '../src/domain/liquiditaet.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
@@ -2450,6 +2451,23 @@ await section('Liquidität: liquiditaetsVorschau mit Geldbestand + Ampel', () =>
   ok('Ampel kritisch (projiziert < 0)', liquiditaetsAmpel(vKrit) === LIQUIDITAET_AMPEL.KRITISCH);
   // Ohne Bestand → Ampel ok (keine Aussage), Felder null.
   ok('ohne Bestand → Ampel ok', liquiditaetsAmpel(liquiditaetsVorschau({ forderungen, heute })) === LIQUIDITAET_AMPEL.OK);
+});
+
+await section('Liquidität: normalizeHorizont (wählbares Zeitfenster)', () => {
+  ok('Default ist 7', LIQUIDITAET_HORIZONT_DEFAULT === 7);
+  ok('Optionen 7/14/30/90', JSON.stringify(LIQUIDITAET_HORIZONT_OPTIONEN) === JSON.stringify([7, 14, 30, 90]));
+  ok('gültige Option bleibt', normalizeHorizont(30) === 30);
+  ok('String-Zahl wird akzeptiert', normalizeHorizont('14') === 14);
+  ok('unbekannter Wert → Default', normalizeHorizont(45) === 7);
+  ok('0 → Default', normalizeHorizont(0) === 7);
+  ok('negativ → Default', normalizeHorizont(-5) === 7);
+  ok('undefined → Default', normalizeHorizont(undefined) === 7);
+  ok('Müll → Default', normalizeHorizont('abc') === 7);
+  // Durchgereicht in die Vorschau: 30-Tage-Fenster fängt einen erst später fälligen Posten.
+  const heute = '2026-06-18';
+  const spaet = [{ betragCent: 5000, faelligAm: '2026-07-10' }]; // +22 Tage
+  ok('7-Tage-Fenster: nichts', liquiditaetsVorschau({ forderungen: spaet, heute, horizontTage: normalizeHorizont(7) }).eingehendAnzahl === 0);
+  ok('30-Tage-Fenster: erfasst', liquiditaetsVorschau({ forderungen: spaet, heute, horizontTage: normalizeHorizont(30) }).eingehendAnzahl === 1);
 });
 
 await section('Mahnwesen: persistenter Verlauf (Stufe/Zins-/Gebührenverlauf)', () => {

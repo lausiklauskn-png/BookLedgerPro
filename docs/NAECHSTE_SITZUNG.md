@@ -20,24 +20,21 @@ AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 202
 (Vertrauen/Sicherheit) und Block 2 (Kalkulation/Angebote) sind KOMPLETT.** Block 3 ist ausgebaut: Eingangsrechnungs-Verzug
 (Gegenseite) ✅ #140 + Buchung gezahlter Verzugskosten (Zinsaufwand) ✅ #141 + Verzugsrisiko-Übersicht in der
 Verbindlichkeiten-Ansicht ✅ #142 + Dashboard-KPI überfällige **Verbindlichkeiten** ✅ #143 + Dashboard-KPI überfällige
-**Forderungen (Mahnwesen)** ✅ #145 + **Dashboard-KPI: Liquiditätsvorschau (bald fällig) ✅ #147** + zuletzt (2026-06-18)
-**Liquiditätsvorschau um Geldbestand + projizierten Saldo erweitert ✅ #149** — der Folgeschritt, der die Frage „reicht das
-Geld?" beantwortet: zum erwarteten **Eingänge-vs-Ausgänge**-Fenster kommt der **aktuelle Geldbestand (Kasse + Bank)** als
-Startwert + ein **projizierter Saldo** am Fenster-Ende (Bestand + Eingänge − Ausgänge). Reine Logik `domain/liquiditaet.js`
-**`GELDKONTO_BEREICHE`/`istGeldkonto(konto)`** (AKTIV-Konten 1000–1099 Kasse / 1200–1299 Bank; Forderungen/Vorsteuer außen
-vor) + **`geldbestand(buchungen, konten, {stichtag})`** (Saldo je Geldkonto Soll−Haben aus den **festgeschriebenen**
-Buchungen, Entwürfe zählen nicht, optional bis Stichtag) + **`liquiditaetsVorschau(opts.geldbestandCent)`** →
-`geldbestandCent`/`projiziertCent` (ohne Bestand `null` → **abwärtskompatibel**) + **`LIQUIDITAET_AMPEL`/`liquiditaetsAmpel`**
-(kritisch bei projiziert < 0, Warnung wenn der Bestand allein die Ausgänge nicht deckt, sonst ok); node-getestet. UI
-`ui/views/dashboard.js`: die Liquiditäts-Karte zeigt zusätzlich „Kontostand (Kasse + Bank)" + „voraussichtlich in N Tagen"
-(ampelgefärbt) + ehrlichen Hinweis bei knapper/negativer Projektion; gefüttert aus den bereits geladenen `konten`/`buchungen`;
-**bucht nichts**. i18n de+en, SW `v129` (kein neues Modul), +25 → **1610/1610** grün, DOM/IndexedDB statisch geprüft.
-**Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln grün + gemergt;
-nie „halb" mergen, im Zweifel feiner schneiden).
+**Forderungen (Mahnwesen)** ✅ #145 + **Dashboard-KPI: Liquiditätsvorschau (bald fällig) ✅ #147** + **Liquiditätsvorschau
+um Geldbestand + projizierten Saldo ✅ #149** + zuletzt (2026-06-18) **Liquiditätsvorschau: wählbares Zeitfenster ✅** — die
+Liquiditäts-Karte rechnete bisher fest mit 7 Tagen; jetzt ist das Fenster **7 / 14 / 30 / 90 Tage** umschaltbar (Segment-Wahl
+in der Karte, Setting `liquiditaetHorizontTage`, gerätelokal/verschlüsselt). Reine Logik `domain/liquiditaet.js`
+**`LIQUIDITAET_HORIZONT_OPTIONEN`** (= [7,14,30,90]) + **`normalizeHorizont(value)`** (klemmt persistierte/ungültige Werte auf
+eine kuratierte Option, Default 7); node-getestet. UI `ui/views/dashboard.js`: `.segmented`-Umschalter über den KPI-Kacheln →
+`updateSettings({liquiditaetHorizontTage})` + Dashboard-Neuzeichnung; `liquiditaetsVorschau`/`baldFaellig` rechnen mit dem
+gewählten Horizont (die reine Logik nahm `horizontTage` bereits entgegen); **bucht nichts**. i18n de+en
+(`dashboard.liquidityHorizonLabel`/`…HorizonDays`), SW `v130` (kein neues Modul), +11 → **1621/1621** grün, DOM/IndexedDB
+statisch geprüft. **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln
+grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden).
 
 Nächste offene Schritte (alle optional):
 1. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen
-   (zuletzt: Dashboard-Karte „Liquiditätsvorschau (bald fällig)" mit neuem Kontostand + projiziertem Saldo).
+   (zuletzt: Dashboard-Karte „Liquiditätsvorschau" mit umschaltbarem Zeitfenster 7/14/30/90 Tage).
 2. **Sonst:** umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server;
    WorkFloh-Gegenstücke — fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt
    blockiert:** Lighthouse/Perf, lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
@@ -73,14 +70,13 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditätsvorschau um Geldbestand + projizierten Saldo
-erweitert** (PR #149): reine Logik `domain/liquiditaet.js` `GELDKONTO_BEREICHE`/`istGeldkonto`/`geldbestand`/
-`liquiditaetsVorschau(opts.geldbestandCent)`/`LIQUIDITAET_AMPEL`/`liquiditaetsAmpel`; UI `ui/views/dashboard.js`: die
-Liquiditäts-Karte zeigt jetzt „Kontostand (Kasse + Bank)" + „voraussichtlich in N Tagen" (ampelgefärbt). Tests
-**1610/1610** · SW **v129** · 117 JS-Module.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditätsvorschau: wählbares Zeitfenster**: reine Logik
+`domain/liquiditaet.js` `LIQUIDITAET_HORIZONT_OPTIONEN` + `normalizeHorizont(value)`; Setting `liquiditaetHorizontTage`
+(`state.js`, Default 7); UI `ui/views/dashboard.js`: `.segmented`-Umschalter (7/14/30/90 Tage) → `updateSettings` +
+Dashboard-Neuzeichnung. Tests **1621/1621** · SW **v130** · 117 JS-Module.
 **Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung + Verzugsrisiko-KPI in
 Verbindlichkeiten-Ansicht + beidseitige Überfälligkeits-KPI #143/#145 + Liquiditätsvorschau #147 + Geldbestand/
-Projektion #149).**
+Projektion #149 + wählbares Zeitfenster).**
 **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
 oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
