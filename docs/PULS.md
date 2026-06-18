@@ -38,8 +38,8 @@
 **📋 Der vorausschauende Gesamt-Bauplan steht jetzt in `docs/BAUPLAN.md`** (geordnete Reihenfolge aller mit dem
 Nutzer 2026-06-17 vereinbarten Themen: Kalkulation/Angebote + Datensicherung + Test-Modus); Ritual/erledigte Tracks
 in `docs/NACHFOLGE_PLAN.md`. **Nächste PRs = BAUPLAN abarbeiten, Block 1 zuerst** (mehrere saubere PRs pro Sitzung wo
-sinnvoll): **1.** Backup→Restore-Roundtrip-Selbsttest (`docs/DATENSICHERUNG.md`, Pflicht #1) → **2.** Test-Modus/
-Sandbox-Tresor (`docs/TEST_MODUS.md`) → **3.** Backup-UX + `backupStrategie`. Danach **Block 2: Kalkulation/Angebote**
+sinnvoll): **1.** Backup→Restore-Roundtrip-Selbsttest ✅ **erledigt + gemergt (PR #116)** → **2. NÄCHSTER SCHRITT:**
+Test-Modus/Sandbox-Tresor (`docs/TEST_MODUS.md`) → **3.** Backup-UX + `backupStrategie`. Danach **Block 2: Kalkulation/Angebote**
 (`docs/KALKULATION_KATALOG.md`; Prime Directive: Kalkulation intern, Angebot/Rechnung neutral). **Vermerk:** auch
 **Mein-WorkFloh** soll einen Test-Modus nach `docs/TEST_MODUS.md` bekommen (fremdes Repo, über den Nutzer).
 **(Frühere Notiz, Kontext):** Der reine „build-freie Rest-Korb" war leer; in der vorigen Sitzung
@@ -101,7 +101,15 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Edit bestehender Aufträge"):** SW **v102** · Tests **1080/1080** grün · 98 JS-Module.
+**Kopf-Status (Stand nach „Backup→Restore-Roundtrip-Selbsttest", PR #116):** SW **v103** · Tests **1095/1095** grün · 98 JS-Module.
+**Backup→Restore-Roundtrip-Selbsttest erledigt (diese Sitzung, BAUPLAN Block 1/Schritt 1):** Datendurabilität ist
+Pflicht #1 — die Rettung ist jetzt **bewiesen**. `core/backup.js` (rein, kein IndexedDB): `buildBackupFromSnapshot`
+(Backup-Bau ohne `dumpAll`; `buildBackup` delegiert), `importProbe` (spiegelt `importSnapshot('replace')`+`dumpAll`
+als In-Memory-Probespeicher, id-basiert), `snapshotBytes`/`backupRoundtripSelbsttest` (**byte-genauer** Vergleich
+Original↔wiederhergestellt). In den „Selbsttest" (V10, `domain/selbsttest.js`) gehängt (+2 Prüfungen: Roundtrip
+byte-genau + Restore lehnt falsches Passwort ab). +15 Node-Tests (verschlüsselte Hülle ohne Klartext,
+Manipulationserkennung, id-Dedup, leerer Tresor). SW `v103`. **Grenze:** echter `dumpAll`/IndexedDB-Pfad nur
+statisch geprüft. **Nächster Schritt: BAUPLAN Block 1/Schritt 2 — Test-Modus (Sandbox-Tresor), `docs/TEST_MODUS.md`.**
 **Zahlungsziel je Auftrag durabel + im Austauschformat (v4) erledigt (diese Sitzung, „nach Empfehlung"):**
 Zwei eng gekoppelte Teile in EINEM PR. **(1) Bugfix:** `crm-store.saveAuftrag` ließ das A1-Rest-Feld
 `zahlungszielTage` aus seiner Whitelist **fallen** → Mahnwesen-Fälligkeit und gedruckte „zahlbar bis"-Zeile fielen
@@ -192,9 +200,9 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-17 (B3) · **Branch (letzte PR):** `claude/balance-sheet-b3-56djmn`
-· **Tests:** `node tests/run.mjs` → **760/760 grün**
-· **SW-Cache:** `v86` · **92 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅**
+**Letzte Aktualisierung:** 2026-06-18 (Backup→Restore-Roundtrip-Selbsttest) · **Branch (letzte PR):** `claude/bookledgerpro-backup-restore-f03itw` (PR #116)
+· **Tests:** `node tests/run.mjs` → **1095/1095 grün**
+· **SW-Cache:** `v103` · **98 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1/Schritt 1 ✅**
 · **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (je 1 PR/Sitzung; nächste = **R1 — Verzugszinsen buchen**).
 · **B1 ✅:** Bilanzierung-Modus (`gewinnermittlung` euer|bilanz, Default euer) + Konten-Klassifikation
   (`domain/bilanzierung.js`) + Bilanz-Grundkonten 0800/0840/0860/0970 im Seed + Modus-Schalter (PR #87).

@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-17** (Edit bestehender Aufträge — GoBD-Guard `darfAuftragBearbeiten` + `updateAuftrag`).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 1/Schritt 1 — Backup→Restore-Roundtrip-Selbsttest, `core/backup.js backupRoundtripSelbsttest`, PR #116; SW `v103`, 1095/1095).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -34,6 +34,10 @@ ein PR, bei grüner CI selbstständig mergen**):
   Server/Offsite; **freie Nutzer-Wahl `backupStrategie`** beim Onboarding + in Einstellungen änderbar;
   **Backup→Restore-Roundtrip-Selbsttest** als beweisbare Prüfung). Backup-Kern existiert bereits
   (`core/backup.js`, verschlüsselte `.blpr.json`, Shamir, persist).
+  ✅ **Schritt 1 (Roundtrip-Selbsttest) erledigt + gemergt (PR #116, 2026-06-18):** `core/backup.js`
+  `backupRoundtripSelbsttest` (byte-genauer Vergleich Original↔wiederhergestellt), in den „Selbsttest" (V10)
+  gehängt; +15 Node-Tests (1095/1095), SW `v103`. **Verbleibend:** Schritt 2 Test-Modus, Schritt 3 Backup-UX +
+  `backupStrategie`, Schritt 4 Server-/Offsite-Ziel.
 - **Test-Modus (Sandbox-Tresor): JA, Spec steht.** Verbindliches Doku: **`docs/TEST_MODUS.md`** (wegwerfbarer
   Test-Tresor über die Mehrmandanten-Schicht; mehrere getrennte Tests, behalten/verwerfen/aufräumen, optional
   Demo-vorbefüllt; echte Daten unberührt; build-frei/node-testbar). **WICHTIG:** Auch **Mein-WorkFloh** soll

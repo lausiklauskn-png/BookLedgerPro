@@ -17,10 +17,12 @@
 ## Reihenfolge (mit Begründung)
 
 ### Block 1 — Vertrauen/Sicherheit zuerst (klein, build-frei, hoher Nutzen)
-- [ ] **1. Backup→Restore-Roundtrip-Selbsttest** — Datendurabilität ist Pflicht #1. Backup bauen →
-  entschlüsseln → in Probespeicher importieren → **byte-genau** mit Original vergleichen → ✓/✗, an den
-  vorhandenen „Selbsttest" (V10) angehängt. Rein/node-testbar. *Warum zuerst:* beweist die Rettung, bevor
-  mehr Daten entstehen. (`docs/DATENSICHERUNG.md`)
+- [x] **1. Backup→Restore-Roundtrip-Selbsttest** — ✅ (PR #116, 2026-06-18). `core/backup.js`
+  `backupRoundtripSelbsttest`/`buildBackupFromSnapshot`/`importProbe`/`snapshotBytes` (rein, kein IndexedDB):
+  Snapshot → verschlüsseltes Backup → entschlüsseln → In-Memory-Probespeicher → **byte-genauer** Vergleich →
+  ✓/✗, angehängt an den „Selbsttest" (V10, `domain/selbsttest.js`, +2 Prüfungen). +15 Tests (**1095/1095**),
+  SW `v103`. Grenze: echter `dumpAll`/IndexedDB-Pfad nur statisch geprüft (kein Headless-Browser).
+  (`docs/DATENSICHERUNG.md`)
 - [ ] **2. Test-Modus (Sandbox-Tresor)** — wegwerfbarer Test-Tresor über die Mehrmandanten-Schicht;
   mehrere getrennte Tests, behalten/verwerfen/aufräumen, optional Demo-vorbefüllt; echte Daten unberührt.
   *Warum früh:* macht das **manuelle Testen aller folgenden Features** gefahrlos. (`docs/TEST_MODUS.md`)
