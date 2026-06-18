@@ -19,20 +19,23 @@ obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sic
 AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 2026-06-17 vereinbart). **Block 1
 (Vertrauen/Sicherheit) und Block 2 (Kalkulation/Angebote) sind KOMPLETT.** Block 3 ist ausgebaut: Eingangsrechnungs-Verzug
 (Gegenseite) ✅ #140 (Mahnung prüfen § 288 BGB) + Buchung gezahlter Verzugskosten (Zinsaufwand) ✅ #141 +
-Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht ✅ #142 + zuletzt (2026-06-18) **Dashboard-KPI: überfällige
-Verbindlichkeiten (eigene Zahlungsdisziplin) ✅ #143** — die node-getestete Verzugs-KPI (`verzugReport`/`verzugUebersicht`)
-ist jetzt auch **auf dem Dashboard** sichtbar: reine Logik `domain/eingangsverzug.js` **`verzugAmpel(uebersicht)`**
-(+ `VERZUG_AMPEL`, node-getestet) liefert die Ampel ok|warnung|kritisch für die KPI-Färbung (kritisch ab einer
-Verbindlichkeit ≥ 14 Tage überfällig); UI `ui/views/dashboard.js`: Karte „Überfällige Verbindlichkeiten (eigene
-Zahlungsdisziplin)" am Kopf der Übersicht über `verzugReport`/`verzugAmpel` — nur im Firmen-/Vereins-Kontext
-(`zeigeAnsicht 'payables'`, in Privat ausgeblendet) UND wenn etwas überfällig ist (sonst kein Lärm); Klick →
-Verbindlichkeiten-Ansicht; **bucht nichts**. i18n de+en, SW `v126` (keine neuen Module), +8 → **1551/1551** grün,
-DOM/IndexedDB statisch geprüft. **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1
-PR, jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden).
+Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht ✅ #142 + Dashboard-KPI überfällige **Verbindlichkeiten**
+(eigene Zahlungsdisziplin) ✅ #143 + zuletzt (2026-06-18) **Dashboard-KPI: überfällige Forderungen (Mahnwesen) ✅ #145** —
+der Spiegel zu #143, aber aus **Gläubigersicht** (die in `docs/OFFENE_PUNKTE.md` A1 dokumentierte Dashboard-Intention
+„Kennzahl überfällige Forderungen, Summe + Anzahl"). Damit sind beide Seiten (Forderungen ⇄ Verbindlichkeiten)
+symmetrisch auf der Übersicht. Reine Logik `domain/mahnwesen.js` **`forderungUebersicht`** (Spiegel zu
+`verzugUebersicht`: überfällige Anzahl/Summe + Σ §-288-Zins-Potenzial + kritisch ab 1. Mahnung/≥14 Tage),
+**`FORDERUNG_AMPEL`/`forderungAmpel`** (Spiegel zu `verzugAmpel`) und **`forderungReport(auftraege, opts)`**
+(Ein-Aufruf-Einstieg `offenePosten` → `anreicherePosten` → `forderungUebersicht`; Import zyklenfrei, node-getestet);
+UI `ui/views/dashboard.js`: Karte „Überfällige Forderungen (Mahnwesen)" am Kopf — nur bei aktivem Mahnwesen
+(`zeigeFeature MAHNWESEN`, in Privat ausgeblendet) UND wenn etwas überfällig ist; Klick → Berichte; **bucht nichts**.
+i18n de+en, SW `v127` (keine neuen Module), +20 → **1571/1571** grün, DOM/IndexedDB statisch geprüft. **Mehrere saubere,
+in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln grün + gemergt; nie „halb"
+mergen, im Zweifel feiner schneiden).
 
 Nächste offene Schritte (alle optional):
 1. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen
-   (zuletzt: Dashboard-Karte „Überfällige Verbindlichkeiten" + die Verbindlichkeiten-Ansicht).
+   (zuletzt: Dashboard-Karten „Überfällige Forderungen (Mahnwesen)" + „Überfällige Verbindlichkeiten").
 2. **Sonst:** umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server;
    WorkFloh-Gegenstücke — fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt
    blockiert:** Lighthouse/Perf, lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
@@ -68,12 +71,12 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Dashboard-KPI: überfällige Verbindlichkeiten (eigene
-Zahlungsdisziplin)** (PR #143): reine Logik `domain/eingangsverzug.js` `verzugAmpel(uebersicht)` (+ `VERZUG_AMPEL`);
-UI `ui/views/dashboard.js`: Karte „Überfällige Verbindlichkeiten (eigene Zahlungsdisziplin)" am Kopf der Übersicht über
-`verzugReport`/`verzugAmpel`. Tests **1551/1551** · SW **v126** · 116 JS-Module.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Dashboard-KPI: überfällige Forderungen (Mahnwesen)**
+(PR #145): reine Logik `domain/mahnwesen.js` `forderungUebersicht`/`FORDERUNG_AMPEL`+`forderungAmpel`/`forderungReport`
+(Spiegel zu `eingangsverzug.verzugUebersicht`/`verzugAmpel`/`verzugReport`); UI `ui/views/dashboard.js`: Karte
+„Überfällige Forderungen (Mahnwesen)" am Kopf der Übersicht. Tests **1571/1571** · SW **v127** · 116 JS-Module.
 **Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung + Verzugsrisiko-KPI in
-Verbindlichkeiten-Ansicht UND Dashboard erledigt).**
+Verbindlichkeiten-Ansicht UND beidseitige Verzugs-KPI — Verbindlichkeiten #143 + Forderungen #145 — auf dem Dashboard erledigt).**
 **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
 oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

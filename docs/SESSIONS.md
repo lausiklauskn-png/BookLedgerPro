@@ -5,6 +5,42 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Dashboard-KPI überfällige Forderungen (Mahnwesen) [Branch `claude/block-3-dashboard-kpi-p2jpfc`, PR #145]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 ausgebaut (Eingangsrechnungs-Verzug #140 + Buchung Verzugskosten #141 +
+  Verzugsrisiko-Übersicht #142 + Dashboard-KPI überfällige **Verbindlichkeiten** #143). Befund: Das Dashboard zeigte
+  die **Schuldnerseite** (überfällige Verbindlichkeiten), aber die **Gläubigerseite** (überfällige Forderungen/
+  Mahnwesen) fehlte — obwohl `docs/OFFENE_PUNKTE.md` (A1) genau diese Dashboard-Kennzahl als Intention dokumentiert und
+  #143 selbst „spiegelt die für die Forderungsseite dokumentierte Dashboard-Intention" notiert. Sauberer, build-freier,
+  symmetrischer Folgeschritt: dieselbe KPI-Idee für die Forderungsseite.
+
+**Was getan**
+- **`src/domain/mahnwesen.js`** (rein, node-getestet, +20 → **1571/1571**): `forderungUebersicht(angereichertePosten,
+  opts)` → `{anzahl, ueberfaelligAnzahl, ueberfaelligCent, zinsRisikoCent, kritischAnzahl}` (Spiegel zu
+  `eingangsverzug.verzugUebersicht`; kritisch ab 1. Mahnung/≥14 Tage; Zins-Potenzial = Σ §-288-Zinsen der überfälligen,
+  b2b-Default konservativ true); `FORDERUNG_AMPEL` + `forderungAmpel(uebersicht)` (Spiegel zu `verzugAmpel`);
+  `forderungReport(auftraege, opts)` (Ein-Aufruf-Einstieg `offenePosten` → `anreicherePosten` → `forderungUebersicht` —
+  ganzer Pfad node-testbar; neuer Import `mahnwesen → zahlungsabgleich` ist zyklenfrei).
+- **`src/ui/views/dashboard.js`**: Karte „Überfällige Forderungen (Mahnwesen)" am Kopf der Übersicht über
+  `forderungReport`/`forderungAmpel` — KPI-Kacheln überfällige Anzahl/gesamt, überfällige Summe, **Verzugszins-Anspruch
+  (§ 288)** (rot bei kritisch). Nur sichtbar bei aktivem Mahnwesen (`zeigeFeature(s, FEATURE.MAHNWESEN)`, in Privat
+  ausgeblendet) UND wenn etwas überfällig ist; Klick → Berichte (Mahnwesen-Karte). **Bucht nichts.** Aufträge sind im
+  Dashboard ohnehin schon geladen → keine zusätzliche Abfrage.
+- i18n de+en (`dashboard.overdueReceivables*`), **SW `v127`** (keine neuen Module — alle bereits precached).
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut (Verzugs-KPI beidseitig — Verbindlichkeiten #143 + Forderungen #145 — auf dem Dashboard).
+- **Tests 1571/1571 grün** (`node tests/run.mjs`). SW `v127`. 116 JS-Module. PR #145 squash-gemergt.
+
+**Offen / Nächstes / Grenzen**
+- **DOM/IndexedDB statisch geprüft** (kein Headless-Browser) — die reine Logik (`forderungUebersicht`/`forderungAmpel`/`forderungReport`) ist node-getestet (+20).
+- **Ehrliche Grenze:** Hilfs-Einordnung nach Tagen überfällig, **keine Rechtsberatung**; aggregiertes Zins-Potenzial mit konservativem B2B-Aufschlag (kein per-Kunde-B2B); Basiszinssatz (§ 247) aktuell halten.
+- **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte
+  Block-3-Punkte (Server-/Offsite-Backup-Ziel, WorkFloh-Gegenstücke) oder eine neue, abgestimmte Idee.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Dashboard-KPI überfällige Verbindlichkeiten (eigene Zahlungsdisziplin) [Branch `claude/bookledgerpro-block-3-1z7x5i`, PR #143]
 
 **Ausgangslage / Auswahl**
