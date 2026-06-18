@@ -5,6 +5,49 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2 Folgeschritt: Zeit-Zuordnungs-UI je Kostenträger [Branch `claude/bookledgerpro-bauplan-block2-r7b23o`]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block-2-Kernkette (4–11) inkl. aller UIs komplett. Verbleibender optionaler Folgeschritt:
+  echte **Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag** (bislang wurden Zeiten/Buchungen in der
+  Nachkalkulation nur ANGEZEIGT). Reine Logik zuerst node-getestet, dann UI „statisch geprüft".
+- **GoBD-Befund (entscheidend für den Schnitt):** `kostenstelle` ist Teil der festgeschriebenen
+  Buchungs-**Hash-Kette** (`audit.hashedFields`). Festgeschriebene Buchungen/Belege lassen sich daher
+  NICHT nachträglich umhängen. Saubere, GoBD-konforme Zuordnung ist nur bei **Zeiteinträgen** möglich
+  (mutable CRM-Records, kein Hash). → Scope: **Zeit-Zuordnung** umgesetzt; für Buchungen/Belege ein
+  ehrlicher Hinweis in der UI (Zuordnung passiert beim Buchen, danach GoBD-fix).
+
+**Was getan**
+- **`src/domain/nachkalkulation.js`** (rein, node-getestet): neuer Helfer **`aufgeloesteKostenstelle(zeit,
+  auftragIndex)`** — EXPLIZITE Zuordnung (`zeit.kostenstelle`) gewinnt vor der Ableitung aus dem Auftrag
+  (`auftragId → auftrag.kostenstelle`), Leer-String '' = bewusst „keiner" → null. `zeiteintraegeAusZeiten`
+  nutzt ihn jetzt (rückwärtskompatibel: Zeiten ohne explizite Kostenstelle bleiben ihrem Auftrag zugeordnet).
+- **`src/domain/crm-store.js`**: `saveZeit` persistiert das neue Feld `kostenstelle`; neue Funktion
+  **`setZeitKostenstelle(id, kostenstelle)`** (lädt via encGet, setzt, encPut).
+- **`src/domain/nachkalkulation-store.js`** (Glue): **`ladeZeitZuordnung()`** (Zeiten angereichert um
+  `aufgeloesteKostenstelle`/`explizit` + Mitarbeiter-Index + distinkte Kostenträger aus den Angeboten) und
+  **`zuordneZeit(zeitId, kostenstelle)`** (dünn auf `setZeitKostenstelle`).
+- **`src/ui/views/nachkalkulation.js`**: neue Karte **„Zeiten zuordnen"** — Tabelle aller Zeiteinträge
+  (Datum/Mitarbeiter/Dauer/Beschreibung) mit **Kostenträger-Select je Zeile** (Wert = aufgelöste
+  Kostenstelle; „— keiner —" hebt auf), Herkunft-Tag „direkt zugeordnet" vs. „über Auftrag"; Änderung →
+  `zuordneZeit` → reload. Beleg-Liste um den ehrlichen **GoBD-Hinweis** ergänzt.
+- i18n de+en, **SW `v122`**. **+8 Tests → 1483/1483 grün.**
+
+**Stand**
+- Block 1 + Block-2-Kernkette (4–11) inkl. aller UIs komplett; **Zeit-Zuordnungs-UI ergänzt.**
+- **Tests 1483/1483 grün** (`node tests/run.mjs`). SW `v122`. 115 JS-Module.
+
+**Offen / Nächstes / Grenzen**
+- **DOM/IndexedDB statisch geprüft** (kein Headless-Browser) — die reine Logik (`aufgeloesteKostenstelle`)
+  + Join sind node-getestet.
+- **Ehrliche Grenze:** Buchungs-/Beleg-→-Kostenträger-Zuordnung ist GoBD-fix (Kostenstelle beim Buchen
+  gesetzt, danach hash-verriegelt) — daher nur Hinweis, kein Umhängen. MASCHINE-Zeit nicht je Eintrag
+  trennbar (alle Zeiten = ARBEIT); `stundenlohnCent` als interner Kostensatz (kein AG-Gemeinkostenaufschlag).
+- **Nächster Schritt (optional):** Schritt 4 der Datensicherung (Server-/Offsite-Ziel) — blockiert, solange
+  kein eigener Server existiert. Sonst Browser-Sichttest durch den Nutzer.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2: Kalibrierte Vorwärtskalkulation im Angebots-Editor [Branch `claude/bookledgerpro-bauplan-blocks-jwodoj`]
 
 **Ausgangslage / Auswahl**

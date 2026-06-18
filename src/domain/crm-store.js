@@ -277,11 +277,33 @@ export const deleteMitarbeiter = (id) => encDel(id);
 export async function saveZeit(z) {
   const zeit = { id: z.id || neueId('zeit'), type: 'zeit', mitarbeiterId: z.mitarbeiterId || null,
     auftragId: z.auftragId || null, datum: z.datum, dauerMin: Number(z.dauerMin) || 0,
+    // EXPLIZITE Kostenträger-Zuordnung (Zeit-Zuordnungs-UI in der Nachkalkulation). Gewinnt
+    // vor der Ableitung aus dem Auftrag; null = nicht explizit zugeordnet (→ Auftrags-Ableitung).
+    kostenstelle: z.kostenstelle || null,
     beschreibung: z.beschreibung || '', createdAt: z.createdAt || new Date().toISOString() };
   return encPut(zeit);
 }
 export const listZeiten = () => encList('zeit');
 export const deleteZeit = (id) => encDel(id);
+
+/**
+ * Ordnet einen vorhandenen Zeiteintrag EXPLIZIT einem Kostenträger (Kostenstelle) zu —
+ * unabhängig vom Auftrag. `kostenstelle` = der Kostenträger-Schlüssel (z. B. die Kostenstelle
+ * des Angebots) oder leer/null für „keine explizite Zuordnung" (fällt dann auf die Ableitung
+ * aus dem Auftrag zurück). Zeiteinträge sind mutable, NICHT GoBD-festgeschriebene CRM-Records
+ * → eine nachträgliche (Neu-)Zuordnung ist hier sauber erlaubt (anders als bei Buchungen, deren
+ * `kostenstelle` Teil der festgeschriebenen Hash-Kette ist und sich nicht ändern lässt).
+ * @param {string} id  Zeit-Record-Id
+ * @param {?string} kostenstelle  Kostenträger-Schlüssel oder null/'' (= nicht zugeordnet)
+ * @returns {Promise<object>} der gespeicherte Zeiteintrag
+ */
+export async function setZeitKostenstelle(id, kostenstelle) {
+  const z = await encGet(id);
+  if (!z) throw new Error('Zeiteintrag nicht gefunden.');
+  z.kostenstelle = kostenstelle || null;
+  await encPut(z);
+  return z;
+}
 
 // ---- Kostenstellen (nicht personenbezogen → Klartext-Records) --------------
 

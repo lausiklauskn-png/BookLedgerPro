@@ -217,6 +217,18 @@
   Faktoren skalieren Mengen-/Geld-Treiber (lineare Korrektur, keine neue Formel); DOM/IndexedDB statisch
   geprüft (kein Headless-Browser). (`docs/KALKULATION_KATALOG.md` §5.1)
 
+- [x] **Folgeschritt: Zeit-Zuordnungs-UI je Kostenträger** ✅ (2026-06-18) — die in der Nachkalkulation-UI
+  als Folgeschritt offene **echte Zeiterfassung-/Beleg-Zuordnung je Auftrag** umgesetzt, soweit GoBD es zulässt.
+  **GoBD-Befund:** `kostenstelle` ist Teil der festgeschriebenen Buchungs-Hash-Kette (`audit.hashedFields`) →
+  Buchungen/Belege lassen sich nicht nachträglich umhängen; saubere Zuordnung nur bei **Zeiteinträgen** (mutable
+  CRM-Records). Reine Logik `domain/nachkalkulation.js` **`aufgeloesteKostenstelle(zeit, auftragIndex)`** (explizite
+  `zeit.kostenstelle` vor Auftrags-Ableitung; '' = bewusst keiner → null), `zeiteintraegeAusZeiten` nutzt ihn
+  (rückwärtskompatibel). `crm-store.js`: `saveZeit` persistiert `kostenstelle`, neue `setZeitKostenstelle(id, ks)`.
+  Glue `nachkalkulation-store.js` `ladeZeitZuordnung()` + `zuordneZeit()`. UI `ui/views/nachkalkulation.js`: Karte
+  **„Zeiten zuordnen"** (Kostenträger-Select je Zeile, Herkunft „direkt"/„über Auftrag") + ehrlicher GoBD-Hinweis an
+  der Beleg-Liste. +8 Tests (**1483/1483**), SW `v122`. **Ehrliche Grenze:** nur Zeit (re)zuordbar; Buchungs-
+  /Beleg-Zuordnung GoBD-fix; alle Zeiten = ARBEIT; DOM/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §6)
+
 ### Block 3 — später / umgebungs-blockiert
 - [ ] **Server-Backup-Ziel** (sobald eigener Server existiert) — Stelle 3 der 3-2-1-Sicherung.
 - [ ] **Eingangsrechnungs-Verzug (Gegenseite)** [SOLL] — Spiegel zum Mahnwesen.

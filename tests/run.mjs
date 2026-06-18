@@ -74,7 +74,7 @@ import {
 import {
   istkostenAusBuchungen, istZeitkosten, istkosten,
   sollkostenAusAngebot, nachkalkulation, kostentraegerAnalyse, zeiteintraegeAusZeiten,
-  kostenartFuerKonto, standardKontoBlock,
+  kostenartFuerKonto, standardKontoBlock, aufgeloesteKostenstelle,
 } from '../src/domain/nachkalkulation.js';
 import {
   korrekturFaktoren, faktorWerte, kalibriereEingabe, kalkuliereKalibriert,
@@ -4044,6 +4044,27 @@ await section('Nachkalkulation-Store (UI-Glue): zeiteintraegeAusZeiten', () => {
   const zk = istZeitkosten(out, { kostenstelle: 'KT-1' });
   ok('istZeitkosten: nur KT-1-Zeit (2h × 60€) = 12000', zk.summeCent === 12000 && zk.minuten === 120);
   ok('leere Eingabe → leere Liste', zeiteintraegeAusZeiten().length === 0);
+
+  // EXPLIZITE Zuordnung (zeit.kostenstelle, über die Zeit-Zuordnungs-UI) gewinnt vor der
+  // Ableitung aus dem Auftrag.
+  const mitExplizit = [
+    { dauerMin: 60, auftragId: 'auf-1', mitarbeiterId: 'ma-1', datum: '2026-06-04', kostenstelle: 'KT-9' },
+    { dauerMin: 60, auftragId: 'auf-2', mitarbeiterId: 'ma-1', datum: '2026-06-05', kostenstelle: 'KT-9' }, // Auftrag ohne KS, aber explizit
+  ];
+  const exp = zeiteintraegeAusZeiten(mitExplizit, auftragIndex, mitarbeiterIndex);
+  ok('explizite Kostenstelle gewinnt vor Auftrag (auf-1=KT-1 → KT-9)', exp[0].kostenstelle === 'KT-9');
+  ok('explizite Kostenstelle auch ohne Auftrags-KS', exp[1].kostenstelle === 'KT-9');
+});
+
+await section('Nachkalkulation: aufgeloesteKostenstelle (explizit vor Auftrag)', () => {
+  const auftragIndex = { 'auf-1': { id: 'auf-1', kostenstelle: 'KT-1' }, 'auf-2': { id: 'auf-2', kostenstelle: null } };
+  ok('explizit gesetzt → genau diese', aufgeloesteKostenstelle({ kostenstelle: 'KT-7', auftragId: 'auf-1' }, auftragIndex) === 'KT-7');
+  ok('ohne explizit → aus Auftrag abgeleitet', aufgeloesteKostenstelle({ auftragId: 'auf-1' }, auftragIndex) === 'KT-1');
+  ok('Auftrag ohne KS → null', aufgeloesteKostenstelle({ auftragId: 'auf-2' }, auftragIndex) === null);
+  ok('unbekannter Auftrag → null', aufgeloesteKostenstelle({ auftragId: 'weg' }, auftragIndex) === null);
+  ok('weder explizit noch Auftrag → null', aufgeloesteKostenstelle({}, auftragIndex) === null);
+  // Leer-String = bewusst „keiner" → überschreibt die Auftrags-Ableitung, wird zu null.
+  ok('explizit "" → null (überschreibt Auftrag)', aufgeloesteKostenstelle({ kostenstelle: '', auftragId: 'auf-1' }, auftragIndex) === null);
 });
 
 await section('Nachkalkulation: Standard-konto→Kostenart (SKR03-Kontenklassen)', () => {

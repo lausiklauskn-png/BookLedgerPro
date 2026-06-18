@@ -18,18 +18,20 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
+import { formatDauer } from '../../domain/employees.js';
 import { KOSTENART_LISTE } from '../../domain/kalkulation.js';
 import { PREISNIVEAU_LISTE } from '../../domain/kalibrierung.js';
-import { nachkalkulationUebersicht } from '../../domain/nachkalkulation-store.js';
+import { nachkalkulationUebersicht, ladeZeitZuordnung, zuordneZeit } from '../../domain/nachkalkulation-store.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
 let _daten = null;
+let _zeit = null;    // { zeiten, mitarbeiterIndex, kostentraeger } für die Zeit-Zuordnung
 let _selId = null;   // id des gewählten Kostenträgers (Angebot)
 
 export async function mountNachkalkulation(host) {
   _host = host;
-  _daten = await nachkalkulationUebersicht();
+  [_daten, _zeit] = await Promise.all([nachkalkulationUebersicht(), ladeZeitZuordnung()]);
   if (_daten.traeger.length && !_daten.traeger.some((x) => x.angebot.id === _selId)) {
     _selId = _daten.traeger[0].angebot.id;
   }
@@ -50,6 +52,7 @@ function repaint() {
     el('h1', { text: t('nachkalk.title') }),
     el('p', { class: 'muted small', text: t('nachkalk.intro') }),
     kostentraegerCard(),
+    zeitZuordnungCard(),
     kalibrierungCard(),
   ]));
 }
@@ -145,6 +148,9 @@ function belegListe(ist) {
   const kinder = [
     el('h3', { class: 'card-subtitle', text: t('nachkalk.belegTitle') }),
     el('p', { class: 'muted small', text: t('nachkalk.belegHint').replace('{stunden}', (Math.round(ist.stunden * 10) / 10)) }),
+    // Ehrlicher GoBD-Hinweis: festgeschriebene Buchungen lassen sich NICHT nachträglich
+    // umhängen (die `kostenstelle` ist Teil der Hash-Kette). Zuordnung passiert beim Buchen.
+    el('p', { class: 'muted small', text: t('nachkalk.belegGobd') }),
   ];
   if (!belege.length) {
     kinder.push(el('p', { class: 'muted small', text: t('nachkalk.belegEmpty') }));
@@ -162,6 +168,76 @@ function belegListe(ist) {
     ]))),
   ]));
   return el('div', {}, kinder);
+}
+
+// ── Zeit-Zuordnung (Zeiteinträge je Kostenträger zuordnen) ───────────────────
+// Zeiteinträge sind mutable CRM-Records (kein GoBD-Hash) → sie lassen sich hier sauber
+// (neu) einem Kostenträger zuordnen. Buchungen/Belege NICHT (siehe belegListe-Hinweis):
+// deren `kostenstelle` ist beim Festschreiben in der Hash-Kette fixiert.
+
+function zeitZuordnungCard() {
+  const z = _zeit || { zeiten: [], mitarbeiterIndex: {}, kostentraeger: [] };
+  const kinder = [
+    el('h2', { class: 'card-title', text: t('nachkalk.zuordnungTitle') }),
+    el('p', { class: 'muted small', text: t('nachkalk.zuordnungHint') }),
+  ];
+  if (!z.kostentraeger.length) {
+    kinder.push(el('p', { class: 'muted small', text: t('nachkalk.zuordnungKeinKt') }));
+    return el('div', { class: 'card' }, kinder);
+  }
+  if (!z.zeiten.length) {
+    kinder.push(el('p', { class: 'muted small', text: t('nachkalk.zuordnungKeineZeit') }));
+    return el('div', { class: 'card' }, kinder);
+  }
+  kinder.push(el('table', { class: 'table' }, [
+    el('thead', {}, el('tr', {}, [
+      el('th', { text: t('nachkalk.datum') }),
+      el('th', { text: t('nachkalk.zuordnungMitarbeiter') }),
+      el('th', { class: 'num', text: t('nachkalk.zuordnungDauer') }),
+      el('th', { text: t('nachkalk.beschreibung') }),
+      el('th', { text: t('nachkalk.zuordnungKostentraeger') }),
+    ])),
+    el('tbody', {}, z.zeiten.map((zeile) => zeitZeile(zeile, z))),
+  ]));
+  return el('div', { class: 'card' }, kinder);
+}
+
+function ktLabel(kt) {
+  return `${kt.nummer || '—'}${kt.titel ? ' · ' + kt.titel : ''}`;
+}
+
+function zeitZeile(zeile, z) {
+  const ma = z.mitarbeiterIndex[zeile.mitarbeiterId];
+  // Aktueller Wert = die aufgelöste Kostenstelle (explizit ODER aus dem Auftrag abgeleitet).
+  const aktuell = zeile.aufgeloesteKostenstelle || '';
+  const bekannt = z.kostentraeger.some((kt) => kt.kostenstelle === aktuell);
+
+  const sel = el('select', {}, [
+    el('option', { value: '' }, t('nachkalk.zuordnungKeine')),
+    ...z.kostentraeger.map((kt) => el('option', { value: kt.kostenstelle }, ktLabel(kt))),
+    // Aufgelöster Kostenträger, der (noch) zu keinem gelisteten Angebot passt → erhaltbar machen.
+    ...(aktuell && !bekannt ? [el('option', { value: aktuell }, aktuell)] : []),
+  ]);
+  sel.value = aktuell;
+  sel.addEventListener('change', async () => {
+    await zuordneZeit(zeile.id, sel.value || null);
+    _zeit = await ladeZeitZuordnung();
+    repaint();
+  });
+
+  // Transparenz: zeigt, ob die aktuelle Zuordnung explizit gesetzt oder aus dem Auftrag
+  // abgeleitet ist (damit „—" vs. abgeleitet nicht verwirrt).
+  const herkunft = aktuell
+    ? (zeile.explizit ? t('nachkalk.zuordnungExplizit') : t('nachkalk.zuordnungAusAuftrag'))
+    : '';
+
+  return el('tr', {}, [
+    el('td', { class: 'mono small', text: zeile.datum || '—' }),
+    el('td', { text: (ma && ma.name) || '—' }),
+    el('td', { class: 'num', text: formatDauer(Number(zeile.dauerMin) || 0) }),
+    el('td', { class: 'muted small', text: zeile.beschreibung || '' }),
+    el('td', {}, [sel, herkunft ? el('div', { class: 'muted small', text: herkunft }) : null]),
+  ]);
 }
 
 // ── Kalibrierung (Korrekturfaktoren + Trefferquote) ──────────────────────────
