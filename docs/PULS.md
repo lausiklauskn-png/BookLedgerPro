@@ -102,7 +102,22 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Dashboard-KPI: überfällige Forderungen (Mahnwesen)"):** SW **v127** · Tests **1571/1571** grün · 116 JS-Module.
+**Kopf-Status (Stand nach „Dashboard-KPI: Liquiditätsvorschau (bald fällig)"):** SW **v128** · Tests **1585/1585** grün · 117 JS-Module.
+**Dashboard-KPI: Liquiditätsvorschau (bald fällig) erledigt (diese Sitzung, BAUPLAN Block 3 — PR #147):**
+Vorausschauender Gegenpol zu den beiden Überfälligkeits-KPIs (#143 Verbindlichkeiten / #145 Forderungen): während jene
+zeigen, was **bereits überfällig** ist, zeigt die neue Karte, was in den **nächsten 7 Tagen fällig** wird — erwartete
+**Eingänge** (bald fällige Forderungen) gegen **Ausgänge** (bald fällige Verbindlichkeiten) + **Netto** (einfache
+Cash-Planung auf einen Blick). Reine Logik `domain/liquiditaet.js` (node-getestet, +14 → **1585/1585**):
+`baldFaellig(angereichertePosten, {heute, horizontTage})` (Posten im Fenster `[heute … heute+Horizont]`, **nicht
+überfällig** → keine Doppelzählung mit den Überfälligkeits-KPIs; liest `offenCent` (Verbindlichkeiten) **und** `betragCent`
+(Forderungen)) + `liquiditaetsVorschau({forderungen, verbindlichkeiten, …})` (eingehend/ausgehend/netto, Horizont
+durchgereicht, Default 7). UI `ui/views/dashboard.js`: Karte „Liquiditätsvorschau (bald fällig)" am Kopf — gefüttert aus
+denselben angereicherten Posten wie die Überfälligkeits-Karten (`forderungReport`/`verzugReport`); nur im Firmen-/Vereins-
+Kontext sichtbar (Forderungen via Ansicht `orders`, Verbindlichkeiten via `payables`; Privat blendet beide aus) UND wenn
+etwas bald fällig ist; **Netto** nur, wenn beide Seiten sichtbar; **bucht nichts**. i18n de+en, SW `v128` (neues Modul
+precached). **Ehrliche Grenze:** einfache Planung nach Fälligkeitsdatum, keine Forecast-Modellierung (Skonto/Teilzahlungs-
+Wahrscheinlichkeit/Zinsen bewusst nicht); DOM/IndexedDB statisch geprüft. **Nächster Schritt (optional):** Browser-
+Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte oder eine neue, abgestimmte Idee.
 **Dashboard-KPI: überfällige Forderungen (Mahnwesen) erledigt (diese Sitzung, BAUPLAN Block 3 — PR #145):**
 Spiegel zur Verbindlichkeiten-KPI (#143), aber aus **Gläubigersicht** — die in `docs/OFFENE_PUNKTE.md` (A1)
 dokumentierte Dashboard-Intention „Kennzahl überfällige Forderungen, Summe + Anzahl". Damit sind beide Seiten
