@@ -148,6 +148,7 @@ import {
   LIQUIDITAET_HORIZONT_DEFAULT, baldFaellig, liquiditaetsVorschau,
   GELDKONTO_BEREICHE, LIQUIDITAET_AMPEL, istGeldkonto, geldbestand, liquiditaetsAmpel,
   LIQUIDITAET_HORIZONT_OPTIONEN, normalizeHorizont, liquiditaetsVerlauf, deckungsluecke,
+  normalizeReserveCent,
 } from '../src/domain/liquiditaet.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
@@ -2539,6 +2540,51 @@ await section('Liquidität: deckungsluecke (Unterdeckung im Fenster)', () => {
   ok('ohne Bestand → keine Unterdeckung', deckungsluecke(ohne).unterdeckung === false);
   // Defensiv: leeres/fehlendes Argument.
   ok('leeres Argument → keine Unterdeckung', deckungsluecke().unterdeckung === false && deckungsluecke({}).lueckeCent === 0);
+  // Rückgabe trägt Reserve-Felder (Default 0, negativ-Flag).
+  ok('Default-Reserve 0 + negativ-Flag', luecke.reserveCent === 0 && luecke.negativ === true && keine.negativ === false && keine.reserveCent === 0);
+});
+
+await section('Liquidität: normalizeReserveCent', () => {
+  ok('positiv bleibt', normalizeReserveCent(50000) === 50000);
+  ok('rundet auf ganze Cent', normalizeReserveCent(123.6) === 124);
+  ok('negativ → 0', normalizeReserveCent(-5) === 0);
+  ok('null/leer/NaN → 0', normalizeReserveCent(0) === 0 && normalizeReserveCent('') === 0 && normalizeReserveCent('abc') === 0 && normalizeReserveCent(undefined) === 0);
+  ok('numerischer String → Zahl', normalizeReserveCent('25000') === 25000);
+});
+
+await section('Liquidität: deckungsluecke mit Mindestreserve (Puffer)', () => {
+  const heute = '2026-06-18';
+  // Tiefpunkt bleibt positiv (Bestand deckt durchgehend), aber unter die gewünschte Reserve.
+  // Kleine Verbindlichkeit Tag 3 zieht den laufenden Saldo von 50000 auf 30000 — über null,
+  // aber unter eine Reserve von 40000.
+  const verbindlichkeiten = [{ offenCent: 20000, faelligAm: '2026-06-21' }];
+  const v = liquiditaetsVerlauf({ verbindlichkeiten, heute, horizontTage: 30, geldbestandCent: 50000 });
+  ok('Tiefpunkt positiv (30000)', v.tiefpunktCent === 30000);
+
+  // Ohne Reserve: keine Lücke (Saldo bleibt ≥ 0).
+  const ohne = deckungsluecke(v);
+  ok('ohne Reserve → keine Lücke', ohne.unterdeckung === false && ohne.lueckeCent === 0);
+
+  // Mit Reserve 40000: Lücke greift, obwohl der Saldo positiv bleibt → milder Hinweis (nicht negativ).
+  const mit = deckungsluecke(v, { reserveCent: 40000 });
+  ok('Reserve unterschritten erkannt', mit.unterdeckung === true);
+  ok('Lücke = Reserve − Tiefpunkt', mit.lueckeCent === 10000); // 40000 − 30000
+  ok('Lücke-Datum = Tiefpunkt-Datum', mit.datum === '2026-06-21');
+  ok('Reserve-Feld durchgereicht', mit.reserveCent === 40000);
+  ok('nicht negativ (Saldo bleibt ≥ 0)', mit.negativ === false);
+
+  // Reserve genau auf Tiefpunkt: noch gedeckt (>= Schwelle).
+  ok('Tiefpunkt == Reserve → keine Lücke', deckungsluecke(v, { reserveCent: 30000 }).unterdeckung === false);
+
+  // Echtes Minus + Reserve: negativ-Flag true, Lücke = Reserve + Fehlbetrag.
+  const vNeg = liquiditaetsVerlauf({ verbindlichkeiten: [{ offenCent: 80000, faelligAm: '2026-06-21' }], heute, horizontTage: 30, geldbestandCent: 50000 });
+  const neg = deckungsluecke(vNeg, { reserveCent: 10000 });
+  ok('echtes Minus → negativ-Flag', neg.negativ === true && neg.unterdeckung === true);
+  ok('Lücke schließt Reserve + Fehlbetrag ein', neg.lueckeCent === 40000); // 10000 − (−30000)
+
+  // Reserve aber kein Engpass → keine Lücke.
+  const heil = liquiditaetsVerlauf({ forderungen: [{ betragCent: 5000, faelligAm: '2026-06-22' }], heute, horizontTage: 14, geldbestandCent: 50000 });
+  ok('Bestand über Reserve → keine Lücke', deckungsluecke(heil, { reserveCent: 40000 }).unterdeckung === false);
 });
 
 await section('Mahnwesen: persistenter Verlauf (Stufe/Zins-/Gebührenverlauf)', () => {

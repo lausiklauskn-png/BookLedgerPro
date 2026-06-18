@@ -2,7 +2,7 @@
 
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
-import { formatEuro } from '../../domain/money.js';
+import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js';
 import { navigate, getSettings, updateSettings } from '../../state.js';
 import { zeigeFeature, FEATURE, zeigeAnsicht } from '../../domain/nutzungsmodus.js';
 import { getMandantId } from '../../core/vault.js';
@@ -12,7 +12,7 @@ import { listKunden, listAuftraege } from '../../domain/crm-store.js';
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { verzugReport, verzugAmpel, VERZUG_AMPEL } from '../../domain/eingangsverzug.js';
 import { forderungReport, forderungAmpel, FORDERUNG_AMPEL } from '../../domain/mahnwesen.js';
-import { liquiditaetsVorschau, liquiditaetsVerlauf, liquiditaetsAmpel, deckungsluecke, geldbestand, normalizeHorizont, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
+import { liquiditaetsVorschau, liquiditaetsVerlauf, liquiditaetsAmpel, deckungsluecke, geldbestand, normalizeHorizont, normalizeReserveCent, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
 import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
@@ -118,9 +118,12 @@ export async function mountDashboard(host) {
     // laufende Saldo zwischendurch ins Minus rutscht (Reihenfolge der Fälligkeiten). Der
     // Tiefpunkt macht genau diese sonst unsichtbare Delle sichtbar (node-getestet).
     const verlauf = liquiditaetsVerlauf({ forderungen, verbindlichkeiten, horizontTage, geldbestandCent });
-    // Deckungslücke: rutscht der laufende Saldo zwischendurch unter null, ist das der bis dahin
-    // fehlende Betrag — auch dann, wenn der End-Saldo (und damit die Ampel) wieder positiv ist.
-    const luecke = deckungsluecke(verlauf);
+    // Deckungslücke: rutscht der laufende Saldo zwischendurch unter die Schwelle, ist das der bis
+    // dahin fehlende Betrag — auch dann, wenn der End-Saldo (und damit die Ampel) wieder positiv
+    // ist. Die Schwelle ist die gewünschte Mindestreserve (Puffer); ohne Reserve = echte
+    // Unterdeckung (Saldo < 0). Gerätelokal/verschlüsselt im Setting liquiditaetReserveCent.
+    const reserveCent = normalizeReserveCent(s.liquiditaetReserveCent);
+    const luecke = deckungsluecke(verlauf, { reserveCent });
     const ampel = liquiditaetsAmpel(v);
     const projCls = ampel === LIQUIDITAET_AMPEL.KRITISCH ? 'kpi-neg' : ampel === LIQUIDITAET_AMPEL.OK ? 'kpi-pos' : '';
     const kacheln = [];
@@ -141,12 +144,29 @@ export async function mountDashboard(host) {
         },
       }),
     ));
+    // Mindestreserve (Puffer): freier Euro-Betrag, unter den der laufende Saldo nicht fallen
+    // soll. 0/leer = keine Reserve (Lücke warnt erst bei echtem Minus). Persistiert + neu zeichnen.
+    const reserveInput = el('input', {
+      type: 'text', inputmode: 'decimal', style: 'width:8rem',
+      value: reserveCent > 0 ? formatCents(reserveCent) : '',
+      placeholder: t('dashboard.liquidityReservePlaceholder'),
+      onChange: async (e) => {
+        const cent = normalizeReserveCent(parseEuroToCents(e.target.value));
+        if (cent === reserveCent) return;
+        await updateSettings({ liquiditaetReserveCent: cent });
+        mountDashboard(host);
+      },
+    });
     return el('div', { class: 'card' }, [
       el('h2', { class: 'card-title', text: t('dashboard.liquidityTitle') }),
       el('p', { class: 'muted small', text: t('dashboard.liquidityHint').replace('{tage}', String(v.horizontTage)) }),
       el('div', { class: 'setting' }, [
         el('span', { class: 'muted small', text: t('dashboard.liquidityHorizonLabel') }),
         horizontWahl,
+      ]),
+      el('div', { class: 'setting' }, [
+        el('span', { class: 'muted small', text: t('dashboard.liquidityReserveLabel') }),
+        reserveInput,
       ]),
       el('div', { class: 'kpi-grid small-kpi' }, kacheln),
       ampel === LIQUIDITAET_AMPEL.KRITISCH
@@ -159,10 +179,22 @@ export async function mountDashboard(host) {
       (verlauf.tiefpunktCent != null && verlauf.endeCent != null && verlauf.tiefpunktCent < verlauf.endeCent && verlauf.tiefpunktDatum)
         ? el('p', { class: 'muted small', text: t('dashboard.liquidityLowHint').replace('{datum}', verlauf.tiefpunktDatum).replace('{betrag}', formatEuro(verlauf.tiefpunktCent)) })
         : null,
-      // Deckungslücke — der konkrete Engpass-Betrag + Stichdatum, prominenter (kpi-neg) als der
-      // reine Tiefpunkt-Hinweis, weil hier echtes Handeln nötig ist. Nur bei echter Unterdeckung.
+      // Deckungslücke — der konkrete Engpass-Betrag + Stichdatum. Rutscht der Saldo echt ins
+      // Minus (negativ), wird prominent gewarnt (hint-error); unterschreitet er „nur" die
+      // gewünschte Mindestreserve (positiv, aber unter Puffer), genügt ein milderer Hinweis.
+      // Ohne gesetzte Reserve greift die Lücke wie bisher erst bei echtem Minus.
       (luecke.unterdeckung && luecke.datum)
-        ? el('p', { class: 'small hint-error', text: t('dashboard.liquidityGapHint').replace('{datum}', luecke.datum).replace('{betrag}', formatEuro(luecke.lueckeCent)) })
+        ? el('p', {
+            class: luecke.negativ ? 'small hint-error' : 'muted small',
+            text: (luecke.reserveCent > 0
+              ? t('dashboard.liquidityReserveGapHint')
+                  .replace('{reserve}', formatEuro(luecke.reserveCent))
+                  .replace('{datum}', luecke.datum)
+                  .replace('{betrag}', formatEuro(luecke.lueckeCent))
+              : t('dashboard.liquidityGapHint')
+                  .replace('{datum}', luecke.datum)
+                  .replace('{betrag}', formatEuro(luecke.lueckeCent))),
+          })
         : null,
     ]);
   };

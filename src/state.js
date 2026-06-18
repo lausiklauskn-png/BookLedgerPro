@@ -23,6 +23,7 @@ const DEFAULTS = Object.freeze({
   backupStrategie: 'download', // download | ordner — Ziel der Datensicherung (Ordner braucht File System Access; sonst Download-Fallback)
   zahlungszielTage: 14,    // Standard-Zahlungsziel für Fälligkeit/Mahnwesen
   liquiditaetHorizontTage: 7, // Zeitfenster (Tage) der Dashboard-Liquiditätsvorschau (7|14|30|90, domain/liquiditaet.js); umschaltbar in der Liquiditäts-Karte
+  liquiditaetReserveCent: 0, // gewünschte Mindestreserve/Liquiditätspuffer (Cent); 0 = keine — die Deckungslücke warnt schon, wenn der laufende Saldo unter diesen Puffer rutscht (domain/liquiditaet.js deckungsluecke)
   vaZeitraum: 'vierteljaehrlich', // USt-Voranmeldungszeitraum: monatlich/vierteljaehrlich/jaehrlich
   wirtschaftsjahrBeginn: '01-01', // MM-TT; 01-01 = Kalenderjahr (abweichendes WJ möglich)
   verzugBasiszinsProzent: 3.37, // Basiszinssatz §247 BGB — REGELMÄSSIG AKTUALISIEREN

@@ -237,23 +237,51 @@ export function liquiditaetsVerlauf(opts = {}) {
 }
 
 /**
- * Deckungslücke (Unterdeckung) im Fenster: Wenn der laufende Saldo am TIEFPUNKT unter null
- * fällt, ist das der Betrag, der bis dahin zusätzlich gebraucht wird, damit der Saldo nicht
- * negativ wird — plus das Datum, bis zu dem er bereitstehen muss.
+ * Normalisiert einen (z.B. persistierten) Mindestreserve-Betrag (Cent) auf eine ganze,
+ * nicht-negative Zahl. Ungültiges/Negatives → 0 (keine Reserve). Rein.
+ * @param {*} value
+ * @returns {number} Cent ≥ 0
+ */
+export function normalizeReserveCent(value) {
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/**
+ * Deckungslücke (Unterdeckung) im Fenster: Wenn der laufende Saldo am TIEFPUNKT unter die
+ * Schwelle fällt, ist das der Betrag, der bis dahin zusätzlich gebraucht wird, damit der Saldo
+ * die Schwelle hält — plus das Datum, bis zu dem er bereitstehen muss.
+ *
+ * Schwelle ist standardmäßig null (echte Unterdeckung: Saldo < 0). Wird eine MINDESTRESERVE
+ * (`opts.reserveCent`, ein gewünschter Sicherheitspuffer) übergeben, greift die Lücke schon,
+ * wenn der laufende Saldo zwar positiv bleibt, aber unter diesen Puffer rutscht — viele Betriebe
+ * wollen das Geld eben NICHT bis auf null herunterfahren. `negativ` zeigt an, ob der Tiefpunkt
+ * tatsächlich unter null liegt (echte Illiquidität) oder „nur" die Reserve unterschreitet.
  *
  * Warum eigenständig zum Tiefpunkt-Hinweis: der Tiefpunkt zeigt den tiefsten Stand auch dann,
- * wenn er positiv bleibt (reine Info „wird es eng"). Die Deckungslücke greift nur, wenn der
- * Saldo ZWISCHENDURCH tatsächlich ins Minus rutscht — auch, wenn er sich bis zum Fenster-Ende
- * wieder erholt (große Verbindlichkeit früh, ausgleichende Forderung spät). Genau dieser
- * Intra-Fenster-Engpass bleibt von der End-Saldo-Ampel (liquiditaetsAmpel, projiziert<0)
+ * wenn er die Schwelle hält (reine Info „wird es eng"). Die Deckungslücke greift nur, wenn der
+ * Saldo ZWISCHENDURCH tatsächlich unter die Schwelle rutscht — auch, wenn er sich bis zum
+ * Fenster-Ende wieder erholt (große Verbindlichkeit früh, ausgleichende Forderung spät). Genau
+ * dieser Intra-Fenster-Engpass bleibt von der End-Saldo-Ampel (liquiditaetsAmpel, projiziert<0)
  * unentdeckt. Rein, cent-genau.
  * @param {{tiefpunktCent:?number, tiefpunktDatum:?string}} verlauf - aus liquiditaetsVerlauf
- * @returns {{unterdeckung:boolean, lueckeCent:number, datum:?string}}
+ * @param {{reserveCent?:number}} [opts] - gewünschte Mindestreserve (Cent, Default 0)
+ * @returns {{unterdeckung:boolean, lueckeCent:number, datum:?string, reserveCent:number,
+ *   negativ:boolean}}
  */
-export function deckungsluecke(verlauf = {}) {
+export function deckungsluecke(verlauf = {}, opts = {}) {
+  const schwelle = normalizeReserveCent(opts.reserveCent);
   const tp = verlauf.tiefpunktCent;
-  if (tp == null || tp >= 0) return { unterdeckung: false, lueckeCent: 0, datum: null };
-  return { unterdeckung: true, lueckeCent: -tp, datum: verlauf.tiefpunktDatum || null };
+  if (tp == null || tp >= schwelle) {
+    return { unterdeckung: false, lueckeCent: 0, datum: null, reserveCent: schwelle, negativ: false };
+  }
+  return {
+    unterdeckung: true,
+    lueckeCent: schwelle - tp,
+    datum: verlauf.tiefpunktDatum || null,
+    reserveCent: schwelle,
+    negativ: tp < 0,
+  };
 }
 
 /**
