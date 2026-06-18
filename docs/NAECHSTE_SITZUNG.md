@@ -18,25 +18,26 @@ obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sic
 
 AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 2026-06-17 vereinbart). **Block 1
 (Vertrauen/Sicherheit) und Block 2 (Kalkulation/Angebote) sind KOMPLETT.** Block 3 ist ausgebaut: Eingangsrechnungs-Verzug
-(Gegenseite) ✅ #140 (Mahnung prüfen § 288 BGB) + Buchung gezahlter Verzugskosten (Zinsaufwand) ✅ #141 +
-Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht ✅ #142 + Dashboard-KPI überfällige **Verbindlichkeiten**
-(eigene Zahlungsdisziplin) ✅ #143 + Dashboard-KPI überfällige **Forderungen (Mahnwesen)** ✅ #145 (Spiegel zu #143 aus
-Gläubigersicht) + zuletzt (2026-06-18) **Dashboard-KPI: Liquiditätsvorschau (bald fällig) ✅ #147** — der vorausschauende
-Gegenpol zu den beiden Überfälligkeits-KPIs: was wird in den **nächsten 7 Tagen fällig** (erwartete **Eingänge** = bald
-fällige Forderungen gegen **Ausgänge** = bald fällige Verbindlichkeiten + **Netto**). Reine Logik
-`domain/liquiditaet.js` **`baldFaellig(angereichertePosten, {heute, horizontTage})`** (Posten im Fenster
-`[heute … heute+Horizont]`, **nicht überfällig** → keine Doppelzählung mit den Überfälligkeits-KPIs; liest
-`offenCent`/`betragCent`) + **`liquiditaetsVorschau({forderungen, verbindlichkeiten, …})`** (eingehend/ausgehend/netto,
-node-getestet); UI `ui/views/dashboard.js`: Karte „Liquiditätsvorschau (bald fällig)" am Kopf — gefüttert aus denselben
-angereicherten Posten wie die Überfälligkeits-Karten (`forderungReport`/`verzugReport`), nur im Firmen-/Vereins-Kontext
-(`zeigeAnsicht 'orders'`/`'payables'`, Privat ausgeblendet) UND wenn etwas bald fällig ist, Netto nur bei beiden Seiten;
-**bucht nichts**. i18n de+en, SW `v128` (neues Modul precached), +14 → **1585/1585** grün, DOM/IndexedDB statisch geprüft.
+(Gegenseite) ✅ #140 + Buchung gezahlter Verzugskosten (Zinsaufwand) ✅ #141 + Verzugsrisiko-Übersicht in der
+Verbindlichkeiten-Ansicht ✅ #142 + Dashboard-KPI überfällige **Verbindlichkeiten** ✅ #143 + Dashboard-KPI überfällige
+**Forderungen (Mahnwesen)** ✅ #145 + **Dashboard-KPI: Liquiditätsvorschau (bald fällig) ✅ #147** + zuletzt (2026-06-18)
+**Liquiditätsvorschau um Geldbestand + projizierten Saldo erweitert ✅ #149** — der Folgeschritt, der die Frage „reicht das
+Geld?" beantwortet: zum erwarteten **Eingänge-vs-Ausgänge**-Fenster kommt der **aktuelle Geldbestand (Kasse + Bank)** als
+Startwert + ein **projizierter Saldo** am Fenster-Ende (Bestand + Eingänge − Ausgänge). Reine Logik `domain/liquiditaet.js`
+**`GELDKONTO_BEREICHE`/`istGeldkonto(konto)`** (AKTIV-Konten 1000–1099 Kasse / 1200–1299 Bank; Forderungen/Vorsteuer außen
+vor) + **`geldbestand(buchungen, konten, {stichtag})`** (Saldo je Geldkonto Soll−Haben aus den **festgeschriebenen**
+Buchungen, Entwürfe zählen nicht, optional bis Stichtag) + **`liquiditaetsVorschau(opts.geldbestandCent)`** →
+`geldbestandCent`/`projiziertCent` (ohne Bestand `null` → **abwärtskompatibel**) + **`LIQUIDITAET_AMPEL`/`liquiditaetsAmpel`**
+(kritisch bei projiziert < 0, Warnung wenn der Bestand allein die Ausgänge nicht deckt, sonst ok); node-getestet. UI
+`ui/views/dashboard.js`: die Liquiditäts-Karte zeigt zusätzlich „Kontostand (Kasse + Bank)" + „voraussichtlich in N Tagen"
+(ampelgefärbt) + ehrlichen Hinweis bei knapper/negativer Projektion; gefüttert aus den bereits geladenen `konten`/`buchungen`;
+**bucht nichts**. i18n de+en, SW `v129` (kein neues Modul), +25 → **1610/1610** grün, DOM/IndexedDB statisch geprüft.
 **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln grün + gemergt;
 nie „halb" mergen, im Zweifel feiner schneiden).
 
 Nächste offene Schritte (alle optional):
 1. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen
-   (zuletzt: Dashboard-Karten „Überfällige Forderungen (Mahnwesen)" + „Überfällige Verbindlichkeiten").
+   (zuletzt: Dashboard-Karte „Liquiditätsvorschau (bald fällig)" mit neuem Kontostand + projiziertem Saldo).
 2. **Sonst:** umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server;
    WorkFloh-Gegenstücke — fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt
    blockiert:** Lighthouse/Perf, lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
@@ -72,12 +73,14 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Dashboard-KPI: Liquiditätsvorschau (bald fällig)**
-(PR #147): reine Logik `domain/liquiditaet.js` `baldFaellig`/`liquiditaetsVorschau`; UI `ui/views/dashboard.js`: Karte
-„Liquiditätsvorschau (bald fällig)" am Kopf der Übersicht. Tests **1585/1585** · SW **v128** · 117 JS-Module.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditätsvorschau um Geldbestand + projizierten Saldo
+erweitert** (PR #149): reine Logik `domain/liquiditaet.js` `GELDKONTO_BEREICHE`/`istGeldkonto`/`geldbestand`/
+`liquiditaetsVorschau(opts.geldbestandCent)`/`LIQUIDITAET_AMPEL`/`liquiditaetsAmpel`; UI `ui/views/dashboard.js`: die
+Liquiditäts-Karte zeigt jetzt „Kontostand (Kasse + Bank)" + „voraussichtlich in N Tagen" (ampelgefärbt). Tests
+**1610/1610** · SW **v129** · 117 JS-Module.
 **Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung + Verzugsrisiko-KPI in
-Verbindlichkeiten-Ansicht + beidseitige Überfälligkeits-KPI — Verbindlichkeiten #143 + Forderungen #145 — auf dem
-Dashboard + Liquiditätsvorschau #147).**
+Verbindlichkeiten-Ansicht + beidseitige Überfälligkeits-KPI #143/#145 + Liquiditätsvorschau #147 + Geldbestand/
+Projektion #149).**
 **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
 oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

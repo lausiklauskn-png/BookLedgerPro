@@ -5,6 +5,42 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Liquiditätsvorschau um Geldbestand + projizierten Saldo [Branch `claude/block-3-liquidity-preview-23iw49`, PR #149]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 ausgebaut, beide Überfälligkeits-KPIs + Liquiditätsvorschau (#147) auf dem Dashboard.
+  Befund: Die Liquiditätsvorschau zeigte nur erwartete **Eingänge gegen Ausgänge** — sie beantwortete noch nicht die
+  eigentliche Frage **„reicht das Geld?"**. Sauberer, build-freier, symmetrischer Folgeschritt: den aktuellen Geldbestand
+  als Startwert heranziehen und projizieren. (Verbleibende explizite BAUPLAN-Punkte sind umgebungs-/menschen-blockiert.)
+
+**Was getan**
+- **`src/domain/liquiditaet.js`** (erweitert, rein, node-getestet, +25 → **1610/1610**): `GELDKONTO_BEREICHE` +
+  `istGeldkonto(konto)` (nur AKTIV-Konten 1000–1099 Kasse / 1200–1299 Bank; Forderungen/Vorsteuer außen vor);
+  `geldbestand(buchungen, konten, {stichtag})` (Saldo je Geldkonto Soll−Haben aus den **festgeschriebenen** Buchungen,
+  Entwürfe zählen nicht, optional bis Stichtag); `liquiditaetsVorschau(opts.geldbestandCent)` ergänzt `geldbestandCent`
+  + `projiziertCent` (Bestand + Netto; ohne Bestand bleiben beide `null` → **abwärtskompatibel**); `LIQUIDITAET_AMPEL`
+  + `liquiditaetsAmpel` (kritisch bei projiziert < 0, Warnung wenn der Bestand allein die Ausgänge nicht deckt, sonst ok).
+- **`src/ui/views/dashboard.js`**: die Liquiditäts-Karte zeigt zusätzlich „Kontostand (Kasse + Bank)" und „voraussichtlich
+  in N Tagen" (ampelgefärbt) + einen ehrlichen Hinweis bei knapper/negativer Projektion; gefüttert aus den bereits
+  geladenen `konten`/`buchungen` (kein zusätzlicher I/O). **Bucht nichts.**
+- i18n de+en (`dashboard.liquidityBalance`/`liquidityProjected`/`liquidityWarnTight`/`liquidityWarnNegative`), **SW `v129`**
+  (kein neues Modul).
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut (Überfälligkeit beidseitig + Liquiditätsvorschau jetzt mit
+  Geldbestand + Projektion).
+- **Tests 1610/1610 grün** (`node tests/run.mjs`). SW `v129`. 117 JS-Module. PR #149 squash-gemergt (CI grün).
+
+**Offen / Nächstes / Grenzen**
+- **DOM/IndexedDB statisch geprüft** (kein Headless-Browser) — die reine Logik (`geldbestand`/`liquiditaetsVorschau`/
+  `liquiditaetsAmpel`) ist node-getestet (+25).
+- **Ehrliche Grenze:** einfache Planung nach Fälligkeitsdatum (keine Forecast-Modellierung von Skonto/Teilzahlungen/
+  Steuern); Geldkonto-Erkennung über die 4-stelligen SKR03-Nummernbereiche (SKR04/6-stellig nicht abgedeckt).
+- **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte
+  Block-3-Punkte (Server-/Offsite-Backup-Ziel, WorkFloh-Gegenstücke) oder eine neue, abgestimmte Idee.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Dashboard-KPI Liquiditätsvorschau (bald fällig) [Branch `claude/bookledgerpro-block-3-liquiditaet`, PR #147]
 
 **Ausgangslage / Auswahl**

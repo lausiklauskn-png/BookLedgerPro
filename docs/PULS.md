@@ -102,8 +102,23 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Dashboard-KPI: Liquiditätsvorschau (bald fällig)"):** SW **v128** · Tests **1585/1585** grün · 117 JS-Module.
-**Dashboard-KPI: Liquiditätsvorschau (bald fällig) erledigt (diese Sitzung, BAUPLAN Block 3 — PR #147):**
+**Kopf-Status (Stand nach „Liquiditätsvorschau: Geldbestand + projizierter Saldo"):** SW **v129** · Tests **1610/1610** grün · 117 JS-Module.
+**Liquiditätsvorschau um Geldbestand + projizierten Saldo erweitert (diese Sitzung, BAUPLAN Block 3 — PR #149):**
+Folgeschritt zur Liquiditätsvorschau (#147): die reine Eingänge-vs-Ausgänge-Sicht beantwortete noch nicht „reicht das
+Geld?". Jetzt wird der **aktuelle Geldbestand (Kasse + Bank)** als Startwert herangezogen und daraus ein **projizierter
+Saldo** am Fenster-Ende gebildet (Bestand + Eingänge − Ausgänge). Reine Logik `domain/liquiditaet.js` (node-getestet,
++25 → **1610/1610**): `GELDKONTO_BEREICHE` + `istGeldkonto(konto)` (AKTIV-Konten 1000–1099 Kasse / 1200–1299 Bank;
+Forderungen/Vorsteuer bleiben außen vor), `geldbestand(buchungen, konten, {stichtag})` (Saldo je Geldkonto Soll−Haben aus
+den **festgeschriebenen** Buchungen, Entwürfe zählen nicht, optional bis Stichtag), `liquiditaetsVorschau(opts.geldbestandCent)`
+→ `geldbestandCent`+`projiziertCent` (ohne Bestand bleiben beide `null` → abwärtskompatibel), `LIQUIDITAET_AMPEL`+
+`liquiditaetsAmpel` (kritisch bei projiziert < 0, Warnung wenn der Bestand allein die Ausgänge nicht deckt, sonst ok). UI
+`ui/views/dashboard.js`: die Liquiditäts-Karte zeigt zusätzlich „Kontostand (Kasse + Bank)" + „voraussichtlich in N Tagen"
+(ampelgefärbt) + ehrlichen Hinweis bei knapper/negativer Projektion; gefüttert aus den bereits geladenen `konten`/`buchungen`;
+**bucht nichts**. i18n de+en, SW `v129` (kein neues Modul). **Ehrliche Grenze:** einfache Planung nach Fälligkeitsdatum (keine
+Forecast-Modellierung von Skonto/Teilzahlungen/Steuern); Geldkonto-Erkennung über die 4-stelligen SKR03-Nummernbereiche;
+DOM/IndexedDB statisch geprüft. **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/
+menschen-blockierte Block-3-Punkte oder eine neue, abgestimmte Idee.
+**Dashboard-KPI: Liquiditätsvorschau (bald fällig) erledigt (BAUPLAN Block 3 — PR #147):**
 Vorausschauender Gegenpol zu den beiden Überfälligkeits-KPIs (#143 Verbindlichkeiten / #145 Forderungen): während jene
 zeigen, was **bereits überfällig** ist, zeigt die neue Karte, was in den **nächsten 7 Tagen fällig** wird — erwartete
 **Eingänge** (bald fällige Forderungen) gegen **Ausgänge** (bald fällige Verbindlichkeiten) + **Netto** (einfache
