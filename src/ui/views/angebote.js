@@ -31,6 +31,7 @@ import {
   verschiebePosition, verschiebeNachOben, verschiebeNachUnten,
 } from '../../domain/baukasten.js';
 import { listAngebote, saveAngebot, getAngebot, deleteAngebot, setzeAngebotStatusStore, rechnungAusAngebot } from '../../domain/angebote-store.js';
+import { ladeKalibrierungFaktoren } from '../../domain/nachkalkulation-store.js';
 import { darfAngebotUebernehmen } from '../../domain/angebotUebernahme.js';
 import { listKunden, listKostenstellen, ensureKostenstellenSeeded } from '../../domain/crm-store.js';
 import { getSettings, updateSettings } from '../../state.js';
@@ -43,6 +44,7 @@ let _entwurf = null;           // in Arbeit befindliches Angebot (Positionen tra
 let _editId = null;            // id des bearbeiteten gespeicherten Angebots (null = Neuanlage)
 let _openSchemaId = null;      // welche Baukasten-Karte ihr Eingabe-Formular geöffnet hat
 let _dragFrom = null;          // Quell-Index beim Drag-and-drop der Positionsliste
+let _kalibrierung = null;      // { faktorWerte, anzahlVergleiche } aus der Historie (oder null)
 // Interne Zuschläge (Gemeinkosten/Gewinn) — gelten beim Hinzufügen einer Position. Reine
 // INTERN-Größen (Prime Directive): sie steuern die Kalkulation, stehen NIE im Angebot.
 let _zuschlaege = { gemeinkostenProzent: 15, gewinnProzent: 20 };
@@ -53,7 +55,20 @@ export async function mountAngebote(host) {
   // _entwurf über Re-Mounts hinweg behalten (updateSettings → Shell-paint → mountAngebote):
   // sonst ginge das in Arbeit befindliche Angebot beim Persistieren des Nutzungsprofils verloren.
   if (!_entwurf) _entwurf = neuesAngebot();
+  // Korrekturfaktoren aus der Historie laden (für die kalibrierte Vorwärtskalkulation).
+  // Fehler dürfen die Ansicht nie blockieren — dann eben ohne Kalibrierungs-Option.
+  try { _kalibrierung = await ladeKalibrierungFaktoren(); }
+  catch { _kalibrierung = null; }
   await repaint();
+}
+
+// Liegt verwertbare Historie für die kalibrierte Vorwärtskalkulation vor?
+function hatKalibrierung() {
+  return !!(_kalibrierung && _kalibrierung.anzahlVergleiche > 0);
+}
+// Soll beim Anlegen einer Position kalibriert werden? (Setting + Historie nötig.)
+function kalibrierungAktiv() {
+  return hatKalibrierung() && !!getSettings().kalibrierungAnwenden;
 }
 
 // Nutzungsprofil (adaptive Sortierung) — gerätelokal in den (verschlüsselten) Settings.
@@ -135,6 +150,8 @@ function editorCard() {
     ]),
     el('p', { class: 'muted small', text: t('angebote.zuschlaegeHint') }),
 
+    kalibrierungUmschalter(),
+
     el('h3', { class: 'card-subtitle', text: t('angebote.baukasten') }),
     el('p', { class: 'muted small', text: t('angebote.baukastenHint') }),
     palette(),
@@ -146,6 +163,26 @@ function editorCard() {
     deckungsbeitragPanel(),
     err,
     el('div', { class: 'btn-row' }, submitBtns),
+  ]);
+}
+
+// Kalibrierte Vorwärtskalkulation (Katalog §5.1): die Korrekturfaktoren aus der eigenen
+// Historie (Vor→Nachkalkulation) auf die interne Kalkulation neuer Positionen anwenden.
+// Nur sichtbar, wenn überhaupt verwertbare Historie vorliegt (sonst kein sinnvoller Schalter).
+// Rein INTERN (Prime Directive): wirkt nur auf Selbstkosten/Deckungsbeitrag, nie aufs Dokument.
+function kalibrierungUmschalter() {
+  if (!hatKalibrierung()) return null;
+  const an = !!getSettings().kalibrierungAnwenden;
+  const box = el('input', { type: 'checkbox' });
+  box.checked = an;
+  box.addEventListener('change', async () => {
+    await updateSettings({ kalibrierungAnwenden: box.checked });
+    await repaint();
+  });
+  const label = t('angebote.kalibrierung').replace('{n}', String(_kalibrierung.anzahlVergleiche));
+  return el('div', {}, [
+    el('label', { class: 'inline-field' }, [box, el('span', { text: label })]),
+    el('p', { class: 'muted small', text: t('angebote.kalibrierungHint') }),
   ]);
 }
 
@@ -202,6 +239,8 @@ function schemaFormSlot() {
         zuschlaege: { ..._zuschlaege, ustProzent: Number(ust.value) || 0 },
         beschreibung: beschreibung.value.trim() || schema.label,
         menge: Number(String(menge.value).replace(',', '.')) || 1,
+        // Kalibrierte Vorwärtskalkulation, wenn der Nutzer sie aktiviert hat und Historie vorliegt.
+        ...(kalibrierungAktiv() ? { faktoren: _kalibrierung.faktorWerte } : {}),
       });
       _entwurf.positionen = [...(_entwurf.positionen || []), pos];
       _openSchemaId = null;
@@ -251,7 +290,12 @@ function positionsListe() {
       'data-idx': String(i),
     }, [
       el('span', { class: 'drag-griff', title: t('angebote.dragHint'), text: '⠿' }),
-      el('span', { class: 'pos-desc', text: p.beschreibung || '—' }),
+      el('span', { class: 'pos-desc' }, [
+        el('span', { text: p.beschreibung || '—' }),
+        p.kalkulation && p.kalkulation.kalibriert
+          ? el('span', { class: 'badge badge-entwurf', title: t('angebote.kalibrierungHint'), text: t('angebote.kalibriert') })
+          : null,
+      ]),
       el('span', { class: 'muted small', text: `${p.menge} × ${formatEuro(p.einzelpreisCent)}` }),
       el('span', { class: 'num', text: formatEuro(netto) }),
       el('span', { class: 'muted small', text: `${p.ustSatz} %` }),

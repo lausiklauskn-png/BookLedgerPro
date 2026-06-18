@@ -24,7 +24,7 @@
 // Dezimal-m² — exakt wie der Kern. Gerundet wird ausschließlich im Kern.
 
 import {
-  KOSTENART_LISTE, kalkuliereVorwaerts,
+  KOSTENART_LISTE, kalkuliereVorwaerts, kalibriereEingabe,
 } from './kalkulation.js';
 
 /** Endliche Zahl oder 0 (schützt vor NaN/undefined/null). Wie im Kern. */
@@ -315,6 +315,23 @@ export function schemaEingabe(schema, werte = {}, zuschlaege = {}, kalibrierung 
  */
 export function kalkuliereSchema(schema, werte = {}, zuschlaege = {}, kalibrierung = {}) {
   return kalkuliereVorwaerts(schemaEingabe(schema, werte, zuschlaege, kalibrierung));
+}
+
+/**
+ * Schema durchrechnen MIT den Korrekturfaktoren aus der eigenen Historie (Schritt 9/10,
+ * domain/kalibrierung.js `faktorWerte`): baut die Kern-Eingabe wie `kalkuliereSchema` und
+ * skaliert sie je Kostenart, BEVOR der Kern rechnet (`kalibriereEingabe`). So fließt die
+ * gelernte Erfahrung (z. B. „Verschnitt real +12 %") in die Vorwärtskalkulation zurück —
+ * ohne neue Formel, nur den Mengen-/Geld-Treiber skaliert. Ohne `faktoren` (bzw. mit lauter
+ * 1-en) identisch zu `kalkuliereSchema`. Cent-genau (gerundet wird nur im Kern).
+ * @param {object} schema Produkt-Schema
+ * @param {object} werte  gefüllte Feldwerte
+ * @param {object} zuschlaege Gemeinkosten%/Gewinn%/USt%
+ * @param {object} [kalibrierung] { feldKey: wert } für kalibrierbare Felder (Hotspots)
+ * @param {Object} [faktoren] block → Multiplikator (aus kalibrierung.js faktorWerte)
+ */
+export function kalkuliereSchemaKalibriert(schema, werte = {}, zuschlaege = {}, kalibrierung = {}, faktoren = {}) {
+  return kalkuliereVorwaerts(kalibriereEingabe(schemaEingabe(schema, werte, zuschlaege, kalibrierung), faktoren));
 }
 
 // ── Validierung der Definitionen (Selbstschutz, im Node-Test geprüft) ────────

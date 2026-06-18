@@ -27,7 +27,7 @@
 // (verschlüsselt, crm-store) und der adaptive Baukasten (Katalog §3) kommen später.
 
 import { auftragSummen, positionNetto } from './orders.js';
-import { schemaNach, kalkuliereSchema } from './produktschemata.js';
+import { schemaNach, kalkuliereSchema, kalkuliereSchemaKalibriert } from './produktschemata.js';
 
 /** Endliche Zahl oder 0 (schützt vor NaN/undefined/null). */
 function num(x) {
@@ -190,10 +190,13 @@ export function normalizeAngebotsposition(pos = {}) {
  * sieht ausschließlich `einzelpreisCent`.
  *
  * @param {string|object} schemaOderId Schema-Objekt ODER Schema-ID
- * @param {{werte?:object, zuschlaege?:object, kalibrierung?:object, beschreibung?:string,
- *          menge?:number}} [opts]
+ * @param {{werte?:object, zuschlaege?:object, kalibrierung?:object, faktoren?:object,
+ *          beschreibung?:string, menge?:number}} [opts]
  *   `zuschlaege.ustProzent` steuert sowohl die interne Kalkulation als auch den externen
- *   `ustSatz` der Position (eine Quelle der Wahrheit).
+ *   `ustSatz` der Position (eine Quelle der Wahrheit). `faktoren` (block → Multiplikator,
+ *   aus der Historie via domain/kalibrierung.js `faktorWerte`): wenn gesetzt, wird die
+ *   interne Kalkulation KALIBRIERT (kalkuliereSchemaKalibriert) — die gelernte Erfahrung
+ *   fließt in den internen Stückpreis zurück; rein intern, das Außendokument bleibt neutral.
  * @returns {object} Angebotsposition mit interner `kalkulation`
  */
 export function positionAusSchema(schemaOderId, opts = {}) {
@@ -201,7 +204,10 @@ export function positionAusSchema(schemaOderId, opts = {}) {
   const werte = opts.werte || {};
   const zuschlaege = opts.zuschlaege || {};
   const kalibrierung = opts.kalibrierung || {};
-  const ergebnis = kalkuliereSchema(schema, werte, zuschlaege, kalibrierung);
+  const faktoren = opts.faktoren || null;     // gesetzt → kalibrierte Vorwärtskalkulation
+  const ergebnis = faktoren
+    ? kalkuliereSchemaKalibriert(schema, werte, zuschlaege, kalibrierung, faktoren)
+    : kalkuliereSchema(schema, werte, zuschlaege, kalibrierung);
   return {
     beschreibung: opts.beschreibung || (schema ? schema.label : ''),
     menge: opts.menge != null ? num(opts.menge) : 1,
@@ -210,6 +216,9 @@ export function positionAusSchema(schemaOderId, opts = {}) {
     kalkulation: {                           // INTERN — bleibt im Haus (Prime Directive)
       schemaId: schema ? schema.id : null,
       werte, zuschlaege, kalibrierung,
+      // Kalibrierung mitschreiben (nur wenn angewandt) → die UI kann die Position markieren,
+      // und die interne Auswertung bleibt nachvollziehbar.
+      ...(faktoren ? { faktoren, kalibriert: true } : {}),
       ergebnis,
     },
   };

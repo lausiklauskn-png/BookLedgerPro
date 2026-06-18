@@ -20,7 +20,11 @@
 // Rückwärts: bei gegebenem Zielpreis/Marge → wie viel Selbstkosten/Zeit darf rein.
 //
 // EHRLICHE GRENZE: Der Kern rechnet nur mit den eingegebenen Sätzen — er erfindet nichts.
-// Kalibrierung/Nachkalkulation (Korrekturfaktoren aus der Historie) ist Schritt 9/10.
+// Die KORREKTURFAKTOREN aus der Historie (Vor→Nachkalkulation) GEWINNT Schritt 9/10
+// (domain/nachkalkulation.js + domain/kalibrierung.js); ihre reine ANWENDUNG auf eine
+// Kern-Eingabe lebt am Ende dieser Datei (kalibriereEingabe/kalkuliereKalibriert), weil das
+// eine reine Kern-Operation ist (Mengen-/Geld-Treiber skalieren) — kalibrierung.js
+// re-exportiert sie, damit die öffentliche API stabil bleibt.
 
 /** Endliche Zahl oder 0 (schützt vor NaN/undefined/null in der Eingabe). */
 function num(x) {
@@ -209,4 +213,55 @@ export function kalkuliereRueckwaerts(input = {}) {
     maxStunden,
     reichtAus: budgetCent >= 0,
   };
+}
+
+// ── Kalibrierung in den Kern zurückführen (Korrekturfaktoren je Kostenart) ───
+// Die FAKTOREN selbst kommen aus der eigenen Historie (domain/kalibrierung.js, Schritt 10:
+// ΣIST/ΣSOLL je Kostenart). HIER im Kern ist nur ihre ANWENDUNG definiert: je Kostenart-Block
+// den mengen-/geldgetriebenen Treiber skalieren (Sätze/Prozente/Zuschläge bleiben). Reine
+// Zuordnung — KEINE neue Formel (analog domain/produktschemata.js „füttert nur den Kern").
+
+/** Skaliert die mengen-/geldgetriebenen Felder EINES Kostenart-Blocks mit dem Faktor. */
+function skaliereBlock(block, faktor) {
+  if (!block || faktor === 1) return block;
+  const b = { ...block };
+  // Geld-/Mengen-Treiber skalieren (Ergebnis skaliert linear mit) — Sätze/Prozente bleiben.
+  for (const key of ['betragCent', 'preisProM2Cent', 'ekCent']) {
+    if (b[key] != null) b[key] = num(b[key]) * faktor;
+  }
+  if (b.stunden != null) b.stunden = num(b.stunden) * faktor;
+  return b;
+}
+
+/**
+ * Wendet die Korrektur-Multiplikatoren (block → Faktor) auf eine Kern-Eingabe an: skaliert je
+ * Kostenart den Mengen-/Geld-Treiber, lässt Sätze/Prozente und die internen Zuschläge
+ * (Gemeinkosten%/Gewinn%/USt%) unangetastet. Mutiert die Eingabe NICHT. Ungültige/≤0-Faktoren
+ * gelten als 1 (neutral — keine Kalibrierung).
+ * @param {object} eingabe  Eingabe für kalkuliereVorwaerts
+ * @param {Object} faktoren block → Multiplikator (Default 1)
+ */
+export function kalibriereEingabe(eingabe = {}, faktoren = {}) {
+  const f = (k) => {
+    const v = faktoren[k];
+    return Number.isFinite(v) && v > 0 ? v : 1;
+  };
+  return {
+    ...eingabe,
+    material: skaliereBlock(eingabe.material, f(KOSTENART.MATERIAL)),
+    maschine: skaliereBlock(eingabe.maschine, f(KOSTENART.MASCHINE)),
+    arbeit: skaliereBlock(eingabe.arbeit, f(KOSTENART.ARBEIT)),
+    zukauf: skaliereBlock(eingabe.zukauf, f(KOSTENART.ZUKAUF)),
+    montage: skaliereBlock(eingabe.montage, f(KOSTENART.MONTAGE)),
+  };
+}
+
+/**
+ * Kalibrierte Vorwärtskalkulation: wie `kalkuliereVorwaerts`, aber mit den aus der Historie
+ * gewonnenen Korrekturfaktoren je Kostenart. Liefert exakt das Kern-Ergebnis (cent-genau).
+ * @param {object} eingabe  Eingabe für kalkuliereVorwaerts
+ * @param {Object} faktoren block → Multiplikator (aus domain/kalibrierung.js faktorWerte)
+ */
+export function kalkuliereKalibriert(eingabe = {}, faktoren = {}) {
+  return kalkuliereVorwaerts(kalibriereEingabe(eingabe, faktoren));
 }

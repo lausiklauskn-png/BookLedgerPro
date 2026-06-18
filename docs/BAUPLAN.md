@@ -203,6 +203,20 @@
   Heuristik nach Kontenklasse (keine exakte Einzelkosten-Zuordnung); Class-4-Gemeinkosten bleiben unklassifiziert;
   MASCHINE kommt nur über die Zeiteinträge. Glue/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §6)
 
+- [x] **Folgeschritt: kalibrierte Vorwärtskalkulation im Angebots-Editor** ✅ (2026-06-18) — die in
+  Schritt 10 fertige reine Logik (`kalkuliereKalibriert`) ist jetzt im Angebots-Editor nutzbar. Die
+  Anwendungs-Primitiven `kalibriereEingabe`/`kalkuliereKalibriert` wandern in den **Kern**
+  (`domain/kalkulation.js`, reine Kern-Operation; `domain/kalibrierung.js` re-exportiert → API stabil);
+  neuer reiner `produktschemata.js` **`kalkuliereSchemaKalibriert`** (Schema-Eingabe → `kalibriereEingabe` →
+  Kern); `angebote.js positionAusSchema(opts.faktoren)` rechnet die interne Kalkulation kalibriert und merkt
+  `kalkulation.kalibriert`/`faktoren` (Außendokument bleibt neutral — Prime Directive). Glue
+  `nachkalkulation-store.js ladeKalibrierungFaktoren()` (gedeckelte `faktorWerte` + Stichprobengröße); UI
+  `ui/views/angebote.js`: Schalter **„Erfahrungswerte anwenden (Kalibrierung aus N Aufträgen)"** (Setting
+  `kalibrierungAnwenden`, nur sichtbar mit Historie), kalibrierte Positionen tragen ein „kalibriert"-Badge,
+  Live-Deckungsbeitrag spiegelt die Kalibrierung. +9 Tests (**1475/1475**), SW `v121`. **Ehrliche Grenze:**
+  Faktoren skalieren Mengen-/Geld-Treiber (lineare Korrektur, keine neue Formel); DOM/IndexedDB statisch
+  geprüft (kein Headless-Browser). (`docs/KALKULATION_KATALOG.md` §5.1)
+
 ### Block 3 — später / umgebungs-blockiert
 - [ ] **Server-Backup-Ziel** (sobald eigener Server existiert) — Stelle 3 der 3-2-1-Sicherung.
 - [ ] **Eingangsrechnungs-Verzug (Gegenseite)** [SOLL] — Spiegel zum Mahnwesen.

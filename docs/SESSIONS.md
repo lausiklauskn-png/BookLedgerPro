@@ -5,6 +5,48 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2: Kalibrierte Vorwärtskalkulation im Angebots-Editor [Branch `claude/bookledgerpro-bauplan-blocks-jwodoj`]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block-2-Kernkette (4–11) inkl. aller UIs sind komplett. Aus den zwei optionalen Folgeschritten
+  der **kleinere, klar abgegrenzte, an fertige reine Logik andockende**: die **kalibrierte Vorwärtskalkulation**
+  im Angebots-Editor (`kalkuliereKalibriert` stand seit Schritt 10 node-getestet bereit, war aber im Editor
+  noch nicht nutzbar). Reine Logik zuerst, dann UI „statisch geprüft".
+
+**Was getan**
+- **`src/domain/kalkulation.js`** (Kern): die Anwendungs-Primitiven **`kalibriereEingabe`**/**`kalkuliereKalibriert`**
+  (Mengen-/Geld-Treiber je Kostenart skalieren) aus `kalibrierung.js` HIERHER verschoben — das ist eine reine
+  Kern-Operation neben `kalkuliereVorwaerts`. **`src/domain/kalibrierung.js`** re-exportiert beide → öffentliche
+  API + bestehende Tests unverändert grün.
+- **`src/domain/produktschemata.js`**: neuer reiner **`kalkuliereSchemaKalibriert(schema, werte, zuschlaege,
+  kalibrierung, faktoren)`** (Schema-Eingabe → `kalibriereEingabe` → Kern; ohne/Neutral-Faktoren identisch zu
+  `kalkuliereSchema`).
+- **`src/domain/angebote.js`**: `positionAusSchema` akzeptiert **`opts.faktoren`** → rechnet die interne
+  Kalkulation kalibriert und merkt `kalkulation.kalibriert`/`faktoren`. Außendokument bleibt NEUTRAL
+  (Whitelist, Prime Directive — im Test geprüft, dass „kalibriert/faktoren" nicht nach außen dringt).
+- **`src/domain/nachkalkulation-store.js`**: `ladeKalibrierungFaktoren()` (Glue) reicht die konservativ
+  gedeckelten `faktorWerte` (0,5–2,0) + die Stichprobengröße `anzahlVergleiche` an die UI durch.
+- **`src/state.js`**: Setting `kalibrierungAnwenden` (Default false). **`src/ui/views/angebote.js`**: lädt die
+  Faktoren beim Mount (Fehler → ohne Option, nie blockierend), Schalter „Erfahrungswerte anwenden (Kalibrierung
+  aus N abgeschlossenen Aufträgen)" (nur sichtbar mit Historie), kalibrierte Positionen tragen ein
+  „kalibriert"-Badge, Live-Deckungsbeitrag spiegelt die Kalibrierung automatisch. i18n de+en.
+- **`sw.js`** `CACHE_VERSION` → **v121** (keine neue Datei; berührte Module bereits präcacht).
+
+**Stand**
+- `node tests/run.mjs` → **1475/1475 grün** (+9: `kalkuliereSchemaKalibriert` == manuell komponiert, Neutral-
+  Faktor identisch, Material-Faktor wirkt nur aufs Material, `positionAusSchema(opts.faktoren)` markiert +
+  rechnet kalibriert, Kalibrierung dringt nicht nach außen). `node --check` der berührten Module grün.
+
+**Offen / Nächstes**
+- **Optional (verbleibend):** echte **Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag** (heute werden vorhandene
+  Zeiten/Buchungen nur angezeigt).
+- **Ehrliche Grenzen:** lineare Korrektur (Faktoren skalieren Mengen-/Geld-Treiber, KEINE neue Formel; Sätze/
+  Prozente/Zuschläge bleiben); Faktoren stammen aus der eigenen Historie und sind nur so gut wie diese (konservativ
+  0,5–2,0 gedeckelt, ab 1 Vergleich wirksam); DOM/IndexedDB **statisch geprüft** (kein Headless-Browser) — die
+  reine Logik ist node-getestet.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2: Standard-konto→Kostenart-Zuordnung (Nachkalkulation) [Branch `claude/bookledgerpro-bauplan-s9rjht`]
 
 **Ausgangslage / Auswahl**
