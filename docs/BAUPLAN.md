@@ -103,6 +103,19 @@
   (Whitelist) → die interne Kalkulation gelangt nie in den Entwurf (Test prüft das JSON). `validateAngebotUebernahme`/
   `darfAngebotUebernehmen` (nur `angenommen` + gültige AN-Nummer + Positionen). SW `v112`. **Rein, kein UI** —
   UI/Store-Glue (Zähler je Kreis, `saveEntwurf`, Angebot→archiviert) sind ein eigener Folgeschritt. (Katalog §4/§7a)
+- [x] **8-UI. „Rechnung aus Angebot" (UI + Store-Glue)** ✅ (2026-06-18) — Knopf **„Rechnung aus Angebot"** an einem
+  angenommenen, gültigen Angebot (`ui/views/angebote.js`, sichtbar via `darfAngebotUebernehmen`) → Store-Glue
+  `domain/angebote-store.js rechnungAusAngebot(id)` über die fertige reine Logik `domain/angebotUebernahme.js`
+  (`validateAngebotUebernahme`/`angebotUebernahmeEntwurf`) → Buchungs-**Entwurf** via `store.saveEntwurf` (Soll
+  Forderung / Haben Erlöse+USt). **Nummernpolitik je `rechnungsstelle`:** `blp` → echte §14-Nummer aus dem
+  **lückenlosen** Zähler `crm-store.naechsteRechnungSeq` (DERSELBE Zähler wie `rechnungAusAuftrag` → ein einziger
+  §14-Kreis), `extern` → vorläufige Vorlage `ENT-JJJJ-NNNN` aus eigenem Zähler `naechsteVorlaeufigeSeq` (getrennt,
+  GoBD-neutral). Die Angebotsnummer wird nur **referenziert** (`entwurf.angebotsnummer`/Beschreibung), nie als
+  Rechnungsnummer wiederverwendet (zwei getrennte Kreise). Angebot danach automatisch **→ archiviert**
+  (`angenommen → archiviert`); **Festschreiben bleibt manuell (GoBD)** — Banner verweist aufs Journal. **Prime
+  Directive:** baut ausschließlich auf `externesAngebot` → keine interne Kalkulation im Entwurf. i18n de+en, SW
+  `v117`. Tests bleiben **1427/1427** grün (reine Logik war #129; dieser Schritt ist UI/Glue). **DOM/IndexedDB/
+  kv-Zähler statisch geprüft** (kein Headless-Browser). (Katalog §4/§7a)
 - [x] **9. Auftrags-Kostenträger + Nachkalkulation** ✅ (PR #130, 2026-06-18) — `domain/nachkalkulation.js`
   (rein, node-getestet, +29 → **1355/1355**): ein **Kostenträger** = Auftrag/Projekt über seine `kostenstelle`.
   **IST** aus den vorhandenen Bausteinen — `istkostenAusBuchungen` (Aufwands-Zeilen FESTGESCHRIEBENER Buchungen je

@@ -25,6 +25,13 @@ import {
   ANGEBOT_STATUS, normalizeAngebotsposition, setzeAngebotStatus,
   vergebeAngebotsnummer, istAngebotsnummer,
 } from './angebote.js';
+import {
+  angebotUebernahmeEntwurf, validateAngebotUebernahme,
+} from './angebotUebernahme.js';
+import { vergibtBlpNummern } from './rechnungsstelle.js';
+import { naechsteRechnungSeq, naechsteVorlaeufigeSeq } from './crm-store.js';
+import { saveEntwurf } from './store.js';
+import { getSettings } from '../state.js';
 
 /** Jahr (Number) aus einem ISO-Datum `YYYY-…` — oder null, wenn nicht erkennbar. */
 function jahrAus(datum) {
@@ -84,4 +91,57 @@ export async function setzeAngebotStatusStore(id, nach) {
   const r = setzeAngebotStatus(a, nach);
   if (!r.ok) throw new Error(r.fehler);
   return saveAngebot(r.angebot);
+}
+
+/**
+ * BAUPLAN Block 2 / Schritt 8-UI — „Rechnung aus Angebot".
+ * Überführt ein ANGENOMMENES Angebot in einen Buchungs-ENTWURF (Forderung an Erlöse + USt)
+ * über die reine Logik domain/angebotUebernahme.js und archiviert das Angebot danach.
+ *
+ * NUMMERNPOLITIK je Setting `rechnungsstelle` (Schritt 4):
+ *   - blp    : reserviert die nächste laufende Zahl aus dem lückenlosen §14-Kreis
+ *              (naechsteRechnungSeq — DERSELBE Zähler wie rechnungAusAuftrag) → echte
+ *              §14-Nummer (JJJJ-NNNN), `vorlaeufig=false`.
+ *   - extern : reserviert aus dem getrennten Vorlagen-Zähler (naechsteVorlaeufigeSeq) →
+ *              vorläufige Vorlage (ENT-JJJJ-NNNN), `vorlaeufig=true`; die endgültige
+ *              §14-Nummer vergibt das externe System.
+ *
+ * PRIME DIRECTIVE: Der Entwurf entsteht ausschließlich aus der EXTERNEN Angebots-Schicht
+ * (externesAngebot → Whitelist in angebotUebernahmeEntwurf). Die interne Kalkulation
+ * (Marge/Selbstkosten/Verschnitt) gelangt NIE in die Buchung.
+ *
+ * ZWEI GETRENNTE KREISE (GoBD): Die Angebotsnummer (AN-…) wird NUR referenziert
+ * (`entwurf.angebotsnummer`/Beschreibung), nie als Rechnungs-/Vorlagen-Nummer wiederverwendet.
+ *
+ * Festschreiben bleibt MANUELL (GoBD) — diese Funktion erzeugt nur den Entwurf.
+ *
+ * EHRLICHE GRENZE: IndexedDB/Krypto/kv-Zähler-Pfad → in der Build-Umgebung NICHT headless
+ * getestet (statisch geprüft). Die reine Übernahme-Logik (angebotUebernahme.js) ist node-getestet.
+ *
+ * @param {string} id  Angebots-id (Status muss `angenommen` sein, gültige AN-Nummer, Positionen)
+ * @returns {Promise<{buchung:object, entwurf:object, angebot:object}>}
+ * @throws wenn das Angebot nicht übernehmbar ist (validateAngebotUebernahme)
+ */
+export async function rechnungAusAngebot(id) {
+  const a = await getAngebot(id);
+  if (!a) throw new Error('Angebot nicht gefunden');
+  const fehler = validateAngebotUebernahme(a);
+  if (fehler.length) throw new Error(fehler.join(' '));
+
+  const settings = getSettings();
+  const datum = new Date().toISOString().slice(0, 10);
+  // Nummernkreis je Rechnungsstelle: §14-Kreis (blp) ODER Vorlagen-Kreis (extern).
+  const seq = vergibtBlpNummern(settings) ? await naechsteRechnungSeq() : await naechsteVorlaeufigeSeq();
+  const entwurf = angebotUebernahmeEntwurf(a, { settings, seq, datum });
+
+  const buchung = await saveEntwurf({
+    datum: entwurf.datum,
+    beschreibung: entwurf.beschreibung,
+    zeilen: entwurf.zeilen,
+    kostenstelle: entwurf.kostenstelle,
+  });
+
+  // Angebot → archiviert (angenommen → archiviert ist der vorgesehene Abschluss, ANGEBOT_STATUS_FLOW).
+  const archiviert = await setzeAngebotStatusStore(id, ANGEBOT_STATUS.ARCHIVIERT);
+  return { buchung, entwurf, angebot: archiviert };
 }
