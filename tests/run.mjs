@@ -55,6 +55,7 @@ import { kleinbetragsrechnung, geschenkAbzug, bewirtungAufteilung, KLEINBETRAG_G
 import { istGesperrt } from '../src/domain/pruefung.js';
 import { demoMandant, demoExportDateien, DEMO_JAHR } from '../src/domain/demodaten.js';
 import { runSelbsttest } from '../src/domain/selbsttest.js';
+import { buildBackupFromSnapshot, readBackup, importProbe, snapshotBytes, backupRoundtripSelbsttest, BACKUP_INFO } from '../src/core/backup.js';
 import { wjPeriode, wirtschaftsjahrVon, wjBeginnYYYYMMDD, validateWjBeginn } from '../src/domain/geschaeftsjahr.js';
 import { aufbewahrungBis, istAufbewahrungspflichtig, darfBelegLoeschen, AUFBEWAHRUNG_JAHRE } from '../src/domain/aufbewahrung.js';
 import { hashedFields } from '../src/domain/audit.js';
@@ -2732,6 +2733,65 @@ await section('V10: In-App-Selbstdiagnose (runSelbsttest)', async () => {
   ok('Selbsttest: alle bestanden (ok)', r.ok === true && r.bestanden === r.gesamt);
   // Jede Einzelprüfung grün.
   for (const e of r.ergebnisse) ok(`Selbsttest-Prüfung: ${e.name}`, e.ok);
+});
+
+await section('Datensicherung: Backup→Restore-Roundtrip (byte-genau, Pflicht #1)', async () => {
+  const snapshot = {
+    kv: {
+      mode: 'profi', gewinnermittlung: 'euer',
+      firma: { name: 'Muster GmbH', iban: 'DE00 0000 0000 0000 0000 00', steuernummer: '12/345/67890' },
+    },
+    records: [
+      { id: 'k-1200', type: 'konto', nummer: '1200', name: 'Bank', art: 'aktiv' },
+      { id: 'b-1', type: 'buchung', seq: 1, datum: '2026-01-01', beschreibung: 'Beleg „Ä/Ö/Ü ß €" ✓',
+        zeilen: [{ konto: '1200', seite: 'S', betrag: 11900 }, { konto: '8400', seite: 'H', betrag: 10000 }, { konto: '1776', seite: 'H', betrag: 1900 }] },
+      { id: 'b-2', type: 'buchung', seq: 2, datum: '2026-01-02', beschreibung: 'Miete',
+        zeilen: [{ konto: '4210', seite: 'S', betrag: 50000 }, { konto: '1200', seite: 'H', betrag: 50000 }] },
+    ],
+    files: [
+      { id: 'f-1', name: 'beleg.pdf', sealed: { v: 1, iv: 'AAAAAAAAAAAAAAAA', ct: 'QkxQUi1CQUNLVVA' } },
+    ],
+  };
+
+  // Roundtrip ist byte-genau identisch.
+  const rt = await backupRoundtripSelbsttest(snapshot, 'Backup-PW-roundtrip');
+  ok('Roundtrip byte-genau identisch', rt.ok === true && rt.gleich === true);
+  ok('Roundtrip ohne Fehler', !rt.fehler);
+  ok('gleiche Byte-Länge Original/Wiederhergestellt', rt.bytesOriginal === rt.bytesWieder && rt.bytesOriginal > 0);
+
+  // Backup-Hülle: verschlüsselt (kein Klartext), korrektes Format-Magic.
+  const text = await buildBackupFromSnapshot(snapshot, 'Backup-PW-roundtrip');
+  const outer = JSON.parse(text);
+  ok('Backup-Hülle trägt MAGIC + Format', outer.magic === BACKUP_INFO.MAGIC && outer.format === BACKUP_INFO.FORMAT_VERSION);
+  ok('Backup-Hülle ist versiegelt (sealed)', !!outer.sealed && !!outer.sealed.ct);
+  ok('Klartext NICHT in der Backup-Datei (verschlüsselt)', !text.includes('Muster GmbH') && !text.includes('Miete'));
+
+  // Lesen/Entschlüsseln liefert exakt den Snapshot zurück.
+  const parsed = await readBackup('Backup-PW-roundtrip', text);
+  const wieder = importProbe(parsed);
+  ok('Probespeicher-Import = Original (byte-genau)',
+    Buffer.compare(Buffer.from(snapshotBytes(snapshot)), Buffer.from(snapshotBytes(wieder))) === 0);
+  ok('alle Records erhalten', wieder.records.length === snapshot.records.length);
+  ok('alle Files erhalten', wieder.files.length === snapshot.files.length);
+
+  // Restore mit falschem Passwort scheitert (Krypto-Schutz auch bei der Rettung).
+  let threw = false;
+  try { await readBackup('falsch', text); } catch { threw = true; }
+  ok('Restore lehnt falsches Passwort ab', threw);
+
+  // Der Vergleich erkennt eine Abweichung (kein blindes „grün").
+  const veraendert = JSON.parse(JSON.stringify(snapshot));
+  veraendert.records[0].name = 'Manipuliert';
+  ok('Vergleich erkennt Manipulation',
+    Buffer.compare(Buffer.from(snapshotBytes(snapshot)), Buffer.from(snapshotBytes(veraendert))) !== 0);
+
+  // id-basierter Import: doppelte id → letzter gewinnt (spiegelt recPut/filePut).
+  const dup = importProbe({ data: { kv: {}, records: [{ id: 'x', n: 1 }, { id: 'x', n: 2 }], files: [] } });
+  ok('id-basierter Import dedupliziert (letzter gewinnt)', dup.records.length === 1 && dup.records[0].n === 2);
+
+  // Leerer Tresor: Roundtrip funktioniert ebenfalls.
+  const leer = await backupRoundtripSelbsttest({ kv: {}, records: [], files: [] }, 'pw');
+  ok('leerer Snapshot: Roundtrip ok', leer.ok === true);
 });
 
 await section('Punkt 28: Abweichendes Wirtschaftsjahr', () => {
