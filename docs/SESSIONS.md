@@ -5,6 +5,39 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 1/Schritt 1: Backup→Restore-Roundtrip-Selbsttest [PR #116, Branch `claude/bookledgerpro-backup-restore-f03itw`]
+
+**Ausgangslage / Auswahl**
+- Start des `docs/BAUPLAN.md` (mit dem Nutzer 2026-06-17 vereinbart). **Block 1 zuerst (Vertrauen/Sicherheit)**,
+  davon **Schritt 1: Backup→Restore-Roundtrip-Selbsttest** (`docs/DATENSICHERUNG.md`) — Datendurabilität ist
+  **Pflicht-Feature #1** (CLAUDE.md Regel #2). Ziel: die Rettung **beweisen**, nicht behaupten.
+
+**Was getan** (reine Logik zuerst, node-getestet — **+15 → 1095/1095**)
+- **`src/core/backup.js` (rein, kein IndexedDB → node-/browser-testbar):**
+  - `buildBackupFromSnapshot(snapshot, pw)` — baut den verschlüsselten Backup-Text aus einem **gegebenen**
+    Snapshot (Form wie `dumpAll()`); `buildBackup` delegiert jetzt daran (Verhalten unverändert), sodass der
+    Roundtrip **ohne** DB-Zugriff testbar ist.
+  - `importProbe(parsed)` — spiegelt `importSnapshot('replace')` + `dumpAll()` in einem **In-Memory-
+    Probespeicher** (kv replace, records/files **id-basiert** „letzter gewinnt", Reihenfolge erhalten).
+  - `snapshotBytes(snapshot)` / `backupRoundtripSelbsttest(snapshot, pw)` — **byte-genauer** Vergleich
+    Original ↔ wiederhergestellt; Fehler werden gefangen + als `{ok:false, fehler}` gemeldet.
+- **`src/domain/selbsttest.js` (V10):** zwei neue Prüfungen — Roundtrip byte-genau + Restore lehnt falsches
+  Passwort ab. (Selbsttest jetzt 13 statt 11 Einzelprüfungen.)
+- **`tests/run.mjs`:** neue Sektion „Datensicherung: Backup→Restore-Roundtrip" (+15 Assertions): Roundtrip
+  identisch, verschlüsselte Hülle **ohne Klartext**, MAGIC/Format, falsches Passwort abgelehnt,
+  **Manipulationserkennung** (kein blindes Grün), id-Dedup, leerer Tresor.
+- **`sw.js`:** `CACHE_VERSION` v102 → **v103** (`backup.js`/`selbsttest.js` waren bereits precached).
+
+**Stand:** `node tests/run.mjs` **1095/1095 grün**; CI (push + pull_request) grün; **PR #116 squash-gemergt**.
+
+**Offen / Grenzen (ehrlich)**
+- Reine Roundtrip-/Vergleichslogik node-getestet. Der **echte `dumpAll`/IndexedDB-Pfad** mit Live-Daten läuft
+  im Browser-Selbsttest, ist hier nur **statisch geprüft** (kein Headless-Browser).
+- **Nächstes (BAUPLAN Block 1):** Schritt 2 **Test-Modus (Sandbox-Tresor)** (`docs/TEST_MODUS.md`),
+  danach Schritt 3 **Backup-UX + `backupStrategie`** (`docs/DATENSICHERUNG.md`).
+
+---
+
 ## 2026-06-17 — Edit bestehender Aufträge (GoBD-Guard) [Branch `claude/edit-auftraege`]
 
 **Ausgangslage / Auswahl** (build-freier Rest-Korb leer → mit dem Nutzer abgestimmt, AskUserQuestion)

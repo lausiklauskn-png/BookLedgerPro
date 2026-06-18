@@ -3,7 +3,10 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-17. Tests-Basis: **1080/1080 grün**, SW `v102`.
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-18. Tests-Basis: **1095/1095 grün**, SW `v103`.
+> **Aktiver Plan jetzt: `docs/BAUPLAN.md`** (Block 1 Vertrauen/Sicherheit). Block 1/Schritt 1
+> **Backup→Restore-Roundtrip-Selbsttest ✅ (PR #116)** → nächster Schritt **Test-Modus/Sandbox-Tresor**
+> (`docs/TEST_MODUS.md`).
 > Nächster Schritt: **mit dem Nutzer abstimmen** (AskUserQuestion) — der **build-freie Rest-Korb ist leer**
 > (R4-Rest ✅, **R5a-Rest SWIFT/ISO-20022-Schema-Validierung ✅**). Verbleibend nur noch **umgebungs-/menschen-
 > blockierte** [KANN]-Punkte (**R6/Rest**: Lighthouse/Perf → Headless-Browser; lokales OCR → Tesseract ist wasm/

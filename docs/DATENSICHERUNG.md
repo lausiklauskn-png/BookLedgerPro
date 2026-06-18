@@ -51,6 +51,9 @@ Damit „funktioniert die Rettung wirklich?" **bewiesen** ist (nicht behauptet):
 
 ## Bau-Reihenfolge (Vorschlag, je eigener PR)
 1. **Backup→Restore-Roundtrip-Selbsttest** (build-frei, node-getestet) — höchste Priorität (Pflicht #1).
+   ✅ **erledigt + gemergt (PR #116, 2026-06-18):** `core/backup.js backupRoundtripSelbsttest` (Snapshot →
+   verschlüsseltes Backup → entschlüsseln → Probespeicher → byte-genauer Vergleich), an den „Selbsttest" (V10)
+   angehängt; +15 Node-Tests (1095/1095), SW `v103`.
 2. **UX:** prominenter Backup-/Restore-Bereich, **gemerkter Zielordner**, Drag-and-drop-Restore.
 3. **`backupStrategie`-Setting** (Onboarding + Einstellungen) — freie Wahl der Ziele/Erinnerung.
 4. **Server-Ziel** (sobald eigener Server existiert) bzw. synchronisierter-Ordner-Ziel.
