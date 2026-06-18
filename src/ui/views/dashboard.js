@@ -3,7 +3,7 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
-import { navigate, getSettings } from '../../state.js';
+import { navigate, getSettings, updateSettings } from '../../state.js';
 import { zeigeFeature, FEATURE, zeigeAnsicht } from '../../domain/nutzungsmodus.js';
 import { getMandantId } from '../../core/vault.js';
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
@@ -12,7 +12,7 @@ import { listKunden, listAuftraege } from '../../domain/crm-store.js';
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { verzugReport, verzugAmpel, VERZUG_AMPEL } from '../../domain/eingangsverzug.js';
 import { forderungReport, forderungAmpel, FORDERUNG_AMPEL } from '../../domain/mahnwesen.js';
-import { liquiditaetsVorschau, liquiditaetsAmpel, geldbestand, LIQUIDITAET_HORIZONT_DEFAULT, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
+import { liquiditaetsVorschau, liquiditaetsAmpel, geldbestand, normalizeHorizont, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
 import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
@@ -110,7 +110,9 @@ export async function mountDashboard(host) {
     // Aktueller Geldbestand (Kasse + Bank) aus den festgeschriebenen Buchungen → erlaubt eine
     // PROJEKTION (Bestand + Eingänge − Ausgänge) statt nur Eingänge-vs-Ausgänge.
     const geldbestandCent = geldbestand(buchungen, konten).gesamtCent;
-    const v = liquiditaetsVorschau({ forderungen, verbindlichkeiten, horizontTage: LIQUIDITAET_HORIZONT_DEFAULT, geldbestandCent });
+    // Wählbares Zeitfenster (Setting liquiditaetHorizontTage, auf eine kuratierte Option geklemmt).
+    const horizontTage = normalizeHorizont(s.liquiditaetHorizontTage);
+    const v = liquiditaetsVorschau({ forderungen, verbindlichkeiten, horizontTage, geldbestandCent });
     if (!v.eingehendAnzahl && !v.ausgehendAnzahl) return null; // nichts bald fällig → kein Lärm
     const ampel = liquiditaetsAmpel(v);
     const projCls = ampel === LIQUIDITAET_AMPEL.KRITISCH ? 'kpi-neg' : ampel === LIQUIDITAET_AMPEL.OK ? 'kpi-pos' : '';
@@ -120,9 +122,25 @@ export async function mountDashboard(host) {
     if (zeigePayables) kacheln.push(kpi(t('dashboard.liquidityOutgoing'), formatEuro(v.ausgehendCent)));
     if (zeigeForderungen && zeigePayables) kacheln.push(kpi(t('dashboard.liquidityNet'), formatEuro(v.nettoCent), v.nettoCent >= 0 ? 'kpi-pos' : 'kpi-neg'));
     kacheln.push(kpi(t('dashboard.liquidityProjected').replace('{tage}', String(v.horizontTage)), formatEuro(v.projiziertCent), projCls));
+    // Umschalter für das Zeitfenster — persistiert das Setting und rendert das Dashboard neu.
+    const horizontWahl = el('div', { class: 'segmented' }, LIQUIDITAET_HORIZONT_OPTIONEN.map((tage) =>
+      el('button', {
+        class: 'seg' + (tage === v.horizontTage ? ' active' : ''),
+        text: t('dashboard.liquidityHorizonDays').replace('{tage}', String(tage)),
+        onClick: async () => {
+          if (tage === v.horizontTage) return;
+          await updateSettings({ liquiditaetHorizontTage: tage });
+          mountDashboard(host); // neu zeichnen mit dem gewählten Fenster
+        },
+      }),
+    ));
     return el('div', { class: 'card' }, [
       el('h2', { class: 'card-title', text: t('dashboard.liquidityTitle') }),
       el('p', { class: 'muted small', text: t('dashboard.liquidityHint').replace('{tage}', String(v.horizontTage)) }),
+      el('div', { class: 'setting' }, [
+        el('span', { class: 'muted small', text: t('dashboard.liquidityHorizonLabel') }),
+        horizontWahl,
+      ]),
       el('div', { class: 'kpi-grid small-kpi' }, kacheln),
       ampel === LIQUIDITAET_AMPEL.KRITISCH
         ? el('p', { class: 'muted small', text: t('dashboard.liquidityWarnNegative') })

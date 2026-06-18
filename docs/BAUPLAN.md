@@ -230,6 +230,14 @@
   /Beleg-Zuordnung GoBD-fix; alle Zeiten = ARBEIT; DOM/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §6)
 
 ### Block 3 — später / umgebungs-blockiert
+- [x] **Liquiditätsvorschau: wählbares Zeitfenster** [Folgeschritt zu #149] ✅ (2026-06-18) — die Liquiditäts-Karte
+  rechnete bisher fest mit 7 Tagen. Jetzt kann der Nutzer das Fenster **7 / 14 / 30 / 90 Tage** umschalten (Segment-Wahl
+  in der Karte, Setting `liquiditaetHorizontTage`, gerätelokal/verschlüsselt). Reine Logik `domain/liquiditaet.js`
+  `LIQUIDITAET_HORIZONT_OPTIONEN` + `normalizeHorizont(value)` (klemmt persistierte/ungültige Werte auf eine kuratierte
+  Option, Default 7), node-getestet (+11 → **1621/1621**). UI `ui/views/dashboard.js`: `.segmented`-Umschalter über den
+  KPI-Kacheln → `updateSettings` + Dashboard-Neuzeichnung; `liquiditaetsVorschau`/`baldFaellig` rechnen mit dem gewählten
+  Horizont (die reine Logik nahm `horizontTage` schon entgegen). i18n de+en, SW `v130` (kein neues Modul). **Ehrliche
+  Grenze:** weiterhin einfache Planung nach Fälligkeitsdatum (keine Forecast-Modellierung); DOM/IndexedDB statisch geprüft.
 - [x] **Liquiditätsvorschau: Geldbestand + projizierter Saldo** [Folgeschritt zu #147] ✅ (2026-06-18, PR #149) — die
   reine Eingänge-vs-Ausgänge-Sicht beantwortete noch nicht „reicht das Geld?". Jetzt zieht die Karte den **aktuellen
   Geldbestand (Kasse + Bank)** heran und projiziert den Saldo am Fenster-Ende (Bestand + Eingänge − Ausgänge). Reine Logik

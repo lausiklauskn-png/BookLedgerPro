@@ -25,6 +25,23 @@ import { KONTOART, saldo } from './accounts.js';
 /** Standard-Zeithorizont (Tage) für die Liquiditätsvorschau. */
 export const LIQUIDITAET_HORIZONT_DEFAULT = 7;
 
+// Auswählbare Zeithorizonte (Tage) für die Vorschau — bewusst gestaffelt von „diese Woche"
+// bis „dieses Quartal". Der Nutzer kann das Fenster im Dashboard umschalten (Setting
+// liquiditaetHorizontTage); die reine Logik rechnet mit jedem Wert, normalizeHorizont hält
+// das Setting aber auf einen dieser kuratierten Werte.
+export const LIQUIDITAET_HORIZONT_OPTIONEN = [7, 14, 30, 90];
+
+/**
+ * Normalisiert einen (z.B. persistierten) Horizont-Wert auf eine der angebotenen Optionen.
+ * Unbekanntes/ungültiges → Default (7 Tage). Rein.
+ * @param {*} value
+ * @returns {number} einer aus LIQUIDITAET_HORIZONT_OPTIONEN
+ */
+export function normalizeHorizont(value) {
+  const n = Math.floor(Number(value));
+  return LIQUIDITAET_HORIZONT_OPTIONEN.includes(n) ? n : LIQUIDITAET_HORIZONT_DEFAULT;
+}
+
 // SKR03-Nummernbereiche der Geld-/Finanzkonten: Kasse (1000–1099) und Bank (1200–1299).
 // Bewusst eng gewählt — Forderungen (1400), Vorsteuer (157x) usw. sind ebenfalls AKTIV,
 // gehören aber NICHT zum verfügbaren Geld.

@@ -102,7 +102,18 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Liquiditätsvorschau: Geldbestand + projizierter Saldo"):** SW **v129** · Tests **1610/1610** grün · 117 JS-Module.
+**Kopf-Status (Stand nach „Liquiditätsvorschau: wählbares Zeitfenster"):** SW **v130** · Tests **1621/1621** grün · 117 JS-Module.
+**Liquiditätsvorschau: wählbares Zeitfenster (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #149):** Die Liquiditäts-
+Karte rechnete bisher fest mit 7 Tagen. Jetzt ist das Fenster **7 / 14 / 30 / 90 Tage** umschaltbar (Segment-Wahl in der
+Karte, Setting `liquiditaetHorizontTage`, gerätelokal/verschlüsselt). Reine Logik `domain/liquiditaet.js` (node-getestet,
++11 → **1621/1621**): `LIQUIDITAET_HORIZONT_OPTIONEN` (= [7,14,30,90]) + `normalizeHorizont(value)` (klemmt persistierte/
+ungültige Werte auf eine kuratierte Option, Default 7). UI `ui/views/dashboard.js`: `.segmented`-Umschalter über den
+KPI-Kacheln → `updateSettings({liquiditaetHorizontTage})` + Dashboard-Neuzeichnung; `liquiditaetsVorschau`/`baldFaellig`
+rechnen mit dem gewählten Horizont (die reine Logik nahm `horizontTage` bereits entgegen). i18n de+en
+(`dashboard.liquidityHorizonLabel`/`…HorizonDays`), SW `v130` (kein neues Modul — `liquiditaet.js` bereits precached).
+**bucht nichts.** **Ehrliche Grenze:** weiterhin einfache Planung nach Fälligkeitsdatum, keine Forecast-Modellierung; DOM/
+IndexedDB statisch geprüft. **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-
+blockierte Block-3-Punkte oder eine neue, abgestimmte Idee.
 **Liquiditätsvorschau um Geldbestand + projizierten Saldo erweitert (diese Sitzung, BAUPLAN Block 3 — PR #149):**
 Folgeschritt zur Liquiditätsvorschau (#147): die reine Eingänge-vs-Ausgänge-Sicht beantwortete noch nicht „reicht das
 Geld?". Jetzt wird der **aktuelle Geldbestand (Kasse + Bank)** als Startwert herangezogen und daraus ein **projizierter

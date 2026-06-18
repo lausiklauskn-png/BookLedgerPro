@@ -5,6 +5,38 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Liquiditätsvorschau — wählbares Zeitfenster [Branch `claude/bookledgerpro-block-3-oqyp8d`]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 ausgebaut (beide Überfälligkeits-KPIs + Liquiditätsvorschau mit Geldbestand +
+  Projektion #149). Befund: Die Liquiditäts-Karte rechnete fest mit **7 Tagen** — für die Frage „reicht das Geld?" ist mal
+  „diese Woche", mal „dieses Quartal" relevant. Sauberer, build-freier Folgeschritt: das Zeitfenster wählbar machen
+  (die reine Logik nahm `horizontTage` ohnehin schon entgegen). (Verbleibende explizite BAUPLAN-Punkte sind umgebungs-/
+  menschen-blockiert.)
+
+**Was getan**
+- **`src/domain/liquiditaet.js`** (rein, node-getestet, +11 → **1621/1621**): `LIQUIDITAET_HORIZONT_OPTIONEN` (= [7,14,30,90])
+  + `normalizeHorizont(value)` (klemmt persistierte/ungültige Werte auf eine kuratierte Option, Default 7).
+- **`src/state.js`**: Setting `liquiditaetHorizontTage` (Default 7, gerätelokal/verschlüsselt im Tresor).
+- **`src/ui/views/dashboard.js`**: `.segmented`-Umschalter (7/14/30/90 Tage) über den KPI-Kacheln der Liquiditäts-Karte →
+  `updateSettings({liquiditaetHorizontTage})` + Dashboard-Neuzeichnung; `liquiditaetsVorschau` rechnet mit dem gewählten
+  Horizont. **Bucht nichts.**
+- i18n de+en (`dashboard.liquidityHorizonLabel`/`liquidityHorizonDays`), **SW `v130`** (kein neues Modul — `liquiditaet.js`
+  bereits precached).
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut. **Tests 1621/1621 grün** (`node tests/run.mjs`). SW `v130`.
+  117 JS-Module.
+
+**Offen / Nächstes / Grenzen**
+- **DOM/IndexedDB statisch geprüft** (kein Headless-Browser) — die reine Logik (`normalizeHorizont`) ist node-getestet (+11).
+- **Ehrliche Grenze:** weiterhin einfache Planung nach Fälligkeitsdatum (keine Forecast-Modellierung); die Horizont-Optionen
+  sind kuratiert (7/14/30/90), kein frei eingebbarer Wert.
+- **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
+  (Server-/Offsite-Backup-Ziel, WorkFloh-Gegenstücke) oder eine neue, abgestimmte Idee.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Liquiditätsvorschau um Geldbestand + projizierten Saldo [Branch `claude/block-3-liquidity-preview-23iw49`, PR #149]
 
 **Ausgangslage / Auswahl**
