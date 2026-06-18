@@ -114,8 +114,21 @@
   → je Kostenart + gesamt Abweichung (IST − SOLL) + Prozent, Deckungsbeitrag SOLL gegen IST (Erlös − Ist-Kosten);
   `kostentraegerAnalyse` als Komfort-Einstieg. SW `v113`. **Rein, kein UI/Store** (eigener Folgeschritt). Prime
   Directive: Nachkalkulation rein intern. (`docs/KALKULATION_KATALOG.md` §5.1/§6)
-- [ ] **10. Kalibrierung + Statistik/Vergleich** — Korrekturfaktoren aus eigener Historie (Vor→Nachkalkulation),
-  Angebots-Vergleich/Trefferquote; optional KI-Analyse (Mistral EU, opt-in, pseudonym).
+- [x] **10. Kalibrierung + Statistik/Vergleich** ✅ (PR #131, 2026-06-18) — `domain/kalibrierung.js`
+  (rein, node-getestet, +39 → **1394/1394**): **(1) Korrekturfaktoren je Kostenart** aus der eigenen
+  Historie (Vor→Nachkalkulation): `korrekturFaktoren(vergleiche)` aggregiert die Soll/Ist-Vergleiche
+  vieler Aufträge (Form `nachkalkulation().perBlock`) je Kostenart zu `faktor` (ΣIST/ΣSOLL, geldgewichtet)
+  + `medianFaktor` (robust) + `abweichungProzent` + `anzahl`; `faktorWerte` verdichtet zu Multiplikatoren
+  (konservativ: `minAnzahl`/`min`/`max`-Schranken, null→1 neutral, Quelle gewichtet|median). **Rückfluss
+  in den Kern:** `kalibriereEingabe`/`kalkuliereKalibriert` skalieren je Kostenart den Mengen-/Geld-Treiber
+  (analog produktschemata „füttert nur den Kern" — keine neue Formel). **(2) Angebots-Trefferquote je
+  Preisniveau:** `angebotErgebnis` (gewonnen/verloren/offen aus Status; `archiviert` mehrdeutig→offen, per
+  opts überschreibbar), `angebotMargeProzent` (DB/Netto aus `interneAuswertung`), `preisniveau`
+  (niedrig/mittel/hoch, Grenzen konfigurierbar), `trefferquote`/`trefferquoteJePreisniveau`. **(3)**
+  `kalibrierungsDigest` = PII-FREIE Aggregat-Zusammenfassung (nur Kostenart-Faktoren + Margen-Kübel) als
+  möglicher Payload-Kandidat für eine **spätere, STRIKT opt-in + BYOK** pseudonyme KI-Analyse (Mistral EU,
+  CLAUDE.md §8) — diese Schicht SENDET NICHTS. SW `v114`. **Rein, kein UI** (eigener Folgeschritt). Prime
+  Directive: Faktoren/Margen/Quoten bleiben intern. (`docs/KALKULATION_KATALOG.md` §5.1/§5.3)
 - [ ] **11. Adaptiver Baukasten-UX** — Positions-Baukasten, **häufig genutzte nach oben** (Nutzungszähler),
   Drag-and-drop. (Katalog §3)
 

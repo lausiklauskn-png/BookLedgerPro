@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 2/Schritt 8 — Angebot → Rechnung-Übernahme `domain/angebotUebernahme.js`, rein, PR #129; SW `v112`, 1326/1326). Davor: Schritt 7 — Angebote-Kern `domain/angebote.js` (PR #128, SW `v111`, 1298/1298). Davor: Schritt 6 — Produkt-Schemata `domain/produktschemata.js` (PR #127, SW `v110`, 1238/1238). Davor: Schritt 5 — Kalkulations-Kern `domain/kalkulation.js` (PR #126, SW `v109`, 1215/1215). Davor: Block 2/Schritt 4 — Setting `rechnungsstelle` (PR #125, SW `v108`, 1181/1181). Davor: Block 1 komplett — Schritt 3 Datensicherungs-UX + `backupStrategie` (PR #124), 2c Test-Modus UI (PR #122), 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 2/Schritt 10 — Kalibrierung + Statistik/Vergleich `domain/kalibrierung.js`, rein, PR #131; SW `v114`, 1394/1394). Davor: Schritt 9 — Auftrags-Kostenträger + Nachkalkulation `domain/nachkalkulation.js` (PR #130, SW `v113`, 1355/1355). Davor: Schritt 8 — Angebot → Rechnung-Übernahme `domain/angebotUebernahme.js` (PR #129, SW `v112`, 1326/1326). Davor: Schritt 7 — Angebote-Kern `domain/angebote.js` (PR #128, SW `v111`, 1298/1298). Davor: Schritt 6 — Produkt-Schemata `domain/produktschemata.js` (PR #127, SW `v110`, 1238/1238). Davor: Schritt 5 — Kalkulations-Kern `domain/kalkulation.js` (PR #126, SW `v109`, 1215/1215). Davor: Block 2/Schritt 4 — Setting `rechnungsstelle` (PR #125, SW `v108`, 1181/1181). Davor: Block 1 komplett — Schritt 3 Datensicherungs-UX + `backupStrategie` (PR #124), 2c Test-Modus UI (PR #122), 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -58,6 +58,16 @@ ein PR, bei grüner CI selbstständig mergen**):
   `istkosten`; **SOLL** `sollkostenAusAngebot` (interne `kalkulation` je Position × Menge nach Kostenart); **Vergleich**
   `nachkalkulation` (Abweichung IST−SOLL je Kostenart + Prozent + Deckungsbeitrag Soll/Ist) + `kostentraegerAnalyse`.
   **Rein, kein UI/Store.**
+  ✅ **Kalibrierung + Statistik/Vergleich umgesetzt (PR #131, BAUPLAN Block 2/Schritt 10):** `domain/kalibrierung.js`
+  (rein, node-getestet) — **(1)** Korrekturfaktoren je Kostenart aus der Historie Vor→Nachkalkulation `korrekturFaktoren`
+  (`faktor` ΣIST/ΣSOLL + `medianFaktor` + `abweichungProzent` + `anzahl`) → `faktorWerte` (Multiplikatoren mit
+  `minAnzahl`/`min`/`max`-Schranken), **Rückfluss in den Kern** `kalibriereEingabe`/`kalkuliereKalibriert` (skaliert
+  je Kostenart den Mengen-/Geld-Treiber, keine neue Formel); **(2)** Angebots-Trefferquote je Preisniveau
+  `angebotErgebnis`/`angebotMargeProzent`/`preisniveau`/`trefferquote`/`trefferquoteJePreisniveau`; **(3)**
+  `kalibrierungsDigest` = **PII-freie** Aggregat-Zusammenfassung als Payload-Kandidat für eine spätere, **strikt
+  opt-in + BYOK** pseudonyme KI-Analyse (Mistral EU) — sendet NICHTS. **Rein, kein UI/Store** (eigener Folgeschritt).
+  ⏭ **Nächster Schritt: Block 2/Schritt 11 — Adaptiver Baukasten-UX** (Positions-Baukasten, Nutzungssortierung
+  „häufig oben", Drag-and-drop; erste UI über `domain/angebote.js`; Katalog §3).
   **Nächster Schritt: Schritt 10 Kalibrierung + Statistik/Vergleich** (Korrekturfaktoren aus eigener Historie
   Vor→Nachkalkulation, Trefferquote; optional KI Mistral EU opt-in/pseudonym), dann 11 Baukasten-UX. **Offene
   Folgeschritte:** UI „Rechnung aus Angebot" + Store-Glue (Zähler je Kreis); UI „Nachkalkulation/Kostenträger" +

@@ -5,6 +5,50 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2/Schritt 10: Kalibrierung + Statistik/Vergleich (rein) [PR #131, Branch `claude/block2-step10-calibration-kzzatj`]
+
+**Ausgangslage / Auswahl**
+- Block 1 komplett; Block 2/Schritte 4–9 erledigt. Laut `docs/BAUPLAN.md` ist der nächste Schritt **Kalibrierung +
+  Statistik/Vergleich** (`docs/KALKULATION_KATALOG.md` §5.1 USP „selbstlernende Kalkulation" + §5.3 Trefferquote je
+  Preisniveau) — bewusst **reine Logik, ohne UI/Store** (eigener Folgeschritt). Baut direkt auf Schritt 9
+  (`domain/nachkalkulation.js`) auf.
+
+**Was getan** (reine Logik node-getestet — **+39 → 1394/1394**)
+- **`src/domain/kalibrierung.js`** (rein, node-getestet):
+  - **(1) Korrekturfaktoren je Kostenart** aus der eigenen Historie (Vor→Nachkalkulation):
+    **`korrekturFaktoren(vergleiche)`** aggregiert die Soll/Ist-Vergleiche vieler Aufträge (Form `nachkalkulation().perBlock`)
+    je Kostenart zu `faktor` (= ΣIST/ΣSOLL, geldgewichtet — große Aufträge zählen stärker), `medianFaktor` (Median der
+    Einzel-Job-Faktoren, robust gegen Ausreißer), `abweichungProzent` und `anzahl` (verwertbare Stichprobe).
+    **`faktorWerte(faktoren, opts)`** verdichtet konservativ zu reinen Multiplikatoren: `opts.minAnzahl` (zu wenig
+    Historie → Faktor 1), `opts.min`/`opts.max` (Ausreißer deckeln), `opts.quelle` gewichtet|median; null/≤0 → 1 (neutral).
+  - **Rückfluss in den Kern:** **`kalibriereEingabe(eingabe, faktoren)`** skaliert je Kostenart den Mengen-/Geld-Treiber
+    (`betragCent`/`preisProM2Cent`/`ekCent`/`stunden`; Sätze/Prozente bleiben), **`kalkuliereKalibriert`** ruft danach
+    `kalkuliereVorwaerts` — **keine neue Formel** (analog `produktschemata.js` „füttert nur den Kern").
+  - **(2) Angebots-Trefferquote je Preisniveau:** **`angebotErgebnis`** (gewonnen/verloren/offen aus Status; `angenommen`
+    → gewonnen, `abgelehnt` → verloren, sonst offen; `archiviert` bewusst mehrdeutig → offen, per `opts` überschreibbar),
+    **`angebotMargeProzent`** (DB/Netto aus `interneAuswertung`), **`preisniveau`** (niedrig/mittel/hoch, Grenzen [15,30]
+    konfigurierbar), **`trefferquote`** (gewonnen/verloren/offen + Quote) und **`trefferquoteJePreisniveau`**.
+  - **(3)** **`kalibrierungsDigest(vergleiche, angebote, opts)`** = **PII-FREIE** Aggregat-Zusammenfassung (nur
+    Kostenart-Faktoren + Margen-Kübel-Zähler) als möglicher Payload-Kandidat für eine **spätere, STRIKT opt-in + BYOK**
+    pseudonyme KI-Analyse (Mistral EU, CLAUDE.md §8) — diese Schicht **SENDET NICHTS**.
+- **`tests/run.mjs`** — drei neue Abschnitte (Korrekturfaktoren; Rückführung in den Kern inkl. m²/Zukauf/Montage +
+  „mutiert Original nicht" + „leere Faktoren = identisch zum Kern"; Trefferquote je Preisniveau + PII-freier Digest).
+- **`sw.js`** — `CACHE_VERSION` → **v114**, `./src/domain/kalibrierung.js` precached.
+
+**Stand**
+- `node tests/run.mjs` → **1394/1394 grün**. SW `v114`, **109 JS-Module**. Prime Directive gewahrt (alles rein intern;
+  Digest PII-frei, sendet nichts).
+
+**Offen / Nächstes**
+- **Block 2/Schritt 11 — Adaptiver Baukasten-UX** (`docs/KALKULATION_KATALOG.md` §3): Positions-Baukasten mit
+  Nutzungssortierung („häufig oben") + Drag-and-drop; erste **UI** über `domain/angebote.js`.
+- **Ehrliche Grenzen:** reine Logik, **kein UI/Store** in diesem Schritt; Vergleiche/Angebote werden hereingereicht (die
+  Persistenz `crm-store`/verschlüsselt ist die I/O-Schicht darüber). **Kein Headless-Browser** → keine DOM/IndexedDB-
+  Prüfung nötig (es gibt keine UI in diesem PR). Die KI-Analyse ist **bewusst NICHT** verdrahtet (eigener opt-in/BYOK-
+  Schritt mit Bestätigung) — `kalibrierungsDigest` liefert nur den fertigen, PII-freien Payload-Kandidaten.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2/Schritt 9: Auftrags-Kostenträger + Nachkalkulation (rein) [PR #130, Branch `claude/block2-step9-cost-tracking-6aeqtl`]
 
 **Ausgangslage / Auswahl**

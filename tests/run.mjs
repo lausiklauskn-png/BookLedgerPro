@@ -74,6 +74,11 @@ import {
   istkostenAusBuchungen, istZeitkosten, istkosten,
   sollkostenAusAngebot, nachkalkulation, kostentraegerAnalyse,
 } from '../src/domain/nachkalkulation.js';
+import {
+  korrekturFaktoren, faktorWerte, kalibriereEingabe, kalkuliereKalibriert,
+  ANGEBOT_ERGEBNIS, angebotErgebnis, angebotMargeProzent, PREISNIVEAU, PREISNIVEAU_LISTE,
+  preisniveau, trefferquote, trefferquoteJePreisniveau, kalibrierungsDigest,
+} from '../src/domain/kalibrierung.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
 import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, istEinfacherSatz, buildUstVa, centsToComma, ustVaToCsv, buildAnlagenverzeichnisCsv, buildUebergabeText } from '../src/domain/export.js';
@@ -3976,6 +3981,115 @@ await section('Nachkalkulation: Auftrags-Kostenträger + Soll/Ist (Schritt 9)', 
   // — leeres/kalkulationsloses Angebot → Soll 0 (kein Wurf) —
   const leer = sollkostenAusAngebot(neuesAngebot({ titel: 'x', positionen: [{ beschreibung: 'p', menge: 1, einzelpreisCent: 100, ustSatz: 19 }] }));
   ok('Soll ohne interne Kalkulation = 0', leer.selbstkostenCent === 0 && leer.nettoCent === 0);
+});
+
+await section('Kalibrierung (Block 2/Schritt 10): Korrekturfaktoren', () => {
+  // Zwei Soll/Ist-Vergleiche (Form wie nachkalkulation().perBlock).
+  const verg = [
+    { perBlock: [{ block: KOSTENART.MATERIAL, sollCent: 1000, istCent: 1100 }, { block: KOSTENART.ARBEIT, sollCent: 2000, istCent: 3000 }] },
+    { perBlock: [{ block: KOSTENART.MATERIAL, sollCent: 1000, istCent: 1300 }, { block: KOSTENART.ARBEIT, sollCent: 2000, istCent: 2000 }] },
+  ];
+  const kf = korrekturFaktoren(verg);
+  ok('Faktor material = ΣIST/ΣSOLL = 2400/2000 = 1.2', kf[KOSTENART.MATERIAL].faktor === 1.2);
+  ok('Faktor material abweichung +20%, anzahl 2', kf[KOSTENART.MATERIAL].abweichungProzent === 20 && kf[KOSTENART.MATERIAL].anzahl === 2);
+  ok('Faktor material median = median(1.1, 1.3) = 1.2', kf[KOSTENART.MATERIAL].medianFaktor === 1.2);
+  ok('Faktor arbeit = 5000/4000 = 1.25', kf[KOSTENART.ARBEIT].faktor === 1.25);
+  ok('Faktor arbeit median = median(1.5, 1.0) = 1.25', kf[KOSTENART.ARBEIT].medianFaktor === 1.25);
+  ok('Faktor maschine: kein SOLL → null, anzahl 0', kf[KOSTENART.MASCHINE].faktor === null && kf[KOSTENART.MASCHINE].anzahl === 0);
+  ok('Faktor maschine median null', kf[KOSTENART.MASCHINE].medianFaktor === null);
+
+  // — faktorWerte: zu Multiplikatoren verdichten —
+  const fw = faktorWerte(kf);
+  ok('faktorWerte material 1.2 / arbeit 1.25', fw[KOSTENART.MATERIAL] === 1.2 && fw[KOSTENART.ARBEIT] === 1.25);
+  ok('faktorWerte maschine null→1 (neutral)', fw[KOSTENART.MASCHINE] === 1);
+  const fwMin = faktorWerte(kf, { minAnzahl: 3 });
+  ok('faktorWerte minAnzahl 3 → alle neutral (Stichprobe 2 < 3)', fwMin[KOSTENART.MATERIAL] === 1 && fwMin[KOSTENART.ARBEIT] === 1);
+  const fwCap = faktorWerte(kf, { max: 1.2 });
+  ok('faktorWerte max 1.2 deckelt arbeit', fwCap[KOSTENART.ARBEIT] === 1.2 && fwCap[KOSTENART.MATERIAL] === 1.2);
+  const fwMed = faktorWerte(kf, { quelle: 'median' });
+  ok('faktorWerte quelle median', fwMed[KOSTENART.ARBEIT] === 1.25);
+});
+
+await section('Kalibrierung: in den Kern zurückführen', () => {
+  const eingabe = {
+    material: { betragCent: 1000, verschnittProzent: 0 },
+    arbeit: { stunden: 2, satzCentProStd: 5000 }, // 10000
+    gemeinkostenProzent: 0, gewinnProzent: 0, ustProzent: 0,
+  };
+  const base = kalkuliereVorwaerts(eingabe);
+  ok('Basis: material 1000, arbeit 10000, selbstkosten 11000', base.material === 1000 && base.arbeit === 10000 && base.selbstkosten === 11000);
+
+  const kal = kalkuliereKalibriert(eingabe, { material: 1.2, arbeit: 1.25 });
+  ok('Kalibriert: material ×1.2 = 1200', kal.material === 1200);
+  ok('Kalibriert: arbeit stunden ×1.25 → 2.5×5000 = 12500', kal.arbeit === 12500);
+  ok('Kalibriert: selbstkosten 13700', kal.selbstkosten === 13700);
+  ok('kalibriereEingabe mutiert Original nicht', eingabe.material.betragCent === 1000 && eingabe.arbeit.stunden === 2);
+
+  const id = kalkuliereKalibriert(eingabe, {});
+  ok('leere Faktoren → identisch mit Kern', JSON.stringify(id) === JSON.stringify(base));
+
+  // m²-Material: Faktor skaliert den m²-Preis (Ergebnis skaliert linear)
+  const e2 = { material: { flaecheM2: 2, preisProM2Cent: 4000, verschnittProzent: 10 } };
+  ok('m² Basis = 2×4000×1.1 = 8800', kalkuliereVorwaerts(e2).material === 8800);
+  ok('m² kalibriert ×1.5 = 13200', kalkuliereKalibriert(e2, { material: 1.5 }).material === 13200);
+
+  // Zukauf: Faktor skaliert den EK
+  const e3 = { zukauf: { ekCent: 1000, handelsaufschlagProzent: 20 } };
+  ok('Zukauf Basis 1200', kalkuliereVorwaerts(e3).zukauf === 1200);
+  ok('Zukauf kalibriert ×2 = 2400', kalkuliereKalibriert(e3, { zukauf: 2 }).zukauf === 2400);
+
+  // Montage: Faktor skaliert die Pauschale
+  ok('Montage kalibriert ×1.4 = 700', kalkuliereKalibriert({ montage: { betragCent: 500 } }, { montage: 1.4 }).montage === 700);
+});
+
+await section('Kalibrierung: Angebots-Trefferquote je Preisniveau', () => {
+  const ANG = ANGEBOT_STATUS.ANGENOMMEN, ABL = ANGEBOT_STATUS.ABGELEHNT;
+  const ang = (status, netto, db) => {
+    const a = neuesAngebot({ titel: 'a', positionen: [{ beschreibung: 'p', menge: 1, einzelpreisCent: netto, ustSatz: 19,
+      kalkulation: { ergebnis: { material: 0, maschine: 0, arbeit: 0, zukauf: 0, montage: 0, selbstkosten: netto - db, netto, deckungsbeitrag: db } } }] });
+    a.status = status;
+    return a;
+  };
+  const A1 = ang(ANG, 10000, 1000); // 10% niedrig, gewonnen
+  const A2 = ang(ABL, 10000, 1200); // 12% niedrig, verloren
+  const A3 = ang(ANG, 10000, 2000); // 20% mittel, gewonnen
+  const A4 = ang(ABL, 10000, 2500); // 25% mittel, verloren
+  const A5 = ang(ANG, 10000, 4000); // 40% hoch, gewonnen
+  const A6 = ang(ABL, 10000, 5000); // 50% hoch, verloren
+  const A7 = ang(ANGEBOT_STATUS.ENTWURF, 10000, 3000); // 30% hoch, offen
+  const A8 = ang(ANG, 10000, 1000); A8.positionen[0].kalkulation = null; // keine Marge → unbekannt, gewonnen
+  const alle = [A1, A2, A3, A4, A5, A6, A7, A8];
+
+  ok('angebotMargeProzent A1 = 10', angebotMargeProzent(A1) === 10);
+  ok('angebotMargeProzent A8 ohne Kalkulation = null', angebotMargeProzent(A8) === null);
+  ok('angebotErgebnis A1 gewonnen / A2 verloren / A7 offen',
+    angebotErgebnis(A1) === ANGEBOT_ERGEBNIS.GEWONNEN && angebotErgebnis(A2) === ANGEBOT_ERGEBNIS.VERLOREN && angebotErgebnis(A7) === ANGEBOT_ERGEBNIS.OFFEN);
+  ok('preisniveau 10/20/40/null', preisniveau(10) === PREISNIVEAU.NIEDRIG && preisniveau(20) === PREISNIVEAU.MITTEL
+    && preisniveau(40) === PREISNIVEAU.HOCH && preisniveau(null) === PREISNIVEAU.UNBEKANNT);
+
+  // archiviert ist mehrdeutig → default offen, per opts überschreibbar
+  const arch = ang(ANGEBOT_STATUS.ARCHIVIERT, 10000, 1000);
+  ok('archiviert default → offen', angebotErgebnis(arch) === ANGEBOT_ERGEBNIS.OFFEN);
+  ok('archiviert als gewonnen markierbar', angebotErgebnis(arch, { gewonnenStatus: [ANGEBOT_STATUS.ARCHIVIERT] }) === ANGEBOT_ERGEBNIS.GEWONNEN);
+
+  const tq = trefferquote(alle);
+  ok('Trefferquote gesamt: 4 gewonnen / 3 verloren / 1 offen', tq.gewonnen === 4 && tq.verloren === 3 && tq.offen === 1);
+  ok('Trefferquote gesamt: entschieden 7, quote 4/7 = 57.1%', tq.entschieden === 7 && tq.quoteProzent === 57.1 && tq.gesamt === 8);
+
+  const jp = trefferquoteJePreisniveau(alle);
+  ok('niedrig: 1/1 → 50%', jp[PREISNIVEAU.NIEDRIG].gewonnen === 1 && jp[PREISNIVEAU.NIEDRIG].verloren === 1 && jp[PREISNIVEAU.NIEDRIG].quoteProzent === 50);
+  ok('mittel: 1/1 → 50%', jp[PREISNIVEAU.MITTEL].quoteProzent === 50);
+  ok('hoch: 1 gewonnen / 1 verloren / 1 offen → 50%', jp[PREISNIVEAU.HOCH].gewonnen === 1 && jp[PREISNIVEAU.HOCH].offen === 1 && jp[PREISNIVEAU.HOCH].quoteProzent === 50);
+  ok('unbekannt: 1 gewonnen → 100%', jp[PREISNIVEAU.UNBEKANNT].gewonnen === 1 && jp[PREISNIVEAU.UNBEKANNT].quoteProzent === 100);
+
+  // — Digest: PII-frei, nur Aggregate —
+  const verg = [{ perBlock: [{ block: KOSTENART.MATERIAL, sollCent: 1000, istCent: 1200 }] }];
+  const dig = kalibrierungsDigest(verg, alle);
+  ok('Digest zählt Vergleiche/Angebote', dig.anzahlVergleiche === 1 && dig.anzahlAngebote === 8);
+  ok('Digest enthält Faktoren + Trefferquote', dig.faktoren[KOSTENART.MATERIAL].faktor === 1.2 && dig.trefferquote.quoteProzent === 57.1);
+  ok('Digest ist PII-frei (kein kundeId/titel/beschreibung)',
+    !JSON.stringify(dig).includes('kundeId') && !JSON.stringify(dig).includes('titel') && !JSON.stringify(dig).includes('beschreibung'));
+  ok('PREISNIVEAU_LISTE hat 4 Kübel', PREISNIVEAU_LISTE.length === 4);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
