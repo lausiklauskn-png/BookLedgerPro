@@ -24,6 +24,8 @@ import { mountSelbsttest } from './views/selbsttest.js';
 import { getBuchungssperre, setBuchungssperre, ensureSeedKonten } from '../domain/store.js';
 import { GEWINNERMITTLUNG, normalizeGewinnermittlung, BILANZ_GRUNDKONTO_NUMMERN } from '../domain/bilanzierung.js';
 import { NUTZUNGSMODUS_LISTE, normalizeNutzungsmodus, zeigeAnsicht } from '../domain/nutzungsmodus.js';
+import { RECHNUNGSSTELLE, normalizeRechnungsstelle, rechnungsstelleWechselHinweis } from '../domain/rechnungsstelle.js';
+import { vergebeneRechnungsnummern } from '../domain/crm-store.js';
 import { mountDocuments } from './views/documents.js';
 import { mountPayables } from './views/payables.js';
 import { mountCustomers } from './views/customers.js';
@@ -305,6 +307,8 @@ function viewSettings() {
       t('settings.kleinunternehmer.hint')),
 
     gewinnermittlungSection(s),
+
+    rechnungsstelleSection(s),
 
     seg(t('settings.datenschutz'), 'datenschutzModus',
       [['aus', t('settings.datenschutz.aus')], ['pseudonym', t('settings.datenschutz.pseudonym')]],
@@ -604,6 +608,37 @@ function gewinnermittlungSection(s) {
     el('div', { class: 'setting-label', text: t('settings.gewinn') }),
     segmented,
     el('p', { class: 'muted small', text: t('settings.gewinn.hint') }),
+    status,
+  ]);
+}
+
+// Rechnungsstelle (§14-Nummernkreis-Hoheit, Katalog §7a): BLP stellt aus (blp)
+// vs. externes Programm/Steuerberater (extern → BLP nur Vorlage). Wechsel weg von
+// BLP wird mit Bestätigung abgesichert, sobald BLP schon §14-Nummern vergeben hat
+// (GoBD-Lückenlosigkeit).
+function rechnungsstelleSection(s) {
+  const aktuell = normalizeRechnungsstelle(s.rechnungsstelle);
+  const status = el('p', { class: 'muted small' });
+  const segmented = el('div', { class: 'segmented' },
+    [[RECHNUNGSSTELLE.BLP, t('settings.rechnungsstelle.blp')], [RECHNUNGSSTELLE.EXTERN, t('settings.rechnungsstelle.extern')]]
+      .map(([val, lab]) => el('button', {
+        class: 'seg' + (aktuell === val ? ' active' : ''),
+        text: lab,
+        onClick: async () => {
+          if (val === aktuell) return;
+          let vergeben = 0;
+          try { vergeben = await vergebeneRechnungsnummern(); } catch { /* Zähler unlesbar → 0 (kein Block) */ }
+          const hinweis = rechnungsstelleWechselHinweis(aktuell, val, { vergebeneNummern: vergeben });
+          if (hinweis.warnen && !confirm(t('settings.rechnungsstelle.warnWechsel').replace('{n}', String(vergeben)))) return;
+          await updateSettings({ rechnungsstelle: val });
+          status.textContent = t('settings.saved');
+          paint();
+        },
+      })));
+  return el('div', { class: 'setting' }, [
+    el('div', { class: 'setting-label', text: t('settings.rechnungsstelle') }),
+    segmented,
+    el('p', { class: 'muted small', text: t('settings.rechnungsstelle.hint') }),
     status,
   ]);
 }

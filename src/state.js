@@ -17,6 +17,7 @@ const DEFAULTS = Object.freeze({
   taxProfile: 'DE',     // Deutschland zuerst
   kleinunternehmer: false, // §19 UStG — unterdrückt USt-Hinweise
   gewinnermittlung: 'euer', // euer (§4 Abs.3) | bilanz (§4 Abs.1/§5 EStG) — Default EÜR (Bestand unverändert)
+  rechnungsstelle: 'blp', // blp | extern — Nummernkreis-Hoheit (§14): BLP vergibt echte Nummern (blp) vs. externes Programm/Steuerberater (extern → BLP nur Vorlage). Default blp (Bestand unverändert), Katalog §7a
   datenschutzModus: 'aus', // aus | pseudonym — ersetzt bekannte Identifikatoren vor KI-Versand
   nerPii: true, // im Pseudonym-Modus zusätzlich erkannte PII Dritter (E-Mail/IBAN/USt-IdNr/Tel.) maskieren
   backupStrategie: 'download', // download | ordner — Ziel der Datensicherung (Ordner braucht File System Access; sonst Download-Fallback)

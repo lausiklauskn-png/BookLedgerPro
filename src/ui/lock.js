@@ -10,6 +10,7 @@ import { exportBackupSmart } from '../core/backup.js';
 import { supportsDirectoryPicker, pickDirectory } from '../core/files.js';
 import { merkeBackupOrdner } from '../core/backupOrdner.js';
 import { BACKUP_STRATEGIEN, DEFAULT_BACKUP_STRATEGIE } from '../domain/backupStrategie.js';
+import { RECHNUNGSSTELLE } from '../domain/rechnungsstelle.js';
 import { updateSettings } from '../state.js';
 import { MycelMark } from './mycel.js';
 import { createMycelBackground } from './mycelCanvas.js';
@@ -387,7 +388,7 @@ function renderOnboarding(container, resolve, opts = {}) {
   function stepProfil() {
     const waehle = async (klein) => {
       try { await updateSettings({ kleinunternehmer: klein }); } catch { /* Backup-Schritt bleibt der Gate */ }
-      stepBackup();
+      stepRechnungsstelle();
     };
     mount(container, shell([
       el('h1', { text: t('onboard.kleinTitle') }),
@@ -397,6 +398,25 @@ function renderOnboarding(container, resolve, opts = {}) {
         el('button', { class: 'btn', text: t('onboard.kleinNein'), onClick: () => waehle(false) }),
       ]),
       el('p', { class: 'muted small', text: t('onboard.kleinHint') }),
+    ], './assets/img/onboard-key.png'));
+  }
+
+  // Nummernkreis-Hoheit (§14, Katalog §7a): Stellt BLP die Rechnungen aus (blp) oder
+  // ein externes Programm/der Steuerberater (extern)? Default blp. In den Einstellungen
+  // jederzeit änderbar.
+  function stepRechnungsstelle() {
+    const waehle = async (rs) => {
+      try { await updateSettings({ rechnungsstelle: rs }); } catch { /* Backup-Schritt bleibt der Gate */ }
+      stepBackup();
+    };
+    mount(container, shell([
+      el('h1', { text: t('onboard.rechnungsstelleTitle') }),
+      el('p', { class: 'muted', text: t('onboard.rechnungsstelleIntro') }),
+      el('div', { class: 'btn-row' }, [
+        el('button', { class: 'btn btn-primary', text: t('onboard.rechnungsstelleBlp'), onClick: () => waehle(RECHNUNGSSTELLE.BLP) }),
+        el('button', { class: 'btn', text: t('onboard.rechnungsstelleExtern'), onClick: () => waehle(RECHNUNGSSTELLE.EXTERN) }),
+      ]),
+      el('p', { class: 'muted small', text: t('onboard.rechnungsstelleHint') }),
     ], './assets/img/onboard-key.png'));
   }
 
