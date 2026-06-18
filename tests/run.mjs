@@ -139,6 +139,11 @@ import {
 import { buildOffeneVerbindlichkeitenCsv } from '../src/domain/export.js';
 import { faelligkeit, faelligAmVon, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, letzteMahnstufe, vorschlagNaechsteStufe, mahnVerlaufSumme, mahnStufeLabel, MAHN_KONTEN, mahnbuchungZeilen, mahnbuchungEntwurf } from '../src/domain/mahnwesen.js';
 import {
+  EINGANG_ZIEL_DEFAULT, PRUEF_TOLERANZ_CENT, VERZUG_SCHWELLEN, PRUEF_BEWERTUNG,
+  verzugsstufe, verzugsstufeLabel, verzugsLage, berechtigteVerzugskosten,
+  pruefeErhalteneMahnung, verzugUebersicht,
+} from '../src/domain/eingangsverzug.js';
+import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
   erstelleMandant, leereRegistry, findeMandant, aktiverMandant, addMandant,
   umbenenneMandant, entferneMandant, setzeAktiv, mitLegacyMandant,
@@ -2348,6 +2353,100 @@ await section('Mahnwesen R1: Verzugszinsen/Mahngebühren buchen (ohne USt)', () 
   const md = mahnschreibenDaten(posten, { heute: '2026-06-30', basiszinsProzent: 0, b2b: true });
   const aus = mahnbuchungEntwurf({ zinsenCent: md.zinsenCent, gebuehrenCent: md.pauschaleCent, referenz: md.referenz, name: md.name });
   ok('aus §288-Mahnschreiben gebauter Entwurf ausgeglichen', istAusgeglichen(aus.zeilen) && aus.summeCent === md.zinsenCent + md.pauschaleCent);
+});
+
+// ===== Eingangsrechnungs-Verzug (Gegenseite) — Spiegel zum Mahnwesen (Schuldnersicht) =====
+
+await section('Eingangsverzug: Verzugsstufe (Schuldnersicht)', () => {
+  ok('Default-Ziel 30 + Toleranz 5', EINGANG_ZIEL_DEFAULT === 30 && PRUEF_TOLERANZ_CENT === 5);
+  ok('Stufe 0 (im Ziel) bei 0 Tagen', verzugsstufe(0).stufe === 0 && verzugsstufe(0).key === 'im_ziel' && verzugsstufe(0).kritisch === false);
+  ok('Stufe 1 (überfällig) ab 1 Tag', verzugsstufe(1).stufe === 1 && verzugsstufe(1).key === 'ueberfaellig' && verzugsstufe(1).kritisch === false);
+  ok('Stufe 2 (deutlich) ab 14 Tagen', verzugsstufe(14).stufe === 2 && verzugsstufe(14).key === 'deutlich' && verzugsstufe(14).kritisch === true);
+  ok('Stufe 3 (stark) ab 42 Tagen', verzugsstufe(50).stufe === 3 && verzugsstufe(50).key === 'stark' && verzugsstufe(50).kritisch === true);
+  ok('eigene Schwellen überschreibbar', verzugsstufe(10, { deutlich: 5 }).stufe === 2);
+  ok('verzugsstufeLabel deckt sich', verzugsstufeLabel(2) === 'deutlich überfällig' && verzugsstufeLabel(0) === 'im Ziel');
+  ok('VERZUG_SCHWELLEN Default', VERZUG_SCHWELLEN.deutlich === 14 && VERZUG_SCHWELLEN.stark === 42);
+});
+
+await section('Eingangsverzug: Lage + berechtigte § 288-Kosten', () => {
+  // Posten ohne angereicherte Felder → Fälligkeit aus Datum + Zahlungsziel.
+  const lage = verzugsLage({ datum: '2026-05-01', zahlungszielTage: 14 }, { heute: '2026-06-16' });
+  ok('Fälligkeit datum+14 (2026-05-15), 32 Tage überfällig', lage.faelligAm === '2026-05-15' && lage.tage === 32 && lage.imVerzug);
+  // Default-Ziel 30, wenn keins am Posten.
+  const lage2 = verzugsLage({ datum: '2026-06-01' }, { heute: '2026-06-16' });
+  ok('Default-Ziel 30 → 2026-07-01, nicht im Verzug', lage2.faelligAm === '2026-07-01' && lage2.imVerzug === false);
+  // angereicherte Felder (faelligAm/tageUeberfaellig) haben Vorrang.
+  const lage3 = verzugsLage({ faelligAm: '2026-05-15', tageUeberfaellig: 10 });
+  ok('angereicherte Tage gewinnen', lage3.tage === 10 && lage3.faelligAm === '2026-05-15');
+
+  // 1.000 € · 365 Tage · Basiszins 0 · B2B (9 %) = 90 € + 40-€-Pauschale.
+  const k = berechtigteVerzugskosten({ offenCent: 100000, faelligAm: '2025-06-16', tageUeberfaellig: 365 },
+    { heute: '2026-06-16', basiszinsProzent: 0 });
+  ok('berechtigte Zinsen 9 % = 9000', k.zinsenCent === 9000);
+  ok('berechtigte Pauschale 40 € (B2B)', k.pauschaleCent === 4000 && k.gesamtCent === 13000);
+  ok('offenCent + imVerzug durchgereicht', k.offenCent === 100000 && k.imVerzug === true);
+  // Nicht im Verzug → keine berechtigten Kosten.
+  const k0 = berechtigteVerzugskosten({ offenCent: 100000, faelligAm: '2026-07-01' }, { heute: '2026-06-16' });
+  ok('nicht überfällig → 0 Zinsen/Pauschale', k0.zinsenCent === 0 && k0.pauschaleCent === 0 && k0.imVerzug === false);
+  // b2b:false (wir wären Verbraucher) → 5 % + keine Pauschale.
+  const kv = berechtigteVerzugskosten({ offenCent: 100000, tageUeberfaellig: 365 }, { basiszinsProzent: 0, b2b: false });
+  ok('Verbraucher 5 % + keine Pauschale', kv.zinsenCent === 5000 && kv.pauschaleCent === 0);
+  // offenCent fehlt → betragCent als Fallback.
+  ok('betragCent-Fallback', berechtigteVerzugskosten({ betragCent: 50000, tageUeberfaellig: 365 }, { basiszinsProzent: 0 }).offenCent === 50000);
+});
+
+await section('Eingangsverzug: erhaltene Mahnung prüfen (§ 288 BGB)', () => {
+  const posten = { offenCent: 100000, faelligAm: '2025-06-16', tageUeberfaellig: 365 };
+  const o = { heute: '2026-06-16', basiszinsProzent: 0 }; // berechtigt: 9000 Zinsen + 4000 Pauschale = 13000
+
+  // Lieferant fordert exakt das Berechtigte → plausibel.
+  const p1 = pruefeErhalteneMahnung(posten, { ...o, geforderteZinsenCent: 9000, geforderteGebuehrenCent: 4000 });
+  ok('exakt berechtigt → plausibel', p1.bewertung === PRUEF_BEWERTUNG.PLAUSIBEL);
+  ok('berechtigte Werte ausgewiesen', p1.berechtigteZinsenCent === 9000 && p1.berechtigteGebuehrenCent === 4000 && p1.berechtigterGesamtCent === 13000);
+  ok('Differenz 0', p1.gesamtDiffCent === 0 && p1.zinsenDiffCent === 0 && p1.gebuehrenDiffCent === 0);
+
+  // Lieferant fordert weniger → plausibel (wir dürften ja sogar mehr schulden).
+  const p2 = pruefeErhalteneMahnung(posten, { ...o, geforderteZinsenCent: 5000, geforderteGebuehrenCent: 0 });
+  ok('weniger gefordert → plausibel', p2.bewertung === PRUEF_BEWERTUNG.PLAUSIBEL && p2.gesamtDiffCent < 0);
+
+  // Überzogene Mahngebühr (z. B. 90 € statt 40 €) → überhöht, Differenz ausgewiesen.
+  const p3 = pruefeErhalteneMahnung(posten, { ...o, geforderteZinsenCent: 9000, geforderteGebuehrenCent: 9000 });
+  ok('überhöhte Gebühr → ueberhoeht', p3.bewertung === PRUEF_BEWERTUNG.UEBERHOEHT);
+  ok('Gebühren-Differenz +5000', p3.gebuehrenDiffCent === 5000 && p3.gesamtDiffCent === 5000);
+
+  // Innerhalb der Rundungs-Toleranz (5 Cent) → noch plausibel.
+  const p4 = pruefeErhalteneMahnung(posten, { ...o, geforderteZinsenCent: 9004, geforderteGebuehrenCent: 4000 });
+  ok('4 Cent über → noch plausibel (Toleranz)', p4.bewertung === PRUEF_BEWERTUNG.PLAUSIBEL);
+  const p5 = pruefeErhalteneMahnung(posten, { ...o, geforderteZinsenCent: 9006, geforderteGebuehrenCent: 4000 });
+  ok('6 Cent über → überhöht', p5.bewertung === PRUEF_BEWERTUNG.UEBERHOEHT);
+
+  // Im Verzug, aber nichts gefordert → ohne_angabe (zeigt nur das Berechtigte).
+  const p6 = pruefeErhalteneMahnung(posten, o);
+  ok('keine Forderung → ohne_angabe', p6.bewertung === PRUEF_BEWERTUNG.OHNE_ANGABE && p6.berechtigterGesamtCent === 13000);
+
+  // Nicht überfällig, aber Lieferant mahnt trotzdem → kein_verzug (keine Grundlage).
+  const p7 = pruefeErhalteneMahnung({ offenCent: 100000, faelligAm: '2026-07-01' },
+    { heute: '2026-06-16', geforderteZinsenCent: 500, geforderteGebuehrenCent: 4000 });
+  ok('nicht im Verzug → kein_verzug', p7.bewertung === PRUEF_BEWERTUNG.KEIN_VERZUG && p7.imVerzug === false);
+  ok('kein_verzug: berechtigt = 0', p7.berechtigterGesamtCent === 0);
+});
+
+await section('Eingangsverzug: Übersicht (eigene Zahlungsdisziplin)', () => {
+  const heute = '2026-06-30';
+  const posten = [
+    { id: 'er:1', offenCent: 119000, faelligAm: '2026-05-15', tageUeberfaellig: 46 }, // stark überfällig
+    { id: 'er:2', offenCent: 50000, faelligAm: '2026-06-28', tageUeberfaellig: 2 },   // überfällig (Stufe 1)
+    { id: 'er:3', offenCent: 30000, faelligAm: '2026-07-10', tageUeberfaellig: 0 },   // im Ziel
+  ];
+  const u = verzugUebersicht(posten, { heute, basiszinsProzent: 0 });
+  ok('3 Posten gesamt, 2 überfällig', u.anzahl === 3 && u.ueberfaelligAnzahl === 2);
+  ok('überfällige Summe 169000', u.ueberfaelligCent === 169000);
+  ok('1 kritischer Posten (≥14 Tage)', u.kritischAnzahl === 1);
+  // Zinsrisiko = Σ berechtigte Zinsen der überfälligen Posten (>0).
+  ok('Zinsrisiko > 0', u.zinsRisikoCent > 0);
+  const erwartet = verzugszinsenCent(119000, 46, { basiszinsProzent: 0, b2b: true })
+    + verzugszinsenCent(50000, 2, { basiszinsProzent: 0, b2b: true });
+  ok('Zinsrisiko = Σ §288-Zinsen der überfälligen', u.zinsRisikoCent === erwartet);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {

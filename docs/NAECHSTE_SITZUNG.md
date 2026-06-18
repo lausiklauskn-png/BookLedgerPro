@@ -62,16 +62,25 @@ umgesetzt, soweit GoBD es zulässt. **GoBD-Befund:** `kostenstelle` ist Teil der
 `ladeZeitZuordnung()`/`zuordneZeit()`; UI-Karte „Zeiten zuordnen" in `ui/views/nachkalkulation.js` (Kostenträger-Select
 je Zeile, Herkunft direkt/über Auftrag) + ehrlicher GoBD-Hinweis an der Beleg-Liste; SW `v122`, +8 → **1483/1483 grün**,
 DOM/IndexedDB statisch geprüft.
-**Damit ist Block 2: Kalkulation/Angebote inkl. aller UIs/Folgeschritte sowie Block 1 inkl. Test-Modus/Demo-Vorbefüllung
-komplett.**
-Nächste offene Schritte (alle optional, umgebungs-/menschen-blockiert):
+**Zuletzt (2026-06-18): Eingangsrechnungs-Verzug (Gegenseite) ✅ — BAUPLAN Block 3 begonnen.** Spiegel zum Mahnwesen
+aus **Schuldnersicht**. Reine Logik `domain/eingangsverzug.js` (node-getestet, +33 → **1516/1516**): `verzugsstufe`
+(gestaffelte Überfälligkeit 1/14/42 Tage) + `verzugsstufeLabel`, `verzugsLage`, `berechtigteVerzugskosten` (§ 288-Zinsen
++ 40-€-Pauschale, wiederverwendet aus `mahnwesen.js`), **`pruefeErhalteneMahnung`** (geforderte vs. berechtigte
+Verzugszinsen/Mahngebühren → `plausibel`/`ueberhoeht`/`kein_verzug`/`ohne_angabe`, Toleranz 5 Cent), `verzugUebersicht`.
+UI `ui/views/payables.js`: Verzugsstufen-Badge je überfälligem Posten + Knopf „Mahnung prüfen" → Karte „Erhaltene
+Mahnung prüfen (§ 288 BGB)" (Live-Vergleich + Bewertungs-Badge + § 286/§ 247-Disclaimer; **bucht nichts**). i18n de+en,
+CSS `.badge-error`, SW `v123`. **Grenze:** Hilfs-Einordnung nach Tagen, keine Rechtsberatung; Buchung gezahlter
+Verzugskosten (Zinsaufwand) bewusst als Folgeschritt offen; DOM/IndexedDB statisch geprüft.
+**Damit ist Block 1 + Block 2 komplett; Block 3 begonnen (Eingangsrechnungs-Verzug erledigt).**
+Nächste offene Schritte (alle optional):
 
-1. **Optional, Schritt 4 der Datensicherung (`docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server) +
-   konfigurierbare Erinnerungs-Kadenz — **blockiert/zurückgestellt**, solange kein eigener Server existiert.
+1. **Buchung gezahlter Verzugskosten (Zinsaufwand)** als Folgeschritt zu `eingangsverzug.js` — wenn wir eine berechtigte
+   Lieferanten-Mahnung zahlen: Zinsaufwand/sonstiger Aufwand AN Bank/Verbindlichkeit (Spiegel zu `mahnwesen.mahnbuchungEntwurf`).
+   Build-frei, node-testbar; **empfohlener nächster Schritt.**
 2. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen.
-3. **Sonst:** Block 3 (Eingangsrechnungs-Verzug Gegenseite [SOLL]; WorkFloh-Gegenstücke — fremde Repos) oder eine neue,
-   mit dem Nutzer vereinbarte Idee. **Bekannt blockiert:** Lighthouse/Perf, lokales OCR (nicht build-frei), ZUGFeRD-
-   Erzeugen, Sage 5b–d.
+3. **Sonst:** weitere Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server; WorkFloh-Gegenstücke —
+   fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt blockiert:** Lighthouse/Perf,
+   lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
 
 RITUAL JE PR (verbindlich, automatisch durchziehen):
 1) `git fetch origin main && git reset --hard origin/main`; pro PR einen eigenen
@@ -104,12 +113,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2 Folgeschritt — Zeit-Zuordnungs-UI je Kostenträger**
-(reine Logik `domain/nachkalkulation.js aufgeloesteKostenstelle` — explizite `zeit.kostenstelle` vor Auftrags-Ableitung;
-`crm-store.js` `saveZeit`-Feld `kostenstelle` + `setZeitKostenstelle`; Glue `nachkalkulation-store.js`
-`ladeZeitZuordnung()`/`zuordneZeit()`; UI-Karte „Zeiten zuordnen" in `ui/views/nachkalkulation.js` + GoBD-Hinweis an der
-Beleg-Liste — Buchungen sind hash-verriegelt). Tests **1483/1483** · SW **v122** · 115 JS-Module. **Block 1 KOMPLETT
-(inkl. Test-Modus 2a–2d)**; **Block 2 inkl. aller UIs/Folgeschritte KOMPLETT.**
-**Nächster Schritt (optional, verbleibend):** Schritt 4 der Datensicherung (Server-/Offsite-Ziel, blockiert) bzw.
-Browser-Sichttest durch den Nutzer.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Eingangsrechnungs-Verzug (Gegenseite)**
+(reine Logik `domain/eingangsverzug.js`: `verzugsstufe`/`verzugsLage`/`berechtigteVerzugskosten`/`pruefeErhalteneMahnung`/
+`verzugUebersicht` — Spiegel zum Mahnwesen aus Schuldnersicht, § 288-Formel aus `mahnwesen.js` wiederverwendet; UI
+`ui/views/payables.js`: Verzugsstufen-Badge + „Mahnung prüfen"-Karte, bucht nichts). Tests **1516/1516** · SW **v123** ·
+116 JS-Module. **Block 1 + Block 2 KOMPLETT; Block 3 begonnen (Eingangsrechnungs-Verzug erledigt).**
+**Nächster Schritt (optional, empfohlen):** Buchung gezahlter Verzugskosten (Zinsaufwand) als Folgeschritt; sonst
+Browser-Sichttest durch den Nutzer bzw. umgebungs-/menschen-blockierte Block-3-Punkte.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

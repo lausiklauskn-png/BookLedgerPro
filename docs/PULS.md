@@ -102,7 +102,19 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Zeit-Zuordnungs-UI je Kostenträger"):** SW **v122** · Tests **1483/1483** grün · 115 JS-Module.
+**Kopf-Status (Stand nach „Eingangsrechnungs-Verzug — Mahnung prüfen"):** SW **v123** · Tests **1516/1516** grün · 116 JS-Module.
+**Eingangsrechnungs-Verzug (Gegenseite) erledigt (diese Sitzung, BAUPLAN Block 3):** Spiegel zum Mahnwesen aus
+**Schuldnersicht**. Reine Logik `src/domain/eingangsverzug.js` (node-getestet, +33 → **1516/1516**): `verzugsstufe`
+(gestaffelte Überfälligkeit 1/14/42 Tage, `kritisch`-Flag) + `verzugsstufeLabel`; `verzugsLage` (Fälligkeit + Tage,
+angereicherte Felder vor Datum+Ziel, Default 30); `berechtigteVerzugskosten` (§ 288-Verzugszinsen via
+`verzugszinsenCent` + 40-€-Pauschale via `mahnpauschaleCent`, wiederverwendet aus `mahnwesen.js`, `b2b` Default true);
+**`pruefeErhalteneMahnung`** (geforderte vs. berechtigte Zinsen/Gebühren → `plausibel`/`ueberhoeht`/`kein_verzug`/
+`ohne_angabe`, Toleranz 5 Cent); `verzugUebersicht` (überfällig-Anzahl/-Summe + Zinsrisiko). UI `ui/views/payables.js`:
+Verzugsstufen-Badge je überfälligem Posten + Knopf „Mahnung prüfen" → Karte „Erhaltene Mahnung prüfen (§ 288 BGB)"
+(Live-Vergleich + Bewertungs-Badge + § 286/§ 247-Disclaimer; **bucht nichts**). i18n de+en, CSS `.badge-error`, SW `v123`.
+**Ehrliche Grenze:** Hilfs-Einordnung nach Tagen überfällig (keine Rechtsberatung); Buchung gezahlter Verzugskosten
+(Zinsaufwand) bewusst als Folgeschritt offen. DOM/IndexedDB statisch geprüft. **Nächster Schritt (optional):** Buchung
+gezahlter Verzugskosten; sonst weitere Block-3-Punkte (Server-Backup/WorkFloh — blockiert) oder Browser-Sichttest.
 **Kalibrierte Vorwärtskalkulation im Angebots-Editor erledigt (diese Sitzung, BAUPLAN Block 2 — Folgeschritt zu
 Schritt 10):** Die in Schritt 10 fertige reine Logik (`kalkuliereKalibriert`) ist jetzt im Angebots-Editor anwendbar.
 Die reinen **Anwendungs-Primitiven** `kalibriereEingabe`/`kalkuliereKalibriert` sind in den **Kern** (`domain/kalkulation.js`)

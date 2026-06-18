@@ -231,7 +231,17 @@
 
 ### Block 3 — später / umgebungs-blockiert
 - [ ] **Server-Backup-Ziel** (sobald eigener Server existiert) — Stelle 3 der 3-2-1-Sicherung.
-- [ ] **Eingangsrechnungs-Verzug (Gegenseite)** [SOLL] — Spiegel zum Mahnwesen.
+- [x] **Eingangsrechnungs-Verzug (Gegenseite)** [SOLL] ✅ (2026-06-18) — Spiegel zum Mahnwesen aus
+  **Schuldnersicht**. Reine Logik `domain/eingangsverzug.js` (node-getestet, +33 → **1516/1516**):
+  `verzugsstufe`/`verzugsstufeLabel` (gestaffelte Überfälligkeit 1/14/42 Tage), `verzugsLage`,
+  `berechtigteVerzugskosten` (§ 288-Zinsen + 40-€-Pauschale, wiederverwendet aus `mahnwesen.js`),
+  **`pruefeErhalteneMahnung`** (geforderte vs. berechtigte Verzugszinsen/Mahngebühren → `plausibel`/
+  `ueberhoeht`/`kein_verzug`/`ohne_angabe`, Toleranz 5 Cent), `verzugUebersicht` (Kennzahlen + Zinsrisiko).
+  UI `ui/views/payables.js`: Verzugsstufen-Badge je überfälligem Posten + Knopf „Mahnung prüfen" → Karte
+  „Erhaltene Mahnung prüfen (§ 288 BGB)" (Live-Vergleich + Bewertungs-Badge + § 286/§ 247-Disclaimer; bucht
+  nichts). i18n de+en, CSS `.badge-error`, SW `v123`. **Ehrliche Grenze:** Hilfs-Einordnung nach Tagen, keine
+  Rechtsberatung; Buchung gezahlter Verzugskosten (Zinsaufwand) bewusst als Folgeschritt offen. DOM/IndexedDB
+  statisch geprüft.
 - [ ] **WorkFloh-Gegenstücke** (fremdes Repo, über den Nutzer): **Test-Modus** (`docs/TEST_MODUS.md` ⇄-Abschnitt),
   BLP-Format-Exporter für die Rechnungsstelle, optional Symbiose-Import (Sage 5d).
 - [ ] **Bekannt blockiert:** Lighthouse/Perf (Headless), lokales OCR (Tesseract = nicht build-frei),
