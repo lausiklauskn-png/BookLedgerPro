@@ -5,6 +5,42 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Liquiditäts-Mindestreserve (Puffer) in der Deckungslücke [Branch `claude/block3-liquidity-reserve`, PR #154]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 ausgebaut bis zur **Deckungslücke** (#153). **Befund:** Die Deckungslücke warnte
+  bisher erst, wenn der laufende Saldo im Fenster ECHT unter null rutscht. Viele Betriebe wollen ihr Geld aber nicht bis
+  auf null herunterfahren, sondern einen **Sicherheitspuffer (Mindestreserve)** halten. Sauberer, build-freier
+  Folgeschritt im Liquiditäts-Thema: eine konfigurierbare Mindestreserve als Schwelle der Deckungslücke.
+
+**Was getan**
+- **`src/domain/liquiditaet.js`** (rein, node-getestet, +17 → **1663/1663**): `normalizeReserveCent(value)` (klemmt einen
+  persistierten Reservebetrag auf ganze, nicht-negative Cent; ungültig/negativ → 0) + `deckungsluecke(verlauf, {reserveCent})`
+  mit optionaler **Mindestreserve als Schwelle** — Default 0 → identisch zu vorher (abwärtskompatibel, bestehende Tests
+  unverändert grün); die Lücke greift, sobald der Tiefpunkt unter die Schwelle fällt (`lueckeCent` = Schwelle − Tiefpunkt),
+  neue Felder `reserveCent` + `negativ` (Tiefpunkt < 0 = echte Illiquidität vs. nur Reserve-Unterschreitung).
+- **`src/state.js`**: Setting `liquiditaetReserveCent` (Default 0, gerätelokal/verschlüsselt).
+- **`src/ui/views/dashboard.js`**: Euro-Eingabefeld „Mindestreserve (Puffer)" in der Liquiditäts-Karte (persistiert + neu
+  zeichnen); der Lücken-Hinweis warnt **rot** (`hint-error`) bei echtem Minus und **mild** (`muted small`) bei reiner
+  Reserve-Unterschreitung (eigene i18n-Variante mit Reserve-Betrag). **Bucht nichts.**
+- i18n de+en (`dashboard.liquidityReserveLabel`/`…ReservePlaceholder`/`…ReserveGapHint`), **SW `v133`** (kein neues Modul).
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut. **Tests 1663/1663 grün** (`node tests/run.mjs`). SW `v133`.
+  PR #154 squash-gemergt (CI smoke-test grün).
+
+**Offen / Nächstes**
+- Optional: Browser-Sichttest durch den Nutzer (kein Headless-Browser hier) — DOM/IndexedDB-Pfad der Liquiditäts-Karte
+  (Mindestreserve-Eingabe + adaptive Lücken-Hinweise) bestätigen.
+- Sonst: umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel; WorkFloh-Gegenstücke) oder eine neue,
+  mit dem Nutzer abgestimmte Idee. Bekannt blockiert: Lighthouse/Perf, lokales OCR, ZUGFeRD-Erzeugen, Sage 5b–d.
+
+**Offene Grenzen / ungetestet**
+- Reine Logik node-getestet; DOM/IndexedDB/Eingabefeld-Pfad **statisch geprüft** (kein Headless-Browser).
+- Inhaltlich: einfache Planung nach Fälligkeitsdatum, keine Finanzberatung; die Reserve ist ein frei gewählter Puffer.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Liquiditäts-Deckungslücke (Unterdeckung im Fenster) [Branch `claude/bookledgerpro-block-3-14vdtm`]
 
 **Ausgangslage / Auswahl**

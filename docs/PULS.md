@@ -102,7 +102,21 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Liquiditäts-Deckungslücke"):** SW **v132** · Tests **1646/1646** grün · 117 JS-Module.
+**Kopf-Status (Stand nach „Liquiditäts-Mindestreserve"):** SW **v133** · Tests **1663/1663** grün · 117 JS-Module.
+**Liquiditäts-Mindestreserve (Puffer) in der Deckungslücke (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #153, PR #154):**
+Die Deckungslücke (#153) warnte bisher erst, wenn der laufende Saldo im Fenster ECHT unter null rutscht. Viele Betriebe
+wollen ihr Geld aber nicht bis auf null herunterfahren, sondern einen Sicherheitspuffer (Mindestreserve) halten. Reine Logik
+`domain/liquiditaet.js` (node-getestet, +17 → **1663/1663**): `normalizeReserveCent(value)` (klemmt einen persistierten
+Reservebetrag auf ganze, nicht-negative Cent; ungültig/negativ → 0) + `deckungsluecke(verlauf, {reserveCent})` mit optionaler
+**Mindestreserve als Schwelle** — Default 0 → identisch zu vorher (abwärtskompatibel); die Lücke greift, sobald der Tiefpunkt
+unter die Schwelle fällt (`lueckeCent` = Schwelle − Tiefpunkt), neue Felder `reserveCent` + `negativ` (Tiefpunkt < 0 = echte
+Illiquidität vs. nur Reserve-Unterschreitung). Setting `liquiditaetReserveCent` (`state.js`, Default 0, gerätelokal/
+verschlüsselt). UI `ui/views/dashboard.js`: Euro-Eingabefeld „Mindestreserve (Puffer)" in der Liquiditäts-Karte; der
+Lücken-Hinweis warnt **rot** (`hint-error`) bei echtem Minus und **mild** (`muted small`) bei reiner Reserve-Unterschreitung
+(eigene i18n-Variante mit Reserve-Betrag). SW `v133` (kein neues Modul). **bucht nichts.** **Ehrliche Grenze:** einfache
+Planung nach Fälligkeitsdatum, keine Finanzberatung; die Reserve ist ein frei gewählter Puffer, keine modellierte Kennzahl;
+DOM/IndexedDB statisch geprüft. **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/
+menschen-blockierte Block-3-Punkte oder eine neue, abgestimmte Idee.
 **Liquiditäts-Deckungslücke (Unterdeckung im Fenster) (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #152):** Der
 Tiefpunkt-Hinweis (#152) zeigt den tiefsten Stand auch dann, wenn er positiv bleibt (reine Info). Wenn der laufende Saldo
 aber zwischendurch ECHT ins Minus rutscht und sich bis zum Fenster-Ende wieder erholt (große Verbindlichkeit früh,

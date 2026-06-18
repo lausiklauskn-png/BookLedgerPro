@@ -22,17 +22,19 @@ AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 202
 Verbindlichkeiten-Ansicht ✅ #142 + Dashboard-KPI überfällige **Verbindlichkeiten** ✅ #143 + Dashboard-KPI überfällige
 **Forderungen (Mahnwesen)** ✅ #145 + **Dashboard-KPI: Liquiditätsvorschau (bald fällig) ✅ #147** + **Liquiditätsvorschau
 um Geldbestand + projizierten Saldo ✅ #149** + **Liquiditätsvorschau: wählbares Zeitfenster ✅** + **Liquiditäts-Tiefpunkt
-(laufender Saldo im Fenster) ✅ #152** + zuletzt (2026-06-18) **Liquiditäts-Deckungslücke (Unterdeckung im Fenster) ✅** —
-der Tiefpunkt-Hinweis (#152) zeigt den tiefsten Stand auch dann, wenn er positiv bleibt; wenn der laufende Saldo aber
-ZWISCHENDURCH echt ins Minus rutscht und sich bis zum Fenster-Ende wieder erholt (große Verbindlichkeit früh, ausgleichende
-Forderung spät), bleibt der Engpass von der End-Saldo-Ampel (`liquiditaetsAmpel`, projiziert<0) unentdeckt — und es fehlt
-der konkrete Finanzierungs-Betrag. Reine Logik `domain/liquiditaet.js` **`deckungsluecke(verlauf)`** (node-getestet):
-nimmt das `liquiditaetsVerlauf`-Ergebnis und liefert `{unterdeckung, lueckeCent, datum}` — greift nur bei
-`tiefpunktCent < 0` (`lueckeCent` = −`tiefpunktCent`, `datum` = `tiefpunktDatum`), sonst keine Unterdeckung
-(abwärtskompatibel). UI `ui/views/dashboard.js`: warnfarbener Hinweis (CSS `.hint-error`) „Unterdeckung: Bis zum {datum}
-fehlen … {betrag}" — unabhängig vom End-Saldo; **bucht nichts**. i18n de+en (`dashboard.liquidityGapHint`), SW `v132`
-(kein neues Modul), +8 → **1646/1646** grün, DOM/IndexedDB statisch geprüft. **Mehrere saubere, in sich abgeschlossene PRs
-pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden).
+(laufender Saldo im Fenster) ✅ #152** + **Liquiditäts-Deckungslücke (Unterdeckung im Fenster) ✅ #153** + zuletzt
+(2026-06-18) **Liquiditäts-Mindestreserve (Puffer) ✅ #154** — die Deckungslücke (#153) warnte bisher erst, wenn der
+laufende Saldo im Fenster ECHT unter null rutscht; viele Betriebe wollen ihr Geld aber nicht bis auf null herunterfahren,
+sondern einen Sicherheitspuffer halten. Reine Logik `domain/liquiditaet.js` (node-getestet): `normalizeReserveCent(value)`
+(klemmt persistierten Reservebetrag auf ganze, nicht-negative Cent; ungültig/negativ → 0) + `deckungsluecke(verlauf,
+{reserveCent})` mit optionaler **Mindestreserve als Schwelle** — Default 0 → identisch zu vorher (abwärtskompatibel);
+die Lücke greift, sobald der Tiefpunkt unter die Schwelle fällt (`lueckeCent` = Schwelle − Tiefpunkt), neue Felder
+`reserveCent` + `negativ` (Tiefpunkt < 0 = echte Illiquidität vs. nur Reserve-Unterschreitung). Setting
+`liquiditaetReserveCent` (`state.js`, Default 0). UI `ui/views/dashboard.js`: Euro-Eingabefeld „Mindestreserve (Puffer)"
+in der Liquiditäts-Karte; der Lücken-Hinweis warnt rot (`hint-error`) bei echtem Minus und mild (`muted small`) bei reiner
+Reserve-Unterschreitung. **bucht nichts**. i18n de+en, SW `v133` (kein neues Modul), +17 → **1663/1663** grün, DOM/IndexedDB
+statisch geprüft. **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln
+grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden).
 
 Nächste offene Schritte (alle optional):
 1. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen
@@ -72,13 +74,14 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditäts-Deckungslücke (Unterdeckung im Fenster)**: reine
-Logik `domain/liquiditaet.js` `deckungsluecke(verlauf)` → `{unterdeckung, lueckeCent, datum}` (greift nur bei negativem
-Tiefpunkt); UI `ui/views/dashboard.js`: warnfarbener Unterdeckungs-Hinweis in der Liquiditäts-Karte (unabhängig vom
-End-Saldo). Tests **1646/1646** · SW **v132** · 117 JS-Module.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditäts-Mindestreserve (Puffer)** (PR #154): reine
+Logik `domain/liquiditaet.js` `normalizeReserveCent(value)` + `deckungsluecke(verlauf, {reserveCent})` mit optionaler
+Mindestreserve als Schwelle (Default 0 → abwärtskompatibel; neue Felder `reserveCent` + `negativ`); Setting
+`liquiditaetReserveCent`; UI `ui/views/dashboard.js`: Euro-Eingabefeld „Mindestreserve (Puffer)" + adaptiver Lücken-Hinweis
+(rot bei echtem Minus, mild bei reiner Reserve-Unterschreitung). Tests **1663/1663** · SW **v133** · 117 JS-Module.
 **Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung + Verzugsrisiko-KPI in
 Verbindlichkeiten-Ansicht + beidseitige Überfälligkeits-KPI #143/#145 + Liquiditätsvorschau #147 + Geldbestand/
-Projektion #149 + wählbares Zeitfenster + Tiefpunkt #152 + Deckungslücke).**
+Projektion #149 + wählbares Zeitfenster + Tiefpunkt #152 + Deckungslücke #153 + Mindestreserve #154).**
 **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
 oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
