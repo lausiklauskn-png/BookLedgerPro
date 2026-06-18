@@ -145,6 +145,9 @@ import {
   VERZUG_AUFWAND_KONTEN, VERZUG_GEGENKONTO, verzugAufwandZeilen, verzugAufwandEntwurf,
 } from '../src/domain/eingangsverzug.js';
 import {
+  LIQUIDITAET_HORIZONT_DEFAULT, baldFaellig, liquiditaetsVorschau,
+} from '../src/domain/liquiditaet.js';
+import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
   erstelleMandant, leereRegistry, findeMandant, aktiverMandant, addMandant,
   umbenenneMandant, entferneMandant, setzeAktiv, mitLegacyMandant,
@@ -2331,6 +2334,55 @@ await section('Mahnwesen: forderungAmpel (KPI-Färbung der Forderungs-Übersicht
   ok('negative Werte geklemmt → ok', forderungAmpel({ ueberfaelligAnzahl: -1, kritischAnzahl: -5 }) === FORDERUNG_AMPEL.OK);
   // Inkonsistente Eingabe (kritisch>0, aber ueberfaellig=0) → kein Verzug zählt → ok.
   ok('kritisch ohne überfällig → ok', forderungAmpel({ ueberfaelligAnzahl: 0, kritischAnzahl: 2 }) === FORDERUNG_AMPEL.OK);
+});
+
+await section('Liquidität: baldFaellig (im Fenster, nicht überfällig)', () => {
+  const heute = '2026-06-18';
+  // angereicherte Posten-Form: faelligAm + betragCent (Forderung) bzw. offenCent (Verbindlichkeit).
+  const posten = [
+    { id: 'p0', betragCent: 10000, faelligAm: '2026-06-12' }, // bereits überfällig → NICHT bald fällig
+    { id: 'p1', betragCent: 20000, faelligAm: '2026-06-18' }, // heute fällig → im Fenster
+    { id: 'p2', betragCent: 30000, faelligAm: '2026-06-25' }, // in 7 Tagen → Grenze inklusive
+    { id: 'p3', betragCent: 40000, faelligAm: '2026-06-26' }, // in 8 Tagen → außerhalb (Default 7)
+    { id: 'p4', betragCent: 50000, faelligAm: '' },           // ohne Datum → ignoriert
+  ];
+  const r = baldFaellig(posten, { heute });
+  ok('Default-Horizont = 7', r.horizontTage === LIQUIDITAET_HORIZONT_DEFAULT && r.horizontTage === 7);
+  ok('2 Posten im Fenster (heute + in 7 Tagen)', r.anzahl === 2);
+  ok('Summe 20000 + 30000', r.summeCent === 50000);
+  ok('überfälliger Posten zählt nicht', r.summeCent !== 60000);
+  // Größeres Fenster zieht den 8-Tage-Posten herein, der überfällige bleibt draußen.
+  const r30 = baldFaellig(posten, { heute, horizontTage: 30 });
+  ok('Horizont 30 → 3 Posten (20000+30000+40000)', r30.anzahl === 3 && r30.summeCent === 90000);
+  // offenCent (Verbindlichkeits-Form) wird ebenso erkannt.
+  const vb = baldFaellig([{ offenCent: 12345, faelligAm: '2026-06-20' }], { heute });
+  ok('offenCent wird gelesen', vb.anzahl === 1 && vb.summeCent === 12345);
+  // Defensive: leer / negativer Horizont.
+  ok('leere Liste → 0', baldFaellig([], { heute }).anzahl === 0);
+  ok('Horizont 0 → nur heute fällige', baldFaellig(posten, { heute, horizontTage: 0 }).summeCent === 20000);
+});
+
+await section('Liquidität: liquiditaetsVorschau (eingehend vs. ausgehend + Netto)', () => {
+  const heute = '2026-06-18';
+  const forderungen = [
+    { betragCent: 100000, faelligAm: '2026-06-20' }, // eingehend, im Fenster
+    { betragCent: 99999, faelligAm: '2026-06-10' },  // überfällig → ignoriert
+  ];
+  const verbindlichkeiten = [
+    { offenCent: 40000, faelligAm: '2026-06-19' }, // ausgehend, im Fenster
+    { offenCent: 60000, faelligAm: '2026-06-25' }, // ausgehend, Grenze inklusive
+  ];
+  const v = liquiditaetsVorschau({ forderungen, verbindlichkeiten, heute });
+  ok('eingehend 1 Posten / 100000', v.eingehendAnzahl === 1 && v.eingehendCent === 100000);
+  ok('ausgehend 2 Posten / 100000', v.ausgehendAnzahl === 2 && v.ausgehendCent === 100000);
+  ok('Netto = eingehend − ausgehend', v.nettoCent === 0);
+  ok('Horizont durchgereicht', v.horizontTage === 7);
+  // Nur Forderungen (z. B. Privat-/Kontext ohne Verbindlichkeiten) → ausgehend 0, Netto positiv.
+  const nurEin = liquiditaetsVorschau({ forderungen, heute });
+  ok('ohne Verbindlichkeiten → Netto = eingehend', nurEin.ausgehendCent === 0 && nurEin.nettoCent === 100000);
+  // Leerer Aufruf → alles 0, kein Fehler.
+  const leer = liquiditaetsVorschau({ heute });
+  ok('leer → alles 0', leer.eingehendCent === 0 && leer.ausgehendCent === 0 && leer.nettoCent === 0);
 });
 
 await section('Mahnwesen: persistenter Verlauf (Stufe/Zins-/Gebührenverlauf)', () => {
