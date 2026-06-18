@@ -70,6 +70,10 @@ import {
   UEBERNAHME_KREIS, validateAngebotUebernahme, darfAngebotUebernehmen,
   uebernahmeNummer, angebotUebernahmeEntwurf,
 } from '../src/domain/angebotUebernahme.js';
+import {
+  istkostenAusBuchungen, istZeitkosten, istkosten,
+  sollkostenAusAngebot, nachkalkulation, kostentraegerAnalyse,
+} from '../src/domain/nachkalkulation.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
 import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, istEinfacherSatz, buildUstVa, centsToComma, ustVaToCsv, buildAnlagenverzeichnisCsv, buildUebergabeText } from '../src/domain/export.js';
@@ -3879,6 +3883,99 @@ await section('Kalkulation Block 2/Schritt 8: Angebot → Rechnung-Übernahme (r
   ok('extern: referenziert Angebot, eigene Nummer ≠ Angebot', eExt.angebotsnummer === 'AN-2026-0001' && eExt.nummer !== eExt.angebotsnummer);
   ok('extern: gleiche Buchungssummen wie blp (nur Nummer/Politik anders)', JSON.stringify(eExt.zeilen) === JSON.stringify(eBlp.zeilen));
   ok('extern: ENT-Nummer ist keine §14-Nummer', !/^\d{4}-\d{4}$/.test(eExt.nummer));
+});
+
+await section('Nachkalkulation: Auftrags-Kostenträger + Soll/Ist (Schritt 9)', () => {
+  // — Angebot mit interner Vorkalkulation (SOLL) je Position —
+  const angebot = neuesAngebot({
+    titel: 'Schild + Montage', kundeId: 'k1', kostenstelle: 'KT-1',
+    positionen: [
+      { beschreibung: 'Schild', menge: 1, einzelpreisCent: 20000, ustSatz: 19, kalkulation: {
+        ergebnis: { material: 10000, maschine: 0, arbeit: 5000, zukauf: 0, montage: 0,
+          selbstkosten: 15000, netto: 20000, deckungsbeitrag: 5000 } } },
+      { beschreibung: 'Profil', menge: 2, einzelpreisCent: 5000, ustSatz: 19, kalkulation: {
+        ergebnis: { material: 1000, maschine: 500, arbeit: 0, zukauf: 2000, montage: 0,
+          selbstkosten: 3500, netto: 5000, deckungsbeitrag: 1500 } } },
+    ],
+  });
+
+  const soll = sollkostenAusAngebot(angebot);
+  ok('Soll perBlock material = 12000', soll.perBlock[KOSTENART.MATERIAL] === 12000);
+  ok('Soll perBlock maschine = 1000', soll.perBlock[KOSTENART.MASCHINE] === 1000);
+  ok('Soll perBlock arbeit = 5000', soll.perBlock[KOSTENART.ARBEIT] === 5000);
+  ok('Soll perBlock zukauf = 4000', soll.perBlock[KOSTENART.ZUKAUF] === 4000);
+  ok('Soll selbstkosten = Σ Blöcke = 22000', soll.selbstkostenCent === 22000);
+  ok('Soll netto = 30000', soll.nettoCent === 30000);
+  ok('Soll deckungsbeitrag = 8000', soll.deckungsbeitragCent === 8000);
+  ok('Soll selbstkosten == interneAuswertung', soll.selbstkostenCent === interneAuswertung(angebot).selbstkosten);
+
+  // — IST aus Buchungen/Belegen (nur festgeschrieben + passende kostenstelle) —
+  const kontoIndex = {
+    '3400': { art: KONTOART.AUFWAND }, '3100': { art: KONTOART.AUFWAND },
+    '1200': { art: KONTOART.AKTIV }, '1600': { art: KONTOART.PASSIV },
+  };
+  const buchungen = [
+    { id: 'b1', seq: 1, datum: '2026-05-02', kostenstelle: 'KT-1', belegRef: 'beleg-1', beschreibung: 'Materialeinkauf',
+      zeilen: [{ konto: '3400', seite: 'S', betrag: 13000 }, { konto: '1200', seite: 'H', betrag: 13000 }] },
+    { id: 'b2', seq: 2, datum: '2026-05-10', kostenstelle: 'KT-1', belegRef: 'beleg-2', beschreibung: 'Fremdleistung',
+      zeilen: [{ konto: '3100', seite: 'S', betrag: 4500 }, { konto: '1600', seite: 'H', betrag: 4500 }] },
+    { id: 'bE', seq: null, datum: '2026-05-11', kostenstelle: 'KT-1', beschreibung: 'Entwurf zählt nicht',
+      zeilen: [{ konto: '3400', seite: 'S', betrag: 9999 }, { konto: '1200', seite: 'H', betrag: 9999 }] },
+    { id: 'bX', seq: 3, datum: '2026-05-12', kostenstelle: 'KT-2', beschreibung: 'fremder Kostenträger',
+      zeilen: [{ konto: '3400', seite: 'S', betrag: 7777 }, { konto: '1200', seite: 'H', betrag: 7777 }] },
+  ];
+  const kontoBlock = { '3100': KOSTENART.ZUKAUF }; // 3100 = Fremdleistung → Zukauf, 3400 default Material
+
+  const ausB = istkostenAusBuchungen(buchungen, kontoIndex, 'KT-1', { kontoBlock });
+  ok('IST-Buchungen summe = 17500 (Entwurf/anderer KT ignoriert)', ausB.summeCent === 17500);
+  ok('IST-Buchungen material = 13000', ausB.perBlock[KOSTENART.MATERIAL] === 13000);
+  ok('IST-Buchungen zukauf = 4500 (kontoBlock)', ausB.perBlock[KOSTENART.ZUKAUF] === 4500);
+  ok('IST-Buchungen perKonto 3400 = 13000', ausB.perKonto['3400'] === 13000);
+  ok('IST-Buchungen 2 Belege geführt', ausB.belege.length === 2);
+  ok('IST-Buchungen belegRef mitgeführt', ausB.belege[0].belegRef === 'beleg-1' && ausB.belege[0].betragCent === 13000);
+
+  // — IST-Zeit (interner Stundenkostensatz; Maschine/Arbeit getrennt) —
+  const zeit = [
+    { dauerMin: 60, art: 'arbeit', kostenstelle: 'KT-1' },                               // 1h × 60€ = 6000
+    { dauerMin: 30, art: 'maschine', kostenstelle: 'KT-1', kostensatzCentProStd: 8000 }, // 0.5h × 80€ = 4000
+    { dauerMin: 120, art: 'arbeit', kostenstelle: 'KT-2' },                              // anderer KT → ignoriert
+  ];
+  const ausZ = istZeitkosten(zeit, { kostenstelle: 'KT-1', kostensatzCentProStd: 6000 });
+  ok('IST-Zeit arbeit = 6000 (Default-Satz)', ausZ.perBlock[KOSTENART.ARBEIT] === 6000);
+  ok('IST-Zeit maschine = 4000 (eigener Satz)', ausZ.perBlock[KOSTENART.MASCHINE] === 4000);
+  ok('IST-Zeit summe = 10000, minuten = 90', ausZ.summeCent === 10000 && ausZ.minuten === 90);
+
+  // — IST gesamt (Belege + Zeit) —
+  const ist = istkosten({ buchungen, kontoIndex, kostenstelle: 'KT-1', zeiteintraege: zeit, kontoBlock, kostensatzCentProStd: 6000 });
+  ok('IST gesamt summe = 27500', ist.summeCent === 27500);
+  ok('IST gesamt material 13000 / maschine 4000 / arbeit 6000 / zukauf 4500',
+    ist.perBlock[KOSTENART.MATERIAL] === 13000 && ist.perBlock[KOSTENART.MASCHINE] === 4000
+    && ist.perBlock[KOSTENART.ARBEIT] === 6000 && ist.perBlock[KOSTENART.ZUKAUF] === 4500);
+
+  // — Soll/Ist-Vergleich —
+  const v = nachkalkulation(soll, ist);
+  const block = (b) => v.perBlock.find((x) => x.block === b);
+  ok('Vergleich material: ist 13000 vs soll 12000 → +1000 / 8.3%',
+    block(KOSTENART.MATERIAL).abweichungCent === 1000 && block(KOSTENART.MATERIAL).abweichungProzent === 8.3);
+  ok('Vergleich maschine: +3000 / 300%', block(KOSTENART.MASCHINE).abweichungCent === 3000 && block(KOSTENART.MASCHINE).abweichungProzent === 300);
+  ok('Vergleich montage: soll 0 → Prozent null', block(KOSTENART.MONTAGE).sollCent === 0 && block(KOSTENART.MONTAGE).abweichungProzent === null);
+  ok('Vergleich Summen: soll 22000 / ist 27500 / +5500 / 25%',
+    v.sollSummeCent === 22000 && v.istSummeCent === 27500 && v.abweichungCent === 5500 && v.abweichungProzent === 25);
+  ok('Vergleich DB: soll 8000, ist 2500 (Erlös 30000 − 27500)', v.deckungsbeitragSollCent === 8000 && v.deckungsbeitragIstCent === 2500);
+  ok('Vergleich DB-Abweichung = -5500', v.deckungsbeitragAbweichungCent === -5500);
+
+  // — abweichender tatsächlicher Erlös —
+  const v2 = nachkalkulation(soll, ist, { nettoCent: 28000 });
+  ok('Vergleich mit Ist-Netto 28000 → DB ist 500', v2.deckungsbeitragIstCent === 500 && v2.nettoCent === 28000);
+
+  // — Komfort-Einstieg liefert dasselbe —
+  const analyse = kostentraegerAnalyse(angebot, { buchungen, kontoIndex, zeiteintraege: zeit, kontoBlock, kostensatzCentProStd: 6000 });
+  ok('kostentraegerAnalyse: kostenstelle aus Angebot', analyse.kostenstelle === 'KT-1');
+  ok('kostentraegerAnalyse: gleicher Vergleich', JSON.stringify(analyse.vergleich) === JSON.stringify(v));
+
+  // — leeres/kalkulationsloses Angebot → Soll 0 (kein Wurf) —
+  const leer = sollkostenAusAngebot(neuesAngebot({ titel: 'x', positionen: [{ beschreibung: 'p', menge: 1, einzelpreisCent: 100, ustSatz: 19 }] }));
+  ok('Soll ohne interne Kalkulation = 0', leer.selbstkostenCent === 0 && leer.nettoCent === 0);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

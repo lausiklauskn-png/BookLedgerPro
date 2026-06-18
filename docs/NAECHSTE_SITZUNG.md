@@ -25,19 +25,24 @@ Kalkulations-Kern ✅ (PR #126:** `domain/kalkulation.js`) · **Schritt 6 Produk
 `domain/produktschemata.js`) · **Schritt 7 Angebote-Kern ✅ (PR #128:** `domain/angebote.js` — zwei Schichten extern/intern,
 Prime Directive via `externesAngebot`-Whitelist, Status-Lebenslauf, freier Nummernkreis `AN-JJJJ-NNNN`, `positionAusSchema`,
 `interneAuswertung`) · **Schritt 8 Angebot → Rechnung-Übernahme ✅ (PR #129:** `domain/angebotUebernahme.js` — angenommenes
-Angebot → bestehender Rechnungs-/Buchungspfad (`invoicing.rechnungZeilen`); Nummern-Politik `uebernahmeNummer` je
-`rechnungsstelle` (blp → echte §14-Nummer, extern → vorläufige Vorlage `ENT-JJJJ-NNNN`); `angebotUebernahmeEntwurf`
-referenziert die Angebotsnummer, benutzt sie NIE wieder (zwei getrennte Kreise, GoBD); baut ausschließlich auf
-`externesAngebot` (Prime Directive → keine interne Kalkulation im Entwurf); `validateAngebotUebernahme`/
-`darfAngebotUebernehmen`; rein node-getestet, **kein UI**)**.** Nächste offene Schritte:
-1. **NÄCHSTER SCHRITT — Block 2/Schritt 9: Auftrags-Kostenträger + Nachkalkulation** — `docs/KALKULATION_KATALOG.md` §6.
-   Material/Belege/Zeit je Auftrag sammeln (nutzt vorhandene Bausteine `payables.js`/`costcenters.js`/Belege/`belegRef`) →
-   **Soll/Ist-Vergleich** (Vor- gegen Nachkalkulation). ZUERST reine Logik node-getestet, UI ggf. eigener Folgeschritt.
-   Danach Schritt 10 (Kalibrierung/Statistik — Korrekturfaktoren aus eigener Historie; optional KI Mistral EU, opt-in,
-   pseudonym) + Schritt 11 (adaptiver Baukasten-UX, Nutzungssortierung, Drag-and-drop). **Prime Directive bleibt:**
-   Kalkulation rein intern, Rechnung neutral nach außen.
-2. **Optional, offener Folgeschritt zu Schritt 8:** **UI „Rechnung aus Angebot"** + Store-Glue (Zähler je Kreis,
-   `saveEntwurf`, Angebot→archiviert) — die reine Übernahme-Logik (`domain/angebotUebernahme.js`) steht bereits.
+Angebot → bestehender Rechnungs-/Buchungspfad; Nummern-Politik je `rechnungsstelle`; referenziert die Angebotsnummer, benutzt
+sie NIE wieder; baut nur auf `externesAngebot`) · **Schritt 9 Auftrags-Kostenträger + Nachkalkulation ✅ (PR #130:**
+`domain/nachkalkulation.js` — Kostenträger = Auftrag über `kostenstelle`; **IST** `istkostenAusBuchungen` (Aufwand
+festgeschriebener Buchungen je `kostenstelle`, Aggregationsweg wie `costcenters.js`, `belegRef`/`buchungId` mitgeführt,
+konto→Kostenart über `kontoBlock`) + `istZeitkosten` (`employees.js`-`{dauerMin}` × interner Stundenkostensatz) +
+`istkosten`; **SOLL** `sollkostenAusAngebot` (interne `kalkulation` je Position × Menge nach Kostenart); **Vergleich**
+`nachkalkulation` (Abweichung IST−SOLL je Kostenart + Prozent + Deckungsbeitrag Soll/Ist) + `kostentraegerAnalyse`; rein
+node-getestet, **kein UI**)**.** Nächste offene Schritte:
+1. **NÄCHSTER SCHRITT — Block 2/Schritt 10: Kalibrierung + Statistik/Vergleich** — `docs/KALKULATION_KATALOG.md` §5.1.
+   Korrekturfaktoren aus der eigenen Historie (Vor→Nachkalkulation, nutzt `domain/nachkalkulation.js`): wo lag der IST
+   real über/unter dem SOLL (z. B. Demontage real 1,4×, Verschnitt +12 %) → kalibrierbare Faktoren, die in den
+   Kalkulations-Kern/die Produkt-Schemata zurückfließen (`kalibrierteDefaults`); Angebots-Trefferquote/Vergleich je
+   Preisniveau. **Optional KI-Analyse** (Mistral EU, opt-in, pseudonym) — strikt EU/BYOK, nur nach Bestätigung. ZUERST
+   reine Logik node-getestet, UI ggf. eigener Folgeschritt. Danach Schritt 11 (adaptiver Baukasten-UX,
+   Nutzungssortierung, Drag-and-drop). **Prime Directive bleibt:** Kalkulation rein intern, Rechnung neutral nach außen.
+2. **Optional, offener Folgeschritt zu Schritt 8/9:** **UI „Rechnung aus Angebot"** (Knopf + Store-Glue, Zähler je Kreis,
+   `saveEntwurf`, Angebot→archiviert) **und/oder** **UI „Nachkalkulation/Kostenträger"** (Zeiterfassung je Auftrag,
+   Beleg-/Buchungs-Zuordnung, Soll/Ist-Anzeige) — die reine Logik (`angebotUebernahme.js`/`nachkalkulation.js`) steht bereits.
 3. **Optional, kleiner Folgeschritt zu Schritt 2c:** **Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) —
    ein neuer Test wahlweise leer **oder** mit Demo-Daten starten. (Die Test-Modus-UI ist ohne sie bereits
    vollständig nutzbar; daher bewusst abgegrenzt.)
@@ -75,10 +80,10 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 8 (Angebot → Rechnung-Übernahme, PR #129)**.
-Tests **1326/1326** · SW **v112** · 107 JS-Module. **Block 1 KOMPLETT** (Schritt 1 + 2a–2c + 3); **Block 2/Schritt 4 + 5 + 6 + 7 + 8 ✅**.
-**Nächster Schritt: BAUPLAN Block 2/Schritt 9 — Auftrags-Kostenträger + Nachkalkulation** (`docs/KALKULATION_KATALOG.md` §6;
-Material/Belege/Zeit je Auftrag über `payables`/`costcenters`/Belege/`belegRef` → Soll/Ist-Vergleich); danach
-Block-2-Schritte 10–11 (Kalibrierung/Statistik → Baukasten-UX).
-Optional: Schritt-8-Folgeschritt **UI „Rechnung aus Angebot"** + Store-Glue; 2c-Folgeschritt Demo-Vorbefüllung
-(`domain/demodaten.js`). Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 9 (Auftrags-Kostenträger + Nachkalkulation, PR #130)**.
+Tests **1355/1355** · SW **v113** · 108 JS-Module. **Block 1 KOMPLETT** (Schritt 1 + 2a–2c + 3); **Block 2/Schritt 4 + 5 + 6 + 7 + 8 + 9 ✅**.
+**Nächster Schritt: BAUPLAN Block 2/Schritt 10 — Kalibrierung + Statistik/Vergleich** (`docs/KALKULATION_KATALOG.md` §5.1;
+Korrekturfaktoren aus der Historie Vor→Nachkalkulation über `domain/nachkalkulation.js`, Trefferquote; optional KI Mistral
+EU opt-in/pseudonym); danach Block-2-Schritt 11 (Baukasten-UX).
+Optional: Schritt-8/9-Folgeschritt **UI „Rechnung aus Angebot"** / **UI „Nachkalkulation/Kostenträger"** + Store-Glue;
+2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`). Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
