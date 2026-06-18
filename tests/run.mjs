@@ -24,6 +24,10 @@ import {
   istFirmenmodus, istPrivatmodus, istVereinsmodus, zeigeAnsicht, sichtbareAnsichten,
   FEATURE, FEATURE_LISTE, zeigeFeature,
 } from '../src/domain/nutzungsmodus.js';
+import {
+  BACKUP_STRATEGIEN, DEFAULT_BACKUP_STRATEGIE, normalizeBackupStrategie,
+  backupZiel, backupDateiname, istBackupDatei,
+} from '../src/domain/backupStrategie.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
@@ -3399,6 +3403,41 @@ await section('Nutzungsmodus (P1): fachliche Feature-Gates', () => {
     !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.RECHNUNGEN) &&
     !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.MAHNWESEN) &&
     !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.MITARBEITER));
+});
+
+await section('Datensicherung (Schritt 3): backupStrategie', () => {
+  ok('Strategien = download + ordner', BACKUP_STRATEGIEN.length === 2 &&
+    BACKUP_STRATEGIEN.includes('download') && BACKUP_STRATEGIEN.includes('ordner'));
+  ok('Default = download (überall verfügbar)', DEFAULT_BACKUP_STRATEGIE === 'download');
+
+  // Normalisierung: Unbekanntes/leeres → Default; Gültiges bleibt.
+  ok('normalize: unbekannt → download', normalizeBackupStrategie('quatsch') === 'download');
+  ok('normalize: undefined → download', normalizeBackupStrategie(undefined) === 'download');
+  ok('normalize: ordner bleibt ordner', normalizeBackupStrategie('ordner') === 'ordner');
+
+  // Ziel-Entscheidung: Ordner nur, wenn Strategie + API + gemerkter Ordner zusammenkommen.
+  ok('Ziel: ordner nur mit API + gemerktem Ordner',
+    backupZiel({ strategie: 'ordner', ordnerApiVerfuegbar: true, hatOrdner: true }) === 'ordner');
+  ok('Ziel: ordner ohne API → download (Tablet-Fallback)',
+    backupZiel({ strategie: 'ordner', ordnerApiVerfuegbar: false, hatOrdner: true }) === 'download');
+  ok('Ziel: ordner ohne gemerkten Ordner → download',
+    backupZiel({ strategie: 'ordner', ordnerApiVerfuegbar: true, hatOrdner: false }) === 'download');
+  ok('Ziel: download-Strategie ignoriert Ordner',
+    backupZiel({ strategie: 'download', ordnerApiVerfuegbar: true, hatOrdner: true }) === 'download');
+  ok('Ziel: leere Eingabe → download', backupZiel({}) === 'download');
+
+  // Dateiname: stabile, sortierbare Form mit Sekunden-Zeitstempel.
+  const name = backupDateiname(new Date('2026-06-18T09:07:05.000Z'));
+  ok('Dateiname Form korrekt', name === 'bookledgerpro-backup-2026-06-18-09-07-05.blpr.json');
+  ok('Dateiname endet auf .blpr.json', /\.blpr\.json$/.test(backupDateiname()));
+
+  // Drag-and-drop-Vorfilter: an Endung ODER am Klartext-Magic erkennen.
+  ok('istBackupDatei: .blpr.json-Endung', istBackupDatei({ name: 'x.blpr.json' }));
+  ok('istBackupDatei: rohes JSON mit Magic',
+    istBackupDatei({ name: 'export.json', text: '{ "magic": "BLPR-BACKUP", "sealed": "…" }' }));
+  ok('istBackupDatei: Fremd-JSON → nein', !istBackupDatei({ name: 'daten.json', text: '{ "foo": 1 }' }));
+  ok('istBackupDatei: PDF → nein', !istBackupDatei({ name: 'beleg.pdf', text: '%PDF' }));
+  ok('istBackupDatei: leer → nein', !istBackupDatei({}));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

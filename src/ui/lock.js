@@ -6,7 +6,10 @@
 import { el, mount } from './dom.js';
 import { t } from './i18n.js';
 import { setupVault, unlockVault, vaultExists } from '../core/vault.js';
-import { exportBackupFile } from '../core/backup.js';
+import { exportBackupSmart } from '../core/backup.js';
+import { supportsDirectoryPicker, pickDirectory } from '../core/files.js';
+import { merkeBackupOrdner } from '../core/backupOrdner.js';
+import { BACKUP_STRATEGIEN, DEFAULT_BACKUP_STRATEGIE } from '../domain/backupStrategie.js';
 import { updateSettings } from '../state.js';
 import { MycelMark } from './mycel.js';
 import { createMycelBackground } from './mycelCanvas.js';
@@ -402,14 +405,50 @@ function renderOnboarding(container, resolve, opts = {}) {
     const finish = el('button', { class: 'btn btn-primary', text: t('onboard.finish'), disabled: true });
     finish.setAttribute('disabled', '');
 
+    // Sicherungs-Strategie schon im Onboarding wählbar (Schritt 3) — in den Einstellungen
+    // änderbar. Default Download (überall verfügbar); „Ordner" braucht File System Access.
+    let strategie = DEFAULT_BACKUP_STRATEGIE;
+    const apiDa = supportsDirectoryPicker();
+
+    const ordnerBtn = el('button', { class: 'btn btn-sm', text: t('backup.folderPick') });
+    const ordnerHinweis = el('p', { class: 'muted small' });
+    const ordnerZeile = el('div', { class: 'backup-folder', style: 'display:none' }, [ordnerBtn, ordnerHinweis]);
+    ordnerBtn.addEventListener('click', async () => {
+      const h = await pickDirectory();
+      if (h) { await merkeBackupOrdner(h); ordnerHinweis.textContent = t('backup.folderCurrent').replace('{ordner}', h.name); }
+    });
+
+    const segWrap = el('div', { class: 'segmented' });
+    const renderSeg = () => {
+      segWrap.replaceChildren(...BACKUP_STRATEGIEN.map((val) => el('button', {
+        class: 'seg' + (strategie === val ? ' active' : ''),
+        text: t('backup.strategie.' + val),
+        onClick: async () => {
+          strategie = val;
+          await updateSettings({ backupStrategie: val });
+          ordnerZeile.style.display = (val === 'ordner') ? '' : 'none';
+          if (val === 'ordner') {
+            ordnerBtn.style.display = apiDa ? '' : 'none';
+            if (!apiDa) ordnerHinweis.textContent = t('backup.noApiHint');
+          }
+          renderSeg();
+        },
+      })));
+    };
+    renderSeg();
+
     const dl = el('button', {
       class: 'btn',
       text: t('onboard.backupDownload'),
       onClick: async () => {
-        await exportBackupFile(state.password);
-        state.backupDone = true;
-        status.textContent = t('onboard.backupDone');
-        finish.removeAttribute('disabled');
+        try {
+          const r = await exportBackupSmart(state.password, strategie);
+          state.backupDone = true;
+          status.textContent = r.ziel === 'ordner'
+            ? t('backup.savedFolder').replace('{ordner}', r.ordner).replace('{name}', r.name)
+            : t('onboard.backupDone');
+          finish.removeAttribute('disabled');
+        } catch (e) { status.textContent = String((e && e.message) || e); }
       },
     });
 
@@ -418,6 +457,8 @@ function renderOnboarding(container, resolve, opts = {}) {
     mount(container, shell([
       el('h1', { text: t('onboard.backupTitle') }),
       el('p', { class: 'muted', text: t('onboard.backupIntro') }),
+      el('div', { class: 'setting-label small', text: t('settings.backup.title') }),
+      segWrap, ordnerZeile,
       dl, status, finish,
     ], './assets/img/onboard-backup.png'));
   }

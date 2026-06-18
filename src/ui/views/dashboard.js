@@ -12,6 +12,7 @@ import { listKunden, listAuftraege } from '../../domain/crm-store.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
 import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
+import { datensicherungKarte } from '../datensicherung.js';
 
 export async function mountDashboard(host) {
   mount(host, el('section', { class: 'view' }, [el('h1', { text: t('dashboard.welcome') }), el('p', { class: 'muted', text: '…' })]));
@@ -76,5 +77,9 @@ export async function mountDashboard(host) {
       el('button', { class: 'btn', text: t('docs.quickEntry'), onClick: () => navigate('documents') }),
       el('button', { class: 'btn', text: t('nav.reports'), onClick: () => navigate('reports') }),
     ]),
+
+    // Prominente Datensicherung (Schritt 3): Backup/Restore + Drag-and-drop —
+    // Datendurabilität ist Pflicht-Feature #1, also gut sichtbar auf der Übersicht.
+    datensicherungKarte(),
   ]));
 }
