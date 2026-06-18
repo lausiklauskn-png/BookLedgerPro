@@ -25,9 +25,15 @@
 //   diesem Schritt (eigener Folgeschritt) — die Vergleiche/Angebote werden hereingereicht.
 
 import {
-  KOSTENART, KOSTENART_LISTE, kalkuliereVorwaerts,
+  KOSTENART_LISTE, kalibriereEingabe, kalkuliereKalibriert,
 } from './kalkulation.js';
 import { ANGEBOT_STATUS, interneAuswertung } from './angebote.js';
+
+// Die ANWENDUNG der Korrekturfaktoren auf eine Kern-Eingabe (kalibriereEingabe/
+// kalkuliereKalibriert) lebt seit dem Angebots-Editor-Folgeschritt im Kern
+// (domain/kalkulation.js) — eine reine Kern-Operation (Mengen-/Geld-Treiber skalieren).
+// Hier nur re-exportiert, damit die öffentliche API von kalibrierung.js stabil bleibt.
+export { kalibriereEingabe, kalkuliereKalibriert };
 
 /** Endliche Zahl oder 0 (schützt vor NaN/undefined/null). */
 function num(x) {
@@ -130,54 +136,7 @@ export function faktorWerte(faktoren = {}, opts = {}) {
   return out;
 }
 
-// ── 2) Kalibrierung in den Kalkulations-Kern zurückführen ────────────────────
-
-/** Skaliert die mengen-/geldgetriebenen Felder eines Kostenart-Blocks mit dem Faktor. */
-function skaliereBlock(block, faktor) {
-  if (!block || faktor === 1) return block;
-  const b = { ...block };
-  // Geld-/Mengen-Treiber skalieren (Ergebnis skaliert linear mit) — Sätze/Prozente bleiben.
-  for (const key of ['betragCent', 'preisProM2Cent', 'ekCent']) {
-    if (b[key] != null) b[key] = num(b[key]) * faktor;
-  }
-  if (b.stunden != null) b.stunden = num(b.stunden) * faktor;
-  return b;
-}
-
-/**
- * Wendet die Korrektur-Multiplikatoren (aus `faktorWerte`) auf eine Kern-Eingabe an:
- * skaliert je Kostenart den Mengen-/Geld-Treiber, lässt Sätze/Prozente und die internen
- * Zuschläge (Gemeinkosten%/Gewinn%/USt%) unangetastet. Reine Zuordnung — KEINE neue Formel
- * (analog domain/produktschemata.js, „füttert nur den Kern").
- * @param {object} eingabe  Eingabe für kalkuliereVorwaerts
- * @param {Object} faktoren block → Multiplikator (Default 1)
- */
-export function kalibriereEingabe(eingabe = {}, faktoren = {}) {
-  const f = (k) => {
-    const v = faktoren[k];
-    return Number.isFinite(v) && v > 0 ? v : 1;
-  };
-  return {
-    ...eingabe,
-    material: skaliereBlock(eingabe.material, f(KOSTENART.MATERIAL)),
-    maschine: skaliereBlock(eingabe.maschine, f(KOSTENART.MASCHINE)),
-    arbeit: skaliereBlock(eingabe.arbeit, f(KOSTENART.ARBEIT)),
-    zukauf: skaliereBlock(eingabe.zukauf, f(KOSTENART.ZUKAUF)),
-    montage: skaliereBlock(eingabe.montage, f(KOSTENART.MONTAGE)),
-  };
-}
-
-/**
- * Kalibrierte Vorwärtskalkulation: wie `kalkuliereVorwaerts`, aber mit den aus der Historie
- * gewonnenen Korrekturfaktoren je Kostenart. Liefert exakt das Kern-Ergebnis (cent-genau).
- * @param {object} eingabe  Eingabe für kalkuliereVorwaerts
- * @param {Object} faktoren block → Multiplikator (aus faktorWerte)
- */
-export function kalkuliereKalibriert(eingabe = {}, faktoren = {}) {
-  return kalkuliereVorwaerts(kalibriereEingabe(eingabe, faktoren));
-}
-
-// ── 3) Angebots-Trefferquote je Preisniveau ──────────────────────────────────
+// ── 2) Angebots-Trefferquote je Preisniveau ──────────────────────────────────
 
 /** Ergebnis eines Angebots aus Vertriebssicht. */
 export const ANGEBOT_ERGEBNIS = Object.freeze({
@@ -287,7 +246,7 @@ export function trefferquoteJePreisniveau(angebote = [], opts = {}) {
   return out;
 }
 
-// ── 4) Pseudonymer Aggregat-Digest (Andockpunkt für optionale KI, opt-in) ────
+// ── 3) Pseudonymer Aggregat-Digest (Andockpunkt für optionale KI, opt-in) ────
 
 /**
  * PII-FREIE Aggregat-Zusammenfassung der Historie — Korrekturfaktoren + Trefferquoten. Sie

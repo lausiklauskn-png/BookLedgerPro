@@ -29,6 +29,7 @@ const DEFAULTS = Object.freeze({
   datev: { beraterNr: '', mandantNr: '', sachkontenlaenge: 4 }, // für DATEV-EXTF-Header (Berater/Mandant)
   partnerAppUrl: '', // verbundene App (z.B. Mein-WorkFloh) — reziproke Verlinkung
   baukastenNutzungsprofil: {}, // { schemaId: {anzahl, zuletzt} } — adaptiver Angebots-Baukasten (Katalog §3): häufig genutzte Leistungsarten rutschen nach oben. Gerätelokal (verschlüsselt im Tresor), reines IDs/Zähler-Profil (keine Marge), domain/baukasten.js
+  kalibrierungAnwenden: false, // beim Anlegen einer Angebotsposition die Korrekturfaktoren aus der eigenen Historie (Vor→Nachkalkulation, domain/kalibrierung.js faktorWerte) auf die interne Kalkulation anwenden (kalkuliereKalibriert). Default aus; nur wirksam, wenn Historie vorliegt. Rein intern (Prime Directive), Katalog §5.1
 });
 
 const _state = { settings: { ...DEFAULTS }, route: 'dashboard' };

@@ -45,13 +45,21 @@ pauschale „alles = Material"-Vorbelegung verfeinert: reine Logik `domain/nachk
 Kontenplan gebaut + in `kostentraegerAnalyse` durchgereicht; `opts.kontoBlock` (manuell) gewinnt; SW `v120`, +22 →
 **1466/1466 grün**, Glue/IndexedDB statisch geprüft (Grenze: Heuristik nach Kontenklasse, keine exakte Einzelkosten-
 Zuordnung; Class-4-Gemeinkosten bleiben unklassifiziert; MASCHINE nur über Zeiteinträge).
+**Zuletzt (2026-06-18): Kalibrierte Vorwärtskalkulation im Angebots-Editor ✅** — die in Schritt 10 fertige reine Logik
+(`kalkuliereKalibriert`) ist jetzt im Editor nutzbar: Anwendungs-Primitiven `kalibriereEingabe`/`kalkuliereKalibriert` in
+den Kern `domain/kalkulation.js` verschoben (`domain/kalibrierung.js` re-exportiert → API stabil), neuer reiner
+`domain/produktschemata.js kalkuliereSchemaKalibriert`, `domain/angebote.js positionAusSchema(opts.faktoren)` rechnet die
+interne Kalkulation kalibriert + merkt `kalkulation.kalibriert`/`faktoren` (Außendokument NEUTRAL, Prime Directive), Glue
+`domain/nachkalkulation-store.js ladeKalibrierungFaktoren()`, Setting `kalibrierungAnwenden` + UI-Schalter „Erfahrungswerte
+anwenden (Kalibrierung aus N Aufträgen)" (nur mit Historie) + „kalibriert"-Badge; SW `v121`, +9 → **1475/1475 grün**,
+DOM/IndexedDB statisch geprüft.
 **Damit ist die Block-2-Kernkette (4–11) inkl. aller UIs + Test-Modus inkl. Demo-Vorbefüllung komplett.**
 Nächste offene Schritte (alle optional):
 
-1. **NÄCHSTER SCHRITT (optional), Folgeschritt zur Nachkalkulation:** echte **Zeiterfassung-/Beleg-Zuordnungs-UI je
-   Auftrag** (heute werden vorhandene Zeiten/Buchungen nur angezeigt) + **kalibrierte Vorwärtskalkulation**
-   (`kalkuliereKalibriert`, reine Logik steht) im Angebots-Editor anbieten. (Die feinere konto→Kostenart-Zuordnung ist
-   inzwischen erledigt — `domain/nachkalkulation.js` `standardKontoBlock`.)
+1. **NÄCHSTER SCHRITT (optional, verbleibend), Folgeschritt zur Nachkalkulation:** echte **Zeiterfassung-/Beleg-
+   Zuordnungs-UI je Auftrag** (heute werden vorhandene Zeiten/Buchungen nur angezeigt — eine UI, um Zeiten/Belege
+   einem Auftrag/Kostenträger zuzuordnen). (Die kalibrierte Vorwärtskalkulation im Editor ist inzwischen erledigt —
+   `domain/kalkulation.js kalkuliereKalibriert` via `positionAusSchema(opts.faktoren)`.)
 2. **Optional, Schritt 4 der Datensicherung (`docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server) +
    konfigurierbare Erinnerungs-Kadenz — **blockiert/zurückgestellt**, solange kein eigener Server existiert.
 
@@ -86,11 +94,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2 Folgeschritt — Standard-konto→Kostenart-Zuordnung**
-(reine Logik `domain/nachkalkulation.js` `kostenartFuerKonto`/`standardKontoBlock` nach SKR03-Kontenklassen + Glue
-`domain/nachkalkulation-store.js` baut die Map automatisch aus dem Kontenplan + reicht sie in `kostentraegerAnalyse`
-durch). Tests **1466/1466** · SW **v120** · 115 JS-Module. **Block 1 KOMPLETT (inkl. Test-Modus 2a–2d)**; **Block-2-
-Kernkette (Schritte 4–11) inkl. aller UIs KOMPLETT.**
-**Nächster Schritt (optional, verbleibend):** Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag + kalibrierte
-Vorwärtskalkulation (`kalkuliereKalibriert`) im Angebots-Editor.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2 Folgeschritt — Kalibrierte Vorwärtskalkulation im
+Angebots-Editor** (Anwendungs-Primitiven `kalibriereEingabe`/`kalkuliereKalibriert` in den Kern `domain/kalkulation.js`
+verschoben + re-exportiert, neuer reiner `domain/produktschemata.js kalkuliereSchemaKalibriert`, `positionAusSchema(opts.faktoren)`,
+Glue `ladeKalibrierungFaktoren()`, Setting `kalibrierungAnwenden` + UI-Schalter + „kalibriert"-Badge). Tests **1475/1475** ·
+SW **v121** · 115 JS-Module. **Block 1 KOMPLETT (inkl. Test-Modus 2a–2d)**; **Block-2-Kernkette (Schritte 4–11) inkl.
+aller UIs KOMPLETT.**
+**Nächster Schritt (optional, verbleibend):** echte Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

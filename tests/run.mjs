@@ -43,7 +43,8 @@ import {
 import {
   PRODUKT_ART, BASIS, FELD_TYP, PRODUKT_SCHEMATA, SCHEMA_IDS, schemaNach,
   feldDefaults, kalibrierbareFelder, kalibrierteDefaults, werteMitDefaults,
-  baueKostenarten, schemaEingabe, kalkuliereSchema, validateSchema, validateAlleSchemata,
+  baueKostenarten, schemaEingabe, kalkuliereSchema, kalkuliereSchemaKalibriert,
+  validateSchema, validateAlleSchemata,
 } from '../src/domain/produktschemata.js';
 import {
   ANGEBOT_STATUS, ANGEBOT_STATUS_LISTE, ANGEBOT_STATUS_DEFAULT, istAngebotStatus,
@@ -4157,6 +4158,33 @@ await section('Kalibrierung: in den Kern zurückführen', () => {
 
   // Montage: Faktor skaliert die Pauschale
   ok('Montage kalibriert ×1.4 = 700', kalkuliereKalibriert({ montage: { betragCent: 500 } }, { montage: 1.4 }).montage === 700);
+});
+
+await section('Kalibrierung: kalibrierte Vorwärtskalkulation aus Schema (Angebots-Editor)', () => {
+  // kalkuliereSchemaKalibriert == Schema-Eingabe → kalibriereEingabe → Kern.
+  const folie = schemaNach('folierung');
+  const werte = { flaecheM2: 5, preisProM2Cent: 4000, verschnittProzent: 15, verklebeStunden: 2, arbeitssatzCentProStd: 4500 };
+  const zuschlaege = { gemeinkostenProzent: 15, gewinnProzent: 20, ustProzent: 19 };
+
+  const ohne = kalkuliereSchema(folie, werte, zuschlaege);
+  // Ohne Faktoren (bzw. lauter 1-en) identisch zu kalkuliereSchema.
+  ok('Schema ohne Faktoren == kalkuliereSchema', JSON.stringify(kalkuliereSchemaKalibriert(folie, werte, zuschlaege, {}, {})) === JSON.stringify(ohne));
+  ok('Schema mit Neutral-Faktor 1 == kalkuliereSchema', JSON.stringify(kalkuliereSchemaKalibriert(folie, werte, zuschlaege, {}, { material: 1, arbeit: 1 })) === JSON.stringify(ohne));
+
+  // Material-Faktor 1.2 skaliert NUR die Material-Basis (m²-Preis), Arbeit bleibt.
+  const mit = kalkuliereSchemaKalibriert(folie, werte, zuschlaege, {}, { material: 1.2 });
+  const manuell = kalkuliereVorwaerts(kalibriereEingabe(schemaEingabe(folie, werte, zuschlaege), { material: 1.2 }));
+  ok('Schema-kalibriert == manuell komponiert', JSON.stringify(mit) === JSON.stringify(manuell));
+  ok('Material ×1.2 wirkt (Material steigt)', mit.material === Math.round(ohne.material * 1.2) && mit.arbeit === ohne.arbeit);
+  ok('kalibrierte Selbstkosten ≥ unkalibrierte', mit.selbstkosten > ohne.selbstkosten);
+
+  // positionAusSchema mit opts.faktoren: interne kalkulation kalibriert + markiert, extern neutral.
+  const posOhne = positionAusSchema(folie, { werte, zuschlaege });
+  const posMit = positionAusSchema(folie, { werte, zuschlaege, faktoren: { material: 1.2 } });
+  ok('Position ohne Faktoren: kein kalibriert-Flag', !posOhne.kalkulation.kalibriert && posOhne.kalkulation.faktoren === undefined);
+  ok('Position mit Faktoren: kalibriert-Flag + faktoren gemerkt', posMit.kalkulation.kalibriert === true && posMit.kalkulation.faktoren.material === 1.2);
+  ok('kalibrierter Einzelpreis = kalibriertes Netto', posMit.einzelpreisCent === mit.netto && posMit.einzelpreisCent > posOhne.einzelpreisCent);
+  ok('Kalibrierung dringt NICHT nach außen', !/(kalibriert|faktoren)/.test(JSON.stringify(externePosition(posMit))));
 });
 
 await section('Kalibrierung: Angebots-Trefferquote je Preisniveau', () => {

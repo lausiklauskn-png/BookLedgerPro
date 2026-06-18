@@ -100,3 +100,17 @@ export async function nachkalkulationUebersicht() {
     anzahlAngebote: (angebote || []).length,
   };
 }
+
+/**
+ * Nur die Korrekturfaktoren je Kostenart — für die KALIBRIERTE Vorwärtskalkulation im
+ * Angebots-Editor (domain/kalkulation.js `kalkuliereKalibriert`). Reicht die fertige
+ * Übersicht durch und liefert die konservativ gedeckelten Multiplikatoren (`faktorWerte`,
+ * 0,5–2,0) + die Stichprobengröße (`anzahlVergleiche` = wie viele Soll/Ist-Vergleiche
+ * dahinterstehen). Die UI zeigt die Größe transparent an und blendet die Option ohne
+ * Historie (anzahlVergleiche = 0) aus.
+ * @returns {Promise<{faktorWerte:object, faktoren:object, anzahlVergleiche:number}>}
+ */
+export async function ladeKalibrierungFaktoren() {
+  const { faktoren, faktorWerte, anzahlVergleiche } = await nachkalkulationUebersicht();
+  return { faktoren, faktorWerte, anzahlVergleiche };
+}
