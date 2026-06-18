@@ -25,7 +25,7 @@
 import { loadAccounts, listBuchungen } from './store.js';
 import { listAngebote } from './angebote-store.js';
 import { listZeiten, listMitarbeiter, listAuftraege } from './crm-store.js';
-import { kostentraegerAnalyse, zeiteintraegeAusZeiten } from './nachkalkulation.js';
+import { kostentraegerAnalyse, zeiteintraegeAusZeiten, standardKontoBlock } from './nachkalkulation.js';
 import {
   korrekturFaktoren, faktorWerte, trefferquote, trefferquoteJePreisniveau,
 } from './kalibrierung.js';
@@ -42,19 +42,23 @@ function indexBy(liste, schluessel) {
 
 /**
  * Lädt den gemeinsamen IST-Kontext einmal: festgeschriebene Buchungen + Konten-Index
- * (konto-Nr → Konto) + die in die istZeitkosten-Form gebrachten Zeiteinträge (Kostenträger
- * aus dem Auftrag, Stundenkostensatz aus dem Mitarbeiter — siehe zeiteintraegeAusZeiten).
- * @returns {Promise<{buchungen:Array, kontoIndex:Object, zeiteintraege:Array}>}
+ * (konto-Nr → Konto) + die Standard-konto→Kostenart-Zuordnung (`standardKontoBlock` nach
+ * SKR03-Kontenklasse: Wareneingang→Material, Fremdleistungen→Zukauf, Personalaufwand→Arbeit;
+ * alles übrige bleibt auf dem Default Material) + die in die istZeitkosten-Form gebrachten
+ * Zeiteinträge (Kostenträger aus dem Auftrag, Stundenkostensatz aus dem Mitarbeiter — siehe
+ * zeiteintraegeAusZeiten).
+ * @returns {Promise<{buchungen:Array, kontoIndex:Object, kontoBlock:Object, zeiteintraege:Array}>}
  */
 export async function ladeNachkalkulationKontext() {
   const [konten, buchungen, zeiten, mitarbeiter, auftraege] = await Promise.all([
     loadAccounts(), listBuchungen(), listZeiten(), listMitarbeiter(), listAuftraege(),
   ]);
   const kontoIndex = indexBy(konten, (k) => k.nummer);
+  const kontoBlock = standardKontoBlock(konten);
   const auftragIndex = indexBy(auftraege, (a) => a.id);
   const mitarbeiterIndex = indexBy(mitarbeiter, (m) => m.id);
   const zeiteintraege = zeiteintraegeAusZeiten(zeiten, auftragIndex, mitarbeiterIndex);
-  return { buchungen, kontoIndex, zeiteintraege };
+  return { buchungen, kontoIndex, kontoBlock, zeiteintraege };
 }
 
 /**
@@ -71,7 +75,7 @@ export async function ladeNachkalkulationKontext() {
  *   anzahlVergleiche:number, anzahlAngebote:number}>}
  */
 export async function nachkalkulationUebersicht() {
-  const [{ buchungen, kontoIndex, zeiteintraege }, angebote] = await Promise.all([
+  const [{ buchungen, kontoIndex, kontoBlock, zeiteintraege }, angebote] = await Promise.all([
     ladeNachkalkulationKontext(), listAngebote(),
   ]);
 
@@ -79,7 +83,7 @@ export async function nachkalkulationUebersicht() {
     .filter((a) => a.kostenstelle)
     .map((angebot) => ({
       angebot,
-      analyse: kostentraegerAnalyse(angebot, { buchungen, kontoIndex, zeiteintraege }),
+      analyse: kostentraegerAnalyse(angebot, { buchungen, kontoIndex, kontoBlock, zeiteintraege }),
     }));
 
   const vergleiche = traeger.map((t) => t.analyse.vergleich);
