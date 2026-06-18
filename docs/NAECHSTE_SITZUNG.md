@@ -16,29 +16,33 @@ Projekt: BookLedgerPro (lausiklauskn-png/bookledgerpro).
 START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/BAUPLAN.md` + `docs/NACHFOLGE_PLAN.md` +
 obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles.
 
-AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 2026-06-17 vereinbart). **Block 1
-(Vertrauen/Sicherheit) und Block 2 (Kalkulation/Angebote) sind KOMPLETT.** Block 3 ist ausgebaut: Eingangsrechnungs-Verzug
-(Gegenseite) ✅ #140 … + Dashboard-KPI überfällige **Verbindlichkeiten** ✅ #143 + **Forderungen (Mahnwesen)** ✅ #145 +
-**Liquiditätsvorschau (bald fällig) ✅ #147** + **Geldbestand + projizierter Saldo ✅ #149** + **wählbares Zeitfenster ✅** +
-**Liquiditäts-Tiefpunkt ✅ #152** + **Deckungslücke ✅ #153** + **Mindestreserve (Puffer) ✅ #154** + **Reichweite („Runway"
-— bis wann reicht das Geld?) ✅ #156** + zuletzt (2026-06-18) **Liquiditäts-Treiber (größte anstehende Bewegungen) ✅** — die
-Liquiditäts-Karte beantwortete *wie viel* bald fällig ist, *wie tief* der Saldo sinkt, *wie viel fehlt* und *bis wann* das
-Geld reicht (alles über Summen/Salden), aber nicht die naheliegende Anschlussfrage „**woran** liegt das?": welche einzelne
-Forderung sich einzutreiben lohnt, welche Verbindlichkeit groß ansteht. Reine Logik `domain/liquiditaet.js` (node-getestet):
-**`groessteFaellige({forderungen, verbindlichkeiten, heute, horizontTage, limit})`** + `LIQUIDITAET_TREIBER_DEFAULT` (3) —
-die nach offenem Betrag absteigend sortierten bald fälligen Posten aus DEMSELBEN Fenster wie `baldFaellig` (nicht
-überfällig), je Eintrag `{richtung:'ein'|'aus', betragCent, faelligAm, name, referenz}`, auf `limit` gekürzt, ≤0-Beträge
-raus, deterministische Sortierung (Betrag → früheste Fälligkeit → Name). UI `ui/views/dashboard.js`: Liste „Größte
-anstehende Bewegungen" in der Liquiditäts-Karte (Wer/Referenz/Datum links, vorzeichenbehafteter Betrag rechts — Eingang
-+/grün, Ausgang −/rot) über das bestehende `report-line`-Layout. **bucht nichts**. i18n de+en
-(`dashboard.liquidityDriversLabel`/`…DriverIn`/`…DriverOut`), SW `v135` (kein neues Modul), +14 → **1689/1689** grün,
-DOM/IndexedDB statisch geprüft. **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR,
-jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden). **Hinweis:** Ist die Sitzung an genau einen
+AUFGABE DIESER SITZUNG: **`docs/BAUPLAN.md` Block 4 — V-Lohn (Lohn-Buchungskern) weiterbauen.** Block 1 + Block 2
+KOMPLETT; Block 3 (Liquidität) ausgebaut. **Neuer finiter Track V-Lohn** (Nutzer-Entscheidung 2026-06-18, Scope
+„Lohn-Buchungskern"): BLP **bucht** Lohn/Gehalt GoBD-sicher (Brutto-Methode), **berechnet aber KEINE** Lohnsteuer/SV
+(kein ELStAM/DEÜV/amtl. Tabellen — die Beträge kommen aus der Entgeltabrechnung des Lohnbüros/Beraters). **Erledigt:**
+**L1 ✅ #158** reine Logik `domain/lohnbuchung.js` (`lohnBuchungZeilen`/`lohnBuchungEntwurf`/`validateLohnlauf`: Soll 4120
+Brutto + 4130 AG-SV, Haben 1200/1740 Netto + 1741 Steuern + 1742 SV) + Seed-Konten 4110/1740/1741/1742; **L2 ✅ #159**
+Store `domain/lohn-store.js` (verschlüsselt; `bucheLohnlauf` → `saveEntwurf`) + reine `normalizeLohnlauf`/
+`lohnkontoAggregat`/`lohnlaufBuchungsdatum`; **L3 ✅ #160** UI `ui/views/lohn.js` (NAV „Lohn", privat/verein ausgeblendet)
+— end-to-end bedienbar. **SW `v138`, Tests `1735/1735` grün, 120 JS-Module.**
+
+**⏭ NÄCHSTER SCHRITT: V-Lohn L4** — monatliche **Lohnsteuer-Anmeldung als Kennzahlen-Datenpaket** (LSt+SolZ+KiSt je
+Monat aus den Lohnläufen aggregiert → strukturiertes Übergabe-Datenpaket, analog USt-VA `export.buildElsterVaPaket`;
+**kein** ERiC-Direktversand). Reine Logik zuerst node-getestet, dann UI/Karte. Danach **L5** SV-/LSt-Zahlungsübersicht
+(offene Verbindlichkeiten 1741/1742) und **L6** Doku `docs/LOHN.md` + Abschluss. Plan: `docs/BAUPLAN.md` Block 4 (L1–L6).
+
+**Danach (ausdrücklicher Nutzer-Wunsch, eigene Sitzung/fremdes Repo):** Befehl an **Mein-WorkFloh** —
+**Test-Modus (Sandbox) nach `docs/TEST_MODUS.md`** (⇄-Abschnitt „Übertrag an Mein-WorkFloh").
+
+**Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln grün +
+gemergt; reine Logik ZUERST node-getestet, dann UI „statisch geprüft"). **Hinweis:** Ist die Sitzung an genau einen
 Branch gebunden, dürfen Feature + Abschlussbrief in einer PR liegen.
 
-Nächste offene Schritte (alle optional):
-1. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen
-   (zuletzt: Dashboard-Karte „Liquiditätsvorschau" mit Reichweite-Bilanz + Tiefpunkt-Hinweis + Deckungslücken-Warnung + Mindestreserve-Eingabe + umschaltbarem Zeitfenster 7/14/30/90 Tage + Treiber-Liste „Größte anstehende Bewegungen").
+Nächste offene Schritte (Reihenfolge):
+1. **V-Lohn L4–L6** (siehe oben) — der finite Lohn-Track zu Ende bauen.
+2. **Mein-WorkFloh Test-Modus** (über den Nutzer, fremdes Repo).
+3. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — u. a. die neue **Lohn-Ansicht** (Lohnlauf
+   erfassen → Live-Vorschau → speichern → „Buchen (Entwurf)" → im Journal festschreiben; Lohnkonto je Mitarbeiter).
 2. **Sonst:** umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server;
    WorkFloh-Gegenstücke — fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt
    blockiert:** Lighthouse/Perf, lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
@@ -74,16 +78,14 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditäts-Treiber (größte anstehende Bewegungen)**
-(Folgeschritt zur Reichweite): reine Logik `domain/liquiditaet.js` **`groessteFaellige({forderungen, verbindlichkeiten,
-heute, horizontTage, limit})`** + `LIQUIDITAET_TREIBER_DEFAULT` (3) — die nach offenem Betrag absteigend sortierten bald
-fälligen Posten je Eintrag `{richtung, betragCent, faelligAm, name, referenz}`, auf `limit` gekürzt; UI
-`ui/views/dashboard.js`: Liste „Größte anstehende Bewegungen" in der Liquiditäts-Karte. Tests **1689/1689** · SW **v135** ·
-117 JS-Module.
-**Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung + Verzugsrisiko-KPI in
-Verbindlichkeiten-Ansicht + beidseitige Überfälligkeits-KPI #143/#145 + Liquiditätsvorschau #147 + Geldbestand/
-Projektion #149 + wählbares Zeitfenster + Tiefpunkt #152 + Deckungslücke #153 + Mindestreserve #154 + Reichweite #156 +
-Treiber).**
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 4 — V-Lohn L1–L3 (Lohn-Buchungskern)**: reine Logik
+`domain/lohnbuchung.js` (Brutto-Methode, +Store/Aggregat) + UI `ui/views/lohn.js` — Lohnbuchhaltung end-to-end
+bedienbar (erfassen → Live-Vorschau → speichern → „Buchen (Entwurf)" → Lohnkonto). Tests **1735/1735** · SW **v138** ·
+120 JS-Module. **⏭ Nächster Schritt: V-Lohn L4** (monatliche Lohnsteuer-Anmeldung als Kennzahlen-Datenpaket), dann L5
+(SV-/LSt-Zahlungsübersicht), L6 (Doku `docs/LOHN.md`). **Danach (Nutzer-Wunsch):** Mein-WorkFloh Test-Modus
+(`docs/TEST_MODUS.md`).
+**Block 1 + Block 2 KOMPLETT; Block 3 (Liquidität) ausgebaut inkl. Treiber #157; Block 4 (V-Lohn) L1 #158 + L2 #159 +
+L3 #160 erledigt, L4–L6 offen.**
 **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
 oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
