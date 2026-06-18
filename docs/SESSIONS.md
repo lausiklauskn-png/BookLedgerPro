@@ -5,6 +5,45 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2/Schritt 8: Angebot → Rechnung-Übernahme (rein) [PR #129, Branch `claude/quote-to-invoice-transfer-4gvaof`]
+
+**Ausgangslage / Auswahl**
+- Block 1 komplett; Block 2/Schritte 4–7 erledigt. Laut `docs/BAUPLAN.md` ist der nächste Schritt die **Angebot →
+  Rechnung-Übernahme** (`docs/KALKULATION_KATALOG.md` §4/§7a) — bewusst **reine Logik, ohne UI** (eigener Folgeschritt).
+- **Zwei getrennte Kreise (GoBD):** der freie Angebotskreis (`AN-JJJJ-NNNN`) und der strikte §14-Kreis bleiben getrennt;
+  die Übernahme **referenziert** die Angebotsnummer, benutzt sie aber nie wieder.
+
+**Was getan** (reine Logik node-getestet — **+28 → 1326/1326**)
+- **`src/domain/angebotUebernahme.js`** (rein, node-getestet):
+  - **`validateAngebotUebernahme`/`darfAngebotUebernehmen`** — übernehmbar nur bei Status `angenommen`, gültiger
+    Angebotsnummer (Referenz) und mindestens einer Position (nicht-werfend, UI zeigt Gründe als Hinweis).
+  - **`uebernahmeNummer({settings, seq, jahr})`** — Nummern-Politik je Setting `rechnungsstelle` (Schritt 4):
+    `blp` → echte §14-Nummer (`formatRechnungsnummer`, `vorlaeufig=false`, Kreis `paragraph14`); `extern` → vorläufige
+    Vorlage `ENT-JJJJ-NNNN` (`vorlaeufigeRechnungsnummer`, `vorlaeufig=true`, Kreis `vorlaeufig`). Default = `blp`.
+  - **`angebotUebernahmeEntwurf`** — baut den Buchungs-/Rechnungs-Entwurf **ausschließlich** aus `externesAngebot`
+    (Prime Directive, Whitelist) → Buchungszeilen über `invoicing.rechnungZeilen` (Soll Forderung / Haben Erlöse+USt),
+    derselbe Kern wie `rechnungAusAuftrag`; `angebotsnummer` wird referenziert, nicht wiederverwendet; Klartext-
+    Beschriftung „Rechnung …" (blp) vs. „Vorlage … (vorläufig)" (extern); Jahr aus `datum` ableitbar; kundeId/
+    kostenstelle übernommen.
+- **`sw.js`:** `CACHE_VERSION` → **v112**, Modul `./src/domain/angebotUebernahme.js` precached.
+- **`tests/run.mjs`:** +28 Prüfungen (Übernehmbarkeit, Nummern-Politik blp/extern/Default, Entwurf-Aufbau,
+  Referenz ≠ Wiederverwendung, Zeilen identisch zum direkten Kern, **Prime Directive: kein `kalkulation`/Marge/
+  Selbstkosten im Entwurf-JSON**).
+
+**Stand**
+- `node tests/run.mjs` → **1326/1326 grün**. PR #129 (Draft → ready → CI → merge).
+- Docs fortgeschrieben: BAUPLAN Schritt 8 abgehakt, PULS „START HIER" + Kopf-Status + Footer auf Schritt 9,
+  OFFENE_PUNKTE + NAECHSTE_SITZUNG.
+
+**Offen / Nächstes**
+- **Block 2/Schritt 9 — Auftrags-Kostenträger + Nachkalkulation**: Material/Belege/Zeit je Auftrag sammeln
+  (`payables`/`costcenters`/Belege/`belegRef`) → Soll/Ist-Vergleich. Danach 10 (Kalibrierung/Statistik) + 11 (Baukasten-UX).
+- **Grenze (ehrlich):** reine Logik, **kein UI** in diesem Schritt; kein Headless-Browser. Die laufende Nummer (`seq`)
+  kommt später aus einem Zähler je Kreis (I/O, `crm-store`) — diese Schicht bekommt `seq`/`jahr` hereingereicht.
+  **Folgeschritt offen:** UI „Rechnung aus Angebot" + Store-Glue (Zähler je Kreis, `saveEntwurf`, Angebot→archiviert).
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2/Schritt 7: Angebote-Kern in BLP (rein, zwei Schichten) [PR #128, Branch `claude/block2-step7-quotation-8wfjxz`]
 
 **Ausgangslage / Auswahl**

@@ -66,6 +66,10 @@ import { auftragSummen, darfWechseln, validateAuftrag, auftragOffen, auftragGeza
   darfAuftragBearbeiten, anwendeAuftragEdit, AUFTRAG_EDIT_FELDER } from '../src/domain/orders.js';
 import { rechnungZeilen, rechnungsUebernahmeEntwurf, validateRechnungsUebernahme,
   zahlungsUebernahmeEntwurf, validateZahlungsUebernahme } from '../src/domain/invoicing.js';
+import {
+  UEBERNAHME_KREIS, validateAngebotUebernahme, darfAngebotUebernehmen,
+  uebernahmeNummer, angebotUebernahmeEntwurf,
+} from '../src/domain/angebotUebernahme.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
 import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, istEinfacherSatz, buildUstVa, centsToComma, ustVaToCsv, buildAnlagenverzeichnisCsv, buildUebergabeText } from '../src/domain/export.js';
@@ -3812,6 +3816,69 @@ await section('Angebote: Factory & Validierung', () => {
   ok('Menge 0 → Fehler', validateAngebot({ ...a, positionen: [{ menge: 0, einzelpreisCent: 100 }] }).some((e) => /Menge/.test(e)));
   ok('negativer Preis → Fehler', validateAngebot({ ...a, positionen: [{ menge: 1, einzelpreisCent: -1 }] }).some((e) => /Einzelpreis/.test(e)));
   ok('kein Angebot → Fehler', validateAngebot(null).length > 0);
+});
+
+await section('Kalkulation Block 2/Schritt 8: Angebot → Rechnung-Übernahme (rein)', () => {
+  // Ein angenommenes Angebot mit interner Kalkulation (Schema) → externe Übernahme.
+  const pos = positionAusSchema('folierung', {
+    werte: { flaecheM2: 5, preisProM2Cent: 4000, verschnittProzent: 15, verklebeStunden: 2, arbeitssatzCentProStd: 4500 },
+    zuschlaege: { gemeinkostenProzent: 15, gewinnProzent: 20, ustProzent: 19 },
+    beschreibung: 'Teilfolierung Transporter',
+  });
+  let angebot = neuesAngebot({ titel: 'Folierung', kundeId: 'kunde:1', kostenstelle: 'ks:3000', positionen: [pos] });
+  angebot = vergebeAngebotsnummer(angebot, [], 2026);          // AN-2026-0001
+  // entwurf → offen → angenommen
+  angebot = setzeAngebotStatus(angebot, ANGEBOT_STATUS.OFFEN).angebot;
+  angebot = setzeAngebotStatus(angebot, ANGEBOT_STATUS.ANGENOMMEN).angebot;
+
+  // --- Übernehmbarkeit ---
+  ok('angenommenes Angebot ist übernehmbar', darfAngebotUebernehmen(angebot));
+  ok('Entwurf NICHT übernehmbar', !darfAngebotUebernehmen(neuesAngebot({ titel: 'x', positionen: [pos] })));
+  ok('offenes Angebot NICHT übernehmbar', !darfAngebotUebernehmen({ ...angebot, status: ANGEBOT_STATUS.OFFEN }));
+  ok('ohne Angebotsnummer → Fehler', validateAngebotUebernahme({ ...angebot, nummer: '' }).some((e) => /Angebotsnummer/.test(e)));
+  ok('ohne Positionen → Fehler', validateAngebotUebernahme({ ...angebot, positionen: [] }).some((e) => /Position/.test(e)));
+  ok('kein Angebot → Fehler', validateAngebotUebernahme(null).length > 0);
+
+  // --- Nummern-Politik: blp → §14-Nummer ---
+  const nBlp = uebernahmeNummer({ settings: { rechnungsstelle: 'blp' }, seq: 7, jahr: 2026 });
+  ok('blp: echte §14-Nummer', nBlp.nummer === '2026-0007' && nBlp.vorlaeufig === false && nBlp.kreis === UEBERNAHME_KREIS.PARAGRAF14);
+  // Default (kein Setting) = blp.
+  ok('Default (kein Setting) = §14', uebernahmeNummer({ seq: 1, jahr: 2026 }).kreis === UEBERNAHME_KREIS.PARAGRAF14);
+  // extern → vorläufige ENT-Nummer.
+  const nExt = uebernahmeNummer({ settings: { rechnungsstelle: 'extern' }, seq: 7, jahr: 2026 });
+  ok('extern: vorläufige ENT-Nummer', nExt.nummer === 'ENT-2026-0007' && nExt.vorlaeufig === true && nExt.kreis === UEBERNAHME_KREIS.VORLAEUFIG);
+
+  // --- Übernahme-Entwurf (blp) ---
+  const eBlp = angebotUebernahmeEntwurf(angebot, { settings: { rechnungsstelle: 'blp' }, seq: 7, datum: '2026-06-18' });
+  ok('blp-Entwurf: §14-Nummer', eBlp.nummer === '2026-0007' && eBlp.vorlaeufig === false);
+  ok('referenziert Angebotsnummer', eBlp.angebotsnummer === 'AN-2026-0001');
+  ok('benutzt Angebotsnummer NICHT wieder', eBlp.nummer !== eBlp.angebotsnummer && !istAngebotsnummer(eBlp.nummer));
+  ok('Beschreibung nennt Rechnung + Angebot', /Rechnung 2026-0007/.test(eBlp.beschreibung) && /aus Angebot AN-2026-0001/.test(eBlp.beschreibung) && !/vorläufig/.test(eBlp.beschreibung));
+  ok('Jahr aus datum abgeleitet', angebotUebernahmeEntwurf(angebot, { settings: { rechnungsstelle: 'blp' }, seq: 3, datum: '2025-12-01' }).nummer === '2025-0003');
+  ok('Stammdaten übernommen (kundeId/kostenstelle)', eBlp.kundeId === 'kunde:1' && eBlp.kostenstelle === 'ks:3000');
+  ok('leistungsdatum fällt auf datum', eBlp.leistungsdatum === '2026-06-18');
+
+  // Buchungszeilen = derselbe Kern wie rechnungAusAuftrag (Soll Forderung / Haben Erlöse+USt).
+  const externDoc = externesAngebot(angebot);
+  const direkt = rechnungZeilen({ positionen: externDoc.positionen });
+  ok('summen = Angebots-Summen (extern)', eBlp.summen.brutto === externDoc.brutto && eBlp.summen.netto === externDoc.netto && eBlp.summen.ust === externDoc.ust);
+  ok('zeilen identisch zum direkten Kern', JSON.stringify(eBlp.zeilen) === JSON.stringify(direkt.zeilen));
+  ok('Soll-Forderung = Brutto', zeile(eBlp.zeilen, '1400', 'S').betrag === externDoc.brutto);
+  ok('Haben-Erlös 19% = Netto', zeile(eBlp.zeilen, '8400', 'H').betrag === externDoc.netto);
+  ok('Haben-USt 19% vorhanden', !!zeile(eBlp.zeilen, '1776', 'H'));
+
+  // --- Prime Directive: NICHTS Internes im Entwurf ---
+  const entwurfJson = JSON.stringify(eBlp);
+  ok('Entwurf hat keine kalkulation', !/kalkulation/.test(entwurfJson));
+  ok('Entwurf verrät keine Marge/Verschnitt/Selbstkosten', !/(verschnitt|gewinnProzent|maschinensatz|selbstkosten|deckungsbeitrag|gemeinkosten)/i.test(entwurfJson));
+
+  // --- Übernahme-Entwurf (extern) ---
+  const eExt = angebotUebernahmeEntwurf(angebot, { settings: { rechnungsstelle: 'extern' }, seq: 7, datum: '2026-06-18' });
+  ok('extern-Entwurf: vorläufige ENT-Nummer', eExt.nummer === 'ENT-2026-0007' && eExt.vorlaeufig === true && eExt.kreis === UEBERNAHME_KREIS.VORLAEUFIG);
+  ok('extern: Beschreibung kennzeichnet „vorläufig"', /Vorlage ENT-2026-0007/.test(eExt.beschreibung) && /vorläufig/.test(eExt.beschreibung) && /aus Angebot AN-2026-0001/.test(eExt.beschreibung));
+  ok('extern: referenziert Angebot, eigene Nummer ≠ Angebot', eExt.angebotsnummer === 'AN-2026-0001' && eExt.nummer !== eExt.angebotsnummer);
+  ok('extern: gleiche Buchungssummen wie blp (nur Nummer/Politik anders)', JSON.stringify(eExt.zeilen) === JSON.stringify(eBlp.zeilen));
+  ok('extern: ENT-Nummer ist keine §14-Nummer', !/^\d{4}-\d{4}$/.test(eExt.nummer));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
