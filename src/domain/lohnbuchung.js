@@ -128,3 +128,103 @@ export function lohnBuchungEntwurf(e = {}, opts = {}) {
     auszahlung: res.auszahlung,
   };
 }
+
+// 'YYYY-MM' oder '' (defensiv).
+function monatNormal(m) {
+  const s = String(m || '').slice(0, 7);
+  return /^\d{4}-\d{2}$/.test(s) ? s : '';
+}
+
+/**
+ * Normalisiert einen (persistierten) Lohnlauf: säubert die Cent-Eingaben und RECHNET die
+ * abgeleiteten Felder (Netto/Steuersumme/SV-Summe) konsistent über `lohnBuchungZeilen` NACH —
+ * eine einzige Wahrheitsquelle, egal was im Record stand. Rein.
+ * @param {object} l roher Lohnlauf
+ * @returns {{mitarbeiterId:?string, name:string, monat:string, bruttoCent:number,
+ *   lohnsteuerCent:number, solzCent:number, kirchensteuerCent:number, svAnCent:number,
+ *   svAgCent:number, nettoCent:number, steuerSummeCent:number, svSummeCent:number, auszahlung:string}}
+ */
+export function normalizeLohnlauf(l = {}) {
+  const e = {
+    bruttoCent: c(l.bruttoCent),
+    lohnsteuerCent: c(l.lohnsteuerCent),
+    solzCent: c(l.solzCent),
+    kirchensteuerCent: c(l.kirchensteuerCent),
+    svAnCent: c(l.svAnCent),
+    svAgCent: c(l.svAgCent),
+  };
+  const r = lohnBuchungZeilen(e, { auszahlung: l.auszahlung });
+  return {
+    mitarbeiterId: l.mitarbeiterId ?? null,
+    name: String(l.name || ''),
+    monat: monatNormal(l.monat),
+    ...e,
+    nettoCent: r.nettoCent,
+    steuerSummeCent: r.steuerSummeCent,
+    svSummeCent: r.svSummeCent,
+    auszahlung: r.auszahlung,
+  };
+}
+
+/**
+ * Buchungsdatum eines Lohnlaufs: der MONATSLETZTE des Abrechnungsmonats (Lohn wird i. d. R.
+ * zum Monatsende gebucht). Ohne erkennbaren Monat → `heute` (Default: heutiges Datum). Rein.
+ * @param {string} monat 'YYYY-MM'
+ * @param {string} [heute] ISO-Datum (Fallback)
+ * @returns {string} 'YYYY-MM-TT'
+ */
+export function lohnlaufBuchungsdatum(monat, heute) {
+  const fallback = heute || new Date().toISOString().slice(0, 10);
+  const m = monatNormal(monat);
+  if (!m) return fallback;
+  const [y, mm] = m.split('-').map(Number);
+  const tag = new Date(Date.UTC(y, mm, 0)).getUTCDate(); // Tag 0 des Folgemonats = letzter Tag
+  return `${m}-${String(tag).padStart(2, '0')}`;
+}
+
+/**
+ * Lohnkonto-Aggregat: verdichtet viele Lohnläufe je Mitarbeiter (Jahressummen) + Gesamtsumme.
+ * Optional auf ein `jahr` gefiltert (über den Abrechnungsmonat). Rein — die abgeleiteten Felder
+ * jedes Laufs werden über `normalizeLohnlauf` frisch gerechnet (konsistent).
+ * @param {Array} laeufe Lohnläufe (roh oder normalisiert)
+ * @param {{jahr?:number|string}} [opts]
+ * @returns {{jahr:?number, proMitarbeiter:Array, summe:{anzahl:number, bruttoCent:number,
+ *   steuerSummeCent:number, svSummeCent:number, nettoCent:number, agAnteilCent:number}}}
+ */
+export function lohnkontoAggregat(laeufe = [], opts = {}) {
+  const jahr = (opts.jahr != null && opts.jahr !== '') ? Number(opts.jahr) : null;
+  const byId = new Map();
+  const summe = { anzahl: 0, bruttoCent: 0, steuerSummeCent: 0, svSummeCent: 0, nettoCent: 0, agAnteilCent: 0 };
+  for (const raw of laeufe || []) {
+    if (!raw) continue;
+    const l = normalizeLohnlauf(raw);
+    const ljahr = l.monat ? Number(l.monat.slice(0, 4)) : null;
+    if (jahr != null && ljahr !== jahr) continue;
+    const id = l.mitarbeiterId != null ? String(l.mitarbeiterId) : (l.name || 'unbekannt');
+    let m = byId.get(id);
+    if (!m) {
+      m = { mitarbeiterId: l.mitarbeiterId ?? null, name: l.name, anzahl: 0, bruttoCent: 0,
+        steuerSummeCent: 0, svAnCent: 0, svAgCent: 0, svSummeCent: 0, nettoCent: 0, monate: [] };
+      byId.set(id, m);
+    }
+    if (l.name && !m.name) m.name = l.name;
+    m.anzahl++;
+    m.bruttoCent += l.bruttoCent;
+    m.steuerSummeCent += l.steuerSummeCent;
+    m.svAnCent += l.svAnCent;
+    m.svAgCent += l.svAgCent;
+    m.svSummeCent += l.svSummeCent;
+    m.nettoCent += l.nettoCent;
+    if (l.monat && !m.monate.includes(l.monat)) m.monate.push(l.monat);
+    summe.anzahl++;
+    summe.bruttoCent += l.bruttoCent;
+    summe.steuerSummeCent += l.steuerSummeCent;
+    summe.svSummeCent += l.svSummeCent;
+    summe.nettoCent += l.nettoCent;
+    summe.agAnteilCent += l.svAgCent;
+  }
+  const proMitarbeiter = [...byId.values()]
+    .map((m) => ({ ...m, monate: m.monate.slice().sort() }))
+    .sort((a, b) => b.bruttoCent - a.bruttoCent || (a.name || '').localeCompare(b.name || ''));
+  return { jahr, proMitarbeiter, summe };
+}

@@ -153,6 +153,7 @@ import {
 } from '../src/domain/liquiditaet.js';
 import {
   LOHN_KONTEN, LOHN_AUSZAHLUNG, lohnNettoCent, validateLohnlauf, lohnBuchungZeilen, lohnBuchungEntwurf,
+  normalizeLohnlauf, lohnkontoAggregat, lohnlaufBuchungsdatum,
 } from '../src/domain/lohnbuchung.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
@@ -3011,6 +3012,54 @@ await section('Lohnbuchung: validateLohnlauf (Plausibilität)', () => {
   ok('falsches Netto → Fehler', validateLohnlauf({ bruttoCent: 300000, lohnsteuerCent: 40000, svAnCent: 60000, nettoCent: 999 }).ok === false);
   ok('passendes Netto → ok', validateLohnlauf({ bruttoCent: 300000, lohnsteuerCent: 40000, svAnCent: 60000, nettoCent: 200000 }).ok === true);
   ok('ungültige Eingabe → Entwurf null', lohnBuchungEntwurf({ bruttoCent: 0 }) === null);
+});
+
+await section('Lohnbuchung: normalizeLohnlauf (abgeleitete Felder konsistent)', () => {
+  // Abgeleitete Felder werden NEU gerechnet, auch wenn der Record falsche mitbringt.
+  const n = normalizeLohnlauf({
+    mitarbeiterId: 'm1', name: 'Erika', monat: '2026-06-15', // Monat wird auf YYYY-MM gekürzt
+    bruttoCent: 300000, lohnsteuerCent: 40000, solzCent: 2200, kirchensteuerCent: 3600,
+    svAnCent: 60000, svAgCent: 60000, nettoCent: 999, // falsches Netto → wird überschrieben
+  });
+  ok('Monat auf YYYY-MM gekürzt', n.monat === '2026-06');
+  ok('Netto frisch gerechnet', n.nettoCent === 194200);
+  ok('Steuersumme/SV-Summe gerechnet', n.steuerSummeCent === 45800 && n.svSummeCent === 120000);
+  ok('Stammfelder erhalten', n.mitarbeiterId === 'm1' && n.name === 'Erika');
+  ok('ungültiger Monat → leer', normalizeLohnlauf({ monat: 'Juni', bruttoCent: 1000 }).monat === '');
+});
+
+await section('Lohnbuchung: lohnlaufBuchungsdatum (Monatsletzter)', () => {
+  ok('Juni → 30.', lohnlaufBuchungsdatum('2026-06') === '2026-06-30');
+  ok('Februar 2026 (kein Schaltjahr) → 28.', lohnlaufBuchungsdatum('2026-02') === '2026-02-28');
+  ok('Februar 2028 (Schaltjahr) → 29.', lohnlaufBuchungsdatum('2028-02') === '2028-02-29');
+  ok('Dezember → 31.', lohnlaufBuchungsdatum('2026-12') === '2026-12-31');
+  ok('ohne Monat → Fallback heute', lohnlaufBuchungsdatum('', '2026-06-18') === '2026-06-18');
+  ok('ungültiger Monat → Fallback', lohnlaufBuchungsdatum('quatsch', '2026-06-18') === '2026-06-18');
+});
+
+await section('Lohnbuchung: lohnkontoAggregat (je Mitarbeiter + Gesamt)', () => {
+  const laeufe = [
+    { mitarbeiterId: 'm1', name: 'Erika', monat: '2026-05', bruttoCent: 300000, lohnsteuerCent: 40000, svAnCent: 60000, svAgCent: 60000 },
+    { mitarbeiterId: 'm1', name: 'Erika', monat: '2026-06', bruttoCent: 300000, lohnsteuerCent: 40000, svAnCent: 60000, svAgCent: 60000 },
+    { mitarbeiterId: 'm2', name: 'Max',   monat: '2026-06', bruttoCent: 200000, lohnsteuerCent: 20000, svAnCent: 40000, svAgCent: 40000 },
+    { mitarbeiterId: 'm1', name: 'Erika', monat: '2025-12', bruttoCent: 999999, lohnsteuerCent: 0, svAnCent: 0, svAgCent: 0 }, // anderes Jahr
+  ];
+  const agg = lohnkontoAggregat(laeufe, { jahr: 2026 });
+  ok('zwei Mitarbeiter (2026)', agg.proMitarbeiter.length === 2);
+  // Erika zuerst (höherer Brutto: 600000 vs Max 200000).
+  ok('Sortierung nach Brutto', agg.proMitarbeiter[0].name === 'Erika' && agg.proMitarbeiter[1].name === 'Max');
+  const erika = agg.proMitarbeiter[0];
+  ok('Erika 2 Läufe, Brutto 600000', erika.anzahl === 2 && erika.bruttoCent === 600000);
+  ok('Erika Netto = 2×200000', erika.nettoCent === 400000); // 300000−40000−60000 = 200000 je Lauf
+  ok('Erika Monate sortiert', JSON.stringify(erika.monate) === JSON.stringify(['2026-05', '2026-06']));
+  ok('Vorjahr ausgefiltert (kein 999999)', erika.bruttoCent === 600000);
+  // Gesamtsumme 2026.
+  ok('Gesamt Brutto 800000', agg.summe.bruttoCent === 800000);
+  ok('Gesamt AG-Anteil 160000', agg.summe.agAnteilCent === 160000);
+  ok('Gesamt-Anzahl 3', agg.summe.anzahl === 3);
+  // Ohne Jahresfilter zählt der Vorjahres-Lauf mit.
+  ok('ohne Jahr → alle 4', lohnkontoAggregat(laeufe).summe.anzahl === 4);
+  ok('leer → 0', lohnkontoAggregat([]).proMitarbeiter.length === 0 && lohnkontoAggregat([]).summe.anzahl === 0);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {

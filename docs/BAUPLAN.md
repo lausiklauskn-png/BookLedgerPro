@@ -384,8 +384,13 @@
   **Haben** 1200 Bank (Netto; „auf Ziel" → 1740) + 1741 Verb. Lohn-/Kirchensteuer + 1742 Verb. soziale
   Sicherheit (AN+AG). Neue Seed-Konten **4110/1740/1741/1742** (`domain/accounts.js`). Entwurf gegen die
   Seed-Kontenliste `validateBuchung`-gültig. SW `v136`, neues Modul precached. **Rein, kein UI/Store.**
-- [ ] **L2. Lohnlauf-Store + Lohnkonto** — `domain/lohn-store.js` (verschlüsselt via encstore): Lohnläufe je
-  Mitarbeiter/Monat speichern; reines Lohnkonto-Aggregat (Jahressummen je Mitarbeiter). Node-getestet.
+- [x] **L2. Lohnlauf-Store + Lohnkonto** ✅ (2026-06-18) — Store-Glue `domain/lohn-store.js` (verschlüsselt via
+  encstore: `saveLohnlauf`/`listLohnlaeufe`/`getLohnlauf`/`deleteLohnlauf` + `bucheLohnlauf(id)` → Buchungs-Entwurf
+  über `saveEntwurf`, Datum = Monatsletzter, `buchungId` verknüpft). **Reine Logik** in `domain/lohnbuchung.js`
+  (node-getestet, +22): `normalizeLohnlauf` (abgeleitete Summen frisch + konsistent gerechnet, Monat → `YYYY-MM`),
+  `lohnkontoAggregat(laeufe, {jahr})` (je Mitarbeiter Jahressummen + Monate + Gesamtsumme, nach Brutto sortiert),
+  `lohnlaufBuchungsdatum(monat, heute)` (Monatsletzter, schaltjahr-sicher). SW `v137`, neues Modul precached.
+  IndexedDB/Krypto statisch geprüft. **Kein UI** (L3).
 - [ ] **L3. UI „Lohn"** — Ansicht: Lohnlauf je Mitarbeiter/Monat erfassen → Buchungs-Entwurf (Festschreiben
   manuell, GoBD); Lohnkonto-Liste. i18n de+en, nur Firmen-Kontext.
 - [ ] **L4. Monatliche Lohnsteuer-Anmeldung (Datenpaket)** — aggregiert LSt+SolZ+KiSt je Monat → strukturiertes
