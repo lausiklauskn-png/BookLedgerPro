@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 1/Schritt 2b — Test-Modus **Store-Glue** `core/sandboxStore.js`, PR #120; SW `v105`, 1132/1132). Davor: Schritt 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 1/Schritt 2c — Test-Modus **UI**, PR #122; SW `v106`, 1141/1141; Test-Modus 2a–2c komplett). Davor: Schritt 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -49,8 +49,14 @@ ein PR, bei grüner CI selbstständig mergen**):
   (`erstelleSandboxTresor`/`wechsleZuSandbox`/`leereSandboxTresor`/`loescheSandboxTresor`/`loescheAlleSandboxes`
   + `raeumeVerwaisteSandboxesAuf` Boot-Aufräumen via `indexedDB.databases()`, in `main.js` verdrahtet); reine
   Helfer `sandboxDbNamen`/`aktiveDbName` node-getestet; `wechsleAktivenMandant` nutzt jetzt `dbNameVon`.
-  SW `v105`, 1132/1132. **Verbleibend:** 2c UI (Tests-Bereich + dauerhafter TEST-MODUS-Banner +
-  behalten/verwerfen-Dialog + optional Demo-Vorbefüllung).
+  SW `v105`, 1132/1132.
+  ✅ **2c UI erledigt + gemergt (PR #122, 2026-06-18):** „🧪 Tests"-Bereich am Sperrbildschirm + in den
+  Einstellungen (`ui/lock.js`/`ui/shell.js`: öffnen/leeren/löschen je Test, „Neuer Test", „Alle Tests löschen",
+  verschlanktes Test-Onboarding nur Passwort); dauerhafter **TEST-MODUS-Banner**; **behalten/verwerfen-Dialog**
+  beim Verlassen (`behalteUndVerlasseSandbox`/`loescheSandboxTresor`); reine Helfer `aktiverSandbox`/
+  `naechsterTestName` node-getestet; Korrektur `initMandanten`→`aktiveDbName()`. SW `v106`, 1141/1141.
+  **★ Test-Modus (2a–2c) damit KOMPLETT.** **Verbleibend (optional, Folgeschritt):** Demo-Vorbefüllung
+  (`domain/demodaten.js`) — UI ohne sie vollständig nutzbar (man startet mit leerem Test).
 - **★ GESAMT-BAUPLAN nächste Phase:** **`docs/BAUPLAN.md`** — geordnete Reihenfolge aller vereinbarten Themen
   (Block 1 Vertrauen/Sicherheit: Roundtrip-Selbsttest → Test-Modus → Backup-UX/`backupStrategie`; Block 2
   Kalkulation/Angebote fein geschnitten; Block 3 später/blockiert). **Arbeitsweise:** mehrere saubere PRs pro

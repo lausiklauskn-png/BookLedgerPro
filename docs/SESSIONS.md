@@ -5,6 +5,49 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 1/Schritt 2c: Test-Modus — **UI** [PR #122, Branch `claude/test-modus-ui-v71y2l`]
+
+**Ausgangslage / Auswahl**
+- Schritte 2a (Sandbox-Kern, PR #118) + 2b (Store-Glue, PR #120) waren erledigt. Nächster Schritt laut
+  `docs/BAUPLAN.md`/`docs/NAECHSTE_SITZUNG.md`: die **Test-Modus-UI** (`docs/TEST_MODUS.md`, Schritt 2c).
+
+**Was getan** (reine Helfer zuerst node-getestet — **+9 → 1141/1141**)
+- **`src/domain/mandanten.js`** (rein, node-getestet): `aktiverSandbox(registry)` (aktiver Mandant nur,
+  wenn Test-Tresor → Grundlage für Banner + Verlassen-Dialog), `naechsterTestName(registry)` (fortlaufender
+  Default „Test N" über das Maximum vorhandener „Test N", keine Doppler nach Löschen).
+- **Korrektur `src/core/mandantenStore.js` `initMandanten`:** richtet die aktive DB über `aktiveDbName()`
+  (Sandbox-Flag beachtet) statt `dbNameFuer(id)` aus → ein „behaltener" Test landet beim nächsten Start
+  wieder in SEINER Sandbox-DB, nicht versehentlich in einer echten.
+- **`src/ui/lock.js`** (DOM, statisch geprüft): „🧪 Tests"-Einstieg am Sperrbildschirm (Auswahl + Unlock);
+  Tests-Verwaltung `renderTestsAuswahl` (öffnen/leeren/löschen je Test, „Neuer Test" `renderNeuerTest`,
+  „Alle Tests löschen"); **verschlanktes Test-Onboarding** (nur Test-Passwort, kein Shamir-/Backup-Gate —
+  ein Test ist ausdrücklich kein Backup); ein aktiver Test wird beim Start direkt wieder geöffnet
+  (`renderSandboxEinstieg`), mit klarem Rückweg zur echten Welt (`unlockLinks`).
+- **`src/ui/shell.js`** (DOM, statisch geprüft): dauerhafter **TEST-MODUS-Banner** (`testModusBanner`) solange
+  ein Test aktiv ist; Sperren/Wechseln aus einem Test über den **behalten/verwerfen-Dialog**
+  (`verlasseSandboxDialog`); Test-Modus-Abschnitt in den Einstellungen (`testModusSection`).
+- **`src/core/sandboxStore.js`:** `behalteUndVerlasseSandbox()` (Test behalten + aktiven Tresor zurück auf
+  einen echten Mandanten → nächster Start in der echten Welt; Test bleibt über „🧪 Tests" erreichbar).
+- **i18n** de/en (alle `test.*`-Strings), **CSS** (Banner/Modal/Tests-Liste), **`sw.js`** `CACHE_VERSION`
+  v105 → **v106**.
+
+**Stand**
+- `node tests/run.mjs` → **1141/1141 grün** (+9). `node --check` aller geänderten Module ok. CI (smoke-test)
+  grün, **PR #122 squash-gemergt**. SW **v106**, **99 JS-Module** (kein neues Modul).
+- **BAUPLAN Block 1 Schritt 2 (Test-Modus) komplett (2a–2c) ✅.**
+
+**Offen / Nächstes**
+- **Nächster Schritt: BAUPLAN Block 1/Schritt 3 — Datensicherungs-UX + `backupStrategie`** (`docs/DATENSICHERUNG.md`):
+  prominente Backup-/Restore-Knöpfe, gemerkter Zielordner, Drag-and-drop-Restore; Setting `backupStrategie`
+  (Onboarding + Einstellungen). Danach **Block 2 (Kalkulation/Angebote)** fein geschnitten.
+- **Offene Grenzen (ehrlich):** DOM-/IndexedDB-Pfade der Test-Modus-UI **nicht** headless E2E-getestet
+  (kein Headless-Browser) — statisch geprüft; reine Helfer node-getestet. **Optionale Demo-Vorbefüllung**
+  (`domain/demodaten.js`) bewusst als sauber abgegrenzter Folgeschritt offen (UI ohne sie vollständig
+  nutzbar — man startet mit leerem Test). **Vermerk:** auch **Mein-WorkFloh** soll einen Test-Modus nach
+  `docs/TEST_MODUS.md` (⇄-Abschnitt) bekommen (fremdes Repo, über den Nutzer).
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 1/Schritt 2 (Teil 2): Test-Modus — Store-Glue `core/sandboxStore.js` [PR #120, Branch `claude/sandbox-store-glue`]
 
 **Ausgangslage / Auswahl**
