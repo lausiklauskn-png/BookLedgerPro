@@ -60,6 +60,11 @@ export const SKR03_SEED = [
   // ---- Verbindlichkeiten / Steuern (Klasse 1, Passiva) ----
   { nummer: '1600', name: 'Verbindlichkeiten aus Lieferungen und Leistungen', art: KONTOART.PASSIV },
   { nummer: '1700', name: 'Sonstige Verbindlichkeiten', art: KONTOART.PASSIV },
+  // Lohn-/Gehaltsabrechnung (Brutto-Methode): Netto-Auszahlung, ans Finanzamt abzuführende
+  // Lohn-/Kirchensteuer, an die Sozialversicherungsträger abzuführende Beiträge (AN+AG-Anteil).
+  { nummer: '1740', name: 'Verbindlichkeiten aus Lohn und Gehalt', art: KONTOART.PASSIV, rolle: 'lohn_netto' },
+  { nummer: '1741', name: 'Verbindlichkeiten aus Lohn- und Kirchensteuer', art: KONTOART.PASSIV, rolle: 'lohn_steuer' },
+  { nummer: '1742', name: 'Verbindlichkeiten im Rahmen der sozialen Sicherheit', art: KONTOART.PASSIV, rolle: 'lohn_sv' },
   { nummer: '1771', name: 'Umsatzsteuer 7%', art: KONTOART.PASSIV, ust: 7, rolle: 'umsatzsteuer' },
   { nummer: '1776', name: 'Umsatzsteuer 19%', art: KONTOART.PASSIV, ust: 19, rolle: 'umsatzsteuer' },
   { nummer: '1772', name: 'Umsatzsteuer innergem. Erwerb 19%', art: KONTOART.PASSIV, ust: 19, rolle: 'umsatzsteuer_ig' },
@@ -78,6 +83,7 @@ export const SKR03_SEED = [
   { nummer: '3736', name: 'Erhaltene Skonti 19% Vorsteuer', art: KONTOART.AUFWAND, ust: 19, rolle: 'skonto_erhalten' },
   // ---- Betriebliche Aufwendungen (Klasse 4) ----
   { nummer: '4100', name: 'Löhne und Gehälter', art: KONTOART.AUFWAND },
+  { nummer: '4110', name: 'Löhne', art: KONTOART.AUFWAND },
   { nummer: '4120', name: 'Gehälter', art: KONTOART.AUFWAND },
   { nummer: '4130', name: 'Gesetzliche soziale Aufwendungen', art: KONTOART.AUFWAND },
   { nummer: '4210', name: 'Miete', art: KONTOART.AUFWAND },

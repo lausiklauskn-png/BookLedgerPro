@@ -371,6 +371,31 @@
 - [ ] **Bekannt blockiert:** Lighthouse/Perf (Headless), lokales OCR (Tesseract = nicht build-frei),
   ZUGFeRD-Erzeugen (PDF/A-3-Lib), Sage 5b–d (fremde Repos).
 
+### Block 4 — V-Lohn: Lohn-Buchungskern (build-frei, FINIT — Nutzer-Entscheidung 2026-06-18)
+> **Scope bewusst eng (vom Nutzer gewählt: „Lohn-Buchungskern").** BLP ist die **prüfungssichere
+> Buchhaltungsschicht** für die Lohnabrechnung, **NICHT die Abrechnung selbst**: Es berechnet **keine**
+> Lohnsteuer/SV, kein ELStAM, keine SV-Meldungen (DEÜV), keine amtlichen Tabellen. Du gibst die
+> bereits berechneten Beträge ein (aus der Entgeltabrechnung des Lohnbüros/Beraters/Lohnprogramms);
+> BLP kontiert sie GoBD-sicher. **Klares Ende:** 6 Schritte, je 1 PR, je node-getestet.
+- [x] **L1. Reine Buchungslogik + Lohn-Konten** ✅ (2026-06-18) — `domain/lohnbuchung.js` (rein, node-getestet,
+  +23): **Brutto-Methode** (SKR03) `lohnBuchungZeilen(e, opts)` / `lohnBuchungEntwurf` / `validateLohnlauf` /
+  `lohnNettoCent` + `LOHN_KONTEN`/`LOHN_AUSZAHLUNG`. Aus {brutto, lohnsteuer, solz, kirchensteuer, svAn, svAg}
+  die ausgeglichene Buchung: **Soll** 4120 Gehälter (Brutto) + 4130 Gesetzl. soziale Aufwendungen (AG-Anteil);
+  **Haben** 1200 Bank (Netto; „auf Ziel" → 1740) + 1741 Verb. Lohn-/Kirchensteuer + 1742 Verb. soziale
+  Sicherheit (AN+AG). Neue Seed-Konten **4110/1740/1741/1742** (`domain/accounts.js`). Entwurf gegen die
+  Seed-Kontenliste `validateBuchung`-gültig. SW `v136`, neues Modul precached. **Rein, kein UI/Store.**
+- [ ] **L2. Lohnlauf-Store + Lohnkonto** — `domain/lohn-store.js` (verschlüsselt via encstore): Lohnläufe je
+  Mitarbeiter/Monat speichern; reines Lohnkonto-Aggregat (Jahressummen je Mitarbeiter). Node-getestet.
+- [ ] **L3. UI „Lohn"** — Ansicht: Lohnlauf je Mitarbeiter/Monat erfassen → Buchungs-Entwurf (Festschreiben
+  manuell, GoBD); Lohnkonto-Liste. i18n de+en, nur Firmen-Kontext.
+- [ ] **L4. Monatliche Lohnsteuer-Anmeldung (Datenpaket)** — aggregiert LSt+SolZ+KiSt je Monat → strukturiertes
+  Übergabe-Datenpaket (analog USt-VA `buildElsterVaPaket`); **kein** ERiC-Direktversand.
+- [ ] **L5. SV-/LSt-Zahlungsübersicht** — offene Verbindlichkeiten 1741/1742 als fällige Zahlungsliste
+  (nutzt die vorhandene Payables-/Liquiditäts-Schicht).
+- [ ] **L6. Doku `docs/LOHN.md` + Abschluss** — ehrliche Grenzen (keine ELStAM/SV-Meldungen/amtl. Tabellen),
+  DoD; PULS/OFFENE_PUNKTE fortschreiben.
+
 ## Abhängigkeiten (kurz)
 8 braucht 7+4 · 7 braucht 5(+4) · 9 braucht 7 · 10 braucht 9 · 11 ist Präsentation (nach 7).
 Block 1 ist unabhängig und kommt zuerst (Sicherheit/Vertrauen).
+**Block 4 (V-Lohn):** L2 braucht L1 · L3 braucht L2 · L4/L5 brauchen L2 · L6 zuletzt.

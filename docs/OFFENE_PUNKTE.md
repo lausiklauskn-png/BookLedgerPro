@@ -278,8 +278,14 @@ verschlüsselt (`state.js firma`).
       (Saldenvortrag 9000 ODER Parameter); `buildBilanzCsv` + Bilanz-Karte in „Auswertung" (nur Bilanz-Modus), SW `v86`,
       760/760. **Grenze:** Bilanz im Konten-Sinn, keine §266-HGB-Gliederung, keine Konzernabschlüsse/E-Bilanz-Taxonomie;
       Konten nach Kontoart, nicht nach Saldovorzeichen umgegliedert. **Rest-Idee (KANN):** Eröffnungsbilanz-Eingabemaske.
-- [ ] **V-Lohn — Lohnbuchhaltung [KANN/extern].** Heute nur Zeiterfassung (`employees.js`); echte
-      Lohnabrechnung/SV/Lohnsteuer ist eigenes Produkt — i. d. R. separate Software/Berater.
+- [◑] **V-Lohn — Lohn-Buchungskern [in Arbeit, Nutzer-Entscheidung 2026-06-18].** Bewusst eng: BLP **bucht**
+      Lohn/Gehalt GoBD-sicher (Brutto-Methode), **berechnet aber keine** Lohnsteuer/SV (kein ELStAM/DEÜV/amtl.
+      Tabellen — die Beträge kommen aus der Entgeltabrechnung des Lohnbüros/Beraters). Finiter 6-Schritte-Plan
+      siehe `docs/BAUPLAN.md` Block 4 (L1–L6). **L1 ✅ (2026-06-18):** reine Logik `domain/lohnbuchung.js`
+      (`lohnBuchungZeilen`/`lohnBuchungEntwurf`/`validateLohnlauf`, +23 Tests) + Seed-Konten 4110/1740/1741/1742.
+      **Offen:** L2 Store, L3 UI, L4 LSt-Anmeldung-Datenpaket, L5 SV-/LSt-Zahlungsübersicht, L6 Doku/Abschluss.
+      **Bewusst außen vor (eigenes, zertifiziertes Produkt):** vollautomatische Brutto→Netto-Berechnung,
+      SV-Meldungen, ELStAM, Beitragsnachweise.
 - [x] **V-Multi — Mehrmandantenfähigkeit ✅ abgeschlossen (2026-06-17).** M1 ✅ (reine Schicht
       `src/domain/mandanten.js`). M2a ✅ (Core: `core/db.js` aktive DB konfigurierbar + `core/mandantenStore.js`
       Registry/`initMandanten`/`wechsleAktivenMandant`). M2b ✅ (Sperrbildschirm-UI: Auswahlliste, „Neuer
