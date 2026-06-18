@@ -230,6 +230,16 @@
   /Beleg-Zuordnung GoBD-fix; alle Zeiten = ARBEIT; DOM/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §6)
 
 ### Block 3 — später / umgebungs-blockiert
+- [x] **Liquiditäts-Mindestreserve (Puffer)** [Folgeschritt zu #153] ✅ (2026-06-18, PR #154) — die Deckungslücke (#153)
+  warnte bisher erst bei echtem Minus; viele Betriebe wollen das Geld aber nicht bis auf null herunterfahren, sondern einen
+  Sicherheitspuffer halten. Reine Logik `domain/liquiditaet.js` (node-getestet, +17 → **1663/1663**): `normalizeReserveCent`
+  (klemmt persistierten Reservebetrag auf ganze, nicht-negative Cent) + `deckungsluecke(verlauf, {reserveCent})` mit optionaler
+  **Mindestreserve als Schwelle** (Default 0 → identisch/abwärtskompatibel; Lücke greift, sobald der Tiefpunkt unter die
+  Schwelle fällt, `lueckeCent` = Schwelle − Tiefpunkt; neue Felder `reserveCent` + `negativ`). Setting `liquiditaetReserveCent`
+  (`state.js`, Default 0). UI `ui/views/dashboard.js`: Euro-Eingabefeld „Mindestreserve (Puffer)"; Lücken-Hinweis rot
+  (`hint-error`) bei echtem Minus, mild (`muted small`) bei reiner Reserve-Unterschreitung. i18n de+en, SW `v133` (kein neues
+  Modul). **bucht nichts.** **Ehrliche Grenze:** einfache Planung nach Fälligkeitsdatum, keine Finanzberatung; DOM/IndexedDB
+  statisch geprüft.
 - [x] **Liquiditäts-Deckungslücke (Unterdeckung im Fenster)** [Folgeschritt zu #152] ✅ (2026-06-18) — der Tiefpunkt-Hinweis
   (#152) zeigt den tiefsten Stand auch dann, wenn er positiv bleibt. Wenn der laufende Saldo aber zwischendurch echt ins
   Minus rutscht und sich bis zum Fenster-Ende wieder erholt, bleibt der Engpass von der End-Saldo-Ampel
