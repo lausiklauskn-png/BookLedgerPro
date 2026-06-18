@@ -32,6 +32,7 @@ import { mountCustomers } from './views/customers.js';
 import { mountOrders } from './views/orders.js';
 import { mountAngebote } from './views/angebote.js';
 import { mountNachkalkulation } from './views/nachkalkulation.js';
+import { mountLohn } from './views/lohn.js';
 import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
@@ -55,6 +56,7 @@ const NAV = [
   ['nachkalkulation', 'nav.nachkalkulation'],
   ['customers', 'nav.customers'],
   ['employees', 'nav.employees'],
+  ['lohn', 'nav.lohn'],
   ['reports', 'nav.reports'],
   ['berichte', 'nav.berichte'],
   ['network', 'nav.network'],
@@ -185,6 +187,7 @@ function renderRoute() {
   if (route === 'nachkalkulation') return void mountNachkalkulation(content);
   if (route === 'customers') return void mountCustomers(content);
   if (route === 'employees') return void mountEmployees(content);
+  if (route === 'lohn') return void mountLohn(content);
   if (route === 'legal') return void mountLegal(content);
   if (route === 'about') return mount(content, el('section', { class: 'view' }, [aboutContent()]));
   if (route === 'anleitung') return void mountAnleitung(content);

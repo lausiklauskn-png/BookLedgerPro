@@ -4144,7 +4144,7 @@ await section('Nutzungsmodus (P1): Modus-Werte + Normalisierung', () => {
 
 await section('Nutzungsmodus (P1): NAV-Ansichten-Gating', () => {
   const NAV_KEYS = ['dashboard', 'journal', 'kassenbuch', 'accounts', 'anlagen', 'documents',
-    'payables', 'orders', 'angebote', 'nachkalkulation', 'customers', 'employees', 'reports', 'berichte', 'network', 'legal',
+    'payables', 'orders', 'angebote', 'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte', 'network', 'legal',
     'anleitung', 'selbsttest', 'about', 'settings'];
   // Firma zeigt ALLES.
   ok('Firma: alle Ansichten sichtbar', sichtbareAnsichten({ nutzungsmodus: 'firma' }, NAV_KEYS).length === NAV_KEYS.length);
@@ -4156,6 +4156,8 @@ await section('Nutzungsmodus (P1): NAV-Ansichten-Gating', () => {
   ok('Privat blendet Anlagen aus', !zeigeAnsicht({ nutzungsmodus: 'privat' }, 'anlagen'));
   ok('Privat blendet Aufträge/Angebote/Nachkalkulation/Kunden/Mitarbeiter aus',
     !privatSichtbar.includes('orders') && !privatSichtbar.includes('angebote') && !privatSichtbar.includes('nachkalkulation') && !privatSichtbar.includes('customers') && !privatSichtbar.includes('employees'));
+  ok('Privat + Verein blenden Lohn aus',
+    !privatSichtbar.includes('lohn') && !sichtbareAnsichten({ nutzungsmodus: 'verein' }, NAV_KEYS).includes('lohn'));
   ok('Privat blendet Kreditoren/Berichte/Netz aus',
     !privatSichtbar.includes('payables') && !privatSichtbar.includes('berichte') && !privatSichtbar.includes('network'));
   ok('Privat behält Kern (Journal/Belege/Auswertung/Kassenbuch/Konten)',
