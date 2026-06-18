@@ -11,6 +11,7 @@ import { listBelege } from '../../domain/documents.js';
 import { listKunden, listAuftraege } from '../../domain/crm-store.js';
 import { listEingangsrechnungen } from '../../domain/payables-store.js';
 import { verzugReport, verzugAmpel, VERZUG_AMPEL } from '../../domain/eingangsverzug.js';
+import { forderungReport, forderungAmpel, FORDERUNG_AMPEL } from '../../domain/mahnwesen.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
 import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
@@ -38,6 +39,34 @@ export async function mountDashboard(host) {
     el('div', { class: 'kpi-value', text: value }),
     el('div', { class: 'kpi-label', text: label }),
   ]);
+
+  // Überfällige FORDERUNGEN (Mahnwesen) auf einen Blick — Spiegel zur Verbindlichkeiten-
+  // KPI, aber aus Gläubigersicht (dokumentierte Dashboard-Intention A1: „Kennzahl
+  // überfällige Forderungen, Summe + Anzahl"). Reine Logik mahnwesen.forderungReport/
+  // forderungAmpel (node-getestet). Nur sichtbar, wenn das Mahnwesen im Nutzungskontext
+  // aktiv ist (Privat blendet es aus) UND etwas überfällig ist. Klick → Berichte
+  // (Mahnwesen-Karte). Bucht nichts.
+  const forderungKarte = () => {
+    if (!zeigeFeature(s, FEATURE.MAHNWESEN)) return null;
+    const { uebersicht } = forderungReport(auftraege, {
+      zielTage: s.zahlungszielTage,
+      basiszinsProzent: s.verzugBasiszinsProzent,
+    });
+    if (!uebersicht.ueberfaelligAnzahl) return null;
+    const ampel = forderungAmpel(uebersicht);
+    const ampelCls = ampel === FORDERUNG_AMPEL.KRITISCH ? 'kpi-neg' : '';
+    return el('div', { class: 'card' }, [
+      el('h2', { class: 'card-title', text: t('dashboard.overdueReceivablesTitle') }),
+      el('div', { class: 'kpi-grid small-kpi' }, [
+        kpi(t('dashboard.overdueReceivablesCount'), `${uebersicht.ueberfaelligAnzahl} / ${uebersicht.anzahl}`, ampelCls),
+        kpi(t('dashboard.overdueReceivablesSum'), formatEuro(uebersicht.ueberfaelligCent), ampelCls),
+        kpi(t('dashboard.overdueReceivablesClaim'), formatEuro(uebersicht.zinsRisikoCent)),
+      ]),
+      el('div', { class: 'btn-row' }, [
+        el('button', { class: 'btn', text: t('nav.reports'), onClick: () => navigate('reports') }),
+      ]),
+    ]);
+  };
 
   // Block 3 — eigene Zahlungsdisziplin: überfällige Verbindlichkeiten auf einen Blick.
   // Reine Logik eingangsverzug.verzugReport/verzugAmpel (node-getestet). Nur sichtbar im
@@ -88,6 +117,7 @@ export async function mountDashboard(host) {
       zeigeAnsicht(s, 'orders') ? kpi(t('nav.orders'), String(auftraege.length)) : null,
     ]),
 
+    forderungKarte(),
     verzugKarte(),
 
     MycelDivider(),

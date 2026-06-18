@@ -8,6 +8,8 @@
 // + 9 %-Punkte, Verbraucher + 5 %-Punkte (§ 288 Abs. 1/2 BGB); 40-€-Pauschale nur B2B
 // (§ 288 Abs. 5). Mahngebühren/USt-Behandlung sind Einzelfall → im Zweifel Berater.
 
+import { offenePosten } from './zahlungsabgleich.js';
+
 // Tage zwischen zwei ISO-Daten (b - a) in ganzen Tagen, oder null.
 function tageDiff(a, b) {
   if (!a || !b) return null;
@@ -155,6 +157,75 @@ export function anreicherePosten(posten = [], opts = {}) {
 export function ueberfaelligSummen(angereichertePosten = []) {
   const offen = angereichertePosten.filter((p) => p.ueberfaellig);
   return { anzahl: offen.length, summeCent: offen.reduce((s, p) => s + (p.betragCent || 0), 0) };
+}
+
+/**
+ * Kennzahlen über die überfälligen FORDERUNGEN (für Dashboard/Auswertung) — Spiegelbild
+ * zu eingangsverzug.verzugUebersicht (Verbindlichkeiten), aber aus Gläubigersicht: wie
+ * viele offene Forderungen sind überfällig, mit welcher Summe, welcher davon kritisch
+ * (≥ 1. Mahnung, also ≥ 14 Tage überfällig) und welches Verzugszins-POTENZIAL (§ 288 BGB,
+ * was wir vom säumigen Kunden zusätzlich fordern könnten) daran hängt. Erwartet bereits
+ * angereicherte Posten (anreicherePosten → {betragCent, faelligAm, tageUeberfaellig,
+ * ueberfaellig, mahnstufe}). `b2b` Default true (konservativ: höherer §-288-Aufschlag).
+ * @returns {{anzahl, ueberfaelligAnzahl, ueberfaelligCent, zinsRisikoCent, kritischAnzahl}}
+ */
+export function forderungUebersicht(angereichertePosten = [], opts = {}) {
+  const b2b = opts.b2b !== false;
+  let ueberfaelligAnzahl = 0, ueberfaelligCent = 0, zinsRisikoCent = 0, kritischAnzahl = 0;
+  for (const p of angereichertePosten) {
+    if (!p.ueberfaellig) continue;
+    const tage = Math.max(0, Number(p.tageUeberfaellig) || 0);
+    ueberfaelligAnzahl++;
+    ueberfaelligCent += Math.round(Number(p.betragCent) || 0);
+    zinsRisikoCent += verzugszinsenCent(p.betragCent, tage, { basiszinsProzent: opts.basiszinsProzent, b2b });
+    const stufe = (p.mahnstufe && p.mahnstufe.stufe) || mahnstufe(tage, opts.schwellen).stufe;
+    if (stufe >= 2) kritischAnzahl++;
+  }
+  return {
+    anzahl: angereichertePosten.length,
+    ueberfaelligAnzahl,
+    ueberfaelligCent,
+    zinsRisikoCent,
+    kritischAnzahl,
+  };
+}
+
+/** Ampel-Stufen für die Forderungs-Übersicht (z. B. Dashboard-KPI-Färbung). */
+export const FORDERUNG_AMPEL = { OK: 'ok', WARNUNG: 'warnung', KRITISCH: 'kritisch' };
+
+/**
+ * Verdichtet eine Forderungs-Übersicht (forderungUebersicht) zu einer Ampel-Stufe für die
+ * KPI-Färbung — Spiegel zu eingangsverzug.verzugAmpel: grün, wenn nichts überfällig ist;
+ * rot („kritisch"), sobald mindestens eine Forderung ≥ 14 Tage überfällig ist (mahnbar ab
+ * 1. Mahnung); sonst gelb („Warnung").
+ * @param {{ueberfaelligAnzahl?:number, kritischAnzahl?:number}} [uebersicht]
+ * @returns {'ok'|'warnung'|'kritisch'}
+ */
+export function forderungAmpel(uebersicht = {}) {
+  const ueberfaellig = Math.max(0, Number(uebersicht.ueberfaelligAnzahl) || 0);
+  const kritisch = Math.max(0, Number(uebersicht.kritischAnzahl) || 0);
+  if (ueberfaellig === 0) return FORDERUNG_AMPEL.OK;
+  if (kritisch > 0) return FORDERUNG_AMPEL.KRITISCH;
+  return FORDERUNG_AMPEL.WARNUNG;
+}
+
+/**
+ * Ein-Aufruf-Einstieg von den GESPEICHERTEN Aufträgen zum Forderungs-Report — Spiegel zu
+ * eingangsverzug.verzugReport: leitet die offenen Forderungs-Posten ab (`offenePosten`,
+ * Status „berechnet", offener Rest), reichert sie um Fälligkeit/Überfälligkeit/Mahnstufe an
+ * (`anreicherePosten`) und verdichtet sie zu den Kennzahlen der überfälligen Forderungen
+ * (`forderungUebersicht`). Damit ist der ganze Pfad von den Aufträgen bis zur KPI
+ * node-testbar (die UI ruft nur noch dies auf).
+ *
+ * @param {Array} auftraege Gespeicherte Aufträge (crm-store-Form)
+ * @param {{heute?:string, zielTage?:number, schwellen?:object, nameById?:object, basiszinsProzent?:number, b2b?:boolean}} [opts]
+ * @returns {{angereichert:Array, uebersicht:{anzahl,ueberfaelligAnzahl,ueberfaelligCent,zinsRisikoCent,kritischAnzahl}}}
+ */
+export function forderungReport(auftraege = [], opts = {}) {
+  const offen = offenePosten(auftraege, { nameById: opts.nameById || {} });
+  const angereichert = anreicherePosten(offen, { heute: opts.heute, zielTage: opts.zielTage, schwellen: opts.schwellen });
+  const uebersicht = forderungUebersicht(angereichert, opts);
+  return { angereichert, uebersicht };
 }
 
 /**
