@@ -140,10 +140,21 @@
   `verschiebePosition(positionen, von, nach)` (immutabel, klemmt das Ziel, behält Element-Referenz → interne
   `kalkulation` unberührt) + `verschiebeNachOben`/`verschiebeNachUnten`. SW `v115`. **Rein, kein UI** — die UI
   (Schritt 11b) sitzt darüber. Prime Directive: kennt nur IDs/Zähler/Reihenfolge, keine Marge. (Katalog §3)
-- [ ] **11b. Adaptiver Baukasten — UI** — Positions-Baukasten-Ansicht über `domain/angebote.js` +
-  `domain/produktschemata.js` + `domain/baukasten.js`: Karten je Leistungsart (häufig genutzte oben, lokal
-  persistiertes Nutzungsprofil), wachsende Positionsliste mit Drag-and-drop-Umsortierung, Live-Deckungsbeitrag
-  (`interneAuswertung`). Braucht Angebots-Ansicht + Store-Glue (verschlüsselt). (Katalog §3)
+- [x] **11b. Adaptiver Baukasten — UI** ✅ (2026-06-18) — neue Angebots-Ansicht `ui/views/angebote.js`
+  (NAV „Angebote", zwischen Aufträge/Kunden; in privat/verein ausgeblendet wie `orders`) über der reinen Logik
+  `domain/angebote.js` + `produktschemata.js` + `baukasten.js`. **Store-Glue** `domain/angebote-store.js`
+  (verschlüsselt via encstore: `saveAngebot`/`listAngebote`/`getAngebot`/`deleteAngebot`/`setzeAngebotStatusStore`;
+  Positionen behalten ihre interne `kalkulation` → Live-DB überlebt Speichern; freier Nummernkreis `AN-JJJJ-NNNN`
+  beim ersten Speichern via `vergebeAngebotsnummer`). **UI:** adaptive **Karten je Leistungsart** (Sortierung
+  `baukastenPalette` + Schnellzeile `haeufigsteSchemata`), Karte tippen → Schema-Felder ausfüllen → `positionAusSchema`
+  → Position; beim Hinzufügen `zaehleNutzung` → Nutzungsprofil gerätelokal in den (verschlüsselten) Settings
+  (`state.js` `baukastenNutzungsprofil`). Wachsende **Positionsliste mit Drag-and-drop** (`verschiebePosition`) +
+  Pfeil-Knöpfen ↑/↓ (`verschiebeNachOben`/`-Unten`, DeX/Touch-tauglich, additiv). **Live-Deckungsbeitrag**
+  (`interneAuswertung`, als „intern — nicht im Angebot" markiert) neben den neutralen Summen. Status-Workflow
+  (`ANGEBOT_STATUS_FLOW`/`setzeAngebotStatusStore`), Archiv-Liste, **neutrales Angebotsdokument** (Druck) ausschließlich
+  über `externesAngebot` (Whitelist → Prime Directive). i18n de+en, SW `v116`, neue Module precached. Tests bleiben
+  **1427/1427** grün (NAV-Gating-Assertions für `angebote` ergänzt); **DOM/IndexedDB statisch geprüft** (kein
+  Headless-Browser). (Katalog §3/§4/§5.2)
 
 ### Block 3 — später / umgebungs-blockiert
 - [ ] **Server-Backup-Ziel** (sobald eigener Server existiert) — Stelle 3 der 3-2-1-Sicherung.

@@ -405,3 +405,34 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .copy-block { margin: .4rem 0 .2rem; }
 .copy-text { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm, 8px); padding: .6rem .7rem; white-space: pre-wrap; font-family: var(--mono); font-size: .82rem; margin: 0 0 .4rem; overflow-x: auto; }
 .guide-highlight { color: var(--accent-strong); font-weight: 700; }
+
+/* ── Angebote — adaptiver Baukasten (BAUPLAN Block 2 / Schritt 11b) ──────────── */
+.card-subtitle { margin: .85rem 0 .2rem; font-size: .95rem; }
+.card-title.pad { padding: .8rem 1rem .2rem; }
+.card-title-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+
+.baukasten { margin: .2rem 0 .4rem; }
+.baukasten-palette { display: flex; flex-wrap: wrap; gap: .5rem; margin: .25rem 0 .6rem; }
+.baukasten-karte {
+  display: inline-flex; align-items: center; gap: .4rem; font: inherit;
+  padding: .5rem .8rem; cursor: pointer; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text);
+}
+.baukasten-karte:hover { border-color: var(--accent); }
+.baukasten-karte.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); }
+.bk-zaehler { font-size: .75rem; font-weight: 600; color: var(--text-muted); }
+.schema-form { background: var(--surface-2); }
+
+.angebot-pos-liste { gap: .35rem; }
+.angebot-pos {
+  grid-template-columns: auto 2fr 1.4fr 1fr .6fr auto;
+  padding: .4rem .55rem; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--surface);
+}
+.angebot-pos.dragging { opacity: .5; }
+.drag-griff { cursor: grab; color: var(--text-muted); user-select: none; }
+.pos-desc { font-weight: 500; }
+
+.angebot-summen { display: flex; flex-wrap: wrap; gap: .8rem; margin: .7rem 0; }
+.angebot-summen > .card { flex: 1 1 14rem; padding: .65rem .85rem; }
+.angebot-intern { border: 1px dashed var(--border); }

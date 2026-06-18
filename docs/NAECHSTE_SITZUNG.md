@@ -17,43 +17,41 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/BAUPLAN.md` + `docs/NAC
 obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles.
 
 AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 2026-06-17 vereinbart). Reihenfolge
-steht dort. **Block 1 (Vertrauen/Sicherheit) ist KOMPLETT** — wir sind mitten in **Block 2 (Kalkulation/Angebote)**.
-**Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (nicht zwingend 1/Sitzung; pro Schritt 1 PR,
-jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden). Stand: **Block 1 KOMPLETT** (Schritt 1 #116 ·
-2a #118 · 2b #120 · 2c #122 · 3 #124) · **Block 2/Schritt 4 Setting `rechnungsstelle` ✅ (PR #125)** · **Schritt 5
-Kalkulations-Kern ✅ (PR #126:** `domain/kalkulation.js`) · **Schritt 6 Produkt-Schemata ✅ (PR #127:**
-`domain/produktschemata.js`) · **Schritt 7 Angebote-Kern ✅ (PR #128:** `domain/angebote.js`) · **Schritt 8 Angebot →
-Rechnung-Übernahme ✅ (PR #129:** `domain/angebotUebernahme.js`) · **Schritt 9 Auftrags-Kostenträger + Nachkalkulation ✅
-(PR #130:** `domain/nachkalkulation.js`) · **Schritt 10 Kalibrierung + Statistik/Vergleich ✅ (PR #131:**
-`domain/kalibrierung.js`) · **Schritt 11a Adaptiver Baukasten — reine Sortier-/Zähl-Logik ✅ (PR #132:**
-`domain/baukasten.js` — **(1) Nutzungszähler je Leistungsart** `leeresNutzungsprofil`/`normalizeNutzung`/`nutzungVon`/
-`anzahlVon`/`istGenutzt`/`zaehleNutzung` (immutabel, Zeitstempel injizierbar, `um:` für Mehrfach); **(2) adaptive Palette**
-`baukastenPalette`/`sortiereSchemata`/`haeufigsteSchemata` (Sortierung **häufig → zuletzt → Katalog-Reihenfolge**, stabil;
-ungenutzte behalten ihre Reihenfolge); **(3) Umsortieren (Drag-and-drop)** `verschiebePosition`/`verschiebeNachOben`/
-`verschiebeNachUnten` (immutabel, klemmt das Ziel, behält Element-Referenz → interne `kalkulation` unberührt); rein
-node-getestet, **kein UI**)**.** Nächste offene Schritte:
-1. **NÄCHSTER SCHRITT — Block 2/Schritt 11b: Adaptiver Baukasten-UI** — `docs/KALKULATION_KATALOG.md` §3. Die **UI** über
-   der bereits fertigen reinen Logik `domain/baukasten.js` (PR #132) + dem Angebote-Kern (`domain/angebote.js`) + den
-   Produkt-Schemata (`domain/produktschemata.js`): Angebots-Ansicht mit **Karten je Leistungsart** (häufig genutzte oben
-   via `baukastenPalette`/`haeufigsteSchemata` + lokal persistiertes Nutzungsprofil, beim Hinzufügen `zaehleNutzung`),
-   wachsende **Positionsliste mit Drag-and-drop**-Umsortierung (`verschiebePosition`/`verschiebeNachOben`/`-Unten`),
-   **Live-Deckungsbeitrag** (`interneAuswertung`). **Braucht zuvor** eine Angebots-Ansicht + **verschlüsselte Store-Glue**
-   (crm-store) — ggf. **feiner schneiden** (erst Angebots-Ansicht/Store-Glue als eigener PR, dann der Baukasten darüber).
-   DOM/IndexedDB als „statisch geprüft" kennzeichnen (kein Headless-Browser). **Prime Directive bleibt:** Kalkulation rein
-   intern, Angebot/Rechnung neutral nach außen (über `externesAngebot`-Whitelist).
-2. **Optional, offener Folgeschritt zu Schritt 8/9/10:** **UI „Rechnung aus Angebot"** (Knopf + Store-Glue, Zähler je
-   Kreis, `saveEntwurf`, Angebot→archiviert) **und/oder** **UI „Nachkalkulation/Kostenträger + Kalibrierung"**
-   (Zeiterfassung je Auftrag, Beleg-/Buchungs-Zuordnung, Soll/Ist-Anzeige, Korrekturfaktoren-Pflege, Trefferquote-Statistik)
-   — die reine Logik (`angebotUebernahme.js`/`nachkalkulation.js`/`kalibrierung.js`) steht bereits.
-3. **Optional, kleiner Folgeschritt zu Schritt 2c:** **Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) —
-   ein neuer Test wahlweise leer **oder** mit Demo-Daten starten. (Die Test-Modus-UI ist ohne sie bereits
-   vollständig nutzbar; daher bewusst abgegrenzt.)
-4. **Optional, Schritt 4 der Datensicherung (`docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server)
-   + konfigurierbare Erinnerungs-Kadenz — **blockiert/zurückgestellt**, solange kein eigener Server existiert.
+steht dort. **Block 1 (Vertrauen/Sicherheit) ist KOMPLETT** und die **Block-2-Kernkette (Schritte 4–11) ist KOMPLETT**
+(Kalkulations-Kern → Produkt-Schemata → Angebote-Kern → Angebot→Rechnung-Logik → Nachkalkulation → Kalibrierung →
+adaptiver Baukasten inkl. UI). **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1
+PR, jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden). Stand: **Block 1 KOMPLETT** (Schritt
+1 #116 · 2a #118 · 2b #120 · 2c #122 · 3 #124) · **Block 2: Schritt 4 `rechnungsstelle` ✅ #125 · 5 Kalkulations-Kern ✅
+#126 · 6 Produkt-Schemata ✅ #127 · 7 Angebote-Kern ✅ #128 · 8 Angebot→Rechnung-Übernahme (rein) ✅ #129 · 9
+Nachkalkulation ✅ #130 · 10 Kalibrierung ✅ #131 · 11a Adaptiver Baukasten — reine Logik ✅ #132 · 11b Adaptiver
+Baukasten — UI ✅** (`ui/views/angebote.js` Angebots-Ansicht + `domain/angebote-store.js` verschlüsselte Store-Glue;
+adaptive Karten je Leistungsart via `baukastenPalette`/`haeufigsteSchemata` + Nutzungsprofil gerätelokal in Settings
+`baukastenNutzungsprofil` via `zaehleNutzung`; Drag-and-drop-Positionsliste `verschiebePosition` + Pfeile ↑/↓;
+Live-Deckungsbeitrag `interneAuswertung` als „intern — nicht im Angebot"; Status-Workflow + Archiv; neutrales
+Angebotsdokument nur über `externesAngebot`-Whitelist; SW `v116`, 1427/1427 grün, **DOM/IndexedDB statisch geprüft**).
+Nächste offene Schritte:
+
+1. **NÄCHSTER SCHRITT — Block 2/Schritt 8-UI: „Rechnung aus Angebot"** (`docs/KALKULATION_KATALOG.md` §4/§7a). Die UI
+   über der bereits fertigen reinen Logik `domain/angebotUebernahme.js` (`angebotUebernahmeEntwurf`/
+   `darfAngebotUebernehmen`/`uebernahmeNummer`/`validateAngebotUebernahme`): In der Angebots-Ansicht (`ui/views/angebote.js`)
+   ein Knopf **„Rechnung aus Angebot"** an einem **angenommenen** Angebot → erzeugt einen Buchungs-**Entwurf** über den
+   bestehenden Pfad (`crm-store.saveEntwurf`/`naechsteRechnungsnummer` bzw. analog), **Nummernpolitik je `rechnungsstelle`**
+   (`blp` → echte §14-Nummer; `extern` → vorläufige Vorlage `ENT-JJJJ-NNNN`, keine §14-Nummer), **referenziert** die
+   Angebotsnummer (benutzt sie nie wieder), setzt das Angebot danach auf **archiviert**. Festschreiben bleibt manuell
+   (GoBD). Store-Glue ggf. in `domain/angebote-store.js` ergänzen (z. B. `rechnungAusAngebot(id)`), reine Logik bleibt in
+   `angebotUebernahme.js`. **DOM/IndexedDB als „statisch geprüft" kennzeichnen.** Prime Directive: nur `externesAngebot`,
+   keine interne Kalkulation im Entwurf.
+2. **Optional, Folgeschritt zu Schritt 9/10:** **UI „Nachkalkulation/Kostenträger + Kalibrierung"** (Zeiterfassung je
+   Auftrag, Beleg-/Buchungs-Zuordnung, Soll/Ist-Anzeige `nachkalkulation`, Korrekturfaktoren-Pflege/Trefferquote
+   `kalibrierung`) — die reine Logik (`nachkalkulation.js`/`kalibrierung.js`) steht bereits.
+3. **Optional, kleiner Folgeschritt zu Schritt 2c:** **Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) — ein
+   neuer Test wahlweise leer **oder** mit Demo-Daten starten.
+4. **Optional, Schritt 4 der Datensicherung (`docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server) +
+   konfigurierbare Erinnerungs-Kadenz — **blockiert/zurückgestellt**, solange kein eigener Server existiert.
 
 RITUAL JE PR (verbindlich, automatisch durchziehen):
 1) `git fetch origin main && git reset --hard origin/main`; pro PR einen eigenen
-   Branch `claude/<kurzbeschreibung>` von `origin/main`.
+   Branch `claude/<kurzbeschreibung>` von `origin/main` (bzw. den für die Sitzung vorgegebenen Branch).
 2) Reine Logik ZUERST node-getestet (`node tests/run.mjs` muss grün bleiben/werden), dann
    UI (DOM/IndexedDB als „statisch geprüft" kennzeichnen — kein Headless-Browser vorhanden).
 3) `CACHE_VERSION` in `sw.js` erhöhen + neue Module precachen.
@@ -82,10 +80,10 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 11a (Adaptiver Baukasten — reine Sortier-/Zähl-Logik, PR #132)**.
-Tests **1427/1427** · SW **v115** · 110 JS-Module. **Block 1 KOMPLETT** (Schritt 1 + 2a–2c + 3); **Block 2/Schritt 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11a ✅**.
-**Nächster Schritt: BAUPLAN Block 2/Schritt 11b — Adaptiver Baukasten-UI** (`docs/KALKULATION_KATALOG.md` §3; UI über der
-fertigen reinen Logik `domain/baukasten.js` + `angebote.js` + `produktschemata.js` — Karten je Leistungsart „häufig oben",
-Drag-and-drop-Positionsliste, Live-Deckungsbeitrag; braucht zuvor Angebots-Ansicht + verschlüsselte Store-Glue, ggf. feiner schneiden).
-Optional: Schritt-8/9/10-Folgeschritt **UI „Rechnung aus Angebot"** / **UI „Nachkalkulation/Kostenträger + Kalibrierung"** + Store-Glue;
-2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`). Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 11b (Adaptiver Baukasten — UI: Angebots-Ansicht
+`ui/views/angebote.js` + verschlüsselte Store-Glue `domain/angebote-store.js`)**. Tests **1427/1427** · SW **v116** ·
+112 JS-Module. **Block 1 KOMPLETT**; **Block-2-Kernkette (Schritte 4–11) KOMPLETT.**
+**Nächster Schritt: Block 2/Schritt 8-UI — „Rechnung aus Angebot"** (UI/Glue über der fertigen reinen Logik
+`domain/angebotUebernahme.js`; Knopf am angenommenen Angebot → Buchungs-Entwurf, Nummernpolitik je `rechnungsstelle`,
+Angebot→archiviert). Optional: UI „Nachkalkulation/Kostenträger + Kalibrierung"; Demo-Vorbefüllung (`domain/demodaten.js`).
+Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
