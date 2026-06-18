@@ -102,7 +102,20 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht"):** SW **v125** · Tests **1543/1543** grün · 116 JS-Module.
+**Kopf-Status (Stand nach „Dashboard-KPI: überfällige Verbindlichkeiten"):** SW **v126** · Tests **1551/1551** grün · 116 JS-Module.
+**Dashboard-KPI: überfällige Verbindlichkeiten (eigene Zahlungsdisziplin) erledigt (diese Sitzung, BAUPLAN Block 3 — PR #143):**
+Die node-getestete Verzugs-KPI (`verzugReport`/`verzugUebersicht`, „eigene Zahlungsdisziplin") war bisher nur in der
+Verbindlichkeiten-Ansicht sichtbar (#142). Jetzt auch **auf der Übersicht (Dashboard)** — überfällige eigene
+Verbindlichkeiten auf einen Blick (Liquiditäts-/Verzugsrisiko); spiegelt die für die Forderungsseite dokumentierte
+Dashboard-Intention. Reine Logik `domain/eingangsverzug.js` **`verzugAmpel(uebersicht)`** (+ `VERZUG_AMPEL`,
+node-getestet, +8 → **1551/1551**): Ampel ok|warnung|kritisch für die KPI-Färbung (kritisch sobald eine Verbindlichkeit
+≥ 14 Tage überfällig ist; defensiv geklemmt). UI `ui/views/dashboard.js`: Karte „Überfällige Verbindlichkeiten (eigene
+Zahlungsdisziplin)" am Kopf der Übersicht über `verzugReport`/`verzugAmpel` — nur im Firmen-/Vereins-Kontext
+(`zeigeAnsicht 'payables'`, in Privat ausgeblendet) UND wenn etwas überfällig ist (sonst kein Lärm); Klick →
+Verbindlichkeiten-Ansicht; **bucht nichts**. i18n de+en, SW `v126` (keine neuen Module — alle bereits precached).
+**Ehrliche Grenze:** Hilfs-Einordnung, keine Rechtsberatung; DOM/IndexedDB statisch geprüft. **Nächster Schritt
+(optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte oder eine neue,
+abgestimmte Idee.
 **Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht erledigt (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #140):**
 Die in #140 angelegte, **node-getestete** KPI-Logik `verzugUebersicht` („eigene Zahlungsdisziplin") war bisher in keiner
 UI sichtbar. Reine Logik `domain/eingangsverzug.js` **`verzugReport(rechnungen, opts)`** (node-getestet, +7 →

@@ -5,6 +5,40 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Dashboard-KPI überfällige Verbindlichkeiten (eigene Zahlungsdisziplin) [Branch `claude/bookledgerpro-block-3-1z7x5i`, PR #143]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 ausgebaut (Eingangsrechnungs-Verzug #140 + Buchung Verzugskosten #141 +
+  Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht #142). Befund: Die node-getestete KPI „eigene
+  Zahlungsdisziplin" (`verzugReport`/`verzugUebersicht`) war nur sichtbar, wenn man die Verbindlichkeiten-Ansicht
+  öffnet. Sauberer, build-freier Folgeschritt: dieselbe Logik **auf das Dashboard** bringen (spiegelt die in
+  `docs/OFFENE_PUNKTE.md` dokumentierte Dashboard-Intention der Forderungsseite, jetzt für die Schuldnerseite).
+
+**Was getan**
+- **`src/domain/eingangsverzug.js`** `verzugAmpel(uebersicht)` (+ `VERZUG_AMPEL`, rein, node-getestet, +8 →
+  **1551/1551**): Ampel-Stufe `ok|warnung|kritisch` aus der Verzugs-Übersicht für die KPI-Färbung — grün wenn nichts
+  überfällig, rot („kritisch") sobald eine Verbindlichkeit ≥ 14 Tage überfällig ist, sonst gelb; defensiv (geklemmte/
+  negative/inkonsistente Eingaben → `ok`).
+- **`src/ui/views/dashboard.js`**: Karte **„Überfällige Verbindlichkeiten (eigene Zahlungsdisziplin)"** am Kopf der
+  Übersicht über die node-getestete `verzugReport`/`verzugAmpel` — KPI-Kacheln überfällige Anzahl/gesamt, überfällige
+  Summe, **Verzugszins-Risiko (§ 288)** (rot bei kritisch). Nur sichtbar im Firmen-/Vereins-Kontext
+  (`zeigeAnsicht(s, 'payables')`, in Privat ausgeblendet) UND wenn etwas überfällig ist (sonst kein Lärm); Klick →
+  Verbindlichkeiten-Ansicht. **Bucht nichts.** Eingangsrechnungen werden nur geladen, wenn die Ansicht im Kontext sichtbar ist.
+- i18n de+en (`dashboard.overduePayables*`), **SW `v126`** (keine neuen Module — `dashboard.js`/`payables-store.js`/
+  `eingangsverzug.js` bereits precached).
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut (Verzugs-KPI jetzt auch auf dem Dashboard).
+- **Tests 1551/1551 grün** (`node tests/run.mjs`). SW `v126`. 116 JS-Module. PR #143 squash-gemergt.
+
+**Offen / Nächstes / Grenzen**
+- **DOM/IndexedDB statisch geprüft** (kein Headless-Browser) — die reine Logik (`verzugAmpel`/`verzugReport`) ist node-getestet (+8).
+- **Ehrliche Grenze:** Hilfs-Einordnung nach Tagen überfällig, **keine Rechtsberatung**; Basiszinssatz (§ 247) aktuell halten.
+- **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte
+  Block-3-Punkte (Server-/Offsite-Backup-Ziel, WorkFloh-Gegenstücke) oder eine neue, abgestimmte Idee.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht [Branch `claude/bookledgerpro-block3-payables-0i5x2p`]
 
 **Ausgangslage / Auswahl**
