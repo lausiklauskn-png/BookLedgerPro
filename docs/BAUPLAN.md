@@ -129,8 +129,21 @@
   möglicher Payload-Kandidat für eine **spätere, STRIKT opt-in + BYOK** pseudonyme KI-Analyse (Mistral EU,
   CLAUDE.md §8) — diese Schicht SENDET NICHTS. SW `v114`. **Rein, kein UI** (eigener Folgeschritt). Prime
   Directive: Faktoren/Margen/Quoten bleiben intern. (`docs/KALKULATION_KATALOG.md` §5.1/§5.3)
-- [ ] **11. Adaptiver Baukasten-UX** — Positions-Baukasten, **häufig genutzte nach oben** (Nutzungszähler),
-  Drag-and-drop. (Katalog §3)
+- [x] **11a. Adaptiver Baukasten — reine Sortier-/Zähl-Logik** ✅ (PR #132, 2026-06-18) — `domain/baukasten.js`
+  (rein, node-getestet, +33 → **1427/1427**): die build-freie Logik UNTER der späteren Angebots-UI (Katalog §3).
+  **(1) Nutzungszähler je Leistungsart:** Profil `{ schemaId: {anzahl, zuletzt} }`; `leeresNutzungsprofil`/
+  `normalizeNutzung` (säubert persistierte Profile, verwirft Müll/leere) / `nutzungVon`/`anzahlVon`/`istGenutzt` /
+  `zaehleNutzung(profil, schemaId, {jetzt, um})` (immutabel, Zeitstempel injizierbar). **(2) Adaptive Palette:**
+  `baukastenPalette(schemata, profil)` reichert je Schema `{anzahl, zuletzt, genutzt}` an und sortiert **häufig
+  → zuletzt → Katalog-Reihenfolge** (stabil; ungenutzte behalten ihre Reihenfolge); `sortiereSchemata` (nur
+  Schemata) + `haeufigsteSchemata(…, n)` (Schnellzugriff, nur genutzte). **(3) Umsortieren (Drag-and-drop):**
+  `verschiebePosition(positionen, von, nach)` (immutabel, klemmt das Ziel, behält Element-Referenz → interne
+  `kalkulation` unberührt) + `verschiebeNachOben`/`verschiebeNachUnten`. SW `v115`. **Rein, kein UI** — die UI
+  (Schritt 11b) sitzt darüber. Prime Directive: kennt nur IDs/Zähler/Reihenfolge, keine Marge. (Katalog §3)
+- [ ] **11b. Adaptiver Baukasten — UI** — Positions-Baukasten-Ansicht über `domain/angebote.js` +
+  `domain/produktschemata.js` + `domain/baukasten.js`: Karten je Leistungsart (häufig genutzte oben, lokal
+  persistiertes Nutzungsprofil), wachsende Positionsliste mit Drag-and-drop-Umsortierung, Live-Deckungsbeitrag
+  (`interneAuswertung`). Braucht Angebots-Ansicht + Store-Glue (verschlüsselt). (Katalog §3)
 
 ### Block 3 — später / umgebungs-blockiert
 - [ ] **Server-Backup-Ziel** (sobald eigener Server existiert) — Stelle 3 der 3-2-1-Sicherung.

@@ -79,6 +79,11 @@ import {
   ANGEBOT_ERGEBNIS, angebotErgebnis, angebotMargeProzent, PREISNIVEAU, PREISNIVEAU_LISTE,
   preisniveau, trefferquote, trefferquoteJePreisniveau, kalibrierungsDigest,
 } from '../src/domain/kalibrierung.js';
+import {
+  leeresNutzungsprofil, normalizeNutzung, nutzungVon, anzahlVon, istGenutzt, zaehleNutzung,
+  baukastenPalette, sortiereSchemata, haeufigsteSchemata,
+  verschiebePosition, verschiebeNachOben, verschiebeNachUnten,
+} from '../src/domain/baukasten.js';
 import { zeitSummen, formatDauer } from '../src/domain/employees.js';
 import { kostenstellenAuswertung } from '../src/domain/costcenters.js';
 import { buildLedgerCsv, buildDatevCsv, buildDatevExtf, datevBuchungssatz, istEinfacherSatz, buildUstVa, centsToComma, ustVaToCsv, buildAnlagenverzeichnisCsv, buildUebergabeText } from '../src/domain/export.js';
@@ -4090,6 +4095,82 @@ await section('Kalibrierung: Angebots-Trefferquote je Preisniveau', () => {
   ok('Digest ist PII-frei (kein kundeId/titel/beschreibung)',
     !JSON.stringify(dig).includes('kundeId') && !JSON.stringify(dig).includes('titel') && !JSON.stringify(dig).includes('beschreibung'));
   ok('PREISNIVEAU_LISTE hat 4 Kübel', PREISNIVEAU_LISTE.length === 4);
+});
+
+await section('Adaptiver Baukasten (Schritt 11 — Nutzungszähler + Sortierung + Umsortieren)', () => {
+  // — Nutzungszähler —
+  ok('leeresNutzungsprofil ist leeres Objekt', Object.keys(leeresNutzungsprofil()).length === 0);
+
+  let p = leeresNutzungsprofil();
+  ok('anzahlVon unbekannt = 0', anzahlVon(p, 'folierung') === 0);
+  ok('istGenutzt unbekannt = false', istGenutzt(p, 'folierung') === false);
+
+  p = zaehleNutzung(p, 'folierung', { jetzt: 1000 });
+  ok('zaehleNutzung setzt anzahl 1 + Zeitstempel', anzahlVon(p, 'folierung') === 1 && nutzungVon(p, 'folierung').zuletzt === 1000);
+  ok('istGenutzt nach Zählen = true', istGenutzt(p, 'folierung') === true);
+
+  const vorher = p;
+  p = zaehleNutzung(p, 'folierung', { jetzt: 2000 });
+  ok('zaehleNutzung ist immutabel (Eingabe unverändert)', anzahlVon(vorher, 'folierung') === 1);
+  ok('zweites Zählen → anzahl 2, neuer Zeitstempel', anzahlVon(p, 'folierung') === 2 && nutzungVon(p, 'folierung').zuletzt === 2000);
+
+  p = zaehleNutzung(p, 'schild', { jetzt: 1500, um: 3 });
+  ok('zaehleNutzung um:3 erhöht um 3', anzahlVon(p, 'schild') === 3);
+  ok('zaehleNutzung mit leerer schemaId lässt Profil unverändert',
+    Object.keys(zaehleNutzung(p, '', { jetzt: 9 })).length === Object.keys(p).length);
+
+  // normalizeNutzung verwirft Müll + leere Einträge
+  const dreck = { gut: { anzahl: 2, zuletzt: 5 }, leer: { anzahl: 0, zuletzt: 0 }, kaputt: { anzahl: -3, zuletzt: 'x' }, '': { anzahl: 1, zuletzt: 1 } };
+  const sauber = normalizeNutzung(dreck);
+  ok('normalizeNutzung behält gültige Einträge', sauber.gut.anzahl === 2 && sauber.gut.zuletzt === 5);
+  ok('normalizeNutzung verwirft leere/leere-ID', !('leer' in sauber) && !('' in sauber));
+  ok('normalizeNutzung klemmt Negatives/NaN auf 0 (→ leer verworfen)', !('kaputt' in sauber));
+
+  // — Adaptive Palette/Sortierung —
+  // Mini-Schemaliste in fester Reihenfolge (wie PRODUKT_SCHEMATA: Katalog-Order).
+  const SCH = [
+    { id: 'folierung' }, { id: 'schild' }, { id: 'gravur' },
+    { id: 'leuchtreklame' }, { id: 'druckZukauf' }, { id: 'montage' },
+  ];
+  // Profil: schild 3× (zuletzt 1500), folierung 2× (zuletzt 2000), gravur 2× (zuletzt 500)
+  const prof = { schild: { anzahl: 3, zuletzt: 1500 }, folierung: { anzahl: 2, zuletzt: 2000 }, gravur: { anzahl: 2, zuletzt: 500 } };
+
+  const reihen = sortiereSchemata(SCH, prof).map((s) => s.id);
+  // schild (3) zuerst; dann folierung vs gravur (beide 2) → folierung zuletzt-neuer (2000>500) zuerst;
+  // dann ungenutzte in Katalog-Reihenfolge.
+  ok('Sortierung: häufigste zuerst (schild)', reihen[0] === 'schild');
+  ok('Sortierung: Gleichstand → zuletzt genutzte zuerst (folierung vor gravur)',
+    reihen[1] === 'folierung' && reihen[2] === 'gravur');
+  ok('Sortierung: ungenutzte behalten Katalog-Reihenfolge am Ende',
+    reihen.slice(3).join(',') === 'leuchtreklame,druckZukauf,montage');
+  ok('sortiereSchemata ist immutabel (Original-Order unverändert)',
+    SCH.map((s) => s.id).join(',') === 'folierung,schild,gravur,leuchtreklame,druckZukauf,montage');
+
+  const pal = baukastenPalette(SCH, prof);
+  ok('baukastenPalette trägt anzahl/zuletzt/genutzt', pal[0].schema.id === 'schild' && pal[0].anzahl === 3 && pal[0].genutzt === true);
+  ok('baukastenPalette markiert ungenutzte', pal[pal.length - 1].genutzt === false && pal[pal.length - 1].anzahl === 0);
+
+  const top = haeufigsteSchemata(SCH, prof, 2).map((s) => s.id);
+  ok('haeufigsteSchemata(2) = nur genutzte, top-2', top.length === 2 && top[0] === 'schild' && top[1] === 'folierung');
+  ok('haeufigsteSchemata mit leerem Profil = leer', haeufigsteSchemata(SCH, {}, 3).length === 0);
+  ok('baukastenPalette mit leerem Profil = Katalog-Reihenfolge',
+    baukastenPalette(SCH, {}).map((e) => e.schema.id).join(',') === 'folierung,schild,gravur,leuchtreklame,druckZukauf,montage');
+
+  // — Umsortieren der Positionen (Drag-and-drop / Pfeile) —
+  const pos = [{ beschreibung: 'A' }, { beschreibung: 'B' }, { beschreibung: 'C' }, { beschreibung: 'D' }];
+  ok('verschiebePosition 0→2', verschiebePosition(pos, 0, 2).map((x) => x.beschreibung).join('') === 'BCAD');
+  ok('verschiebePosition 3→0', verschiebePosition(pos, 3, 0).map((x) => x.beschreibung).join('') === 'DABC');
+  ok('verschiebePosition behält Element-Referenz (keine Kopie)', verschiebePosition(pos, 0, 2)[2] === pos[0]);
+  ok('verschiebePosition ist immutabel (Eingabe unverändert)', pos.map((x) => x.beschreibung).join('') === 'ABCD');
+  ok('verschiebePosition Ziel == Quelle → unverändert', verschiebePosition(pos, 1, 1).map((x) => x.beschreibung).join('') === 'ABCD');
+  ok('verschiebePosition klemmt Ziel > Ende', verschiebePosition(pos, 0, 99).map((x) => x.beschreibung).join('') === 'BCDA');
+  ok('verschiebePosition klemmt Ziel < 0', verschiebePosition(pos, 3, -5).map((x) => x.beschreibung).join('') === 'DABC');
+  ok('verschiebePosition ungültiger vonIndex → flache Kopie unverändert', verschiebePosition(pos, 9, 0).map((x) => x.beschreibung).join('') === 'ABCD');
+
+  ok('verschiebeNachOben 2', verschiebeNachOben(pos, 2).map((x) => x.beschreibung).join('') === 'ACBD');
+  ok('verschiebeNachOben 0 (oberste) → unverändert', verschiebeNachOben(pos, 0).map((x) => x.beschreibung).join('') === 'ABCD');
+  ok('verschiebeNachUnten 1', verschiebeNachUnten(pos, 1).map((x) => x.beschreibung).join('') === 'ACBD');
+  ok('verschiebeNachUnten letzte → unverändert', verschiebeNachUnten(pos, 3).map((x) => x.beschreibung).join('') === 'ABCD');
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

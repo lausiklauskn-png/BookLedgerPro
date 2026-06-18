@@ -25,19 +25,22 @@ Kalkulations-Kern ✅ (PR #126:** `domain/kalkulation.js`) · **Schritt 6 Produk
 `domain/produktschemata.js`) · **Schritt 7 Angebote-Kern ✅ (PR #128:** `domain/angebote.js`) · **Schritt 8 Angebot →
 Rechnung-Übernahme ✅ (PR #129:** `domain/angebotUebernahme.js`) · **Schritt 9 Auftrags-Kostenträger + Nachkalkulation ✅
 (PR #130:** `domain/nachkalkulation.js`) · **Schritt 10 Kalibrierung + Statistik/Vergleich ✅ (PR #131:**
-`domain/kalibrierung.js` — **(1) Korrekturfaktoren je Kostenart** aus der Historie Vor→Nachkalkulation:
-`korrekturFaktoren(vergleiche)` aggregiert `nachkalkulation().perBlock` vieler Aufträge je Kostenart zu `faktor`
-(ΣIST/ΣSOLL, geldgewichtet) + `medianFaktor` (robust) + `abweichungProzent` + `anzahl`; `faktorWerte` verdichtet zu
-Multiplikatoren (`minAnzahl`/`min`/`max`-Schranken); **Rückfluss in den Kern** `kalibriereEingabe`/`kalkuliereKalibriert`
-(skaliert je Kostenart den Mengen-/Geld-Treiber, keine neue Formel); **(2) Trefferquote** `angebotErgebnis`/
-`angebotMargeProzent`/`preisniveau`/`trefferquote`/`trefferquoteJePreisniveau` (je Preisniveau aus interner Marge);
-**(3)** `kalibrierungsDigest` = PII-freie Aggregat-Zusammenfassung als Payload-Kandidat für spätere opt-in/BYOK-KI
-(Mistral EU) — sendet NICHTS; rein node-getestet, **kein UI**)**.** Nächste offene Schritte:
-1. **NÄCHSTER SCHRITT — Block 2/Schritt 11: Adaptiver Baukasten-UX** — `docs/KALKULATION_KATALOG.md` §3. Positions-
-   Baukasten für Angebote: **häufig genutzte Positionen/Schemata nach oben** (Nutzungszähler), **Drag-and-drop**-Sortierung
-   der Positionen. Erste **UI** über dem fertigen Angebote-Kern (`domain/angebote.js`) + den Produkt-Schemata
-   (`domain/produktschemata.js`); reine Sortier-/Zähl-Logik ZUERST node-getestet, dann UI („statisch geprüft" — kein
-   Headless-Browser). **Prime Directive bleibt:** Kalkulation rein intern, Angebot/Rechnung neutral nach außen.
+`domain/kalibrierung.js`) · **Schritt 11a Adaptiver Baukasten — reine Sortier-/Zähl-Logik ✅ (PR #132:**
+`domain/baukasten.js` — **(1) Nutzungszähler je Leistungsart** `leeresNutzungsprofil`/`normalizeNutzung`/`nutzungVon`/
+`anzahlVon`/`istGenutzt`/`zaehleNutzung` (immutabel, Zeitstempel injizierbar, `um:` für Mehrfach); **(2) adaptive Palette**
+`baukastenPalette`/`sortiereSchemata`/`haeufigsteSchemata` (Sortierung **häufig → zuletzt → Katalog-Reihenfolge**, stabil;
+ungenutzte behalten ihre Reihenfolge); **(3) Umsortieren (Drag-and-drop)** `verschiebePosition`/`verschiebeNachOben`/
+`verschiebeNachUnten` (immutabel, klemmt das Ziel, behält Element-Referenz → interne `kalkulation` unberührt); rein
+node-getestet, **kein UI**)**.** Nächste offene Schritte:
+1. **NÄCHSTER SCHRITT — Block 2/Schritt 11b: Adaptiver Baukasten-UI** — `docs/KALKULATION_KATALOG.md` §3. Die **UI** über
+   der bereits fertigen reinen Logik `domain/baukasten.js` (PR #132) + dem Angebote-Kern (`domain/angebote.js`) + den
+   Produkt-Schemata (`domain/produktschemata.js`): Angebots-Ansicht mit **Karten je Leistungsart** (häufig genutzte oben
+   via `baukastenPalette`/`haeufigsteSchemata` + lokal persistiertes Nutzungsprofil, beim Hinzufügen `zaehleNutzung`),
+   wachsende **Positionsliste mit Drag-and-drop**-Umsortierung (`verschiebePosition`/`verschiebeNachOben`/`-Unten`),
+   **Live-Deckungsbeitrag** (`interneAuswertung`). **Braucht zuvor** eine Angebots-Ansicht + **verschlüsselte Store-Glue**
+   (crm-store) — ggf. **feiner schneiden** (erst Angebots-Ansicht/Store-Glue als eigener PR, dann der Baukasten darüber).
+   DOM/IndexedDB als „statisch geprüft" kennzeichnen (kein Headless-Browser). **Prime Directive bleibt:** Kalkulation rein
+   intern, Angebot/Rechnung neutral nach außen (über `externesAngebot`-Whitelist).
 2. **Optional, offener Folgeschritt zu Schritt 8/9/10:** **UI „Rechnung aus Angebot"** (Knopf + Store-Glue, Zähler je
    Kreis, `saveEntwurf`, Angebot→archiviert) **und/oder** **UI „Nachkalkulation/Kostenträger + Kalibrierung"**
    (Zeiterfassung je Auftrag, Beleg-/Buchungs-Zuordnung, Soll/Ist-Anzeige, Korrekturfaktoren-Pflege, Trefferquote-Statistik)
@@ -79,9 +82,10 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 10 (Kalibrierung + Statistik/Vergleich, PR #131)**.
-Tests **1394/1394** · SW **v114** · 109 JS-Module. **Block 1 KOMPLETT** (Schritt 1 + 2a–2c + 3); **Block 2/Schritt 4 + 5 + 6 + 7 + 8 + 9 + 10 ✅**.
-**Nächster Schritt: BAUPLAN Block 2/Schritt 11 — Adaptiver Baukasten-UX** (`docs/KALKULATION_KATALOG.md` §3;
-Positions-Baukasten mit Nutzungssortierung „häufig oben" + Drag-and-drop, erste UI über `domain/angebote.js`).
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 11a (Adaptiver Baukasten — reine Sortier-/Zähl-Logik, PR #132)**.
+Tests **1427/1427** · SW **v115** · 110 JS-Module. **Block 1 KOMPLETT** (Schritt 1 + 2a–2c + 3); **Block 2/Schritt 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11a ✅**.
+**Nächster Schritt: BAUPLAN Block 2/Schritt 11b — Adaptiver Baukasten-UI** (`docs/KALKULATION_KATALOG.md` §3; UI über der
+fertigen reinen Logik `domain/baukasten.js` + `angebote.js` + `produktschemata.js` — Karten je Leistungsart „häufig oben",
+Drag-and-drop-Positionsliste, Live-Deckungsbeitrag; braucht zuvor Angebots-Ansicht + verschlüsselte Store-Glue, ggf. feiner schneiden).
 Optional: Schritt-8/9/10-Folgeschritt **UI „Rechnung aus Angebot"** / **UI „Nachkalkulation/Kostenträger + Kalibrierung"** + Store-Glue;
 2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`). Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
