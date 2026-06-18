@@ -23,7 +23,7 @@
   ✓/✗, angehängt an den „Selbsttest" (V10, `domain/selbsttest.js`, +2 Prüfungen). +15 Tests (**1095/1095**),
   SW `v103`. Grenze: echter `dumpAll`/IndexedDB-Pfad nur statisch geprüft (kein Headless-Browser).
   (`docs/DATENSICHERUNG.md`)
-- [~] **2. Test-Modus (Sandbox-Tresor)** — wegwerfbarer Test-Tresor über die Mehrmandanten-Schicht;
+- [x] **2. Test-Modus (Sandbox-Tresor)** ✅ (2a–2c gemergt) — wegwerfbarer Test-Tresor über die Mehrmandanten-Schicht;
   mehrere getrennte Tests, behalten/verwerfen/aufräumen, optional Demo-vorbefüllt; echte Daten unberührt.
   *Warum früh:* macht das **manuelle Testen aller folgenden Features** gefahrlos. (`docs/TEST_MODUS.md`)
   - [x] **2a. Sandbox-Kern (rein, node-getestet)** ✅ (PR #118, 2026-06-18): `domain/mandanten.js` —
@@ -36,8 +36,14 @@
     `deleteDatabase`/`vorhandeneDbNamen`. Reine Helfer `sandboxDbNamen`/`aktiveDbName` in `domain/mandanten.js`
     node-getestet; `wechsleAktivenMandant` nutzt jetzt `dbNameVon` (Sandbox-Flag). +9 Tests (1132/1132), SW `v105`.
     IndexedDB/Glue statisch geprüft.
-  - [ ] **2c. UI** — „🧪 Tests"-Bereich (Sperrbildschirm/Einstellungen), dauerhafter **TEST-MODUS-Banner**,
-    behalten/verwerfen-Dialog, optional Demo-Vorbefüllung (`domain/demodaten.js`).
+  - [x] **2c. UI** ✅ (PR #122, 2026-06-18): „🧪 Tests"-Bereich am Sperrbildschirm + in den Einstellungen
+    (`ui/lock.js`/`ui/shell.js`) — öffnen/leeren/löschen je Test, „Neuer Test", „Alle Tests löschen";
+    verschlanktes Test-Onboarding (nur Test-Passwort, kein Shamir-/Backup-Gate); dauerhafter **TEST-MODUS-Banner**;
+    **behalten/verwerfen-Dialog** beim Verlassen (`behalteUndVerlasseSandbox`/`loescheSandboxTresor`); aktiver Test
+    wird beim Start direkt wieder geöffnet (Korrektur `initMandanten` → `aktiveDbName()`). Reine Helfer
+    `aktiverSandbox`/`naechsterTestName` node-getestet. +9 Tests (1141/1141), SW `v106`. i18n de/en, CSS.
+    DOM/IndexedDB statisch geprüft. **Offen (optional, Folgeschritt):** Demo-Vorbefüllung (`domain/demodaten.js`) —
+    die Test-Modus-UI ist ohne sie vollständig nutzbar (man startet mit leerem Test).
 - [ ] **3. Datensicherungs-UX + `backupStrategie`** — prominenter Backup-/Restore-Bereich, **gemerkter
   Zielordner** (File System Access; Tablet→Download), **Drag-and-drop-Restore**; Setting `backupStrategie`
   (Onboarding + Einstellungen, frei wählbare Ziele/Erinnerung, Default sicher). (`docs/DATENSICHERUNG.md`)

@@ -40,7 +40,7 @@ Nutzer 2026-06-17 vereinbarten Themen: Kalkulation/Angebote + Datensicherung + T
 in `docs/NACHFOLGE_PLAN.md`. **Nächste PRs = BAUPLAN abarbeiten, Block 1 zuerst** (mehrere saubere PRs pro Sitzung wo
 sinnvoll): **1.** Backup→Restore-Roundtrip-Selbsttest ✅ **(PR #116)** → **2.** Test-Modus/Sandbox-Tresor
 (`docs/TEST_MODUS.md`): **2a. Sandbox-Kern ✅ (PR #118)** → **2b. Store-Glue `core/sandboxStore.js` ✅ (PR #120)**
-→ **2c. NÄCHSTER SCHRITT: UI** („🧪 Tests"-Bereich + TEST-Banner + behalten/verwerfen) → **3.** Backup-UX + `backupStrategie`. Danach **Block 2: Kalkulation/Angebote**
+→ **2c. UI ✅ (PR #122)** („🧪 Tests"-Bereich + TEST-Banner + behalten/verwerfen; optionale Demo-Vorbefüllung bewusst als Folgeschritt offen) → **3. NÄCHSTER SCHRITT: Backup-UX + `backupStrategie`** (`docs/DATENSICHERUNG.md`). Danach **Block 2: Kalkulation/Angebote**
 (`docs/KALKULATION_KATALOG.md`; Prime Directive: Kalkulation intern, Angebot/Rechnung neutral). **Vermerk:** auch
 **Mein-WorkFloh** soll einen Test-Modus nach `docs/TEST_MODUS.md` bekommen (fremdes Repo, über den Nutzer).
 **(Frühere Notiz, Kontext):** Der reine „build-freie Rest-Korb" war leer; in der vorigen Sitzung
@@ -102,8 +102,19 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Test-Modus Store-Glue", PR #120):** SW **v105** · Tests **1132/1132** grün · 99 JS-Module.
-**Test-Modus Store-Glue erledigt (diese Sitzung, BAUPLAN Block 1/Schritt 2b):** Neues dünnes IndexedDB-/Verdrahtungs-
+**Kopf-Status (Stand nach „Test-Modus UI", PR #122):** SW **v106** · Tests **1141/1141** grün · 99 JS-Module.
+**Test-Modus UI erledigt (diese Sitzung, BAUPLAN Block 1/Schritt 2c):** Die UI über der Store-Glue + dem Kern
+(Spezifikation `docs/TEST_MODUS.md`). Sperrbildschirm (`ui/lock.js`): „🧪 Tests"-Einstieg + Verwaltung (öffnen/leeren/
+löschen je Test, „Neuer Test", „Alle Tests löschen"); **verschlanktes Test-Onboarding** (nur Test-Passwort, kein
+Shamir-/Backup-Gate — ein Test ist kein Backup); ein aktiver Test wird beim Start direkt wieder geöffnet, mit Rückweg
+zur echten Welt. App-Shell (`ui/shell.js`): dauerhafter **TEST-MODUS-Banner** solange ein Test aktiv ist; Sperren/
+Wechseln aus einem Test über den **behalten/verwerfen-Dialog**; Test-Modus-Abschnitt in den Einstellungen. Reine
+Helfer node-getestet: `aktiverSandbox`/`naechsterTestName` (+9 Tests, **1141/1141**). Korrektur: `core/mandantenStore.js`
+`initMandanten` richtet die aktive DB über `aktiveDbName()` (Sandbox-Flag beachtet) aus → ein „behaltener" Test landet
+beim Start wieder in SEINER Sandbox-DB. i18n de/en, CSS (Banner/Modal/Tests-Liste). SW `v106`. **Grenze:** DOM/
+IndexedDB statisch geprüft (kein Headless-Browser); **optionale Demo-Vorbefüllung** (`domain/demodaten.js`) bewusst als
+sauber abgegrenzter Folgeschritt offen (UI ist ohne sie vollständig nutzbar — man startet mit leerem Test).
+**Test-Modus Store-Glue erledigt (vorige Sitzung, BAUPLAN Block 1/Schritt 2b):** Neues dünnes IndexedDB-/Verdrahtungs-
 modul `core/sandboxStore.js` über dem Sandbox-Kern + der Registry-Persistenz: `erstelleSandboxTresor`/`wechsleZuSandbox`/
 `leereSandboxTresor`/`loescheSandboxTresor`/`loescheAlleSandboxes` (DEK verwerfen, DB-Handle schließen, aktive Tresor-DB
 ausrichten, Registry persistieren) + `raeumeVerwaisteSandboxesAuf` (Boot-Aufräumen verwaister Test-DBs via
@@ -219,9 +230,9 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-18 (Test-Modus Store-Glue) · **Branch (letzte PR):** `claude/sandbox-store-glue` (PR #120)
-· **Tests:** `node tests/run.mjs` → **1132/1132 grün**
-· **SW-Cache:** `v105` · **99 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1: Schritt 1 ✅, Schritt 2a (Sandbox-Kern) ✅, Schritt 2b (Store-Glue) ✅**
+**Letzte Aktualisierung:** 2026-06-18 (Test-Modus UI) · **Branch (letzte PR):** `claude/test-modus-ui-v71y2l` (PR #122)
+· **Tests:** `node tests/run.mjs` → **1141/1141 grün**
+· **SW-Cache:** `v106` · **99 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1: Schritt 1 ✅, Schritt 2a (Sandbox-Kern) ✅, Schritt 2b (Store-Glue) ✅, Schritt 2c (Test-Modus UI) ✅**
 · **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (je 1 PR/Sitzung; nächste = **R1 — Verzugszinsen buchen**).
 · **B1 ✅:** Bilanzierung-Modus (`gewinnermittlung` euer|bilanz, Default euer) + Konten-Klassifikation
   (`domain/bilanzierung.js`) + Bilanz-Grundkonten 0800/0840/0860/0970 im Seed + Modus-Schalter (PR #87).
