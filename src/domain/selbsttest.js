@@ -13,6 +13,7 @@ import { buildUstVa } from './export.js';
 import { gdpduCsvBuchungen } from './gdpdu.js';
 import { demoMandant, demoExportDateien } from './demodaten.js';
 import { zipFiles } from '../core/zip.js';
+import { backupRoundtripSelbsttest, buildBackupFromSnapshot, readBackup } from '../core/backup.js';
 
 function bytesEqual(a, b) {
   if (a.length !== b.length) return false;
@@ -89,6 +90,36 @@ export async function runSelbsttest() {
     const zip = zipFiles(demoExportDateien(demoMandant('klein')));
     add('Export-Pipeline (Demo-ZIP, alle Formate)', zip[0] === 0x50 && zip[1] === 0x4b && zip.length > 500, `${zip.length} Bytes`);
   } catch (e) { add('Export-Pipeline (Demo-ZIP)', false, String(e.message || e)); }
+
+  // 7) Datensicherung: Backup→Restore-Roundtrip BYTE-GENAU — Pflicht #1 (Datendurabilität).
+  // Beweist, dass die Rettung wirklich funktioniert: Snapshot → verschlüsseltes Backup →
+  // entschlüsseln → Probespeicher-Import → byte-genauer Vergleich mit dem Original.
+  try {
+    const probeSnapshot = {
+      kv: {
+        mode: 'profi', gewinnermittlung: 'euer', nutzungsmodus: 'firma',
+        firma: { name: 'Muster GmbH', anschrift: 'Weg 1, 12345 Berlin', iban: 'DE00 0000 0000 0000 0000 00' },
+      },
+      records: [
+        { id: 'k-1200', type: 'konto', nummer: '1200', name: 'Bank', art: 'aktiv' },
+        { id: 'b-1', type: 'buchung', seq: 1, datum: '2026-01-01', beschreibung: 'Beleg „Ä/Ö/Ü ß €" ✓',
+          zeilen: [{ konto: '1200', seite: 'S', betrag: 11900 }, { konto: '8400', seite: 'H', betrag: 10000 }, { konto: '1776', seite: 'H', betrag: 1900 }] },
+      ],
+      files: [
+        { id: 'f-1', name: 'beleg.pdf', sealed: { v: 1, iv: 'AAAAAAAAAAAAAAAA', ct: 'QkxQUi1CQUNLVVA' } },
+      ],
+    };
+    const rt = await backupRoundtripSelbsttest(probeSnapshot, 'Selbsttest-Backup-Passwort-123');
+    add('Datensicherung: Backup→Restore-Roundtrip (byte-genau)', rt.ok,
+      rt.fehler || `${rt.bytesOriginal} Byte identisch wiederhergestellt`);
+    // Restore mit falschem Passwort muss scheitern (Krypto-Schutz auch bei der Rettung).
+    let restoreAbgelehnt = false;
+    try {
+      const txt = await buildBackupFromSnapshot(probeSnapshot, 'Passwort-A');
+      await readBackup('Passwort-B', txt);
+    } catch { restoreAbgelehnt = true; }
+    add('Datensicherung: Restore lehnt falsches Passwort ab', restoreAbgelehnt);
+  } catch (e) { add('Datensicherung: Backup→Restore-Roundtrip', false, String(e.message || e)); }
 
   const bestanden = ergebnisse.filter((r) => r.ok).length;
   return { gesamt: ergebnisse.length, bestanden, ok: bestanden === ergebnisse.length, ergebnisse };
