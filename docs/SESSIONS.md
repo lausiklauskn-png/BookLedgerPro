@@ -5,6 +5,44 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2/Schritt 5: Kalkulations-Kern (rein, cent-genau) [PR #126, Branch `claude/block-2-calculation-core-bu1qag`]
+
+**Ausgangslage / Auswahl**
+- Block 1 komplett, Block 2/Schritt 4 (`rechnungsstelle`) erledigt. Laut `docs/BAUPLAN.md` ist der nächste Schritt der
+  **Kalkulations-Kern** — reine Rechenlogik (`docs/KALKULATION_KATALOG.md` §2/§9), bewusst **ohne UI-Zwang** in diesem Schritt.
+- Prime Directive (Katalog §0/§8): Kalkulation ist **rein intern** — der Kern erzeugt **kein** Außendokument; das neutrale
+  Angebot/die Rechnung (Schritte 6/7) zeigt nie die Systematik (Marge/Maschinensatz/Verschnitt …).
+
+**Was getan** (reine Logik zuerst node-getestet — **+34 → 1215/1215**)
+- **`src/domain/kalkulation.js`** (rein, node-getestet, cent-genau wie `money.js`):
+  - Kostenarten `KOSTENART`/`KOSTENART_LISTE` (material/maschine/arbeit/zukauf/montage).
+  - Bausteine: `materialkosten` (pauschal **oder** m²-Formel `flaecheM2 × preisProM2 × (1+Verschnitt%)`),
+    `zeitkosten`/`maschinenkosten`/`arbeitskosten` (Stunden × Satz Cent/Std), `zukaufkosten` (EK × (1+Handelsaufschlag%)),
+    `montagekosten` (pauschal); Hilfen `rundeCent` (kaufmännisch, zentrale Rundungsstelle) + `prozentFaktor`.
+  - **Vorwärts** `kalkuliereVorwaerts(input)` → Selbstkosten → Zuschlag Gemeinkosten% → Gewinn% → Netto → USt% → Brutto,
+    je Stufe auf ganze Cent gerundet; liefert vollständige Aufschlüsselung inkl. `gemeinkostenBetrag`/`gewinnBetrag`/
+    `deckungsbeitrag`.
+  - USt-Umrechnung `bruttoVonNetto`/`nettoVonBrutto`.
+  - **Rückwärts** `maxSelbstkosten(zielNetto, marge)` + `kalkuliereRueckwaerts(input)` (Ziel-Netto **oder** -Brutto)
+    → max. zulässige Selbstkosten, Restbudget nach fixen Kosten, daraus **erlaubte Arbeitsstunden** — konservativ
+    abgerundet (`floor`), überschreitet das Ziel nie.
+- **`sw.js`:** `CACHE_VERSION` → **v109**, Modul `./src/domain/kalkulation.js` precached.
+- **`tests/run.mjs`:** +34 Prüfungen (Bausteine, kompletter Vorwärtslauf 392€ SK → 540,96€ Netto → 643,74€ Brutto,
+  USt-Umrechnung, Rückwärts-Roundtrip inkl. Zielbrutto + negatives Budget).
+
+**Stand**
+- `node tests/run.mjs` → **1215/1215 grün**; `node --check` für `kalkulation.js`/`sw.js`/`run.mjs` ok. PR #126 (Draft → ready → CI → merge).
+- Docs fortgeschrieben: BAUPLAN Schritt 5 abgehakt, PULS „START HIER" + Kopf-Status auf Schritt 6, OFFENE_PUNKTE + NAECHSTE_SITZUNG.
+
+**Offen / Nächstes**
+- **Block 2/Schritt 6 — Produkt-Schemata** (`docs/KALKULATION_KATALOG.md` §1/§2): Folierung (m²)/Schild/Gravur/
+  Leuchtreklame/Druck-Zukauf/Montage … als kalibrierbare Vorlagen, die den Kalkulations-Kern füttern.
+- **Grenze (ehrlich):** Der Kern rechnet nur mit den eingegebenen Sätzen (erfindet nichts) — Kalibrierung/
+  Nachkalkulation (Korrekturfaktoren aus der Historie) ist Schritt 9/10. Reine Logik, **kein UI** in diesem Schritt
+  (kommt mit den Schemata/Angeboten).
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2/Schritt 4: Setting `rechnungsstelle` (§14-Nummernkreis-Hoheit) [PR #125, Branch `claude/block-2-kalkulation-angebote-6z8pht`]
 
 **Ausgangslage / Auswahl**

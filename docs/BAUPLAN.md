@@ -63,8 +63,15 @@
   `blp`), Onboarding-Schritt (`ui/lock.js`, nach §19) + Einstellungs-Umschalter mit Bestätigung (`ui/shell.js`,
   `vergebeneRechnungsnummern` aus `crm-store.js`). i18n de/en, SW `v108`. **Konsumiert** (Nummernvergabe/Beschriftung/
   Export) wird das in Schritt 7/8. UI/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §7a)
-- [ ] **5. Kalkulations-Kern (rein)** — Kostenarten + Zuschlags-/Maschinenstundensatz-/m²-Formel, **vorwärts**
-  (Selbstkosten→Preis) **und rückwärts** (erlaubtes Zeit-/Kostenbudget), cent-genau, node-getestet.
+- [x] **5. Kalkulations-Kern (rein)** ✅ (PR #126, 2026-06-18) — `domain/kalkulation.js` (rein, node-getestet,
+  +34 → **1215/1215**): Kostenarten `KOSTENART` (material/maschine/arbeit/zukauf/montage); Bausteine
+  `materialkosten` (pauschal **oder** m²-Formel `flaecheM2×preisProM2×(1+Verschnitt%)`), `zeitkosten`/
+  `maschinenkosten`/`arbeitskosten`, `zukaufkosten` (EK×(1+Handelsaufschlag%)), `montagekosten`; **vorwärts**
+  `kalkuliereVorwaerts` → Selbstkosten → Zuschlag Gemeinkosten% → Gewinn% → Netto → USt% → Brutto +
+  Deckungsbeitrag (cent-genau, je Stufe `rundeCent`); USt-Umrechnung `bruttoVonNetto`/`nettoVonBrutto`;
+  **rückwärts** `maxSelbstkosten`/`kalkuliereRueckwaerts` (Zielpreis/-marge → erlaubte Selbstkosten,
+  Restbudget, max. Arbeitsstunden — konservativ `floor`, überschreitet das Ziel nie). SW `v109`. Rein —
+  KEIN UI/Außendokument (Prime Directive); das kommt in Schritt 6/7. (`docs/KALKULATION_KATALOG.md` §2/§9)
 - [ ] **6. Produkt-Schemata** — Folierung (m²)/Schild/Gravur/Leuchtreklame/Druck-Zukauf/Montage … als
   kalibrierbare Vorlagen auf dem Kern. (Katalog §1/§2)
 - [ ] **7. Angebote-Kern in BLP** — Angebots-Dokument (Positionen/Preise/USt) **+ interne Kalkulationsschicht**

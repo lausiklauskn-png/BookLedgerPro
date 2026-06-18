@@ -34,6 +34,12 @@ import {
   vergibtBlpNummern, vorlaeufigeRechnungsnummer, istVorlaeufigeNummer, VORLAEUFIG_PREFIX,
   rechnungsstelleWechselHinweis,
 } from '../src/domain/rechnungsstelle.js';
+import {
+  KOSTENART, KOSTENART_LISTE, rundeCent, prozentFaktor,
+  materialkosten, m2Materialkosten, zeitkosten, maschinenkosten, arbeitskosten,
+  zukaufkosten, montagekosten, kalkuliereVorwaerts,
+  bruttoVonNetto, nettoVonBrutto, maxSelbstkosten, kalkuliereRueckwaerts,
+} from '../src/domain/kalkulation.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
@@ -3497,6 +3503,89 @@ await section('Kalkulation Block 2/Schritt 4: rechnungsstelle (§14-Hoheit)', ()
     const h = rechnungsstelleWechselHinweis('quatsch', 'extern', { vergebeneNummern: 2 });
     // 'quatsch' → blp, also blp→extern mit Nummern → warnen
     return h.code === 'blp-nummern-vergeben' && h.warnen;
+  })());
+});
+
+await section('Kalkulation Block 2/Schritt 5: Kalkulations-Kern (rein, cent-genau)', () => {
+  // Bausteine.
+  ok('Kostenarten-Liste vollständig', KOSTENART_LISTE.length === 5 &&
+    KOSTENART_LISTE.includes(KOSTENART.MATERIAL) && KOSTENART_LISTE.includes(KOSTENART.MASCHINE) &&
+    KOSTENART_LISTE.includes(KOSTENART.ARBEIT) && KOSTENART_LISTE.includes(KOSTENART.ZUKAUF) &&
+    KOSTENART_LISTE.includes(KOSTENART.MONTAGE));
+  ok('rundeCent: kaufmännisch', rundeCent(11199.5) === 11200 && rundeCent(11199.49) === 11199);
+  ok('rundeCent: NaN/undefined → 0', rundeCent(NaN) === 0 && rundeCent(undefined) === 0);
+  ok('prozentFaktor: 12 → 1.12, leer → 1', prozentFaktor(12) === 1.12 && prozentFaktor() === 1);
+
+  // Material: pauschal + Verschnitt.
+  ok('materialkosten pauschal + Verschnitt 12%', materialkosten({ betragCent: 10000, verschnittProzent: 12 }) === 11200);
+  ok('materialkosten ohne Verschnitt', materialkosten({ betragCent: 10000 }) === 10000);
+  ok('materialkosten leer → 0', materialkosten() === 0 && materialkosten({}) === 0);
+  // Material: m²-Formel.
+  ok('m²-Material: 2,5 m² × 40€/m² + 12% Verschnitt',
+    materialkosten({ flaecheM2: 2.5, preisProM2Cent: 4000, verschnittProzent: 12 }) === 11200);
+  ok('m2Materialkosten = materialkosten(m²)',
+    m2Materialkosten({ flaecheM2: 2.5, preisProM2Cent: 4000, verschnittProzent: 12 }) === 11200);
+  ok('m²-Basis schlägt betragCent (gesetztes preisProM2)',
+    materialkosten({ betragCent: 999999, flaecheM2: 1, preisProM2Cent: 5000 }) === 5000);
+
+  // Zeitkosten (Maschine/Arbeit teilen die Logik).
+  ok('zeitkosten: 2 Std × 45€/Std', zeitkosten({ stunden: 2, satzCentProStd: 4500 }) === 9000);
+  ok('maschinenkosten = zeitkosten', maschinenkosten({ stunden: 2, satzCentProStd: 4500 }) === 9000);
+  ok('arbeitskosten = zeitkosten', arbeitskosten({ stunden: 3, satzCentProStd: 3500 }) === 10500);
+  ok('zeitkosten: gebrochene Std cent-genau', zeitkosten({ stunden: 1.5, satzCentProStd: 3333 }) === 5000); // round(4999.5)
+
+  // Zukauf/Handel.
+  ok('zukaufkosten: EK 50€ + 20% Handelsaufschlag', zukaufkosten({ ekCent: 5000, handelsaufschlagProzent: 20 }) === 6000);
+  ok('zukaufkosten ohne Aufschlag', zukaufkosten({ ekCent: 5000 }) === 5000);
+  ok('montagekosten: pauschal', montagekosten({ betragCent: 2500 }) === 2500 && montagekosten() === 0);
+
+  // Vorwärts: kompletter Durchlauf (Katalog §2).
+  const v = kalkuliereVorwaerts({
+    material: { betragCent: 10000, verschnittProzent: 12 }, // 11200
+    maschine: { stunden: 2, satzCentProStd: 4500 },          // 9000
+    arbeit: { stunden: 3, satzCentProStd: 3500 },            // 10500
+    zukauf: { ekCent: 5000, handelsaufschlagProzent: 20 },   // 6000
+    montage: { betragCent: 2500 },                           // 2500
+    gemeinkostenProzent: 15, gewinnProzent: 20, ustProzent: 19,
+  });
+  ok('vorwärts: Einzelkosten', v.material === 11200 && v.maschine === 9000 &&
+    v.arbeit === 10500 && v.zukauf === 6000 && v.montage === 2500);
+  ok('vorwärts: Selbstkosten = Summe', v.selbstkosten === 39200);
+  ok('vorwärts: Gemeinkosten 15% → 45080', v.selbstkosten + v.gemeinkostenBetrag === 45080 && v.gemeinkostenBetrag === 5880);
+  ok('vorwärts: Netto nach Gewinn 20% = 54096', v.netto === 54096 && v.gewinnBetrag === 9016);
+  ok('vorwärts: USt 19% = 10278, Brutto = 64374', v.ustBetrag === 10278 && v.brutto === 64374);
+  ok('vorwärts: Deckungsbeitrag = Netto − Selbstkosten', v.deckungsbeitrag === 14896);
+  ok('vorwärts: leere Eingabe → alles 0', (() => {
+    const z = kalkuliereVorwaerts();
+    return z.selbstkosten === 0 && z.netto === 0 && z.brutto === 0 && z.deckungsbeitrag === 0;
+  })());
+
+  // USt-Umrechnung cent-genau.
+  ok('bruttoVonNetto: 54096 @19%', (() => {
+    const b = bruttoVonNetto(54096, 19);
+    return b.ustBetragCent === 10278 && b.bruttoCent === 64374;
+  })());
+  ok('nettoVonBrutto: 64374 @19% → 54096 (gerundet)', nettoVonBrutto(64374, 19) === 54096);
+  ok('USt 0% neutral', nettoVonBrutto(5000, 0) === 5000 && bruttoVonNetto(5000, 0).bruttoCent === 5000);
+
+  // Rückwärts: Zielpreis/Marge → erlaubte Kosten/Zeit (Katalog §2/§5.2).
+  ok('maxSelbstkosten: invers zum Vorwärtslauf', maxSelbstkosten(54096, { gemeinkostenProzent: 15, gewinnProzent: 20 }) === 39200);
+  ok('maxSelbstkosten: konservativ abgerundet (floor)',
+    maxSelbstkosten(54097, { gemeinkostenProzent: 15, gewinnProzent: 20 }) === 39200);
+  const r = kalkuliereRueckwaerts({
+    zielNettoCent: 54096, gemeinkostenProzent: 15, gewinnProzent: 20,
+    fixeKostenCent: 28700, stundensatzCentProStd: 3500, // alles außer Arbeit
+  });
+  ok('rückwärts: maxSelbstkosten = 39200', r.maxSelbstkostenCent === 39200);
+  ok('rückwärts: Restbudget für Arbeit = 10500', r.budgetCent === 10500 && r.reichtAus);
+  ok('rückwärts: erlaubte Stunden = 3.00', r.maxStunden === 3 && r.zielNettoCent === 54096);
+  ok('rückwärts: aus Zielbrutto (64374 @19%)', (() => {
+    const rb = kalkuliereRueckwaerts({ zielBruttoCent: 64374, ustProzent: 19, gemeinkostenProzent: 15, gewinnProzent: 20 });
+    return rb.zielNettoCent === 54096 && rb.maxSelbstkostenCent === 39200;
+  })());
+  ok('rückwärts: Budget negativ → reichtAus=false, 0 Stunden', (() => {
+    const rn = kalkuliereRueckwaerts({ zielNettoCent: 10000, fixeKostenCent: 12000, stundensatzCentProStd: 3500 });
+    return rn.budgetCent < 0 && !rn.reichtAus && rn.maxStunden === 0;
   })());
 });
 
