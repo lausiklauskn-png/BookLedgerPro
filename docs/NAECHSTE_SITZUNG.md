@@ -20,16 +20,18 @@ AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 202
 steht dort. **Block 1 (Vertrauen/Sicherheit) ist KOMPLETT** — wir sind mitten in **Block 2 (Kalkulation/Angebote)**.
 **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (nicht zwingend 1/Sitzung; pro Schritt 1 PR,
 jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden). Stand: **Block 1 KOMPLETT** (Schritt 1 #116 ·
-2a #118 · 2b #120 · 2c #122 · 3 #124) · **Block 2/Schritt 4 Setting `rechnungsstelle` ✅ (PR #125:** `domain/rechnungsstelle.js`
-— `blp|extern`, Default `blp`, vorläufige interne Nummer `ENT-JJJJ-NNNN`, Wechsel-Hinweis blp→extern→Bestätigung; Onboarding +
-Einstellungen; node-getestet, UI statisch geprüft**).** Nächste offene Schritte:
-1. **NÄCHSTER SCHRITT — Block 2/Schritt 5: Kalkulations-Kern (rein)** — `docs/KALKULATION_KATALOG.md` §2/§9. Kostenarten
-   + Zuschlags-/Maschinenstundensatz-/m²-Formel, **vorwärts** (Selbstkosten→Preis) **und rückwärts** (erlaubtes Zeit-/
-   Kostenbudget), **cent-genau**, ZUERST node-getestet (reine Logik, kein UI-Zwang in diesem Schritt). Danach Block-2-Schritte
-   6–11 fein geschnitten: Produkt-Schemata → Angebote-Kern → Angebot→Rechnung → Auftrags-Kostenträger/Nachkalkulation →
-   Kalibrierung/Statistik → Baukasten-UX. **Prime Directive Angebote:** Kalkulation rein intern, Angebot/Rechnung neutral
-   nach außen. Hinweis: das Setting `rechnungsstelle` (Schritt 4) ist da — `vergibtBlpNummern`/`vorlaeufigeRechnungsnummer`
-   stehen bereit und werden in Schritt 7+8 konsumiert.
+2a #118 · 2b #120 · 2c #122 · 3 #124) · **Block 2/Schritt 4 Setting `rechnungsstelle` ✅ (PR #125)** · **Block 2/Schritt 5
+Kalkulations-Kern ✅ (PR #126:** `domain/kalkulation.js` — Kostenarten + m²-/Maschinenstundensatz-/Zuschlags-Formel,
+`kalkuliereVorwaerts` (Selbstkosten→Netto→Brutto + Deckungsbeitrag) **und** `kalkuliereRueckwaerts`/`maxSelbstkosten`
+(Zielpreis/-marge → erlaubte Kosten/Zeit), cent-genau, rein node-getestet, **kein UI**)**.** Nächste offene Schritte:
+1. **NÄCHSTER SCHRITT — Block 2/Schritt 6: Produkt-Schemata** — `docs/KALKULATION_KATALOG.md` §1/§2. Folierung (m²)/
+   Schild/Gravur/Leuchtreklame/Druck-Zukauf/Montage … als **kalibrierbare Vorlagen**, die den vorhandenen Kalkulations-Kern
+   (`domain/kalkulation.js`: `materialkosten`/`m2Materialkosten`/`maschinenkosten`/`arbeitskosten`/`zukaufkosten`/
+   `montagekosten`/`kalkuliereVorwaerts`/`kalkuliereRueckwaerts`) füttern. ZUERST reine Logik node-getestet (Schema-
+   Definition + Mapping auf den Kern), UI ggf. eigener Folgeschritt. Danach Block-2-Schritte 7–11 fein geschnitten:
+   Angebote-Kern → Angebot→Rechnung → Auftrags-Kostenträger/Nachkalkulation → Kalibrierung/Statistik → Baukasten-UX.
+   **Prime Directive Angebote:** Kalkulation rein intern, Angebot/Rechnung neutral nach außen. Hinweis: das Setting
+   `rechnungsstelle` (Schritt 4) ist da — `vergibtBlpNummern`/`vorlaeufigeRechnungsnummer` werden in Schritt 7+8 konsumiert.
 2. **Optional, kleiner Folgeschritt zu Schritt 2c:** **Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) —
    ein neuer Test wahlweise leer **oder** mit Demo-Daten starten. (Die Test-Modus-UI ist ohne sie bereits
    vollständig nutzbar; daher bewusst abgegrenzt.)
@@ -67,9 +69,9 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 4 (Setting `rechnungsstelle`, PR #125)**.
-Tests **1181/1181** · SW **v108** · 103 JS-Module. **Block 1 KOMPLETT** (Schritt 1 + 2a–2c + 3); **Block 2/Schritt 4 ✅**.
-**Nächster Schritt: BAUPLAN Block 2/Schritt 5 — Kalkulations-Kern (rein)** (`docs/KALKULATION_KATALOG.md` §2/§9;
-Zuschlags-/Maschinenstundensatz-/m²-Formel, vorwärts + rückwärts, cent-genau, node-getestet); danach Block-2-Schritte
-6–11 (Produkt-Schemata → … → Baukasten-UX). Optional: 2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`).
-Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 5 (Kalkulations-Kern, PR #126)**.
+Tests **1215/1215** · SW **v109** · 104 JS-Module. **Block 1 KOMPLETT** (Schritt 1 + 2a–2c + 3); **Block 2/Schritt 4 + 5 ✅**.
+**Nächster Schritt: BAUPLAN Block 2/Schritt 6 — Produkt-Schemata** (`docs/KALKULATION_KATALOG.md` §1/§2;
+Folierung (m²)/Schild/Gravur/Leuchtreklame … als kalibrierbare Vorlagen auf dem Kalkulations-Kern `domain/kalkulation.js`);
+danach Block-2-Schritte 7–11 (Angebote-Kern → Angebot→Rechnung → … → Baukasten-UX). Optional: 2c-Folgeschritt
+Demo-Vorbefüllung (`domain/demodaten.js`). Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
