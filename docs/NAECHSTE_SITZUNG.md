@@ -21,20 +21,22 @@ AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 202
 (Gegenseite) ✅ #140 + Buchung gezahlter Verzugskosten (Zinsaufwand) ✅ #141 + Verzugsrisiko-Übersicht in der
 Verbindlichkeiten-Ansicht ✅ #142 + Dashboard-KPI überfällige **Verbindlichkeiten** ✅ #143 + Dashboard-KPI überfällige
 **Forderungen (Mahnwesen)** ✅ #145 + **Dashboard-KPI: Liquiditätsvorschau (bald fällig) ✅ #147** + **Liquiditätsvorschau
-um Geldbestand + projizierten Saldo ✅ #149** + zuletzt (2026-06-18) **Liquiditätsvorschau: wählbares Zeitfenster ✅** — die
-Liquiditäts-Karte rechnete bisher fest mit 7 Tagen; jetzt ist das Fenster **7 / 14 / 30 / 90 Tage** umschaltbar (Segment-Wahl
-in der Karte, Setting `liquiditaetHorizontTage`, gerätelokal/verschlüsselt). Reine Logik `domain/liquiditaet.js`
-**`LIQUIDITAET_HORIZONT_OPTIONEN`** (= [7,14,30,90]) + **`normalizeHorizont(value)`** (klemmt persistierte/ungültige Werte auf
-eine kuratierte Option, Default 7); node-getestet. UI `ui/views/dashboard.js`: `.segmented`-Umschalter über den KPI-Kacheln →
-`updateSettings({liquiditaetHorizontTage})` + Dashboard-Neuzeichnung; `liquiditaetsVorschau`/`baldFaellig` rechnen mit dem
-gewählten Horizont (die reine Logik nahm `horizontTage` bereits entgegen); **bucht nichts**. i18n de+en
-(`dashboard.liquidityHorizonLabel`/`…HorizonDays`), SW `v130` (kein neues Modul), +11 → **1621/1621** grün, DOM/IndexedDB
-statisch geprüft. **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln
+um Geldbestand + projizierten Saldo ✅ #149** + **Liquiditätsvorschau: wählbares Zeitfenster ✅** + zuletzt (2026-06-18)
+**Liquiditäts-Tiefpunkt (laufender Saldo im Fenster) ✅** — die Projektion (#149) prüfte nur den Saldo am **Fenster-ENDE**;
+der kann positiv sein, obwohl der laufende Saldo zwischendurch ins Minus rutscht (große Verbindlichkeit früh, ausgleichende
+Forderung spät). Reine Logik `domain/liquiditaet.js` **`liquiditaetsVerlauf({forderungen, verbindlichkeiten, heute,
+horizontTage, geldbestandCent})`** (node-getestet): bündelt bald fällige Bewegungen je Fälligkeits-Tag, addiert sie
+chronologisch ab dem aktuellen Geldbestand auf → `punkte[]` (Saldo nach jedem Bewegungs-Tag) + `startCent`/`endeCent` +
+**`tiefpunktCent`/`tiefpunktDatum`** (tiefster Stand + wann; startet beim heutigen Bestand; ohne `geldbestandCent` → Salden
+`null`, abwärtskompatibel). UI `ui/views/dashboard.js`: Tiefpunkt-Hinweis in der Liquiditäts-Karte — nur, wenn der laufende
+Saldo zwischendurch UNTER den End-Saldo fällt (sonst keine neue Info); **bucht nichts**. i18n de+en
+(`dashboard.liquidityLow`/`…LowHint`), SW `v131` (kein neues Modul), +17 → **1638/1638** grün, DOM/IndexedDB statisch
+geprüft. **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln
 grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden).
 
 Nächste offene Schritte (alle optional):
 1. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen
-   (zuletzt: Dashboard-Karte „Liquiditätsvorschau" mit umschaltbarem Zeitfenster 7/14/30/90 Tage).
+   (zuletzt: Dashboard-Karte „Liquiditätsvorschau" mit Tiefpunkt-Hinweis + umschaltbarem Zeitfenster 7/14/30/90 Tage).
 2. **Sonst:** umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server;
    WorkFloh-Gegenstücke — fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt
    blockiert:** Lighthouse/Perf, lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
@@ -70,13 +72,13 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditätsvorschau: wählbares Zeitfenster**: reine Logik
-`domain/liquiditaet.js` `LIQUIDITAET_HORIZONT_OPTIONEN` + `normalizeHorizont(value)`; Setting `liquiditaetHorizontTage`
-(`state.js`, Default 7); UI `ui/views/dashboard.js`: `.segmented`-Umschalter (7/14/30/90 Tage) → `updateSettings` +
-Dashboard-Neuzeichnung. Tests **1621/1621** · SW **v130** · 117 JS-Module.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Liquiditäts-Tiefpunkt (laufender Saldo im Fenster)**: reine
+Logik `domain/liquiditaet.js` `liquiditaetsVerlauf(opts)` → `punkte[]` + `startCent`/`endeCent` + `tiefpunktCent`/
+`tiefpunktDatum`; UI `ui/views/dashboard.js`: Tiefpunkt-Hinweis in der Liquiditäts-Karte (nur bei genuiner Delle unter den
+End-Saldo). Tests **1638/1638** · SW **v131** · 117 JS-Module.
 **Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung + Verzugsrisiko-KPI in
 Verbindlichkeiten-Ansicht + beidseitige Überfälligkeits-KPI #143/#145 + Liquiditätsvorschau #147 + Geldbestand/
-Projektion #149 + wählbares Zeitfenster).**
+Projektion #149 + wählbares Zeitfenster + Tiefpunkt).**
 **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
 oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

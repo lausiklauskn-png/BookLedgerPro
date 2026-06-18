@@ -5,6 +5,39 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Liquiditäts-Tiefpunkt (laufender Saldo im Fenster) [Branch `claude/bookledgerpro-block-3-h56a44`]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 ausgebaut (beide Überfälligkeits-KPIs + Liquiditätsvorschau mit Geldbestand +
+  projiziertem Saldo #149 + wählbares Zeitfenster). **Befund:** Die Projektion (#149) prüft nur den Saldo am
+  **Fenster-ENDE**. Der kann positiv sein, obwohl der laufende Saldo zwischendurch ins Minus rutscht (große
+  Verbindlichkeit früh, ausgleichende Forderung spät). Das beantwortet „reicht das Geld?" unehrlich. Sauberer,
+  build-freier Folgeschritt: einen **laufenden Saldo** über die Fälligkeiten rechnen und den **Tiefpunkt** (tiefster
+  Stand + Datum) sichtbar machen.
+
+**Was getan**
+- **`src/domain/liquiditaet.js`** (rein, node-getestet, +17 → **1638/1638**): `liquiditaetsVerlauf({forderungen,
+  verbindlichkeiten, heute, horizontTage, geldbestandCent})` — bündelt bald fällige Bewegungen je Fälligkeits-Tag,
+  addiert sie chronologisch ab dem aktuellen Geldbestand auf und liefert `punkte[]` (Saldo nach jedem Bewegungs-Tag),
+  `startCent`/`endeCent` sowie **`tiefpunktCent`/`tiefpunktDatum`** (Tiefpunkt startet beim heutigen Bestand). Ohne
+  `geldbestandCent` bleiben die Saldo-Felder `null` (abwärtskompatibel).
+- **`src/ui/views/dashboard.js`**: Die Liquiditäts-Karte zeigt zusätzlich einen **Tiefpunkt-Hinweis** — aber nur, wenn
+  der laufende Saldo zwischendurch UNTER den End-Saldo fällt (sonst keine neue Information). **Bucht nichts.**
+- i18n de+en (`dashboard.liquidityLow`/`liquidityLowHint`), **SW `v131`** (kein neues Modul — `liquiditaet.js` bereits precached).
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut. **Tests 1638/1638 grün** (`node tests/run.mjs`). SW `v131`.
+  117 JS-Module.
+
+**Offen / Nächstes / Grenzen**
+- **DOM/IndexedDB statisch geprüft** (kein Headless-Browser) — die reine Logik (`liquiditaetsVerlauf`) ist node-getestet (+17).
+- **Ehrliche Grenze:** weiterhin einfache Planung nach Fälligkeitsdatum (keine Forecast-Modellierung von Skonto/
+  Teilzahlungen/Steuern); Bündelung je Tag (kein Intraday); Tiefpunkt nur innerhalb des gewählten Fensters.
+- **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
+  (Server-/Offsite-Backup-Ziel, WorkFloh-Gegenstücke) oder eine neue, abgestimmte Idee.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Liquiditätsvorschau — wählbares Zeitfenster [Branch `claude/bookledgerpro-block-3-oqyp8d`]
 
 **Ausgangslage / Auswahl**

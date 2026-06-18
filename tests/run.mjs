@@ -147,7 +147,7 @@ import {
 import {
   LIQUIDITAET_HORIZONT_DEFAULT, baldFaellig, liquiditaetsVorschau,
   GELDKONTO_BEREICHE, LIQUIDITAET_AMPEL, istGeldkonto, geldbestand, liquiditaetsAmpel,
-  LIQUIDITAET_HORIZONT_OPTIONEN, normalizeHorizont,
+  LIQUIDITAET_HORIZONT_OPTIONEN, normalizeHorizont, liquiditaetsVerlauf,
 } from '../src/domain/liquiditaet.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
@@ -2468,6 +2468,45 @@ await section('Liquidität: normalizeHorizont (wählbares Zeitfenster)', () => {
   const spaet = [{ betragCent: 5000, faelligAm: '2026-07-10' }]; // +22 Tage
   ok('7-Tage-Fenster: nichts', liquiditaetsVorschau({ forderungen: spaet, heute, horizontTage: normalizeHorizont(7) }).eingehendAnzahl === 0);
   ok('30-Tage-Fenster: erfasst', liquiditaetsVorschau({ forderungen: spaet, heute, horizontTage: normalizeHorizont(30) }).eingehendAnzahl === 1);
+});
+
+await section('Liquidität: liquiditaetsVerlauf (Tiefpunkt im Fenster)', () => {
+  const heute = '2026-06-18';
+  // Große Verbindlichkeit am Tag 3, ausgleichende Forderung erst am Tag 25 → Endsaldo positiv,
+  // aber zwischendurch tief im Minus. Genau das soll der Tiefpunkt fangen.
+  const forderungen = [{ betragCent: 200000, faelligAm: '2026-07-13' }]; // +25 Tage (außerhalb 14-Fenster)
+  const verbindlichkeiten = [{ offenCent: 80000, faelligAm: '2026-06-21' }]; // +3 Tage
+  const v14 = liquiditaetsVerlauf({ forderungen, verbindlichkeiten, heute, horizontTage: 14, geldbestandCent: 50000 });
+  ok('Horizont durchgereicht', v14.horizontTage === 14);
+  ok('Startsaldo = Geldbestand', v14.startCent === 50000);
+  // Im 14-Tage-Fenster fällt nur die Verbindlichkeit (Forderung erst +25): 50000 − 80000 = −30000.
+  ok('Endsaldo nach Ausgang', v14.endeCent === -30000);
+  ok('Tiefpunkt = Endsaldo (einziger Punkt)', v14.tiefpunktCent === -30000);
+  ok('Tiefpunkt-Datum = Fälligkeit Ausgang', v14.tiefpunktDatum === '2026-06-21');
+  ok('genau ein Bewegungs-Tag', v14.punkte.length === 1);
+  ok('Punkt trägt Saldo', v14.punkte[0].saldoCent === -30000 && v14.punkte[0].ausgehendCent === 80000);
+
+  // 30-Tage-Fenster: jetzt fällt auch die Forderung → Endsaldo wieder positiv, Tiefpunkt bleibt negativ.
+  const v30 = liquiditaetsVerlauf({ forderungen, verbindlichkeiten, heute, horizontTage: 30, geldbestandCent: 50000 });
+  ok('30-Tage: Endsaldo positiv', v30.endeCent === 170000); // 50000 − 80000 + 200000
+  ok('30-Tage: Tiefpunkt trotzdem negativ', v30.tiefpunktCent === -30000);
+  ok('30-Tage: Tiefpunkt vor dem Eingang', v30.tiefpunktDatum === '2026-06-21');
+  ok('30-Tage: zwei Bewegungs-Tage chronologisch', v30.punkte.length === 2 && v30.punkte[0].datum < v30.punkte[1].datum);
+
+  // Heute schon knapper Bestand, nur ein späterer Eingang → Tiefpunkt = Startbestand am Tag heute.
+  const vStart = liquiditaetsVerlauf({ forderungen: [{ betragCent: 10000, faelligAm: '2026-06-22' }], heute, horizontTage: 14, geldbestandCent: 500 });
+  ok('Tiefpunkt = Startbestand', vStart.tiefpunktCent === 500 && vStart.tiefpunktDatum === heute);
+  ok('Endsaldo steigt durch Eingang', vStart.endeCent === 10500);
+
+  // Ohne Geldbestand: nur Bewegungs-Punkte, Salden null (abwärtskompatibel).
+  const ohne = liquiditaetsVerlauf({ forderungen, verbindlichkeiten, heute, horizontTage: 14 });
+  ok('ohne Bestand → Salden null', ohne.startCent === null && ohne.endeCent === null && ohne.tiefpunktCent === null && ohne.tiefpunktDatum === null);
+  ok('ohne Bestand → Punkt-Saldo null', ohne.punkte.length === 1 && ohne.punkte[0].saldoCent === null);
+
+  // Nichts fällig → keine Punkte, Tiefpunkt = Startbestand.
+  const leer = liquiditaetsVerlauf({ heute, horizontTage: 14, geldbestandCent: 12345 });
+  ok('leer → keine Punkte', leer.punkte.length === 0);
+  ok('leer → Tiefpunkt = Bestand', leer.tiefpunktCent === 12345 && leer.endeCent === 12345);
 });
 
 await section('Mahnwesen: persistenter Verlauf (Stufe/Zins-/Gebührenverlauf)', () => {

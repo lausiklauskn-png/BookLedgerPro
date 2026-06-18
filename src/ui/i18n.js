@@ -286,6 +286,8 @@ const STRINGS = {
     'dashboard.liquidityProjected': 'voraussichtlich in {tage} Tagen',
     'dashboard.liquidityWarnTight': 'Knapp: Der aktuelle Bestand deckt die Ausgänge allein nicht — die Liquidität hängt an den erwarteten Eingängen.',
     'dashboard.liquidityWarnNegative': 'Achtung: Nach dieser einfachen Planung wird der Saldo im Fenster negativ. Hinweis, keine Finanzberatung — Skonto/Teilzahlungen/Steuern sind nicht berücksichtigt.',
+    'dashboard.liquidityLow': 'tiefster Stand am {datum}',
+    'dashboard.liquidityLowHint': 'Auch wenn der Saldo am Fenster-Ende reicht: zwischenzeitlich (am {datum}) sinkt er voraussichtlich auf {betrag}. Reihenfolge der Fälligkeiten beachten.',
     'a11y.skip': 'Zum Inhalt springen',
     'a11y.nav': 'Hauptnavigation',
 
@@ -1200,6 +1202,8 @@ const STRINGS = {
     'dashboard.liquidityProjected': 'projected in {tage} days',
     'dashboard.liquidityWarnTight': 'Tight: the current balance alone does not cover the outflows — liquidity depends on the expected inflows.',
     'dashboard.liquidityWarnNegative': 'Warning: on this simple projection the balance turns negative within the window. A hint, not financial advice — discounts/partial payments/taxes are not taken into account.',
+    'dashboard.liquidityLow': 'lowest point on {datum}',
+    'dashboard.liquidityLowHint': 'Even if the balance is sufficient at the end of the window: in between (on {datum}) it is expected to drop to {betrag}. Mind the order of due dates.',
     'a11y.skip': 'Skip to content',
     'a11y.nav': 'Main navigation',
     'common.cancel': 'Cancel',
