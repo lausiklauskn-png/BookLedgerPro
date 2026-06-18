@@ -5,6 +5,40 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 1/Schritt 2 (Teil 1): Test-Modus — Sandbox-Kern (reine Schicht) [PR #118, Branch `claude/testmodus-sandbox-kern`]
+
+**Ausgangslage / Auswahl**
+- BAUPLAN Block 1/Schritt 1 (Roundtrip-Selbsttest) war erledigt → nächster Schritt **Test-Modus
+  (Sandbox-Tresor)** (`docs/TEST_MODUS.md`). Fein geschnitten: **erst die reine Lebenszyklus-Logik**
+  (node-testbar), Store-Glue + UI als eigene Folge-PRs.
+
+**Was getan** (reine Logik zuerst, node-getestet — **+28 → 1123/1123**)
+- **`src/domain/mandanten.js` (rein, kein IndexedDB):** Sandbox-/Test-Tresor als Mandant mit Flag
+  `sandbox:true` über die vorhandene Mehrmandanten-Schicht.
+  - `SANDBOX_INFIX` + `dbNameFuer(id, { sandbox })` → eigener DB-Infix `blpr_sandbox_<id>_bookledgerpro`;
+    Sandbox wird **nie** auf die Legacy-/Bestands-DB abgebildet (echte Daten technisch unberührt);
+    Suffix `bookledgerpro` bleibt (Regel #3). `dbNameVon(mandant)` + `istSandboxDbName(name)`
+    (erkennt Test-DBs am Namen ohne Registry → Aufräum-Sicherheit).
+  - `erstelleSandbox`/`istSandbox`; `echteMandanten`/`sandboxMandanten` trennen die Bereiche.
+  - `mandantenAuswahlListe`/`brauchtMandantenAuswahl` blenden Sandboxes aus (Sperrbildschirm = nur
+    echte Mandanten); neue `sandboxAuswahlListe` für den „🧪 Tests"-Bereich.
+  - `entferneAlleSandboxes` („Alle Tests löschen", immutabel) + `verwaisteSandboxDbs` (verwaiste
+    Test-DBs nach Absturz erkennen).
+- **`sw.js`:** `CACHE_VERSION` v103 → **v104** (`mandanten.js` ist precached).
+
+**Stand:** `node tests/run.mjs` **1123/1123 grün**; CI grün; **PR #118 squash-gemergt**.
+
+**Offen / Grenzen (ehrlich)**
+- Nur die **reine Schicht**. Es fehlen noch (eigene PRs):
+  **(a) Store-Glue** `core/sandboxStore.js` (Sandbox-DB anlegen/wechseln/**leeren**/löschen,
+  „alle aufräumen", Boot-Aufräumen verwaister Test-DBs via `indexedDB.databases()`);
+  **(b) UI** „🧪 Tests"-Bereich + dauerhafter **TEST-MODUS-Banner** + behalten/verwerfen-Dialog +
+  optional Demo-Vorbefüllung.
+- **Nächster Schritt:** Test-Modus **Store-Glue** (`core/sandboxStore.js`), dann UI; danach
+  Schritt 3 Backup-UX + `backupStrategie`.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 1/Schritt 1: Backup→Restore-Roundtrip-Selbsttest [PR #116, Branch `claude/bookledgerpro-backup-restore-f03itw`]
 
 **Ausgangslage / Auswahl**

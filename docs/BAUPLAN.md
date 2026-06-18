@@ -23,9 +23,17 @@
   ✓/✗, angehängt an den „Selbsttest" (V10, `domain/selbsttest.js`, +2 Prüfungen). +15 Tests (**1095/1095**),
   SW `v103`. Grenze: echter `dumpAll`/IndexedDB-Pfad nur statisch geprüft (kein Headless-Browser).
   (`docs/DATENSICHERUNG.md`)
-- [ ] **2. Test-Modus (Sandbox-Tresor)** — wegwerfbarer Test-Tresor über die Mehrmandanten-Schicht;
+- [~] **2. Test-Modus (Sandbox-Tresor)** — wegwerfbarer Test-Tresor über die Mehrmandanten-Schicht;
   mehrere getrennte Tests, behalten/verwerfen/aufräumen, optional Demo-vorbefüllt; echte Daten unberührt.
   *Warum früh:* macht das **manuelle Testen aller folgenden Features** gefahrlos. (`docs/TEST_MODUS.md`)
+  - [x] **2a. Sandbox-Kern (rein, node-getestet)** ✅ (PR #118, 2026-06-18): `domain/mandanten.js` —
+    `SANDBOX_INFIX`/`dbNameFuer({sandbox})`/`dbNameVon`/`istSandboxDbName`, `erstelleSandbox`/`istSandbox`,
+    `echteMandanten`/`sandboxMandanten`, Sandbox-Ausblendung am Sperrbildschirm + `sandboxAuswahlListe`,
+    `entferneAlleSandboxes`, `verwaisteSandboxDbs`. +28 Tests (1123/1123), SW `v104`.
+  - [ ] **2b. Store-Glue** `core/sandboxStore.js` — Sandbox-DB anlegen/wechseln/leeren/löschen,
+    „alle aufräumen", Boot-Aufräumen verwaister Test-DBs (`indexedDB.databases()`). (IndexedDB → statisch.)
+  - [ ] **2c. UI** — „🧪 Tests"-Bereich (Sperrbildschirm/Einstellungen), dauerhafter **TEST-MODUS-Banner**,
+    behalten/verwerfen-Dialog, optional Demo-Vorbefüllung (`domain/demodaten.js`).
 - [ ] **3. Datensicherungs-UX + `backupStrategie`** — prominenter Backup-/Restore-Bereich, **gemerkter
   Zielordner** (File System Access; Tablet→Download), **Drag-and-drop-Restore**; Setting `backupStrategie`
   (Onboarding + Einstellungen, frei wählbare Ziele/Erinnerung, Default sicher). (`docs/DATENSICHERUNG.md`)
