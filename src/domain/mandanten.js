@@ -231,6 +231,26 @@ export function verwaisteSandboxDbs(dbNamen, registry) {
 }
 
 /**
+ * Liefert die DB-Namen ALLER in der Registry geführten Sandbox-Tresore (Sandbox-Flag
+ * beachtet). Die Store-Schicht löscht damit beim „Alle Tests löschen" gezielt nur die
+ * Test-DBs — echte Mandanten-DBs sind nie dabei. Reine Funktion.
+ */
+export function sandboxDbNamen(registry) {
+  return sandboxMandanten(registry).map((m) => dbNameVon(m));
+}
+
+/**
+ * DB-Name des AKTIVEN Mandanten — berücksichtigt das `sandbox`-Flag (über `dbNameVon`).
+ * Fällt auf die Legacy-/Bestands-DB zurück, wenn keiner aktiv ist (z. B. nachdem der
+ * aktive Test-Tresor gelöscht wurde und kein Mandant nachrückt). Reine Funktion; die
+ * Store-Schicht richtet die aktive DB damit nach Lösch-/Wechsel-Operationen wieder aus.
+ */
+export function aktiveDbName(registry) {
+  const m = aktiverMandant(registry);
+  return m ? dbNameVon(m) : LEGACY_DB_NAME;
+}
+
+/**
  * Stellt sicher, dass der vorhandene Einzel-Tresor als Legacy-Mandant registriert ist
  * (migrationsfrei). Ist die Registry leer, wird der Bestand als „Mandant 1" mit der
  * festen Legacy-ID aufgenommen und aktiv gesetzt. Vorhandene Registries bleiben

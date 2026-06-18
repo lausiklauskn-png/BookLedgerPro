@@ -4,6 +4,7 @@
 
 import { requestPersistence } from './core/durability.js';
 import { initMandanten } from './core/mandantenStore.js';
+import { raeumeVerwaisteSandboxesAuf } from './core/sandboxStore.js';
 import { showLockScreen } from './ui/lock.js';
 import { showIntro } from './ui/intro.js';
 import { renderShell } from './ui/shell.js';
@@ -38,6 +39,11 @@ async function boot() {
   // aktive Tresor-DB ausrichten (Default = Legacy). Behält das bisherige Verhalten bei,
   // solange nur ein Mandant existiert.
   await initMandanten();
+
+  // Test-Modus (docs/TEST_MODUS.md), Aufräum-Sicherheit: verwaiste Sandbox-/Test-DBs (am
+  // Namen erkennbar, nicht in der Registry — z. B. nach einem Absturz) vorsorglich entfernen.
+  // Best-effort, blockiert den Start nie und fasst nie eine echte/aktive DB an.
+  raeumeVerwaisteSandboxesAuf().catch((e) => console.warn('[sandbox] Aufräumen übersprungen:', e));
 
   // Sperrbildschirm/Onboarding bis entsperrt.
   await showLockScreen(root);
