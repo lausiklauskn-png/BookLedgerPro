@@ -5,6 +5,43 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — V-Lohn: Lohn-Buchungskern L1–L3 (+ Liquiditäts-Treiber) [Branches `claude/bookledgerpro-liquidity-runway-0idq3p`, `claude/lohn-buchungskern`, `claude/lohn-store`, `claude/lohn-ui`]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 (Liquidität) bis zur Reichweite ausgebaut. **Diese Sitzung:** zunächst Block 3
+  um den **Liquiditäts-Treiber** ergänzt (#157), dann auf **Nutzer-Wunsch** ein **neuer, finiter Track gestartet:
+  V-Lohn — Lohn-Buchungskern** (BAUPLAN Block 4). **Scope-Entscheidung des Nutzers (2026-06-18):** „Lohn-Buchungskern" —
+  BLP **bucht** Lohn/Gehalt GoBD-sicher, **berechnet aber keine** Lohnsteuer/SV (kein ELStAM/DEÜV/amtl. Tabellen; die
+  Beträge kommen aus der Entgeltabrechnung). Reihenfolge: erst Lohn in BLP, **danach** WorkFloh-Test-Modus (eigene Sitzung).
+
+**Was getan**
+- **#157 Liquiditäts-Treiber** — `domain/liquiditaet.js groessteFaellige` + UI-Liste „Größte anstehende Bewegungen" in
+  der Liquiditäts-Karte (+14 → 1689).
+- **#158 V-Lohn L1** — reine Logik `domain/lohnbuchung.js` (Brutto-Methode `lohnBuchungZeilen`/`lohnBuchungEntwurf`/
+  `validateLohnlauf`/`lohnNettoCent`; Soll 4120 Brutto + 4130 AG-SV, Haben 1200/1740 Netto + 1741 Steuern + 1742 SV) +
+  Seed-Konten `domain/accounts.js` 4110/1740/1741/1742 (+23). Entwurf `validateBuchung`-gültig.
+- **#159 V-Lohn L2** — Store `domain/lohn-store.js` (verschlüsselt: save/list/get/delete + `bucheLohnlauf` → `saveEntwurf`,
+  Datum = Monatsletzter) + reine `normalizeLohnlauf`/`lohnkontoAggregat`/`lohnlaufBuchungsdatum` (+22).
+- **#160 V-Lohn L3** — UI `ui/views/lohn.js` (NAV „Lohn", privat/verein ausgeblendet): Lohnlauf-Formular + Live-Vorschau
+  (Netto/Soll=Haben) → speichern → „Buchen (Entwurf)" → Lohnkonto je Mitarbeiter; `shell.js`/`nutzungsmodus.js`-Gating;
+  i18n de+en (+1 NAV-Gating-Assertion). **End-to-end bedienbar.**
+
+**Stand**
+- **Tests 1735/1735 grün**, SW **v138**, 120 JS-Module. Vier PRs gemergt (#157–#160). V-Lohn L1–L3 von 6 erledigt.
+
+**Offen / Nächstes**
+- **V-Lohn L4** — monatliche Lohnsteuer-Anmeldung als Kennzahlen-Datenpaket (analog USt-VA); dann L5 SV-/LSt-Zahlungs-
+  übersicht, L6 Doku `docs/LOHN.md` + Abschluss. Plan: `docs/BAUPLAN.md` Block 4.
+- **Nutzer-Parallelwunsch:** Befehl an eine **Mein-WorkFloh**-Sitzung — Test-Modus nach `docs/TEST_MODUS.md` (⇄-Abschnitt).
+- Optional weiterhin: Browser-Sichttest (kein Headless-Browser hier).
+
+**Offene Grenzen / ungetestet**
+- Lohn-Logik + Store-Aggregat node-getestet; **DOM/IndexedDB/Lohn-UI statisch geprüft** (kein Headless-Browser).
+- Inhaltlich bewusst außen vor (eigenes, zertifiziertes Produkt): vollautomatische Brutto→Netto-Berechnung, SV-Meldungen
+  (DEÜV), ELStAM, Beitragsnachweise. BLP ist die Buchungs-/Kontroll-Schicht, nicht die Abrechnung.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Liquiditäts-Treiber (größte anstehende Bewegungen) [Branch `claude/bookledgerpro-liquidity-runway-0idq3p`]
 
 **Ausgangslage / Auswahl**
