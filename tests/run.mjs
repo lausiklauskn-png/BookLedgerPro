@@ -95,6 +95,7 @@ import {
   brauchtMandantenAuswahl, mandantenAuswahlListe,
   SANDBOX_INFIX, dbNameVon, istSandboxDbName, istSandbox, erstelleSandbox,
   echteMandanten, sandboxMandanten, sandboxAuswahlListe, entferneAlleSandboxes, verwaisteSandboxDbs,
+  sandboxDbNamen, aktiveDbName,
 } from '../src/domain/mandanten.js';
 import { DB_SUFFIX, getActiveDbName, setActiveDbName, closeDb, LEGACY_DB_NAME as DB_LEGACY_NAME } from '../src/core/db.js';
 
@@ -3111,6 +3112,28 @@ await section('Test-Modus (Sandbox-Kern): Lebenszyklus + Trennung von echten Man
   ok('verwaiste Sandbox-DB erkannt', JSON.stringify(verwaisteSandboxDbs(vorhandene, regNurTest1)) === JSON.stringify(['blpr_sandbox_99999999_bookledgerpro']));
   ok('keine verwaisten ohne Sandbox-DBs', verwaisteSandboxDbs(['blpr_bookledgerpro'], regNurTest1).length === 0);
   ok('verwaiste robust bei leerer Eingabe', verwaisteSandboxDbs(null, leereRegistry()).length === 0);
+});
+
+await section('Test-Modus (Store-Glue 2b): reine Helfer (DB-Namen je Test, aktive DB)', () => {
+  // sandboxDbNamen: liefert die DB-Namen NUR der Sandbox-Tresore (für „Alle Tests löschen").
+  let reg = mitLegacyMandant(leereRegistry());                    // 1 echter (Legacy, aktiv)
+  reg = addMandant(reg, erstelleMandant('Firma 2', { id: 'bbbb0002', erstellt: 5 }));
+  reg = addMandant(reg, erstelleSandbox('Test 1', { id: 'cccc0003', erstellt: 6 }));
+  reg = addMandant(reg, erstelleSandbox('Test 2', { id: 'dddd0004', erstellt: 7 }));
+  ok('sandboxDbNamen nur Sandbox-DBs', JSON.stringify(sandboxDbNamen(reg).sort())
+    === JSON.stringify(['blpr_sandbox_cccc0003_bookledgerpro', 'blpr_sandbox_dddd0004_bookledgerpro']));
+  ok('sandboxDbNamen ohne echte DBs', sandboxDbNamen(reg).every((n) => istSandboxDbName(n)));
+  ok('sandboxDbNamen leer ohne Tests', sandboxDbNamen(mitLegacyMandant(leereRegistry())).length === 0);
+  ok('sandboxDbNamen robust', sandboxDbNamen(leereRegistry()).length === 0 && sandboxDbNamen(null).length === 0);
+
+  // aktiveDbName: DB-Name des aktiven Mandanten, Sandbox-Flag beachtet, Legacy-Fallback.
+  ok('aktiv = Legacy → Bestands-DB', aktiveDbName(reg) === 'blpr_bookledgerpro');
+  ok('aktiv = echter Mandant', aktiveDbName(setzeAktiv(reg, 'bbbb0002')) === 'blpr_bbbb0002_bookledgerpro');
+  ok('aktiv = Sandbox → Sandbox-DB (Flag beachtet)', aktiveDbName(setzeAktiv(reg, 'cccc0003')) === 'blpr_sandbox_cccc0003_bookledgerpro');
+  ok('keiner aktiv → Legacy-Fallback', aktiveDbName(leereRegistry()) === 'blpr_bookledgerpro' && aktiveDbName(null) === 'blpr_bookledgerpro');
+  // Nach „Alle Tests löschen" zeigt aktiveDbName auf den nachgerückten echten Mandanten.
+  ok('aktiv nach entferneAlleSandboxes (war Sandbox aktiv)',
+    aktiveDbName(entferneAlleSandboxes(setzeAktiv(reg, 'dddd0004'))) === 'blpr_bookledgerpro');
 });
 
 await section('Mandanten (M2a): Registry-DB-Name', () => {

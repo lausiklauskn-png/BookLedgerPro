@@ -16,7 +16,7 @@ import { setActiveDbName, closeDb } from './db.js';
 import { lockVault, vaultExists } from './vault.js';
 import {
   REGISTRY_DB_NAME, LEGACY_MANDANT_ID, leereRegistry, mitLegacyMandant,
-  dbNameFuer, addMandant, setzeAktiv, erstelleMandant,
+  dbNameFuer, dbNameVon, findeMandant, addMandant, setzeAktiv, erstelleMandant,
 } from '../domain/mandanten.js';
 
 const STORE = 'kv';
@@ -110,9 +110,11 @@ export async function registriereMandant(name) {
 export async function wechsleAktivenMandant(id) {
   const registry = await ladeRegistry();
   const next = setzeAktiv(registry, id); // wirft, wenn unbekannt
+  const mandant = findeMandant(next, id);
   lockVault();           // Sitzungs-Key (DEK) sauber verwerfen
   closeDb();             // altes DB-Handle schließen
-  setActiveDbName(dbNameFuer(id));
+  // `dbNameVon` beachtet das `sandbox`-Flag → korrekte DB auch für Test-Tresore (Sandbox).
+  setActiveDbName(dbNameVon(mandant));
   await speichereRegistry(next);
   return { registry: next, aktiv: id };
 }
