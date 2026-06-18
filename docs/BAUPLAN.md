@@ -42,8 +42,17 @@
     **behalten/verwerfen-Dialog** beim Verlassen (`behalteUndVerlasseSandbox`/`loescheSandboxTresor`); aktiver Test
     wird beim Start direkt wieder geöffnet (Korrektur `initMandanten` → `aktiveDbName()`). Reine Helfer
     `aktiverSandbox`/`naechsterTestName` node-getestet. +9 Tests (1141/1141), SW `v106`. i18n de/en, CSS.
-    DOM/IndexedDB statisch geprüft. **Offen (optional, Folgeschritt):** Demo-Vorbefüllung (`domain/demodaten.js`) —
-    die Test-Modus-UI ist ohne sie vollständig nutzbar (man startet mit leerem Test).
+    DOM/IndexedDB statisch geprüft.
+  - [x] **2d. Demo-Vorbefüllung** ✅ (2026-06-18) — beim „Neuer Test" wahlweise **leer** oder **mit Demo-Daten**
+    (Radio-Wahl, Default leer). Reine Logik in `domain/demodaten.js`: `demoEntwuerfe(mandant)` (Buchungen →
+    chronologische Entwurfs-Form, immutabel, jede `validateBuchung`-gültig + ausgeglichen) + `demoBefuellungsplan(groesse)`
+    (bündelt Konten/Anfangsbestände/Anlagen/Buchungs-Entwürfe). Store-Glue `domain/demodaten-store.js`
+    `befuelleMitDemodaten(groesse)` schreibt in den **aktiven** (Sandbox-)Tresor über die bestehenden Stores +
+    den **echten GoBD-Pfad** (`ensureAccountsSeeded` → `setAnfangsbestand` → `addAnlage` → `saveEntwurf`+`festschreiben`
+    chronologisch → lückenlose seq + Hash-Kette). UI: `ui/lock.js renderNeuerTest` reicht `demo:'klein'` ins
+    Sandbox-Onboarding; nach `setupVault` (DEK aktiv) wird befüllt (Fehler → Test startet leer, kein Block).
+    i18n de+en (`test.inhalt*`), CSS `.test-inhalt`, SW `v119`, neues Modul precached. +10 Tests (**1444/1444**).
+    Glue/DOM/IndexedDB statisch geprüft. (`docs/TEST_MODUS.md`)
 - [x] **3. Datensicherungs-UX + `backupStrategie`** ✅ (PR #124, 2026-06-18): prominente Backup-/Restore-Karte
   (Dashboard + Durabilitäts-Banner + Einstellungen) mit **Drag-and-drop-Restore**; **gemerkter Zielordner**
   (File System Access, gerätelokal in eigener unverschl. kv-DB `core/backupOrdner.js`; Tablet/ohne API/ohne

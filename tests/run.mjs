@@ -101,7 +101,7 @@ import { crc32, zipFiles } from '../src/core/zip.js';
 import { gdpduCsvBuchungen, gdpduCsvKonten, buildGdpduIndexXml, buildGdpduPaket } from '../src/domain/gdpdu.js';
 import { kleinbetragsrechnung, geschenkAbzug, bewirtungAufteilung, KLEINBETRAG_GRENZE_CENT, GESCHENK_GRENZE_CENT } from '../src/domain/kleinfaelle.js';
 import { istGesperrt } from '../src/domain/pruefung.js';
-import { demoMandant, demoExportDateien, DEMO_JAHR } from '../src/domain/demodaten.js';
+import { demoMandant, demoExportDateien, DEMO_JAHR, demoEntwuerfe, demoBefuellungsplan } from '../src/domain/demodaten.js';
 import { runSelbsttest } from '../src/domain/selbsttest.js';
 import { buildBackupFromSnapshot, readBackup, importProbe, snapshotBytes, backupRoundtripSelbsttest, BACKUP_INFO } from '../src/core/backup.js';
 import { wjPeriode, wirtschaftsjahrVon, wjBeginnYYYYMMDD, validateWjBeginn } from '../src/domain/geschaeftsjahr.js';
@@ -2716,6 +2716,41 @@ await section('Simulation: Demo-Mandant „klein" gegen dokumentierte Vergleichs
   ok('klein Demo-Export: alle Formate', dateien.length >= 9 && dateien.some((f) => f.name.startsWith('datev/')) && dateien.some((f) => f.name.startsWith('gdpdu/')));
   const zip = zipFiles(dateien);
   ok('klein Demo-Export als ZIP baubar', zip[0] === 0x50 && zip.length > 500);
+});
+
+await section('Demo-Vorbefüllung (Test-Modus): reiner Plan demoEntwuerfe/demoBefuellungsplan', () => {
+  const m = demoMandant('klein');
+  const idx = {}; for (const k of m.konten) idx[k.nummer] = k;
+  const entw = demoEntwuerfe(m);
+
+  ok('demoEntwuerfe: gleiche Anzahl wie Buchungen', entw.length === m.buchungen.length && entw.length > 0);
+  ok('demoEntwuerfe: nur Entwurfs-Felder (kein seq/status/hash)',
+    entw.every((e) => e.seq === undefined && e.status === undefined && e._seq === undefined
+      && typeof e.datum === 'string' && Array.isArray(e.zeilen)));
+  ok('demoEntwuerfe: chronologisch sortiert',
+    entw.every((e, i) => i === 0 || entw[i - 1].datum <= e.datum));
+  ok('demoEntwuerfe: jede Buchung ist gültig festschreibbar (validateBuchung)',
+    entw.every((e) => validateBuchung(e, idx).length === 0));
+  ok('demoEntwuerfe: jede Buchung ausgeglichen (Soll == Haben)',
+    entw.every((e) => istAusgeglichen(e.zeilen)));
+
+  // Immutabel: Eingabe-Buchungen bleiben unberührt (festgeschrieben mit seq).
+  ok('demoEntwuerfe: lässt Eingabe-Buchungen unangetastet',
+    m.buchungen.every((b) => b.status === 'festgeschrieben' && b.seq != null));
+  const e0 = entw.find((e) => e.beschreibung.includes('Reverse-Charge'));
+  e0.zeilen[0].betrag = -999;
+  ok('demoEntwuerfe: Zeilen sind Kopien (Mutation färbt nicht zurück)',
+    m.buchungen.some((b) => b.zeilen.some((z) => z.betrag === -999)) === false);
+
+  const plan = demoBefuellungsplan('klein');
+  ok('demoBefuellungsplan: bündelt Konten/Buchungen/Anlagen/Anfangsbestände',
+    plan.groesse === 'klein' && plan.jahr === DEMO_JAHR
+    && plan.konten.length > 0 && plan.buchungenEntwuerfe.length === m.buchungen.length
+    && plan.anlagen.length === 1 && plan.anfangsbestaende.length === 1);
+  ok('demoBefuellungsplan: Anfangsbestand 1200 = 500000',
+    plan.anfangsbestaende[0].konto === '1200' && plan.anfangsbestaende[0].betragCent === 500000);
+  ok('demoBefuellungsplan("gross"): mehr Buchungen als klein',
+    demoBefuellungsplan('gross').buchungenEntwuerfe.length > plan.buchungenEntwuerfe.length);
 });
 
 await section('Simulation: Demo-Mandant „groß" — Konsistenz im Maßstab', () => {

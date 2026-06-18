@@ -19,6 +19,7 @@ import {
   erstelleSandboxTresor, wechsleZuSandbox, leereSandboxTresor,
   loescheSandboxTresor, loescheAlleSandboxes,
 } from '../core/sandboxStore.js';
+import { befuelleMitDemodaten } from '../domain/demodaten-store.js';
 import {
   brauchtMandantenAuswahl, mandantenAuswahlListe, validateMandantName,
   aktiverSandbox, echteMandanten, sandboxAuswahlListe, naechsterTestName,
@@ -218,6 +219,10 @@ function renderNeuerTest(container, resolve, zurueck) {
     const err = el('p', { class: 'form-error', role: 'alert' });
     const name = el('input', { type: 'text', value: naechsterTestName(registry), placeholder: t('test.name') });
     const btn = el('button', { class: 'btn btn-primary', type: 'submit', text: t('test.create') });
+    // Inhalt: leer ODER mit deterministischen Demo-Daten vorbefüllt (docs/TEST_MODUS.md) —
+    // so kann man sofort mit realistischem Journal/EÜR/USt-VA/Anlagen üben.
+    const inhaltLeer = el('input', { type: 'radio', name: 'test-inhalt', value: 'leer', checked: '' });
+    const inhaltDemo = el('input', { type: 'radio', name: 'test-inhalt', value: 'demo' });
 
     const form = el('form', {
       class: 'lock-form',
@@ -229,7 +234,10 @@ function renderNeuerTest(container, resolve, zurueck) {
         btn.setAttribute('disabled', '');
         try {
           const { mandant } = await erstelleSandboxTresor(name.value);
-          renderOnboarding(container, resolve, { mandantName: mandant.name, sandbox: true });
+          renderOnboarding(container, resolve, {
+            mandantName: mandant.name, sandbox: true,
+            demo: inhaltDemo.checked ? 'klein' : null,
+          });
         } catch (ex) {
           err.textContent = ex?.message || String(ex);
           btn.removeAttribute('disabled');
@@ -239,6 +247,11 @@ function renderNeuerTest(container, resolve, zurueck) {
       el('h1', { text: t('test.newTitle') }),
       el('p', { class: 'muted', text: t('test.newIntro') }),
       el('label', { class: 'field' }, [el('span', { text: t('test.name') }), name]),
+      el('fieldset', { class: 'test-inhalt' }, [
+        el('legend', { text: t('test.inhalt') }),
+        el('label', { class: 'radio-row' }, [inhaltLeer, el('span', { text: t('test.inhaltLeer') })]),
+        el('label', { class: 'radio-row' }, [inhaltDemo, el('span', { text: t('test.inhaltDemo') })]),
+      ]),
       err, btn,
       el('button', { class: 'btn btn-link', type: 'button', text: t('common.back'), onClick: zurueck }),
     ]);
@@ -353,7 +366,16 @@ function renderOnboarding(container, resolve, opts = {}) {
         const { shares } = await setupVault(state.password);
         // Test-Tresor: verschlankt — nur ein Test-Passwort, kein Shamir-/Backup-Gate
         // (ein Test ist ausdrücklich KEIN Backup, docs/TEST_MODUS.md) → direkt in die App.
-        if (opts.sandbox) { resolve(); return; }
+        if (opts.sandbox) {
+          // Optionale Demo-Vorbefüllung: schreibt den deterministischen Demo-Mandanten in den
+          // gerade entsperrten Sandbox-Tresor (echte Daten unberührt — eigene DB). Scheitert das
+          // Befüllen, startet der Test trotzdem (leer) statt zu blockieren.
+          if (opts.demo) {
+            try { await befuelleMitDemodaten(opts.demo); }
+            catch (ex) { console.warn('Demo-Vorbefüllung fehlgeschlagen:', ex); }
+          }
+          resolve(); return;
+        }
         stepShamir(shares);
       },
     }, [

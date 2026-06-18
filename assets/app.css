@@ -95,6 +95,11 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   border: 1px solid var(--accent); border-radius: 999px; padding: .1rem .5rem;
 }
 .mandant-context { margin: 0 0 .25rem; }
+/* Test-Inhalt-Wahl (leer / Demo-Daten) im „Neuer Test"-Onboarding */
+.test-inhalt { display: flex; flex-direction: column; gap: .4rem; border: 1px solid var(--border); border-radius: .5rem; padding: .6rem .75rem; margin: 0; }
+.test-inhalt legend { font-size: .85rem; color: var(--text-muted); padding: 0 .3rem; }
+.test-inhalt .radio-row { display: flex; align-items: flex-start; gap: .5rem; font-size: .9rem; cursor: pointer; }
+.test-inhalt .radio-row input { margin-top: .15rem; }
 /* Mandanten-Verwaltung (M3) in den Einstellungen */
 .mandant-admin { display: flex; flex-direction: column; gap: .5rem; }
 .mandant-admin-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
