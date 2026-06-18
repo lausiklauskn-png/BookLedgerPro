@@ -80,7 +80,15 @@ null bei 0/0). UI `ui/views/payables.js`: in der „Mahnung prüfen"-Karte neuer
 (Zinsaufwand)" — Gegenkonto-Wahl + Knopf → Buchungs-ENTWURF (`ensureSeedKonten`+`saveEntwurf`; Festschreiben manuell,
 GoBD). i18n de+en, SW `v124`. **Grenze:** bucht die eingegebenen geforderten Beträge (keine Auto-Deckelung); DOM/IndexedDB
 statisch geprüft.
-**Damit ist Block 1 + Block 2 komplett; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung erledigt).**
+**Zuletzt (2026-06-18): Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht ✅ — BAUPLAN Block 3 (Folgeschritt zu #140).**
+Die in #140 angelegte **node-getestete** KPI-Logik `verzugUebersicht` („eigene Zahlungsdisziplin") war bisher in keiner UI
+sichtbar. Reine Logik `domain/eingangsverzug.js` **`verzugReport(rechnungen, opts)`** (node-getestet, +7 → **1543/1543**):
+Ein-Aufruf-Einstieg von den gespeicherten Eingangsrechnungen zur KPI — `offeneVerbindlichkeiten` (`payables.js`) →
+`anreichereVerbindlichkeiten` → `verzugUebersicht` (Import zyklenfrei). UI `ui/views/payables.js`: Karte „Verzugsrisiko
+(eigene Zahlungsdisziplin)" am Kopf (überfällige Anzahl/Summe + § 288-Zinsrisiko + kritisch ≥ 14 Tage), nur sichtbar wenn
+etwas überfällig ist; **bucht nichts**. i18n de+en, SW `v125` (keine neuen Module). **Grenze:** Hilfs-Einordnung, keine
+Rechtsberatung; DOM/IndexedDB statisch geprüft.
+**Damit ist Block 1 + Block 2 komplett; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung + Verzugsrisiko-KPI erledigt).**
 Nächste offene Schritte (alle optional):
 
 1. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen
@@ -120,11 +128,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Buchung gezahlter Verzugskosten (Zinsaufwand)** (PR #141)
-(reine Logik `domain/eingangsverzug.js`: `VERZUG_AUFWAND_KONTEN`/`VERZUG_GEGENKONTO`/`verzugAufwandZeilen`/
-`verzugAufwandEntwurf` — Spiegel zu `mahnwesen.mahnbuchungEntwurf` aus Schuldnersicht; UI `ui/views/payables.js`:
-Abschnitt „Verzugskosten buchen" in der „Mahnung prüfen"-Karte, baut Buchungs-Entwurf). Tests **1536/1536** · SW **v124** ·
-116 JS-Module. **Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung erledigt).**
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht**
+(Folgeschritt zu #140): reine Logik `domain/eingangsverzug.js` `verzugReport(rechnungen, opts)` (Ein-Aufruf-Einstieg
+`offeneVerbindlichkeiten` → `anreichereVerbindlichkeiten` → `verzugUebersicht`); UI `ui/views/payables.js`: Karte
+„Verzugsrisiko (eigene Zahlungsdisziplin)" am Kopf der Ansicht. Tests **1543/1543** · SW **v125** · 116 JS-Module.
+**Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung + Verzugsrisiko-KPI erledigt).**
 **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
 oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

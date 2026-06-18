@@ -17,7 +17,7 @@ import {
 } from '../../domain/payables.js';
 import {
   verzugsstufe, pruefeErhalteneMahnung, PRUEF_BEWERTUNG,
-  verzugAufwandEntwurf, VERZUG_AUFWAND_KONTEN, VERZUG_GEGENKONTO,
+  verzugAufwandEntwurf, VERZUG_AUFWAND_KONTEN, VERZUG_GEGENKONTO, verzugReport,
 } from '../../domain/eingangsverzug.js';
 import {
   listEingangsrechnungen, saveEingangsrechnung, stornoEingangsrechnung, deleteEingangsrechnung,
@@ -49,10 +49,39 @@ async function repaint() {
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('pay.title') }),
     el('p', { class: 'muted small', text: t('pay.intro') }),
+    verzugUebersichtKarte(rechnungen),
     _pruefe ? pruefKarte(_pruefe) : null,
     formKarte(),
     liste(rechnungen),
   ]));
+}
+
+// ---- Verzugsrisiko-Übersicht (eigene Zahlungsdisziplin) ---------------------
+//
+// Verdichtet die offenen Eingangsrechnungen zu Kennzahlen (überfällige Anzahl/Summe +
+// nach § 288 BGB berechtigtes Verzugszins-Risiko). Reine Logik: eingangsverzug.verzugReport
+// (node-getestet). Wird nur gezeigt, wenn überhaupt etwas überfällig ist (sonst kein Lärm).
+function verzugUebersichtKarte(rechnungen) {
+  const s = getSettings();
+  const { uebersicht } = verzugReport(rechnungen, {
+    zielTage: ZIEL_DEFAULT,
+    basiszinsProzent: s.verzugBasiszinsProzent,
+  });
+  if (!uebersicht.ueberfaelligAnzahl) return null;
+  const kpi = (label, value, cls) => el('div', { class: 'kpi ' + (cls || '') }, [
+    el('div', { class: 'kpi-value', text: value }),
+    el('div', { class: 'kpi-label', text: label }),
+  ]);
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('pay.verzug.overviewTitle') }),
+    el('div', { class: 'kpi-grid small-kpi' }, [
+      kpi(t('pay.verzug.overviewOverdue'), `${uebersicht.ueberfaelligAnzahl} / ${uebersicht.anzahl}`, 'kpi-neg'),
+      kpi(t('pay.verzug.overviewSum'), formatCents(uebersicht.ueberfaelligCent) + ' €', 'kpi-neg'),
+      kpi(t('pay.verzug.overviewRisk'), formatCents(uebersicht.zinsRisikoCent) + ' €'),
+      kpi(t('pay.verzug.overviewCritical'), String(uebersicht.kritischAnzahl), uebersicht.kritischAnzahl ? 'kpi-neg' : ''),
+    ]),
+    el('p', { class: 'muted small', text: t('pay.verzug.overviewHint') }),
+  ]);
 }
 
 // ---- Erfassungs-/Bearbeitungsformular ---------------------------------------

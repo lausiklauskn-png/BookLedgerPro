@@ -141,7 +141,7 @@ import { faelligkeit, faelligAmVon, tageUeberfaellig, mahnstufe, verzugszinsenCe
 import {
   EINGANG_ZIEL_DEFAULT, PRUEF_TOLERANZ_CENT, VERZUG_SCHWELLEN, PRUEF_BEWERTUNG,
   verzugsstufe, verzugsstufeLabel, verzugsLage, berechtigteVerzugskosten,
-  pruefeErhalteneMahnung, verzugUebersicht,
+  pruefeErhalteneMahnung, verzugUebersicht, verzugReport,
   VERZUG_AUFWAND_KONTEN, VERZUG_GEGENKONTO, verzugAufwandZeilen, verzugAufwandEntwurf,
 } from '../src/domain/eingangsverzug.js';
 import {
@@ -2448,6 +2448,37 @@ await section('Eingangsverzug: Übersicht (eigene Zahlungsdisziplin)', () => {
   const erwartet = verzugszinsenCent(119000, 46, { basiszinsProzent: 0, b2b: true })
     + verzugszinsenCent(50000, 2, { basiszinsProzent: 0, b2b: true });
   ok('Zinsrisiko = Σ §288-Zinsen der überfälligen', u.zinsRisikoCent === erwartet);
+});
+
+await section('Eingangsverzug: verzugReport (Roh-Rechnungen → KPI in einem Aufruf)', () => {
+  const heute = '2026-06-30';
+  // Gespeicherte Eingangsrechnungen (payables-store-Form): Positionen treiben den Brutto.
+  const rechnungen = [
+    // stark überfällig (fällig 2026-05-15, 46 Tage), 1000 € netto + 19 % = 1190 €
+    { id: 'er:1', kreditor: 'Alpha', datum: '2026-05-01', faelligAm: '2026-05-15',
+      positionen: [{ nettoCent: 100000, ustSatz: 19 }] },
+    // überfällig Stufe 1 (fällig 2026-06-28, 2 Tage), 500 € netto, 0 %
+    { id: 'er:2', kreditor: 'Beta', datum: '2026-06-14', faelligAm: '2026-06-28',
+      positionen: [{ nettoCent: 50000, ustSatz: 0 }] },
+    // noch im Ziel (fällig 2026-07-10), zählt nicht als überfällig
+    { id: 'er:3', kreditor: 'Gamma', datum: '2026-06-26', faelligAm: '2026-07-10',
+      positionen: [{ nettoCent: 30000, ustSatz: 0 }] },
+    // bereits bezahlt → fällt aus offeneVerbindlichkeiten heraus
+    { id: 'er:4', kreditor: 'Delta', datum: '2026-04-01', faelligAm: '2026-04-15',
+      positionen: [{ nettoCent: 20000, ustSatz: 0 }], zahlungen: [{ datum: '2026-04-10', betragCent: 20000 }] },
+  ];
+  const { angereichert, uebersicht } = verzugReport(rechnungen, { heute, basiszinsProzent: 0 });
+  ok('bezahlte Rechnung fällt heraus → 3 offene Posten', uebersicht.anzahl === 3 && angereichert.length === 3);
+  ok('2 überfällig (er:1, er:2)', uebersicht.ueberfaelligAnzahl === 2);
+  ok('überfällige Summe 119000 + 50000', uebersicht.ueberfaelligCent === 169000);
+  ok('1 kritischer Posten (≥14 Tage)', uebersicht.kritischAnzahl === 1);
+  const erwartet = verzugszinsenCent(119000, 46, { basiszinsProzent: 0, b2b: true })
+    + verzugszinsenCent(50000, 2, { basiszinsProzent: 0, b2b: true });
+  ok('Zinsrisiko = Σ §288-Zinsen der überfälligen', uebersicht.zinsRisikoCent === erwartet);
+  ok('angereicherte Posten tragen Fälligkeit/Tage', angereichert[0].faelligAm && angereichert[0].tageUeberfaellig != null);
+  // Leere Eingabe → alles 0, kein Fehler.
+  const leer = verzugReport([], { heute });
+  ok('leere Liste → 0 Posten', leer.uebersicht.anzahl === 0 && leer.uebersicht.ueberfaelligAnzahl === 0 && leer.angereichert.length === 0);
 });
 
 await section('Eingangsverzug: Buchung gezahlter Verzugskosten (Zinsaufwand)', () => {
