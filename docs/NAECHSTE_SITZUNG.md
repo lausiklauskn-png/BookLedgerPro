@@ -20,7 +20,7 @@ AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 202
 steht dort. **Block 1 (Vertrauen/Sicherheit) ist KOMPLETT** — wir sind mitten in **Block 2 (Kalkulation/Angebote)**.
 **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (nicht zwingend 1/Sitzung; pro Schritt 1 PR,
 jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden). Stand: **Block 1 KOMPLETT** (Schritt 1 #116 ·
-2a #118 · 2b #120 · 2c #122 · 3 #124) · **Block 2/Schritt 4 Setting `rechnungsstelle` ✅ (PR #126:** `domain/rechnungsstelle.js`
+2a #118 · 2b #120 · 2c #122 · 3 #124) · **Block 2/Schritt 4 Setting `rechnungsstelle` ✅ (PR #125:** `domain/rechnungsstelle.js`
 — `blp|extern`, Default `blp`, vorläufige interne Nummer `ENT-JJJJ-NNNN`, Wechsel-Hinweis blp→extern→Bestätigung; Onboarding +
 Einstellungen; node-getestet, UI statisch geprüft**).** Nächste offene Schritte:
 1. **NÄCHSTER SCHRITT — Block 2/Schritt 5: Kalkulations-Kern (rein)** — `docs/KALKULATION_KATALOG.md` §2/§9. Kostenarten
@@ -67,7 +67,7 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 4 (Setting `rechnungsstelle`, PR #126)**.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 2/Schritt 4 (Setting `rechnungsstelle`, PR #125)**.
 Tests **1181/1181** · SW **v108** · 103 JS-Module. **Block 1 KOMPLETT** (Schritt 1 + 2a–2c + 3); **Block 2/Schritt 4 ✅**.
 **Nächster Schritt: BAUPLAN Block 2/Schritt 5 — Kalkulations-Kern (rein)** (`docs/KALKULATION_KATALOG.md` §2/§9;
 Zuschlags-/Maschinenstundensatz-/m²-Formel, vorwärts + rückwärts, cent-genau, node-getestet); danach Block-2-Schritte

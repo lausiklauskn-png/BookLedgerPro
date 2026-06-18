@@ -5,7 +5,7 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
-## 2026-06-18 — BAUPLAN Block 2/Schritt 4: Setting `rechnungsstelle` (§14-Nummernkreis-Hoheit) [PR #126, Branch `claude/block-2-kalkulation-angebote-6z8pht`]
+## 2026-06-18 — BAUPLAN Block 2/Schritt 4: Setting `rechnungsstelle` (§14-Nummernkreis-Hoheit) [PR #125, Branch `claude/block-2-kalkulation-angebote-6z8pht`]
 
 **Ausgangslage / Auswahl**
 - Block 1 (Vertrauen/Sicherheit) war komplett (Schritt 1 + 2a–2c + 3). Laut `docs/BAUPLAN.md` ist der nächste Schritt
@@ -30,7 +30,7 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 - i18n de/en (`onboard.rechnungsstelle*`, `settings.rechnungsstelle*` inkl. `warnWechsel`), **SW `v108`** + Modul precached.
 
 **Stand**
-- `node tests/run.mjs` → **1181/1181 grün**; `node --check` für alle geänderten Module ok. PR #126 (Draft → ready → CI → merge).
+- `node tests/run.mjs` → **1181/1181 grün**; `node --check` für alle geänderten Module ok. PR #125 (Draft → ready → CI → merge).
 - Docs fortgeschrieben: BAUPLAN Schritt 4 abgehakt, PULS „START HIER" + Kopf-Status auf Schritt 5, OFFENE_PUNKTE + NAECHSTE_SITZUNG.
 
 **Offen / Nächstes**
