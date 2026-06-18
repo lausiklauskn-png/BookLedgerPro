@@ -348,7 +348,16 @@ berechtigte Verzugszinsen/Mahngebühren → `plausibel`/`ueberhoeht`/`kein_verzu
 `verzugUebersicht`. UI `ui/views/payables.js`: Verzugsstufen-Badge je überfälligem Posten + Knopf „Mahnung prüfen" →
 Karte „Erhaltene Mahnung prüfen (§ 288 BGB)" (Live-Vergleich + Bewertungs-Badge + § 286/§ 247-Disclaimer; bucht
 nichts). i18n de+en, CSS `.badge-error`, SW `v123`. **Grenze:** Hilfs-Einordnung nach Tagen, keine Rechtsberatung;
-Buchung gezahlter Verzugskosten (Zinsaufwand) bewusst Folgeschritt. DOM/IndexedDB statisch geprüft.
+Buchung gezahlter Verzugskosten (Zinsaufwand) als Folgeschritt — siehe unten. DOM/IndexedDB statisch geprüft.
+**Buchung gezahlter Verzugskosten (Zinsaufwand) erledigt (2026-06-18, BAUPLAN Block 3, PR #141):** Spiegel zu
+`mahnwesen.mahnbuchungEntwurf` (R1) aus Schuldnersicht. Reine Logik `src/domain/eingangsverzug.js` (node-getestet,
++20 → **1536/1536**): `VERZUG_AUFWAND_KONTEN` (SKR03: 2100 Zinsaufwand / 4980 sonstiger Aufwand / 1200 Bank /
+1600 Verbindlichkeit) + `VERZUG_GEGENKONTO` (bank|verbindlichkeit); `verzugAufwandZeilen` (Soll 2100/4980 AN Haben
+Bank/Verbindlichkeit, **ohne Vorsteuer** — Schadensersatz Abschn. 1.3 UStAE; ausgeglichen; Konto-Override);
+`verzugAufwandEntwurf` (Buchungs-Entwurf, null bei 0/0). UI `ui/views/payables.js`: in der „Mahnung prüfen"-Karte
+neuer Abschnitt „Verzugskosten buchen (Zinsaufwand)" — Gegenkonto-Wahl + Knopf → Buchungs-ENTWURF (`ensureSeedKonten`
++`saveEntwurf`; Festschreiben manuell, GoBD). i18n de+en, SW `v124`. **Grenze:** bucht die eingegebenen geforderten
+Beträge (keine Auto-Deckelung); DOM/IndexedDB statisch geprüft.
 **[Sichttest]** `saveAuftrag`/`updateAuftrag`-Persistenz (IndexedDB) ist nur statisch geprüft → im Browser bestätigen.
 
 **Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,

@@ -69,18 +69,25 @@ aus **Schuldnersicht**. Reine Logik `domain/eingangsverzug.js` (node-getestet, +
 Verzugszinsen/Mahngebühren → `plausibel`/`ueberhoeht`/`kein_verzug`/`ohne_angabe`, Toleranz 5 Cent), `verzugUebersicht`.
 UI `ui/views/payables.js`: Verzugsstufen-Badge je überfälligem Posten + Knopf „Mahnung prüfen" → Karte „Erhaltene
 Mahnung prüfen (§ 288 BGB)" (Live-Vergleich + Bewertungs-Badge + § 286/§ 247-Disclaimer; **bucht nichts**). i18n de+en,
-CSS `.badge-error`, SW `v123`. **Grenze:** Hilfs-Einordnung nach Tagen, keine Rechtsberatung; Buchung gezahlter
-Verzugskosten (Zinsaufwand) bewusst als Folgeschritt offen; DOM/IndexedDB statisch geprüft.
-**Damit ist Block 1 + Block 2 komplett; Block 3 begonnen (Eingangsrechnungs-Verzug erledigt).**
+CSS `.badge-error`, SW `v123`. **Grenze:** Hilfs-Einordnung nach Tagen, keine Rechtsberatung; DOM/IndexedDB statisch geprüft.
+**Zuletzt (2026-06-18): Buchung gezahlter Verzugskosten (Zinsaufwand) ✅ — BAUPLAN Block 3, PR #141.** Spiegel zu
+`mahnwesen.mahnbuchungEntwurf` (R1) aus **Schuldnersicht**: zahlt man eine berechtigte Lieferanten-Mahnung, entsteht
+Zins-/Gebühren-**AUFWAND**. Reine Logik `domain/eingangsverzug.js` (node-getestet, +20 → **1536/1536**):
+`VERZUG_AUFWAND_KONTEN` (SKR03: 2100 Zinsaufwand, 4980 sonstiger Aufwand, 1200 Bank, 1600 Verbindlichkeit) +
+`VERZUG_GEGENKONTO` (bank|verbindlichkeit); `verzugAufwandZeilen` (Soll 2100/4980 AN Haben Bank/Verbindlichkeit, **ohne
+Vorsteuer** — Schadensersatz Abschn. 1.3 UStAE; ausgeglichen; Konto-Override); `verzugAufwandEntwurf` (Buchungs-Entwurf,
+null bei 0/0). UI `ui/views/payables.js`: in der „Mahnung prüfen"-Karte neuer Abschnitt „Verzugskosten buchen
+(Zinsaufwand)" — Gegenkonto-Wahl + Knopf → Buchungs-ENTWURF (`ensureSeedKonten`+`saveEntwurf`; Festschreiben manuell,
+GoBD). i18n de+en, SW `v124`. **Grenze:** bucht die eingegebenen geforderten Beträge (keine Auto-Deckelung); DOM/IndexedDB
+statisch geprüft.
+**Damit ist Block 1 + Block 2 komplett; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung erledigt).**
 Nächste offene Schritte (alle optional):
 
-1. **Buchung gezahlter Verzugskosten (Zinsaufwand)** als Folgeschritt zu `eingangsverzug.js` — wenn wir eine berechtigte
-   Lieferanten-Mahnung zahlen: Zinsaufwand/sonstiger Aufwand AN Bank/Verbindlichkeit (Spiegel zu `mahnwesen.mahnbuchungEntwurf`).
-   Build-frei, node-testbar; **empfohlener nächster Schritt.**
-2. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen.
-3. **Sonst:** weitere Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server; WorkFloh-Gegenstücke —
-   fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt blockiert:** Lighthouse/Perf,
-   lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
+1. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen
+   (zuletzt: „Verzugskosten buchen" in der Verbindlichkeiten-Ansicht).
+2. **Sonst:** umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server;
+   WorkFloh-Gegenstücke — fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt
+   blockiert:** Lighthouse/Perf, lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
 
 RITUAL JE PR (verbindlich, automatisch durchziehen):
 1) `git fetch origin main && git reset --hard origin/main`; pro PR einen eigenen
@@ -113,11 +120,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Eingangsrechnungs-Verzug (Gegenseite)**
-(reine Logik `domain/eingangsverzug.js`: `verzugsstufe`/`verzugsLage`/`berechtigteVerzugskosten`/`pruefeErhalteneMahnung`/
-`verzugUebersicht` — Spiegel zum Mahnwesen aus Schuldnersicht, § 288-Formel aus `mahnwesen.js` wiederverwendet; UI
-`ui/views/payables.js`: Verzugsstufen-Badge + „Mahnung prüfen"-Karte, bucht nichts). Tests **1516/1516** · SW **v123** ·
-116 JS-Module. **Block 1 + Block 2 KOMPLETT; Block 3 begonnen (Eingangsrechnungs-Verzug erledigt).**
-**Nächster Schritt (optional, empfohlen):** Buchung gezahlter Verzugskosten (Zinsaufwand) als Folgeschritt; sonst
-Browser-Sichttest durch den Nutzer bzw. umgebungs-/menschen-blockierte Block-3-Punkte.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Buchung gezahlter Verzugskosten (Zinsaufwand)** (PR #141)
+(reine Logik `domain/eingangsverzug.js`: `VERZUG_AUFWAND_KONTEN`/`VERZUG_GEGENKONTO`/`verzugAufwandZeilen`/
+`verzugAufwandEntwurf` — Spiegel zu `mahnwesen.mahnbuchungEntwurf` aus Schuldnersicht; UI `ui/views/payables.js`:
+Abschnitt „Verzugskosten buchen" in der „Mahnung prüfen"-Karte, baut Buchungs-Entwurf). Tests **1536/1536** · SW **v124** ·
+116 JS-Module. **Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung erledigt).**
+**Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
+oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
