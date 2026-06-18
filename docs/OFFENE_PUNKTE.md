@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 1/Schritt 2a — Test-Modus **Sandbox-Kern** rein, `domain/mandanten.js`, PR #118; SW `v104`, 1123/1123). Davor: Schritt 1 Roundtrip-Selbsttest (PR #116).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 1/Schritt 2b — Test-Modus **Store-Glue** `core/sandboxStore.js`, PR #120; SW `v105`, 1132/1132). Davor: Schritt 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -44,9 +44,13 @@ ein PR, bei grüner CI selbstständig mergen**):
   einen Test-Modus nach dieser Spec bekommen (⇄-Abschnitt im Doku; eigenes Repo, über den Nutzer).
   ✅ **2a Sandbox-Kern (rein) erledigt + gemergt (PR #118, 2026-06-18):** `domain/mandanten.js`
   (`erstelleSandbox`/`dbNameFuer({sandbox})`/`istSandboxDbName`/`echteMandanten`/`sandboxMandanten`/
-  `entferneAlleSandboxes`/`verwaisteSandboxDbs` …). **Verbleibend:** 2b Store-Glue `core/sandboxStore.js`
-  (DB anlegen/wechseln/leeren/löschen, Boot-Aufräumen verwaister Test-DBs), 2c UI (Tests-Bereich + TEST-Banner +
-  behalten/verwerfen).
+  `entferneAlleSandboxes`/`verwaisteSandboxDbs` …).
+  ✅ **2b Store-Glue erledigt + gemergt (PR #120, 2026-06-18):** `core/sandboxStore.js`
+  (`erstelleSandboxTresor`/`wechsleZuSandbox`/`leereSandboxTresor`/`loescheSandboxTresor`/`loescheAlleSandboxes`
+  + `raeumeVerwaisteSandboxesAuf` Boot-Aufräumen via `indexedDB.databases()`, in `main.js` verdrahtet); reine
+  Helfer `sandboxDbNamen`/`aktiveDbName` node-getestet; `wechsleAktivenMandant` nutzt jetzt `dbNameVon`.
+  SW `v105`, 1132/1132. **Verbleibend:** 2c UI (Tests-Bereich + dauerhafter TEST-MODUS-Banner +
+  behalten/verwerfen-Dialog + optional Demo-Vorbefüllung).
 - **★ GESAMT-BAUPLAN nächste Phase:** **`docs/BAUPLAN.md`** — geordnete Reihenfolge aller vereinbarten Themen
   (Block 1 Vertrauen/Sicherheit: Roundtrip-Selbsttest → Test-Modus → Backup-UX/`backupStrategie`; Block 2
   Kalkulation/Angebote fein geschnitten; Block 3 später/blockiert). **Arbeitsweise:** mehrere saubere PRs pro

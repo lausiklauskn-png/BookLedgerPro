@@ -20,15 +20,16 @@ AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 202
 steht dort; **Block 1 zuerst (Vertrauen/Sicherheit)**. **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung,
 wo sinnvoll** (nicht zwingend 1/Sitzung; pro Schritt 1 PR, jeder einzeln grün + gemergt; nie „halb" mergen, im
 Zweifel feiner schneiden). Stand Block 1: **Schritt 1 ✅ (PR #116, Roundtrip-Selbsttest)** · **Schritt 2a ✅
-(PR #118, Test-Modus Sandbox-Kern, reine Schicht in `domain/mandanten.js`)**. Nächste offene Schritte:
-1. **NÄCHSTER SCHRITT — Test-Modus Store-Glue (`core/sandboxStore.js`)** (`docs/TEST_MODUS.md`) — baut auf dem
-   Sandbox-Kern (`domain/mandanten.js`: `erstelleSandbox`/`dbNameVon`/`istSandboxDbName`/`sandboxMandanten`/
-   `entferneAlleSandboxes`/`verwaisteSandboxDbs`) + `core/mandantenStore.js`: Sandbox-Tresor **anlegen/wechseln/
-   leeren/löschen**, „alle Tests löschen", **Boot-Aufräumen verwaister Test-DBs** (`indexedDB.databases()`).
-   IndexedDB/Glue → „statisch geprüft"; wo möglich reine Helfer node-testen.
-2. **Test-Modus UI** — „🧪 Tests"-Bereich (Sperrbildschirm/Einstellungen), dauerhafter **TEST-MODUS-Banner**,
-   behalten/verwerfen-Dialog, optional Demo-Vorbefüllung (`domain/demodaten.js`).
-3. **Datensicherungs-UX + `backupStrategie`** (`docs/DATENSICHERUNG.md`) — prominente Backup-/Restore-Knöpfe,
+(PR #118, Test-Modus Sandbox-Kern, reine Schicht in `domain/mandanten.js`)** · **Schritt 2b ✅ (PR #120, Test-Modus
+Store-Glue `core/sandboxStore.js`: anlegen/wechseln/leeren/löschen + Boot-Aufräumen, in `main.js` verdrahtet)**.
+Nächste offene Schritte:
+1. **NÄCHSTER SCHRITT — Test-Modus UI (Schritt 2c)** (`docs/TEST_MODUS.md`) — baut auf der Store-Glue
+   (`core/sandboxStore.js`: `erstelleSandboxTresor`/`wechsleZuSandbox`/`leereSandboxTresor`/`loescheSandboxTresor`/
+   `loescheAlleSandboxes`) + dem Kern (`domain/mandanten.js`: `sandboxAuswahlListe`/`istSandbox`): **„🧪 Tests"-Bereich**
+   am Sperrbildschirm/in den Einstellungen (Neuer Test / wechseln / behalten / leeren / löschen / „Alle Tests löschen"),
+   dauerhafter **TEST-MODUS-Banner** solange ein Sandbox-Tresor aktiv ist, **behalten/verwerfen-Dialog** beim Verlassen,
+   optional **Demo-Vorbefüllung** (`domain/demodaten.js`). UI/DOM/IndexedDB → „statisch geprüft"; reine Helfer node-testen.
+2. **Datensicherungs-UX + `backupStrategie`** (`docs/DATENSICHERUNG.md`) — prominente Backup-/Restore-Knöpfe,
    gemerkter Zielordner, Drag-and-drop-Restore; Setting `backupStrategie` (Onboarding + Einstellungen).
 Danach **Block 2 (Kalkulation/Angebote)** fein geschnitten: `rechnungsstelle`-Setting → Kalkulations-Kern →
 Produkt-Schemata → Angebote-Kern → Angebot→Rechnung → Auftrags-Kostenträger/Nachkalkulation → Kalibrierung/
@@ -68,7 +69,8 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 1/Schritt 2a (Test-Modus Sandbox-Kern, PR #118)**.
-Tests **1123/1123** · SW **v104** · 98 JS-Module. **Nächster Schritt: BAUPLAN Block 1/Schritt 2b — Test-Modus
-Store-Glue (`core/sandboxStore.js`)**, dann 2c UI, dann Schritt 3 Backup-UX/`backupStrategie`, dann Block 2
-(Kalkulation/Angebote). Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 1/Schritt 2b (Test-Modus Store-Glue, PR #120)**.
+Tests **1132/1132** · SW **v105** · 99 JS-Module. **Nächster Schritt: BAUPLAN Block 1/Schritt 2c — Test-Modus
+UI** („🧪 Tests"-Bereich + TEST-MODUS-Banner + behalten/verwerfen-Dialog + optional Demo-Vorbefüllung), dann
+Schritt 3 Backup-UX/`backupStrategie`, dann Block 2 (Kalkulation/Angebote). Mehrere PRs pro Sitzung erlaubt.
+(Diese Zeile bei jeder Sitzung aktualisieren.)
