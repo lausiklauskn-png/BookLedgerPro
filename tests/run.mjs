@@ -146,6 +146,7 @@ import {
 } from '../src/domain/eingangsverzug.js';
 import {
   LIQUIDITAET_HORIZONT_DEFAULT, baldFaellig, liquiditaetsVorschau,
+  GELDKONTO_BEREICHE, LIQUIDITAET_AMPEL, istGeldkonto, geldbestand, liquiditaetsAmpel,
 } from '../src/domain/liquiditaet.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
@@ -2383,6 +2384,72 @@ await section('Liquidität: liquiditaetsVorschau (eingehend vs. ausgehend + Nett
   // Leerer Aufruf → alles 0, kein Fehler.
   const leer = liquiditaetsVorschau({ heute });
   ok('leer → alles 0', leer.eingehendCent === 0 && leer.ausgehendCent === 0 && leer.nettoCent === 0);
+  // Abwärtskompatibel: ohne geldbestandCent bleiben Bestand/Projektion null.
+  ok('ohne Bestand → geldbestandCent/projiziertCent null', leer.geldbestandCent === null && leer.projiziertCent === null);
+});
+
+await section('Liquidität: istGeldkonto (Kasse/Bank vs. übrige Aktiv-Konten)', () => {
+  ok('Default-Bereiche Kasse 1000–1099, Bank 1200–1299', GELDKONTO_BEREICHE.length === 2 && GELDKONTO_BEREICHE[0][0] === 1000 && GELDKONTO_BEREICHE[1][1] === 1299);
+  ok('Kasse 1000 = Geldkonto', istGeldkonto({ nummer: '1000', art: 'aktiv' }) === true);
+  ok('Bank 1200 = Geldkonto', istGeldkonto({ nummer: '1200', art: 'aktiv' }) === true);
+  ok('Bank (2) 1210 = Geldkonto', istGeldkonto({ nummer: '1210', art: 'aktiv' }) === true);
+  ok('Forderungen 1400 ≠ Geldkonto', istGeldkonto({ nummer: '1400', art: 'aktiv' }) === false);
+  ok('Vorsteuer 1576 ≠ Geldkonto', istGeldkonto({ nummer: '1576', art: 'aktiv' }) === false);
+  ok('Bank-Nummer aber PASSIV ≠ Geldkonto', istGeldkonto({ nummer: '1200', art: 'passiv' }) === false);
+  ok('ungültige Nummer → false', istGeldkonto({ nummer: 'abc', art: 'aktiv' }) === false);
+  ok('null → false', istGeldkonto(null) === false);
+});
+
+await section('Liquidität: geldbestand (aktueller Kassen-/Bankstand aus Buchungen)', () => {
+  const konten = [
+    { nummer: '1000', name: 'Kasse', art: 'aktiv' },
+    { nummer: '1200', name: 'Bank', art: 'aktiv' },
+    { nummer: '1400', name: 'Forderungen', art: 'aktiv' },
+    { nummer: '8400', name: 'Erlöse', art: 'ertrag' },
+  ];
+  const buchungen = [
+    // festgeschrieben: Anfangsbestand Bank 1000,00 €
+    { seq: 1, datum: '2026-01-01', zeilen: [{ konto: '1200', seite: 'S', betrag: 100000 }, { konto: '9000', seite: 'H', betrag: 100000 }] },
+    // festgeschrieben: Zahlungseingang Bank +500,00 € (gegen Forderung)
+    { seq: 2, datum: '2026-03-10', zeilen: [{ konto: '1200', seite: 'S', betrag: 50000 }, { konto: '1400', seite: 'H', betrag: 50000 }] },
+    // festgeschrieben: Barausgabe Kasse −200,00 €  (Kasse vorher per Einlage befüllt)
+    { seq: 3, datum: '2026-03-11', zeilen: [{ konto: '1000', seite: 'S', betrag: 30000 }, { konto: '1890', seite: 'H', betrag: 30000 }] },
+    { seq: 4, datum: '2026-03-12', zeilen: [{ konto: '4930', seite: 'S', betrag: 20000 }, { konto: '1000', seite: 'H', betrag: 20000 }] },
+    // ENTWURF (seq null) zählt NICHT
+    { seq: null, datum: '2026-04-01', zeilen: [{ konto: '1200', seite: 'S', betrag: 99999 }, { konto: '1400', seite: 'H', betrag: 99999 }] },
+  ];
+  const g = geldbestand(buchungen, konten);
+  ok('Bank-Saldo 1500,00 €', g.perKonto.find((p) => p.nummer === '1200').saldoCent === 150000);
+  ok('Kasse-Saldo 100,00 €', g.perKonto.find((p) => p.nummer === '1000').saldoCent === 10000);
+  ok('Gesamt 1600,00 €', g.gesamtCent === 160000);
+  ok('nur Geldkonten in perKonto', g.perKonto.length === 2);
+  ok('Entwurf zählt nicht (sonst wäre Bank höher)', g.gesamtCent === 160000);
+  // Stichtag: nur bis 2026-03-10 → Bank 1500, Kasse 0 (Kassenbewegungen am 11./12. ausgeblendet)
+  const gStichtag = geldbestand(buchungen, konten, { stichtag: '2026-03-10' });
+  ok('Stichtag blendet spätere Buchungen aus', gStichtag.gesamtCent === 150000);
+  // Keine Geldkonten im Plan → leer, kein Fehler.
+  ok('ohne Geldkonten → 0', geldbestand(buchungen, [{ nummer: '8400', name: 'Erlöse', art: 'ertrag' }]).gesamtCent === 0);
+});
+
+await section('Liquidität: liquiditaetsVorschau mit Geldbestand + Ampel', () => {
+  const heute = '2026-06-18';
+  const forderungen = [{ betragCent: 30000, faelligAm: '2026-06-20' }];
+  const verbindlichkeiten = [{ offenCent: 50000, faelligAm: '2026-06-22' }];
+  // Bestand 100000, +30000 −50000 = projiziert 80000 (deckt sich, ok)
+  const v = liquiditaetsVorschau({ forderungen, verbindlichkeiten, heute, geldbestandCent: 100000 });
+  ok('Bestand durchgereicht', v.geldbestandCent === 100000);
+  ok('projiziert = Bestand + Netto', v.projiziertCent === 80000 && v.nettoCent === -20000);
+  ok('Ampel ok (Bestand deckt Ausgänge)', liquiditaetsAmpel(v) === LIQUIDITAET_AMPEL.OK);
+  // Knapper Bestand: 40000 deckt die 50000 Ausgänge nicht allein → Warnung (aber projiziert 20000 ≥ 0)
+  const vWarn = liquiditaetsVorschau({ forderungen, verbindlichkeiten, heute, geldbestandCent: 40000 });
+  ok('projiziert 20000 ≥ 0', vWarn.projiziertCent === 20000);
+  ok('Ampel Warnung (Bestand < Ausgänge)', liquiditaetsAmpel(vWarn) === LIQUIDITAET_AMPEL.WARNUNG);
+  // Zu wenig: projiziert negativ → kritisch
+  const vKrit = liquiditaetsVorschau({ forderungen, verbindlichkeiten, heute, geldbestandCent: 10000 });
+  ok('projiziert negativ', vKrit.projiziertCent === -10000);
+  ok('Ampel kritisch (projiziert < 0)', liquiditaetsAmpel(vKrit) === LIQUIDITAET_AMPEL.KRITISCH);
+  // Ohne Bestand → Ampel ok (keine Aussage), Felder null.
+  ok('ohne Bestand → Ampel ok', liquiditaetsAmpel(liquiditaetsVorschau({ forderungen, heute })) === LIQUIDITAET_AMPEL.OK);
 });
 
 await section('Mahnwesen: persistenter Verlauf (Stufe/Zins-/Gebührenverlauf)', () => {
