@@ -93,6 +93,8 @@ import {
   erstelleMandant, leereRegistry, findeMandant, aktiverMandant, addMandant,
   umbenenneMandant, entferneMandant, setzeAktiv, mitLegacyMandant,
   brauchtMandantenAuswahl, mandantenAuswahlListe,
+  SANDBOX_INFIX, dbNameVon, istSandboxDbName, istSandbox, erstelleSandbox,
+  echteMandanten, sandboxMandanten, sandboxAuswahlListe, entferneAlleSandboxes, verwaisteSandboxDbs,
 } from '../src/domain/mandanten.js';
 import { DB_SUFFIX, getActiveDbName, setActiveDbName, closeDb, LEGACY_DB_NAME as DB_LEGACY_NAME } from '../src/core/db.js';
 
@@ -3038,6 +3040,77 @@ await section('Mandanten (M2b): Sperrbildschirm-Auswahl (reine Logik)', () => {
   const c2 = erstelleMandant('Anna', { id: 'cccc0002', erstellt: 50 });
   const regT = addMandant(addMandant(leereRegistry(), c1), c2);
   ok('Tiebreak nach Name', mandantenAuswahlListe(regT).map((m) => m.name).join(',') === 'Anna,Zeta');
+});
+
+await section('Test-Modus (Sandbox-Kern): DB-Namen + Erkennung', () => {
+  // Sandbox-DB trägt eigenen Infix, bleibt aber unter dem Suffix (Regel #3).
+  ok('Sandbox-Infix = sandbox', SANDBOX_INFIX === 'sandbox');
+  ok('Sandbox-DB-Name mit Infix', dbNameFuer('a1b2c3d4', { sandbox: true }) === 'blpr_sandbox_a1b2c3d4_bookledgerpro');
+  ok('Sandbox-Name endet auf Suffix', dbNameFuer('a1b2c3d4', { sandbox: true }).endsWith('_bookledgerpro'));
+  ok('Sandbox ≠ echter Mandant gleicher ID', dbNameFuer('a1b2c3d4', { sandbox: true }) !== dbNameFuer('a1b2c3d4'));
+  // Sandbox wird NIE auf die Legacy-/Bestands-DB abgebildet (echte Daten unberührt).
+  let threw = false;
+  try { dbNameFuer('', { sandbox: true }); } catch { threw = true; }
+  ok('Sandbox mit leerer ID wirft (keine Legacy-Abbildung)', threw);
+  ok('echter Default ohne opts unverändert', dbNameFuer('a1b2c3d4') === 'blpr_a1b2c3d4_bookledgerpro' && dbNameFuer(null) === 'blpr_bookledgerpro');
+
+  // dbNameVon liest das Flag aus dem Datensatz.
+  ok('dbNameVon echter Mandant', dbNameVon({ id: 'a1b2c3d4' }) === 'blpr_a1b2c3d4_bookledgerpro');
+  ok('dbNameVon Sandbox', dbNameVon({ id: 'a1b2c3d4', sandbox: true }) === 'blpr_sandbox_a1b2c3d4_bookledgerpro');
+
+  // istSandboxDbName erkennt am Namen (ohne Registry).
+  ok('erkennt Sandbox-DB', istSandboxDbName('blpr_sandbox_x_bookledgerpro') === true);
+  ok('echte DB ist keine Sandbox', istSandboxDbName('blpr_a1b2c3d4_bookledgerpro') === false);
+  ok('Legacy-DB ist keine Sandbox', istSandboxDbName('blpr_bookledgerpro') === false);
+  ok('fremder Name keine Sandbox', istSandboxDbName('blpr_sandbox_x_andereapp') === false && istSandboxDbName(null) === false);
+});
+
+await section('Test-Modus (Sandbox-Kern): Lebenszyklus + Trennung von echten Mandanten', () => {
+  const s = erstelleSandbox('Test A', { id: 'feedface', erstellt: 10 });
+  ok('erstelleSandbox setzt sandbox-Flag', istSandbox(s) === true && s.name === 'Test A' && s.id === 'feedface');
+  ok('echter Mandant ist keine Sandbox', istSandbox(erstelleMandant('Echt', { id: 'aaaa0001' })) === false);
+  ok('istSandbox robust', istSandbox(null) === false && istSandbox({}) === false);
+
+  // Gemischte Registry: echte + Sandbox-Tresore.
+  let reg = mitLegacyMandant(leereRegistry());                 // 1 echter (aktiv)
+  reg = addMandant(reg, erstelleMandant('Firma 2', { id: 'bbbb0002', erstellt: 5 }));
+  reg = addMandant(reg, erstelleSandbox('Test 1', { id: 'cccc0003', erstellt: 6 }));
+  reg = addMandant(reg, erstelleSandbox('Test 2', { id: 'dddd0004', erstellt: 7 }));
+  ok('echteMandanten filtert Sandboxes raus', echteMandanten(reg).map((m) => m.id).sort().join(',') === 'bbbb0002,standard');
+  ok('sandboxMandanten nur Tests', sandboxMandanten(reg).map((m) => m.id).sort().join(',') === 'cccc0003,dddd0004');
+
+  // Auswahl-Listen: Sperrbildschirm zeigt NUR echte; Tests-Bereich nur Sandboxes.
+  ok('mandantenAuswahlListe ohne Sandboxes', mandantenAuswahlListe(reg).every((m) => m.sandbox === false) && mandantenAuswahlListe(reg).length === 2);
+  ok('brauchtMandantenAuswahl zählt Sandboxes nicht', brauchtMandantenAuswahl(reg) === true);
+  const nurEinEcht = addMandant(mitLegacyMandant(leereRegistry()), erstelleSandbox('T', { id: 'eeee0005' }));
+  ok('1 echter + Sandbox → keine Auswahl', brauchtMandantenAuswahl(nurEinEcht) === false);
+  const sl = sandboxAuswahlListe(reg);
+  ok('sandboxAuswahlListe sortiert + markiert sandbox', sl.map((m) => m.id).join(',') === 'cccc0003,dddd0004' && sl.every((m) => m.sandbox === true));
+
+  // Aktiv kann auch ein Sandbox-Tresor sein.
+  const aktivSandbox = setzeAktiv(reg, 'cccc0003');
+  ok('Sandbox aktiv markiert', sandboxAuswahlListe(aktivSandbox).find((m) => m.id === 'cccc0003').aktiv === true);
+
+  // "Alle Tests löschen": Sandboxes weg, echte bleiben.
+  const bereinigt = entferneAlleSandboxes(reg);
+  ok('entferneAlleSandboxes entfernt nur Tests', sandboxMandanten(bereinigt).length === 0 && echteMandanten(bereinigt).length === 2);
+  ok('entferneAlleSandboxes immutabel', sandboxMandanten(reg).length === 2);
+  // War ein Sandbox aktiv → aktiv rückt auf echten Mandanten.
+  const nachLoeschen = entferneAlleSandboxes(setzeAktiv(reg, 'dddd0004'));
+  ok('aktiver Sandbox → aktiv rückt auf echten', nachLoeschen.aktiv === 'standard' && !sandboxMandanten(nachLoeschen).length);
+
+  // Aufräum-Sicherheit: verwaiste Sandbox-DBs (am Namen erkennbar, nicht in Registry).
+  const regNurTest1 = addMandant(mitLegacyMandant(leereRegistry()), erstelleSandbox('Test 1', { id: 'cccc0003' }));
+  const vorhandene = [
+    'blpr_bookledgerpro',                       // echt (Legacy)
+    'blpr_mandanten_bookledgerpro',             // Registry
+    'blpr_sandbox_cccc0003_bookledgerpro',      // bekannt (in Registry)
+    'blpr_sandbox_99999999_bookledgerpro',      // VERWAIST
+    'blpr_bbbb0002_bookledgerpro',              // echter Mandant
+  ];
+  ok('verwaiste Sandbox-DB erkannt', JSON.stringify(verwaisteSandboxDbs(vorhandene, regNurTest1)) === JSON.stringify(['blpr_sandbox_99999999_bookledgerpro']));
+  ok('keine verwaisten ohne Sandbox-DBs', verwaisteSandboxDbs(['blpr_bookledgerpro'], regNurTest1).length === 0);
+  ok('verwaiste robust bei leerer Eingabe', verwaisteSandboxDbs(null, leereRegistry()).length === 0);
 });
 
 await section('Mandanten (M2a): Registry-DB-Name', () => {
