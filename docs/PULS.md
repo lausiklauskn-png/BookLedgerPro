@@ -38,8 +38,9 @@
 **📋 Der vorausschauende Gesamt-Bauplan steht jetzt in `docs/BAUPLAN.md`** (geordnete Reihenfolge aller mit dem
 Nutzer 2026-06-17 vereinbarten Themen: Kalkulation/Angebote + Datensicherung + Test-Modus); Ritual/erledigte Tracks
 in `docs/NACHFOLGE_PLAN.md`. **Nächste PRs = BAUPLAN abarbeiten, Block 1 zuerst** (mehrere saubere PRs pro Sitzung wo
-sinnvoll): **1.** Backup→Restore-Roundtrip-Selbsttest ✅ **erledigt + gemergt (PR #116)** → **2. NÄCHSTER SCHRITT:**
-Test-Modus/Sandbox-Tresor (`docs/TEST_MODUS.md`) → **3.** Backup-UX + `backupStrategie`. Danach **Block 2: Kalkulation/Angebote**
+sinnvoll): **1.** Backup→Restore-Roundtrip-Selbsttest ✅ **(PR #116)** → **2.** Test-Modus/Sandbox-Tresor
+(`docs/TEST_MODUS.md`): **2a. Sandbox-Kern ✅ (PR #118)** → **2b. NÄCHSTER SCHRITT: Store-Glue `core/sandboxStore.js`**
+→ **2c. UI** („🧪 Tests"-Bereich + TEST-Banner + behalten/verwerfen) → **3.** Backup-UX + `backupStrategie`. Danach **Block 2: Kalkulation/Angebote**
 (`docs/KALKULATION_KATALOG.md`; Prime Directive: Kalkulation intern, Angebot/Rechnung neutral). **Vermerk:** auch
 **Mein-WorkFloh** soll einen Test-Modus nach `docs/TEST_MODUS.md` bekommen (fremdes Repo, über den Nutzer).
 **(Frühere Notiz, Kontext):** Der reine „build-freie Rest-Korb" war leer; in der vorigen Sitzung
@@ -101,7 +102,14 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Backup→Restore-Roundtrip-Selbsttest", PR #116):** SW **v103** · Tests **1095/1095** grün · 98 JS-Module.
+**Kopf-Status (Stand nach „Test-Modus Sandbox-Kern", PR #118):** SW **v104** · Tests **1123/1123** grün · 98 JS-Module.
+**Test-Modus Sandbox-Kern erledigt (diese Sitzung, BAUPLAN Block 1/Schritt 2a):** Reine Lebenszyklus-Schicht des
+wegwerfbaren Test-Tresors in `domain/mandanten.js` (kein IndexedDB): `SANDBOX_INFIX`/`dbNameFuer({sandbox})` →
+DB-Infix `blpr_sandbox_<id>_bookledgerpro` (nie auf die Bestands-DB abgebildet → echte Daten unberührt),
+`dbNameVon`/`istSandboxDbName`, `erstelleSandbox`/`istSandbox`, `echteMandanten`/`sandboxMandanten`,
+Sandbox-Ausblendung am Sperrbildschirm + `sandboxAuswahlListe`, `entferneAlleSandboxes`, `verwaisteSandboxDbs`.
++28 Tests, SW `v104`. **Grenze:** nur reine Logik; Store-Glue (`core/sandboxStore.js`) + UI folgen.
+**Nächster Schritt: BAUPLAN Block 1/Schritt 2b — Test-Modus Store-Glue (`core/sandboxStore.js`).**
 **Backup→Restore-Roundtrip-Selbsttest erledigt (diese Sitzung, BAUPLAN Block 1/Schritt 1):** Datendurabilität ist
 Pflicht #1 — die Rettung ist jetzt **bewiesen**. `core/backup.js` (rein, kein IndexedDB): `buildBackupFromSnapshot`
 (Backup-Bau ohne `dumpAll`; `buildBackup` delegiert), `importProbe` (spiegelt `importSnapshot('replace')`+`dumpAll`
@@ -200,9 +208,9 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-18 (Backup→Restore-Roundtrip-Selbsttest) · **Branch (letzte PR):** `claude/bookledgerpro-backup-restore-f03itw` (PR #116)
-· **Tests:** `node tests/run.mjs` → **1095/1095 grün**
-· **SW-Cache:** `v103` · **98 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1/Schritt 1 ✅**
+**Letzte Aktualisierung:** 2026-06-18 (Test-Modus Sandbox-Kern) · **Branch (letzte PR):** `claude/testmodus-sandbox-kern` (PR #118)
+· **Tests:** `node tests/run.mjs` → **1123/1123 grün**
+· **SW-Cache:** `v104` · **98 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1: Schritt 1 ✅, Schritt 2a (Sandbox-Kern) ✅**
 · **Mehr-Sitzungs-Plan:** `docs/NACHFOLGE_PLAN.md` (je 1 PR/Sitzung; nächste = **R1 — Verzugszinsen buchen**).
 · **B1 ✅:** Bilanzierung-Modus (`gewinnermittlung` euer|bilanz, Default euer) + Konten-Klassifikation
   (`domain/bilanzierung.js`) + Bilanz-Grundkonten 0800/0840/0860/0970 im Seed + Modus-Schalter (PR #87).
