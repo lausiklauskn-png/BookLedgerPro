@@ -102,7 +102,20 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Eingangsrechnungs-Verzug — Mahnung prüfen"):** SW **v123** · Tests **1516/1516** grün · 116 JS-Module.
+**Kopf-Status (Stand nach „Buchung gezahlter Verzugskosten — Zinsaufwand"):** SW **v124** · Tests **1536/1536** grün · 116 JS-Module.
+**Buchung gezahlter Verzugskosten (Zinsaufwand) erledigt (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #140, PR #141):**
+Spiegel zu `mahnwesen.mahnbuchungEntwurf` (R1) aus **Schuldnersicht** — zahlt man eine berechtigte Lieferanten-Mahnung,
+entsteht Zins-/Gebühren-**AUFWAND**. Reine Logik `domain/eingangsverzug.js` (node-getestet, +20 → **1536/1536**):
+`VERZUG_AUFWAND_KONTEN` (SKR03: 2100 Zinsaufwand, 4980 sonstiger betrieblicher Aufwand, 1200 Bank, 1600 Verbindlichkeit)
++ `VERZUG_GEGENKONTO` (bank|verbindlichkeit); `verzugAufwandZeilen` (Soll 2100/4980 AN Haben Bank/Verbindlichkeit, **ohne
+Vorsteuer** — nicht steuerbarer Schadensersatz Abschn. 1.3 UStAE; ausgeglichen; nur Zinsen/nur Gebühren; Konto-Override);
+`verzugAufwandEntwurf` (vollständiger Buchungs-Entwurf, null bei 0/0). UI `ui/views/payables.js`: in der „Mahnung
+prüfen"-Karte neuer Abschnitt „Verzugskosten buchen (Zinsaufwand)" — Gegenkonto-Wahl (Bank sofort / Verbindlichkeit auf
+Ziel) + Knopf, der die eingegebenen geforderten Beträge als Buchungs-**ENTWURF** übernimmt (`ensureSeedKonten` +
+`saveEntwurf`); **Festschreiben manuell (GoBD)**. i18n de+en, SW `v124`. **Ehrliche Grenze:** bucht die eingegebenen
+geforderten Beträge (keine Auto-Deckelung aufs Berechtigte); DOM/IndexedDB statisch geprüft. **Nächster Schritt
+(optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte oder eine neue,
+abgestimmte Idee.
 **Eingangsrechnungs-Verzug (Gegenseite) erledigt (diese Sitzung, BAUPLAN Block 3):** Spiegel zum Mahnwesen aus
 **Schuldnersicht**. Reine Logik `src/domain/eingangsverzug.js` (node-getestet, +33 → **1516/1516**): `verzugsstufe`
 (gestaffelte Überfälligkeit 1/14/42 Tage, `kritisch`-Flag) + `verzugsstufeLabel`; `verzugsLage` (Fälligkeit + Tage,

@@ -17,11 +17,12 @@ import {
 } from '../../domain/payables.js';
 import {
   verzugsstufe, pruefeErhalteneMahnung, PRUEF_BEWERTUNG,
+  verzugAufwandEntwurf, VERZUG_AUFWAND_KONTEN, VERZUG_GEGENKONTO,
 } from '../../domain/eingangsverzug.js';
 import {
   listEingangsrechnungen, saveEingangsrechnung, stornoEingangsrechnung, deleteEingangsrechnung,
 } from '../../domain/payables-store.js';
-import { loadAccounts, saveEntwurf } from '../../domain/store.js';
+import { loadAccounts, saveEntwurf, ensureSeedKonten } from '../../domain/store.js';
 import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
 
@@ -179,6 +180,11 @@ function pruefKarte(r) {
 
   const zinsenInput = el('input', { type: 'text', inputmode: 'decimal', placeholder: '0,00' });
   const gebuehrenInput = el('input', { type: 'text', inputmode: 'decimal', placeholder: '0,00' });
+  const gegenkonto = el('select', {}, [
+    el('option', { value: VERZUG_GEGENKONTO.BANK, text: t('pay.verzug.viaBank') }),
+    el('option', { value: VERZUG_GEGENKONTO.VERBINDLICHKEIT, text: t('pay.verzug.viaLiability') }),
+  ]);
+  const bookStatus = el('p', { class: 'muted small' });
   const ergebnis = el('div', { class: 'report-lines' });
 
   const zeile = (label, cents, strong) => el('div', { class: 'report-line' + (strong ? ' strong' : '') }, [
@@ -223,7 +229,34 @@ function pruefKarte(r) {
     ]),
     ergebnis,
     el('p', { class: 'muted small', text: t('pay.verzug.disclaimer') }),
+    // Buchung gezahlter Verzugskosten (Zinsaufwand): bucht die eingegebenen GEFORDERTEN
+    // Beträge als Entwurf (manuell, GoBD — Festschreiben bleibt im Journal). Spiegel zu R1.
+    el('h3', { class: 'card-subtitle', text: t('pay.verzug.bookTitle') }),
+    el('p', { class: 'muted small', text: t('pay.verzug.bookIntro') }),
+    el('div', { class: 'form-grid' }, [feld(t('pay.verzug.counterAccount'), gegenkonto)]),
+    bookStatus,
     el('div', { class: 'btn-row' }, [
+      el('button', { class: 'btn btn-primary', type: 'button', text: t('pay.verzug.book'),
+        onClick: async () => {
+          bookStatus.textContent = '';
+          const o = pruefOpts();
+          const entwurf = verzugAufwandEntwurf({
+            zinsenCent: o.geforderteZinsenCent,
+            gebuehrenCent: o.geforderteGebuehrenCent,
+            gegenkonto: gegenkonto.value,
+            referenz: r.rechnungsnr || '',
+            name: r.kreditor || '',
+          });
+          if (!entwurf) { bookStatus.textContent = t('pay.verzug.bookNone'); return; }
+          try {
+            await ensureSeedKonten([
+              VERZUG_AUFWAND_KONTEN.zinsaufwand, VERZUG_AUFWAND_KONTEN.gebuehraufwand,
+              VERZUG_AUFWAND_KONTEN.bank, VERZUG_AUFWAND_KONTEN.verbindlichkeit,
+            ]);
+            await saveEntwurf(entwurf);
+            bookStatus.textContent = t('pay.verzug.booked');
+          } catch (ex) { bookStatus.textContent = String(ex.message || ex); }
+        } }),
       el('button', { class: 'btn', type: 'button', text: t('common.cancel'),
         onClick: async () => { _pruefe = null; await repaint(); } }),
     ]),

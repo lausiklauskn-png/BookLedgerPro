@@ -5,6 +5,41 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Buchung gezahlter Verzugskosten (Zinsaufwand) [Branch `claude/block3-payables-default-interest-ou6j1d`]
+
+**Ausgangslage / Auswahl**
+- Empfohlener Folgeschritt zu „Eingangsrechnungs-Verzug (Gegenseite)" (#140): das **Buchen gezahlter
+  Verzugskosten** aus Schuldnersicht — der Spiegel zu `mahnwesen.mahnbuchungEntwurf` (R1). Zahlt man eine
+  **berechtigte** Lieferanten-Mahnung, entsteht uns Zins-/Gebühren-**AUFWAND** (statt des Ertrags auf der
+  Forderungsseite).
+
+**Was getan**
+- **`src/domain/eingangsverzug.js`** (rein, node-getestet, +20 → **1536/1536**): `VERZUG_AUFWAND_KONTEN`
+  (SKR03: Zinsaufwand **2100**, sonstiger betrieblicher Aufwand **4980** = Spiegel zu 2700, Bank **1200**,
+  Verbindlichkeit **1600**) + `VERZUG_GEGENKONTO` (`bank`|`verbindlichkeit`); `verzugAufwandZeilen(opts)`
+  (Soll 2100 Zinsen + Soll 4980 Gebühren AN Haben Bank/Verbindlichkeit; **ohne Vorsteuer** — nicht
+  steuerbarer Schadensersatz, Abschn. 1.3 UStAE; ausgeglichen; nur Zinsen/nur Gebühren; Konto-Override);
+  `verzugAufwandEntwurf(opts)` (vollständiger Buchungs-Entwurf mit Beschreibung/Begründung, `null` bei 0/0).
+- **`src/ui/views/payables.js`**: in der Karte „Erhaltene Mahnung prüfen (§ 288 BGB)" neuer Abschnitt
+  **„Verzugskosten buchen (Zinsaufwand)"** — Gegenkonto-Wahl (Bank sofort / Verbindlichkeit auf Ziel) +
+  Knopf, der die eingegebenen **geforderten** Beträge als Buchungs-**ENTWURF** übernimmt
+  (`ensureSeedKonten` + `saveEntwurf`); **Festschreiben bleibt manuell (GoBD)** — Hinweis aufs Journal.
+- i18n de+en (`pay.verzug.book*`/`counterAccount`/`viaBank`/`viaLiability`), **SW `v124`** (keine neuen
+  Module — alle editierten Dateien bereits precached). **+20 Tests → 1536/1536 grün.**
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut (Eingangsrechnungs-Verzug **inkl. Buchung**).
+- **Tests 1536/1536 grün** (`node tests/run.mjs`). SW `v124`. 116 JS-Module.
+
+**Offen / Nächstes / Grenzen**
+- **DOM/IndexedDB statisch geprüft** (kein Headless-Browser) — die reine Logik ist node-getestet (+20).
+- **Ehrliche Grenze:** bucht die **eingegebenen geforderten** Beträge (was man tatsächlich zahlt), keine
+  automatische Deckelung auf das Berechtigte; USt-Einordnung als Schadensersatz (im Zweifel Steuerberater).
+- **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte
+  Block-3-Punkte (Server-/Offsite-Backup-Ziel, WorkFloh-Gegenstücke) oder eine neue, abgestimmte Idee.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Eingangsrechnungs-Verzug (Gegenseite) — Mahnung prüfen (§ 288 BGB) [Branch `claude/bookledgerpro-bauplan-block-3-ogalj7`]
 
 **Ausgangslage / Auswahl**

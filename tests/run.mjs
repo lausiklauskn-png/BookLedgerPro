@@ -142,6 +142,7 @@ import {
   EINGANG_ZIEL_DEFAULT, PRUEF_TOLERANZ_CENT, VERZUG_SCHWELLEN, PRUEF_BEWERTUNG,
   verzugsstufe, verzugsstufeLabel, verzugsLage, berechtigteVerzugskosten,
   pruefeErhalteneMahnung, verzugUebersicht,
+  VERZUG_AUFWAND_KONTEN, VERZUG_GEGENKONTO, verzugAufwandZeilen, verzugAufwandEntwurf,
 } from '../src/domain/eingangsverzug.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
@@ -2447,6 +2448,56 @@ await section('Eingangsverzug: Übersicht (eigene Zahlungsdisziplin)', () => {
   const erwartet = verzugszinsenCent(119000, 46, { basiszinsProzent: 0, b2b: true })
     + verzugszinsenCent(50000, 2, { basiszinsProzent: 0, b2b: true });
   ok('Zinsrisiko = Σ §288-Zinsen der überfälligen', u.zinsRisikoCent === erwartet);
+});
+
+await section('Eingangsverzug: Buchung gezahlter Verzugskosten (Zinsaufwand)', () => {
+  // Standard: per Bank gezahlt — Soll Zinsaufwand + Gebührenaufwand, Haben Bank.
+  const bank = verzugAufwandZeilen({ zinsenCent: 1234, gebuehrenCent: 4000 });
+  ok('Summe 5234', bank.summeCent === 5234);
+  ok('drei Zeilen', bank.zeilen.length === 3);
+  ok('Soll Zinsaufwand 2100/1234', bank.zeilen[0].konto === '2100' && bank.zeilen[0].seite === 'S' && bank.zeilen[0].betrag === 1234);
+  ok('Soll Gebührenaufwand 4980/4000', bank.zeilen[1].konto === '4980' && bank.zeilen[1].seite === 'S' && bank.zeilen[1].betrag === 4000);
+  ok('Haben Bank 1200/5234', bank.zeilen[2].konto === '1200' && bank.zeilen[2].seite === 'H' && bank.zeilen[2].betrag === 5234);
+  ok('Gegenkonto default bank', bank.gegenkonto === VERZUG_GEGENKONTO.BANK);
+  // Soll = Haben (ausgeglichen).
+  const summeS = bank.zeilen.filter((z) => z.seite === 'S').reduce((s, z) => s + z.betrag, 0);
+  const summeH = bank.zeilen.filter((z) => z.seite === 'H').reduce((s, z) => s + z.betrag, 0);
+  ok('Buchung ausgeglichen', summeS === summeH && summeS === 5234);
+
+  // Auf Verbindlichkeit einbuchen statt zahlen → Haben 1600.
+  const verb = verzugAufwandZeilen({ zinsenCent: 1000, gebuehrenCent: 0, gegenkonto: VERZUG_GEGENKONTO.VERBINDLICHKEIT });
+  ok('Verbindlichkeit: zwei Zeilen', verb.zeilen.length === 2);
+  ok('Haben Verbindlichkeit 1600', verb.zeilen[1].konto === '1600' && verb.zeilen[1].seite === 'H' && verb.zeilen[1].betrag === 1000);
+
+  // Nur Zinsen / nur Gebühren.
+  const nurZins = verzugAufwandZeilen({ zinsenCent: 500, gebuehrenCent: 0 });
+  ok('nur Zinsen: 2 Zeilen, kein 4980', nurZins.zeilen.length === 2 && !nurZins.zeilen.some((z) => z.konto === '4980'));
+  const nurGeb = verzugAufwandZeilen({ zinsenCent: 0, gebuehrenCent: 4000 });
+  ok('nur Gebühren: 2 Zeilen, kein 2100', nurGeb.zeilen.length === 2 && !nurGeb.zeilen.some((z) => z.konto === '2100'));
+
+  // 0/0 → keine Zeilen, Entwurf null.
+  ok('0/0 → keine Zeilen', verzugAufwandZeilen({ zinsenCent: 0, gebuehrenCent: 0 }).zeilen.length === 0);
+  ok('0/0 → Entwurf null', verzugAufwandEntwurf({ zinsenCent: 0, gebuehrenCent: 0 }) === null);
+
+  // Konto-Überschreibung.
+  const custom = verzugAufwandZeilen({ zinsenCent: 100, konten: { zinsaufwand: '2110', bank: '1210' } });
+  ok('Konto-Override', custom.zeilen[0].konto === '2110' && custom.zeilen[1].konto === '1210');
+
+  // Konstanten gespiegelt.
+  ok('VERZUG_AUFWAND_KONTEN Defaults', VERZUG_AUFWAND_KONTEN.zinsaufwand === '2100'
+    && VERZUG_AUFWAND_KONTEN.gebuehraufwand === '4980' && VERZUG_AUFWAND_KONTEN.bank === '1200'
+    && VERZUG_AUFWAND_KONTEN.verbindlichkeit === '1600');
+
+  // Vollständiger Entwurf.
+  const ent = verzugAufwandEntwurf({ zinsenCent: 1234, gebuehrenCent: 4000, referenz: 'ER-7', name: 'Lieferant GmbH', datum: '2026-06-18' });
+  ok('Entwurf Datum', ent.datum === '2026-06-18');
+  ok('Entwurf Beschreibung', ent.beschreibung === 'Gezahlte Verzugszinsen + Mahngebühren Rechnung ER-7 (Lieferant GmbH)');
+  ok('Entwurf Summe/Zeilen', ent.summeCent === 5234 && ent.zeilen.length === 3);
+  ok('Entwurf ohne Vorsteuer-Hinweis', /ohne Vorsteuer/.test(ent.begruendung));
+  // Speist sich aus berechtigteVerzugskosten (echter Anwendungsfall: berechtigtes Maximum buchen).
+  const bk = berechtigteVerzugskosten({ offenCent: 100000, tageUeberfaellig: 365 }, { basiszinsProzent: 0 });
+  const aus = verzugAufwandEntwurf({ zinsenCent: bk.zinsenCent, gebuehrenCent: bk.pauschaleCent, referenz: 'ER-9' });
+  ok('Entwurf aus berechtigten Kosten', aus.summeCent === bk.gesamtCent && aus.zeilen.length === 3);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
