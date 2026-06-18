@@ -5,6 +5,52 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Eingangsrechnungs-Verzug (Gegenseite) — Mahnung prüfen (§ 288 BGB) [Branch `claude/bookledgerpro-bauplan-block-3-ogalj7`]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 (inkl. aller UIs/Folgeschritte) komplett. Erster build-freier, unblockierter
+  **Block-3**-Punkt: **Eingangsrechnungs-Verzug (Gegenseite) [SOLL]** — der Spiegel zum Mahnwesen, aber
+  aus **Schuldnersicht** (wir bekommen eine Eingangsrechnung und zahlen ggf. zu spät).
+- Befund: `payables.js` erkennt Überfälligkeit bereits (Fälligkeit/`ueberfaellig`/Tage). Der echte
+  Mehrwert fehlte: (a) **gestaffelte Verzugsstufe** und (b) **Prüfung einer ERHALTENEN Mahnung** —
+  sind die vom Lieferanten geforderten Verzugszinsen/Mahngebühren nach § 288 BGB überhaupt berechtigt,
+  bevor man sie zahlt? Die §-288-Formel wird aus `mahnwesen.js` wiederverwendet (DRY, identisch zur
+  Forderungsseite).
+
+**Was getan**
+- **`src/domain/eingangsverzug.js`** (NEU, rein, node-getestet): `verzugsstufe(tageUeber)` (0 im Ziel /
+  1 überfällig / 2 deutlich / 3 stark, Schwellen 1/14/42, `kritisch`-Flag) + `verzugsstufeLabel`;
+  `verzugsLage(posten, opts)` (Fälligkeit + Tage überfällig; angereicherte Felder haben Vorrang, sonst
+  Datum+Zahlungsziel, Default 30); `berechtigteVerzugskosten(posten, opts)` (nach § 288 berechtigte
+  Verzugszinsen via `verzugszinsenCent` + 40-€-Pauschale via `mahnpauschaleCent`, `b2b` Default true =
+  unsere Firma ist kein Verbraucher); **`pruefeErhalteneMahnung(posten, opts)`** — vergleicht geforderte
+  vs. berechtigte Zinsen/Gebühren → `bewertung` ∈ {`kein_verzug`, `ohne_angabe`, `plausibel`, `ueberhoeht`}
+  mit Differenzen (Rundungs-Toleranz 5 Cent); `verzugUebersicht(angereichertePosten)` (Kennzahlen:
+  überfällig-Anzahl/-Summe, Zinsrisiko = Σ § 288-Zinsen, kritisch-Anzahl).
+- **`src/ui/views/payables.js`**: in der Verbindlichkeiten-Liste je überfälligem Posten ein **Verzugsstufen-
+  Badge** (gelb/rot + Tage); neuer Knopf **„Mahnung prüfen"** an offenen Posten → Karte **„Erhaltene Mahnung
+  prüfen (§ 288 BGB)"** mit Eingabe der geforderten Zinsen/Gebühren (€), **Live-Vergleich** gegen das
+  Berechtigte + Bewertungs-Badge + ehrlicher § 286/§ 247-Disclaimer. Bucht nichts (reine Prüfung vor dem Zahlen).
+- i18n de+en (`pay.stage.*`, `pay.verzug.*`), CSS (`.badge-error`/Badge-Abstand), **SW `v123`** + neues
+  Modul precached. **+33 Tests → 1516/1516 grün.**
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3 begonnen** — Eingangsrechnungs-Verzug (Mahnung-Prüfung) ergänzt.
+- **Tests 1516/1516 grün** (`node tests/run.mjs`). SW `v123`. 116 JS-Module.
+
+**Offen / Nächstes / Grenzen**
+- **DOM/IndexedDB statisch geprüft** (kein Headless-Browser) — die reine Logik (`eingangsverzug.js`) ist
+  node-getestet (+33).
+- **Ehrliche Grenze:** Hilfs-Einordnung nach Tagen überfällig, **keine Rechtsberatung** (§ 286 BGB: Verzug
+  i. d. R. erst mit Mahnung oder 30 Tagen); Basiszinssatz (§ 247) muss aktuell gehalten werden. Die
+  **Buchung** tatsächlich gezahlter Verzugszinsen/Mahngebühren (Zinsaufwand) ist bewusst ein separater
+  Folgeschritt; bisher nur Prüfung/Anzeige.
+- **Nächster Schritt (optional):** Buchung gezahlter Verzugskosten (Aufwand) als Folgeschritt; sonst
+  weitere Block-3-Punkte (Server-Backup-Ziel/WorkFloh-Gegenstücke — beide umgebungs-/menschen-blockiert)
+  oder Browser-Sichttest durch den Nutzer.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2 Folgeschritt: Zeit-Zuordnungs-UI je Kostenträger [Branch `claude/bookledgerpro-bauplan-block2-r7b23o`]
 
 **Ausgangslage / Auswahl**

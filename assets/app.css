@@ -234,6 +234,10 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .badge-warn { background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
 .badge-ok { background: var(--accent-soft); color: var(--accent-strong); border-color: transparent; }
 .badge-storno { background: var(--warn-bg); color: var(--warn-text); border-color: var(--warn-border); }
+.badge-error { background: var(--critical-bg); color: var(--critical-text); border-color: var(--critical-border); }
+.badge-line { margin: .5rem 0 0; }
+.badge + .badge { margin-left: .35rem; }
+.report-lines { margin: .4rem 0; }
 
 /* ---- Buchungs-Formular ---------------------------------------------------- */
 .buchung-form { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1rem; }

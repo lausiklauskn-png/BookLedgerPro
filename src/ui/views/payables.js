@@ -10,26 +10,33 @@
 
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
-import { formatEuro, parseEuroToCents } from '../../domain/money.js';
+import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js';
 import {
   eingangsrechnungZeilen, offenerBetrag, rechnungStatus, rechnungBrutto,
   berechneFaelligAm, validateEingangsrechnung,
 } from '../../domain/payables.js';
 import {
+  verzugsstufe, pruefeErhalteneMahnung, PRUEF_BEWERTUNG,
+} from '../../domain/eingangsverzug.js';
+import {
   listEingangsrechnungen, saveEingangsrechnung, stornoEingangsrechnung, deleteEingangsrechnung,
 } from '../../domain/payables-store.js';
 import { loadAccounts, saveEntwurf } from '../../domain/store.js';
+import { getSettings } from '../../state.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
 let _idx = {};
 let _bearbeite = null; // aktuell bearbeitete Rechnung (oder null = Neuanlage)
+let _pruefe = null;    // aktuell auf erhaltene Mahnung geprüfte Rechnung (oder null)
 
 const AUFWAND_DEFAULT = '4980';
 const ZIEL_DEFAULT = 30;
 
 export async function mountPayables(host) {
   _host = host;
+  _bearbeite = null;
+  _pruefe = null;
   const konten = await loadAccounts();
   _idx = {};
   for (const k of konten) _idx[k.nummer] = k;
@@ -41,6 +48,7 @@ async function repaint() {
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('pay.title') }),
     el('p', { class: 'muted small', text: t('pay.intro') }),
+    _pruefe ? pruefKarte(_pruefe) : null,
     formKarte(),
     liste(rechnungen),
   ]));
@@ -147,6 +155,84 @@ function formKarte() {
 
 const feld = (label, input) => el('label', { class: 'field' }, [el('span', { text: label }), input]);
 
+// ---- Erhaltene Mahnung prüfen (§ 288 BGB, Schuldnersicht) -------------------
+//
+// Reine Anzeige/Prüfung: vergleicht die vom Lieferanten GEFORDERTEN Verzugszinsen/
+// Mahngebühren mit dem nach § 288 BGB Berechtigten (domain/eingangsverzug.js).
+// Bucht nichts — soll vor dem Zahlen einer strittigen Mahnung Klarheit geben.
+
+function pruefKarte(r) {
+  const s = getSettings();
+  const offen = offenerBetrag(r);
+  const posten = {
+    offenCent: offen,
+    datum: r.datum || '',
+    faelligAm: r.faelligAm || '',
+    zahlungszielTage: r.zahlungszielTage != null ? r.zahlungszielTage : null,
+  };
+  const pruefOpts = () => ({
+    zielTage: ZIEL_DEFAULT,
+    basiszinsProzent: s.verzugBasiszinsProzent,
+    geforderteZinsenCent: parseEuroToCents(zinsenInput.value) || 0,
+    geforderteGebuehrenCent: parseEuroToCents(gebuehrenInput.value) || 0,
+  });
+
+  const zinsenInput = el('input', { type: 'text', inputmode: 'decimal', placeholder: '0,00' });
+  const gebuehrenInput = el('input', { type: 'text', inputmode: 'decimal', placeholder: '0,00' });
+  const ergebnis = el('div', { class: 'report-lines' });
+
+  const zeile = (label, cents, strong) => el('div', { class: 'report-line' + (strong ? ' strong' : '') }, [
+    el('span', { text: label }), el('span', { class: 'num mono', text: formatEuro(cents) }),
+  ]);
+
+  function neuRechnen() {
+    const p = pruefeErhalteneMahnung(posten, pruefOpts());
+    const bewKlasse = p.bewertung === PRUEF_BEWERTUNG.PLAUSIBEL ? 'badge-ok'
+      : p.bewertung === PRUEF_BEWERTUNG.UEBERHOEHT ? 'badge-error'
+      : 'badge-warn';
+    ergebnis.replaceChildren(
+      el('div', { class: 'report-line' }, [
+        el('span', { text: t('pay.verzug.overdueDays') }),
+        el('span', { class: 'mono', text: String(p.tageUeberfaellig) }),
+      ]),
+      el('div', { class: 'report-line' }, [
+        el('span', { text: t('pay.verzug.stage') }),
+        el('span', {}, [el('span', { class: 'badge ' + (verzugsstufe(p.tageUeberfaellig).kritisch ? 'badge-error' : 'badge-warn'),
+          text: t('pay.stage.' + verzugsstufe(p.tageUeberfaellig).key) })]),
+      ]),
+      zeile(t('pay.verzug.justifiedInterest'), p.berechtigteZinsenCent),
+      zeile(t('pay.verzug.justifiedFees'), p.berechtigteGebuehrenCent),
+      zeile(t('pay.verzug.justifiedTotal'), p.berechtigterGesamtCent, true),
+      zeile(t('pay.verzug.demandedTotal'), p.geforderterGesamtCent),
+      zeile(t('pay.verzug.diff'), p.gesamtDiffCent),
+      el('p', { class: 'badge-line' }, [
+        el('span', { class: 'badge ' + bewKlasse, text: t('pay.verzug.result.' + p.bewertung) }),
+      ]),
+    );
+  }
+  zinsenInput.addEventListener('input', neuRechnen);
+  gebuehrenInput.addEventListener('input', neuRechnen);
+
+  const karte = el('form', { class: 'card', onSubmit: (e) => { e.preventDefault(); neuRechnen(); } }, [
+    el('h2', { class: 'card-title', text: t('pay.verzug.title') }),
+    el('p', { class: 'muted small', text: `${r.kreditor || ''} ${r.rechnungsnr || ''} — ${t('pay.open')}: ${formatCents(offen)} €`.trim() }),
+    el('p', { class: 'muted small', text: t('pay.verzug.intro') }),
+    el('div', { class: 'form-grid' }, [
+      feld(t('pay.verzug.demandedInterest'), zinsenInput),
+      feld(t('pay.verzug.demandedFees'), gebuehrenInput),
+    ]),
+    ergebnis,
+    el('p', { class: 'muted small', text: t('pay.verzug.disclaimer') }),
+    el('div', { class: 'btn-row' }, [
+      el('button', { class: 'btn', type: 'button', text: t('common.cancel'),
+        onClick: async () => { _pruefe = null; await repaint(); } }),
+    ]),
+  ]);
+  // Erstberechnung (zeigt das Berechtigte schon ohne Eingabe).
+  neuRechnen();
+  return karte;
+}
+
 // ---- Liste der Verbindlichkeiten --------------------------------------------
 
 function liste(rechnungen) {
@@ -156,7 +242,11 @@ function liste(rechnungen) {
     const status = rechnungStatus(r);
     const offen = offenerBetrag(r);
     const faellig = berechneFaelligAm(r, ZIEL_DEFAULT);
-    const ueberfaellig = status !== 'bezahlt' && status !== 'storniert' && faellig && faellig < heute;
+    const offenPosten = status !== 'bezahlt' && status !== 'storniert';
+    const ueberfaellig = offenPosten && faellig && faellig < heute;
+    // Verzugsstufe (Schuldnersicht) als Badge, wenn überfällig.
+    const tage = ueberfaellig ? Math.round((Date.parse(heute) - Date.parse(faellig)) / 86400000) : 0;
+    const stufe = verzugsstufe(tage);
     return el('tr', {}, [
       el('td', { text: r.kreditor || '—' }),
       el('td', { class: 'muted small mono', text: r.rechnungsnr || '' }),
@@ -164,8 +254,12 @@ function liste(rechnungen) {
       el('td', { class: 'muted small mono' + (ueberfaellig ? ' form-error' : ''), text: faellig || '—' }),
       el('td', { class: 'num mono', text: formatEuro(rechnungBrutto(r)) }),
       el('td', { class: 'num mono', text: formatEuro(offen) }),
-      el('td', {}, [el('span', { class: 'badge ' + statusKlasse(status), text: t('pay.status.' + status) })]),
-      el('td', { class: 'actions' }, [aktionen(r, status)]),
+      el('td', {}, [
+        el('span', { class: 'badge ' + statusKlasse(status), text: t('pay.status.' + status) }),
+        ueberfaellig ? el('span', { class: 'badge ' + (stufe.kritisch ? 'badge-error' : 'badge-warn'),
+          text: `${t('pay.stage.' + stufe.key)} (${tage})` }) : null,
+      ]),
+      el('td', { class: 'actions' }, [aktionen(r, status, offenPosten)]),
     ]);
   });
   return el('div', { class: 'card no-pad' }, [el('table', { class: 'table' }, [
@@ -183,11 +277,16 @@ function statusKlasse(status) {
   return status === 'bezahlt' ? 'badge-ok' : 'badge-entwurf';
 }
 
-function aktionen(r, status) {
+function aktionen(r, status, offenPosten) {
   const wrap = el('div', { class: 'btn-row' });
   if (status !== 'storniert') {
     wrap.appendChild(el('button', { class: 'btn btn-sm', text: t('common.edit'),
-      onClick: async () => { _bearbeite = r; await repaint(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }));
+      onClick: async () => { _bearbeite = r; _pruefe = null; await repaint(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }));
+    // „Mahnung prüfen" nur bei noch offenen Posten sinnvoll (Verzugskosten der Gegenseite).
+    if (offenPosten) {
+      wrap.appendChild(el('button', { class: 'btn btn-sm', text: t('pay.verzug.check'),
+        onClick: async () => { _pruefe = r; _bearbeite = null; await repaint(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }));
+    }
     wrap.appendChild(el('button', { class: 'btn btn-sm', text: t('pay.storno'),
       onClick: async () => { if (confirm(t('pay.confirmStorno'))) { await stornoEingangsrechnung(r.id); await repaint(); } } }));
   }

@@ -340,7 +340,15 @@ in_arbeit/erledigt, keine Rechnung gebucht, keine Zahlung erfasst) ist jetzt **n
 `orders.anwendeAuftragEdit` (nur freigegebene Felder, `AUFTRAG_EDIT_FELDER`) rein/node-getestet;
 `crm-store.updateAuftrag` (Guard + Validierung + `encPut`); UI: „Bearbeiten"-Knopf + prefill-fähiges Formular
 (`_editAuftrag`). +21 Tests (1080/1080), SW `v102`.
-**Noch offen [SOLL]:** Eingangsrechnungs-Verzug (Gegenseite, Mahnung erhalten/prüfen).
+**Eingangsrechnungs-Verzug (Gegenseite) erledigt (2026-06-18, BAUPLAN Block 3):** Spiegel zum Mahnwesen aus
+**Schuldnersicht**. Reine Logik `src/domain/eingangsverzug.js` (node-getestet, +33 → **1516/1516**): `verzugsstufe`
+(gestaffelte Überfälligkeit 1/14/42 Tage) + `verzugsstufeLabel`, `verzugsLage`, `berechtigteVerzugskosten`
+(§ 288-Zinsen + 40-€-Pauschale, wiederverwendet aus `mahnwesen.js`), **`pruefeErhalteneMahnung`** (geforderte vs.
+berechtigte Verzugszinsen/Mahngebühren → `plausibel`/`ueberhoeht`/`kein_verzug`/`ohne_angabe`, Toleranz 5 Cent),
+`verzugUebersicht`. UI `ui/views/payables.js`: Verzugsstufen-Badge je überfälligem Posten + Knopf „Mahnung prüfen" →
+Karte „Erhaltene Mahnung prüfen (§ 288 BGB)" (Live-Vergleich + Bewertungs-Badge + § 286/§ 247-Disclaimer; bucht
+nichts). i18n de+en, CSS `.badge-error`, SW `v123`. **Grenze:** Hilfs-Einordnung nach Tagen, keine Rechtsberatung;
+Buchung gezahlter Verzugskosten (Zinsaufwand) bewusst Folgeschritt. DOM/IndexedDB statisch geprüft.
 **[Sichttest]** `saveAuftrag`/`updateAuftrag`-Persistenz (IndexedDB) ist nur statisch geprüft → im Browser bestätigen.
 
 **Warum (Ausgangslage):** Eine offene Rechnung mit abgelaufener Frist muss sofort sichtbar sein,
