@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 2/Schritt 5 — Kalkulations-Kern `domain/kalkulation.js`, rein/cent-genau, PR #126; SW `v109`, 1215/1215). Davor: Block 2/Schritt 4 — Setting `rechnungsstelle` (PR #125, SW `v108`, 1181/1181). Davor: Block 1 komplett — Schritt 3 Datensicherungs-UX + `backupStrategie` (PR #124), 2c Test-Modus UI (PR #122), 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 2/Schritt 6 — Produkt-Schemata `domain/produktschemata.js`, rein, PR #127; SW `v110`, 1238/1238). Davor: Schritt 5 — Kalkulations-Kern `domain/kalkulation.js` (PR #126, SW `v109`, 1215/1215). Davor: Block 2/Schritt 4 — Setting `rechnungsstelle` (PR #125, SW `v108`, 1181/1181). Davor: Block 1 komplett — Schritt 3 Datensicherungs-UX + `backupStrategie` (PR #124), 2c Test-Modus UI (PR #122), 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -35,8 +35,12 @@ ein PR, bei grüner CI selbstständig mergen**):
   ✅ **Kalkulations-Kern umgesetzt (PR #126, BAUPLAN Block 2/Schritt 5):** `domain/kalkulation.js` (rein,
   cent-genau, node-getestet) — Kostenarten + m²-/Maschinenstundensatz-/Zuschlags-Formel, **vorwärts**
   `kalkuliereVorwaerts` (Selbstkosten→Netto→Brutto + Deckungsbeitrag) **und rückwärts** `kalkuliereRueckwaerts`/
-  `maxSelbstkosten` (Zielpreis/-marge → erlaubte Kosten/Zeit, konservativ). **Nächster Schritt: Schritt 6
-  Produkt-Schemata** (kalibrierbare Vorlagen auf dem Kern), dann 7 Angebote-Kern → 8 Angebot→Rechnung → …
+  `maxSelbstkosten` (Zielpreis/-marge → erlaubte Kosten/Zeit, konservativ).
+  ✅ **Produkt-Schemata umgesetzt (PR #127, BAUPLAN Block 2/Schritt 6):** `domain/produktschemata.js` (rein,
+  node-getestet) — die 6 kalibrierbaren Vorlagen (Folierung m²/Schild/Gravur/Leuchtreklame/Druck-Zukauf/Montage),
+  die den Kern füttern (Enums + `mapping`→Kostenarten + `kalkuliereSchema`, „Hotspots" kalibrierbar via
+  `kalibrierteDefaults`). **Nächster Schritt: Schritt 7 Angebote-Kern** (Angebots-Dokument + interne Kalkulationsschicht,
+  Angebotsnummernkreis, Status/Archiv; nutzt 4+5+6), dann 8 Angebot→Rechnung → 9 Nachkalkulation → 10 Kalibrierung → 11 Baukasten-UX.
 - **Datensicherung — wählbare 3-2-1-Strategie (Pflicht #1): JA, Anforderung steht.** Verbindliches Doku:
   **`docs/DATENSICHERUNG.md`** (Stellen: BLP intern · verschlüsselter gewählter Ordner re-importierbar ·
   Server/Offsite; **freie Nutzer-Wahl `backupStrategie`** beim Onboarding + in Einstellungen änderbar;

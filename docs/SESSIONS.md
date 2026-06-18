@@ -5,6 +5,43 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 2/Schritt 6: Produkt-Schemata (rein, füttert den Kern) [PR #127, Branch `claude/block2-produkt-schemata`]
+
+**Ausgangslage / Auswahl**
+- Block 1 komplett, Block 2/Schritt 4 (`rechnungsstelle`) + 5 (Kalkulations-Kern) erledigt. Laut `docs/BAUPLAN.md` ist der
+  nächste Schritt die **Produkt-Schemata** — kalibrierbare Vorlagen je Leistungsart (`docs/KALKULATION_KATALOG.md` §1/§2),
+  die den vorhandenen Kern (`domain/kalkulation.js`) füttern. Bewusst **ohne UI** in diesem Schritt (eigener Folgeschritt).
+- Prime Directive (Katalog §0): rein intern — die Schicht erzeugt **kein** Außendokument; das neutrale Angebot/die Rechnung
+  kommen erst in Schritt 7/8.
+
+**Was getan** (reine Logik node-getestet — **+23 → 1238/1238**)
+- **`src/domain/produktschemata.js`** (rein, node-getestet): die 6 Vorlagen **Folierung (m²)/Schild/Gravur/Leuchtreklame/
+  Druck-Zukauf/Montage**. Jedes Schema definiert nur **Felder** (`PRODUKT_ART`/`BASIS`/`FELD_TYP`-Enums) + ein **`mapping`**
+  auf die Kostenarten des Kerns (`material`/`maschine`/`arbeit`/`zukauf`/`montage`). Es rechnet nicht selbst — `kalkuliereSchema`
+  ruft `kalkuliereVorwaerts`. Umrechnungen im Mapping: m²-Felder → Material, Gravur-**Minuten** → Maschinen-**Stunden**.
+  - `feldDefaults`/`kalibrierbareFelder`/`kalibrierteDefaults`/`werteMitDefaults`: die „Hotspot"-Felder aus Katalog §1
+    (Verschnitt/Verklebezeit/Fräszeit/Elektrik/Montage …) sind `kalibrierbar` markiert + überschreibbar; **feste Felder
+    bleiben unangetastet** → sauberer Andockpunkt für die selbstlernende Kalibrierung (Schritt 9/10).
+  - `baueKostenarten`/`schemaEingabe`/`kalkuliereSchema`; `validateSchema`/`validateAlleSchemata` (eindeutige Keys, gültige
+    Enums, mapping liefert nur bekannte Kostenarten).
+- **`sw.js`:** `CACHE_VERSION` → **v110**, Modul `./src/domain/produktschemata.js` precached.
+- **`tests/run.mjs`:** +23 Prüfungen — u. a. **`kalkuliereSchema == direkter Kern-Aufruf`** (die Schicht verändert das
+  Ergebnis nicht), Folie 24200 SK / Gravur 8300 / Leuchtreklame 35000 cent-genau, Kalibrierung überschreibt nur Hotspots,
+  leere Mengen → 0.
+
+**Stand**
+- `node tests/run.mjs` → **1238/1238 grün**. PR #127 (Draft → ready → CI → merge).
+- Docs fortgeschrieben: BAUPLAN Schritt 6 abgehakt, PULS „START HIER" + Kopf-Status auf Schritt 7, OFFENE_PUNKTE + NAECHSTE_SITZUNG.
+
+**Offen / Nächstes**
+- **Block 2/Schritt 7 — Angebote-Kern in BLP**: Angebots-Dokument (Positionen/Preise/USt) **+ interne Kalkulationsschicht**
+  (Prime Directive: intern bleibt intern), eigener Angebotsnummernkreis, Status (Entwurf/offen/angenommen/abgelehnt/archiviert),
+  Archiv. Nutzt Kern (5) + Schemata (6) + `rechnungsstelle` (4).
+- **Grenze (ehrlich):** reine Logik, **kein UI** in diesem Schritt; kein Headless-Browser. Die Startsätze (Folienpreis,
+  Maschinensatz, Handelsaufschlag …) sind neutrale Platzhalter zum Kalibrieren — kein Versprechen für einen konkreten Betrieb.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 2/Schritt 5: Kalkulations-Kern (rein, cent-genau) [PR #126, Branch `claude/block-2-calculation-core-bu1qag`]
 
 **Ausgangslage / Auswahl**

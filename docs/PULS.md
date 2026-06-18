@@ -40,7 +40,7 @@ Nutzer 2026-06-17 vereinbarten Themen: Kalkulation/Angebote + Datensicherung + T
 in `docs/NACHFOLGE_PLAN.md`. **Nächste PRs = BAUPLAN abarbeiten, Block 1 zuerst** (mehrere saubere PRs pro Sitzung wo
 sinnvoll): **1.** Backup→Restore-Roundtrip-Selbsttest ✅ **(PR #116)** → **2.** Test-Modus/Sandbox-Tresor
 (`docs/TEST_MODUS.md`): **2a. Sandbox-Kern ✅ (PR #118)** → **2b. Store-Glue `core/sandboxStore.js` ✅ (PR #120)**
-→ **2c. UI ✅ (PR #122)** („🧪 Tests"-Bereich + TEST-Banner + behalten/verwerfen; optionale Demo-Vorbefüllung bewusst als Folgeschritt offen) → **3. Backup-UX + `backupStrategie` ✅ (PR #124)** (`docs/DATENSICHERUNG.md`; prominente Karte + gemerkter Zielordner/File System Access + Download-Fallback + Drag-and-drop-Restore + Setting `backupStrategie` im Onboarding/Einstellungen) → **Block 1 abgeschlossen.** **Block 2/Schritt 4 — Setting `rechnungsstelle` ✅ (PR #125)** (`domain/rechnungsstelle.js`: blp|extern, Default blp, vorläufige interne Nummer `ENT-JJJJ-NNNN`, Wechsel-Hinweis blp→extern→Bestätigung; Onboarding + Einstellungen) → **Block 2/Schritt 5 — Kalkulations-Kern (rein) ✅ (PR #126)** (`domain/kalkulation.js`: Kostenarten + Zuschlags-/Maschinenstundensatz-/m²-Formel, vorwärts `kalkuliereVorwaerts` + rückwärts `kalkuliereRueckwaerts`/`maxSelbstkosten`, cent-genau, node-getestet; rein, kein UI). **NÄCHSTER SCHRITT: Block 2/Schritt 6 — Produkt-Schemata** (`docs/KALKULATION_KATALOG.md` §1/§2: Folierung (m²)/Schild/Gravur/Leuchtreklame/Druck-Zukauf/Montage … als kalibrierbare Vorlagen auf dem Kalkulations-Kern). Danach weiter **Block 2: Kalkulation/Angebote**
+→ **2c. UI ✅ (PR #122)** („🧪 Tests"-Bereich + TEST-Banner + behalten/verwerfen; optionale Demo-Vorbefüllung bewusst als Folgeschritt offen) → **3. Backup-UX + `backupStrategie` ✅ (PR #124)** (`docs/DATENSICHERUNG.md`; prominente Karte + gemerkter Zielordner/File System Access + Download-Fallback + Drag-and-drop-Restore + Setting `backupStrategie` im Onboarding/Einstellungen) → **Block 1 abgeschlossen.** **Block 2/Schritt 4 — Setting `rechnungsstelle` ✅ (PR #125)** (`domain/rechnungsstelle.js`: blp|extern, Default blp, vorläufige interne Nummer `ENT-JJJJ-NNNN`, Wechsel-Hinweis blp→extern→Bestätigung; Onboarding + Einstellungen) → **Block 2/Schritt 5 — Kalkulations-Kern (rein) ✅ (PR #126)** (`domain/kalkulation.js`: Kostenarten + Zuschlags-/Maschinenstundensatz-/m²-Formel, vorwärts `kalkuliereVorwaerts` + rückwärts `kalkuliereRueckwaerts`/`maxSelbstkosten`, cent-genau, node-getestet; rein, kein UI) → **Block 2/Schritt 6 — Produkt-Schemata ✅ (PR #127)** (`domain/produktschemata.js`: die 6 kalibrierbaren Vorlagen Folierung (m²)/Schild/Gravur/Leuchtreklame/Druck-Zukauf/Montage, die den Kern füttern — Enums + `mapping`→Kostenarten + `kalkuliereSchema`, „Hotspots" kalibrierbar; rein, kein UI). **NÄCHSTER SCHRITT: Block 2/Schritt 7 — Angebote-Kern in BLP** (Angebots-Dokument Positionen/Preise/USt **+ interne Kalkulationsschicht**, eigener Angebotsnummernkreis, Status Entwurf/offen/angenommen/abgelehnt/archiviert, Archiv; nutzt Kern (5) + Schemata (6) + `rechnungsstelle` (4); Prime Directive: intern bleibt intern). Danach weiter **Block 2: Kalkulation/Angebote**
 (`docs/KALKULATION_KATALOG.md`; Prime Directive: Kalkulation intern, Angebot/Rechnung neutral). **Vermerk:** auch
 **Mein-WorkFloh** soll einen Test-Modus nach `docs/TEST_MODUS.md` bekommen (fremdes Repo, über den Nutzer).
 **(Frühere Notiz, Kontext):** Der reine „build-freie Rest-Korb" war leer; in der vorigen Sitzung
@@ -102,7 +102,7 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Kalkulations-Kern", PR #126):** SW **v109** · Tests **1215/1215** grün · 104 JS-Module.
+**Kopf-Status (Stand nach „Produkt-Schemata", PR #127):** SW **v110** · Tests **1238/1238** grün · 105 JS-Module.
 **Setting `rechnungsstelle` erledigt (diese Sitzung, BAUPLAN Block 2/Schritt 4 — Block-2-Enabler):** Nummernkreis-Hoheit
 (§14) als Setting `rechnungsstelle` (`blp|extern`, Default `blp`, Katalog §7a). Reine Logik `src/domain/rechnungsstelle.js`
 (node-getestet, +23): `RECHNUNGSSTELLE`/`normalizeRechnungsstelle`/`rechnungsstelleVon`/`istBlp|ExternRechnungsstelle`/
@@ -250,9 +250,9 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-18 (Kalkulations-Kern) · **Branch (letzte PR):** `claude/block-2-calculation-core-bu1qag` (PR #126)
-· **Tests:** `node tests/run.mjs` → **1215/1215 grün**
-· **SW-Cache:** `v109` · **104 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1 KOMPLETT (Schritt 1 + 2a/2b/2c + 3) · Block 2/Schritt 4 (`rechnungsstelle`) ✅ · Schritt 5 (Kalkulations-Kern) ✅**
+**Letzte Aktualisierung:** 2026-06-18 (Produkt-Schemata) · **Branch (letzte PR):** `claude/block2-produkt-schemata` (PR #127)
+· **Tests:** `node tests/run.mjs` → **1238/1238 grün**
+· **SW-Cache:** `v110` · **105 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1 KOMPLETT (Schritt 1 + 2a/2b/2c + 3) · Block 2/Schritt 4 (`rechnungsstelle`) ✅ · Schritt 5 (Kalkulations-Kern) ✅ · Schritt 6 (Produkt-Schemata) ✅**
 · **Mehr-Sitzungs-Plan:** `docs/BAUPLAN.md` (nächste = **Block 2/Schritt 6 — Produkt-Schemata**).
 · **B1 ✅:** Bilanzierung-Modus (`gewinnermittlung` euer|bilanz, Default euer) + Konten-Klassifikation
   (`domain/bilanzierung.js`) + Bilanz-Grundkonten 0800/0840/0860/0970 im Seed + Modus-Schalter (PR #87).
