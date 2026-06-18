@@ -147,7 +147,7 @@ import {
 import {
   LIQUIDITAET_HORIZONT_DEFAULT, baldFaellig, liquiditaetsVorschau,
   GELDKONTO_BEREICHE, LIQUIDITAET_AMPEL, istGeldkonto, geldbestand, liquiditaetsAmpel,
-  LIQUIDITAET_HORIZONT_OPTIONEN, normalizeHorizont, liquiditaetsVerlauf,
+  LIQUIDITAET_HORIZONT_OPTIONEN, normalizeHorizont, liquiditaetsVerlauf, deckungsluecke,
 } from '../src/domain/liquiditaet.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
@@ -2507,6 +2507,38 @@ await section('Liquidität: liquiditaetsVerlauf (Tiefpunkt im Fenster)', () => {
   const leer = liquiditaetsVerlauf({ heute, horizontTage: 14, geldbestandCent: 12345 });
   ok('leer → keine Punkte', leer.punkte.length === 0);
   ok('leer → Tiefpunkt = Bestand', leer.tiefpunktCent === 12345 && leer.endeCent === 12345);
+});
+
+await section('Liquidität: deckungsluecke (Unterdeckung im Fenster)', () => {
+  const heute = '2026-06-18';
+  // Intra-Fenster-Engpass: Verbindlichkeit früh (Tag 3), ausgleichende Forderung spät (Tag 25).
+  const forderungen = [{ betragCent: 200000, faelligAm: '2026-07-13' }]; // +25 Tage
+  const verbindlichkeiten = [{ offenCent: 80000, faelligAm: '2026-06-21' }]; // +3 Tage
+
+  // 30-Tage-Fenster: Endsaldo wieder positiv (170000), aber Tiefpunkt −30000 → echte Lücke,
+  // die die End-Saldo-Ampel NICHT sieht.
+  const v30 = liquiditaetsVerlauf({ forderungen, verbindlichkeiten, heute, horizontTage: 30, geldbestandCent: 50000 });
+  const luecke = deckungsluecke(v30);
+  ok('Unterdeckung erkannt trotz positivem Endsaldo', luecke.unterdeckung === true);
+  ok('Lücke = Betrag unter null', luecke.lueckeCent === 30000); // −(−30000)
+  ok('Lücke-Datum = Tiefpunkt-Datum', luecke.datum === '2026-06-21');
+  // Gegenprobe: die End-Saldo-Ampel ist hier NICHT kritisch (Endsaldo positiv 170000), obwohl
+  // der laufende Saldo zwischendurch ins Minus rutscht → die Deckungslücke fängt genau das.
+  ok('End-Saldo-Ampel nicht kritisch trotz Engpass', liquiditaetsAmpel(liquiditaetsVorschau({ forderungen, verbindlichkeiten, heute, horizontTage: 30, geldbestandCent: 50000 })) !== LIQUIDITAET_AMPEL.KRITISCH);
+
+  // Tiefpunkt positiv (Bestand deckt durchgehend) → keine Lücke.
+  const vOk = liquiditaetsVerlauf({ forderungen: [{ betragCent: 10000, faelligAm: '2026-06-22' }], heute, horizontTage: 14, geldbestandCent: 50000 });
+  const keine = deckungsluecke(vOk);
+  ok('kein Engpass → keine Unterdeckung', keine.unterdeckung === false && keine.lueckeCent === 0 && keine.datum === null);
+
+  // Tiefpunkt genau null → noch keine Lücke (>= 0 ist gedeckt).
+  ok('Tiefpunkt 0 → keine Lücke', deckungsluecke({ tiefpunktCent: 0, tiefpunktDatum: heute }).unterdeckung === false);
+
+  // Ohne Geldbestand → Tiefpunkt null → keine Aussage (abwärtskompatibel).
+  const ohne = liquiditaetsVerlauf({ forderungen, verbindlichkeiten, heute, horizontTage: 14 });
+  ok('ohne Bestand → keine Unterdeckung', deckungsluecke(ohne).unterdeckung === false);
+  // Defensiv: leeres/fehlendes Argument.
+  ok('leeres Argument → keine Unterdeckung', deckungsluecke().unterdeckung === false && deckungsluecke({}).lueckeCent === 0);
 });
 
 await section('Mahnwesen: persistenter Verlauf (Stufe/Zins-/Gebührenverlauf)', () => {

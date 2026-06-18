@@ -311,6 +311,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .kpi-label { color: var(--text-muted); font-size: .82rem; margin-top: .15rem; }
 .kpi-pos .kpi-value { color: var(--accent-strong); }
 .kpi-neg .kpi-value { color: var(--error); }
+/* Hinweistext mit Warnfarbe (z. B. Liquiditäts-Unterdeckung) — additiv, nur Textfarbe. */
+.hint-error { color: var(--error); }
 .small-kpi .kpi-value { font-size: 1.15rem; }
 .small-kpi .kpi { padding: .7rem .9rem; }
 

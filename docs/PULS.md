@@ -102,7 +102,19 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Liquiditäts-Tiefpunkt"):** SW **v131** · Tests **1638/1638** grün · 117 JS-Module.
+**Kopf-Status (Stand nach „Liquiditäts-Deckungslücke"):** SW **v132** · Tests **1646/1646** grün · 117 JS-Module.
+**Liquiditäts-Deckungslücke (Unterdeckung im Fenster) (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #152):** Der
+Tiefpunkt-Hinweis (#152) zeigt den tiefsten Stand auch dann, wenn er positiv bleibt (reine Info). Wenn der laufende Saldo
+aber zwischendurch ECHT ins Minus rutscht und sich bis zum Fenster-Ende wieder erholt (große Verbindlichkeit früh,
+ausgleichende Forderung spät), bleibt der Engpass von der End-Saldo-Ampel (`liquiditaetsAmpel`, projiziert<0) unentdeckt —
+und es fehlt der konkrete Finanzierungs-Betrag. Reine Logik `domain/liquiditaet.js` **`deckungsluecke(verlauf)`**
+(node-getestet, +8 → **1646/1646**): nimmt das `liquiditaetsVerlauf`-Ergebnis und liefert `{unterdeckung, lueckeCent,
+datum}` — greift nur bei `tiefpunktCent < 0` (`lueckeCent` = −`tiefpunktCent`, `datum` = `tiefpunktDatum`), sonst keine
+Unterdeckung (abwärtskompatibel). UI `ui/views/dashboard.js`: warnfarbener Hinweis (CSS `.hint-error`) „Unterdeckung: Bis
+zum {datum} fehlen … {betrag}" — unabhängig vom End-Saldo; **bucht nichts**. i18n de+en (`dashboard.liquidityGapHint`), SW
+`v132` (kein neues Modul). **Ehrliche Grenze:** einfache Planung nach Fälligkeitsdatum, keine Finanzberatung; DOM/IndexedDB
+statisch geprüft. **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte
+Block-3-Punkte oder eine neue, abgestimmte Idee.
 **Liquiditäts-Tiefpunkt (laufender Saldo im Fenster) (diese Sitzung, BAUPLAN Block 3 — Folgeschritt zu #149):** Die
 Projektion (#149) prüfte nur den Saldo am **Fenster-ENDE** — der kann positiv sein, obwohl der laufende Saldo
 zwischendurch ins Minus rutscht (große Verbindlichkeit früh, ausgleichende Forderung spät). Reine Logik
