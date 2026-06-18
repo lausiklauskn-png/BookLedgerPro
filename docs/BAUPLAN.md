@@ -267,6 +267,17 @@
   Verbindlichkeit ≥ 14 Tage überfällig). UI `ui/views/dashboard.js`: Karte „Überfällige Verbindlichkeiten (eigene
   Zahlungsdisziplin)" am Kopf — nur im Firmen-/Vereins-Kontext (`zeigeAnsicht 'payables'`) UND wenn etwas überfällig ist;
   Klick → Verbindlichkeiten-Ansicht; **bucht nichts**. i18n de+en, SW `v126` (keine neuen Module). DOM/IndexedDB statisch geprüft.
+- [x] **Dashboard-KPI: überfällige Forderungen (Mahnwesen)** [Folgeschritt zu #143] ✅ (2026-06-18, PR #145) — Spiegel
+  zur Verbindlichkeiten-KPI (#143), aber aus **Gläubigersicht**: die in `docs/OFFENE_PUNKTE.md` (A1) dokumentierte
+  Dashboard-Intention „Kennzahl überfällige Forderungen, Summe + Anzahl". Damit sind beide Seiten (Forderungen ⇄
+  Verbindlichkeiten) symmetrisch auf der Übersicht. Reine Logik `domain/mahnwesen.js` (node-getestet, +20 →
+  **1571/1571**): **`forderungUebersicht`** (Spiegel zu `verzugUebersicht`: überfällige Anzahl/Summe + Σ §-288-Zins-
+  Potenzial + kritisch ab 1. Mahnung/≥14 Tage), **`FORDERUNG_AMPEL`/`forderungAmpel`** (Spiegel zu `verzugAmpel`) und
+  **`forderungReport(auftraege, opts)`** (Ein-Aufruf-Einstieg `offenePosten` → `anreicherePosten` →
+  `forderungUebersicht`; Import zyklenfrei). UI `ui/views/dashboard.js`: Karte „Überfällige Forderungen (Mahnwesen)" am
+  Kopf — nur sichtbar bei aktivem Mahnwesen (`zeigeFeature MAHNWESEN`, in Privat ausgeblendet) UND wenn etwas überfällig
+  ist; Klick → Berichte; **bucht nichts**. i18n de+en, SW `v127` (keine neuen Module). **Ehrliche Grenze:** Hilfs-
+  Einordnung, keine Rechtsberatung; aggregiertes Zins-Potenzial mit konservativem B2B-Aufschlag; DOM/IndexedDB statisch geprüft.
 - [ ] **WorkFloh-Gegenstücke** (fremdes Repo, über den Nutzer): **Test-Modus** (`docs/TEST_MODUS.md` ⇄-Abschnitt),
   BLP-Format-Exporter für die Rechnungsstelle, optional Symbiose-Import (Sage 5d).
 - [ ] **Bekannt blockiert:** Lighthouse/Perf (Headless), lokales OCR (Tesseract = nicht build-frei),

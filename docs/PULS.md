@@ -102,8 +102,22 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „Dashboard-KPI: überfällige Verbindlichkeiten"):** SW **v126** · Tests **1551/1551** grün · 116 JS-Module.
-**Dashboard-KPI: überfällige Verbindlichkeiten (eigene Zahlungsdisziplin) erledigt (diese Sitzung, BAUPLAN Block 3 — PR #143):**
+**Kopf-Status (Stand nach „Dashboard-KPI: überfällige Forderungen (Mahnwesen)"):** SW **v127** · Tests **1571/1571** grün · 116 JS-Module.
+**Dashboard-KPI: überfällige Forderungen (Mahnwesen) erledigt (diese Sitzung, BAUPLAN Block 3 — PR #145):**
+Spiegel zur Verbindlichkeiten-KPI (#143), aber aus **Gläubigersicht** — die in `docs/OFFENE_PUNKTE.md` (A1)
+dokumentierte Dashboard-Intention „Kennzahl überfällige Forderungen, Summe + Anzahl". Damit sind beide Seiten
+(Forderungen ⇄ Verbindlichkeiten) symmetrisch auf einen Blick auf der Übersicht. Reine Logik
+`domain/mahnwesen.js` (node-getestet, +20 → **1571/1571**): **`forderungUebersicht(angereichertePosten, opts)`**
+(Spiegel zu `verzugUebersicht`: überfällige Anzahl/Summe + Σ §-288-Zins-Potenzial + kritisch ab 1. Mahnung/≥14 Tage),
+**`FORDERUNG_AMPEL`/`forderungAmpel`** (Spiegel zu `verzugAmpel`) und **`forderungReport(auftraege, opts)`**
+(Ein-Aufruf-Einstieg `offenePosten` → `anreicherePosten` → `forderungUebersicht`; Import `mahnwesen → zahlungsabgleich`
+zyklenfrei). UI `ui/views/dashboard.js`: Karte „Überfällige Forderungen (Mahnwesen)" am Kopf — nur sichtbar, wenn das
+Mahnwesen im Nutzungskontext aktiv ist (`zeigeFeature MAHNWESEN`; Privat blendet aus) UND etwas überfällig ist; Klick →
+Berichte (Mahnwesen-Karte); **bucht nichts**. i18n de+en (`dashboard.overdueReceivables*`), SW `v127` (keine neuen
+Module). **Ehrliche Grenze:** Hilfs-Einordnung, keine Rechtsberatung; aggregiertes Zins-Potenzial nutzt den
+konservativen B2B-Aufschlag (kein per-Kunde-B2B); DOM/IndexedDB statisch geprüft. **Nächster Schritt (optional):**
+Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte oder eine neue, abgestimmte Idee.
+**Dashboard-KPI: überfällige Verbindlichkeiten (eigene Zahlungsdisziplin) erledigt (BAUPLAN Block 3 — PR #143):**
 Die node-getestete Verzugs-KPI (`verzugReport`/`verzugUebersicht`, „eigene Zahlungsdisziplin") war bisher nur in der
 Verbindlichkeiten-Ansicht sichtbar (#142). Jetzt auch **auf der Übersicht (Dashboard)** — überfällige eigene
 Verbindlichkeiten auf einen Blick (Liquiditäts-/Verzugsrisiko); spiegelt die für die Forderungsseite dokumentierte
