@@ -5,6 +5,43 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 1/Schritt 2 (Teil 2): Test-Modus — Store-Glue `core/sandboxStore.js` [PR #120, Branch `claude/sandbox-store-glue`]
+
+**Ausgangslage / Auswahl**
+- Schritt 2a (Sandbox-Kern, reine Logik) war erledigt (PR #118). Nächster, fein geschnittener Schritt:
+  die **Store-Glue** — die dünne IndexedDB-/Verdrahtungsschicht über dem Kern (`docs/TEST_MODUS.md` 2b).
+
+**Was getan** (reine Helfer zuerst node-getestet — **+9 → 1132/1132**)
+- **Neu `src/core/sandboxStore.js`** (Glue, statisch geprüft): wegwerfbare Test-Tresore über die
+  Mehrmandanten-Schicht — echte Daten technisch unberührt (eigene DBs, eigener Namens-Infix).
+  - `erstelleSandboxTresor(name)` — Sandbox-Mandant registrieren, aktiv setzen, DEK verwerfen, aktive
+    DB auf die (leere) Sandbox-DB schalten (Onboarding folgt). Berührt keinen echten Mandanten.
+  - `wechsleZuSandbox(id)` (verweigert Nicht-Sandbox-IDs), `leereSandboxTresor(id)` (Inhalt weg, Eintrag
+    bleibt), `loescheSandboxTresor(id)` (aus Registry + DB löschen, aktive DB rückt über `aktiveDbName`
+    nach), `loescheAlleSandboxes()` („Alle Tests löschen"). Lösch-/Leer-Pfade verweigern Nicht-Sandboxes.
+  - `raeumeVerwaisteSandboxesAuf()` — Boot-Aufräumen verwaister Test-DBs via `indexedDB.databases()`
+    (belt & suspenders, nie eine echte/aktive DB); in `src/main.js` nach `initMandanten` verdrahtet
+    (best-effort, blockiert den Start nie). `deleteDatabase`/`vorhandeneDbNamen` als API-Wrapper.
+- **`src/domain/mandanten.js`** (rein, node-getestet): `sandboxDbNamen(registry)` (DB-Namen je Test) +
+  `aktiveDbName(registry)` (aktive DB, Sandbox-Flag beachtet, Legacy-Fallback).
+- **`src/core/mandantenStore.js`:** `wechsleAktivenMandant` nutzt jetzt `dbNameVon(mandant)` statt
+  `dbNameFuer(id)` → korrekte DB auch für Test-Tresore (latenter Bug behoben).
+- **`sw.js`:** `CACHE_VERSION` v104 → **v105**, `core/sandboxStore.js` precachet.
+
+**Stand:** `node tests/run.mjs` **1132/1132 grün**; CI (2× smoke-test) grün; **PR #120 squash-gemergt**.
+
+**Offen / Grenzen (ehrlich)**
+- **UI fehlt noch** (Schritt 2c, eigene PR): „🧪 Tests"-Bereich (Sperrbildschirm/Einstellungen),
+  dauerhafter **TEST-MODUS-Banner**, behalten/verwerfen-Dialog, optional Demo-Vorbefüllung
+  (`domain/demodaten.js`).
+- **Nicht headless E2E:** die echten IndexedDB-Operationen (`deleteDatabase`, `databases()`) und die
+  `main.js`-Verdrahtung sind **statisch geprüft** (kein Headless-Browser); reine Auswahl-/Lebenszyklus-
+  Logik ist node-getestet.
+- **Nächster Schritt:** Test-Modus **UI** (Schritt 2c), dann Schritt 3 Backup-UX + `backupStrategie`,
+  danach Block 2 (Kalkulation/Angebote).
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 1/Schritt 2 (Teil 1): Test-Modus — Sandbox-Kern (reine Schicht) [PR #118, Branch `claude/testmodus-sandbox-kern`]
 
 **Ausgangslage / Auswahl**

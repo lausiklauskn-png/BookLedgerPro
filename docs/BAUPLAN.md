@@ -30,8 +30,12 @@
     `SANDBOX_INFIX`/`dbNameFuer({sandbox})`/`dbNameVon`/`istSandboxDbName`, `erstelleSandbox`/`istSandbox`,
     `echteMandanten`/`sandboxMandanten`, Sandbox-Ausblendung am Sperrbildschirm + `sandboxAuswahlListe`,
     `entferneAlleSandboxes`, `verwaisteSandboxDbs`. +28 Tests (1123/1123), SW `v104`.
-  - [ ] **2b. Store-Glue** `core/sandboxStore.js` — Sandbox-DB anlegen/wechseln/leeren/löschen,
-    „alle aufräumen", Boot-Aufräumen verwaister Test-DBs (`indexedDB.databases()`). (IndexedDB → statisch.)
+  - [x] **2b. Store-Glue** `core/sandboxStore.js` ✅ (PR #120, 2026-06-18): `erstelleSandboxTresor`/
+    `wechsleZuSandbox`/`leereSandboxTresor`/`loescheSandboxTresor`/`loescheAlleSandboxes` +
+    `raeumeVerwaisteSandboxesAuf` (Boot-Aufräumen via `indexedDB.databases()`, in `main.js` verdrahtet) +
+    `deleteDatabase`/`vorhandeneDbNamen`. Reine Helfer `sandboxDbNamen`/`aktiveDbName` in `domain/mandanten.js`
+    node-getestet; `wechsleAktivenMandant` nutzt jetzt `dbNameVon` (Sandbox-Flag). +9 Tests (1132/1132), SW `v105`.
+    IndexedDB/Glue statisch geprüft.
   - [ ] **2c. UI** — „🧪 Tests"-Bereich (Sperrbildschirm/Einstellungen), dauerhafter **TEST-MODUS-Banner**,
     behalten/verwerfen-Dialog, optional Demo-Vorbefüllung (`domain/demodaten.js`).
 - [ ] **3. Datensicherungs-UX + `backupStrategie`** — prominenter Backup-/Restore-Bereich, **gemerkter
