@@ -263,6 +263,24 @@ export function verzugUebersicht(angereichertePosten = [], opts = {}) {
   };
 }
 
+/** Ampel-Stufen für die Verzugs-Übersicht (z. B. Dashboard-KPI-Färbung). */
+export const VERZUG_AMPEL = { OK: 'ok', WARNUNG: 'warnung', KRITISCH: 'kritisch' };
+
+/**
+ * Verdichtet eine Verzugs-Übersicht (verzugUebersicht) zu einer Ampel-Stufe für die
+ * KPI-Färbung: grün, wenn nichts überfällig ist; rot („kritisch"), sobald mindestens eine
+ * Verbindlichkeit deutlich/stark überfällig ist (≥ 14 Tage); sonst gelb („Warnung").
+ * @param {{ueberfaelligAnzahl?:number, kritischAnzahl?:number}} [uebersicht]
+ * @returns {'ok'|'warnung'|'kritisch'}
+ */
+export function verzugAmpel(uebersicht = {}) {
+  const ueberfaellig = Math.max(0, Number(uebersicht.ueberfaelligAnzahl) || 0);
+  const kritisch = Math.max(0, Number(uebersicht.kritischAnzahl) || 0);
+  if (ueberfaellig === 0) return VERZUG_AMPEL.OK;
+  if (kritisch > 0) return VERZUG_AMPEL.KRITISCH;
+  return VERZUG_AMPEL.WARNUNG;
+}
+
 /**
  * Ein-Aufruf-Einstieg von den GESPEICHERTEN Eingangsrechnungen zum Verzugs-Report:
  * leitet die offenen Verbindlichkeiten ab (`offeneVerbindlichkeiten`), reichert sie um

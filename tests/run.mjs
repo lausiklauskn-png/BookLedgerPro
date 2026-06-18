@@ -141,7 +141,7 @@ import { faelligkeit, faelligAmVon, tageUeberfaellig, mahnstufe, verzugszinsenCe
 import {
   EINGANG_ZIEL_DEFAULT, PRUEF_TOLERANZ_CENT, VERZUG_SCHWELLEN, PRUEF_BEWERTUNG,
   verzugsstufe, verzugsstufeLabel, verzugsLage, berechtigteVerzugskosten,
-  pruefeErhalteneMahnung, verzugUebersicht, verzugReport,
+  pruefeErhalteneMahnung, verzugUebersicht, verzugReport, verzugAmpel, VERZUG_AMPEL,
   VERZUG_AUFWAND_KONTEN, VERZUG_GEGENKONTO, verzugAufwandZeilen, verzugAufwandEntwurf,
 } from '../src/domain/eingangsverzug.js';
 import {
@@ -2479,6 +2479,20 @@ await section('Eingangsverzug: verzugReport (Roh-Rechnungen → KPI in einem Auf
   // Leere Eingabe → alles 0, kein Fehler.
   const leer = verzugReport([], { heute });
   ok('leere Liste → 0 Posten', leer.uebersicht.anzahl === 0 && leer.uebersicht.ueberfaelligAnzahl === 0 && leer.angereichert.length === 0);
+  // verzugAmpel über die Übersicht: er:1 ist ≥14 Tage → kritisch.
+  ok('verzugReport → Ampel kritisch (1 kritischer Posten)', verzugAmpel(uebersicht) === VERZUG_AMPEL.KRITISCH);
+  ok('leere Übersicht → Ampel ok', verzugAmpel(leer.uebersicht) === VERZUG_AMPEL.OK);
+});
+
+await section('Eingangsverzug: verzugAmpel (KPI-Färbung der Verzugs-Übersicht)', () => {
+  ok('nichts überfällig → ok', verzugAmpel({ ueberfaelligAnzahl: 0, kritischAnzahl: 0 }) === VERZUG_AMPEL.OK);
+  ok('überfällig, aber nicht kritisch → warnung', verzugAmpel({ ueberfaelligAnzahl: 2, kritischAnzahl: 0 }) === VERZUG_AMPEL.WARNUNG);
+  ok('mind. 1 kritisch → kritisch', verzugAmpel({ ueberfaelligAnzahl: 3, kritischAnzahl: 1 }) === VERZUG_AMPEL.KRITISCH);
+  // Defensive: leeres/ungültiges Objekt → ok (kein Lärm), negative Zahlen geklemmt.
+  ok('leeres Objekt → ok', verzugAmpel() === VERZUG_AMPEL.OK);
+  ok('negative Werte geklemmt → ok', verzugAmpel({ ueberfaelligAnzahl: -1, kritischAnzahl: -5 }) === VERZUG_AMPEL.OK);
+  // Inkonsistente Eingabe (kritisch>0, aber ueberfaellig=0) → kein Verzug zählt → ok.
+  ok('kritisch ohne überfällig → ok', verzugAmpel({ ueberfaelligAnzahl: 0, kritischAnzahl: 2 }) === VERZUG_AMPEL.OK);
 });
 
 await section('Eingangsverzug: Buchung gezahlter Verzugskosten (Zinsaufwand)', () => {
