@@ -230,6 +230,17 @@
   /Beleg-Zuordnung GoBD-fix; alle Zeiten = ARBEIT; DOM/IndexedDB statisch geprüft. (`docs/KALKULATION_KATALOG.md` §6)
 
 ### Block 3 — später / umgebungs-blockiert
+- [x] **Dashboard-KPI: Liquiditätsvorschau (bald fällig)** [Folgeschritt zu #143/#145] ✅ (2026-06-18, PR #147) —
+  vorausschauender Gegenpol zu den Überfälligkeits-KPIs: was wird in den **nächsten 7 Tagen fällig** — erwartete
+  **Eingänge** (bald fällige Forderungen) gegen **Ausgänge** (bald fällige Verbindlichkeiten) + **Netto**. Reine Logik
+  `domain/liquiditaet.js` (node-getestet, +14 → **1585/1585**): `baldFaellig(angereichertePosten, {heute, horizontTage})`
+  (Posten im Fenster `[heute … heute+Horizont]`, **nicht überfällig** → keine Doppelzählung mit den Überfälligkeits-KPIs;
+  liest `offenCent`/`betragCent`) + `liquiditaetsVorschau({forderungen, verbindlichkeiten, …})` (eingehend/ausgehend/netto).
+  UI `ui/views/dashboard.js`: Karte „Liquiditätsvorschau (bald fällig)" am Kopf — gefüttert aus denselben angereicherten
+  Posten wie die Überfälligkeits-Karten (`forderungReport`/`verzugReport`); nur im Firmen-/Vereins-Kontext (Forderungen via
+  Ansicht `orders`, Verbindlichkeiten via `payables`; Privat blendet beide aus) UND wenn etwas bald fällig ist; Netto nur,
+  wenn beide Seiten sichtbar; **bucht nichts**. i18n de+en, SW `v128` (neues Modul precached). **Ehrliche Grenze:** einfache
+  Planung nach Fälligkeitsdatum, keine Forecast-Modellierung; DOM/IndexedDB statisch geprüft.
 - [ ] **Server-Backup-Ziel** (sobald eigener Server existiert) — Stelle 3 der 3-2-1-Sicherung.
 - [x] **Eingangsrechnungs-Verzug (Gegenseite)** [SOLL] ✅ (2026-06-18) — Spiegel zum Mahnwesen aus
   **Schuldnersicht**. Reine Logik `domain/eingangsverzug.js` (node-getestet, +33 → **1516/1516**):

@@ -20,18 +20,19 @@ AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 202
 (Vertrauen/Sicherheit) und Block 2 (Kalkulation/Angebote) sind KOMPLETT.** Block 3 ist ausgebaut: Eingangsrechnungs-Verzug
 (Gegenseite) ✅ #140 (Mahnung prüfen § 288 BGB) + Buchung gezahlter Verzugskosten (Zinsaufwand) ✅ #141 +
 Verzugsrisiko-Übersicht in der Verbindlichkeiten-Ansicht ✅ #142 + Dashboard-KPI überfällige **Verbindlichkeiten**
-(eigene Zahlungsdisziplin) ✅ #143 + zuletzt (2026-06-18) **Dashboard-KPI: überfällige Forderungen (Mahnwesen) ✅ #145** —
-der Spiegel zu #143, aber aus **Gläubigersicht** (die in `docs/OFFENE_PUNKTE.md` A1 dokumentierte Dashboard-Intention
-„Kennzahl überfällige Forderungen, Summe + Anzahl"). Damit sind beide Seiten (Forderungen ⇄ Verbindlichkeiten)
-symmetrisch auf der Übersicht. Reine Logik `domain/mahnwesen.js` **`forderungUebersicht`** (Spiegel zu
-`verzugUebersicht`: überfällige Anzahl/Summe + Σ §-288-Zins-Potenzial + kritisch ab 1. Mahnung/≥14 Tage),
-**`FORDERUNG_AMPEL`/`forderungAmpel`** (Spiegel zu `verzugAmpel`) und **`forderungReport(auftraege, opts)`**
-(Ein-Aufruf-Einstieg `offenePosten` → `anreicherePosten` → `forderungUebersicht`; Import zyklenfrei, node-getestet);
-UI `ui/views/dashboard.js`: Karte „Überfällige Forderungen (Mahnwesen)" am Kopf — nur bei aktivem Mahnwesen
-(`zeigeFeature MAHNWESEN`, in Privat ausgeblendet) UND wenn etwas überfällig ist; Klick → Berichte; **bucht nichts**.
-i18n de+en, SW `v127` (keine neuen Module), +20 → **1571/1571** grün, DOM/IndexedDB statisch geprüft. **Mehrere saubere,
-in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln grün + gemergt; nie „halb"
-mergen, im Zweifel feiner schneiden).
+(eigene Zahlungsdisziplin) ✅ #143 + Dashboard-KPI überfällige **Forderungen (Mahnwesen)** ✅ #145 (Spiegel zu #143 aus
+Gläubigersicht) + zuletzt (2026-06-18) **Dashboard-KPI: Liquiditätsvorschau (bald fällig) ✅ #147** — der vorausschauende
+Gegenpol zu den beiden Überfälligkeits-KPIs: was wird in den **nächsten 7 Tagen fällig** (erwartete **Eingänge** = bald
+fällige Forderungen gegen **Ausgänge** = bald fällige Verbindlichkeiten + **Netto**). Reine Logik
+`domain/liquiditaet.js` **`baldFaellig(angereichertePosten, {heute, horizontTage})`** (Posten im Fenster
+`[heute … heute+Horizont]`, **nicht überfällig** → keine Doppelzählung mit den Überfälligkeits-KPIs; liest
+`offenCent`/`betragCent`) + **`liquiditaetsVorschau({forderungen, verbindlichkeiten, …})`** (eingehend/ausgehend/netto,
+node-getestet); UI `ui/views/dashboard.js`: Karte „Liquiditätsvorschau (bald fällig)" am Kopf — gefüttert aus denselben
+angereicherten Posten wie die Überfälligkeits-Karten (`forderungReport`/`verzugReport`), nur im Firmen-/Vereins-Kontext
+(`zeigeAnsicht 'orders'`/`'payables'`, Privat ausgeblendet) UND wenn etwas bald fällig ist, Netto nur bei beiden Seiten;
+**bucht nichts**. i18n de+en, SW `v128` (neues Modul precached), +14 → **1585/1585** grün, DOM/IndexedDB statisch geprüft.
+**Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln grün + gemergt;
+nie „halb" mergen, im Zweifel feiner schneiden).
 
 Nächste offene Schritte (alle optional):
 1. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — die DOM/IndexedDB-Pfade aller UIs bestätigen
@@ -71,12 +72,12 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Dashboard-KPI: überfällige Forderungen (Mahnwesen)**
-(PR #145): reine Logik `domain/mahnwesen.js` `forderungUebersicht`/`FORDERUNG_AMPEL`+`forderungAmpel`/`forderungReport`
-(Spiegel zu `eingangsverzug.verzugUebersicht`/`verzugAmpel`/`verzugReport`); UI `ui/views/dashboard.js`: Karte
-„Überfällige Forderungen (Mahnwesen)" am Kopf der Übersicht. Tests **1571/1571** · SW **v127** · 116 JS-Module.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 3 — Dashboard-KPI: Liquiditätsvorschau (bald fällig)**
+(PR #147): reine Logik `domain/liquiditaet.js` `baldFaellig`/`liquiditaetsVorschau`; UI `ui/views/dashboard.js`: Karte
+„Liquiditätsvorschau (bald fällig)" am Kopf der Übersicht. Tests **1585/1585** · SW **v128** · 117 JS-Module.
 **Block 1 + Block 2 KOMPLETT; Block 3 ausgebaut (Eingangsrechnungs-Verzug inkl. Buchung + Verzugsrisiko-KPI in
-Verbindlichkeiten-Ansicht UND beidseitige Verzugs-KPI — Verbindlichkeiten #143 + Forderungen #145 — auf dem Dashboard erledigt).**
+Verbindlichkeiten-Ansicht + beidseitige Überfälligkeits-KPI — Verbindlichkeiten #143 + Forderungen #145 — auf dem
+Dashboard + Liquiditätsvorschau #147).**
 **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
 oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

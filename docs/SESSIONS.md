@@ -5,6 +5,38 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 3: Dashboard-KPI Liquiditätsvorschau (bald fällig) [Branch `claude/bookledgerpro-block-3-liquiditaet`, PR #147]
+
+**Ausgangslage / Auswahl**
+- Block 1 + Block 2 komplett; Block 3 ausgebaut, beide Überfälligkeits-KPIs auf dem Dashboard (Verbindlichkeiten #143 +
+  Forderungen #145). Befund: Das Dashboard zeigte nur, was **bereits überfällig** ist — die vorausschauende Seite
+  („was wird demnächst fällig, reicht die Liquidität?") fehlte. Sauberer, build-freier, symmetrischer Folgeschritt:
+  dieselbe Posten-Basis vorwärts auswerten.
+
+**Was getan**
+- **`src/domain/liquiditaet.js`** (NEU, rein, node-getestet, +14 → **1585/1585**): `LIQUIDITAET_HORIZONT_DEFAULT` (7),
+  `baldFaellig(angereichertePosten, {heute, horizontTage})` — Posten mit Fälligkeit im Fenster `[heute … heute+Horizont]`,
+  die **noch nicht überfällig** sind (Fälligkeit < heute fällt heraus → keine Doppelzählung mit den Überfälligkeits-KPIs);
+  liest `offenCent` (Verbindlichkeiten) **und** `betragCent` (Forderungen). `liquiditaetsVorschau({forderungen,
+  verbindlichkeiten, …})` — eingehend/ausgehend/netto über denselben Horizont.
+- **`src/ui/views/dashboard.js`**: Karte „Liquiditätsvorschau (bald fällig)" am Kopf — gefüttert aus denselben
+  angereicherten Posten wie die Überfälligkeits-Karten (`forderungReport(...).angereichert` / `verzugReport(...).angereichert`).
+  Nur im Firmen-/Vereins-Kontext sichtbar (Forderungen via `zeigeAnsicht 'orders'`, Verbindlichkeiten via `payables`; Privat
+  blendet beide aus) UND wenn etwas bald fällig ist; **Netto** nur, wenn beide Seiten sichtbar. **Bucht nichts.**
+- i18n de+en (`dashboard.liquidity*`), **SW `v128`** (`src/domain/liquiditaet.js` neu precached).
+
+**Stand**
+- Block 1 + Block 2 komplett; **Block 3** weiter ausgebaut (Überfälligkeit beidseitig + jetzt Liquiditätsvorschau).
+- **Tests 1585/1585 grün** (`node tests/run.mjs`). SW `v128`. 117 JS-Module. PR #147 squash-gemergt (CI smoke-test grün).
+
+**Offen / Nächstes / Grenzen**
+- **DOM/IndexedDB statisch geprüft** (kein Headless-Browser) — die reine Logik (`baldFaellig`/`liquiditaetsVorschau`) ist node-getestet (+14).
+- **Ehrliche Grenze:** einfache Planung nach **Fälligkeitsdatum**, keine Forecast-Modellierung (Skonto/Teilzahlungs-Wahrscheinlichkeit/Zinsen bewusst nicht); Standard-Zahlungsziele, wo kein posten-eigenes Ziel hinterlegt ist.
+- **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
+  (Server-/Offsite-Backup-Ziel, WorkFloh-Gegenstücke) oder eine neue, abgestimmte Idee.
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 3: Dashboard-KPI überfällige Forderungen (Mahnwesen) [Branch `claude/block-3-dashboard-kpi-p2jpfc`, PR #145]
 
 **Ausgangslage / Auswahl**
