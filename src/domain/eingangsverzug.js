@@ -156,6 +156,86 @@ export function pruefeErhalteneMahnung(posten = {}, opts = {}) {
   };
 }
 
+// ---- Buchung GEZAHLTER Verzugskosten (Zinsaufwand) — Spiegel zu R1 ----------
+//
+// Wenn wir eine BERECHTIGTE Lieferanten-Mahnung zahlen, ist das Spiegelbild zur
+// Forderungsseite (mahnwesen.mahnbuchungEntwurf): dort entstand ein Zins-/Gebühren-
+// ERTRAG, hier entsteht uns ein Zins-/Gebühren-AUFWAND.
+//
+// EHRLICHE USt-EINORDNUNG (identisch zu mahnwesen.js): Verzugszinsen und Mahngebühren
+// sind nach h. M. (Abschn. 1.3 UStAE) nicht steuerbarer **echter Schadensersatz** — es
+// fehlt der Leistungsaustausch. Daher KEINE Vorsteuer auf der Buchung; der volle Betrag
+// ist Aufwand. Im Zweifel (z. B. vertraglich vereinbarte „Bearbeitungsgebühr") Berater.
+
+/** Standard-Kontenzuordnung (SKR03) für die Buchung gezahlter Verzugskosten. */
+export const VERZUG_AUFWAND_KONTEN = {
+  zinsaufwand: '2100',      // Zinsen und ähnliche Aufwendungen (Soll)
+  gebuehraufwand: '4980',   // Sonstige betriebliche Aufwendungen (Soll) — Spiegel zu 2700
+  bank: '1200',             // Bank (Haben) — Standard-Gegenkonto bei Zahlung
+  verbindlichkeit: '1600',  // Verbindlichkeiten aus L+L (Haben) — alternativ „auf Ziel"
+};
+
+/** Gegenkonto-Wahl für die Verzugskosten-Buchung: per Bank zahlen oder als Verbindlichkeit einbuchen. */
+export const VERZUG_GEGENKONTO = { BANK: 'bank', VERBINDLICHKEIT: 'verbindlichkeit' };
+
+/**
+ * Baut die Buchungszeilen für gezahlte/zu zahlende Verzugszinsen + Mahngebühren
+ * (ohne Vorsteuer — nicht steuerbarer Schadensersatz). Spiegel zu mahnbuchungZeilen.
+ *
+ *   Soll  Zinsen und ähnliche Aufwendungen (2100)    zinsen
+ *   Soll  Sonstige betriebliche Aufwendungen (4980)  gebühren
+ *   Haben Bank (1200) ODER Verbindlichkeiten (1600)  zinsen + gebühren
+ *
+ * @param {object} opts
+ * @param {number} [opts.zinsenCent=0]    Verzugszinsen (Cent, ≥0)
+ * @param {number} [opts.gebuehrenCent=0] Mahngebühren/Pauschale (Cent, ≥0)
+ * @param {'bank'|'verbindlichkeit'} [opts.gegenkonto='bank'] Bank zahlen oder als Verbindlichkeit einbuchen
+ * @param {object} [opts.konten] optionale Konto-Überschreibung (zinsaufwand/gebuehraufwand/bank/verbindlichkeit)
+ * @returns {{zeilen:Array, summeCent:number, zinsenCent:number, gebuehrenCent:number, gegenkonto:string}}
+ */
+export function verzugAufwandZeilen(opts = {}) {
+  const zinsenCent = Math.max(0, Math.round(Number(opts.zinsenCent) || 0));
+  const gebuehrenCent = Math.max(0, Math.round(Number(opts.gebuehrenCent) || 0));
+  const k = { ...VERZUG_AUFWAND_KONTEN, ...(opts.konten || {}) };
+  const gegenkonto = opts.gegenkonto === VERZUG_GEGENKONTO.VERBINDLICHKEIT
+    ? VERZUG_GEGENKONTO.VERBINDLICHKEIT : VERZUG_GEGENKONTO.BANK;
+  const gegenkontoNr = gegenkonto === VERZUG_GEGENKONTO.VERBINDLICHKEIT ? k.verbindlichkeit : k.bank;
+  const summeCent = zinsenCent + gebuehrenCent;
+  const zeilen = [];
+  if (summeCent > 0) {
+    if (zinsenCent > 0) zeilen.push({ konto: k.zinsaufwand, seite: 'S', betrag: zinsenCent });
+    if (gebuehrenCent > 0) zeilen.push({ konto: k.gebuehraufwand, seite: 'S', betrag: gebuehrenCent });
+    zeilen.push({ konto: gegenkontoNr, seite: 'H', betrag: summeCent });
+  }
+  return { zeilen, summeCent, zinsenCent, gebuehrenCent, gegenkonto };
+}
+
+/**
+ * Baut einen vollständigen Buchungs-ENTWURF (manuell, KEIN Auto-Festschreiben —
+ * GoBD-Disziplin) für gezahlte Verzugszinsen/Mahngebühren. Spiegel zu
+ * mahnwesen.mahnbuchungEntwurf. Gibt null zurück, wenn weder Zinsen noch Gebühren anfallen.
+ * @returns {{datum, beschreibung, begruendung, zeilen, summeCent, zinsenCent, gebuehrenCent, gegenkonto}|null}
+ */
+export function verzugAufwandEntwurf(opts = {}) {
+  const res = verzugAufwandZeilen(opts);
+  if (!res.zeilen.length) return null;
+  const teile = [];
+  if (res.zinsenCent > 0) teile.push('Verzugszinsen');
+  if (res.gebuehrenCent > 0) teile.push('Mahngebühren');
+  const refTeil = opts.referenz ? ` Rechnung ${opts.referenz}` : '';
+  const nameTeil = opts.name ? ` (${opts.name})` : '';
+  return {
+    datum: opts.datum || new Date().toISOString().slice(0, 10),
+    beschreibung: `Gezahlte ${teile.join(' + ')}${refTeil}${nameTeil}`.trim(),
+    begruendung: 'Gezahlte Verzugszinsen/Mahngebühren als nicht steuerbarer Schadensersatz (§ 288 BGB) — ohne Vorsteuer. Im Zweifel Steuerberater.',
+    zeilen: res.zeilen,
+    summeCent: res.summeCent,
+    zinsenCent: res.zinsenCent,
+    gebuehrenCent: res.gebuehrenCent,
+    gegenkonto: res.gegenkonto,
+  };
+}
+
 /**
  * Kennzahlen über die eigene Zahlungsdisziplin (für Dashboard/Auswertung): wie viele
  * offene Verbindlichkeiten sind überfällig, mit welcher Summe, und welches Verzugszins-
