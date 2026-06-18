@@ -40,6 +40,11 @@ import {
   zukaufkosten, montagekosten, kalkuliereVorwaerts,
   bruttoVonNetto, nettoVonBrutto, maxSelbstkosten, kalkuliereRueckwaerts,
 } from '../src/domain/kalkulation.js';
+import {
+  PRODUKT_ART, BASIS, FELD_TYP, PRODUKT_SCHEMATA, SCHEMA_IDS, schemaNach,
+  feldDefaults, kalibrierbareFelder, kalibrierteDefaults, werteMitDefaults,
+  baueKostenarten, schemaEingabe, kalkuliereSchema, validateSchema, validateAlleSchemata,
+} from '../src/domain/produktschemata.js';
 import { extractFromText } from '../src/ai/extract.js';
 import { categorize } from '../src/ai/categorize.js';
 import { buildVorschlag } from '../src/ai/suggest.js';
@@ -3587,6 +3592,81 @@ await section('Kalkulation Block 2/Schritt 5: Kalkulations-Kern (rein, cent-gena
     const rn = kalkuliereRueckwaerts({ zielNettoCent: 10000, fixeKostenCent: 12000, stundensatzCentProStd: 3500 });
     return rn.budgetCent < 0 && !rn.reichtAus && rn.maxStunden === 0;
   })());
+});
+
+await section('Kalkulation Block 2/Schritt 6: Produkt-Schemata (rein, füttert den Kern)', () => {
+  // Struktur: alle Schemata sind strukturell gültig (eindeutige Keys, gültige
+  // Art/Basis/Feldtypen, mapping liefert nur bekannte Kostenarten).
+  const alle = validateAlleSchemata();
+  ok('alle Schemata strukturell gültig', alle.ok);
+  if (!alle.ok) console.error('   →', alle.fehler.join(' | '));
+  ok('die 6 BAUPLAN-Schemata vorhanden', SCHEMA_IDS.length === 6 &&
+    ['folierung', 'schild', 'gravur', 'leuchtreklame', 'druckZukauf', 'montage'].every((id) => SCHEMA_IDS.includes(id)));
+  ok('SCHEMA_IDS deckt sich mit PRODUKT_SCHEMATA', SCHEMA_IDS.length === PRODUKT_SCHEMATA.length);
+  ok('schemaNach: bekannt/unbekannt', schemaNach('folierung') && schemaNach('schild').id === 'schild' && schemaNach('quatsch') === null);
+  ok('validateSchema: Müll → nicht ok', !validateSchema(null).ok && !validateSchema({ id: 'x', art: 'x', basis: 'x', felder: [], mapping: () => ({}) }).ok);
+
+  // Defaults / Kalibrierung.
+  const folie = schemaNach('folierung');
+  ok('feldDefaults liefert alle Feld-Keys', Object.keys(feldDefaults(folie)).length === folie.felder.length);
+  ok('kalibrierbareFelder nur die Hotspots', kalibrierbareFelder(folie).every((f) => f.kalibrierbar) &&
+    kalibrierbareFelder(folie).length < folie.felder.length);
+  ok('Folie hat sinnvolle Startsätze', feldDefaults(folie).preisProM2Cent === 4000 && feldDefaults(folie).verschnittProzent === 15);
+  // Kalibrierung überschreibt NUR kalibrierbare Felder.
+  ok('kalibrierteDefaults überschreibt kalibrierbares Feld', kalibrierteDefaults(folie, { preisProM2Cent: 5500 }).preisProM2Cent === 5500);
+  ok('kalibrierteDefaults lässt nicht-kalibrierbares Feld unberührt', (() => {
+    // flaecheM2 ist NICHT kalibrierbar → darf nicht aus der Kalibrierung gesetzt werden.
+    const d = kalibrierteDefaults(folie, { flaecheM2: 99 });
+    return d.flaecheM2 === 0;
+  })());
+  ok('werteMitDefaults: explizite Werte schlagen Defaults', (() => {
+    const w = werteMitDefaults(folie, { flaecheM2: 2.5 }, { preisProM2Cent: 5000 });
+    return w.flaecheM2 === 2.5 && w.preisProM2Cent === 5000 && w.verschnittProzent === 15;
+  })());
+
+  // Mapping: Schema-Werte → Kostenarten des Kerns (reine Zuordnung).
+  const ka = baueKostenarten(folie, { flaecheM2: 2.5, preisProM2Cent: 4000, verschnittProzent: 12, verklebeStunden: 3, arbeitssatzCentProStd: 3500, montageCent: 2500 });
+  ok('Folie-mapping: m²-Felder ins Material', ka.material.flaecheM2 === 2.5 && ka.material.preisProM2Cent === 4000 && ka.material.verschnittProzent === 12);
+  ok('Folie-mapping: Verklebung in Arbeit, Montage gesetzt', ka.arbeit.stunden === 3 && ka.arbeit.satzCentProStd === 3500 && ka.montage.betragCent === 2500);
+
+  // Durchrechnen über den Kern — Ergebnis muss IDENTISCH zum direkten Kern-Aufruf sein
+  // (die Schicht erfindet keine Formel, sie füttert nur). Folie: 11200+10500+2500=24200.
+  const erg = kalkuliereSchema(folie,
+    { flaecheM2: 2.5, preisProM2Cent: 4000, verschnittProzent: 12, verklebeStunden: 3, arbeitssatzCentProStd: 3500, montageCent: 2500 },
+    { gemeinkostenProzent: 15, gewinnProzent: 20, ustProzent: 19 });
+  const direkt = kalkuliereVorwaerts({
+    material: { flaecheM2: 2.5, preisProM2Cent: 4000, verschnittProzent: 12 },
+    arbeit: { stunden: 3, satzCentProStd: 3500 },
+    montage: { betragCent: 2500 },
+    gemeinkostenProzent: 15, gewinnProzent: 20, ustProzent: 19,
+  });
+  ok('kalkuliereSchema == direkter Kern-Aufruf', JSON.stringify(erg) === JSON.stringify(direkt));
+  ok('Folie: Selbstkosten 24200, Material m² korrekt', erg.selbstkosten === 24200 && erg.material === 11200 && erg.arbeit === 10500 && erg.montage === 2500);
+
+  // Gravur: Maschinenzeit in MINUTEN → korrekt in Stunden umgerechnet (30 min @ 60€/Std = 3000 ct).
+  const gravur = schemaNach('gravur');
+  const kg = baueKostenarten(gravur, { gravurMinuten: 30, maschinensatzCentProStd: 6000 });
+  ok('Gravur-mapping: 30 min → 0,5 Std Maschine', kg.maschine.stunden === 0.5 && kg.maschine.satzCentProStd === 6000);
+  const eg = kalkuliereSchema(gravur, { rohlingCent: 800, gravurMinuten: 30, maschinensatzCentProStd: 6000, vorlageStunden: 1, arbeitssatzCentProStd: 4500 }, { ustProzent: 19 });
+  ok('Gravur: Selbstkosten = 800 + 3000 + 4500 = 8300', eg.selbstkosten === 8300 && eg.maschine === 3000 && eg.arbeit === 4500);
+
+  // Zukauf-Schema: Handelsaufschlag wirkt; reine Eigenleistung Layout.
+  const druck = schemaNach('druckZukauf');
+  const ed = kalkuliereSchema(druck, { layoutStunden: 2, arbeitssatzCentProStd: 4500, druckEkCent: 10000, handelsaufschlagProzent: 30 }, { ustProzent: 19 });
+  ok('Druck-Zukauf: Arbeit 9000 + Zukauf 13000 = 22000', ed.arbeit === 9000 && ed.zukauf === 13000 && ed.selbstkosten === 22000);
+  ok('Druck-Zukauf: Art = Handel', druck.art === PRODUKT_ART.HANDEL);
+
+  // Leuchtreklame: alle fünf Kostenarten greifen.
+  const leucht = schemaNach('leuchtreklame');
+  const el = kalkuliereSchema(leucht, { materialCent: 8000, fertigungStunden: 2, maschinensatzCentProStd: 6000, elektrikStunden: 1.5, arbeitssatzCentProStd: 4000, ledEkCent: 5000, handelsaufschlagProzent: 20, montageCent: 3000 }, { ustProzent: 19 });
+  ok('Leuchtreklame: alle Kostenarten > 0', el.material === 8000 && el.maschine === 12000 && el.arbeit === 6000 && el.zukauf === 6000 && el.montage === 3000);
+  ok('Leuchtreklame: Selbstkosten = Summe (35000)', el.selbstkosten === 35000);
+
+  // Leeres Schema (nur Defaults, keine Mengen) → Selbstkosten 0, kein Absturz.
+  ok('leere Mengen → Selbstkosten 0', kalkuliereSchema(folie, {}, {}).selbstkosten === 0);
+
+  // Feld-/Enum-Konstanten exportiert und nicht-leer (für die spätere UI).
+  ok('Enums vorhanden', PRODUKT_ART.EIGEN === 'eigen' && BASIS.M2 === 'm2' && FELD_TYP.GELD === 'geld');
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
