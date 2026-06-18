@@ -93,8 +93,16 @@
   (5): interne Kalkulation gespeichert, extern dringt **nur der Netto-Stückpreis**. `interneAuswertung`
   (Live-Deckungsbeitrag, rein intern). `neuesAngebot`/`validateAngebot`. SW `v111`. **Kein UI** (eigener Folgeschritt).
   (`docs/KALKULATION_KATALOG.md` §3/§4/§5)
-- [ ] **8. Angebot → Rechnung-Übernahme** — angenommenes Angebot → bestehender Rechnungs-/Buchungspfad;
-  je nach `rechnungsstelle` echte §14-Nummer (blp) oder vorläufige Vorlage (extern); referenziert Angebotsnr.
+- [x] **8. Angebot → Rechnung-Übernahme (rein)** ✅ (PR #129, 2026-06-18) — `domain/angebotUebernahme.js`
+  (rein, node-getestet, +28 → **1326/1326**): angenommenes Angebot (`ANGEBOT_STATUS.ANGENOMMEN`) → bestehender
+  Rechnungs-/Buchungspfad (`invoicing.rechnungZeilen`, Soll Forderung / Haben Erlöse+USt — selber Kern wie
+  `rechnungAusAuftrag`). **Nummern-Politik** `uebernahmeNummer` je `rechnungsstelle` (Schritt 4): `blp` → echte
+  §14-Nummer (`formatRechnungsnummer`), `extern` → vorläufige Vorlage `ENT-JJJJ-NNNN` (`vorlaeufigeRechnungsnummer`,
+  `vorlaeufig=true`). **`angebotUebernahmeEntwurf`** referenziert die Angebotsnummer (`angebotsnummer`), benutzt sie
+  aber NIE wieder (zwei getrennte Kreise, GoBD). **Prime Directive:** baut ausschließlich auf `externesAngebot`
+  (Whitelist) → die interne Kalkulation gelangt nie in den Entwurf (Test prüft das JSON). `validateAngebotUebernahme`/
+  `darfAngebotUebernehmen` (nur `angenommen` + gültige AN-Nummer + Positionen). SW `v112`. **Rein, kein UI** —
+  UI/Store-Glue (Zähler je Kreis, `saveEntwurf`, Angebot→archiviert) sind ein eigener Folgeschritt. (Katalog §4/§7a)
 - [ ] **9. Auftrags-Kostenträger + Nachkalkulation** — Material/Belege/Zeit je Auftrag sammeln (nutzt
   `payables`/`costcenters`/Belege/`belegRef`) → Soll/Ist-Vergleich.
 - [ ] **10. Kalibrierung + Statistik/Vergleich** — Korrekturfaktoren aus eigener Historie (Vor→Nachkalkulation),

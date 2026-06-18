@@ -3,7 +3,7 @@
 > **Lebende Merkliste.** Hier wird festgehalten, was wichtig ist, noch fehlt, nachgearbeitet
 > oder verbessert werden muss — damit über Sitzungen hinweg nichts verloren geht. Ergänzt
 > `ROADMAP.md` (Phasen), `docs/PULS.md` (Stand/Leitbild) und `docs/SESSIONS.md` (Verlauf).
-> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 2/Schritt 7 — Angebote-Kern `domain/angebote.js`, rein, PR #128; SW `v111`, 1298/1298). Davor: Schritt 6 — Produkt-Schemata `domain/produktschemata.js` (PR #127, SW `v110`, 1238/1238). Davor: Schritt 5 — Kalkulations-Kern `domain/kalkulation.js` (PR #126, SW `v109`, 1215/1215). Davor: Block 2/Schritt 4 — Setting `rechnungsstelle` (PR #125, SW `v108`, 1181/1181). Davor: Block 1 komplett — Schritt 3 Datensicherungs-UX + `backupStrategie` (PR #124), 2c Test-Modus UI (PR #122), 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
+> Erledigte Punkte abhaken und ins SESSIONS-Log verschieben. Letzte Pflege: **2026-06-18** (BAUPLAN Block 2/Schritt 8 — Angebot → Rechnung-Übernahme `domain/angebotUebernahme.js`, rein, PR #129; SW `v112`, 1326/1326). Davor: Schritt 7 — Angebote-Kern `domain/angebote.js` (PR #128, SW `v111`, 1298/1298). Davor: Schritt 6 — Produkt-Schemata `domain/produktschemata.js` (PR #127, SW `v110`, 1238/1238). Davor: Schritt 5 — Kalkulations-Kern `domain/kalkulation.js` (PR #126, SW `v109`, 1215/1215). Davor: Block 2/Schritt 4 — Setting `rechnungsstelle` (PR #125, SW `v108`, 1181/1181). Davor: Block 1 komplett — Schritt 3 Datensicherungs-UX + `backupStrategie` (PR #124), 2c Test-Modus UI (PR #122), 2b Store-Glue (PR #120), 2a Sandbox-Kern (PR #118), Schritt 1 Roundtrip-Selbsttest (PR #116).
 
 Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlicher Mehrwert ·
 **[KANN]** später/optional.
@@ -45,9 +45,14 @@ ein PR, bei grüner CI selbstständig mergen**):
   Directive via `externesAngebot`/`externePosition`-**Whitelist**), Status entwurf/offen/angenommen/abgelehnt/archiviert
   (`darfAngebotWechseln`/`setzeAngebotStatus` + Archiv-Filter), **freier** Nummernkreis `AN-JJJJ-NNNN`
   (`naechsteAngebotsSeq`/`vergebeAngebotsnummer`), Aggregation `angebotSummen` (= `orders.auftragSummen`),
-  `positionAusSchema` (koppelt Schemata + Kern), `interneAuswertung` (Live-Deckungsbeitrag). **Nächster Schritt: Schritt 8
-  Angebot→Rechnung-Übernahme** (angenommenes Angebot → Rechnungs-/Buchungspfad, §14-Nummer (blp) bzw. Vorlage `ENT-…`
-  (extern), referenziert die Angebotsnummer), dann 9 Nachkalkulation → 10 Kalibrierung → 11 Baukasten-UX.
+  `positionAusSchema` (koppelt Schemata + Kern), `interneAuswertung` (Live-Deckungsbeitrag).
+  ✅ **Angebot → Rechnung-Übernahme umgesetzt (PR #129, BAUPLAN Block 2/Schritt 8):** `domain/angebotUebernahme.js`
+  (rein, node-getestet) — angenommenes Angebot → bestehender Rechnungs-/Buchungspfad (`invoicing.rechnungZeilen`),
+  Nummern-Politik `uebernahmeNummer` je `rechnungsstelle` (blp → §14-Nummer, extern → vorläufige Vorlage `ENT-…`),
+  `angebotUebernahmeEntwurf` referenziert die Angebotsnummer (nicht wiederverwendet, zwei getrennte Kreise/GoBD),
+  baut nur auf `externesAngebot` (Prime Directive), `validateAngebotUebernahme`/`darfAngebotUebernehmen`. **Rein, kein UI.**
+  **Nächster Schritt: Schritt 9 Auftrags-Kostenträger + Nachkalkulation** (`payables`/`costcenters`/Belege → Soll/Ist),
+  dann 10 Kalibrierung → 11 Baukasten-UX. **Offener Folgeschritt:** UI „Rechnung aus Angebot" + Store-Glue (Zähler je Kreis).
 - **Datensicherung — wählbare 3-2-1-Strategie (Pflicht #1): JA, Anforderung steht.** Verbindliches Doku:
   **`docs/DATENSICHERUNG.md`** (Stellen: BLP intern · verschlüsselter gewählter Ordner re-importierbar ·
   Server/Offsite; **freie Nutzer-Wahl `backupStrategie`** beim Onboarding + in Einstellungen änderbar;
