@@ -3,11 +3,13 @@
 > **Brief an die nachfolgenden Sitzungen.** Jede Sitzung erledigt **genau einen** Schritt unten
 > als **eine** PR, sauber und fehlerfrei, und endet mit einem **Abschlussbrief** (siehe Ritual),
 > damit die nächste Sitzung **konfliktfrei** startet. Ergänzt `docs/PULS.md` (START HIER) und
-> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-18. Tests-Basis: **1141/1141 grün**, SW `v106`.
+> `docs/OFFENE_PUNKTE.md`. Stand: 2026-06-18. Tests-Basis: **1158/1158 grün**, SW `v107`.
 > **Aktiver Plan jetzt: `docs/BAUPLAN.md`** (Block 1 Vertrauen/Sicherheit). Schritt 1
 > **Roundtrip-Selbsttest ✅ (PR #116)** · Schritt 2 **Test-Modus komplett**: 2a Sandbox-Kern ✅ (PR #118),
-> 2b Store-Glue ✅ (PR #120), 2c UI ✅ (PR #122) — `docs/TEST_MODUS.md`. **Nächster Schritt: 3 Datensicherungs-
-> UX + `backupStrategie`** (`docs/DATENSICHERUNG.md`), dann Block 2 (Kalkulation/Angebote).
+> 2b Store-Glue ✅ (PR #120), 2c UI ✅ (PR #122) — `docs/TEST_MODUS.md` · **Schritt 3 Datensicherungs-UX +
+> `backupStrategie` ✅ (PR #124)** — `docs/DATENSICHERUNG.md`. **→ Block 1 abgeschlossen.** **Nächster Schritt:
+> Block 2 (Kalkulation/Angebote), Schritt 4: Setting `rechnungsstelle`** (`docs/KALKULATION_KATALOG.md`); optional
+> kleiner 2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`).
 > Nächster Schritt: **mit dem Nutzer abstimmen** (AskUserQuestion) — der **build-freie Rest-Korb ist leer**
 > (R4-Rest ✅, **R5a-Rest SWIFT/ISO-20022-Schema-Validierung ✅**). Verbleibend nur noch **umgebungs-/menschen-
 > blockierte** [KANN]-Punkte (**R6/Rest**: Lighthouse/Perf → Headless-Browser; lokales OCR → Tesseract ist wasm/

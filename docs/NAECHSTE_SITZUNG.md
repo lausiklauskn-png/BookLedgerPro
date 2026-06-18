@@ -17,27 +17,25 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/BAUPLAN.md` + `docs/NAC
 obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles.
 
 AUFGABE DIESER SITZUNG: **Den `docs/BAUPLAN.md` abarbeiten** (mit dem Nutzer 2026-06-17 vereinbart). Reihenfolge
-steht dort; **Block 1 zuerst (Vertrauen/Sicherheit)**. **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung,
-wo sinnvoll** (nicht zwingend 1/Sitzung; pro Schritt 1 PR, jeder einzeln grün + gemergt; nie „halb" mergen, im
-Zweifel feiner schneiden). Stand Block 1: **Schritt 1 ✅ (PR #116, Roundtrip-Selbsttest)** · **Schritt 2 Test-Modus
-KOMPLETT** — 2a Sandbox-Kern ✅ (PR #118), 2b Store-Glue `core/sandboxStore.js` ✅ (PR #120), 2c UI ✅ (PR #122:
-„🧪 Tests"-Bereich am Sperrbildschirm/in den Einstellungen, TEST-MODUS-Banner, behalten/verwerfen-Dialog,
-verschlanktes Test-Onboarding; reine Helfer `aktiverSandbox`/`naechsterTestName` node-getestet; Korrektur
-`initMandanten`→`aktiveDbName()`). Nächste offene Schritte:
-1. **NÄCHSTER SCHRITT — Datensicherungs-UX + `backupStrategie` (Schritt 3)** (`docs/DATENSICHERUNG.md`): prominente
-   Backup-/Restore-Knöpfe (nicht nur im Durabilitäts-Banner), **gemerkter Zielordner** (File System Access; auf
-   Tablet/ohne API → Download-Fallback), **Drag-and-drop-Restore**; neues Setting **`backupStrategie`** (im
-   Onboarding wählbar + in den Einstellungen änderbar). Reine Helfer/Logik ZUERST node-testen; UI/DOM/IndexedDB
-   als „statisch geprüft" kennzeichnen. Datendurabilität ist Pflicht-Feature #1 (CLAUDE.md Regel #2).
+steht dort. **Block 1 (Vertrauen/Sicherheit) ist KOMPLETT** — als Nächstes **Block 2 (Kalkulation/Angebote)**.
+**Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (nicht zwingend 1/Sitzung; pro Schritt 1 PR,
+jeder einzeln grün + gemergt; nie „halb" mergen, im Zweifel feiner schneiden). Stand Block 1: **Schritt 1 ✅ (PR #116,
+Roundtrip-Selbsttest)** · **Schritt 2 Test-Modus KOMPLETT** (2a #118, 2b #120, 2c #122) · **Schritt 3 Datensicherungs-UX
++ `backupStrategie` ✅ (PR #124:** prominente „Datensicherung"-Karte + gemerkter Zielordner/File System Access +
+Download-Fallback + Drag-and-drop-Restore + Setting `backupStrategie` im Onboarding/Einstellungen; reine Logik
+`domain/backupStrategie.js` node-getestet; UI/IndexedDB/FS statisch geprüft**).** Nächste offene Schritte:
+1. **NÄCHSTER SCHRITT — Block 2/Schritt 4: Setting `rechnungsstelle`** (`blp|extern`, Default `blp`) —
+   `docs/KALKULATION_KATALOG.md` §7a. Kleiner Enabler für Block 2; im **Onboarding** wählbar + in den **Einstellungen**
+   änderbar; steuert §14-Nummernvergabe (blp) vs. interne Vorlage/vorläufige Nummer (extern). Reine Helfer/Logik
+   ZUERST node-testen; UI/DOM/IndexedDB als „statisch geprüft" kennzeichnen. Danach Block-2-Schritte 5–11 fein
+   geschnitten: Kalkulations-Kern → Produkt-Schemata → Angebote-Kern → Angebot→Rechnung → Auftrags-Kostenträger/
+   Nachkalkulation → Kalibrierung/Statistik → Baukasten-UX. **Prime Directive Angebote:** Kalkulation rein intern,
+   Angebot/Rechnung neutral nach außen.
 2. **Optional, kleiner Folgeschritt zu Schritt 2c:** **Demo-Vorbefüllung** für neue Tests (`domain/demodaten.js`) —
    ein neuer Test wahlweise leer **oder** mit Demo-Daten starten. (Die Test-Modus-UI ist ohne sie bereits
    vollständig nutzbar; daher bewusst abgegrenzt.)
-Danach **Block 2 (Kalkulation/Angebote)** fein geschnitten: `rechnungsstelle`-Setting → Kalkulations-Kern →
-Produkt-Schemata → Angebote-Kern → Angebot→Rechnung → Auftrags-Kostenträger/Nachkalkulation → Kalibrierung/
-Statistik → Baukasten-UX (Details + Abhängigkeiten in `docs/BAUPLAN.md`; Design in `docs/KALKULATION_KATALOG.md`).
-**Prime Directive Angebote:** Kalkulation rein intern, Angebot/Rechnung neutral nach außen.
-**Vermerk:** Auch **Mein-WorkFloh** soll einen **Test-Modus** nach `docs/TEST_MODUS.md` (⇄-Abschnitt) bekommen
-(fremdes Repo, über den Nutzer).
+3. **Optional, Schritt 4 der Datensicherung (`docs/DATENSICHERUNG.md` #4):** Server-/Offsite-Ziel (eigener Server)
+   + konfigurierbare Erinnerungs-Kadenz — **blockiert/zurückgestellt**, solange kein eigener Server existiert.
 
 RITUAL JE PR (verbindlich, automatisch durchziehen):
 1) `git fetch origin main && git reset --hard origin/main`; pro PR einen eigenen
@@ -70,9 +68,9 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 1/Schritt 2c (Test-Modus UI, PR #122)**.
-Tests **1141/1141** · SW **v106** · 99 JS-Module. **Test-Modus (2a–2c) komplett.** **Nächster Schritt:
-BAUPLAN Block 1/Schritt 3 — Datensicherungs-UX + `backupStrategie`** (prominente Backup-/Restore-Knöpfe,
-gemerkter Zielordner, Drag-and-drop-Restore, Setting `backupStrategie`); optional kleiner 2c-Folgeschritt
-Demo-Vorbefüllung (`domain/demodaten.js`); danach Block 2 (Kalkulation/Angebote). Mehrere PRs pro Sitzung erlaubt.
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 1/Schritt 3 (Datensicherungs-UX + `backupStrategie`, PR #124)**.
+Tests **1158/1158** · SW **v107** · 102 JS-Module. **Block 1 (Vertrauen/Sicherheit) KOMPLETT** (Schritt 1 + 2a–2c + 3).
+**Nächster Schritt: BAUPLAN Block 2/Schritt 4 — Setting `rechnungsstelle`** (`blp|extern`, Onboarding + Einstellungen;
+`docs/KALKULATION_KATALOG.md` §7a); danach Block-2-Schritte 5–11 (Kalkulations-Kern → … → Baukasten-UX). Optional:
+2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`). Mehrere PRs pro Sitzung erlaubt.
 (Diese Zeile bei jeder Sitzung aktualisieren.)

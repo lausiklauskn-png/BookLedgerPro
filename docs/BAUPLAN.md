@@ -44,9 +44,15 @@
     `aktiverSandbox`/`naechsterTestName` node-getestet. +9 Tests (1141/1141), SW `v106`. i18n de/en, CSS.
     DOM/IndexedDB statisch geprüft. **Offen (optional, Folgeschritt):** Demo-Vorbefüllung (`domain/demodaten.js`) —
     die Test-Modus-UI ist ohne sie vollständig nutzbar (man startet mit leerem Test).
-- [ ] **3. Datensicherungs-UX + `backupStrategie`** — prominenter Backup-/Restore-Bereich, **gemerkter
-  Zielordner** (File System Access; Tablet→Download), **Drag-and-drop-Restore**; Setting `backupStrategie`
-  (Onboarding + Einstellungen, frei wählbare Ziele/Erinnerung, Default sicher). (`docs/DATENSICHERUNG.md`)
+- [x] **3. Datensicherungs-UX + `backupStrategie`** ✅ (PR #124, 2026-06-18): prominente Backup-/Restore-Karte
+  (Dashboard + Durabilitäts-Banner + Einstellungen) mit **Drag-and-drop-Restore**; **gemerkter Zielordner**
+  (File System Access, gerätelokal in eigener unverschl. kv-DB `core/backupOrdner.js`; Tablet/ohne API/ohne
+  Ordner → **Download-Fallback**); Setting **`backupStrategie`** (`download`|`ordner`, Default `download`) im
+  **Onboarding** wählbar + in den Einstellungen änderbar. Reine Logik node-getestet: `domain/backupStrategie.js`
+  (`backupZiel`/`normalizeBackupStrategie`/`backupDateiname`/`istBackupDatei`), +17 Tests (**1158/1158**), SW
+  `v107`. Gemeinsame Aktionen in `ui/datensicherung.js`; `core/backup.js exportBackupSmart`. DOM/IndexedDB/
+  File-System-Access statisch geprüft (kein Headless-Browser). **Bewusst offen (`docs/DATENSICHERUNG.md` #4):**
+  Server-Ziel + konfigurierbare Erinnerungs-Kadenz (Banner erinnert weiterhin wöchentlich). (`docs/DATENSICHERUNG.md`)
 
 ### Block 2 — Kalkulation/Angebote (das große Thema, fein geschnitten)
 - [ ] **4. Setting `rechnungsstelle` (`blp|extern`, Default `blp`)** — kleiner Enabler für Block 2; Onboarding

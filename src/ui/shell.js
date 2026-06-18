@@ -13,8 +13,7 @@ import { ladeRegistry, speichereRegistry } from '../core/mandantenStore.js';
 import { aktiverMandant, mandantenAuswahlListe, umbenenneMandant, entferneMandant, validateMandantName, istSandbox, sandboxAuswahlListe, naechsterTestName } from '../domain/mandanten.js';
 import { erstelleSandboxTresor, wechsleZuSandbox, leereSandboxTresor, loescheSandboxTresor, loescheAlleSandboxes, behalteUndVerlasseSandbox } from '../core/sandboxStore.js';
 import { durabilityStatus } from '../core/durability.js';
-import { exportBackupFile, readBackup, importSnapshot } from '../core/backup.js';
-import { pickFile, readFileText } from '../core/files.js';
+import { backupJetzt, restoreWaehlen, backupEinstellungen, onDatensicherungAktion } from './datensicherung.js';
 import { mountAccounts } from './views/accounts.js';
 import { mountAnlagen } from './views/anlagen.js';
 import { mountKassenbuch } from './views/kassenbuch.js';
@@ -202,32 +201,13 @@ async function refreshDurability() {
 
   slot.appendChild(el('div', { class: `banner banner-${st.level === 'critical' ? 'critical' : 'warn'}`, role: 'status', 'aria-live': 'polite' }, [
     el('span', { class: 'banner-text', text: msgs.join(' ') }),
-    el('button', { class: 'btn btn-sm', text: t('durability.backupNow'), onClick: doBackup }),
+    el('button', { class: 'btn btn-sm', text: t('durability.backupNow'), onClick: backupJetzt }),
   ]));
 }
 
-// ---- Aktionen ---------------------------------------------------------------
-
-async function doBackup() {
-  const pwd = prompt(t('lock.password'));
-  if (!pwd) return;
-  try { await exportBackupFile(pwd); refreshDurability(); }
-  catch (e) { alert(String(e.message || e)); }
-}
-
-async function doRestore() {
-  const file = await pickFile('.json,.blpr.json,application/json');
-  if (!file) return;
-  const pwd = prompt(t('lock.password'));
-  if (!pwd) return;
-  try {
-    const text = await readFileText(file);
-    const snap = await readBackup(pwd, text);
-    const res = await importSnapshot(snap, 'merge');
-    alert(`OK: ${res.records} Datensätze, ${res.files} Belege`);
-    refreshDurability();
-  } catch (e) { alert(String(e.message || e)); }
-}
+// Datensicherungs-Aktionen (Modul ui/datensicherung.js) frischen nach Backup/Restore
+// das Durabilitäts-Banner auf.
+onDatensicherungAktion(refreshDurability);
 
 // ---- Test-Modus (Sandbox-Tresore, docs/TEST_MODUS.md) -----------------------
 
@@ -371,13 +351,7 @@ function viewSettings() {
 
     passwortSection(),
 
-    el('div', { class: 'setting' }, [
-      el('div', { class: 'setting-label', text: 'Backup' }),
-      el('div', { class: 'btn-row' }, [
-        el('button', { class: 'btn', text: t('settings.backup'), onClick: doBackup }),
-        el('button', { class: 'btn', text: t('settings.restore'), onClick: doRestore }),
-      ]),
-    ]),
+    backupEinstellungen(),
   ]);
 }
 

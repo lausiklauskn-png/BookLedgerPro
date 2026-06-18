@@ -5,8 +5,10 @@
 
 import { encryptWithPassword, decryptWithPassword } from './crypto.js';
 import { dumpAll, kvSet, recPut, filePut } from './db.js';
-import { downloadText } from './files.js';
+import { downloadText, supportsDirectoryPicker, ensureRwPermission, writeTextToDirectory } from './files.js';
 import { markBackupDone } from './durability.js';
+import { ladeBackupOrdner } from './backupOrdner.js';
+import { backupZiel, backupDateiname, normalizeBackupStrategie } from '../domain/backupStrategie.js';
 
 const MAGIC = 'BLPR-BACKUP';
 const FORMAT_VERSION = 1;
@@ -40,9 +42,40 @@ export async function buildBackup(password) {
 /** Baut das Backup und löst direkt einen Download aus; markiert Backup als erledigt. */
 export async function exportBackupFile(password) {
   const text = await buildBackup(password);
-  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-  downloadText(`bookledgerpro-backup-${stamp}.blpr.json`, text, 'application/json');
+  downloadText(backupDateiname(), text, 'application/json');
   await markBackupDone();
+}
+
+/**
+ * Strategie-bewusster Backup-Export (Schritt 3). Schreibt entweder in den gemerkten
+ * Zielordner (File System Access) oder löst einen Download aus — die Wahl trifft die
+ * reine `backupZiel`-Logik; bei fehlender API/ohne Ordner/abgelehnter Berechtigung
+ * IMMER konservativer Download-Fallback (Pflicht #1: nie blockieren).
+ * @returns {Promise<{ziel:'ordner'|'download', name:string, ordner?:string}>}
+ */
+export async function exportBackupSmart(password, strategie) {
+  const text = await buildBackup(password);
+  const name = backupDateiname();
+
+  const handle = normalizeBackupStrategie(strategie) === 'ordner' ? await ladeBackupOrdner() : null;
+  const ziel = backupZiel({
+    strategie,
+    ordnerApiVerfuegbar: supportsDirectoryPicker(),
+    hatOrdner: !!handle,
+  });
+
+  if (ziel === 'ordner' && handle) {
+    if (await ensureRwPermission(handle)) {
+      await writeTextToDirectory(handle, name, text);
+      await markBackupDone();
+      return { ziel: 'ordner', name, ordner: handle.name };
+    }
+    // Schreibrecht abgelehnt → Download-Fallback statt stiller Fehlschlag.
+  }
+
+  downloadText(name, text, 'application/json');
+  await markBackupDone();
+  return { ziel: 'download', name };
 }
 
 /**

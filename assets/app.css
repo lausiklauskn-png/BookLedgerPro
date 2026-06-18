@@ -144,6 +144,13 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 }
 .placeholder { display: grid; place-items: center; min-height: 160px; }
 
+/* ---- Datensicherung (Schritt 3) ------------------------------------------- */
+.backup-card { display: flex; flex-direction: column; gap: .65rem; transition: border-color var(--motion), background var(--motion); }
+.backup-card-head { display: flex; flex-direction: column; gap: .15rem; }
+.backup-card.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+.backup-drop-hint { margin: 0; }
+.backup-folder { display: flex; flex-direction: column; gap: .4rem; }
+
 /* ---- Einstellungen -------------------------------------------------------- */
 .setting { display: flex; flex-direction: column; gap: .45rem; }
 .setting-label { font-weight: 600; }

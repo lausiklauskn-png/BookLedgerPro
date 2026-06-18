@@ -5,6 +5,53 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — BAUPLAN Block 1/Schritt 3: Datensicherungs-UX + `backupStrategie` [PR #124, Branch `claude/backup-restore-ux-kd8ft9`]
+
+**Ausgangslage / Auswahl**
+- Block 1 Schritte 1 (Roundtrip-Selbsttest, PR #116) + 2a–2c (Test-Modus, PRs #118/#120/#122) waren erledigt.
+  Nächster Schritt laut `docs/BAUPLAN.md`/`docs/DATENSICHERUNG.md`: **Datensicherungs-UX + `backupStrategie`** (Schritt 3).
+- Bewusst **eine** zusammenhängende PR: Strategie ↔ gemerkter Ordner ↔ prominente Knöpfe sind voneinander abhängig;
+  ein Aufteilen hätte Halb-Pfade erzeugt (Setting ohne Wirkung bzw. Knöpfe ohne Strategie).
+
+**Was getan** (reine Logik zuerst node-getestet — **+17 → 1158/1158**)
+- **`src/domain/backupStrategie.js`** (rein, node-getestet): `BACKUP_STRATEGIEN` (`download`|`ordner`), Default
+  `download`, `normalizeBackupStrategie`, **`backupZiel`** (Ordner nur bei API + gemerktem Ordner → sonst
+  konservativer **Download-Fallback**, nie blockieren — Pflicht #1), `backupDateiname` (sortierbar, Sekunden-Stempel),
+  `istBackupDatei` (Drag-and-drop-Vorfilter an Endung/Magic).
+- **`src/core/files.js`**: File-System-Access-Helfer `supportsDirectoryPicker`/`pickDirectory`/`ensureRwPermission`/
+  `writeTextToDirectory` (statisch geprüft).
+- **`src/core/backupOrdner.js`** (neu): gemerkter Zielordner **gerätelokal** in eigener, unverschlüsselter kv-DB
+  (`blpr_backupordner_bookledgerpro` — DB-Suffix unverändert, Regel #3); `merkeBackupOrdner`/`ladeBackupOrdner`/
+  `vergissBackupOrdner`. FileSystemDirectoryHandle ist strukturiert-klonbar → in IndexedDB speicherbar.
+- **`src/core/backup.js`**: `exportBackupSmart(password, strategie)` — schreibt in den Ordner **oder** lädt herunter
+  (Fallback bei fehlender API/abgelehnter Berechtigung); `exportBackupFile` nutzt jetzt `backupDateiname`.
+- **`src/state.js`**: neues Setting `backupStrategie` (Default `download`).
+- **`src/ui/datensicherung.js`** (neu): **eine** Quelle für Aktionen (`backupJetzt`/`restoreAusDatei`/`restoreWaehlen`),
+  prominente **`datensicherungKarte()`** (Backup/Restore + **Drag-and-drop-Zone**) und **`backupEinstellungen()`**
+  (Strategie-Umschalter + Zielordner-Verwaltung).
+- **`src/ui/shell.js`**: Durabilitäts-Banner-Knopf + Einstellungen nutzen das Modul (`onDatensicherungAktion`
+  → `refreshDurability`).
+- **`src/ui/views/dashboard.js`**: prominente Datensicherungs-Karte (nicht nur im Banner).
+- **`src/ui/lock.js`**: Onboarding lässt `backupStrategie` wählen + (bei API) Zielordner wählen; Erst-Backup via
+  `exportBackupSmart`.
+- i18n de/en (`backup.*`, `settings.backup.*`), CSS (Karte/Drop-Zone), **SW `v107`** + 3 neue Module precachen.
+
+**Stand**
+- `node tests/run.mjs` → **1158/1158 grün**; `node --check` für alle geänderten Module; CI (smoke-test) grün; **PR #124 gemergt**.
+- **BAUPLAN Block 1 komplett** (Schritt 1 + 2a–2c + 3).
+
+**Offen / Grenzen (ehrlich)**
+- DOM/IndexedDB/File-System-Access-Pfade **statisch geprüft** (kein Headless-Browser): Ordner merken/schreiben,
+  Drag-and-drop, Onboarding-Auswahl. File System Access nur Desktop-Chromium → Tablet/iOS/Firefox fallen via
+  `backupZiel` (node-getestet) automatisch auf Download zurück.
+- **Bewusst offen (`docs/DATENSICHERUNG.md` #4):** Server-Ziel (eigener Server existiert noch nicht) +
+  konfigurierbare Erinnerungs-Kadenz (Durabilitäts-Banner erinnert weiterhin wöchentlich).
+
+**Nächstes:** BAUPLAN **Block 2/Schritt 4 — Setting `rechnungsstelle`** (`docs/KALKULATION_KATALOG.md`); optional
+kleiner 2c-Folgeschritt Demo-Vorbefüllung (`domain/demodaten.js`).
+
+---
+
 ## 2026-06-18 — BAUPLAN Block 1/Schritt 2c: Test-Modus — **UI** [PR #122, Branch `claude/test-modus-ui-v71y2l`]
 
 **Ausgangslage / Auswahl**
