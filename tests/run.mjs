@@ -137,7 +137,7 @@ import {
   extraktionZuEingangsrechnung, berechneFaelligAm,
 } from '../src/domain/payables.js';
 import { buildOffeneVerbindlichkeitenCsv } from '../src/domain/export.js';
-import { faelligkeit, faelligAmVon, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, letzteMahnstufe, vorschlagNaechsteStufe, mahnVerlaufSumme, mahnStufeLabel, MAHN_KONTEN, mahnbuchungZeilen, mahnbuchungEntwurf } from '../src/domain/mahnwesen.js';
+import { faelligkeit, faelligAmVon, tageUeberfaellig, mahnstufe, verzugszinsenCent, mahnpauschaleCent, anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, letzteMahnstufe, vorschlagNaechsteStufe, mahnVerlaufSumme, mahnStufeLabel, MAHN_KONTEN, mahnbuchungZeilen, mahnbuchungEntwurf, forderungUebersicht, forderungAmpel, FORDERUNG_AMPEL, forderungReport } from '../src/domain/mahnwesen.js';
 import {
   EINGANG_ZIEL_DEFAULT, PRUEF_TOLERANZ_CENT, VERZUG_SCHWELLEN, PRUEF_BEWERTUNG,
   verzugsstufe, verzugsstufeLabel, verzugsLage, berechtigteVerzugskosten,
@@ -2268,6 +2268,69 @@ await section('Mahnwesen: Posten anreichern + Mahnschreiben-Daten', () => {
   // Bei bloßer Zahlungserinnerung (Stufe 1) keine Zinsen/Pauschale.
   const m2 = mahnschreibenDaten(ang[1], { heute, basiszinsProzent: 0, b2b: true });
   ok('Erinnerung ohne Zinsen/Pauschale', m2.zinsenCent === 0 && m2.pauschaleCent === 0);
+});
+
+await section('Mahnwesen: forderungUebersicht (überfällige Forderungen, Dashboard-KPI)', () => {
+  // Bereits angereicherte Posten (anreicherePosten-Form): ueberfaellig/tageUeberfaellig/mahnstufe.
+  const posten = [
+    { id: 'a1', betragCent: 119000, ueberfaellig: true, tageUeberfaellig: 46, mahnstufe: { stufe: 4 } }, // kritisch
+    { id: 'a2', betragCent: 50000, ueberfaellig: true, tageUeberfaellig: 2, mahnstufe: { stufe: 1 } },    // überfällig, nicht kritisch
+    { id: 'a3', betragCent: 30000, ueberfaellig: false, tageUeberfaellig: 0, mahnstufe: { stufe: 0 } },   // im Ziel
+  ];
+  const u = forderungUebersicht(posten, { basiszinsProzent: 0 });
+  ok('3 Posten gesamt, 2 überfällig', u.anzahl === 3 && u.ueberfaelligAnzahl === 2);
+  ok('überfällige Summe 169000', u.ueberfaelligCent === 169000);
+  ok('1 kritischer Posten (≥ 1. Mahnung)', u.kritischAnzahl === 1);
+  const erwartet = verzugszinsenCent(119000, 46, { basiszinsProzent: 0, b2b: true })
+    + verzugszinsenCent(50000, 2, { basiszinsProzent: 0, b2b: true });
+  ok('Zins-Potenzial = Σ §288-Zinsen der überfälligen', u.zinsRisikoCent === erwartet && u.zinsRisikoCent > 0);
+  // Leere Eingabe → alles 0, kein Fehler.
+  const leer = forderungUebersicht([]);
+  ok('leere Liste → 0', leer.anzahl === 0 && leer.ueberfaelligAnzahl === 0 && leer.zinsRisikoCent === 0);
+});
+
+await section('Mahnwesen: forderungReport (Aufträge → KPI in einem Aufruf)', () => {
+  const heute = '2026-06-30';
+  const auftraege = [
+    // stark überfällig (fällig 2026-05-15, 46 Tage), 1000 € netto + 19 % = 1190 €
+    { id: 'a1', status: 'berechnet', rechnungNummer: 'R-1', rechnungDatum: '2026-05-01', kundeId: 'k1',
+      positionen: [{ menge: 1, einzelpreisCent: 100000, ustSatz: 19 }] },
+    // leicht überfällig (fällig 2026-06-28, 2 Tage), 500 € netto, 0 %
+    { id: 'a2', status: 'berechnet', rechnungNummer: 'R-2', rechnungDatum: '2026-06-14', kundeId: 'k1',
+      positionen: [{ menge: 1, einzelpreisCent: 50000, ustSatz: 0 }] },
+    // noch im Ziel (fällig 2026-07-10)
+    { id: 'a3', status: 'berechnet', rechnungNummer: 'R-3', rechnungDatum: '2026-06-26', kundeId: 'k1',
+      positionen: [{ menge: 1, einzelpreisCent: 30000, ustSatz: 0 }] },
+    // voll bezahlt → fällt aus offenePosten heraus
+    { id: 'a4', status: 'berechnet', rechnungNummer: 'R-4', rechnungDatum: '2026-04-01', kundeId: 'k1',
+      positionen: [{ menge: 1, einzelpreisCent: 20000, ustSatz: 0 }], zahlungen: [{ betragCent: 20000 }] },
+  ];
+  const { angereichert, uebersicht } = forderungReport(auftraege, { heute, zielTage: 14, basiszinsProzent: 0 });
+  ok('bezahlter Auftrag fällt heraus → 3 offene Posten', uebersicht.anzahl === 3 && angereichert.length === 3);
+  ok('2 überfällig (a1, a2)', uebersicht.ueberfaelligAnzahl === 2);
+  ok('überfällige Summe 119000 + 50000', uebersicht.ueberfaelligCent === 169000);
+  ok('1 kritischer Posten (≥ 14 Tage)', uebersicht.kritischAnzahl === 1);
+  const erwartet = verzugszinsenCent(119000, 46, { basiszinsProzent: 0, b2b: true })
+    + verzugszinsenCent(50000, 2, { basiszinsProzent: 0, b2b: true });
+  ok('Zins-Potenzial = Σ §288-Zinsen der überfälligen', uebersicht.zinsRisikoCent === erwartet);
+  ok('angereicherte Posten tragen Fälligkeit/Tage', angereichert[0].faelligAm && angereichert[0].tageUeberfaellig != null);
+  // Leere Eingabe → alles 0, kein Fehler.
+  const leer = forderungReport([], { heute });
+  ok('leere Liste → 0 Posten', leer.uebersicht.anzahl === 0 && leer.angereichert.length === 0);
+  // forderungAmpel über die Übersicht: a1 ist ≥ 14 Tage → kritisch.
+  ok('forderungReport → Ampel kritisch', forderungAmpel(uebersicht) === FORDERUNG_AMPEL.KRITISCH);
+  ok('leere Übersicht → Ampel ok', forderungAmpel(leer.uebersicht) === FORDERUNG_AMPEL.OK);
+});
+
+await section('Mahnwesen: forderungAmpel (KPI-Färbung der Forderungs-Übersicht)', () => {
+  ok('nichts überfällig → ok', forderungAmpel({ ueberfaelligAnzahl: 0, kritischAnzahl: 0 }) === FORDERUNG_AMPEL.OK);
+  ok('überfällig, aber nicht kritisch → warnung', forderungAmpel({ ueberfaelligAnzahl: 2, kritischAnzahl: 0 }) === FORDERUNG_AMPEL.WARNUNG);
+  ok('mind. 1 kritisch → kritisch', forderungAmpel({ ueberfaelligAnzahl: 3, kritischAnzahl: 1 }) === FORDERUNG_AMPEL.KRITISCH);
+  // Defensive: leeres/ungültiges Objekt → ok (kein Lärm), negative Zahlen geklemmt.
+  ok('leeres Objekt → ok', forderungAmpel() === FORDERUNG_AMPEL.OK);
+  ok('negative Werte geklemmt → ok', forderungAmpel({ ueberfaelligAnzahl: -1, kritischAnzahl: -5 }) === FORDERUNG_AMPEL.OK);
+  // Inkonsistente Eingabe (kritisch>0, aber ueberfaellig=0) → kein Verzug zählt → ok.
+  ok('kritisch ohne überfällig → ok', forderungAmpel({ ueberfaelligAnzahl: 0, kritischAnzahl: 2 }) === FORDERUNG_AMPEL.OK);
 });
 
 await section('Mahnwesen: persistenter Verlauf (Stufe/Zins-/Gebührenverlauf)', () => {
