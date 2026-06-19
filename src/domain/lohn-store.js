@@ -17,6 +17,7 @@
 import { encPut, encGet, encList, encDel, neueId } from './encstore.js';
 import {
   normalizeLohnlauf, lohnBuchungEntwurf, lohnlaufBuchungsdatum, validateLohnlauf,
+  lohnabgabeZahlungEntwurf,
 } from './lohnbuchung.js';
 import { saveEntwurf } from './store.js';
 
@@ -71,4 +72,18 @@ export async function bucheLohnlauf(id) {
   });
   const lohnlauf = await saveLohnlauf({ ...l, buchungId: buchung.id });
   return { buchung, entwurf, lohnlauf };
+}
+
+/**
+ * Erzeugt einen Buchungs-ENTWURF für die Abführung offener Lohnabgaben (Lohnsteuer 1741 +
+ * Sozialversicherung 1742 an die Bank) über die reine Logik lohnabgabeZahlungEntwurf.
+ * Festschreiben bleibt MANUELL (GoBD).
+ * @param {{lohnsteuerCent?:number, sozialCent?:number, monat?:string, datum?:string}} opts
+ * @returns {Promise<object>} die gespeicherte Entwurfs-Buchung
+ * @throws wenn nichts abzuführen ist
+ */
+export async function bucheLohnabgaben(opts = {}) {
+  const entwurf = lohnabgabeZahlungEntwurf(opts);
+  if (!entwurf) throw new Error('Keine offenen Lohnabgaben zu buchen.');
+  return saveEntwurf({ datum: entwurf.datum, beschreibung: entwurf.beschreibung, zeilen: entwurf.zeilen });
 }

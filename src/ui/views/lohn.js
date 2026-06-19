@@ -13,12 +13,14 @@ import { t } from '../i18n.js';
 import { formatCents, parseEuroToCents } from '../../domain/money.js';
 import { navigate, getSettings } from '../../state.js';
 import {
-  lohnBuchungZeilen, validateLohnlauf, lohnkontoAggregat, lohnsteuerAnmeldung, LOHN_AUSZAHLUNG,
+  lohnBuchungZeilen, validateLohnlauf, lohnkontoAggregat, lohnsteuerAnmeldung,
+  offeneLohnabgaben, LOHN_AUSZAHLUNG,
 } from '../../domain/lohnbuchung.js';
 import {
-  saveLohnlauf, listLohnlaeufe, deleteLohnlauf, bucheLohnlauf,
+  saveLohnlauf, listLohnlaeufe, deleteLohnlauf, bucheLohnlauf, bucheLohnabgaben,
 } from '../../domain/lohn-store.js';
 import { buildLohnsteuerAnmeldungPaket } from '../../domain/export.js';
+import { listBuchungen } from '../../domain/store.js';
 import { downloadText } from '../../core/files.js';
 import { listMitarbeiter } from '../../domain/crm-store.js';
 import { emptyState } from '../empty.js';
@@ -34,7 +36,7 @@ export async function mountLohn(host) {
 }
 
 async function repaint() {
-  const [mitarbeiter, laeufe] = await Promise.all([listMitarbeiter(), listLohnlaeufe()]);
+  const [mitarbeiter, laeufe, buchungen] = await Promise.all([listMitarbeiter(), listLohnlaeufe(), listBuchungen()]);
   _mitarbeiter = mitarbeiter.slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   laeufe.sort((a, b) => (b.monat || '').localeCompare(a.monat || '') || (b.createdAt || '').localeCompare(a.createdAt || ''));
 
@@ -47,6 +49,7 @@ async function repaint() {
       el('div', { class: 'btn-row' }, [el('button', { class: 'btn', text: t('nav.employees'), onClick: () => navigate('employees') })]),
     ]),
     lohnlaufListe(laeufe),
+    abgabenKarte(buchungen),
     lohnsteuerKarte(laeufe),
     lohnkontoKarte(laeufe),
   ]));
@@ -135,6 +138,31 @@ function lohnlaufListe(laeufe) {
         el('button', { class: 'btn btn-sm', text: t('lohn.delete'), onClick: async () => { await deleteLohnlauf(l.id); await repaint(); } }),
       ]),
     ])),
+  ]);
+}
+
+function abgabenKarte(buchungen) {
+  const offen = offeneLohnabgaben(buchungen);
+  if (offen.summeCent <= 0) return null; // nichts abzuführen → keine Karte
+  const zeile = (label, cent, strong) => el('div', { class: 'report-line' + (strong ? ' strong' : '') }, [
+    el('span', { class: 'small', text: label }), el('span', { class: 'small', text: formatCents(cent) }),
+  ]);
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('lohn.dueTitle') }),
+    zeile(t('lohn.dueTax'), offen.lohnsteuerCent),
+    zeile(t('lohn.dueSv'), offen.sozialCent),
+    zeile(t('lohn.dueTotal'), offen.summeCent, true),
+    el('p', { class: 'muted small', text: t('lohn.dueHint') }),
+    el('div', { class: 'btn-row' }, [
+      el('button', {
+        class: 'btn btn-sm', text: t('lohn.dueBook'),
+        onClick: async () => {
+          try { await bucheLohnabgaben({ lohnsteuerCent: offen.lohnsteuerCent, sozialCent: offen.sozialCent }); _banner = { kind: 'ok', text: t('lohn.dueBooked') }; }
+          catch (e2) { _banner = { kind: 'err', text: String(e2.message || e2) }; }
+          await repaint();
+        },
+      }),
+    ]),
   ]);
 }
 

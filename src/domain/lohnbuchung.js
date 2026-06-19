@@ -259,3 +259,76 @@ export function lohnsteuerAnmeldung(laeufe = [], opts = {}) {
     summeCent: lohnsteuerCent + solzCent + kirchensteuerCent, anzahl,
   };
 }
+
+/** Konten der Lohnabgaben-Zahlung (an Finanzamt/SV-Träger). Über opts.konten überschreibbar. */
+export const LOHN_ABGABE_KONTEN = {
+  steuer: '1741', // Verbindlichkeiten Lohn-/Kirchensteuer (Soll bei Zahlung)
+  sozial: '1742', // Verbindlichkeiten soziale Sicherheit (Soll bei Zahlung)
+  bank:   '1200', // Bank (Haben)
+};
+
+/**
+ * Noch ABZUFÜHRENDE Lohnabgaben: der offene Saldo der Verbindlichkeitskonten 1741 (Lohn-/
+ * Kirchensteuer ans Finanzamt) und 1742 (Sozialversicherung an die SV-Träger) aus den
+ * FESTGESCHRIEBENEN Buchungen. Beim Buchen eines Lohnlaufs wird hier eingestellt (Haben), beim
+ * Bezahlen ausgebucht (Soll) — der Saldo (Haben − Soll, Passivkonto) ist der offene Rest. Rein.
+ * @param {Array} buchungen alle Buchungen (nur `seq != null` zählt)
+ * @param {{stichtag?:string, konten?:object}} [opts]
+ * @returns {{lohnsteuerCent:number, sozialCent:number, summeCent:number, konten:{steuer:string, sozial:string}}}
+ */
+export function offeneLohnabgaben(buchungen = [], opts = {}) {
+  const k = { ...LOHN_ABGABE_KONTEN, ...(opts.konten || {}) };
+  const stichtag = opts.stichtag || null;
+  const bew = {}; // konto -> {soll, haben}
+  for (const b of buchungen || []) {
+    if (!b || b.seq == null) continue;                       // nur festgeschrieben
+    if (stichtag && b.datum && b.datum > stichtag) continue; // Zukunft ausblenden
+    for (const z of b.zeilen || []) {
+      const nr = String(z.konto);
+      if (nr !== k.steuer && nr !== k.sozial) continue;
+      const w = bew[nr] || (bew[nr] = { soll: 0, haben: 0 });
+      if (z.seite === 'S') w.soll += z.betrag || 0; else w.haben += z.betrag || 0;
+    }
+  }
+  const saldoPassiv = (nr) => { const w = bew[nr] || { soll: 0, haben: 0 }; return w.haben - w.soll; };
+  const lohnsteuerCent = saldoPassiv(k.steuer);
+  const sozialCent = saldoPassiv(k.sozial);
+  return { lohnsteuerCent, sozialCent, summeCent: lohnsteuerCent + sozialCent, konten: { steuer: k.steuer, sozial: k.sozial } };
+}
+
+/**
+ * Buchungszeilen einer Lohnabgaben-ZAHLUNG: bucht die offene Lohnsteuer/SV gegen die Bank aus
+ * (Soll 1741/1742 an Haben 1200). Negative/0-Beträge werden ausgelassen. Rein, cent-genau.
+ * @param {{lohnsteuerCent?:number, sozialCent?:number, konten?:object}} [opts]
+ * @returns {{zeilen:Array<{konto:string,seite:'S'|'H',betrag:number}>, lohnsteuerCent:number, sozialCent:number, summeCent:number}}
+ */
+export function lohnabgabeZahlungZeilen(opts = {}) {
+  const k = { ...LOHN_ABGABE_KONTEN, ...(opts.konten || {}) };
+  const ls = Math.max(0, Math.round(Number(opts.lohnsteuerCent) || 0));
+  const sv = Math.max(0, Math.round(Number(opts.sozialCent) || 0));
+  const summeCent = ls + sv;
+  const zeilen = [];
+  if (ls > 0) zeilen.push({ konto: k.steuer, seite: 'S', betrag: ls });
+  if (sv > 0) zeilen.push({ konto: k.sozial, seite: 'S', betrag: sv });
+  if (summeCent > 0) zeilen.push({ konto: k.bank, seite: 'H', betrag: summeCent });
+  return { zeilen, lohnsteuerCent: ls, sozialCent: sv, summeCent };
+}
+
+/**
+ * Buchungs-ENTWURF einer Lohnabgaben-Zahlung (null bei 0/0). Festschreiben bleibt manuell (GoBD). Rein.
+ * @param {{lohnsteuerCent?:number, sozialCent?:number, konten?:object, datum?:string, monat?:string}} [opts]
+ * @returns {?{datum:string, beschreibung:string, begruendung:string, zeilen:Array, summeCent:number}}
+ */
+export function lohnabgabeZahlungEntwurf(opts = {}) {
+  const res = lohnabgabeZahlungZeilen(opts);
+  if (!res.zeilen.length) return null;
+  const monatTeil = opts.monat ? ` ${opts.monat}` : '';
+  return {
+    datum: opts.datum || new Date().toISOString().slice(0, 10),
+    beschreibung: `Lohnabgaben-Zahlung${monatTeil} (Lohnsteuer + Sozialversicherung)`.trim(),
+    begruendung: 'Abführung der einbehaltenen Lohn-/Kirchensteuer (1741) und Sozialversicherungsbeiträge '
+      + '(1742) an Finanzamt/SV-Träger. Festschreiben manuell (GoBD).',
+    zeilen: res.zeilen,
+    summeCent: res.summeCent,
+  };
+}

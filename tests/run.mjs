@@ -154,6 +154,7 @@ import {
 import {
   LOHN_KONTEN, LOHN_AUSZAHLUNG, lohnNettoCent, validateLohnlauf, lohnBuchungZeilen, lohnBuchungEntwurf,
   normalizeLohnlauf, lohnkontoAggregat, lohnlaufBuchungsdatum, lohnsteuerAnmeldung,
+  offeneLohnabgaben, lohnabgabeZahlungZeilen, lohnabgabeZahlungEntwurf,
 } from '../src/domain/lohnbuchung.js';
 import { buildLohnsteuerAnmeldungPaket } from '../src/domain/export.js';
 import {
@@ -3083,6 +3084,40 @@ await section('Lohnbuchung: lohnsteuerAnmeldung + Datenpaket', () => {
   ok('Paket trägt LSt + Summe', /600,00/.test(paket) && /687,00/.test(paket));
   ok('Paket trägt Steuernummer + Monat', /12\/345\/67890/.test(paket) && /2026-06/.test(paket));
   ok('Paket markiert „NICHT amtlich"', /NICHT amtlich/.test(paket));
+});
+
+await section('Lohnbuchung: offeneLohnabgaben + Zahlung', () => {
+  const buchungen = [
+    // Festgeschriebener Lohnlauf: stellt 1741 (Steuer) + 1742 (SV) als Verbindlichkeit ein.
+    { seq: 1, datum: '2026-06-30', zeilen: [
+      { konto: '4120', seite: 'S', betrag: 300000 },
+      { konto: '1741', seite: 'H', betrag: 45800 },
+      { konto: '1742', seite: 'H', betrag: 120000 },
+      { konto: '1200', seite: 'H', betrag: 134200 },
+    ] },
+    // Lohnsteuer bezahlt (1741 ausgebucht), SV bleibt offen.
+    { seq: 2, datum: '2026-07-10', zeilen: [
+      { konto: '1741', seite: 'S', betrag: 45800 },
+      { konto: '1200', seite: 'H', betrag: 45800 },
+    ] },
+    // Entwurf (seq null) zählt NICHT.
+    { seq: null, datum: '2026-06-30', zeilen: [{ konto: '1742', seite: 'H', betrag: 99999 }] },
+  ];
+  const offen = offeneLohnabgaben(buchungen);
+  ok('Lohnsteuer ausgeglichen (0 offen)', offen.lohnsteuerCent === 0);
+  ok('SV noch offen (120000)', offen.sozialCent === 120000);
+  ok('Summe offen', offen.summeCent === 120000);
+  ok('Stichtag vor Zahlung → Steuer noch offen', offeneLohnabgaben(buchungen, { stichtag: '2026-06-30' }).lohnsteuerCent === 45800);
+
+  const z = lohnabgabeZahlungZeilen({ lohnsteuerCent: 0, sozialCent: 120000 });
+  ok('Zahlung: Soll 1742 an Haben 1200', z.zeilen.length === 2
+    && z.zeilen.find((x) => x.konto === '1742' && x.seite === 'S' && x.betrag === 120000)
+    && z.zeilen.find((x) => x.konto === '1200' && x.seite === 'H' && x.betrag === 120000));
+  ok('0/0 → keine Zeilen + Entwurf null', lohnabgabeZahlungZeilen({}).zeilen.length === 0 && lohnabgabeZahlungEntwurf({}) === null);
+
+  const ent = lohnabgabeZahlungEntwurf({ lohnsteuerCent: 45800, sozialCent: 120000, monat: '2026-06', datum: '2026-07-10' });
+  ok('Zahlungs-Entwurf node-festschreibbar', validateBuchung(ent, indexFromSeed()).length === 0);
+  ok('Zahlungs-Entwurf Summe', ent.summeCent === 165800);
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
