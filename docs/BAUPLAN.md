@@ -458,7 +458,29 @@
   (Kapazität, Format-/Versions-Info-BCH-Ground-Truth, RS-Teiler, GF-Reduktion, Ausrichtungspositionen, Matrix-Struktur).
   UI: „Als QR anzeigen (lokal)" für das pseudonyme Dokument (Inline-SVG, kein Netz) in der Schlüssel-Abgleich-Karte.
   SW `v147`, 127 Module. **Ehrliche Grenze:** physischer Scan-Test braucht ein echtes Gerät (kein Scanner in der Umgebung).
-- [x] **Danach: BESPRECHUNG mit dem Nutzer** (Bilanz + neue Richtung) — **Sprint abgeschlossen, jetzt fällig.**
+- [x] **Danach: BESPRECHUNG mit dem Nutzer** (Bilanz + neue Richtung) — **erledigt 2026-06-19.**
+
+### Block 6 — Sage-Mycel-Andock (Phase 5) — Nutzer-Entscheidung 2026-06-19
+**Abgestimmtes Thema + Reihenfolge: ZUERST Sage/Hub, DANN Mein-WorkFloh** (Sage hält die Spec-Hoheit; „Spec vor Code").
+Verbindliche Referenz: `docs/SAGE_SYNC_BRIEFKASTEN.md`. Hintergrund/E2E-Brief: `docs/SAGE_E2E_ANFRAGE.md`.
+**E2E-Befund (aus `Sage-Protokol/docs/INTERFACES.md`, gelesen 2026-06-19):** das Mycel ist heute **signatur-only**
+(Ed25519), **keine** Nutzlast-Verschlüsselung, kein X25519, `protocolVersion 0.1`. → **Grad B (sensible Daten)**
+heute build-frei **pseudonym** (P9, keine Spec-Änderung); **E2E (X25519)** wäre eine **additive** Spec-Erweiterung,
+die **Sage netzweit entscheidet** (Brief raus, Antwort abwarten).
+- [ ] **6.1 — BLP wird SBKIM-Knoten** (erste PR): Ed25519-Identität (WebCrypto, in-app) + `sbkim/spore.json`
+  (9 Pflichtfelder, kanonische Signatur, `id=base64url(SHA256(rawPub))`, `domainVector` vorerst `_demo`) +
+  `sbkim/SIGNAL.json` (seq 1). **Headless-Beweis** `node tools/verify_remote_spore.mjs sbkim/spore.json` = VALID;
+  Krypto-/Kanon-Helfer node-getestet. **Schritt 4 dabei:** `docs/SAGE_E2E_ANFRAGE.md` dem Nutzer zum Relayen geben.
+- [ ] **6.2 — Sage/Hub-Registrierung + erster Handshake** → `verified-spore` (menschlich vermittelt, fremde Repos;
+  Nachbar-Spore reziprok verifizieren → `sbkim/<gegenseite>_inbox.json` + `.verify.md`).
+- [ ] **6.3 — WorkFloh-Pairing vom Hub aus:** Angebote ⇄ E-Mail-/Lead-Aufbereitung über den Briefkasten
+  (Nutzlast = vorhandenes Austauschformat v4 `domain/connect.js`; sensible Teile pseudonym/P9).
+- [ ] **6.4 — echter `domainVector`** (Transformers.js `Xenova/multilingual-e5-small`) → `verified-match`
+  (build-frei prüfen — WASM/CDN-Frage; sonst ehrlich als blockiert melden).
+- [ ] **6.5 — (nur falls Sage E2E bejaht):** X25519-Erweiterung nach Sage-Spec umsetzen.
+
+**Abhängigkeiten Block 6:** 6.1 ist Voraussetzung für alles · 6.2 braucht 6.1 · 6.3 braucht 6.2 · 6.4/6.5 nach Bedarf.
+**Mensch-/umgebungs-blockiert:** 6.2/6.3 berühren fremde Repos (Klaus vermittelt) — **nie selbst fremde Repos anfassen.**
 
 ## Abhängigkeiten (kurz)
 8 braucht 7+4 · 7 braucht 5(+4) · 9 braucht 7 · 10 braucht 9 · 11 ist Präsentation (nach 7).

@@ -10,6 +10,15 @@ Legende: **[MUSS]** wichtig/rechtlich oder für Kernnutzen · **[SOLL]** deutlic
 
 ---
 
+## ★ Nutzer-Entscheidung (2026-06-19) — neues Thema: Sage-Mycel-Andock (Phase 5)
+Nach der Besprechungs-Sitzung abgestimmt: **Sage-Andock, Reihenfolge ZUERST Sage/Hub, DANN Mein-WorkFloh.**
+Plan = `docs/BAUPLAN.md` **Block 6** (6.1–6.5); Brief an Sage = `docs/SAGE_E2E_ANFRAGE.md`; Referenz =
+`docs/SAGE_SYNC_BRIEFKASTEN.md`. **E2E-Befund (Sage-Quelle):** Mycel heute signatur-only (Ed25519), keine
+Nutzlast-Verschlüsselung, `protocolVersion 0.1` → Grad-B-Daten heute **pseudonym (P9, keine Spec-Änderung)**;
+**E2E/X25519 = additive Spec-Erweiterung, Sage entscheidet** (Antwort abwarten). **Nächster Bauschritt: 6.1 —
+BLP zum SBKIM-Knoten machen** (Spore/SIGNAL, headless VALID; `domainVector` vorerst `_demo`). **Mensch-blockiert:**
+6.2/6.3 (Hub-Registrierung, WorkFloh-Pairing) berühren fremde Repos → nie selbst anfassen.
+
 ## ★ Nutzer-Entscheidungen (2026-06-17) — verbindlich für den weiteren Bau
 Der Profi-Readiness-Fahrplan **V1–V10 ist abgeschlossen.** Folgende Richtungs-Entscheidungen
 gelten ab jetzt (Reihenfolge der Umsetzung legt die jeweilige Sitzung fest; **Freibrief: je Punkt

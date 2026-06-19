@@ -5,6 +5,37 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Besprechung + Richtungs-Entscheidung: Sage-Mycel-Andock (Phase 5) [Branch `claude/bookledgerpro-sprint-review-05m92f`]
+
+**Was getan (reine Doku/Abstimmung — kein Code geändert)**
+- **Bilanz** des 5-Sitzungs-Sprints (P9/P10/P3+P4/P2/P8) im Chat gezogen; Stand bestätigt: Tests **1926/1926** grün,
+  SW **v147**, **127 JS-Module**.
+- **Erörterung** mit dem Nutzer zu (a) Datenmigration (Excel→CSV-Weg ist build-frei; `.xlsx`/OCR/ZUGFeRD-Erzeugen
+  nicht build-frei → bewusste Grenze), (b) Bedeutung von „build-frei" + Vendoring-Mittelweg (wie `core/qr.js`),
+  (c) Sage/SBKIM: Siegel (Ed25519-Spore) + Briefkasten (Dead-Drop) + „beides durch einen Briefkasten" (ein Umschlag,
+  Sensitivitäts-Weiche Grad A Klartext / Grad B pseudonym|verschlüsselt).
+- **E2E-Frage aus der Quelle geklärt:** `Sage-Protokol/docs/INTERFACES.md` über den öffentlichen `raw`-Kanal gelesen →
+  Mycel heute **signatur-only** (Ed25519), **keine** Nutzlast-Verschlüsselung, kein X25519, `protocolVersion 0.1`.
+  E2E ist machbar, aber **additive Spec-Erweiterung** → **Sage entscheidet** („Spec vor Code").
+- **Brief an Sage** geschrieben: `docs/SAGE_E2E_ANFRAGE.md` (Frage 1–3 + X25519-Vorschlag + Reihenfolge-Vorschlag),
+  menschlich zu relayen bis BLP ein Knoten ist.
+- **Neues Thema abgestimmt:** Sage-Andock (Phase 5), Reihenfolge **ZUERST Sage/Hub, DANN WorkFloh** →
+  `docs/BAUPLAN.md` **Block 6** (6.1–6.5) angelegt; PULS/NAECHSTE_SITZUNG/OFFENE_PUNKTE fortgeschrieben.
+- **Nebenbei:** Stop-Hook-Fehlalarm (geerbte main-Historie als „unverified") an der Wurzel behoben — Remote-Branch
+  per **Fast-Forward** auf `origin/main` gebracht (kein Force, nichts verloren). Git-Identität gesetzt.
+
+**Stand**
+- Tests **1926/1926** grün (unverändert, kein Code). SW **v147**, 127 Module. Branch deckungsgleich mit `main`.
+
+**Offen / Nächstes**
+- **⏭ Phase-5-Schritt 1 (6.1):** BLP zum echten SBKIM-Knoten machen — Ed25519-Identität + `sbkim/spore.json` +
+  `SIGNAL.json`, headless via `tools/verify_remote_spore.mjs` = VALID, Krypto-/Kanon-Helfer node-getestet;
+  `domainVector` vorerst `_demo`. Brief `docs/SAGE_E2E_ANFRAGE.md` dem Nutzer zum Relayen geben.
+- **Ehrliche Grenzen:** 6.2/6.3 (Hub-Registrierung, WorkFloh-Pairing) berühren **fremde Repos → menschlich
+  vermittelt**; E2E (X25519) hängt an Sages Antwort; echter `domainVector` (6.4) ist build-frei noch zu prüfen.
+
+---
+
 ## 2026-06-19 — Sprint S5: P8 — QR-Einzelteilen (vendored reiner JS-Encoder, lokal/kein Netz) [Branch `claude/qr-encoder-offline-j4179g`]
 
 **Was getan**
