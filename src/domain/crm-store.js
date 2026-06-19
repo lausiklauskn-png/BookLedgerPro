@@ -59,7 +59,7 @@ export async function vergebeneRechnungsnummern() {
 
 export async function saveKunde(k) {
   const kunde = { id: k.id || neueId('kunde'), type: 'kunde', name: k.name || '', email: k.email || '',
-    adresse: k.adresse || '', ustId: k.ustId || '', istVerbraucher: !!k.istVerbraucher,
+    adresse: k.adresse || '', ustId: k.ustId || '', telefon: k.telefon || '', istVerbraucher: !!k.istVerbraucher,
     externId: k.externId || null, createdAt: k.createdAt || new Date().toISOString() };
   return encPut(kunde);
 }
