@@ -5,6 +5,39 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Sprint S1: P9 — Datei-Import mit exaktem Schlüssel-Abgleich [Branch `claude/p9-file-import-key-match-opvy4e`]
+
+**Was getan**
+- **P9** macht den Pseudonym-Round-Trip **dateibasiert / sitzungsübergreifend.** Bisher lebte die
+  Token↔Klartext-Tabelle nur im RAM eines einzelnen `tokenize → senden → reidentify`-Durchlaufs.
+- **Reine Logik** `src/ai/schluesselabgleich.js` (node-getestet, **+38 → 1810/1810**):
+  - `gleicheAb(text, schluessel)` — **exakter Schlüssel-Abgleich**: jeder Token nur ersetzt, wenn sein Schlüssel exakt
+    vorliegt (keine Heuristik); verlustfrei via `pseudonym.reidentify`; Bericht `ersetzt`/`fehlend`/`ungenutzt`/
+    `vollstaendig` — **Token OHNE Schlüssel bleiben sichtbar stehen** (`[[…]]`), nichts wird erfunden.
+  - `serialisiereSchluessel`/`parseSchluessel` — **Schlüssel-Datei = „Anker-Tresor"** (JSON `blp-schluessel` v1; enthält
+    Klartext → bleibt gerätelokal). `parse` robust ggü. map-Liste + `{token:wert}`-Objekt + Fehlerfällen.
+  - `tokenVorkommen`/`typAusToken`/`istToken`/`schluesselAusMap`/`abgleichBericht` (Zähler ohne Klartext)/`pruefeRoundtrip`
+    (Selbsttest, auch mit Briefkasten-Scopes verlustfrei).
+- **UI** `src/ui/schluesselabgleich.js` — zusammenklappbare Karte in den Einstellungen (unter „Datenschutz bei KI"):
+  **1.** Klartext (einfügen/laden) → pseudonymes Dokument (Download) + Schlüssel-Datei (Anker-Tresor) via
+  `ladeAnker`+`tokenize`; **2.** Antwort-Dokument + Schlüssel-Datei laden → `gleicheAb` → re-identifizierter Text +
+  ehrlicher Bericht. Mount in `ui/shell.js`. i18n de+en, SW `v143`, neue Module precached.
+
+**Stand**
+- **Tests 1810/1810 grün · SW v143 · 123 JS-Module.** Sprint-Pointer **S1 (P9) erledigt → steht jetzt auf S2 (P10).**
+
+**Nächstes / Sprint**
+- **S2 → P10 — handelnde Person als Besteller** an Auftrag/Rechnung (Datenmodell **additiv** + UI-Feld; Prime Directive/
+  GoBD). Danach S3 (P3+P4), S4 (P2), S5 (P8) — **EINER pro Sitzung, danach Besprechung.** COPY-Block: `docs/NAECHSTE_SITZUNG.md`.
+
+**Offene Grenzen / ungetestet**
+- Reine Logik node-getestet; **DOM/Datei-Picker/Download statisch geprüft** (kein Headless-Browser). Browser-Sichttest
+  der Schlüssel-Abgleich-Karte steht beim Nutzer aus. Schlüssel-Datei wird (bewusst) **unverschlüsselt** als lokaler
+  Download abgelegt — der Nutzer ist verantwortlich, sie nicht zusammen mit dem pseudonymen Dokument weiterzugeben
+  (Warnhinweis in der UI). Eine optionale verschlüsselte Ablage des Anker-Tresors im Tresor ist ein möglicher Folgeschritt.
+
+---
+
 ## 2026-06-19 — Transparenzbericht (HTML-Update + in-App-Link) · P6 CSV/vCard-Import · 5-Sitzungs-Sprint vereinbart
 
 **Was getan**

@@ -38,6 +38,7 @@ import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
 import { mountDashboard } from './views/dashboard.js';
 import { mountAnleitung } from './views/anleitung.js';
+import { schluesselAbgleichSection } from './schluesselabgleich.js';
 import { aboutContent } from './intro.js';
 import { getAiConfig, saveAiConfig, MISTRAL_MODELS } from '../ai/aiConfig.js';
 import { testVision } from '../ai/vision.js';
@@ -337,6 +338,10 @@ function viewSettings() {
           [['nein', t('common.no')], ['ja', t('common.yes')]], s.briefkastenScopes === true ? 'ja' : 'nein',
           (v) => updateSettings({ briefkastenScopes: v === 'ja' }), t('settings.datenschutz.briefkastenHint'))
       : null,
+
+    // P9: Datei-Import mit exaktem Schlüssel-Abgleich (Pseudonymisieren ↔ Re-Identifizieren
+    // über Dateien hinweg). Reine Logik node-getestet; dieser Glue ist statisch geprüft.
+    schluesselAbgleichSection(),
 
     seg(t('settings.theme'), 'theme',
       [['system', t('settings.theme.system')], ['light', t('settings.theme.light')], ['dark', t('settings.theme.dark')]],

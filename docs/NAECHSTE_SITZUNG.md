@@ -18,16 +18,20 @@ obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sic
 
 STAND: Block 1 + 2 KOMPLETT · Block 3 (Liquidität) ausgebaut · Block 4 (V-Lohn — Lohn-Buchungskern) KOMPLETT
 (L1–L6, `docs/LOHN.md`) · P6 (CSV/vCard-Kundenimport) erledigt (#167) · Transparenzbericht in der App verlinkt
-(„Recht & Doku", stets aktuell). **SW `v142`, Tests `1772/1772` grün, 121 JS-Module.**
+(„Recht & Doku", stets aktuell) · **Sprint S1 → P9 (Datei-Import mit exaktem Schlüssel-Abgleich) ✅ erledigt**
+(`src/ai/schluesselabgleich.js` + `src/ui/schluesselabgleich.js`). **SW `v143`, Tests `1810/1810` grün, 123 JS-Module.**
 
 AUFGABE — **5-Sitzungs-Sprint (mit dem Nutzer vereinbart 2026-06-19): genau diese Punkte abarbeiten, EINER pro
 Sitzung, in dieser Reihenfolge; danach BESPRECHUNG.** Bearbeite in DIESER Sitzung den ERSTEN noch offenen Punkt der
 Liste (Reihenfolge unten) und stelle den Sprint-Pointer am Ende eine Stufe weiter.
 
-**🏃 SPRINT-PLAN (eine Sitzung = ein Punkt):**
-- **[ ] Sitzung 1 → P9 — Datei-Import mit exaktem Schlüssel-Abgleich:** pseudonymisierte/anker-basierte Daten
-  verlustfrei wieder den echten Werten zuordnen (Token ↔ Klartext über den Briefkasten/Anker-Tresor; siehe
-  `src/ai/anker.js`, `src/ai/briefkasten.js`, `src/ai/pseudonym.js`). Reine Logik ZUERST node-getestet, dann UI.
+**🏃 SPRINT-PLAN (eine Sitzung = ein Punkt) — Pointer steht jetzt auf Sitzung 2 → P10:**
+- **[x] Sitzung 1 → P9 — Datei-Import mit exaktem Schlüssel-Abgleich ✅ (2026-06-19):** reine Logik
+  `src/ai/schluesselabgleich.js` (node-getestet, +38 → **1810/1810**): `gleicheAb` (exakter Token↔Klartext-Abgleich,
+  verlustfrei + Bericht `ersetzt`/`fehlend`/`ungenutzt`/`vollstaendig` — Token ohne Schlüssel bleiben sichtbar, nichts
+  erfunden), `serialisiereSchluessel`/`parseSchluessel` (Schlüssel-Datei „Anker-Tresor", JSON `blp-schluessel` v1),
+  `tokenVorkommen`/`typAusToken`/`schluesselAusMap`/`abgleichBericht`/`pruefeRoundtrip`. UI `src/ui/schluesselabgleich.js`
+  (Einstellungs-Karte „Datenschutz bei KI": pseudonymisieren+Schlüssel sichern · Datei importieren+abgleichen). SW `v143`.
 - **[ ] Sitzung 2 → P10 — handelnde Person als Besteller:** Auftrag/Rechnung führt die bestellende Person mit
   (Datenmodell **additiv** + UI-Feld). Prime Directive/GoBD beachten — nichts Internes nach außen.
 - **[ ] Sitzung 3 → P3 + P4 — Aufklärungstexte:** KI-**Autonomiestufen** (P3) + **Kleinunternehmer**-Pflichten bei
@@ -86,9 +90,10 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-19 nach **P6 (CSV/vCard-Kundenimport, #167)** + **Transparenzbericht in der App
-verlinkt (#166)**. Mit dem Nutzer vereinbart: **5-Sitzungs-Sprint** P9 → P10 → P3+P4 → P2 → P8, **EINER pro Sitzung**,
-**danach Besprechung**. Selbstständig nach Logik/Nutzen handeln; **größere Konflikte/Unklarheiten über `AskUserQuestion`
-eskalieren**, Kleines selbst entscheiden. Tests **1772/1772** · SW **v142** · 121 JS-Module.
-**Block 1 + 2 KOMPLETT; Block 3 (Liquidität) ausgebaut; Block 4 (V-Lohn) KOMPLETT (#158–#164); P6 ✓ (#167).**
-Sprint-Pointer steht auf **Sitzung 1 → P9**. (Diese Zeile + die Sprint-Checkboxen bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-19 nach **Sprint S1: P9 — Datei-Import mit exaktem Schlüssel-Abgleich** (reine Logik
+`src/ai/schluesselabgleich.js` + UI `src/ui/schluesselabgleich.js`). Mit dem Nutzer vereinbart: **5-Sitzungs-Sprint**
+P9 → P10 → P3+P4 → P2 → P8, **EINER pro Sitzung**, **danach Besprechung**. Selbstständig nach Logik/Nutzen handeln;
+**größere Konflikte/Unklarheiten über `AskUserQuestion` eskalieren**, Kleines selbst entscheiden. Tests **1810/1810** ·
+SW **v143** · 123 JS-Module. **Block 1 + 2 KOMPLETT; Block 3 (Liquidität) ausgebaut; Block 4 (V-Lohn) KOMPLETT
+(#158–#164); P6 ✓ (#167); P9 ✓.** Sprint-Pointer steht jetzt auf **Sitzung 2 → P10**. (Diese Zeile + die
+Sprint-Checkboxen bei jeder Sitzung aktualisieren.)
