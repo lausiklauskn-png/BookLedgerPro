@@ -16,63 +16,29 @@ Projekt: BookLedgerPro (lausiklauskn-png/bookledgerpro).
 START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/BAUPLAN.md` + `docs/NACHFOLGE_PLAN.md` +
 obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles.
 
-STAND: Block 1 + 2 KOMPLETT · Block 3 (Liquidität) ausgebaut · Block 4 (V-Lohn — Lohn-Buchungskern) KOMPLETT
-(L1–L6, `docs/LOHN.md`) · P6 (CSV/vCard-Kundenimport) erledigt (#167) · Transparenzbericht in der App verlinkt
-(„Recht & Doku", stets aktuell) · **Sprint S1 → P9 ✅** · **Sprint S2 → P10 ✅** · **Sprint S3 → P3+P4 ✅** ·
-**Sprint S4 → P2 (KI-Anbieterwahl je Modus, strikt EU) ✅ erledigt** (`src/ai/anbieter.js` + `aiConfig.anbieterWahl` +
-drei Anbieter-Selects in `src/ui/shell.js`; Netz-Rand `vision.ocr`/`mistral.categorize`/`berater`/Steuer-Assistent gated).
-**SW `v146`, Tests `1886/1886` grün, 126 JS-Module.**
+STAND: Block 1 + 2 KOMPLETT · Block 3 (Liquidität) ausgebaut · Block 4 (V-Lohn) KOMPLETT (L1–L6,
+`docs/LOHN.md`) · P6 (#167) · **5-Sitzungs-Sprint (Block 5) ABGESCHLOSSEN:** S1·P9 ✅ (#169) · S2·P10 ✅ (#170) ·
+S3·P3+P4 ✅ (#171) · S4·P2 ✅ (#172) · **S5·P8 ✅ — QR-Einzelteilen (vendored reiner JS-QR-Encoder
+`src/core/qr.js`, build-frei, lokal/kein Netz; UI „Als QR anzeigen (lokal)" in der Schlüssel-Abgleich-Karte).**
+**SW `v147`, Tests `1926/1926` grün, 127 JS-Module.**
 
-AUFGABE — **5-Sitzungs-Sprint (mit dem Nutzer vereinbart 2026-06-19): genau diese Punkte abarbeiten, EINER pro
-Sitzung, in dieser Reihenfolge; danach BESPRECHUNG.** Bearbeite in DIESER Sitzung den ERSTEN noch offenen Punkt der
-Liste (Reihenfolge unten) und stelle den Sprint-Pointer am Ende eine Stufe weiter.
+⏭ AUFGABE DIESER SITZUNG — **BESPRECHUNG mit dem Nutzer (KEIN neuer Sprint von selbst!):** Der mit dem Nutzer
+vereinbarte 5-Sitzungs-Sprint (P9 → P10 → P3+P4 → P2 → P8) ist **vollständig erledigt**. **NICHT selbstständig den
+nächsten Bauschritt starten.** Stattdessen:
+1. **Bilanz im Chat** ziehen: was in den fünf Sitzungen entstanden ist (P9/P10/P3+P4/P2/P8), aktueller Stand
+   (Tests/SW/Module), und welche **ehrlichen Grenzen** offen bleiben (v. a.: **physischer QR-Scan-Test braucht ein
+   echtes Gerät**; diverse Browser-Sichttests; umgebungs-/menschen-blockierte [KANN]-Punkte in `docs/OFFENE_PUNKTE.md`).
+2. **Neue Richtung mit dem Nutzer abstimmen** (über `AskUserQuestion`, wenn mehrere sinnvolle Optionen bestehen):
+   z. B. Browser-Sichttests abarbeiten, einen offenen Punkt aus `docs/OFFENE_PUNKTE.md` / `docs/BAUPLAN.md` aufgreifen,
+   oder ein neues Thema. **Erst nach Abstimmung** einen neuen, fein geschnittenen Arbeitsplan beginnen.
 
-**🏃 SPRINT-PLAN (eine Sitzung = ein Punkt) — Pointer steht jetzt auf Sitzung 5 → P8:**
-- **[x] Sitzung 1 → P9 — Datei-Import mit exaktem Schlüssel-Abgleich ✅ (2026-06-19):** reine Logik
-  `src/ai/schluesselabgleich.js` (+38 → 1810/1810) + UI `src/ui/schluesselabgleich.js` (Einstellungs-Karte
-  „Datenschutz bei KI"). SW `v143`.
-- **[x] Sitzung 2 → P10 — handelnde Person als Besteller ✅ (2026-06-19):** additives Datenmodell + UI-Feld. Reine
-  Logik `src/domain/besteller.js` (node-getestet, +26 → **1836/1836**): `normalizeBesteller` (String/Objekt →
-  `{name,funktion,email,telefon}`, null ohne Name), `validateBesteller` (optional; E-Mail formal; Längen-Cap),
-  `bestellerLabel`, `bestellerKontaktzeile` („z. Hd. Name (Funktion)" — OHNE E-Mail/Telefon → Prime Directive).
-  Verdrahtet: `domain/orders.js` (`validateAuftrag` + `AUFTRAG_EDIT_FELDER`), `domain/crm-store.js saveAuftrag` +
-  `importWorkFloh`, `domain/rechnung.js baueRechnung` (Dokumentfeld `besteller`), `domain/importworkfloh.js`. UI
-  `ui/views/orders.js`: 4 Formularfelder + Liste-Label + „z. Hd."-Zeile im Empfängerblock. GoBD: Buchung trägt keinen
-  Besteller (mutable CRM-Metadaten). SW `v144`. (Folgeschritt offen: Besteller in die XRechnung als CII-Käuferkontakt.)
-- **[x] Sitzung 3 → P3 + P4 — Aufklärungstexte ✅ (2026-06-19):** reine Daten + Selektoren `src/domain/aufklaerung.js`
-  (node-getestet, +22 → **1858/1858**): `AUTONOMIE_STUFEN` (suggest/draft/auto, je Titel/Kurztext/Punkte),
-  `AUTONOMIE_GRENZEN` (Festschreiben bleibt manuell/GoBD, Storno statt Löschen, kein Datenabfluss ohne Bestätigung),
-  `KLEINUNTERNEHMER_DRITTDATEN` (§ 19 UStG ≠ DSGVO-Befreiung; Art. 6/13/14/28/32 DSGVO, § 147 AO/§ 257 HGB) +
-  `autonomieStufe`/`aktiveAutonomieStufe`/`drittdatenHinweisRelevant`. UI: zwei neue Karten in „Recht & Doku"
-  (`src/ui/views/legal.js`) — aktive Stufe markiert; Drittdaten-Karte betont AVV bei konfigurierter EU-KI. SW `v145`.
-- **[x] Sitzung 4 → P2 — KI-Anbieterwahl je Modus ✅ (2026-06-19):** **strikt innerhalb der EU** (Vision EU /
-  Mistral EU; Nicht-EU bleibt geschlossen/dormant), KEIN neuer Anbieter. Reine Logik `src/ai/anbieter.js` (node-getestet,
-  +28 → **1886/1886**): `KI_MODI` (ocr|kontierung|steuer), `KI_REGION`/`ERLAUBTE_REGIONEN` (eu+lokal; Nicht-EU dormant),
-  Registry `KI_ANBIETER` (vision/mistral/heuristik/aus), `STANDARD_WAHL` (verhaltensgleich) + Selektoren
-  `normalizeAnbieterWahl`/`erlaubteAnbieter`/`aktiverAnbieter`/`istAus`/`istLokal`/`istEuCloud`. Persistenz
-  `aiConfig.anbieterWahl` (verschlüsselt, normalisiert). Netz-Rand: `vision.ocr`, `mistral.categorize`,
-  `berater.begruendeBuchung`, Steuer-Assistent (reports.js), OCR-Bereitschaft (documents.js). UI: drei Selects +
-  EU-Hinweis in `ui/shell.js`. i18n de+en, SW `v146`, 126 Module. DOM/IndexedDB statisch geprüft.
-- **[ ] Sitzung 5 → P8 — QR-Einzelteilen (lokal erzeugt, kein Netz):** braucht einen **vendored, reinen JS-QR-Encoder**
-  (build-frei: eigene Datei, keine npm/CDN-Runtime; Lizenz prüfen). Geht das NICHT sauber build-frei → ehrlich als
-  blockiert melden statt zu tricksen (dann beim Nutzer rückfragen).
-- **[ ] DANACH: BESPRECHUNG mit dem Nutzer** — NICHT selbstständig den nächsten Sprint starten. COPY-Block auf
-  „Sprint abgeschlossen → Besprechung" stellen, Bilanz im Chat ausgeben, neue Richtung abstimmen.
+**🤝 ARBEITSAUFTRAG (weiterhin gültig):** selbstständig nach Logik + Nutzen handeln, Kleines selbst entscheiden;
+**bei GRÖSSEREN Konflikten/Unklarheiten INNEHALTEN und über `AskUserQuestion` rückfragen** (Datenmodell/GoBD/Krypto,
+Mehrdeutigkeit, nicht build-frei/blockiert, echter Merge-Konflikt). Merge-Konflikte zuerst selbst lösen
+(`git fetch origin main && git reset --hard origin/main`, neu aufsetzen); nur den *inhaltlichen* Konflikt eskalieren.
+**Solange noch kein neues Thema abgestimmt ist, ist die einzige Aufgabe die Besprechung — nicht bauen.**
 
-**🤝 ARBEITSAUFTRAG (Nutzer 2026-06-19): selbstständig handeln nach Logik + Nutzen für App und Nutzer.** Kleinere
-Entscheidungen (Benennung, UI-Detail, Konto-/Feldwahl, Test-Fälle, Reihenfolge innerhalb eines Punkts) selbst treffen
-und durchziehen. **Bei GRÖSSEREN Konflikten/Unklarheiten INNEHALTEN und über `AskUserQuestion` rückfragen** — nämlich
-wenn: ein Eingriff ins **Datenmodell/GoBD/Krypto** nötig wird; eine Anforderung **mehrdeutig** ist; etwas der bestehenden
-Logik oder den **unverrückbaren Regeln** widerspricht; ein Punkt sich als **nicht build-frei/blockiert** erweist; oder ein
-**echter Architektur-/Merge-Konflikt** auftritt, den ein Rebase nicht sauber löst. Lieber einmal kurz fragen als eine
-große, schwer rückbaubare Sache raten. **Merge-Konflikte** zuerst selbst lösen (`git fetch origin main && git reset
---hard origin/main`, neu aufsetzen); nur den *inhaltlichen* Konflikt eskalieren.
-
-**Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln grün +
-gemergt; reine Logik ZUERST node-getestet, dann UI „statisch geprüft"). **Hinweis:** Ist die Sitzung an genau einen
-Branch gebunden, dürfen Feature + Abschlussbrief in einer PR liegen.
-
-RITUAL JE PR (verbindlich, automatisch durchziehen):
+RITUAL JE PR (sobald wieder gebaut wird, verbindlich):
 1) `git fetch origin main && git reset --hard origin/main`; pro PR einen eigenen
    Branch `claude/<kurzbeschreibung>` von `origin/main` (bzw. den für die Sitzung vorgegebenen Branch).
 2) Reine Logik ZUERST node-getestet (`node tests/run.mjs` muss grün bleiben/werden), dann
@@ -94,9 +60,9 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 - Obersten `docs/SESSIONS.md`-Eintrag schreiben (Was getan · Stand · Nächstes · offene Grenzen).
 - `docs/OFFENE_PUNKTE.md` pflegen.
 - **Diese Datei `docs/NAECHSTE_SITZUNG.md` neu schreiben**, sodass der COPY-Block auf den dann
-  nächsten Schritt zeigt — **den erledigten Sprint-Punkt oben abhaken (`[x]`) und den Sprint-Pointer
-  eine Stufe weiterstellen**; nach Sitzung 5 den COPY-Block auf **„BESPRECHUNG mit dem Nutzer"**
-  setzen (innehalten, NICHT weiterbauen). Den Auftrag „ABSCHLUSSBRIEF AM ENDE (PFLICHT)" inkl.
+  nächsten Schritt zeigt. **Solange der Sprint abgeschlossen und noch kein neues Thema abgestimmt ist, bleibt der
+  COPY-Block auf „BESPRECHUNG mit dem Nutzer".** Sobald mit dem Nutzer ein neues Thema/ein neuer Sprint vereinbart
+  ist, den COPY-Block auf den ersten Schritt davon setzen. Den Auftrag „ABSCHLUSSBRIEF AM ENDE (PFLICHT)" inkl.
   **dieser Selbst-Fortschreibungs-Anweisung beibehalten** (die Kette darf nie abreißen).
 - Den fertigen COPY-Block am Sitzungsende auch im Chat ausgeben, damit er direkt in die
   nächste Sitzung eingefügt werden kann.
@@ -105,12 +71,10 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-19 nach **Sprint S4: P2 — KI-Anbieterwahl je Modus, strikt EU** (reine Logik
-`src/ai/anbieter.js` + verschlüsseltes `aiConfig.anbieterWahl` + drei Anbieter-Selects in `src/ui/shell.js`; Netz-Rand
-gated). Mit dem Nutzer vereinbart: **5-Sitzungs-Sprint** P9 → P10 → P3+P4 → P2 → P8, **EINER pro Sitzung**, **danach
-Besprechung**. Selbstständig nach Logik/Nutzen handeln; **größere Konflikte/Unklarheiten über `AskUserQuestion`
-eskalieren**, Kleines selbst entscheiden. Tests **1886/1886** · SW **v146** · 126 JS-Module. **Block 1 + 2 KOMPLETT;
-Block 3 (Liquidität) ausgebaut; Block 4 (V-Lohn) KOMPLETT (#158–#164); P6 ✓ (#167); P9 ✓; P10 ✓; P3+P4 ✓; P2 ✓.**
-Sprint-Pointer steht jetzt auf **Sitzung 5 → P8 (QR-Einzelteilen, vendored reiner JS-Encoder — build-frei prüfen, sonst
-ehrlich als blockiert melden und rückfragen)**; **danach BESPRECHUNG mit dem Nutzer** (NICHT selbstständig weiterlaufen).
-(Diese Zeile + die Sprint-Checkboxen bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-19 nach **Sprint S5: P8 — QR-Einzelteilen** (vendored reiner JS-QR-Encoder
+`src/core/qr.js`, build-frei/lokal; UI „Als QR anzeigen (lokal)" für das pseudonyme Dokument in der
+Schlüssel-Abgleich-Karte). **Der 5-Sitzungs-Sprint P9 → P10 → P3+P4 → P2 → P8 ist vollständig abgeschlossen.**
+**Nächste Sitzung = BESPRECHUNG mit dem Nutzer** (Bilanz + neue Richtung abstimmen) — **NICHT selbstständig den
+nächsten Sprint starten.** Tests **1926/1926** · SW **v147** · 127 JS-Module. **Block 1 + 2 KOMPLETT; Block 3
+(Liquidität) ausgebaut; Block 4 (V-Lohn) KOMPLETT (#158–#164); P6 ✓ (#167); P9 ✓ (#169); P10 ✓ (#170); P3+P4 ✓
+(#171); P2 ✓ (#172); P8 ✓.** (Diese Zeile + den COPY-Block bei jeder Sitzung aktualisieren.)

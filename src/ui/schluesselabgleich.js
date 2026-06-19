@@ -17,6 +17,7 @@ import {
   serialisiereSchluessel, parseSchluessel, gleicheAb, abgleichBericht,
 } from '../ai/schluesselabgleich.js';
 import { pickFile, readFileText, downloadText } from '../core/files.js';
+import { qrSvg, qrMaxBytes } from '../core/qr.js';
 
 function zeitstempelName(prefix, ext) {
   const d = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
@@ -35,10 +36,39 @@ function exportPanel() {
   const dlKey = el('button', { class: 'btn btn-sm', text: t('schluessel.downloadKey'), disabled: true,
     onClick: () => { if (letzterSchlusselJson != null) downloadText(zeitstempelName('schluessel', 'json'), letzterSchlusselJson, 'application/json'); } });
 
+  // ---- QR-Einzelteilen (lokal erzeugt, KEIN Netz) -------------------------
+  const qrOut = el('div', {});
+  let letzterSvg = null;
+  const dlSvg = el('button', { class: 'btn btn-sm', text: t('schluessel.qrSave'), disabled: true,
+    onClick: () => { if (letzterSvg != null) downloadText(zeitstempelName('qr', 'svg'), letzterSvg, 'image/svg+xml'); } });
+  const qrBtn = el('button', { class: 'btn btn-sm', text: t('schluessel.qrShow'), disabled: true,
+    onClick: () => {
+      qrOut.replaceChildren();
+      letzterSvg = null; dlSvg.setAttribute('disabled', '');
+      if (letztesPseudo == null) return;
+      try {
+        letzterSvg = qrSvg(letztesPseudo, { ecl: 'M', scale: 6 });
+        const img = el('img', {
+          class: 'qr-img',
+          src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(letzterSvg),
+          alt: 'QR', width: '220', height: '220',
+        });
+        dlSvg.removeAttribute('disabled');
+        qrOut.append(img, el('p', { class: 'muted small', text: t('schluessel.qrHint') }));
+      } catch (e) {
+        // Einziger erwarteter Fehler: Text zu lang für QR → ehrlich auf den Datei-Kanal verweisen.
+        qrOut.append(el('p', { class: 'hint-error small',
+          text: t('schluessel.qrTooLong').replace('{max}', String(qrMaxBytes('M'))) }));
+      }
+    } });
+
   const setBereit = (bereit) => {
-    dlDoc.disabled = !bereit; dlKey.disabled = !bereit;
-    if (bereit) { dlDoc.removeAttribute('disabled'); dlKey.removeAttribute('disabled'); }
-    else { dlDoc.setAttribute('disabled', ''); dlKey.setAttribute('disabled', ''); }
+    dlDoc.disabled = !bereit; dlKey.disabled = !bereit; qrBtn.disabled = !bereit;
+    if (bereit) { dlDoc.removeAttribute('disabled'); dlKey.removeAttribute('disabled'); qrBtn.removeAttribute('disabled'); }
+    else {
+      dlDoc.setAttribute('disabled', ''); dlKey.setAttribute('disabled', ''); qrBtn.setAttribute('disabled', '');
+      qrOut.replaceChildren(); letzterSvg = null; dlSvg.setAttribute('disabled', '');
+    }
   };
 
   const ladeBtn = el('button', { class: 'btn btn-sm', text: t('schluessel.loadFile'), onClick: async () => {
@@ -67,6 +97,8 @@ function exportPanel() {
     el('div', { class: 'btn-row' }, [ladeBtn, runBtn, status]),
     el('div', { class: 'btn-row' }, [dlDoc, dlKey]),
     el('p', { class: 'muted small', text: t('schluessel.keyWarn') }),
+    el('div', { class: 'btn-row' }, [qrBtn, dlSvg]),
+    qrOut,
   ]);
 }
 

@@ -320,6 +320,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .kpi-neg .kpi-value { color: var(--error); }
 /* Hinweistext mit Warnfarbe (z. B. Liquiditäts-Unterdeckung) — additiv, nur Textfarbe. */
 .hint-error { color: var(--error); }
+/* QR-Einzelteilen (lokal erzeugt) — weißer Grund + scharfe Kanten zum Scannen. */
+.qr-img { display: block; margin-top: .6rem; background: #fff; padding: .5rem; border-radius: .4rem; image-rendering: pixelated; max-width: 100%; height: auto; }
 .small-kpi .kpi-value { font-size: 1.15rem; }
 .small-kpi .kpi { padding: .7rem .9rem; }
 
