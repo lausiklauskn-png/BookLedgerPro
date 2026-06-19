@@ -5,6 +5,33 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Phase-5-Andock Schritt 1 (echte spore.json) + Geheim-Fach [Branch `claude/phase-5-sbkim-integration-v1v0ed`]
+
+**Was getan**
+- **BLP ist ein echter SBKIM-Knoten:** echte, signierte `sbkim/spore.json` + `sbkim/SIGNAL.json`
+  committet (headless gemintet via neuem `tools/mint_spore.mjs`, zero-dep). nodeId
+  `MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ`; `domainVector` `_demo` → `verified-spore`.
+  `node tools/verify_remote_spore.mjs sbkim/spore.json` → **VALID**.
+- `src/sbkim/nodeProfile.js` = eine Quelle der Wahrheit (Domänen-Felder) → committete und
+  In-App-Spore können nicht driften. `identity.js importIdentity()` + UI „Identität importieren"
+  (Mycel-Netz): geminteten Schlüssel in den Tresor übernehmen (gleicher nodeId). Privater
+  Schlüssel → `sbkim/.node-secret.json` (**gitignored**).
+- **Geheim-Fach (Tresor im Tresor):** `src/core/safebox.js` — unabhängig verschlüsselter
+  Bereich mit EIGENEM Code (eigener PBKDF2/AES-GCM-Schlüssel, Fach-Key nur im RAM wenn offen →
+  Defense-in-Depth), eigenes Shamir-Backup + Recovery. Ansicht „Geheim-Fach" (Nav/Routing):
+  Einträge Schlüssel/Text/Datei. Vorbild Mein-Tresor (Fächer-Tresor), gleicher Krypto-Kern.
+- Tests nach Merge mit `origin/main`: **1945/1945 grün**. SW-Cache `v148`. i18n DE/EN.
+
+**Stand:** auf veralteter Basis (`9ebcfe0`) entwickelt, dann sauber mit `origin/main` (SW v147,
+1926 Tests) gemerged — alle Beiträge sind additiv (main hatte weder spore.json noch Geheim-Fach).
+
+**Offen / Grenzen (ehrlich):** UI-/IndexedDB-Pfade nicht headless E2E getestet (Krypto-/Recovery-
+Kern node-getestet). Schritt 2 (Hub-Registrierung + Handshake → `verified-spore`) menschlich
+vermittelt, offen. Nutzer muss `sbkim/.node-secret.json` sichern (per ZIP übergeben / ins
+Geheim-Fach legen).
+
+---
+
 ## 2026-06-19 — Lebenden Mycel-Knoten regelkonform vendort (`sbkim/mycelknoten.html`) [Branch `claude/read-respond-messages-t92x7a`]
 
 **Was getan**

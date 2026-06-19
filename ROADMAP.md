@@ -77,14 +77,31 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
       Verifizierer-Paar (§11.2) im Test einig
 - [x] Briefkasten/Sync verankert: `sbkim/README.md`, `SIGNAL.template.json`,
       `AUSTAUSCH-template.md` (+ `docs/SAGE_SYNC_BRIEFKASTEN.md`)
-- [ ] **Phase 5b (menschlich vermittelt, fremde Repos):** echte `spore.json` in-app erzeugen
-      & committen, im Hub-`status.json` registrieren, erster Handshake, `verified-spore`
+- [x] **Phase 5b — Schritt 1 (Knoten geboren):** echte, signierte `sbkim/spore.json` +
+      `sbkim/SIGNAL.json` committet (headless gemintet via `tools/mint_spore.mjs`,
+      eine Quelle der Wahrheit `src/sbkim/nodeProfile.js`); `node tools/verify_remote_spore.mjs
+      sbkim/spore.json` → **VALID**. In-App-Import bestehender Identität (`importIdentity`)
+      ergänzt → App kann denselben nodeId in den Tresor übernehmen
+- [ ] **Phase 5b — Schritt 2 (menschlich vermittelt, fremde Repos):** im Hub-`status.json`
+      registrieren, erster Handshake bei Geschwister-Knoten, `verified-spore`
 - [ ] **Phase 5c:** echter `domainVector` (Transformers.js) → `verified-match`
 - [ ] **Phase 5d:** Symbiose-Import (Belege aus Mein-Tresor, Aufträge aus WorkFloh → Buchungen)
 
 > Diese Phase bereitet den Andock **lokal** vor (kein fremdes Repo verändert). Der
 > Live-Schritt (Hub-Registrierung, Handshake) erfolgt menschlich vermittelt (Modul 09).
 > Der `domainVector` ist noch `_demo` → ermöglicht `verified-spore`, nicht `verified-match`.
+
+## ✅ Geheim-Fach (Tresor im Tresor)
+- [x] `src/core/safebox.js`: unabhängig verschlüsselter Bereich mit EIGENEM Code (eigener
+      PBKDF2/AES-GCM-Schlüssel, eigenes Salt), Fach-Key nur im RAM wenn offen (Defense-in-Depth)
+- [x] Eigenes **Shamir-Backup** des Fach-Schlüssels + Recovery (vergessenen Code per Shares
+      ersetzen, Inhalt bleibt) — Datendurabilität (#2)
+- [x] Ansicht „Geheim-Fach": Einrichten/Entsperren/Recovery, Einträge (Schlüssel/Text/Datei)
+      anlegen/anzeigen/laden/löschen; i18n DE/EN; SW `v27`
+- [x] Kern node-getestet (Versiegeln/Öffnen, falscher Code, Shamir-Recovery, Validierung)
+
+> Vorbild: Mein-Tresor („Tresorraum mit 20 Fächern — jedes Fach = echter AES-Tresor"),
+> gleicher Krypto-Kern. Gedacht u.a. als sicherer Ablageort für den SBKIM-Schlüssel.
 
 ## ◑ Phase 6 — Design-Politur & Bilder
 - [x] Dashboard mit echten Jahres-Kennzahlen (`domain/summary.js`, getestet) + KPI-Karten

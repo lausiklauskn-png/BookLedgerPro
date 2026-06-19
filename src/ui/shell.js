@@ -36,6 +36,7 @@ import { mountLohn } from './views/lohn.js';
 import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
+import { mountSafebox } from './views/safebox.js';
 import { mountDashboard } from './views/dashboard.js';
 import { mountAnleitung } from './views/anleitung.js';
 import { schluesselAbgleichSection } from './schluesselabgleich.js';
@@ -62,6 +63,7 @@ const NAV = [
   ['reports', 'nav.reports'],
   ['berichte', 'nav.berichte'],
   ['network', 'nav.network'],
+  ['safebox', 'nav.safebox'],
   ['legal', 'nav.legal'],
   ['anleitung', 'nav.anleitung'],
   ['selbsttest', 'nav.selbsttest'],
@@ -194,6 +196,7 @@ function renderRoute() {
   if (route === 'about') return mount(content, el('section', { class: 'view' }, [aboutContent()]));
   if (route === 'anleitung') return void mountAnleitung(content);
   if (route === 'network') return void mountNetwork(content);
+  if (route === 'safebox') return void mountSafebox(content);
   return mount(content, viewPlaceholder(route));
 }
 

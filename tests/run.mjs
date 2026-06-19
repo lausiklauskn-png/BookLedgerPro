@@ -8,6 +8,9 @@ import {
   encryptBytesWithKey, decryptBytesWithKey, encryptWithKey, decryptWithKey,
 } from '../src/core/crypto.js';
 import { splitSecret, combineShares, encodeShare, decodeShare } from '../src/core/shamir.js';
+import {
+  deriveSafeKey, sealEntries, openEntries, makeEntry, splitSafeKey, safeKeyFromShares, ENTRY_TYPES,
+} from '../src/core/safebox.js';
 import { parseEuroToCents, formatCents } from '../src/domain/money.js';
 import { saldo, KONTOART, mehrungsSeite, validateKonto, normalizeKonto, KONTOART_LISTE, SKR03_SEED, REVERSE_CHARGE_KONTEN } from '../src/domain/accounts.js';
 import { baueBuchungZeilen, baueReverseChargeZeilen, UMSATZART, istAusgeglichen, validateBuchung, summeSeiten, stornoZeilen, formularAusBuchung } from '../src/domain/journal.js';
@@ -117,6 +120,7 @@ import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
 import { buildSignal } from '../src/sbkim/signal.js';
+import { NODE_PROFILE, KEYWORDS } from '../src/sbkim/nodeProfile.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
@@ -1089,12 +1093,83 @@ await section('SBKIM: Spore bauen & verifizieren (§11.1/§11.2)', async () => {
   ok('manipulierte Spore UNGÜLTIG', v3.valid === false);
 });
 
+await section('SBKIM: Knoten-Profil (eine Quelle der Wahrheit)', async () => {
+  // Die committete Spore (Headless-Minter) muss byte-identische Domänen-Felder zur
+  // In-App-Spore haben — beide ziehen aus nodeProfile.js. Hier: Minter-Pfad nachbilden.
+  const keys = await generateKeyPair();
+  const spore = await buildSpore(keys, { ...NODE_PROFILE, domainVector: demoVector(KEYWORDS) });
+  ok('domain aus Profil', spore.domain === NODE_PROFILE.domain);
+  ok('endpoint aus Profil', spore.endpoint === NODE_PROFILE.endpoint);
+  ok('domainKeywords aus Profil', JSON.stringify(spore.domainKeywords) === JSON.stringify(KEYWORDS));
+  ok('9 Pflichtfelder vorhanden', REQUIRED_FIELDS.every((f) => spore[f] != null));
+  ok('_demo-Markierung gesetzt', JSON.stringify(spore._demo) === '["domainVector"]');
+  ok('id == nodeId(pubkey)', spore.id === await nodeId(keys.publicKey));
+  // Beide Verifizierer (Browser + headless) müssen VALID urteilen — wie verify_remote_spore.mjs.
+  ok('Browser-Verifizierer VALID', (await verifySpore(spore)).valid === true);
+  ok('Headless-Verifizierer VALID', (await verifySporeObject(spore)).valid === true);
+});
+
 await section('SBKIM: SIGNAL.json (§11.6)', () => {
   const sig = buildSignal({ nodeId: 'ABC', seq: 1, headline: 'Andock vorbereitet', forNodes: ['*'] });
   ok('node = BookLedgerPro', sig.node === 'BookLedgerPro');
   ok('seq vorhanden', sig.seq === 1);
   ok('sporeUrl gesetzt', /BookLedgerPro\/main\/sbkim\/spore\.json$/.test(sig.sporeUrl));
   ok('forNodes = *', JSON.stringify(sig.forNodes) === '["*"]');
+});
+
+// ===== Geheim-Fach (Tresor im Tresor) — Krypto- & Recovery-Kern =====
+
+await section('Geheim-Fach: Versiegeln/Öffnen-Roundtrip', async () => {
+  const salt = randomBytes(16);
+  const key = await deriveSafeKey('zweiter-geheim-code', salt, true);
+  const entries = [
+    makeEntry({ type: 'schluessel', name: 'SBKIM-Key', value: '{"d":"abc"}' }),
+    makeEntry({ type: 'text', name: 'Notiz', value: 'streng geheim' }),
+  ];
+  const blob = await sealEntries(key, entries);
+  ok('Blob ist Chiffre (kein Klartext)', !JSON.stringify(blob).includes('streng geheim'));
+  const back = await openEntries(key, blob);
+  ok('Roundtrip identisch', JSON.stringify(back) === JSON.stringify(entries));
+  ok('leerer Blob → []', JSON.stringify(await openEntries(key, null)) === '[]');
+});
+
+await section('Geheim-Fach: falscher Code entschlüsselt nicht', async () => {
+  const salt = randomBytes(16);
+  const key = await deriveSafeKey('richtig-richtig', salt, true);
+  const blob = await sealEntries(key, [makeEntry({ type: 'text', name: 'x', value: 'y' })]);
+  const wrong = await deriveSafeKey('falsch-falsch', salt, true);
+  let failed = false;
+  try { await openEntries(wrong, blob); } catch { failed = true; }
+  ok('falscher Code wirft (AES-GCM-Auth)', failed === true);
+});
+
+await section('Geheim-Fach: Shamir-Recovery des Fach-Schlüssels', async () => {
+  const salt = randomBytes(16);
+  const key = await deriveSafeKey('vergessener-code-123', salt, true);
+  const entries = [makeEntry({ type: 'schluessel', name: 'K', value: 'geheim-inhalt' })];
+  const blob = await sealEntries(key, entries);
+
+  const raw = await exportRawAesKey(key);
+  const shares = splitSafeKey(raw, 3, 2);
+  ok('3 Shares erzeugt', shares.length === 3);
+  ok('Share-Format BLPR1', shares.every((s) => s.startsWith('BLPR1-')));
+
+  // 2 von 3 Shares genügen, um den Schlüssel zu rekonstruieren und zu entschlüsseln.
+  const recovered = await safeKeyFromShares([shares[0], shares[2]]);
+  const back = await openEntries(recovered, blob);
+  ok('2/3 Shares stellen Inhalt wieder her', JSON.stringify(back) === JSON.stringify(entries));
+});
+
+await section('Geheim-Fach: makeEntry-Validierung', () => {
+  ok('Typen definiert', JSON.stringify(ENTRY_TYPES) === '["schluessel","text","datei"]');
+  let bad = false;
+  try { makeEntry({ type: 'quatsch', name: 'x' }); } catch { bad = true; }
+  ok('unbekannter Typ wirft', bad === true);
+  let noName = false;
+  try { makeEntry({ type: 'text', name: '' }); } catch { noName = true; }
+  ok('fehlender Name wirft', noName === true);
+  const e = makeEntry({ type: 'text', name: 'A' });
+  ok('id + createdAt gesetzt', Boolean(e.id) && Boolean(e.createdAt));
 });
 
 // ===== Phase 6: Dashboard-Kennzahlen =====

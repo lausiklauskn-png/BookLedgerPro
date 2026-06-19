@@ -6,12 +6,11 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { downloadJson } from '../../core/files.js';
-import { identityExists, createIdentity, loadIdentity } from '../../sbkim/identity.js';
+import { identityExists, createIdentity, loadIdentity, importIdentity } from '../../sbkim/identity.js';
 import { buildSpore, verifySpore } from '../../sbkim/spore.js';
 import { demoVector } from '../../sbkim/domainvector.js';
-import { buildSignal, ENDPOINT } from '../../sbkim/signal.js';
-
-const KEYWORDS = ['Buchhaltung', 'Beleg', 'Konto', 'Rechnung', 'USt', 'EÜR', 'Kostenstelle', 'GoBD', 'Mitarbeiter', 'Auftrag'];
+import { buildSignal } from '../../sbkim/signal.js';
+import { NODE_PROFILE, KEYWORDS } from '../../sbkim/nodeProfile.js';
 
 let _host = null;
 
@@ -34,6 +33,8 @@ async function repaint() {
 
 function identityCard(ident) {
   if (!ident) {
+    const importTa = el('textarea', { class: 'beleg-text', rows: '5', placeholder: t('net.importPlaceholder') });
+    const importOut = el('div', { class: 'muted small' });
     return el('div', { class: 'card' }, [
       el('h2', { class: 'card-title', text: t('net.identity') }),
       el('img', { class: 'empty-illu', src: './assets/img/empty-network.png', alt: '', loading: 'lazy' }),
@@ -42,6 +43,22 @@ function identityCard(ident) {
         class: 'btn btn-primary', text: t('net.create'),
         onClick: async () => { await createIdentity(); await repaint(); },
       })]),
+      el('h3', { class: 'card-title', style: 'margin-top:1rem', text: t('net.import') }),
+      el('p', { class: 'muted small', text: t('net.importIntro') }),
+      importTa,
+      el('div', { class: 'btn-row' }, [el('button', {
+        class: 'btn', text: t('net.importBtn'),
+        onClick: async () => {
+          importOut.replaceChildren();
+          let parsed;
+          try { parsed = JSON.parse(importTa.value); } catch { importOut.textContent = 'JSON?'; return; }
+          try {
+            await importIdentity({ privJwk: parsed.privJwk, pubJwk: parsed.pubJwk });
+            await repaint();
+          } catch (e) { importOut.textContent = t('net.importErr') + e.message; }
+        },
+      })]),
+      importOut,
     ]);
   }
   return el('div', { class: 'card' }, [
@@ -57,11 +74,7 @@ function deployCard(ident) {
     class: 'btn', text: t('net.downloadSpore'),
     onClick: async () => {
       const spore = await buildSpore(ident.keys, {
-        domain: 'BookLedgerPro-Buchhaltung',
-        domainDescription: 'Offline-first, verschlüsselte Buchhaltung: Belege, Konten, USt/EÜR, GoBD, Aufträge.',
-        domainKeywords: KEYWORDS,
-        endpoint: ENDPOINT,
-        nodeName: 'BookLedgerPro',
+        ...NODE_PROFILE,
         domainVector: demoVector(KEYWORDS),
       });
       downloadJson('spore.json', spore);
