@@ -26,9 +26,17 @@ Mein-WorkFloh.** Hintergrund-Brief + E2E-Spec-Frage stehen in `docs/SAGE_E2E_ANF
 → Grad-B-Pseudonymisierung (P9) ist der freigegebene **Sofortpfad** (kein Bump/Bau); echte E2E (X25519 „sealed box")
 ist **Entwurf 0.2**, formaler `protocolVersion`-Bump erst nach Knoten-Deploy + Go (Sage-Hoheit, deren PR #302). Der
 Relay-Schritt (Brief an Sage geben + Antwort einholen) ist damit **erledigt**.
+**✅ NEU (2026-06-19, #176): Lebender Mycel-Andock-Helfer regelkonform vendort → `sbkim/mycelknoten.html`** (echte
+SBKIM-Module 01–17 + Live-Lampen + Wächter-Log + Widget; CDN-Embedding nach Regel #1 und Anthropic-US-Stufe-B nach
+Regel #8 fail-soft deaktiviert, als `BLP-Vendor-Anpassung` markiert; Gemini war nur ein Demo-String). Diese Seite
+**mintet im Browser** Identität + signierte Spore + `SIGNAL.json` (verified-spore **ohne** `domainVector`) — also genau
+das Werkzeug für Schritt 1 unten.
 
 ⏭ AUFGABE DIESER SITZUNG — **Phase-5-Andock, Schritt 1: BLP zum echten SBKIM-Knoten machen** (Voraussetzung für ALLES
-Weitere — ohne Spore kann BLP keinen Brief in den Briefkasten werfen). Konkret, **eine saubere PR**:
+Weitere — ohne Spore kann BLP keinen Brief in den Briefkasten werfen). **Zwei gangbare Wege** (Helfer ODER in-app):
+- **(a) Helfer nutzen:** `sbkim/mycelknoten.html` im Browser laden → andocken → erzeugte `spore.json`/`SIGNAL.json`
+  herunterladen, nach `sbkim/` committen. Schnellster Weg zum deploybaren Knoten.
+- **(b) In-app generieren** (für dauerhafte App-Integration), konkret als **eine saubere PR**:
 1. **Identität + Spore erzeugen** (Ed25519 via WebCrypto **in-app**; `sbkim/spore.json` mit den 9 Pflichtfeldern
    `createdAt/domain/embeddingModel/endpoint/id/nodeType/protocolVersion/publicKey/signature`; `id =
    base64url(SHA256(rawPub))`; kanonische Signier-Form = kompaktes JSON ohne `signature`, **rekursiv alphabetisch
