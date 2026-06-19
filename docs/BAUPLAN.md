@@ -411,8 +411,9 @@
   (Soll 1741/1742 an Bank). Store-Glue `domain/lohn-store.js bucheLohnabgaben`. UI-Karte „Abzuführende Lohnabgaben
   (offen)" in `ui/views/lohn.js` (LSt/SV/Summe + „Als bezahlt buchen (Entwurf)" → `saveEntwurf`, GoBD). i18n de+en,
   SW `v140` (+8 → **1754/1754**). DOM/IndexedDB statisch geprüft.
-- [ ] **L6. Doku `docs/LOHN.md` + Abschluss** — ehrliche Grenzen (keine ELStAM/SV-Meldungen/amtl. Tabellen),
-  DoD; PULS/OFFENE_PUNKTE fortschreiben.
+- [x] **L6. Doku `docs/LOHN.md` + Abschluss** ✅ (2026-06-18) — `docs/LOHN.md` (Architektur, Buchungslogik,
+  Workflow, Konten-Referenz, ehrliche Grenzen, Test-Modus-Hinweis); PULS/SESSIONS/OFFENE_PUNKTE/NAECHSTE_SITZUNG
+  fortgeschrieben. **→ Block 4 (V-Lohn) KOMPLETT (L1–L6).**
 
 ## Abhängigkeiten (kurz)
 8 braucht 7+4 · 7 braucht 5(+4) · 9 braucht 7 · 10 braucht 9 · 11 ist Präsentation (nach 7).

@@ -5,6 +5,20 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-18 — V-Lohn: Lohn-Buchungskern KOMPLETT (L1–L6) + Liquiditäts-Treiber [mehrere Branches]
+
+**Nachtrag (L4–L6):** Der Lohn-Track wurde in dieser Sitzung **vollständig** abgeschlossen.
+- **#162 V-Lohn L4** — `lohnsteuerAnmeldung(laeufe,{monat})` + `export.buildLohnsteuerAnmeldungPaket` (CSV-Datenpaket,
+  NICHT amtlich, kein Direktversand); UI-Karte „Lohnsteuer-Anmeldung (je Monat)" mit Download + ELSTER-Link (+10).
+- **#163 V-Lohn L5** — `offeneLohnabgaben(buchungen)` (Saldo 1741/1742 aus festgeschriebenen Buchungen) +
+  `lohnabgabeZahlungEntwurf` + Store `bucheLohnabgaben`; UI-Karte „Abzuführende Lohnabgaben (offen)" + „Als bezahlt
+  buchen (Entwurf)" (+8).
+- **L6** — `docs/LOHN.md` (Architektur/Workflow/Konten/ehrliche Grenzen/Test-Modus) + Abschlussbrief.
+- **Endstand: Tests 1754/1754 grün, SW v140, 120 JS-Module. Block 4 (V-Lohn) KOMPLETT.** Nächstes: Mein-WorkFloh
+  Test-Modus (eigenes Repo, Nutzer-Wunsch) bzw. Browser-Sichttest der Lohn-Ansicht.
+
+---
+
 ## 2026-06-18 — V-Lohn: Lohn-Buchungskern L1–L3 (+ Liquiditäts-Treiber) [Branches `claude/bookledgerpro-liquidity-runway-0idq3p`, `claude/lohn-buchungskern`, `claude/lohn-store`, `claude/lohn-ui`]
 
 **Ausgangslage / Auswahl**
