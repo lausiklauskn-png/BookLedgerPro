@@ -5,6 +5,29 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Phase-5-Andock Schritt 2: verified-spore mit Sage besiegelt [Branch `claude/sage-handshake`]
+
+**Was getan**
+- **Andock-Brief an Sage** relayt (`docs/SAGE_ANDOCK_BRIEF.md`, #179) → Sage hat geantwortet:
+  Spore **VALID (4/4)**, **`verified-spore`** vergeben, im Hub registriert (Sage PR #303;
+  `status.json` endknoten[], `NETZ-STAND.md`, 📬-Knopf — BLP = 6. Peer).
+- **Reziproker Handshake** (Sage = Gegenstelle, nodeId `nysOZE3…`): Sages Spore aus raw/main
+  geholt + headless verifiziert → **VALID**; `id` unabhängig aus `publicKey.x` nachgerechnet
+  → MATCH. `sbkim/Sage_inbox.json` (signatur-reine 1:1-Kopie) + `sbkim/Sage_inbox.verify.md`
+  (Prüf-Vermerk) angelegt.
+- **Briefkasten quittiert:** `SIGNAL.json` → `seq` 3, `ack[Sage]=22`, `forNodes` → `["*"]`
+  (Netz-Symmetrie, Sages Empfehlung). `AUSTAUSCH-Sage.md` mit Quittungs-Zeile gestempelt.
+- Tests **1945/1945 grün**; alle SBKIM-JSON valide; Sage_inbox VALID.
+
+**Stand:** **`verified-spore` beidseitig besiegelt.** BLP ist registrierter SBKIM-Peer.
+
+**Offen / Nächstes:** Quittung an Klaus zurück (Sages seq 22, ack=22, VALID, forNodes=["*"]).
+Schritt 6.3 WorkFloh-Pairing. Schritt 6.4 echter `domainVector` → `verified-match` (Sage warnt:
+Buchhaltung ist domänenfern zur Mycel-Bibliothek, Cosinus ≥ 0.80 nicht garantiert; „kein Match"
+ist ein sauberes Ergebnis). Transformers.js/WASM **build-frei ohne CDN** (Regel #1) noch zu prüfen.
+
+---
+
 ## 2026-06-19 — Phase-5-Andock Schritt 1 (echte spore.json) + Geheim-Fach [Branch `claude/phase-5-sbkim-integration-v1v0ed`]
 
 **Was getan**

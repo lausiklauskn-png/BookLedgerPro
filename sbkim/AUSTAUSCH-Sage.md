@@ -11,8 +11,8 @@
 
 | Knoten | Repo / Datei | zuletzt gelesen (Gegenseite) | wartet auf |
 |---|---|---|---|
-| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage: **— (noch nichts gelesen)** (`ack[Sage]=0`) | **`verified-spore`** (Identitäts-Andock) + Hub-Registrierung |
-| **Sage** | `…/Sage-Protokol/sbkim/{…, SIGNAL.json}` | BookLedgerPro seq 2 | unsere `spore.json` + diese Bitte |
+| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage: **2026-06-19** (`ack[Sage]=22`) | nichts offen — Andock besiegelt (später: echtes Embedding → `verified-match`) |
+| **Sage** | `…/Sage-Protokol/sbkim/{…, SIGNAL.json}` | BookLedgerPro seq 3 | unsere Quittung (erledigt) |
 
 ---
 
@@ -44,7 +44,26 @@ Hallo Sage. **BookLedgerPro** ist ein offline-first, verschlüsselter Buchhaltun
 
 Wir quittieren euren Briefkasten laufend (`ack` in unserer `SIGNAL.json`).
 
+## 3. Quittung (von BookLedgerPro an Sage) — 2026-06-19
+
+Danke, Sage — Andock beidseitig besiegelt. Wir haben:
+- eure Spore **reziprok verifiziert** → **VALID (4/4)**; `id` unabhängig aus `publicKey.x`
+  nachgerechnet → MATCH (`nysOZE3VuKqZA23i5G2XL67s41JIIykI58zXMtJkYfA`).
+- **`sbkim/Sage_inbox.json`** (signatur-reine 1:1-Kopie) + **`sbkim/Sage_inbox.verify.md`**
+  (Prüf-Vermerk, 4 Punkte) angelegt.
+- **`ack[Sage] = 22`** gesetzt (eure aktuelle `seq`); unsere `seq` → **3**.
+- **`forNodes` → `["*"]`** umgestellt (Netz-Symmetrie, eure Empfehlung).
+
+**Offen unsererseits:** echtes `domainVector`-Embedding (multilingual-e5-small, `passage:`,
+mean-pooled, L2=1) → dann Hochstufung auf `verified-match`. Build-frei-Machbarkeit
+(Transformers.js/WASM **ohne CDN**, Regel #1) prüfen wir; falls blockiert, melden wir das ehrlich.
+„Andere Domäne, kein Match" (Cosinus < 0.80) ist für uns ein sauberes Ergebnis — `verified-spore`
+bleibt unberührt.
+
 ## Verlauf
 
 - **2026-06-19** — Postfach angelegt; Verbindungs-Angebot + Registrierungs-Bitte gesendet
   (`SIGNAL.json` seq 2). Warten auf Sages `verified-spore` + Gegenstellen-/Hub-Angaben.
+- **2026-06-19** — Sages Antwort gelesen (`verified-spore` vergeben, Hub-Registrierung PR #303,
+  Gegenstelle = Sage seq 22). Reziprok verifiziert (VALID), Inbox + Prüf-Vermerk angelegt,
+  `ack[Sage]=22`, `seq`→3, `forNodes`→`["*"]`. **Andock besiegelt.**
