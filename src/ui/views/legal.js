@@ -35,11 +35,30 @@ export function mountLegal(host) {
   mount(_host, el('section', { class: 'view legal' }, [
     el('h1', { text: t('legal.title') }),
     siegel(),
+    transparenzCard(),
     textCard(t('legal.gobd'), GOBD),
     textCard(t('legal.dsgvo'), DSGVO),
     avvCard(),
     rightsCard(),
   ]));
+}
+
+// Transparenz- & Zwischenstandsbericht — verlinkt die STETS AKTUELLE Datei
+// docs/TRANSPARENZ_ZWISCHENSTAND.html (eine Quelle der Wahrheit): wird die HTML aktualisiert,
+// zeigt die App beim nächsten Öffnen automatisch den neuen Stand. Öffnet in eigenem Tab; die
+// Datei trägt einen „Als PDF speichern"-Knopf. Pfad ist relativ zur index.html (Routing ändert
+// die URL nicht), funktioniert lokal wie auf GitHub Pages.
+function transparenzCard() {
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('legal.transparenzTitle') }),
+    el('p', { class: 'small', text: t('legal.transparenzHint') }),
+    el('div', { class: 'btn-row' }, [
+      el('a', {
+        class: 'btn btn-sm', href: 'docs/TRANSPARENZ_ZWISCHENSTAND.html',
+        target: '_blank', rel: 'noopener noreferrer', text: t('legal.transparenzOpen'),
+      }),
+    ]),
+  ]);
 }
 
 // AVV/DPA-Verträge der EU-KI-Anbieter — direkt zum Abschließen verlinkt (Entscheidung: umsetzen).
