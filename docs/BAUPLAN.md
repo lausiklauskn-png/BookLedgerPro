@@ -405,8 +405,12 @@
   kein ELSTER-Direktversand — analog `buildElsterVaPaket`). UI-Karte in `ui/views/lohn.js`: Monatswahl → LSt/SolZ/
   KiSt/Summe + „Datenpaket herunterladen" (`downloadText`) + ELSTER-Link + ehrlicher Hinweis. i18n de+en, SW `v139`
   (+10 → **1746/1746**). **Ehrliche Grenze:** keine Konfessions-Aufteilung, Kennzahlen am Formular/mit Berater prüfen.
-- [ ] **L5. SV-/LSt-Zahlungsübersicht** — offene Verbindlichkeiten 1741/1742 als fällige Zahlungsliste
-  (nutzt die vorhandene Payables-/Liquiditäts-Schicht).
+- [x] **L5. SV-/LSt-Zahlungsübersicht** ✅ (2026-06-18) — reine Logik `domain/lohnbuchung.js`
+  `offeneLohnabgaben(buchungen, {stichtag})` (offener Saldo der Verbindlichkeitskonten 1741 Steuer + 1742 SV aus den
+  **festgeschriebenen** Buchungen, Passiv-Saldo Haben−Soll) + `lohnabgabeZahlungZeilen`/`lohnabgabeZahlungEntwurf`
+  (Soll 1741/1742 an Bank). Store-Glue `domain/lohn-store.js bucheLohnabgaben`. UI-Karte „Abzuführende Lohnabgaben
+  (offen)" in `ui/views/lohn.js` (LSt/SV/Summe + „Als bezahlt buchen (Entwurf)" → `saveEntwurf`, GoBD). i18n de+en,
+  SW `v140` (+8 → **1754/1754**). DOM/IndexedDB statisch geprüft.
 - [ ] **L6. Doku `docs/LOHN.md` + Abschluss** — ehrliche Grenzen (keine ELStAM/SV-Meldungen/amtl. Tabellen),
   DoD; PULS/OFFENE_PUNKTE fortschreiben.
 
