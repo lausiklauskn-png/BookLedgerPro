@@ -2,6 +2,8 @@
 // Aufträge (WorkFloh-Domänenmodell). Positionen mit Menge × Einzelpreis (Cent) und
 // USt-Satz; Summen cent-genau, nach USt-Satz gruppiert. Reine Funktionen.
 
+import { validateBesteller } from './besteller.js';
+
 export const AUFTRAG_STATUS = {
   ANGELEGT: 'angelegt',
   IN_ARBEIT: 'in_arbeit',
@@ -75,6 +77,8 @@ export function validateAuftrag(a) {
   if (a.zahlungszielTage != null && (!Number.isInteger(Number(a.zahlungszielTage)) || Number(a.zahlungszielTage) < 0)) {
     errors.push('Zahlungsziel (Tage) ungültig.');
   }
+  // Handelnde Person als Besteller (P10, optional): nur formale Prüfung (Name/E-Mail).
+  for (const e of validateBesteller(a.besteller)) errors.push(e);
   return errors;
 }
 
@@ -82,7 +86,7 @@ export function validateAuftrag(a) {
 // Bewusst NICHT editierbar: id/type/status/createdAt/externNummer/zahlungen/mahnungen sowie
 // rechnungBuchungId/-Nummer/-Datum — sie würden den Workflow bzw. eine bereits gebuchte
 // Forderung verfälschen.
-export const AUFTRAG_EDIT_FELDER = ['titel', 'kundeId', 'kostenstelle', 'zahlungszielTage', 'positionen'];
+export const AUFTRAG_EDIT_FELDER = ['titel', 'kundeId', 'besteller', 'kostenstelle', 'zahlungszielTage', 'positionen'];
 
 /**
  * Darf ein bestehender Auftrag noch bearbeitet werden? GoBD-Disziplin: sobald aus dem

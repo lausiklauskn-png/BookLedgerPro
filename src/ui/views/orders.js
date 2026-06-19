@@ -4,6 +4,7 @@ import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js';
 import { AUFTRAG_STATUS, STATUS_FLOW, auftragSummen, validateAuftrag, darfAuftragBearbeiten } from '../../domain/orders.js';
+import { bestellerLabel, bestellerKontaktzeile } from '../../domain/besteller.js';
 import { UST_SAETZE } from '../../domain/taxes.js';
 import {
   listAuftraege, saveAuftrag, updateAuftrag, deleteAuftrag, setAuftragStatus, rechnungAusAuftrag,
@@ -112,6 +113,12 @@ function form() {
   const kunde = el('select', {}, [el('option', { value: '' }, t('orders.none')),
     ..._kunden.map((k) => el('option', { value: k.id }, k.name))]);
   if (bearbeiten) kunde.value = bearbeiten.kundeId || '';
+  // Handelnde Person als Besteller (P10): Ansprechpartner beim Kunden (additiv, optional).
+  const best = (bearbeiten && bearbeiten.besteller) || {};
+  const bestName = el('input', { type: 'text', placeholder: t('orders.besteller.namePh'), value: best.name || '' });
+  const bestFunktion = el('input', { type: 'text', placeholder: t('orders.besteller.funktionPh'), value: best.funktion || '' });
+  const bestEmail = el('input', { type: 'email', placeholder: t('orders.besteller.emailPh'), value: best.email || '' });
+  const bestTelefon = el('input', { type: 'tel', placeholder: t('orders.besteller.telefonPh'), value: best.telefon || '' });
   const ks = el('select', {}, [el('option', { value: '' }, t('journal.noKostenstelle')),
     ..._kostenstellen.map((k) => el('option', { value: k.nummer }, `${k.nummer} · ${k.name}`))]);
   if (bearbeiten) ks.value = bearbeiten.kostenstelle || '';
@@ -139,7 +146,8 @@ function form() {
       const positionen = Array.from(posBox.children).map((r) => r._read()).filter((p) => p.einzelpreisCent > 0);
       const zielRoh = String(ziel.value).trim();
       const zahlungszielTage = zielRoh === '' ? null : Math.trunc(Number(zielRoh));
-      const daten = { titel: titel.value, kundeId: kunde.value || null, kostenstelle: ks.value || null, zahlungszielTage, positionen };
+      const besteller = { name: bestName.value, funktion: bestFunktion.value, email: bestEmail.value, telefon: bestTelefon.value };
+      const daten = { titel: titel.value, kundeId: kunde.value || null, besteller, kostenstelle: ks.value || null, zahlungszielTage, positionen };
       const fehler = validateAuftrag(daten);
       if (fehler.length) { err.textContent = fehler.join(' '); return; }
       try {
@@ -152,6 +160,8 @@ function form() {
     el('h2', { class: 'card-title', text: bearbeiten ? t('orders.edit') : t('orders.new') }),
     el('div', { class: 'form-grid' }, [field(t('orders.titel'), titel), field(t('orders.customer'), kunde), field(t('orders.kostenstelle'), ks), field(t('orders.zahlungsziel'), ziel)]),
     el('p', { class: 'muted small', text: t('orders.zahlungsziel.hint') }),
+    el('div', { class: 'form-grid' }, [field(t('orders.besteller.name'), bestName), field(t('orders.besteller.funktion'), bestFunktion), field(t('orders.besteller.email'), bestEmail), field(t('orders.besteller.telefon'), bestTelefon)]),
+    el('p', { class: 'muted small', text: t('orders.besteller.hint') }),
     el('div', { class: 'pos-head' }, [el('span', { text: t('orders.posDesc') }), el('span', { text: t('orders.qty') }), el('span', { text: t('orders.price') }), el('span', { text: t('orders.vat') }), el('span', {})]),
     posBox,
     el('div', { class: 'btn-row' }, [addPos]),
@@ -169,8 +179,13 @@ function liste(auftraege) {
   const kundeName = (id) => (_kunden.find((k) => k.id === id) || {}).name || '';
   const rows = auftraege.map((a) => {
     const s = auftragSummen(a.positionen);
+    const bLabel = bestellerLabel(a.besteller);
     return el('tr', {}, [
-      el('td', {}, [el('div', { text: a.titel || '—' }), el('div', { class: 'muted small', text: kundeName(a.kundeId) })]),
+      el('td', {}, [
+        el('div', { text: a.titel || '—' }),
+        el('div', { class: 'muted small', text: kundeName(a.kundeId) }),
+        bLabel ? el('div', { class: 'muted small', text: `${t('orders.besteller.label')}: ${bLabel}` }) : null,
+      ]),
       el('td', { text: a.kostenstelle || '' , class: 'mono small' }),
       el('td', { class: 'num', text: formatEuro(s.brutto) }),
       el('td', {}, [statusBadge(a.status)]),
@@ -237,7 +252,7 @@ function rechnungView(r) {
     el('div', { class: 'card rechnung-doc' }, [
       el('div', { class: 'rech-kopf' }, [
         adrBlock(t('orders.issuer'), [r.firma.name, r.firma.anschrift, r.firma.steuernummer ? `St.-Nr.: ${r.firma.steuernummer}` : '', r.firma.ustId ? `USt-IdNr.: ${r.firma.ustId}` : '']),
-        adrBlock(t('orders.recipient'), [r.kunde.name, r.kunde.adresse, r.kunde.ustId ? `USt-IdNr.: ${r.kunde.ustId}` : '']),
+        adrBlock(t('orders.recipient'), [r.kunde.name, bestellerKontaktzeile(r.besteller), r.kunde.adresse, r.kunde.ustId ? `USt-IdNr.: ${r.kunde.ustId}` : '']),
       ]),
       el('h2', { class: 'card-title', text: `${t('orders.invoiceTitle')} ${r.nummer || ''}` }),
       el('div', { class: 'muted small' }, [

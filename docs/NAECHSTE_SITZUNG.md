@@ -18,22 +18,26 @@ obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sic
 
 STAND: Block 1 + 2 KOMPLETT · Block 3 (Liquidität) ausgebaut · Block 4 (V-Lohn — Lohn-Buchungskern) KOMPLETT
 (L1–L6, `docs/LOHN.md`) · P6 (CSV/vCard-Kundenimport) erledigt (#167) · Transparenzbericht in der App verlinkt
-(„Recht & Doku", stets aktuell) · **Sprint S1 → P9 (Datei-Import mit exaktem Schlüssel-Abgleich) ✅ erledigt**
-(`src/ai/schluesselabgleich.js` + `src/ui/schluesselabgleich.js`). **SW `v143`, Tests `1810/1810` grün, 123 JS-Module.**
+(„Recht & Doku", stets aktuell) · **Sprint S1 → P9 (Datei-Import mit exaktem Schlüssel-Abgleich) ✅** · **Sprint S2 →
+P10 (handelnde Person als Besteller) ✅ erledigt** (`src/domain/besteller.js` + Verdrahtung Auftrag→Rechnung + UI in
+`src/ui/views/orders.js`). **SW `v144`, Tests `1836/1836` grün, 124 JS-Module.**
 
 AUFGABE — **5-Sitzungs-Sprint (mit dem Nutzer vereinbart 2026-06-19): genau diese Punkte abarbeiten, EINER pro
 Sitzung, in dieser Reihenfolge; danach BESPRECHUNG.** Bearbeite in DIESER Sitzung den ERSTEN noch offenen Punkt der
 Liste (Reihenfolge unten) und stelle den Sprint-Pointer am Ende eine Stufe weiter.
 
-**🏃 SPRINT-PLAN (eine Sitzung = ein Punkt) — Pointer steht jetzt auf Sitzung 2 → P10:**
+**🏃 SPRINT-PLAN (eine Sitzung = ein Punkt) — Pointer steht jetzt auf Sitzung 3 → P3+P4:**
 - **[x] Sitzung 1 → P9 — Datei-Import mit exaktem Schlüssel-Abgleich ✅ (2026-06-19):** reine Logik
-  `src/ai/schluesselabgleich.js` (node-getestet, +38 → **1810/1810**): `gleicheAb` (exakter Token↔Klartext-Abgleich,
-  verlustfrei + Bericht `ersetzt`/`fehlend`/`ungenutzt`/`vollstaendig` — Token ohne Schlüssel bleiben sichtbar, nichts
-  erfunden), `serialisiereSchluessel`/`parseSchluessel` (Schlüssel-Datei „Anker-Tresor", JSON `blp-schluessel` v1),
-  `tokenVorkommen`/`typAusToken`/`schluesselAusMap`/`abgleichBericht`/`pruefeRoundtrip`. UI `src/ui/schluesselabgleich.js`
-  (Einstellungs-Karte „Datenschutz bei KI": pseudonymisieren+Schlüssel sichern · Datei importieren+abgleichen). SW `v143`.
-- **[ ] Sitzung 2 → P10 — handelnde Person als Besteller:** Auftrag/Rechnung führt die bestellende Person mit
-  (Datenmodell **additiv** + UI-Feld). Prime Directive/GoBD beachten — nichts Internes nach außen.
+  `src/ai/schluesselabgleich.js` (+38 → 1810/1810) + UI `src/ui/schluesselabgleich.js` (Einstellungs-Karte
+  „Datenschutz bei KI"). SW `v143`.
+- **[x] Sitzung 2 → P10 — handelnde Person als Besteller ✅ (2026-06-19):** additives Datenmodell + UI-Feld. Reine
+  Logik `src/domain/besteller.js` (node-getestet, +26 → **1836/1836**): `normalizeBesteller` (String/Objekt →
+  `{name,funktion,email,telefon}`, null ohne Name), `validateBesteller` (optional; E-Mail formal; Längen-Cap),
+  `bestellerLabel`, `bestellerKontaktzeile` („z. Hd. Name (Funktion)" — OHNE E-Mail/Telefon → Prime Directive).
+  Verdrahtet: `domain/orders.js` (`validateAuftrag` + `AUFTRAG_EDIT_FELDER`), `domain/crm-store.js saveAuftrag` +
+  `importWorkFloh`, `domain/rechnung.js baueRechnung` (Dokumentfeld `besteller`), `domain/importworkfloh.js`. UI
+  `ui/views/orders.js`: 4 Formularfelder + Liste-Label + „z. Hd."-Zeile im Empfängerblock. GoBD: Buchung trägt keinen
+  Besteller (mutable CRM-Metadaten). SW `v144`. (Folgeschritt offen: Besteller in die XRechnung als CII-Käuferkontakt.)
 - **[ ] Sitzung 3 → P3 + P4 — Aufklärungstexte:** KI-**Autonomiestufen** (P3) + **Kleinunternehmer**-Pflichten bei
   Drittdaten (P4) als In-App-Texte in „Recht & Doku"/Einstellungen. Klein, build-frei.
 - **[ ] Sitzung 4 → P2 — KI-Anbieterwahl je Modus:** **strikt innerhalb der EU** (Vision EU / Mistral EU; Nicht-EU
@@ -90,10 +94,10 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-19 nach **Sprint S1: P9 — Datei-Import mit exaktem Schlüssel-Abgleich** (reine Logik
-`src/ai/schluesselabgleich.js` + UI `src/ui/schluesselabgleich.js`). Mit dem Nutzer vereinbart: **5-Sitzungs-Sprint**
-P9 → P10 → P3+P4 → P2 → P8, **EINER pro Sitzung**, **danach Besprechung**. Selbstständig nach Logik/Nutzen handeln;
-**größere Konflikte/Unklarheiten über `AskUserQuestion` eskalieren**, Kleines selbst entscheiden. Tests **1810/1810** ·
-SW **v143** · 123 JS-Module. **Block 1 + 2 KOMPLETT; Block 3 (Liquidität) ausgebaut; Block 4 (V-Lohn) KOMPLETT
-(#158–#164); P6 ✓ (#167); P9 ✓.** Sprint-Pointer steht jetzt auf **Sitzung 2 → P10**. (Diese Zeile + die
-Sprint-Checkboxen bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-19 nach **Sprint S2: P10 — handelnde Person als Besteller** (reine Logik
+`src/domain/besteller.js` + Verdrahtung Auftrag→Rechnung + UI `src/ui/views/orders.js`). Mit dem Nutzer vereinbart:
+**5-Sitzungs-Sprint** P9 → P10 → P3+P4 → P2 → P8, **EINER pro Sitzung**, **danach Besprechung**. Selbstständig nach
+Logik/Nutzen handeln; **größere Konflikte/Unklarheiten über `AskUserQuestion` eskalieren**, Kleines selbst entscheiden.
+Tests **1836/1836** · SW **v144** · 124 JS-Module. **Block 1 + 2 KOMPLETT; Block 3 (Liquidität) ausgebaut; Block 4
+(V-Lohn) KOMPLETT (#158–#164); P6 ✓ (#167); P9 ✓; P10 ✓.** Sprint-Pointer steht jetzt auf **Sitzung 3 → P3+P4**.
+(Diese Zeile + die Sprint-Checkboxen bei jeder Sitzung aktualisieren.)

@@ -65,6 +65,7 @@ import { findeRechtsregeln, onDeviceBegruendung } from '../src/domain/rechtsrege
 import { buildBegruendungMessages, parseBegruendung, begruendeBuchung } from '../src/ai/berater.js';
 import { auftragSummen, darfWechseln, validateAuftrag, auftragOffen, auftragGezahlt,
   darfAuftragBearbeiten, anwendeAuftragEdit, AUFTRAG_EDIT_FELDER } from '../src/domain/orders.js';
+import { normalizeBesteller, validateBesteller, bestellerLabel, bestellerKontaktzeile } from '../src/domain/besteller.js';
 import { rechnungZeilen, rechnungsUebernahmeEntwurf, validateRechnungsUebernahme,
   zahlungsUebernahmeEntwurf, validateZahlungsUebernahme } from '../src/domain/invoicing.js';
 import {
@@ -692,6 +693,12 @@ await section('Rechnungs-Dokument: Aufbau + §14-Pflichtangaben', () => {
   ok('zahlbar bis: ohne Datum leer', baueRechnung({ auftrag, kunde, firma, nummer: '', datum: '' }).zahlbarBis === '');
 
   ok('Rechnungsnummer-Format', formatRechnungsnummer(7, 2026) === '2026-0007');
+
+  // P10: handelnde Person (Besteller) fließt normalisiert ins Dokument (z.-Hd.-Zeile).
+  const rB = baueRechnung({ auftrag: { ...auftrag, besteller: { name: ' Max Müller ', funktion: 'Einkauf', email: 'm@x.de' } }, kunde, firma, nummer: '2026-0006', datum: '2026-06-14' });
+  ok('Dokument trägt Besteller (normalisiert)', rB.besteller && rB.besteller.name === 'Max Müller' && rB.besteller.funktion === 'Einkauf');
+  ok('Dokument-Besteller behält E-Mail (für App), Doku-Zeile zeigt sie nicht', rB.besteller.email === 'm@x.de' && bestellerKontaktzeile(rB.besteller) === 'z. Hd. Max Müller (Einkauf)');
+  ok('Dokument ohne Besteller → null', baueRechnung({ auftrag, kunde, firma, nummer: '2026-0007', datum: '2026-06-14' }).besteller === null);
 });
 
 await section('WorkFloh-Import: Normalisierung (Kunden, Aufträge, USt-Ergänzung)', () => {
@@ -880,6 +887,42 @@ await section('Auftrag bearbeiten: GoBD-Guard + Edit-Merge (rein)', () => {
   ok('zahlungszielTage löschbar (null)', anwendeAuftragEdit(basis, { zahlungszielTage: null }).zahlungszielTage === null);
   ok('AUFTRAG_EDIT_FELDER enthält keine Rechnungs-/Status-Felder',
     !AUFTRAG_EDIT_FELDER.includes('status') && !AUFTRAG_EDIT_FELDER.includes('rechnungBuchungId') && !AUFTRAG_EDIT_FELDER.includes('zahlungen'));
+  ok('AUFTRAG_EDIT_FELDER enthält besteller (P10)', AUFTRAG_EDIT_FELDER.includes('besteller'));
+});
+
+await section('Handelnde Person als Besteller (P10, rein)', () => {
+  // normalizeBesteller: String oder Objekt → additives Objekt; trimmt; null ohne Name.
+  ok('null/undefined → null', normalizeBesteller(null) === null && normalizeBesteller(undefined) === null);
+  ok('leerer String → null', normalizeBesteller('   ') === null);
+  ok('String → {name}', JSON.stringify(normalizeBesteller(' Max Müller ')) === JSON.stringify({ name: 'Max Müller', funktion: '', email: '', telefon: '' }));
+  const b = normalizeBesteller({ name: ' Max Müller ', funktion: ' Einkauf ', email: ' max@kunde.de ', telefon: ' 030 1 ' });
+  ok('Objekt: Felder getrimmt', b.name === 'Max Müller' && b.funktion === 'Einkauf' && b.email === 'max@kunde.de' && b.telefon === '030 1');
+  ok('Objekt ohne Name → null (auch mit Funktion)', normalizeBesteller({ funktion: 'Einkauf' }) === null);
+
+  // validateBesteller: optional → leer gültig; Name-Pflicht nur wenn Restangaben da; E-Mail formal.
+  ok('leer/null gültig (optional)', validateBesteller(null).length === 0 && validateBesteller('').length === 0);
+  ok('reiner Name gültig', validateBesteller('Max Müller').length === 0);
+  ok('vollständiges Objekt gültig', validateBesteller({ name: 'Max', email: 'm@x.de' }).length === 0);
+  ok('Funktion ohne Name → Fehler', validateBesteller({ funktion: 'Einkauf' }).some((e) => /Name/.test(e)));
+  ok('nur Name (kein Rest) ohne Name-Objekt → kein Fehler', validateBesteller({ name: '' }).length === 0);
+  ok('ungültige E-Mail → Fehler', validateBesteller({ name: 'Max', email: 'keine-mail' }).some((e) => /E-Mail/.test(e)));
+  ok('zu langer Name → Fehler', validateBesteller({ name: 'x'.repeat(121) }).some((e) => /lang/.test(e)));
+
+  // Anzeige + Dokumentzeile.
+  ok('Label mit Funktion', bestellerLabel({ name: 'Max Müller', funktion: 'Einkauf' }) === 'Max Müller (Einkauf)');
+  ok('Label ohne Funktion', bestellerLabel('Max Müller') === 'Max Müller');
+  ok('Label leer ohne Person', bestellerLabel(null) === '');
+  ok('z.Hd.-Zeile mit Funktion', bestellerKontaktzeile({ name: 'Max Müller', funktion: 'Einkauf' }) === 'z. Hd. Max Müller (Einkauf)');
+  ok('z.Hd.-Zeile ohne Funktion', bestellerKontaktzeile('Max Müller') === 'z. Hd. Max Müller');
+  ok('z.Hd.-Zeile leer ohne Person', bestellerKontaktzeile(null) === '');
+  // Prime Directive: E-Mail/Telefon erscheinen NICHT auf der Dokumentzeile.
+  ok('Dokumentzeile ohne E-Mail/Telefon', !/@|030/.test(bestellerKontaktzeile({ name: 'Max', funktion: 'Einkauf', email: 'm@x.de', telefon: '030' })));
+
+  // validateAuftrag bezieht die Besteller-Prüfung mit ein (additiv, optional).
+  const basis = { titel: 'x', positionen: [{ menge: 1, einzelpreisCent: 100, ustSatz: 19 }] };
+  ok('Auftrag ohne Besteller gültig', validateAuftrag(basis).length === 0);
+  ok('Auftrag mit gültigem Besteller gültig', validateAuftrag({ ...basis, besteller: { name: 'Max', email: 'm@x.de' } }).length === 0);
+  ok('Auftrag mit ungültiger Besteller-E-Mail → Fehler', validateAuftrag({ ...basis, besteller: { name: 'Max', email: 'x' } }).some((e) => /E-Mail/.test(e)));
 });
 
 await section('Rechnung → Buchung (Ausgangsrechnung, mehrere Sätze)', () => {

@@ -5,10 +5,11 @@
 
 import { auftragSummen, positionNetto } from './orders.js';
 import { faelligAmVon } from './mahnwesen.js';
+import { normalizeBesteller } from './besteller.js';
 
 /**
  * Baut ein strukturiertes Rechnungs-Dokument aus Auftrag + Stammdaten.
- * @param p.auftrag  {titel, positionen:[{beschreibung?,menge,einzelpreisCent,ustSatz}], zahlungszielTage?}
+ * @param p.auftrag  {titel, positionen:[{beschreibung?,menge,einzelpreisCent,ustSatz}], zahlungszielTage?, besteller?}
  * @param p.kunde    {name, adresse, ustId, email}
  * @param p.firma    {name, anschrift, steuernummer, ustId, iban}
  * @param p.nummer   fortlaufende Rechnungsnummer (oder leer = Entwurf)
@@ -37,6 +38,9 @@ export function baueRechnung({ auftrag = {}, kunde = {}, firma = {}, nummer = ''
     zahlbarBis,
     zahlungszielTage: zielTage,
     firma, kunde,
+    // Handelnde Person als Besteller (P10): Ansprechpartner beim Empfänger. Erscheint
+    // auf dem Dokument als knappe „z. Hd."-Zeile (Name + Funktion); null = ohne.
+    besteller: normalizeBesteller(auftrag.besteller),
     titel: auftrag.titel || '',
     positionen: (auftrag.positionen || []).map((p) => ({
       beschreibung: p.beschreibung || '',
