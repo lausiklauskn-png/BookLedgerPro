@@ -5,6 +5,38 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Sprint S3: P3 + P4 — Aufklärungstexte (KI-Autonomiestufen + Kleinunternehmer/Drittdaten) [Branch `claude/autonomie-kleinunternehmer-docs-5uuq74`]
+
+**Was getan**
+- **P3 + P4** als In-App-Aufklärung in „Recht & Dokumentation". Reine Daten + Selektoren zuerst,
+  node-getestet; dann UI „statisch geprüft" (kein Headless-Browser hier).
+- **Reine Logik** `src/domain/aufklaerung.js` (node-getestet, **+22 → 1858/1858**):
+  - `AUTONOMIE_STUFEN` — die drei App-Stufen `suggest`/`draft`/`auto` (deckungsgleich mit `state.AI_LEVELS`),
+    je Titel, Kurztext und 3 erklärenden Punkten (was die KI tut, was manuell bleibt).
+  - `AUTONOMIE_GRENZEN` — die harte Grenze in JEDER Stufe: **Festschreiben bleibt manuell** (GoBD), Korrektur
+    nur per Storno, kein Datenabfluss ohne Bestätigung, Endverantwortung beim Nutzer.
+  - `KLEINUNTERNEHMER_DRITTDATEN` — § 19 UStG befreit NUR von der USt, nicht von DSGVO/Aufbewahrung: Punkte zu
+    Art. 6/13/14/28/32 DSGVO, Verarbeitungsverzeichnis-Schwelle Art. 30 Abs. 5, Aufbewahrung § 147 AO/§ 257 HGB
+    vor Löschverlangen, verschlüsselte Belege Dritter, AVV bei externer EU-KI.
+  - Selektoren `autonomieStufe(id)`, `aktiveAutonomieStufe(settings)` (Fallback `suggest`),
+    `drittdatenHinweisRelevant(aiConfig)` (true sobald ein EU-KI-Schlüssel gesetzt ist).
+- **UI** `src/ui/views/legal.js`: zwei neue Karten — „KI-Autonomiestufen" (alle drei Stufen erklärt, die aktuell
+  in den Einstellungen gewählte Stufe markiert, darunter die festen Grenzen) und „Kleinunternehmer & fremde Daten"
+  (Einleitung + Punkte; betont den AVV-Hinweis, wenn externe EU-KI konfiguriert ist — `getAiConfig()` async).
+  i18n de+en (`legal.autonomie*`, `legal.drittdaten*`), neue CSS-Klassen (`legal-stufe`/`legal-liste`/`.note`).
+- **SW** `CACHE_VERSION` `v144 → v145`, neues Modul precacht. **125 JS-Module.**
+
+**Stand**
+- `node tests/run.mjs` → **1858/1858 grün**. Reine Logik abgedeckt; Karten-Texte sind bewusst deutsch (wie die
+  bestehenden GOBD/DSGVO-Blöcke), nur Titel/Hinweise sind i18n.
+
+**Offen / Nächstes**
+- Sprint-Pointer steht jetzt auf **S4 · P2 — KI-Anbieterwahl je Modus (strikt EU)**.
+- **Statisch geprüft, NICHT im Browser verifiziert:** Darstellung/Hervorhebung der aktiven Stufe und der async
+  AVV-Betonung (kein Headless-Browser in dieser Umgebung).
+
+---
+
 ## 2026-06-19 — Sprint S2: P10 — handelnde Person als Besteller [Branch `claude/actor-orderer-invoice-rw7ec4`]
 
 **Was getan**

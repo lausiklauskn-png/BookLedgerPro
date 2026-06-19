@@ -19,14 +19,15 @@ obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sic
 STAND: Block 1 + 2 KOMPLETT · Block 3 (Liquidität) ausgebaut · Block 4 (V-Lohn — Lohn-Buchungskern) KOMPLETT
 (L1–L6, `docs/LOHN.md`) · P6 (CSV/vCard-Kundenimport) erledigt (#167) · Transparenzbericht in der App verlinkt
 („Recht & Doku", stets aktuell) · **Sprint S1 → P9 (Datei-Import mit exaktem Schlüssel-Abgleich) ✅** · **Sprint S2 →
-P10 (handelnde Person als Besteller) ✅ erledigt** (`src/domain/besteller.js` + Verdrahtung Auftrag→Rechnung + UI in
-`src/ui/views/orders.js`). **SW `v144`, Tests `1836/1836` grün, 124 JS-Module.**
+P10 (handelnde Person als Besteller) ✅** · **Sprint S3 → P3+P4 (Aufklärungstexte: KI-Autonomiestufen +
+Kleinunternehmer/Drittdaten) ✅ erledigt** (`src/domain/aufklaerung.js` + zwei neue Karten in `src/ui/views/legal.js`).
+**SW `v145`, Tests `1858/1858` grün, 125 JS-Module.**
 
 AUFGABE — **5-Sitzungs-Sprint (mit dem Nutzer vereinbart 2026-06-19): genau diese Punkte abarbeiten, EINER pro
 Sitzung, in dieser Reihenfolge; danach BESPRECHUNG.** Bearbeite in DIESER Sitzung den ERSTEN noch offenen Punkt der
 Liste (Reihenfolge unten) und stelle den Sprint-Pointer am Ende eine Stufe weiter.
 
-**🏃 SPRINT-PLAN (eine Sitzung = ein Punkt) — Pointer steht jetzt auf Sitzung 3 → P3+P4:**
+**🏃 SPRINT-PLAN (eine Sitzung = ein Punkt) — Pointer steht jetzt auf Sitzung 4 → P2:**
 - **[x] Sitzung 1 → P9 — Datei-Import mit exaktem Schlüssel-Abgleich ✅ (2026-06-19):** reine Logik
   `src/ai/schluesselabgleich.js` (+38 → 1810/1810) + UI `src/ui/schluesselabgleich.js` (Einstellungs-Karte
   „Datenschutz bei KI"). SW `v143`.
@@ -38,8 +39,12 @@ Liste (Reihenfolge unten) und stelle den Sprint-Pointer am Ende eine Stufe weite
   `importWorkFloh`, `domain/rechnung.js baueRechnung` (Dokumentfeld `besteller`), `domain/importworkfloh.js`. UI
   `ui/views/orders.js`: 4 Formularfelder + Liste-Label + „z. Hd."-Zeile im Empfängerblock. GoBD: Buchung trägt keinen
   Besteller (mutable CRM-Metadaten). SW `v144`. (Folgeschritt offen: Besteller in die XRechnung als CII-Käuferkontakt.)
-- **[ ] Sitzung 3 → P3 + P4 — Aufklärungstexte:** KI-**Autonomiestufen** (P3) + **Kleinunternehmer**-Pflichten bei
-  Drittdaten (P4) als In-App-Texte in „Recht & Doku"/Einstellungen. Klein, build-frei.
+- **[x] Sitzung 3 → P3 + P4 — Aufklärungstexte ✅ (2026-06-19):** reine Daten + Selektoren `src/domain/aufklaerung.js`
+  (node-getestet, +22 → **1858/1858**): `AUTONOMIE_STUFEN` (suggest/draft/auto, je Titel/Kurztext/Punkte),
+  `AUTONOMIE_GRENZEN` (Festschreiben bleibt manuell/GoBD, Storno statt Löschen, kein Datenabfluss ohne Bestätigung),
+  `KLEINUNTERNEHMER_DRITTDATEN` (§ 19 UStG ≠ DSGVO-Befreiung; Art. 6/13/14/28/32 DSGVO, § 147 AO/§ 257 HGB) +
+  `autonomieStufe`/`aktiveAutonomieStufe`/`drittdatenHinweisRelevant`. UI: zwei neue Karten in „Recht & Doku"
+  (`src/ui/views/legal.js`) — aktive Stufe markiert; Drittdaten-Karte betont AVV bei konfigurierter EU-KI. SW `v145`.
 - **[ ] Sitzung 4 → P2 — KI-Anbieterwahl je Modus:** **strikt innerhalb der EU** (Vision EU / Mistral EU; Nicht-EU
   bleibt geschlossen/dormant). Setting + UI; KEIN neuer Anbieter.
 - **[ ] Sitzung 5 → P8 — QR-Einzelteilen (lokal erzeugt, kein Netz):** braucht einen **vendored, reinen JS-QR-Encoder**
@@ -94,10 +99,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-19 nach **Sprint S2: P10 — handelnde Person als Besteller** (reine Logik
-`src/domain/besteller.js` + Verdrahtung Auftrag→Rechnung + UI `src/ui/views/orders.js`). Mit dem Nutzer vereinbart:
-**5-Sitzungs-Sprint** P9 → P10 → P3+P4 → P2 → P8, **EINER pro Sitzung**, **danach Besprechung**. Selbstständig nach
-Logik/Nutzen handeln; **größere Konflikte/Unklarheiten über `AskUserQuestion` eskalieren**, Kleines selbst entscheiden.
-Tests **1836/1836** · SW **v144** · 124 JS-Module. **Block 1 + 2 KOMPLETT; Block 3 (Liquidität) ausgebaut; Block 4
-(V-Lohn) KOMPLETT (#158–#164); P6 ✓ (#167); P9 ✓; P10 ✓.** Sprint-Pointer steht jetzt auf **Sitzung 3 → P3+P4**.
+**Stand dieses Briefes:** 2026-06-19 nach **Sprint S3: P3+P4 — Aufklärungstexte (KI-Autonomiestufen +
+Kleinunternehmer/Drittdaten)** (reine Daten + Selektoren `src/domain/aufklaerung.js` + zwei neue Karten in
+`src/ui/views/legal.js`). Mit dem Nutzer vereinbart: **5-Sitzungs-Sprint** P9 → P10 → P3+P4 → P2 → P8, **EINER pro
+Sitzung**, **danach Besprechung**. Selbstständig nach Logik/Nutzen handeln; **größere Konflikte/Unklarheiten über
+`AskUserQuestion` eskalieren**, Kleines selbst entscheiden. Tests **1858/1858** · SW **v145** · 125 JS-Module.
+**Block 1 + 2 KOMPLETT; Block 3 (Liquidität) ausgebaut; Block 4 (V-Lohn) KOMPLETT (#158–#164); P6 ✓ (#167); P9 ✓;
+P10 ✓; P3+P4 ✓.** Sprint-Pointer steht jetzt auf **Sitzung 4 → P2 (KI-Anbieterwahl je Modus, strikt EU)**.
 (Diese Zeile + die Sprint-Checkboxen bei jeder Sitzung aktualisieren.)

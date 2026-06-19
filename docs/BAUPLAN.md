@@ -435,8 +435,14 @@
   (persistiert normalisiert) + `importWorkFloh` (Durchreichen), `rechnung.baueRechnung` (Dokumentfeld `besteller`),
   `importworkfloh.normalizeImport` (roh durchreichen). UI `ui/views/orders.js`: 4 Formularfelder + Liste-Label +
   „z. Hd."-Zeile im Empfängerblock der Rechnung. i18n de+en, SW `v144`, 124 Module. DOM/IndexedDB statisch geprüft.
-- [ ] **S3 · P3 + P4 — Aufklärungstexte:** KI-Autonomiestufen (P3) + Kleinunternehmer-Pflichten bei Drittdaten (P4),
-  In-App in „Recht & Doku"/Einstellungen.
+- [x] **S3 · P3 + P4 — Aufklärungstexte ✅ (2026-06-19):** reine Daten + Selektoren `src/domain/aufklaerung.js`
+  (node-getestet, +22 → **1858/1858**): `AUTONOMIE_STUFEN` (suggest/draft/auto — je Titel/Kurztext/Punkte),
+  `AUTONOMIE_GRENZEN` (Festschreiben bleibt manuell, Storno statt Löschen, kein Datenabfluss ohne Bestätigung,
+  Endverantwortung beim Nutzer), `KLEINUNTERNEHMER_DRITTDATEN` (§ 19 UStG befreit NUR von USt, nicht von DSGVO/
+  Aufbewahrung — Punkte zu Art. 6/13/14/28/32 DSGVO, § 147 AO/§ 257 HGB) + Selektoren `autonomieStufe`,
+  `aktiveAutonomieStufe` (Fallback suggest), `drittdatenHinweisRelevant`. UI: zwei neue Karten in „Recht & Doku"
+  (`src/ui/views/legal.js`) — Autonomiestufen mit Markierung der aktiv eingestellten Stufe + Grenzen; Drittdaten-Karte
+  mit AVV-Betonung, wenn EU-KI konfiguriert. i18n de+en, CSS, SW `v145`, 125 Module. DOM statisch geprüft.
 - [ ] **S4 · P2 — KI-Anbieterwahl je Modus**, strikt innerhalb der EU (Nicht-EU bleibt geschlossen). Setting + UI.
 - [ ] **S5 · P8 — QR-Einzelteilen (lokal erzeugt):** braucht einen vendored reinen JS-QR-Encoder (build-frei prüfen;
   sonst ehrlich als blockiert melden).

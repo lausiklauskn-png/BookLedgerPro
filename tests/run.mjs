@@ -173,6 +173,10 @@ import {
   sandboxDbNamen, aktiveDbName, aktiverSandbox, naechsterTestName,
 } from '../src/domain/mandanten.js';
 import { DB_SUFFIX, getActiveDbName, setActiveDbName, closeDb, LEGACY_DB_NAME as DB_LEGACY_NAME } from '../src/core/db.js';
+import {
+  AUTONOMIE_STUFEN, AUTONOMIE_GRENZEN, KLEINUNTERNEHMER_DRITTDATEN,
+  autonomieStufe, aktiveAutonomieStufe, drittdatenHinweisRelevant,
+} from '../src/domain/aufklaerung.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -5307,6 +5311,46 @@ await section('Adaptiver Baukasten (Schritt 11 — Nutzungszähler + Sortierung 
   ok('verschiebeNachOben 0 (oberste) → unverändert', verschiebeNachOben(pos, 0).map((x) => x.beschreibung).join('') === 'ABCD');
   ok('verschiebeNachUnten 1', verschiebeNachUnten(pos, 1).map((x) => x.beschreibung).join('') === 'ACBD');
   ok('verschiebeNachUnten letzte → unverändert', verschiebeNachUnten(pos, 3).map((x) => x.beschreibung).join('') === 'ABCD');
+});
+
+await section('Aufklärung: KI-Autonomiestufen + Kleinunternehmer-Drittdaten', () => {
+  // Stufen decken exakt die App-Autonomiestufen ab (state.AI_LEVELS).
+  ok('genau 3 Stufen', AUTONOMIE_STUFEN.length === 3);
+  ok('Stufen-Ids = suggest/draft/auto in Reihenfolge',
+    AUTONOMIE_STUFEN.map((s) => s.id).join(',') === 'suggest,draft,auto');
+  ok('jede Stufe hat Titel, Kurztext und ≥1 Punkt',
+    AUTONOMIE_STUFEN.every((s) => s.titel && s.kurz && Array.isArray(s.punkte) && s.punkte.length >= 1));
+
+  // Selektor autonomieStufe
+  ok('autonomieStufe(draft) liefert die richtige Stufe', autonomieStufe('draft').titel === 'Auto-Entwurf + Review');
+  ok('autonomieStufe(unbekannt) = null', autonomieStufe('xxx') === null);
+  ok('autonomieStufe(undefined) = null', autonomieStufe(undefined) === null);
+
+  // aktiveAutonomieStufe — fällt sicher auf suggest zurück
+  ok('aktiveAutonomieStufe nimmt Setting', aktiveAutonomieStufe({ aiAutonomy: 'auto' }).id === 'auto');
+  ok('aktiveAutonomieStufe ohne Setting → suggest', aktiveAutonomieStufe({}).id === 'suggest');
+  ok('aktiveAutonomieStufe(null) → suggest', aktiveAutonomieStufe(null).id === 'suggest');
+  ok('aktiveAutonomieStufe bei Unfug → suggest', aktiveAutonomieStufe({ aiAutonomy: 'unfug' }).id === 'suggest');
+
+  // Grenzen: Festschreiben bleibt manuell (GoBD) — muss explizit vorkommen.
+  ok('Grenzen nennen ≥3 Punkte', AUTONOMIE_GRENZEN.length >= 3);
+  ok('Grenzen nennen „Festschreiben"', AUTONOMIE_GRENZEN.some((g) => /Festschreiben/i.test(g)));
+  ok('Grenzen nennen „Storno"', AUTONOMIE_GRENZEN.some((g) => /Storno/i.test(g)));
+
+  // Kleinunternehmer/Drittdaten: §19 ≠ DSGVO-Befreiung, Aufbewahrung erwähnt.
+  ok('Drittdaten-Einleitung nennt § 19', /§\s*19/.test(KLEINUNTERNEHMER_DRITTDATEN.einleitung));
+  ok('Drittdaten-Punkte ≥5', KLEINUNTERNEHMER_DRITTDATEN.punkte.length >= 5);
+  ok('Drittdaten nennt DSGVO', KLEINUNTERNEHMER_DRITTDATEN.punkte.some((p) => /DSGVO/.test(p)));
+  ok('Drittdaten nennt Aufbewahrung (§ 147 AO / § 257 HGB)',
+    KLEINUNTERNEHMER_DRITTDATEN.punkte.some((p) => /147 AO|257 HGB/.test(p)));
+  ok('Drittdaten nennt Auftragsverarbeitung (Art. 28)',
+    KLEINUNTERNEHMER_DRITTDATEN.punkte.some((p) => /Art\.\s*28/.test(p)));
+
+  // drittdatenHinweisRelevant: relevant, sobald ein EU-KI-Schlüssel gesetzt ist.
+  ok('relevant bei Vision-Key', drittdatenHinweisRelevant({ visionKey: 'x' }) === true);
+  ok('relevant bei Mistral-Key', drittdatenHinweisRelevant({ mistralKey: 'y' }) === true);
+  ok('nicht relevant ohne Keys', drittdatenHinweisRelevant({}) === false);
+  ok('nicht relevant bei null', drittdatenHinweisRelevant(null) === false);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
