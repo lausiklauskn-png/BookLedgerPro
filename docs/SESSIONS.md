@@ -5,6 +5,35 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Transparenzbericht (HTML-Update + in-App-Link) · P6 CSV/vCard-Import · 5-Sitzungs-Sprint vereinbart
+
+**Was getan**
+- **#165** Transparenzbericht `docs/TRANSPARENZ_ZWISCHENSTAND.html` auf Stand 19.06. (Test-Modus/Datensicherung/Angebote/
+  Liquidität/Lohn von „geplant" → ✓; K1–K6, Zahlen aktualisiert).
+- **#166** Transparenzbericht **in der App** verlinkt: Karte in „Recht & Doku" → öffnet die EINE Quelle
+  `docs/…html` (Navigationen netz-zuerst → stets aktuell; offline gecacht). SW-Navigations-Fallback verbessert.
+- **#167 P6** Kundenimport aus **CSV und vCard** — reine Logik `domain/kundenimport.js` (`parseKundenCsv`/`parseVcard`/
+  `normalizeKunde`/`importKundenAusText`, +18 → **1772/1772**) + Import-Karte `ui/views/customers.js` (verschlüsselt,
+  vorhandene Namen übersprungen) + additives Feld `telefon` in `crm-store.saveKunde`. SW `v142`.
+
+**Stand**
+- **Tests 1772/1772 grün · SW v142 · 121 JS-Module.** Block 1+2 komplett · Block 3 (Liquidität) ausgebaut · Block 4
+  (V-Lohn) komplett · P6 ✓.
+
+**Nächstes / Vereinbarung (Nutzer 2026-06-19)**
+- **5-Sitzungs-Sprint, EINER pro Sitzung, danach Besprechung:** S1 P9 (Schlüssel-genauer Import) · S2 P10 (Besteller-
+  Person) · S3 P3+P4 (Aufklärungstexte) · S4 P2 (KI-Anbieterwahl, EU) · S5 P8 (QR, vendored Encoder). Plan in
+  `docs/BAUPLAN.md` Block 5 + `docs/NAECHSTE_SITZUNG.md` (COPY-Block, Sprint-Pointer auf **S1 → P9**).
+- **Arbeitsauftrag:** selbstständig nach Logik + Nutzen; **größere Konflikte/Unklarheiten über `AskUserQuestion`
+  eskalieren** (Datenmodell/GoBD/Krypto, Mehrdeutigkeit, Regel-Konflikt, nicht-build-frei, Architektur-/Merge-Konflikt),
+  Kleines selbst entscheiden.
+
+**Offene Grenzen / ungetestet**
+- Reine Logik node-getestet; DOM/IndexedDB **statisch geprüft** (kein Headless-Browser). Browser-Sichttest (Lohn-Ansicht,
+  Transparenz-Link, Kundenimport) steht beim Nutzer aus.
+
+---
+
 ## 2026-06-18 — V-Lohn: Lohn-Buchungskern KOMPLETT (L1–L6) + Liquiditäts-Treiber [mehrere Branches]
 
 **Nachtrag (L4–L6):** Der Lohn-Track wurde in dieser Sitzung **vollständig** abgeschlossen.

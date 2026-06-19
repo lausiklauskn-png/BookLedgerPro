@@ -415,7 +415,25 @@
   Workflow, Konten-Referenz, ehrliche Grenzen, Test-Modus-Hinweis); PULS/SESSIONS/OFFENE_PUNKTE/NAECHSTE_SITZUNG
   fortgeschrieben. **→ Block 4 (V-Lohn) KOMPLETT (L1–L6).**
 
+### Block 5 — P-Sprint (5 Sitzungen, EINER pro Sitzung, danach Besprechung — Nutzer 2026-06-19)
+> Vom Nutzer am 2026-06-19 vereinbart: die folgenden P-Punkte (aus dem Transparenzbericht §8) in genau
+> dieser Reihenfolge, **eine Sitzung = ein Punkt**, **danach Besprechung** (nicht selbstständig
+> weiterlaufen). Arbeitsauftrag: selbstständig nach Logik + Nutzen; **größere Konflikte/Unklarheiten über
+> `AskUserQuestion` eskalieren**, Kleines selbst entscheiden. Paste-fertiger Auftrag: `docs/NAECHSTE_SITZUNG.md`.
+- [ ] **S1 · P9 — Datei-Import mit exaktem Schlüssel-Abgleich:** pseudonymisierte/anker-basierte Daten verlustfrei
+  zurück auf echte Werte abbilden (Token ↔ Klartext, Briefkasten/Anker-Tresor `src/ai/anker.js`/`briefkasten.js`/
+  `pseudonym.js`). Reine Logik zuerst node-getestet, dann UI.
+- [ ] **S2 · P10 — handelnde Person als Besteller** an Auftrag/Rechnung (Datenmodell additiv + UI-Feld; Prime
+  Directive/GoBD beachten).
+- [ ] **S3 · P3 + P4 — Aufklärungstexte:** KI-Autonomiestufen (P3) + Kleinunternehmer-Pflichten bei Drittdaten (P4),
+  In-App in „Recht & Doku"/Einstellungen.
+- [ ] **S4 · P2 — KI-Anbieterwahl je Modus**, strikt innerhalb der EU (Nicht-EU bleibt geschlossen). Setting + UI.
+- [ ] **S5 · P8 — QR-Einzelteilen (lokal erzeugt):** braucht einen vendored reinen JS-QR-Encoder (build-frei prüfen;
+  sonst ehrlich als blockiert melden).
+- [ ] **Danach: BESPRECHUNG mit dem Nutzer** (Bilanz + neue Richtung).
+
 ## Abhängigkeiten (kurz)
 8 braucht 7+4 · 7 braucht 5(+4) · 9 braucht 7 · 10 braucht 9 · 11 ist Präsentation (nach 7).
 Block 1 ist unabhängig und kommt zuerst (Sicherheit/Vertrauen).
 **Block 4 (V-Lohn):** L2 braucht L1 · L3 braucht L2 · L4/L5 brauchen L2 · L6 zuletzt.
+**Block 5 (P-Sprint):** strikt sequenziell S1→S5, je 1 Sitzung, danach Besprechung.

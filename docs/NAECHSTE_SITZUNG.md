@@ -16,29 +16,42 @@ Projekt: BookLedgerPro (lausiklauskn-png/bookledgerpro).
 START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/BAUPLAN.md` + `docs/NACHFOLGE_PLAN.md` +
 obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles.
 
-AUFGABE DIESER SITZUNG: **Eine mit dem Nutzer abgestimmte, in sich abgeschlossene Verbesserung bauen.** Block 1 + 2
-KOMPLETT; Block 3 (Liquidität) ausgebaut; **Block 4 (V-Lohn — Lohn-Buchungskern) KOMPLETT (L1–L6, #158–#163 + Doku
-`docs/LOHN.md`).** BLP **bucht** Lohn/Gehalt GoBD-sicher (Brutto-Methode), **berechnet aber KEINE** Lohnsteuer/SV (kein
-ELStAM/DEÜV/amtl. Tabellen — die Beträge kommen aus der Entgeltabrechnung). **SW `v140`, Tests `1754/1754` grün, 120
-JS-Module.**
+STAND: Block 1 + 2 KOMPLETT · Block 3 (Liquidität) ausgebaut · Block 4 (V-Lohn — Lohn-Buchungskern) KOMPLETT
+(L1–L6, `docs/LOHN.md`) · P6 (CSV/vCard-Kundenimport) erledigt (#167) · Transparenzbericht in der App verlinkt
+(„Recht & Doku", stets aktuell). **SW `v142`, Tests `1772/1772` grün, 121 JS-Module.**
 
-**⏭ NÄCHSTE SCHRITTE (Reihenfolge, mit Nutzer abstimmen):**
-1. **Mein-WorkFloh — Test-Modus (Sandbox)** nach `docs/TEST_MODUS.md` (⇄-Abschnitt „Übertrag an Mein-WorkFloh"):
-   wegwerfbarer Sandbox-Speicher getrennt vom echten Bestand (eigener Schlüssel-Präfix `wf_sandbox_*` ODER separate
-   IndexedDB), Behalten/Verwerfen + mehrere Tests + „alle aufräumen", dauerhafter TEST-Banner, optional Demo-Vorbefüllung.
-   **Eigenes Repo `lausiklauskn-png/Mein-WorkFloh`** — ggf. via `list_repos`/`add_repo` in die Sitzung holen.
-2. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — u. a. die **Lohn-Ansicht** (Lohnlauf erfassen →
-   Live-Vorschau → speichern → „Buchen (Entwurf)" → im Journal festschreiben; Lohnsteuer-Anmeldung-Download; offene
-   Lohnabgaben; Lohnkonto).
-3. **Sonst:** umgebungs-/menschen-blockierte Punkte (Server-/Offsite-Backup; WorkFloh-Format-Exporter; Sage 5b–d) oder
-   eine neue, mit dem Nutzer vereinbarte Idee. Bekannt blockiert: Lighthouse/Perf, lokales OCR, ZUGFeRD-Erzeugen.
+AUFGABE — **5-Sitzungs-Sprint (mit dem Nutzer vereinbart 2026-06-19): genau diese Punkte abarbeiten, EINER pro
+Sitzung, in dieser Reihenfolge; danach BESPRECHUNG.** Bearbeite in DIESER Sitzung den ERSTEN noch offenen Punkt der
+Liste (Reihenfolge unten) und stelle den Sprint-Pointer am Ende eine Stufe weiter.
+
+**🏃 SPRINT-PLAN (eine Sitzung = ein Punkt):**
+- **[ ] Sitzung 1 → P9 — Datei-Import mit exaktem Schlüssel-Abgleich:** pseudonymisierte/anker-basierte Daten
+  verlustfrei wieder den echten Werten zuordnen (Token ↔ Klartext über den Briefkasten/Anker-Tresor; siehe
+  `src/ai/anker.js`, `src/ai/briefkasten.js`, `src/ai/pseudonym.js`). Reine Logik ZUERST node-getestet, dann UI.
+- **[ ] Sitzung 2 → P10 — handelnde Person als Besteller:** Auftrag/Rechnung führt die bestellende Person mit
+  (Datenmodell **additiv** + UI-Feld). Prime Directive/GoBD beachten — nichts Internes nach außen.
+- **[ ] Sitzung 3 → P3 + P4 — Aufklärungstexte:** KI-**Autonomiestufen** (P3) + **Kleinunternehmer**-Pflichten bei
+  Drittdaten (P4) als In-App-Texte in „Recht & Doku"/Einstellungen. Klein, build-frei.
+- **[ ] Sitzung 4 → P2 — KI-Anbieterwahl je Modus:** **strikt innerhalb der EU** (Vision EU / Mistral EU; Nicht-EU
+  bleibt geschlossen/dormant). Setting + UI; KEIN neuer Anbieter.
+- **[ ] Sitzung 5 → P8 — QR-Einzelteilen (lokal erzeugt, kein Netz):** braucht einen **vendored, reinen JS-QR-Encoder**
+  (build-frei: eigene Datei, keine npm/CDN-Runtime; Lizenz prüfen). Geht das NICHT sauber build-frei → ehrlich als
+  blockiert melden statt zu tricksen (dann beim Nutzer rückfragen).
+- **[ ] DANACH: BESPRECHUNG mit dem Nutzer** — NICHT selbstständig den nächsten Sprint starten. COPY-Block auf
+  „Sprint abgeschlossen → Besprechung" stellen, Bilanz im Chat ausgeben, neue Richtung abstimmen.
+
+**🤝 ARBEITSAUFTRAG (Nutzer 2026-06-19): selbstständig handeln nach Logik + Nutzen für App und Nutzer.** Kleinere
+Entscheidungen (Benennung, UI-Detail, Konto-/Feldwahl, Test-Fälle, Reihenfolge innerhalb eines Punkts) selbst treffen
+und durchziehen. **Bei GRÖSSEREN Konflikten/Unklarheiten INNEHALTEN und über `AskUserQuestion` rückfragen** — nämlich
+wenn: ein Eingriff ins **Datenmodell/GoBD/Krypto** nötig wird; eine Anforderung **mehrdeutig** ist; etwas der bestehenden
+Logik oder den **unverrückbaren Regeln** widerspricht; ein Punkt sich als **nicht build-frei/blockiert** erweist; oder ein
+**echter Architektur-/Merge-Konflikt** auftritt, den ein Rebase nicht sauber löst. Lieber einmal kurz fragen als eine
+große, schwer rückbaubare Sache raten. **Merge-Konflikte** zuerst selbst lösen (`git fetch origin main && git reset
+--hard origin/main`, neu aufsetzen); nur den *inhaltlichen* Konflikt eskalieren.
 
 **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln grün +
 gemergt; reine Logik ZUERST node-getestet, dann UI „statisch geprüft"). **Hinweis:** Ist die Sitzung an genau einen
 Branch gebunden, dürfen Feature + Abschlussbrief in einer PR liegen.
-2. **Sonst:** umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server;
-   WorkFloh-Gegenstücke — fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt
-   blockiert:** Lighthouse/Perf, lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
 
 RITUAL JE PR (verbindlich, automatisch durchziehen):
 1) `git fetch origin main && git reset --hard origin/main`; pro PR einen eigenen
@@ -62,8 +75,10 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 - Obersten `docs/SESSIONS.md`-Eintrag schreiben (Was getan · Stand · Nächstes · offene Grenzen).
 - `docs/OFFENE_PUNKTE.md` pflegen.
 - **Diese Datei `docs/NAECHSTE_SITZUNG.md` neu schreiben**, sodass der COPY-Block auf den dann
-  nächsten Schritt zeigt — und den Auftrag „ABSCHLUSSBRIEF AM ENDE (PFLICHT)" inkl. **dieser
-  Selbst-Fortschreibungs-Anweisung beibehält** (die Kette darf nie abreißen).
+  nächsten Schritt zeigt — **den erledigten Sprint-Punkt oben abhaken (`[x]`) und den Sprint-Pointer
+  eine Stufe weiterstellen**; nach Sitzung 5 den COPY-Block auf **„BESPRECHUNG mit dem Nutzer"**
+  setzen (innehalten, NICHT weiterbauen). Den Auftrag „ABSCHLUSSBRIEF AM ENDE (PFLICHT)" inkl.
+  **dieser Selbst-Fortschreibungs-Anweisung beibehalten** (die Kette darf nie abreißen).
 - Den fertigen COPY-Block am Sitzungsende auch im Chat ausgeben, damit er direkt in die
   nächste Sitzung eingefügt werden kann.
 
@@ -71,11 +86,9 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 4 — V-Lohn KOMPLETT (L1–L6)**: Lohn-Buchungskern voll
-bedienbar (erfassen → Live-Vorschau → buchen → Lohnsteuer-Anmeldung-Datenpaket → offene Lohnabgaben → Lohnkonto), Doku
-`docs/LOHN.md`. Tests **1754/1754** · SW **v140** · 120 JS-Module. **⏭ Nächstes (Nutzer-Wunsch):** Mein-WorkFloh
-Test-Modus nach `docs/TEST_MODUS.md` (eigenes Repo); sonst Browser-Sichttest der Lohn-Ansicht oder neue abgestimmte Idee.
-**Block 1 + Block 2 KOMPLETT; Block 3 (Liquidität) ausgebaut inkl. Treiber #157; Block 4 (V-Lohn) KOMPLETT (#158–#163).**
-**Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
-oder eine neue, mit dem Nutzer vereinbarte Idee.
-Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-19 nach **P6 (CSV/vCard-Kundenimport, #167)** + **Transparenzbericht in der App
+verlinkt (#166)**. Mit dem Nutzer vereinbart: **5-Sitzungs-Sprint** P9 → P10 → P3+P4 → P2 → P8, **EINER pro Sitzung**,
+**danach Besprechung**. Selbstständig nach Logik/Nutzen handeln; **größere Konflikte/Unklarheiten über `AskUserQuestion`
+eskalieren**, Kleines selbst entscheiden. Tests **1772/1772** · SW **v142** · 121 JS-Module.
+**Block 1 + 2 KOMPLETT; Block 3 (Liquidität) ausgebaut; Block 4 (V-Lohn) KOMPLETT (#158–#164); P6 ✓ (#167).**
+Sprint-Pointer steht auf **Sitzung 1 → P9**. (Diese Zeile + die Sprint-Checkboxen bei jeder Sitzung aktualisieren.)

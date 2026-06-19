@@ -102,9 +102,24 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „V-Lohn L6 — Block 4 KOMPLETT"):** SW **v140** · Tests **1754/1754** grün · 120 JS-Module.
+**Kopf-Status (Stand nach „P6 — CSV/vCard-Kundenimport"):** SW **v142** · Tests **1772/1772** grün · 121 JS-Module.
 
-**V-Lohn — Lohn-Buchungskern KOMPLETT (diese Sitzung, BAUPLAN Block 4 — Nutzer-Entscheidung 2026-06-18):** Finiter
+**⏭ START HIER → 5-Sitzungs-Sprint (Nutzer 2026-06-19):** genau diese Punkte, **EINER pro Sitzung**, danach
+**Besprechung**: **Sitzung 1 → P9** (Datei-Import mit exaktem Schlüssel-Abgleich, Pseudonym/Anker) · **2 → P10**
+(handelnde Person als Besteller) · **3 → P3+P4** (KI-Autonomiestufen + Kleinunternehmer-Aufklärung) · **4 → P2**
+(KI-Anbieterwahl je Modus, strikt EU) · **5 → P8** (QR-Einzelteilen, vendored reiner JS-Encoder). **Arbeitsauftrag:**
+selbstständig nach Logik + Nutzen handeln; **größere Konflikte/Unklarheiten über `AskUserQuestion` eskalieren**, Kleines
+selbst entscheiden. Details + Sprint-Pointer im **paste-fertigen COPY-Block** in `docs/NAECHSTE_SITZUNG.md`.
+
+**P6 — CSV/vCard-Kundenimport ✅ (#167, 2026-06-19):** reine Logik `domain/kundenimport.js` (`parseKundenCsv`/
+`parseVcard`/`normalizeKunde`/`importKundenAusText`, +18 → **1772/1772**) + Import-Karte in `ui/views/customers.js`
+(verschlüsselt, vorhandene Namen übersprungen) + additives Feld `telefon` in `crm-store.saveKunde`. SW `v142`.
+**Davor — Transparenzbericht in der App ✅ (#166):** „Recht & Doku" verlinkt `docs/TRANSPARENZ_ZWISCHENSTAND.html`
+(eine Quelle der Wahrheit, netz-zuerst → stets aktuell, offline gecacht).
+
+---
+
+**V-Lohn — Lohn-Buchungskern KOMPLETT (BAUPLAN Block 4 — Nutzer-Entscheidung 2026-06-18):** Finiter
 Track (6 Schritte), **L1–L6 erledigt + gemergt** (#158/#159/#160/#162/#163 + Doku). **Scope bewusst eng:** BLP ist die **prüfungssichere Buchhaltungsschicht** für die Lohnabrechnung,
 **nicht die Abrechnung selbst** — es berechnet KEINE Lohnsteuer/SV (kein ELStAM/DEÜV/amtl. Tabellen); die Beträge kommen
 aus der Entgeltabrechnung des Lohnbüros/Beraters. **L1 ✅ (#158)** reine Logik `domain/lohnbuchung.js` (Brutto-Methode
