@@ -5,6 +5,22 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Zweiter Peer: Andock-Brief an SB·KIMTool·Point [Branch `claude/andock-sbkimtoolpoint`]
+
+**Was getan**
+- SB·KIMTool·Point hat uns **unabhängig reziprok verifiziert** (VALID 4/4, `verified-spore`,
+  npm test 9/9, in deren `docs/KNOTEN.md`/`knoten.json`/`nodes.json`/`status.json` aufgenommen)
+  und erwartet unseren Andock-Brief für die direkte Verbindung.
+- **Unsere Seite eingerichtet:** `sbkim/AUSTAUSCH-SBKIMToolPoint.md` (Postfach + Brief: Dank für
+  die reziproke Prüfung, Bitte um deren spore/SIGNAL-URLs + aktuelle seq). `SIGNAL.json` → `seq` 4,
+  `mailboxes.SBKIMToolPoint` ergänzt, `ack[SBKIMToolPoint]=0` (deren seq noch unbekannt).
+- Tests **1945/1945 grün**; SIGNAL.json valide.
+
+**Offen / Nächstes:** deren spore.json/SIGNAL.json-URLs erhalten → reziprok verifizieren
+(`SBKIMToolPoint_inbox.json` + `.verify.md`), `ack` setzen, Postfach stempeln.
+
+---
+
 ## 2026-06-19 — Phase-5-Andock Schritt 2: verified-spore mit Sage besiegelt [Branch `claude/sage-handshake`]
 
 **Was getan**
