@@ -21,6 +21,7 @@ import { mountOrders } from './views/orders.js';
 import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
+import { mountSafebox } from './views/safebox.js';
 import { mountDashboard } from './views/dashboard.js';
 import { getAiConfig, saveAiConfig, MISTRAL_MODELS } from '../ai/aiConfig.js';
 import { testVision } from '../ai/vision.js';
@@ -36,6 +37,7 @@ const NAV = [
   ['employees', 'nav.employees'],
   ['reports', 'nav.reports'],
   ['network', 'nav.network'],
+  ['safebox', 'nav.safebox'],
   ['legal', 'nav.legal'],
   ['settings', 'nav.settings'],
 ];
@@ -108,6 +110,7 @@ function renderRoute() {
   if (route === 'employees') return void mountEmployees(content);
   if (route === 'legal') return void mountLegal(content);
   if (route === 'network') return void mountNetwork(content);
+  if (route === 'safebox') return void mountSafebox(content);
   return mount(content, viewPlaceholder(route));
 }
 

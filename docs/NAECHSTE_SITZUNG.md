@@ -18,8 +18,11 @@
 
 ## ⚠ ZUERST ERLEDIGEN (Nutzer)
 **Privaten Schlüssel sichern.** `sbkim/.node-secret.json` (gitignored) ist der einzige
-Weg, den Knoten zu signieren/rotieren. Entweder sicher verwahren **oder** in der App
-(Ansicht „Mycel-Netz" → „Bestehende Identität importieren") in den Tresor übernehmen.
+Weg, den Knoten zu signieren/rotieren. Wege:
+- In der App (Ansicht „Mycel-Netz" → „Bestehende Identität importieren") in den Tresor übernehmen.
+- **NEU:** im **Geheim-Fach** ablegen (Ansicht „Geheim-Fach" → Eintrag Typ „Schlüssel") —
+  separat mit zweitem Code verschlüsselt, mit eigenem Shamir-Backup.
+- Sonst sicher verwahren (das per Chat übergebene ZIP).
 Geht er verloren: `node tools/mint_spore.mjs --force` (nodeId wechselt → Mycel neu andocken).
 
 ## ⏭ NÄCHSTE SCHRITTE (Priorität)

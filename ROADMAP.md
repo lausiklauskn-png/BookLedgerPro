@@ -91,6 +91,18 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 > Live-Schritt (Hub-Registrierung, Handshake) erfolgt menschlich vermittelt (Modul 09).
 > Der `domainVector` ist noch `_demo` → ermöglicht `verified-spore`, nicht `verified-match`.
 
+## ✅ Geheim-Fach (Tresor im Tresor)
+- [x] `src/core/safebox.js`: unabhängig verschlüsselter Bereich mit EIGENEM Code (eigener
+      PBKDF2/AES-GCM-Schlüssel, eigenes Salt), Fach-Key nur im RAM wenn offen (Defense-in-Depth)
+- [x] Eigenes **Shamir-Backup** des Fach-Schlüssels + Recovery (vergessenen Code per Shares
+      ersetzen, Inhalt bleibt) — Datendurabilität (#2)
+- [x] Ansicht „Geheim-Fach": Einrichten/Entsperren/Recovery, Einträge (Schlüssel/Text/Datei)
+      anlegen/anzeigen/laden/löschen; i18n DE/EN; SW `v27`
+- [x] Kern node-getestet (Versiegeln/Öffnen, falscher Code, Shamir-Recovery, Validierung)
+
+> Vorbild: Mein-Tresor („Tresorraum mit 20 Fächern — jedes Fach = echter AES-Tresor"),
+> gleicher Krypto-Kern. Gedacht u.a. als sicherer Ablageort für den SBKIM-Schlüssel.
+
 ## ◑ Phase 6 — Design-Politur & Bilder
 - [x] Dashboard mit echten Jahres-Kennzahlen (`domain/summary.js`, getestet) + KPI-Karten
 - [x] Dezente **Mycel-Canvas**-Animation am Sperrbildschirm (additiv, **DeX-sicher**,

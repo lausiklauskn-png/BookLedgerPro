@@ -5,6 +5,33 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Geheim-Fach (Tresor im Tresor)
+
+**Was getan (auf Nutzerwunsch)**
+- **`src/core/safebox.js`** — unabhängig verschlüsselter Bereich mit EIGENEM Code, getrennt
+  vom Haupt-Tresor. Eigener PBKDF2/AES-GCM-Schlüssel (eigenes Salt), Fach-Key nur im RAM
+  wenn offen → Defense-in-Depth (bleibt zu, auch wenn der Haupt-Tresor offen ist).
+- **Eigenes Shamir-Backup** des Fach-Schlüssels (3 Shares, 2 nötig) + Recovery-Pfad
+  (`recoverSafebox`: vergessenen Code per Shares ersetzen, ohne Inhalt zu verlieren) —
+  Datendurabilität (#2). Inhalt landet als verschlüsselter Blob auch im Gesamt-Backup
+  (doppelt verschlüsselt).
+- **Ansicht „Geheim-Fach"** (`src/ui/views/safebox.js`, in Nav + Routing): Einrichten →
+  Shares sichern; Entsperren/Recovery; Einträge (Schlüssel/Text/Datei) anlegen, anzeigen/
+  herunterladen, löschen. i18n DE/EN. SW-Cache `v27`.
+- Vorbild **Mein-Tresor** („Tresorraum mit 20 nummerierten Fächern — jedes Fach = echter
+  AES-Tresor"); BLP teilt denselben Krypto-Kern (AES-256-GCM, PBKDF2-600k).
+- Tests **153/153** (Versiegeln/Öffnen, falscher Code, Shamir-Recovery, Validierung).
+
+**Zweck:** sicherer Ort für den SBKIM-Schlüssel + Verträge/Codes. Nutzer kann den geminteten
+SBKIM-Key als ersten Eintrag (Typ „Schlüssel") ablegen.
+
+**Offen / Grenzen (ehrlich)**
+- Storage-Pfad (IndexedDB) + UI nicht headless E2E getestet (kein Browser); Krypto-/Recovery-
+  Kern ist node-getestet. Dateien werden base64 im Blob gehalten → für große Dateien ungeeignet
+  (gedacht für Schlüssel/Verträge/Codes).
+
+---
+
 ## 2026-06-19 — Phase-5-Andock Schritt 1: BookLedgerPro ist ein echter SBKIM-Knoten
 
 **Was getan**

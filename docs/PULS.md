@@ -6,9 +6,10 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 **Letzte Aktualisierung:** 2026-06-19 · **Branch:** `claude/phase-5-sbkim-integration-v1v0ed`
-· **Tests:** `node tests/run.mjs` → **142/142 grün** · **SW-Cache:** `v26`
+· **Tests:** `node tests/run.mjs` → **153/153 grün** · **SW-Cache:** `v27`
 · **Phase-5-Andock Schritt 1 erledigt:** echte `sbkim/spore.json` committet (headless VALID),
   nodeId `MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ`.
+· **Geheim-Fach** (Tresor im Tresor, eigener Code + Shamir) gebaut — Ablageort für den SBKIM-Key.
 
 ---
 
@@ -99,7 +100,7 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 4. **Optional:** Lighthouse/Perf, weitere UX-Politur, lokaler OCR-Fallback.
 
 ## 8. Architektur-Landkarte (wo was liegt)
-- `src/core/` crypto · shamir · db · durability · files · vault · backup
+- `src/core/` crypto · shamir · db · durability · files · vault · **safebox** (Geheim-Fach) · backup
 - `src/domain/` money · accounts · journal · audit · taxes · store · documents · orders ·
   invoicing · employees · costcenters · encstore · crm-store · export · summary
 - `src/ai/` extract · categorize · suggest · **aiConfig · vision · mistral** · taxAssist
@@ -107,7 +108,7 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
   (eine Quelle der Wahrheit) — Tools: `tools/verify_remote_spore.mjs` · **`tools/mint_spore.mjs`**
 - `src/ui/` dom · i18n · theme · mycel · mycelCanvas · empty · lock · shell ·
   `views/` dashboard · accounts · journal · reports · documents · customers · orders ·
-  employees · legal · network
+  employees · legal · network · **safebox** (Geheim-Fach)
 - `assets/` tokens.css · app.css · icon.svg · `icons/` (PWA) · `img/` (Hero/Leerzustände/OG/Onboarding)
 - `sbkim/` (Repo-Root) README · SIGNAL.template.json · AUSTAUSCH-template.md (+ spore.json nach Deploy)
 - `docs/` ARCHITECTURE · ROADMAP · PULS (diese Datei) · SESSIONS · AI · SAGE_BROWSER_LEHREN ·
