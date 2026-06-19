@@ -17,26 +17,34 @@ START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/BAUPLAN.md` + `docs/NAC
 obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles.
 
 STAND: Block 1 + 2 KOMPLETT · Block 3 (Liquidität) ausgebaut · Block 4 (V-Lohn) KOMPLETT (L1–L6,
-`docs/LOHN.md`) · P6 (#167) · **5-Sitzungs-Sprint (Block 5) ABGESCHLOSSEN:** S1·P9 ✅ (#169) · S2·P10 ✅ (#170) ·
-S3·P3+P4 ✅ (#171) · S4·P2 ✅ (#172) · **S5·P8 ✅ — QR-Einzelteilen (vendored reiner JS-QR-Encoder
-`src/core/qr.js`, build-frei, lokal/kein Netz; UI „Als QR anzeigen (lokal)" in der Schlüssel-Abgleich-Karte).**
-**SW `v147`, Tests `1926/1926` grün, 127 JS-Module.**
+`docs/LOHN.md`) · P6 (#167) · 5-Sitzungs-Sprint (Block 5) ABGESCHLOSSEN (S1·P9 #169 · S2·P10 #170 · S3·P3+P4 #171 ·
+S4·P2 #172 · S5·P8 #173). **SW `v147`, Tests `1926/1926` grün, 127 JS-Module.**
+**NEU ABGESTIMMT (2026-06-19, Nutzer): Thema = Sage-Mycel-Andock (Phase 5), Reihenfolge ZUERST Sage/Hub, DANN
+Mein-WorkFloh.** Hintergrund-Brief + E2E-Spec-Frage stehen in `docs/SAGE_E2E_ANFRAGE.md`; Sequenz/Plan in
+`docs/BAUPLAN.md` „Block 6 — Sage-Andock (Phase 5)".
 
-⏭ AUFGABE DIESER SITZUNG — **BESPRECHUNG mit dem Nutzer (KEIN neuer Sprint von selbst!):** Der mit dem Nutzer
-vereinbarte 5-Sitzungs-Sprint (P9 → P10 → P3+P4 → P2 → P8) ist **vollständig erledigt**. **NICHT selbstständig den
-nächsten Bauschritt starten.** Stattdessen:
-1. **Bilanz im Chat** ziehen: was in den fünf Sitzungen entstanden ist (P9/P10/P3+P4/P2/P8), aktueller Stand
-   (Tests/SW/Module), und welche **ehrlichen Grenzen** offen bleiben (v. a.: **physischer QR-Scan-Test braucht ein
-   echtes Gerät**; diverse Browser-Sichttests; umgebungs-/menschen-blockierte [KANN]-Punkte in `docs/OFFENE_PUNKTE.md`).
-2. **Neue Richtung mit dem Nutzer abstimmen** (über `AskUserQuestion`, wenn mehrere sinnvolle Optionen bestehen):
-   z. B. Browser-Sichttests abarbeiten, einen offenen Punkt aus `docs/OFFENE_PUNKTE.md` / `docs/BAUPLAN.md` aufgreifen,
-   oder ein neues Thema. **Erst nach Abstimmung** einen neuen, fein geschnittenen Arbeitsplan beginnen.
+⏭ AUFGABE DIESER SITZUNG — **Phase-5-Andock, Schritt 1: BLP zum echten SBKIM-Knoten machen** (Voraussetzung für ALLES
+Weitere — ohne Spore kann BLP keinen Brief in den Briefkasten werfen). Konkret, **eine saubere PR**:
+1. **Identität + Spore erzeugen** (Ed25519 via WebCrypto **in-app**; `sbkim/spore.json` mit den 9 Pflichtfeldern
+   `createdAt/domain/embeddingModel/endpoint/id/nodeType/protocolVersion/publicKey/signature`; `id =
+   base64url(SHA256(rawPub))`; kanonische Signier-Form = kompaktes JSON ohne `signature`, **rekursiv alphabetisch
+   sortierte Schlüssel**, Ed25519, base64url ohne Padding). `domainVector` vorerst **`_demo`-Stub** markieren
+   (→ Stufe `verified-spore`; echter Vektor/Transformers.js später → `verified-match`).
+2. **`sbkim/SIGNAL.json`** aus dem Template füllen (`seq` ab 1, `nodeId`, `mailboxes`, `forNodes`, `ack:{}`).
+3. **Headless-Beweis:** `node tools/verify_remote_spore.mjs sbkim/spore.json` muss **VALID** urteilen; reine
+   Krypto-/Kanonisierungs-Helfer **node-getestet** (Signatur-Roundtrip, `id`-Ableitung, Sortier-Kanon).
+4. **Den Brief `docs/SAGE_E2E_ANFRAGE.md`** an den Nutzer zum Relayen an Sage geben (Frage 1–3) — die E2E-Antwort
+   entscheidet, ob Grad-B später pseudonym (P9, ohne Spec-Änderung) **oder** verschlüsselt (X25519, nach Spec) läuft.
 
-**🤝 ARBEITSAUFTRAG (weiterhin gültig):** selbstständig nach Logik + Nutzen handeln, Kleines selbst entscheiden;
-**bei GRÖSSEREN Konflikten/Unklarheiten INNEHALTEN und über `AskUserQuestion` rückfragen** (Datenmodell/GoBD/Krypto,
-Mehrdeutigkeit, nicht build-frei/blockiert, echter Merge-Konflikt). Merge-Konflikte zuerst selbst lösen
-(`git fetch origin main && git reset --hard origin/main`, neu aufsetzen); nur den *inhaltlichen* Konflikt eskalieren.
-**Solange noch kein neues Thema abgestimmt ist, ist die einzige Aufgabe die Besprechung — nicht bauen.**
+**Reihenfolge danach:** (Schritt 2) Sage/Hub-Registrierung + erster Handshake → `verified-spore`; (Schritt 3) vom Hub
+aus WorkFloh-Pairing (Angebote ⇄ E-Mail/Lead-Aufbereitung über den Briefkasten); (Schritt 4) echter `domainVector` →
+`verified-match`. Details: `docs/BAUPLAN.md` Block 6.
+
+**🤝 ARBEITSAUFTRAG:** selbstständig nach Logik + Nutzen handeln, Kleines selbst entscheiden; **bei GRÖSSEREN
+Konflikten/Unklarheiten INNEHALTEN und über `AskUserQuestion` rückfragen** (Datenmodell/GoBD/Krypto, Mehrdeutigkeit,
+nicht build-frei/blockiert, echter Merge-Konflikt; **Hub-Registrierung/fremde Repos sind menschlich vermittelt — nie
+selbst fremde Repos anfassen**). Merge-Konflikte zuerst selbst lösen (`git fetch origin main && git reset --hard
+origin/main`, neu aufsetzen); nur den *inhaltlichen* Konflikt eskalieren.
 
 RITUAL JE PR (sobald wieder gebaut wird, verbindlich):
 1) `git fetch origin main && git reset --hard origin/main`; pro PR einen eigenen
@@ -71,10 +79,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-19 nach **Sprint S5: P8 — QR-Einzelteilen** (vendored reiner JS-QR-Encoder
-`src/core/qr.js`, build-frei/lokal; UI „Als QR anzeigen (lokal)" für das pseudonyme Dokument in der
-Schlüssel-Abgleich-Karte). **Der 5-Sitzungs-Sprint P9 → P10 → P3+P4 → P2 → P8 ist vollständig abgeschlossen.**
-**Nächste Sitzung = BESPRECHUNG mit dem Nutzer** (Bilanz + neue Richtung abstimmen) — **NICHT selbstständig den
-nächsten Sprint starten.** Tests **1926/1926** · SW **v147** · 127 JS-Module. **Block 1 + 2 KOMPLETT; Block 3
-(Liquidität) ausgebaut; Block 4 (V-Lohn) KOMPLETT (#158–#164); P6 ✓ (#167); P9 ✓ (#169); P10 ✓ (#170); P3+P4 ✓
-(#171); P2 ✓ (#172); P8 ✓.** (Diese Zeile + den COPY-Block bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-19 nach **Besprechungs-Sitzung** (Bilanz 5-Sitzungs-Sprint + neue Richtung
+abgestimmt). **Neues Thema mit dem Nutzer vereinbart: Sage-Mycel-Andock (Phase 5), Reihenfolge ZUERST Sage/Hub, DANN
+WorkFloh.** Diese Sitzung hat (a) die **E2E-Frage aus der Sage-Quelle** geklärt (Mycel heute: nur Ed25519-Signatur,
+**keine** Nutzlast-Verschlüsselung, `protocolVersion 0.1` — E2E wäre additive Erweiterung, „Spec vor Code") und
+(b) den **Brief an Sage** (`docs/SAGE_E2E_ANFRAGE.md`) + den **Bauplan Block 6** geschrieben. **Kein Code geändert**
+(reine Doku/Abstimmung): Tests **1926/1926** · SW **v147** · 127 JS-Module. **Nächste Sitzung = Phase-5-Schritt 1:
+BLP zum echten SBKIM-Knoten machen** (Spore/SIGNAL, headless verifizierbar) — Details im COPY-Block oben.
+(Diese Zeile + den COPY-Block bei jeder Sitzung aktualisieren.)

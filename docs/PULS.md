@@ -11,11 +11,14 @@
 
 > **Lies das zuerst und vollständig. Danach OHNE Rückfragen loslegen.**
 
-> **⏭ AKTUELLER SPRINT-POINTER (Block 5, 5-Sitzungs-Sprint ABGESCHLOSSEN):** S1·P9 ✅ · S2·P10 ✅ · S3·P3+P4 ✅ ·
-> S4·P2 ✅ · **S5·P8 ✅ (2026-06-19) — QR-Einzelteilen (vendored reiner JS-Encoder, build-frei, lokal/kein Netz).**
-> **⏭ ALS NÄCHSTES: BESPRECHUNG mit dem Nutzer** — NICHT selbstständig den nächsten Sprint starten; Bilanz +
-> neue Richtung abstimmen (COPY-Block in `docs/NAECHSTE_SITZUNG.md` steht auf „Besprechung"). **Stand:** Tests
-> **1926/1926**, SW **v147**, **127 JS-Module**.
+> **⏭ AKTUELLER POINTER (2026-06-19, neues Thema abgestimmt):** Block 5 (5-Sitzungs-Sprint) ABGESCHLOSSEN.
+> Besprechungs-Sitzung gehalten → **neues Thema: Sage-Mycel-Andock (Phase 5), Reihenfolge ZUERST Sage/Hub, DANN
+> WorkFloh.** E2E-Frage aus der Sage-Quelle geklärt (Mycel heute nur Ed25519-**Signatur**, keine Nutzlast-
+> Verschlüsselung, `protocolVersion 0.1`; E2E = additive Erweiterung, „Spec vor Code"). Brief an Sage:
+> `docs/SAGE_E2E_ANFRAGE.md`; Sequenz/Plan: `docs/BAUPLAN.md` **Block 6**. **⏭ NÄCHSTE SITZUNG = Phase-5-Schritt 1:
+> BLP zum echten SBKIM-Knoten machen** (Ed25519-Identität + `sbkim/spore.json` + `SIGNAL.json`, headless via
+> `tools/verify_remote_spore.mjs` VALID; `domainVector` vorerst `_demo`). Konkreter COPY-Block:
+> `docs/NAECHSTE_SITZUNG.md`. **Stand:** Tests **1926/1926**, SW **v147**, **127 JS-Module** (diese Sitzung kein Code).
 
 > **📨 Selbstfortschreibende Nachfolge-Kette (verbindlich, vom Nutzer gewünscht):**
 > Der **paste-fertige Brief** für die jeweils nächste Sitzung steht in
