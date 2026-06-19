@@ -16,33 +16,26 @@ Projekt: BookLedgerPro (lausiklauskn-png/bookledgerpro).
 START: Lies ZUERST `docs/PULS.md` ("START HIER") + `docs/BAUPLAN.md` + `docs/NACHFOLGE_PLAN.md` +
 obersten `docs/SESSIONS.md`-Eintrag + `docs/OFFENE_PUNKTE.md`. Daraus ergibt sich alles.
 
-AUFGABE DIESER SITZUNG: **`docs/BAUPLAN.md` Block 4 — V-Lohn (Lohn-Buchungskern) weiterbauen.** Block 1 + Block 2
-KOMPLETT; Block 3 (Liquidität) ausgebaut. **Neuer finiter Track V-Lohn** (Nutzer-Entscheidung 2026-06-18, Scope
-„Lohn-Buchungskern"): BLP **bucht** Lohn/Gehalt GoBD-sicher (Brutto-Methode), **berechnet aber KEINE** Lohnsteuer/SV
-(kein ELStAM/DEÜV/amtl. Tabellen — die Beträge kommen aus der Entgeltabrechnung des Lohnbüros/Beraters). **Erledigt:**
-**L1 ✅ #158** reine Logik `domain/lohnbuchung.js` (`lohnBuchungZeilen`/`lohnBuchungEntwurf`/`validateLohnlauf`: Soll 4120
-Brutto + 4130 AG-SV, Haben 1200/1740 Netto + 1741 Steuern + 1742 SV) + Seed-Konten 4110/1740/1741/1742; **L2 ✅ #159**
-Store `domain/lohn-store.js` (verschlüsselt; `bucheLohnlauf` → `saveEntwurf`) + reine `normalizeLohnlauf`/
-`lohnkontoAggregat`/`lohnlaufBuchungsdatum`; **L3 ✅ #160** UI `ui/views/lohn.js` (NAV „Lohn", privat/verein ausgeblendet)
-— end-to-end bedienbar. **SW `v138`, Tests `1735/1735` grün, 120 JS-Module.**
+AUFGABE DIESER SITZUNG: **Eine mit dem Nutzer abgestimmte, in sich abgeschlossene Verbesserung bauen.** Block 1 + 2
+KOMPLETT; Block 3 (Liquidität) ausgebaut; **Block 4 (V-Lohn — Lohn-Buchungskern) KOMPLETT (L1–L6, #158–#163 + Doku
+`docs/LOHN.md`).** BLP **bucht** Lohn/Gehalt GoBD-sicher (Brutto-Methode), **berechnet aber KEINE** Lohnsteuer/SV (kein
+ELStAM/DEÜV/amtl. Tabellen — die Beträge kommen aus der Entgeltabrechnung). **SW `v140`, Tests `1754/1754` grün, 120
+JS-Module.**
 
-**⏭ NÄCHSTER SCHRITT: V-Lohn L4** — monatliche **Lohnsteuer-Anmeldung als Kennzahlen-Datenpaket** (LSt+SolZ+KiSt je
-Monat aus den Lohnläufen aggregiert → strukturiertes Übergabe-Datenpaket, analog USt-VA `export.buildElsterVaPaket`;
-**kein** ERiC-Direktversand). Reine Logik zuerst node-getestet, dann UI/Karte. Danach **L5** SV-/LSt-Zahlungsübersicht
-(offene Verbindlichkeiten 1741/1742) und **L6** Doku `docs/LOHN.md` + Abschluss. Plan: `docs/BAUPLAN.md` Block 4 (L1–L6).
-
-**Danach (ausdrücklicher Nutzer-Wunsch, eigene Sitzung/fremdes Repo):** Befehl an **Mein-WorkFloh** —
-**Test-Modus (Sandbox) nach `docs/TEST_MODUS.md`** (⇄-Abschnitt „Übertrag an Mein-WorkFloh").
+**⏭ NÄCHSTE SCHRITTE (Reihenfolge, mit Nutzer abstimmen):**
+1. **Mein-WorkFloh — Test-Modus (Sandbox)** nach `docs/TEST_MODUS.md` (⇄-Abschnitt „Übertrag an Mein-WorkFloh"):
+   wegwerfbarer Sandbox-Speicher getrennt vom echten Bestand (eigener Schlüssel-Präfix `wf_sandbox_*` ODER separate
+   IndexedDB), Behalten/Verwerfen + mehrere Tests + „alle aufräumen", dauerhafter TEST-Banner, optional Demo-Vorbefüllung.
+   **Eigenes Repo `lausiklauskn-png/Mein-WorkFloh`** — ggf. via `list_repos`/`add_repo` in die Sitzung holen.
+2. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — u. a. die **Lohn-Ansicht** (Lohnlauf erfassen →
+   Live-Vorschau → speichern → „Buchen (Entwurf)" → im Journal festschreiben; Lohnsteuer-Anmeldung-Download; offene
+   Lohnabgaben; Lohnkonto).
+3. **Sonst:** umgebungs-/menschen-blockierte Punkte (Server-/Offsite-Backup; WorkFloh-Format-Exporter; Sage 5b–d) oder
+   eine neue, mit dem Nutzer vereinbarte Idee. Bekannt blockiert: Lighthouse/Perf, lokales OCR, ZUGFeRD-Erzeugen.
 
 **Mehrere saubere, in sich abgeschlossene PRs pro Sitzung, wo sinnvoll** (pro Schritt 1 PR, jeder einzeln grün +
 gemergt; reine Logik ZUERST node-getestet, dann UI „statisch geprüft"). **Hinweis:** Ist die Sitzung an genau einen
 Branch gebunden, dürfen Feature + Abschlussbrief in einer PR liegen.
-
-Nächste offene Schritte (Reihenfolge):
-1. **V-Lohn L4–L6** (siehe oben) — der finite Lohn-Track zu Ende bauen.
-2. **Mein-WorkFloh Test-Modus** (über den Nutzer, fremdes Repo).
-3. **Browser-Sichttest durch den Nutzer** (kein Headless-Browser hier) — u. a. die neue **Lohn-Ansicht** (Lohnlauf
-   erfassen → Live-Vorschau → speichern → „Buchen (Entwurf)" → im Journal festschreiben; Lohnkonto je Mitarbeiter).
 2. **Sonst:** umgebungs-/menschen-blockierte Block-3-Punkte (Server-/Offsite-Backup-Ziel — blockiert ohne eigenen Server;
    WorkFloh-Gegenstücke — fremde Repos, über den Nutzer) oder eine neue, mit dem Nutzer vereinbarte Idee. **Bekannt
    blockiert:** Lighthouse/Perf, lokales OCR (nicht build-frei), ZUGFeRD-Erzeugen, Sage 5b–d.
@@ -78,14 +71,11 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 4 — V-Lohn L1–L3 (Lohn-Buchungskern)**: reine Logik
-`domain/lohnbuchung.js` (Brutto-Methode, +Store/Aggregat) + UI `ui/views/lohn.js` — Lohnbuchhaltung end-to-end
-bedienbar (erfassen → Live-Vorschau → speichern → „Buchen (Entwurf)" → Lohnkonto). Tests **1735/1735** · SW **v138** ·
-120 JS-Module. **⏭ Nächster Schritt: V-Lohn L4** (monatliche Lohnsteuer-Anmeldung als Kennzahlen-Datenpaket), dann L5
-(SV-/LSt-Zahlungsübersicht), L6 (Doku `docs/LOHN.md`). **Danach (Nutzer-Wunsch):** Mein-WorkFloh Test-Modus
-(`docs/TEST_MODUS.md`).
-**Block 1 + Block 2 KOMPLETT; Block 3 (Liquidität) ausgebaut inkl. Treiber #157; Block 4 (V-Lohn) L1 #158 + L2 #159 +
-L3 #160 erledigt, L4–L6 offen.**
+**Stand dieses Briefes:** 2026-06-18 nach **BAUPLAN Block 4 — V-Lohn KOMPLETT (L1–L6)**: Lohn-Buchungskern voll
+bedienbar (erfassen → Live-Vorschau → buchen → Lohnsteuer-Anmeldung-Datenpaket → offene Lohnabgaben → Lohnkonto), Doku
+`docs/LOHN.md`. Tests **1754/1754** · SW **v140** · 120 JS-Module. **⏭ Nächstes (Nutzer-Wunsch):** Mein-WorkFloh
+Test-Modus nach `docs/TEST_MODUS.md` (eigenes Repo); sonst Browser-Sichttest der Lohn-Ansicht oder neue abgestimmte Idee.
+**Block 1 + Block 2 KOMPLETT; Block 3 (Liquidität) ausgebaut inkl. Treiber #157; Block 4 (V-Lohn) KOMPLETT (#158–#163).**
 **Nächster Schritt (optional):** Browser-Sichttest durch den Nutzer; sonst umgebungs-/menschen-blockierte Block-3-Punkte
 oder eine neue, mit dem Nutzer vereinbarte Idee.
 Mehrere PRs pro Sitzung erlaubt. (Diese Zeile bei jeder Sitzung aktualisieren.)

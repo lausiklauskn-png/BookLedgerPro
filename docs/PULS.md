@@ -102,10 +102,10 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „V-Lohn L3"):** SW **v138** · Tests **1735/1735** grün · 120 JS-Module.
+**Kopf-Status (Stand nach „V-Lohn L6 — Block 4 KOMPLETT"):** SW **v140** · Tests **1754/1754** grün · 120 JS-Module.
 
-**V-Lohn — Lohn-Buchungskern (diese Sitzung, BAUPLAN Block 4 — Nutzer-Entscheidung 2026-06-18):** Neuer **finiter**
-Track (6 Schritte). **Scope bewusst eng:** BLP ist die **prüfungssichere Buchhaltungsschicht** für die Lohnabrechnung,
+**V-Lohn — Lohn-Buchungskern KOMPLETT (diese Sitzung, BAUPLAN Block 4 — Nutzer-Entscheidung 2026-06-18):** Finiter
+Track (6 Schritte), **L1–L6 erledigt + gemergt** (#158/#159/#160/#162/#163 + Doku). **Scope bewusst eng:** BLP ist die **prüfungssichere Buchhaltungsschicht** für die Lohnabrechnung,
 **nicht die Abrechnung selbst** — es berechnet KEINE Lohnsteuer/SV (kein ELStAM/DEÜV/amtl. Tabellen); die Beträge kommen
 aus der Entgeltabrechnung des Lohnbüros/Beraters. **L1 ✅ (#158)** reine Logik `domain/lohnbuchung.js` (Brutto-Methode
 `lohnBuchungZeilen`/`lohnBuchungEntwurf`/`validateLohnlauf`: Soll 4120 Brutto + 4130 AG-SV, Haben 1200/1740 Netto + 1741
@@ -113,11 +113,13 @@ Steuern + 1742 SV) + Seed-Konten 4110/1740/1741/1742. **L2 ✅ (#159)** Store `d
 `saveLohnlauf`/`listLohnlaeufe`/`getLohnlauf`/`deleteLohnlauf`/`bucheLohnlauf`) + reine `normalizeLohnlauf`/
 `lohnkontoAggregat`/`lohnlaufBuchungsdatum`. **L3 ✅ (#160)** UI `ui/views/lohn.js` (NAV „Lohn", privat/verein
 ausgeblendet): Lohnlauf erfassen (Mitarbeiter/Monat/Brutto/Steuern/SV + Live-Vorschau) → speichern → „Buchen (Entwurf)"
-(`saveEntwurf`, Festschreiben manuell/GoBD) → Lohnkonto je Mitarbeiter. **End-to-end bedienbar.** SW `v138`, +45 →
-**1735/1735** grün, DOM/IndexedDB statisch geprüft. **⏭ Nächster Schritt: L4** — monatliche Lohnsteuer-Anmeldung als
-Kennzahlen-Datenpaket (analog USt-VA `buildElsterVaPaket`); danach L5 SV-/LSt-Zahlungsübersicht, L6 Doku `docs/LOHN.md`.
-Plan: `docs/BAUPLAN.md` Block 4 (L1–L6). **Danach (Nutzer-Wunsch):** Befehl an eine **Mein-WorkFloh**-Sitzung —
-**Test-Modus nach `docs/TEST_MODUS.md`** (⇄-Abschnitt).
+(`saveEntwurf`, Festschreiben manuell/GoBD) → Lohnkonto je Mitarbeiter. **End-to-end bedienbar.** **L4 ✅ #162** monatliche Lohnsteuer-Anmeldung als Kennzahlen-Datenpaket
+(`lohnsteuerAnmeldung` + `export.buildLohnsteuerAnmeldungPaket`, NICHT amtlich, kein Direktversand). **L5 ✅ #163**
+SV-/LSt-Zahlungsübersicht (`offeneLohnabgaben` Saldo 1741/1742 + `lohnabgabeZahlungEntwurf`, „Als bezahlt buchen").
+**L6 ✅** Doku `docs/LOHN.md`. SW `v140`, **1754/1754** grün, DOM/IndexedDB statisch geprüft. **⏭ Nächster Schritt
+(BLP):** offen — Browser-Sichttest der Lohn-Ansicht durch den Nutzer; sonst umgebungs-/menschen-blockierte Punkte oder
+eine neue, abgestimmte Idee. **Parallel (Nutzer-Wunsch, eigenes Repo):** Mein-WorkFloh **Test-Modus nach
+`docs/TEST_MODUS.md`** (⇄-Abschnitt).
 
 ---
 
