@@ -466,7 +466,13 @@ Verbindliche Referenz: `docs/SAGE_SYNC_BRIEFKASTEN.md`. Hintergrund/E2E-Brief: `
 **E2E-Befund (aus `Sage-Protokol/docs/INTERFACES.md`, gelesen 2026-06-19):** das Mycel ist heute **signatur-only**
 (Ed25519), **keine** Nutzlast-Verschlüsselung, kein X25519, `protocolVersion 0.1`. → **Grad B (sensible Daten)**
 heute build-frei **pseudonym** (P9, keine Spec-Änderung); **E2E (X25519)** wäre eine **additive** Spec-Erweiterung,
-die **Sage netzweit entscheidet** (Brief raus, Antwort abwarten).
+die **Sage netzweit entscheidet**.
+**✅ SAGE-ANTWORT (2026-06-19, menschlich vermittelt):** 1 **JA** (Briefkasten in 0.1 bewusst öffentlich/signiert,
+nicht verschlüsselt — Vertraulichkeit = lokale Knoten-Sache) · 2 **JA** (Grad-B-Pseudonymisierung = freigegebener
+**Sofortpfad**, kein Bump/Bau) · 3 **JA mit Wie** (X25519 „sealed box" `{v,epk,iv,ct}` = ECDH→HKDF-SHA256→AES-GCM-256,
+optionales Feld `encryptionPublicKey`, an libsodium `crypto_box_seal` angelehnt; additiv `0.1→0.2`) · 4 Reihenfolge
+**bestätigt**. Formaler `protocolVersion`-Bump bleibt **Sage-Hoheit** und kommt erst **nach** Knoten-Deploy + Knoten-Go.
+Sage hat seine Seite als Entwurf abgelegt (deren PR #302, kein netzweites Signal/kein INTERFACES-Bump).
 - [ ] **6.1 — BLP wird SBKIM-Knoten** (erste PR): Ed25519-Identität (WebCrypto, in-app) + `sbkim/spore.json`
   (9 Pflichtfelder, kanonische Signatur, `id=base64url(SHA256(rawPub))`, `domainVector` vorerst `_demo`) +
   `sbkim/SIGNAL.json` (seq 1). **Headless-Beweis** `node tools/verify_remote_spore.mjs sbkim/spore.json` = VALID;
@@ -477,7 +483,8 @@ die **Sage netzweit entscheidet** (Brief raus, Antwort abwarten).
   (Nutzlast = vorhandenes Austauschformat v4 `domain/connect.js`; sensible Teile pseudonym/P9).
 - [ ] **6.4 — echter `domainVector`** (Transformers.js `Xenova/multilingual-e5-small`) → `verified-match`
   (build-frei prüfen — WASM/CDN-Frage; sonst ehrlich als blockiert melden).
-- [ ] **6.5 — (nur falls Sage E2E bejaht):** X25519-Erweiterung nach Sage-Spec umsetzen.
+- [ ] **6.5 — X25519-Erweiterung (Sage hat E2E bejaht, „mit Wie"):** nach Sages 0.2-Spec umsetzen —
+  **erst nach** Knoten-Deploy (6.1) + netzweitem Knoten-Go (Sage setzt den formalen `protocolVersion`-Bump).
 
 **Abhängigkeiten Block 6:** 6.1 ist Voraussetzung für alles · 6.2 braucht 6.1 · 6.3 braucht 6.2 · 6.4/6.5 nach Bedarf.
 **Mensch-/umgebungs-blockiert:** 6.2/6.3 berühren fremde Repos (Klaus vermittelt) — **nie selbst fremde Repos anfassen.**

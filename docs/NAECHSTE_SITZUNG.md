@@ -22,6 +22,10 @@ S4·P2 #172 · S5·P8 #173). **SW `v147`, Tests `1926/1926` grün, 127 JS-Module
 **NEU ABGESTIMMT (2026-06-19, Nutzer): Thema = Sage-Mycel-Andock (Phase 5), Reihenfolge ZUERST Sage/Hub, DANN
 Mein-WorkFloh.** Hintergrund-Brief + E2E-Spec-Frage stehen in `docs/SAGE_E2E_ANFRAGE.md`; Sequenz/Plan in
 `docs/BAUPLAN.md` „Block 6 — Sage-Andock (Phase 5)".
+**✅ SAGE HAT DIE E2E-FRAGE BEANTWORTET (2026-06-19, menschlich vermittelt): 1 JA / 2 JA / 3 JA mit Wie / 4 bestätigt.**
+→ Grad-B-Pseudonymisierung (P9) ist der freigegebene **Sofortpfad** (kein Bump/Bau); echte E2E (X25519 „sealed box")
+ist **Entwurf 0.2**, formaler `protocolVersion`-Bump erst nach Knoten-Deploy + Go (Sage-Hoheit, deren PR #302). Der
+Relay-Schritt (Brief an Sage geben + Antwort einholen) ist damit **erledigt**.
 
 ⏭ AUFGABE DIESER SITZUNG — **Phase-5-Andock, Schritt 1: BLP zum echten SBKIM-Knoten machen** (Voraussetzung für ALLES
 Weitere — ohne Spore kann BLP keinen Brief in den Briefkasten werfen). Konkret, **eine saubere PR**:
@@ -33,8 +37,9 @@ Weitere — ohne Spore kann BLP keinen Brief in den Briefkasten werfen). Konkret
 2. **`sbkim/SIGNAL.json`** aus dem Template füllen (`seq` ab 1, `nodeId`, `mailboxes`, `forNodes`, `ack:{}`).
 3. **Headless-Beweis:** `node tools/verify_remote_spore.mjs sbkim/spore.json` muss **VALID** urteilen; reine
    Krypto-/Kanonisierungs-Helfer **node-getestet** (Signatur-Roundtrip, `id`-Ableitung, Sortier-Kanon).
-4. **Den Brief `docs/SAGE_E2E_ANFRAGE.md`** an den Nutzer zum Relayen an Sage geben (Frage 1–3) — die E2E-Antwort
-   entscheidet, ob Grad-B später pseudonym (P9, ohne Spec-Änderung) **oder** verschlüsselt (X25519, nach Spec) läuft.
+4. ✅ **Brief `docs/SAGE_E2E_ANFRAGE.md` relayt — Sage hat geantwortet (2026-06-19): 1 JA / 2 JA / 3 JA mit Wie / 4
+   bestätigt.** Entscheidung steht: Grad-B läuft **pseudonym (P9, ohne Spec-Änderung)** als Sofortpfad; X25519-E2E
+   (Entwurf 0.2) folgt erst nach Knoten-Deploy + netzweitem Go (Sage-Hoheit). Dieser Schritt ist nicht mehr offen.
 
 **Reihenfolge danach:** (Schritt 2) Sage/Hub-Registrierung + erster Handshake → `verified-spore`; (Schritt 3) vom Hub
 aus WorkFloh-Pairing (Angebote ⇄ E-Mail/Lead-Aufbereitung über den Briefkasten); (Schritt 4) echter `domainVector` →
@@ -79,11 +84,10 @@ ABSCHLUSSBRIEF AM ENDE (PFLICHT — automatisch, ohne Rückfrage):
 
 ---
 
-**Stand dieses Briefes:** 2026-06-19 nach **Besprechungs-Sitzung** (Bilanz 5-Sitzungs-Sprint + neue Richtung
-abgestimmt). **Neues Thema mit dem Nutzer vereinbart: Sage-Mycel-Andock (Phase 5), Reihenfolge ZUERST Sage/Hub, DANN
-WorkFloh.** Diese Sitzung hat (a) die **E2E-Frage aus der Sage-Quelle** geklärt (Mycel heute: nur Ed25519-Signatur,
-**keine** Nutzlast-Verschlüsselung, `protocolVersion 0.1` — E2E wäre additive Erweiterung, „Spec vor Code") und
-(b) den **Brief an Sage** (`docs/SAGE_E2E_ANFRAGE.md`) + den **Bauplan Block 6** geschrieben. **Kein Code geändert**
-(reine Doku/Abstimmung): Tests **1926/1926** · SW **v147** · 127 JS-Module. **Nächste Sitzung = Phase-5-Schritt 1:
-BLP zum echten SBKIM-Knoten machen** (Spore/SIGNAL, headless verifizierbar) — Details im COPY-Block oben.
-(Diese Zeile + den COPY-Block bei jeder Sitzung aktualisieren.)
+**Stand dieses Briefes:** 2026-06-19, aktualisiert nach **Sage-Antwort auf die E2E-Frage** (menschlich vermittelt).
+Neues Thema bleibt: **Sage-Mycel-Andock (Phase 5), Reihenfolge ZUERST Sage/Hub, DANN WorkFloh.** Stand: die
+E2E-Frage (`docs/SAGE_E2E_ANFRAGE.md`) ist **beantwortet** — **1 JA / 2 JA / 3 JA mit Wie / 4 bestätigt**: Grad-B
+läuft **pseudonym (P9)** als Sofortpfad, echte E2E (X25519, Entwurf 0.2) erst nach Knoten-Deploy + netzweitem Go
+(Sage-Hoheit, deren PR #302). **Kein App-Code geändert** (reine Doku/Korrespondenz): Tests **1926/1926** · SW
+**v147** · 127 JS-Module. **Nächste Sitzung = Phase-5-Schritt 1: BLP zum echten SBKIM-Knoten machen** (Spore/SIGNAL,
+headless verifizierbar) — Details im COPY-Block oben. (Diese Zeile + den COPY-Block bei jeder Sitzung aktualisieren.)

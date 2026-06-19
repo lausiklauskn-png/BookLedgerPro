@@ -5,6 +5,43 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Sage-Antwort auf die E2E-Frage erhalten (menschlich vermittelt) [Branch `claude/read-respond-messages-t92x7a`]
+
+**Was getan (reine Doku/Korrespondenz — kein App-Code geändert)**
+- Die in der Vorsitzung gestellte **E2E-Spec-Frage** (`docs/SAGE_E2E_ANFRAGE.md`, Frage 1–3 + Reihenfolge) an
+  **Sage-Protokol** beantwortet bekommen (über den Nutzer relayt, da BLP noch kein deployter Knoten ist).
+  **Sage-Antwort: 1 JA / 2 JA / 3 JA mit Wie / 4 bestätigt** (Datum 2026-06-19):
+  - **1 JA:** Briefkasten ist in `protocolVersion 0.1` **bewusst** öffentlich/signiert (Ed25519), **nicht**
+    verschlüsselt — Vertraulichkeit ist eine **lokale Knoten-Sache**. (Gedeckt durch BLPs eigene Quellen:
+    `src/sbkim/spore.js`, `src/core/crypto.js` nur lokal, `docs/SAGE_SYNC_BRIEFKASTEN.md` Dead-Drop.)
+  - **2 JA:** Grad-B-**Pseudonymisierung** (P9 „Schlüssel-Abgleich") ist der freigegebene **Sofortpfad** —
+    kein Bump, kein Bau. Ehrliche Grenze: Metadaten leaken weiter (≠ Verschlüsselung).
+  - **3 JA mit Wie:** echte E2E als **Entwurf 0.2** — X25519 „sealed box" `{v,epk,iv,ct}`
+    (ECDH→HKDF-SHA256→AES-GCM-256), optionales Feld `encryptionPublicKey`, an libsodium `crypto_box_seal`
+    angelehnt, additiv/abwärtskompatibel. Formaler `protocolVersion`-Bump bleibt **Sage-Hoheit**.
+  - **4 bestätigt:** Reihenfolge BLP-Knoten → WorkFloh-Pairing → 0.2-Stellungnahme → Go → Bau.
+- **Zwei Scope-Rückfragen von Sage beraten** (jeweils reversibilitäts-/reihenfolgentreu): Sage solle (1) Antwort +
+  Entwurf-Doku ablegen, **kein** INTERFACES-/`protocolVersion`-Bump (bleibt 0.1), und (2) **kein** netzweites Signal
+  (`SIGNAL.json` unverändert) feuern, solange BLP nicht deployt ist. Sage hat genau so umgesetzt (deren **PR #302**).
+- **BLP-Doku additiv fortgeschrieben:** PULS-Pointer, OFFENE_PUNKTE ★-Abschnitt, BAUPLAN Block 6 (E2E-Befund +
+  6.5 von „nur falls Sage bejaht" auf „bejaht, nach Knoten-Go" präzisiert), NAECHSTE_SITZUNG COPY-Block (Relay-Schritt
+  als erledigt markiert). **Bewusst KEIN** sbkim-Postfach in BLP angelegt (noch kein Knoten → kein Postfach-Schein,
+  `sbkim/README`-Disziplin).
+- **Git-Hinweis:** Sitzungs-Branch war auf einen veralteten Commit aufgesetzt; vor dem Schreiben sauber auf
+  `origin/main` (a6d7c13) neu aufgesetzt (Merge-Konflikt selbst gelöst, kein App-Code betroffen).
+
+**Stand**
+- E2E-Strang inhaltlich **geschlossen**. Tests **1926/1926** grün (unverändert, kein App-Code), SW **v147**, 127 Module.
+
+**Offen / Nächstes**
+- **⏭ Phase-5-Schritt 1 (6.1):** BLP zum echten SBKIM-Knoten machen — Ed25519-Identität + `sbkim/spore.json` +
+  `SIGNAL.json`, headless `node tools/verify_remote_spore.mjs` = VALID, Krypto-/Kanon-Helfer node-getestet;
+  `domainVector` vorerst `_demo`. (Echte Spore wird **in-app** erzeugt + committet — keine erfundene Spore eincheck.)
+- **Grad-B-Pseudonymisierung** ist ab sofort nutzbar (P9), unabhängig vom Deploy. **6.5 (X25519/0.2)** erst nach
+  Knoten-Go. **Mensch-blockiert:** 6.2/6.3 (Hub/WorkFloh, fremde Repos).
+
+---
+
 ## 2026-06-19 — Besprechung + Richtungs-Entscheidung: Sage-Mycel-Andock (Phase 5) [Branch `claude/bookledgerpro-sprint-review-05m92f`]
 
 **Was getan (reine Doku/Abstimmung — kein Code geändert)**

@@ -15,8 +15,12 @@ Nach der Besprechungs-Sitzung abgestimmt: **Sage-Andock, Reihenfolge ZUERST Sage
 Plan = `docs/BAUPLAN.md` **Block 6** (6.1–6.5); Brief an Sage = `docs/SAGE_E2E_ANFRAGE.md`; Referenz =
 `docs/SAGE_SYNC_BRIEFKASTEN.md`. **E2E-Befund (Sage-Quelle):** Mycel heute signatur-only (Ed25519), keine
 Nutzlast-Verschlüsselung, `protocolVersion 0.1` → Grad-B-Daten heute **pseudonym (P9, keine Spec-Änderung)**;
-**E2E/X25519 = additive Spec-Erweiterung, Sage entscheidet** (Antwort abwarten). **Nächster Bauschritt: 6.1 —
-BLP zum SBKIM-Knoten machen** (Spore/SIGNAL, headless VALID; `domainVector` vorerst `_demo`). **Mensch-blockiert:**
+**E2E/X25519 = additive Spec-Erweiterung, Sage entscheidet**. **✅ SAGE HAT GEANTWORTET (2026-06-19, menschlich
+vermittelt): 1 JA / 2 JA / 3 JA mit Wie / 4 bestätigt** → Grad-B-Pseudonymisierung ist der freigegebene **Sofortpfad**
+(kein Bump/Bau); echte E2E (X25519 „sealed box") = **Entwurf 0.2**, formaler Bump erst nach Knoten-Deploy + Go
+(Sage-Hoheit, deren PR #302). 6.5 ist damit von „nur falls Sage bejaht" auf **bejaht (nach Knoten-Go)** präzisiert.
+**Nächster Bauschritt: 6.1 — BLP zum SBKIM-Knoten machen** (Spore/SIGNAL, headless VALID; `domainVector` vorerst
+`_demo`). **Mensch-blockiert:**
 6.2/6.3 (Hub-Registrierung, WorkFloh-Pairing) berühren fremde Repos → nie selbst anfassen.
 
 ## ★ Nutzer-Entscheidungen (2026-06-17) — verbindlich für den weiteren Bau
