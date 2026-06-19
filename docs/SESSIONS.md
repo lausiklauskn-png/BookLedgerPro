@@ -5,6 +5,43 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Sprint S4: P2 — KI-Anbieterwahl je Modus, strikt EU [Branch `claude/ai-provider-mode-selection-rsse5c`]
+
+**Was getan**
+- **P2** macht den KI-Anbieter **je Funktion (Modus) wählbar** — **strikt innerhalb der EU**, **KEIN neuer Anbieter**.
+  Nicht-EU bleibt bewusst geschlossen/dormant (nie wählbar). Reine Logik zuerst node-getestet, dann UI „statisch geprüft".
+- **Reine Logik** `src/ai/anbieter.js` (node-getestet, **+28 → 1886/1886**):
+  - `KI_MODI` = `ocr|kontierung|steuer`; `KI_REGION` + `ERLAUBTE_REGIONEN` (`eu`+`lokal` → Nicht-EU dormant).
+  - Registry `KI_ANBIETER` (vision EU/mistral EU/On-Device-Heuristik/aus, je `region`+`modi`), `STANDARD_WAHL`
+    (verhaltensgleich zum bisher Festverdrahteten: vision/mistral/mistral).
+  - Selektoren `regionErlaubt`/`istAnbieterErlaubt`/`erlaubteAnbieter`/`istWahlGueltig`/`normalizeAnbieterWahl`
+    (unzulässige/Nicht-EU-Werte fallen auf den Standard zurück)/`aktiverAnbieter`/`istAus`/`istLokal`/`istEuCloud`.
+- **Persistenz** `src/ai/aiConfig.js`: neues verschlüsseltes Feld `anbieterWahl` (in `getAiConfig`/`saveAiConfig` immer
+  normalisiert) + Helfer `aktiverKiAnbieter`/`isOcrAktiv`/`isSteuerAssistentAktiv`/`nutzeMistralFuerKontierung`.
+- **Netz-Rand verdrahtet:** `ai/vision.js ocr` wirft bei OCR=aus; `ai/mistral.js categorize` + `ai/berater.js
+  begruendeBuchung` nutzen `nutzeMistralFuerKontierung` (Wahl „heuristik" erzwingt On-Device, **kein Versand**);
+  Steuer-Assistent in `ui/views/reports.js` über `isSteuerAssistentAktiv`; OCR-Bereitschaft in `ui/views/documents.js`
+  über `isOcrAktiv`.
+- **UI** `src/ui/shell.js` (`aiConfigSection`): drei Anbieter-Selects (je Modus, nur erlaubte EU/lokale Anbieter) +
+  EU-Hinweis; Speichern/Test schreiben `anbieterWahl` mit. i18n de+en (`settings.aiProviderTitle`/`…Hint`/`aiMode.*`/
+  `aiProv.*`).
+- **SW** `CACHE_VERSION` `v145 → v146`, `src/ai/anbieter.js` precacht. **126 JS-Module.**
+
+**Stand**
+- `node tests/run.mjs` → **1886/1886 grün**. Reine Logik (Registry/Selektoren/Normalisierung/EU-Guard) abgedeckt.
+- Verhaltensgleich zum Bestand, solange die Standard-Wahl greift; die Wahl „heuristik"/„aus" schaltet Cloud-Versand
+  je Funktion gezielt ab.
+
+**Offen / Nächstes**
+- Sprint-Pointer steht jetzt auf **S5 · P8 — QR-Einzelteilen** (vendored reiner JS-QR-Encoder; build-frei prüfen,
+  sonst ehrlich als blockiert melden und rückfragen). **Danach: BESPRECHUNG mit dem Nutzer.**
+- **Statisch geprüft, NICHT im Browser verifiziert:** die drei Selects + Speichern/Laden über IndexedDB
+  (kein Headless-Browser in dieser Umgebung).
+- **Bewusste Grenze:** der Modus „kontierung" bündelt Kontierung **und** Begründung (beide Mistral-Textfunktionen mit
+  On-Device-Fallback); der Steuer-Assistent ist eigen (mistral ↔ aus, kein On-Device-Pendant).
+
+---
+
 ## 2026-06-19 — Sprint S3: P3 + P4 — Aufklärungstexte (KI-Autonomiestufen + Kleinunternehmer/Drittdaten) [Branch `claude/autonomie-kleinunternehmer-docs-5uuq74`]
 
 **Was getan**

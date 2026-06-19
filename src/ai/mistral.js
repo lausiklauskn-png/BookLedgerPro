@@ -94,7 +94,7 @@ export async function chat(messages, { maxTokens = 400, temperature = 0 } = {}) 
  */
 export async function categorize(text, kontoIndex, opts = {}) {
   let useMistral = false;
-  try { const { isMistralConfigured } = await import('./aiConfig.js'); useMistral = await isMistralConfigured(); }
+  try { const { nutzeMistralFuerKontierung } = await import('./aiConfig.js'); useMistral = await nutzeMistralFuerKontierung(); }
   catch { useMistral = false; }
   if (useMistral) {
     try {
