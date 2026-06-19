@@ -5,6 +5,39 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Lebenden Mycel-Knoten regelkonform vendort (`sbkim/mycelknoten.html`) [Branch `claude/read-respond-messages-t92x7a`]
+
+**Was getan**
+- Den **lebenden SBKIM-Knoten** (Andock-Helfer mit echten Sage-Modulen 01/02/03/04/05/07/15/16/17,
+  Live-Lampen, Wächter-Log, Widget) nach `sbkim/mycelknoten.html` vendort.
+- **Konformitäts-Audit der Egress-Pfade** (alle 4 Treffer im Code nachgelesen, nicht geraten):
+  - `cdn.jsdelivr.net` → transformers.js-Import (Modul 03 Embedding), feuerte beim Andocken via
+    Checkbox `doEmbed`. **Verletzte Regel #1 (keine CDNs).**
+  - `api.anthropic.com` → Modul 04 `explainMatchLLM` (Stufe-B-LLM), US-Endpoint hartcodiert,
+    **schlafend** (an keinen Knopf verdrahtet). **Latent Regel #8 (EU-KI).**
+  - `gemini.google.com` → **kein Aufruf**, nur Demo-String in einer Wächter-Log-Testzeile (kosmetisch).
+  - `raw.githubusercontent.com` → Peer-Spore-Datenabruf (SBKIM-Protokoll, **konform**).
+- **Entscheidung mit Nutzer (zweistufig):** jetzt verbinden, EU-KI später. Daher chirurgisch neutralisiert
+  (SBKIM-Protokollkern 1:1, nur Egress-Pfade), alle Stellen klar als `BLP-Vendor-Anpassung` markiert:
+  - Embedding/CDN deaktiviert: `loadTransformers()` lehnt fail-soft ab (kein dynamischer Import mehr),
+    `doEmbed`-Checkbox entfernt, Andocken erzeugt **verified-spore ohne `domainVector`**.
+  - Stufe-B-LLM deaktiviert: `explainMatchLLM` endet vor jedem `fetch` fail-soft (Aufrufer nutzt
+    Stufe-A-Resultat); US-Endpoint-Konstante + Doku-Kommentar entschärft.
+  - Gemini-Demo-String → `example.com`.
+- **Verifikations-Scan:** Datei enthält **keine** `cdn.jsdelivr|api.anthropic|gemini.google|generativelanguage|openai|unpkg|esm.sh|googleapis`-Treffer mehr; verbleibend nur `raw.githubusercontent.com` (Protokoll-Datenabruf), `example.com` (Demo), `w3.org` (SVG-Namespace). Kein `import(<CDN>)` mehr.
+
+**Stand**
+- `node tests/run.mjs` **1926/1926 grün** (keine Regression). Regeln #1 + #8 in der vendorten Datei eingehalten.
+
+**Offen / ungetestete Teile (ehrlich)**
+- `mycelknoten.html` ist ein **Browser-/DOM-Artefakt** (IndexedDB/WebCrypto/DOM) — die Andock-/Lampen-/
+  Spore-Funktion ist **nicht im Browser verifiziert** (Node-Suite deckt sie nicht ab).
+- **Semantisches Matching fehlt bewusst** (kein `domainVector`): Andocken/Verbinden zu Sage/Mycel voll
+  möglich, aber keine bedeutungsbasierte Entdeckung. **Nächste EU-Phase:** Matching via Mistral-EU
+  (BYOK, opt-in) — Schwellen (`PROVIDER_MIN_MATCH=0.80`, e5-Kosinus) müssen für EU-Embeddings neu validiert werden.
+
+---
+
 ## 2026-06-19 — Sage-Antwort auf die E2E-Frage erhalten (menschlich vermittelt) [Branch `claude/read-respond-messages-t92x7a`]
 
 **Was getan (reine Doku/Korrespondenz — kein App-Code geändert)**
