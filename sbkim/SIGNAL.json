@@ -1,14 +1,18 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-19",
-  "seq": 1,
-  "headline": "BookLedgerPro-Knoten geboren (verified-spore-Andock).",
+  "seq": 2,
+  "headline": "Andock-Bitte an Sage: bitte verified-spore + Hub-Registrierung; Postfach AUSTAUSCH-Sage.md angelegt.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
-  "mailboxes": {},
+  "mailboxes": {
+    "Sage": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/AUSTAUSCH-Sage.md"
+  },
   "forNodes": [
-    "*"
+    "Sage"
   ],
-  "ack": {},
+  "ack": {
+    "Sage": 0
+  },
   "_doc": "Maschinenlesbarer Briefkasten-Aushang (INTERFACES §11.6). seq steigt +1 pro gemeldetem Bau; Gegenseite liest bei Sitzungsstart, vergleicht mit ihrem ack und quittiert. Server-los: das Pushen dieser Datei IST das Signal."
 }
