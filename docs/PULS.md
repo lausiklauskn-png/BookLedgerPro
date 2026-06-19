@@ -11,11 +11,11 @@
 
 > **Lies das zuerst und vollständig. Danach OHNE Rückfragen loslegen.**
 
-> **⏭ AKTUELLER SPRINT-POINTER (Block 5, 5-Sitzungs-Sprint):** S1·P9 ✅ · S2·P10 ✅ · S3·P3+P4 ✅ ·
-> **S4·P2 ✅ (2026-06-19) — KI-Anbieterwahl je Modus, strikt EU** · **als Nächstes: S5·P8 — QR-Einzelteilen
-> (vendored reiner JS-Encoder; build-frei prüfen, sonst ehrlich als blockiert melden).** Paste-fertiger Auftrag:
-> `docs/NAECHSTE_SITZUNG.md`; Abhaken/Plan: `docs/BAUPLAN.md` (Block 5). **Stand:** Tests **1886/1886**,
-> SW **v146**, **126 JS-Module**.
+> **⏭ AKTUELLER SPRINT-POINTER (Block 5, 5-Sitzungs-Sprint ABGESCHLOSSEN):** S1·P9 ✅ · S2·P10 ✅ · S3·P3+P4 ✅ ·
+> S4·P2 ✅ · **S5·P8 ✅ (2026-06-19) — QR-Einzelteilen (vendored reiner JS-Encoder, build-frei, lokal/kein Netz).**
+> **⏭ ALS NÄCHSTES: BESPRECHUNG mit dem Nutzer** — NICHT selbstständig den nächsten Sprint starten; Bilanz +
+> neue Richtung abstimmen (COPY-Block in `docs/NAECHSTE_SITZUNG.md` steht auf „Besprechung"). **Stand:** Tests
+> **1926/1926**, SW **v147**, **127 JS-Module**.
 
 > **📨 Selbstfortschreibende Nachfolge-Kette (verbindlich, vom Nutzer gewünscht):**
 > Der **paste-fertige Brief** für die jeweils nächste Sitzung steht in
@@ -108,7 +108,24 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „P2 — KI-Anbieterwahl je Modus, strikt EU"):** SW **v146** · Tests **1886/1886** grün · 126 JS-Module.
+**Kopf-Status (Stand nach „P8 — QR-Einzelteilen, vendored reiner JS-Encoder"):** SW **v147** · Tests **1926/1926** grün · 127 JS-Module.
+
+**P8 — QR-Einzelteilen (lokal erzeugt, kein Netz) ✅ (Sitzung 5, 2026-06-19):** der QR-Teil von P8 („Datei-Kanal
+(Masse) + QR (Einzel-Teilen, lokal erzeugt)") — der Datei-Kanal war P9. **Build-frei gelöst:** vendored, reiner
+JS-QR-Encoder als eigenes ES-Modul `src/core/qr.js` (keine npm/CDN-Runtime). Algorithmus portiert aus der **MIT**-lizenzierten
+„QR Code generator library" von **Project Nayuki** (Lizenz + Attribution im Dateikopf), neu als ES-Modul geschrieben:
+Byte-Modus (UTF-8), Versionen 1–40, EC L/M/Q/H, automatische Maskenwahl. Kein Online-QR-Dienst → keine Datenübertragung
+(genau der Sinn von „lokal erzeugt"; Regel #1 + #4). Reine Logik node-getestet (+40 → **1926/1926**) gegen **unabhängige
+Spezifikations-Anker**: Kapazitätstabelle (v1 = 19/16/13/9, v5-H = 46, v7-L = 156), Rohmodul-Formel (208/359/1568),
+Format-Info BCH(15,5) Ground-Truth `0x5412` (M,0) + 32-Werte-Nachrechnung, Versions-Info BCH(18,6) Ground-Truth
+v7 = `0x07C94`, RS-Teiler `[3,2]`, GF(256)-Reduktion `gfMul(2,128)=29`, Ausrichtungspositionen (v7 = [6,22,38]),
+Matrix-Struktur (Finder/Timing/dunkles Modul/Größe), Determinismus, `QR_ZU_LANG`-Fehler, SVG ohne Klartext-Leck.
+UI: in der Schlüssel-Abgleich-Karte (Einstellungen) erzeugt „Als QR anzeigen (lokal)" einen QR aus dem **pseudonymen
+Dokument** (nie der Schlüssel!) als Inline-SVG (`data:`-URI) + „QR speichern (SVG)"; zu langer Text → ehrlicher
+Hinweis auf den Datei-Kanal. i18n de+en, SW `v147`. **Ehrliche Grenze:** **physischer Scan-Test braucht ein echtes
+Gerät** (kein QR-Scanner/SVG-Renderer in der Build-Umgebung — Nutzer-Sichttest offen); die node-getesteten Anker
+validieren alle Algorithmus-Konstanten unabhängig, die Platzierung ist strukturell geprüft. **Sprint abgeschlossen →
+BESPRECHUNG mit dem Nutzer.**
 
 **P2 — KI-Anbieterwahl je Modus, strikt EU ✅ (Sitzung 4, 2026-06-19):** je KI-Funktion (Modus) ein wählbarer
 Anbieter — **strikt innerhalb der EU**, KEIN neuer Anbieter. Reine Logik `src/ai/anbieter.js` (node-getestet, +28 →

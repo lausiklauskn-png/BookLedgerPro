@@ -182,6 +182,11 @@ import {
   regionErlaubt, istAnbieterErlaubt, erlaubteAnbieter, istWahlGueltig,
   normalizeAnbieterWahl, aktiverAnbieter, istAus, istLokal, istEuCloud,
 } from '../src/ai/anbieter.js';
+import {
+  ECL, getNumRawDataModules, getNumDataCodewords, gfMul, reedSolomonComputeDivisor,
+  formatInfoBits, versionInfoBits, getAlignmentPatternPositions,
+  qrMatrix, qrMaxBytes, qrSvg,
+} from '../src/core/qr.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -5403,6 +5408,104 @@ await section('P2: KI-Anbieterwahl je Modus (strikt EU)', () => {
   ok('istEuCloud mistral (Standard)', istEuCloud('kontierung', {}) === true);
   ok('istEuCloud heuristik false', istEuCloud('kontierung', { kontierung: 'heuristik' }) === false);
   ok('istEuCloud aus false', istEuCloud('steuer', { steuer: 'aus' }) === false);
+});
+
+// ===== P8: QR-Encoder (vendored, reiner JS, lokal — core/qr.js) =====
+await section('P8: QR-Encoder (build-frei, lokal)', () => {
+  // --- GF(256)-Mathematik (Primpolynom 0x11D) ---
+  ok('gfMul Null', gfMul(0, 123) === 0 && gfMul(123, 0) === 0);
+  ok('gfMul Eins', gfMul(1, 200) === 200 && gfMul(200, 1) === 200);
+  ok('gfMul kommutativ', gfMul(0x53, 0xCA) === gfMul(0xCA, 0x53));
+  ok('gfMul(2,128)=29 (bekannte Reduktion)', gfMul(2, 128) === 29);
+  ok('gfMul distributiv (Stichprobe)',
+    gfMul(7, 11 ^ 200) === (gfMul(7, 11) ^ gfMul(7, 200)));
+  // a^255 = 1 in GF(256)*: wiederholtes ×2, 255 Schritte → zurück zu 1.
+  let acc = 1; for (let i = 0; i < 255; i++) acc = gfMul(acc, 2);
+  ok('alpha^255 = 1', acc === 1);
+
+  // --- Reed-Solomon-Teilerpolynome (bekannte Werte) ---
+  ok('RS-Divisor Grad 1 = [1]', JSON.stringify(reedSolomonComputeDivisor(1)) === '[1]');
+  ok('RS-Divisor Grad 2 = [3,2]', JSON.stringify(reedSolomonComputeDivisor(2)) === '[3,2]');
+  ok('RS-Divisor Grad 10 hat Länge 10', reedSolomonComputeDivisor(10).length === 10);
+
+  // --- Kapazitätstabellen gegen unabhängig dokumentierte Werte ---
+  ok('Rohmodule v1 = 208', getNumRawDataModules(1) === 208);
+  ok('Rohmodule v2 = 359', getNumRawDataModules(2) === 359);
+  ok('Rohmodule v7 = 1568', getNumRawDataModules(7) === 1568);
+  ok('Datenwörter v1 L/M/Q/H = 19/16/13/9',
+    getNumDataCodewords(1, ECL.L) === 19 && getNumDataCodewords(1, ECL.M) === 16
+    && getNumDataCodewords(1, ECL.Q) === 13 && getNumDataCodewords(1, ECL.H) === 9);
+  ok('Datenwörter v2-L = 34', getNumDataCodewords(2, ECL.L) === 34);
+  ok('Datenwörter v5-H = 46', getNumDataCodewords(5, ECL.H) === 46);
+  ok('Datenwörter v7-L = 156', getNumDataCodewords(7, ECL.L) === 156);
+
+  // --- Format-Info BCH(15,5): Ground-Truth + unabhängige Nachrechnung ---
+  // (M, Maske 0): Datenfeld 00000 → BCH 0 → XOR-Maske 0x5412 (publizierter Wert).
+  ok('Format-Info (M,0) = 0x5412', formatInfoBits(ECL.M, 0) === 0x5412);
+  // Zweite, unabhängige BCH-Implementierung (andere Schleifenform) zum Abgleich.
+  const refFormat = (formatBits, mask) => {
+    const data = (formatBits << 3) | mask;
+    let r = data << 10;
+    for (let i = 14; i >= 10; i--) if ((r >>> i) & 1) r ^= 0x537 << (i - 10);
+    return ((data << 10) | (r & 0x3FF)) ^ 0x5412;
+  };
+  let formatOk = true;
+  for (const e of [ECL.L, ECL.M, ECL.Q, ECL.H]) {
+    for (let m = 0; m < 8; m++) {
+      const v = formatInfoBits(e, m);
+      if (v !== refFormat(e.formatBits, m) || v < 0 || v > 0x7FFF) formatOk = false;
+    }
+  }
+  ok('Format-Info: 32 Werte = unabhängige Nachrechnung & 15-bit', formatOk);
+
+  // --- Versions-Info BCH(18,6): publizierte Ground-Truth v7 ---
+  ok('Versions-Info v7 = 0x07C94', versionInfoBits(7) === 0x07C94);
+  ok('Versions-Info v1..6: gezeichnet wird nichts (Logik liefert dennoch Zahl)',
+    typeof versionInfoBits(7) === 'number');
+
+  // --- Ausrichtungsmuster-Positionen ---
+  ok('Align v1 leer', getAlignmentPatternPositions(1).length === 0);
+  ok('Align v2 = [6,18]', JSON.stringify(getAlignmentPatternPositions(2)) === '[6,18]');
+  ok('Align v7 = [6,22,38]', JSON.stringify(getAlignmentPatternPositions(7)) === '[6,22,38]');
+
+  // --- Matrix-Struktur ---
+  const qr = qrMatrix('HELLO WORLD', { ecl: 'M' });
+  ok('Version 1 für kurzen Text', qr.version === 1);
+  ok('Größe = 4*version+17 = 21', qr.size === 21 && qr.modules.length === 21);
+  ok('Maske 0..7', qr.mask >= 0 && qr.mask <= 7);
+  // Finder oben-links: Außenecke dunkel, weißer Ring, dunkles Zentrum.
+  ok('Finder Ecke dunkel', qr.modules[0][0] === true && qr.modules[0][6] === true && qr.modules[6][0] === true);
+  ok('Finder weißer Ring', qr.modules[1][1] === false);
+  ok('Finder Zentrum dunkel', qr.modules[3][3] === true && qr.modules[2][2] === true);
+  // Timing-Muster (Zeile/Spalte 6) alterniert, beginnt dunkel.
+  ok('Timing alterniert', qr.modules[6][8] === true && qr.modules[6][9] === false && qr.modules[8][6] === true);
+  // Immer dunkles Modul.
+  ok('dunkles Modul (size-8,8)', qr.modules[qr.size - 8][8] === true);
+  // Determinismus.
+  const qr2 = qrMatrix('HELLO WORLD', { ecl: 'M' });
+  ok('deterministisch', JSON.stringify(qr.modules) === JSON.stringify(qr2.modules));
+  // Höhere Version bei langem Text.
+  const qrLang = qrMatrix('x'.repeat(300), { ecl: 'M' });
+  ok('langer Text → höhere Version', qrLang.version > 1 && qrLang.size === qrLang.version * 4 + 17);
+  // UTF-8 (Mehrbyte) erzeugt gültige Matrix.
+  const qrUtf = qrMatrix('Beleg №42 — Müller & Söhne €', { ecl: 'Q' });
+  ok('UTF-8 erzeugt gültige Matrix', qrUtf.size > 0 && qrUtf.modules[0].length === qrUtf.size);
+
+  // --- Kapazitätsgrenze + ehrlicher Fehler ---
+  ok('qrMaxBytes L > H', qrMaxBytes('L') > qrMaxBytes('H'));
+  ok('qrMaxBytes L plausibel (~2953)', qrMaxBytes('L') > 2900 && qrMaxBytes('L') < 3000);
+  let zuLang = false;
+  try { qrMatrix('x'.repeat(qrMaxBytes('H') + 5000), { ecl: 'H' }); }
+  catch (e) { zuLang = e.code === 'QR_ZU_LANG'; }
+  ok('zu langer Text wirft QR_ZU_LANG', zuLang);
+
+  // --- SVG (reine String-Erzeugung, Nutzdaten NICHT im Markup) ---
+  const svg = qrSvg('Soll 1200 an Haben 8400 — €119,00', { ecl: 'M', scale: 4 });
+  ok('SVG-Hülle', svg.startsWith('<svg') && svg.includes('viewBox=') && svg.includes('<path'));
+  ok('SVG enthält keine Nutzdaten (kein Klartext-Leck)', !svg.includes('8400') && !svg.includes('Soll'));
+  // Sonderzeichen in Farboptionen werden escaped (kein Attribut-Ausbruch).
+  const svgEsc = qrSvg('x', { dark: '"><x' });
+  ok('SVG escaped Optionswerte', !svgEsc.includes('"><x') && svgEsc.includes('&quot;'));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

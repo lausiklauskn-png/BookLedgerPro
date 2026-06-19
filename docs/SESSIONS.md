@@ -5,6 +5,44 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Sprint S5: P8 — QR-Einzelteilen (vendored reiner JS-Encoder, lokal/kein Netz) [Branch `claude/qr-encoder-offline-j4179g`]
+
+**Was getan**
+- **P8** = „Datei-Kanal (Masse) + QR (Einzel-Teilen, lokal erzeugt)". Der Datei-Kanal war bereits **P9** (Sitzung 1);
+  diese Sitzung liefert den **QR-Teil**: einzelne (pseudonyme) Schnipsel **lokal** als QR teilen, **ohne Netz**.
+- **Build-frei-Befund (positiv):** ein QR-Encoder ist ein klar spezifizierter, abhängigkeitsfreier Algorithmus →
+  als eigenes ES-Modul vendorbar (Regel #1 erfüllt, kein npm/CDN-Runtime). **NICHT blockiert.**
+- **Reine Logik** `src/core/qr.js` (node-getestet, **+40 → 1926/1926**): Byte-Modus (UTF-8), Versionen 1–40,
+  Fehlerkorrektur L/M/Q/H, automatische Maskenwahl. Algorithmus **portiert aus der MIT-lizenzierten „QR Code generator
+  library" von Project Nayuki** (Lizenztext + Attribution im Dateikopf), neu als ES-Modul geschrieben. Exporte:
+  `qrMatrix`/`qrSvg`/`qrSvgDataUri`/`qrMaxBytes` + getestete Bausteine `gfMul`/`reedSolomonComputeDivisor`/
+  `formatInfoBits`/`versionInfoBits`/`getNumRawDataModules`/`getNumDataCodewords`/`getAlignmentPatternPositions`.
+- **Test-Anker (unabhängig von der Implementierung):** Kapazität (v1 = 19/16/13/9, v5-H = 46, v7-L = 156),
+  Rohmodul-Formel (208/359/1568), Format-Info BCH(15,5) Ground-Truth `0x5412` für (M,0) + 32-Werte-Nachrechnung mit
+  zweiter, unabhängiger BCH-Schleife, Versions-Info BCH(18,6) Ground-Truth v7 = `0x07C94`, RS-Teiler `[3,2]`,
+  GF(256)-Reduktion `gfMul(2,128)=29`, α^255=1, Ausrichtungspositionen (v2=[6,18], v7=[6,22,38]), Matrix-Struktur
+  (Finder-Ecken/weißer Ring/Zentrum, Timing-Alternation, dunkles Modul, Größe = 4·Version+17), Determinismus,
+  `QR_ZU_LANG`-Fehler bei Überlänge, SVG ohne Klartext-Leck + escapte Optionswerte.
+- **UI** `src/ui/schluesselabgleich.js`: in der Export-/Pseudonymisier-Karte neuer Knopf „Als QR anzeigen (lokal)" →
+  rendert das **pseudonyme Dokument** (nie die Schlüssel-Datei!) als Inline-SVG (`data:image/svg+xml`-URI) + „QR
+  speichern (SVG)"; zu langer Text → ehrlicher Hinweis auf den Datei-Kanal. CSS `.qr-img` (weißer Grund, scharfe Kanten).
+  i18n de+en (`schluessel.qrShow`/`qrSave`/`qrHint`/`qrTooLong`).
+- **SW** `CACHE_VERSION` `v146 → v147`, `src/core/qr.js` precacht. **127 JS-Module.**
+
+**Stand**
+- `node tests/run.mjs` → **1926/1926 grün**. ASCII-Render + zwei Beispiel-SVGs erzeugt; Matrix strukturell korrekt
+  (drei Finder, Ausrichtungsmuster, Timing, Ruhezone). Beispiel-QRs dem Nutzer zum Geräte-Scan geschickt.
+
+**Offen / Nächstes**
+- **⏭ BESPRECHUNG mit dem Nutzer** — der 5-Sitzungs-Sprint (P9→P10→P3+P4→P2→P8) ist **abgeschlossen**; NICHT
+  selbstständig weiterlaufen, sondern Bilanz ziehen + neue Richtung abstimmen.
+- **Ehrliche Grenze (ungetestet):** **physischer Scan-Test braucht ein echtes Gerät** — in der Build-Umgebung gibt es
+  keinen QR-Scanner/SVG-Renderer (analog „kein Headless-Browser"). Die node-Anker validieren alle Algorithmus-Konstanten
+  unabhängig; die Platzierung ist strukturell + per Determinismus geprüft, aber nicht maschinell zurück-dekodiert.
+- DOM/`data:`-URI/Download statisch geprüft (kein Headless-Browser).
+
+---
+
 ## 2026-06-19 — Sprint S4: P2 — KI-Anbieterwahl je Modus, strikt EU [Branch `claude/ai-provider-mode-selection-rsse5c`]
 
 **Was getan**

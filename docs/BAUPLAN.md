@@ -451,9 +451,14 @@
   Netz-Rand: `vision.ocr`, `mistral.categorize`, `berater.begruendeBuchung`, Steuer-Assistent (reports.js), OCR-Bereitschaft
   (documents.js). UI: drei Anbieter-Selects + EU-Hinweis (`ui/shell.js`), i18n de+en, SW `v146`, 126 Module. Setting + UI,
   kein Datenmodell-/GoBD-Eingriff. DOM statisch geprüft.
-- [ ] **S5 · P8 — QR-Einzelteilen (lokal erzeugt):** braucht einen vendored reinen JS-QR-Encoder (build-frei prüfen;
-  sonst ehrlich als blockiert melden).
-- [ ] **Danach: BESPRECHUNG mit dem Nutzer** (Bilanz + neue Richtung).
+- [x] **S5 · P8 — QR-Einzelteilen (lokal erzeugt) ✅ (2026-06-19):** build-frei gelöst — vendored, reiner JS-QR-Encoder
+  `src/core/qr.js` (eigenes ES-Modul, keine npm/CDN-Runtime), Algorithmus portiert aus der **MIT**-lizenzierten
+  „QR Code generator library" von Project Nayuki (Lizenz + Attribution im Kopf); Byte-Modus/UTF-8, Versionen 1–40,
+  EC L/M/Q/H, automatische Maskenwahl. node-getestet (+40 → **1926/1926**) gegen unabhängige Spezifikations-Anker
+  (Kapazität, Format-/Versions-Info-BCH-Ground-Truth, RS-Teiler, GF-Reduktion, Ausrichtungspositionen, Matrix-Struktur).
+  UI: „Als QR anzeigen (lokal)" für das pseudonyme Dokument (Inline-SVG, kein Netz) in der Schlüssel-Abgleich-Karte.
+  SW `v147`, 127 Module. **Ehrliche Grenze:** physischer Scan-Test braucht ein echtes Gerät (kein Scanner in der Umgebung).
+- [x] **Danach: BESPRECHUNG mit dem Nutzer** (Bilanz + neue Richtung) — **Sprint abgeschlossen, jetzt fällig.**
 
 ## Abhängigkeiten (kurz)
 8 braucht 7+4 · 7 braucht 5(+4) · 9 braucht 7 · 10 braucht 9 · 11 ist Präsentation (nach 7).
