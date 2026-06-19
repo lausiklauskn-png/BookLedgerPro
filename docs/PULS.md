@@ -11,10 +11,11 @@
 
 > **Lies das zuerst und vollständig. Danach OHNE Rückfragen loslegen.**
 
-> **⏭ AKTUELLER SPRINT-POINTER (Block 5, 5-Sitzungs-Sprint):** S1·P9 ✅ · S2·P10 ✅ · **S3·P3+P4 ✅
-> (2026-06-19)** · **als Nächstes: S4·P2 — KI-Anbieterwahl je Modus, strikt EU.** Paste-fertiger Auftrag:
-> `docs/NAECHSTE_SITZUNG.md`; Abhaken/Plan: `docs/BAUPLAN.md` (Block 5). **Stand:** Tests **1858/1858**,
-> SW **v145**, **125 JS-Module**.
+> **⏭ AKTUELLER SPRINT-POINTER (Block 5, 5-Sitzungs-Sprint):** S1·P9 ✅ · S2·P10 ✅ · S3·P3+P4 ✅ ·
+> **S4·P2 ✅ (2026-06-19) — KI-Anbieterwahl je Modus, strikt EU** · **als Nächstes: S5·P8 — QR-Einzelteilen
+> (vendored reiner JS-Encoder; build-frei prüfen, sonst ehrlich als blockiert melden).** Paste-fertiger Auftrag:
+> `docs/NAECHSTE_SITZUNG.md`; Abhaken/Plan: `docs/BAUPLAN.md` (Block 5). **Stand:** Tests **1886/1886**,
+> SW **v146**, **126 JS-Module**.
 
 > **📨 Selbstfortschreibende Nachfolge-Kette (verbindlich, vom Nutzer gewünscht):**
 > Der **paste-fertige Brief** für die jeweils nächste Sitzung steht in
@@ -107,16 +108,30 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „P10 — handelnde Person als Besteller"):** SW **v144** · Tests **1836/1836** grün · 124 JS-Module.
+**Kopf-Status (Stand nach „P2 — KI-Anbieterwahl je Modus, strikt EU"):** SW **v146** · Tests **1886/1886** grün · 126 JS-Module.
+
+**P2 — KI-Anbieterwahl je Modus, strikt EU ✅ (Sitzung 4, 2026-06-19):** je KI-Funktion (Modus) ein wählbarer
+Anbieter — **strikt innerhalb der EU**, KEIN neuer Anbieter. Reine Logik `src/ai/anbieter.js` (node-getestet, +28 →
+**1886/1886**): `KI_MODI` (ocr|kontierung|steuer), `KI_REGION`/`ERLAUBTE_REGIONEN` (`eu`+`lokal`; **Nicht-EU bleibt
+dormant** — nie wählbar), Registry `KI_ANBIETER` (vision EU/mistral EU/On-Device-Heuristik/aus), `STANDARD_WAHL`
+(verhaltensgleich: vision/mistral/mistral) + Selektoren `regionErlaubt`/`istAnbieterErlaubt`/`erlaubteAnbieter`/
+`istWahlGueltig`/`normalizeAnbieterWahl` (unzulässige/Nicht-EU-Werte → Standard)/`aktiverAnbieter`/`istAus`/`istLokal`/
+`istEuCloud`. Persistiert verschlüsselt in `aiConfig.anbieterWahl` (immer normalisiert). Verdrahtet am Netz-Rand:
+`vision.ocr` (wirft bei OCR=aus), `mistral.categorize` + `berater.begruendeBuchung` (`nutzeMistralFuerKontierung` →
+„heuristik" erzwingt On-Device, kein Versand), Steuer-Assistent (`isSteuerAssistentAktiv`, reports.js); OCR-Bereitschaft
+(`isOcrAktiv`, documents.js). UI: drei Anbieter-Selects in der „Externe KI"-Karte (`ui/shell.js`) + EU-Hinweis. i18n
+de+en, SW `v146`, 126 Module. **GoBD/Krypto:** kein Datenmodell-Eingriff, nur Gating der ausgehenden KI-Aufrufe.
+**Ehrliche Grenze:** „kontierung" bündelt Kontierung **und** Begründung (beide Mistral-Textfunktionen mit On-Device-
+Fallback); DOM/IndexedDB statisch geprüft (kein Headless-Browser); reine Logik node-getestet. **Sprint-Pointer → S5
+(P8 — QR-Einzelteilen).**
 
 **⏭ START HIER → 5-Sitzungs-Sprint (Nutzer 2026-06-19):** genau diese Punkte, **EINER pro Sitzung**, danach
-**Besprechung**. **Sitzung 1 → P9 ✅** (Datei-Import mit exaktem Schlüssel-Abgleich) · **Sitzung 2 → P10 ✅**
-(handelnde Person als Besteller an Auftrag/Rechnung — additives Datenmodell `src/domain/besteller.js` + UI-Feld;
-„z. Hd."-Zeile auf der Rechnung, Buchung bleibt frei von PII). **Sprint-Pointer steht jetzt auf Sitzung 3 → P3+P4**
-(KI-Autonomiestufen + Kleinunternehmer-Aufklärung als In-App-Texte). Danach **4 → P2** (KI-Anbieterwahl je Modus,
-strikt EU) · **5 → P8** (QR-Einzelteilen, vendored reiner JS-Encoder). **Arbeitsauftrag:** selbstständig nach Logik +
-Nutzen handeln; **größere Konflikte/Unklarheiten über `AskUserQuestion` eskalieren**, Kleines selbst entscheiden.
-Details + Sprint-Pointer im **paste-fertigen COPY-Block** in `docs/NAECHSTE_SITZUNG.md`.
+**Besprechung**. **Sitzung 1 → P9 ✅** · **Sitzung 2 → P10 ✅** · **Sitzung 3 → P3+P4 ✅** · **Sitzung 4 → P2 ✅**
+(KI-Anbieterwahl je Modus, strikt EU). **Sprint-Pointer steht jetzt auf Sitzung 5 → P8** (QR-Einzelteilen, vendored
+reiner JS-Encoder — build-frei prüfen, sonst ehrlich als blockiert melden und rückfragen). **Danach: BESPRECHUNG mit
+dem Nutzer — NICHT selbstständig weiterlaufen.** **Arbeitsauftrag:** selbstständig nach Logik + Nutzen handeln;
+**größere Konflikte/Unklarheiten über `AskUserQuestion` eskalieren**, Kleines selbst entscheiden. Details + Sprint-
+Pointer im **paste-fertigen COPY-Block** in `docs/NAECHSTE_SITZUNG.md`.
 
 **P9 — Datei-Import mit exaktem Schlüssel-Abgleich ✅ (Sitzung 1, 2026-06-19):** macht den Pseudonym-Round-Trip
 **dateibasiert/sitzungsübergreifend**. Reine Logik `src/ai/schluesselabgleich.js` (node-getestet, +38 → **1810/1810**):

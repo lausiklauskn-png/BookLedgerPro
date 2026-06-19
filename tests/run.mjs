@@ -177,6 +177,11 @@ import {
   AUTONOMIE_STUFEN, AUTONOMIE_GRENZEN, KLEINUNTERNEHMER_DRITTDATEN,
   autonomieStufe, aktiveAutonomieStufe, drittdatenHinweisRelevant,
 } from '../src/domain/aufklaerung.js';
+import {
+  KI_MODI, KI_REGION, ERLAUBTE_REGIONEN, KI_ANBIETER, STANDARD_WAHL,
+  regionErlaubt, istAnbieterErlaubt, erlaubteAnbieter, istWahlGueltig,
+  normalizeAnbieterWahl, aktiverAnbieter, istAus, istLokal, istEuCloud,
+} from '../src/ai/anbieter.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -5351,6 +5356,53 @@ await section('Aufklärung: KI-Autonomiestufen + Kleinunternehmer-Drittdaten', (
   ok('relevant bei Mistral-Key', drittdatenHinweisRelevant({ mistralKey: 'y' }) === true);
   ok('nicht relevant ohne Keys', drittdatenHinweisRelevant({}) === false);
   ok('nicht relevant bei null', drittdatenHinweisRelevant(null) === false);
+});
+
+// ===== P2: KI-Anbieterwahl je Modus (strikt EU, ai/anbieter.js) =====
+await section('P2: KI-Anbieterwahl je Modus (strikt EU)', () => {
+  // Modi + Standard-Wahl decken die drei Funktionen ab.
+  ok('drei Modi (ocr/kontierung/steuer)', KI_MODI.length === 3 && KI_MODI.includes('ocr') && KI_MODI.includes('kontierung') && KI_MODI.includes('steuer'));
+  ok('Standard-Wahl verhaltensgleich (vision/mistral/mistral)',
+    STANDARD_WAHL.ocr === 'vision' && STANDARD_WAHL.kontierung === 'mistral' && STANDARD_WAHL.steuer === 'mistral');
+
+  // STRIKT EU: nur EU/lokal erlaubt, Nicht-EU dormant.
+  ok('Region eu erlaubt', regionErlaubt('eu') === true);
+  ok('Region lokal erlaubt', regionErlaubt('lokal') === true);
+  ok('Region nicht-eu NICHT erlaubt', regionErlaubt('nicht-eu') === false);
+  ok('KI_REGION.NICHT_EU nicht in ERLAUBTE_REGIONEN', !ERLAUBTE_REGIONEN.includes(KI_REGION.NICHT_EU));
+  ok('vision/mistral sind EU', KI_ANBIETER.vision.region === 'eu' && KI_ANBIETER.mistral.region === 'eu');
+  ok('istAnbieterErlaubt(vision)', istAnbieterErlaubt('vision') === true);
+  ok('istAnbieterErlaubt(unbekannt) false', istAnbieterErlaubt('us-cloud') === false);
+
+  // erlaubteAnbieter je Modus (KEIN neuer Anbieter).
+  const ocrIds = erlaubteAnbieter('ocr').map((a) => a.id);
+  ok('OCR: nur vision + aus', ocrIds.length === 2 && ocrIds.includes('vision') && ocrIds.includes('aus'));
+  const kIds = erlaubteAnbieter('kontierung').map((a) => a.id);
+  ok('Kontierung: mistral + heuristik (+aus)', kIds.includes('mistral') && kIds.includes('heuristik') && kIds.includes('aus'));
+  ok('Kontierung kennt KEIN vision', !kIds.includes('vision'));
+  const sIds = erlaubteAnbieter('steuer').map((a) => a.id);
+  ok('Steuer: mistral + aus, kein heuristik', sIds.includes('mistral') && sIds.includes('aus') && !sIds.includes('heuristik'));
+  ok('unbekannter Modus → leer', erlaubteAnbieter('foo').length === 0);
+
+  // istWahlGueltig.
+  ok('OCR vision gültig', istWahlGueltig('ocr', 'vision'));
+  ok('OCR heuristik UNGÜLTIG', !istWahlGueltig('ocr', 'heuristik'));
+  ok('Steuer heuristik UNGÜLTIG', !istWahlGueltig('steuer', 'heuristik'));
+
+  // normalizeAnbieterWahl: füllt, repariert, lehnt Nicht-EU ab.
+  ok('null → Standard', JSON.stringify(normalizeAnbieterWahl(null)) === JSON.stringify(STANDARD_WAHL));
+  ok('teilweise wird ergänzt', normalizeAnbieterWahl({ kontierung: 'heuristik' }).ocr === 'vision');
+  ok('eigene gültige Wahl bleibt', normalizeAnbieterWahl({ kontierung: 'heuristik' }).kontierung === 'heuristik');
+  ok('ungültiger Wert → Standard', normalizeAnbieterWahl({ ocr: 'heuristik' }).ocr === 'vision');
+  ok('Nicht-EU-Versuch → Standard', normalizeAnbieterWahl({ steuer: 'us-cloud' }).steuer === 'mistral');
+
+  // aktiverAnbieter + Prädikate.
+  ok('aktiverAnbieter kontierung=heuristik', aktiverAnbieter('kontierung', { kontierung: 'heuristik' }) === 'heuristik');
+  ok('istAus steuer', istAus('steuer', { steuer: 'aus' }) === true);
+  ok('istLokal heuristik', istLokal('kontierung', { kontierung: 'heuristik' }) === true);
+  ok('istEuCloud mistral (Standard)', istEuCloud('kontierung', {}) === true);
+  ok('istEuCloud heuristik false', istEuCloud('kontierung', { kontierung: 'heuristik' }) === false);
+  ok('istEuCloud aus false', istEuCloud('steuer', { steuer: 'aus' }) === false);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

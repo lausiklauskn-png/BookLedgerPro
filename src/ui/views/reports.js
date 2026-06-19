@@ -11,7 +11,7 @@ import { gewinnUndVerlust, bilanz } from '../../domain/bilanz.js';
 import { istBilanzierung } from '../../domain/bilanzierung.js';
 import { VA_ZEITRAUM, voranmeldungsperioden, periodeIndexFuer, sondervorauszahlung, jahresZahllast } from '../../domain/umsatzsteuer.js';
 import { downloadText } from '../../core/files.js';
-import { isMistralConfigured } from '../../ai/aiConfig.js';
+import { isSteuerAssistentAktiv } from '../../ai/aiConfig.js';
 import { erklaereSteuer } from '../../ai/taxAssist.js';
 import { listAuftraege, listKunden, mahnungErfassen } from '../../domain/crm-store.js';
 import { offenePosten } from '../../domain/zahlungsabgleich.js';
@@ -63,7 +63,7 @@ async function repaint() {
   const va = buildUstVa(buchungen, idx, p);
   const ks = kostenstellenAuswertung(buchungen, idx, p);
   const audit = await verifyAuditChain();
-  const claudeBereit = await isMistralConfigured().catch(() => false);
+  const claudeBereit = await isSteuerAssistentAktiv().catch(() => false);
 
   // Offene Forderungen + Fälligkeit/Überfälligkeit für das Mahnwesen.
   let offen = [];

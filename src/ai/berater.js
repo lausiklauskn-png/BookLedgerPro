@@ -9,7 +9,7 @@
 // On-Device-Begründung direkt aus den Regeln. KEINE Steuerberatung.
 
 import { chat } from './mistral.js';
-import { isMistralConfigured } from './aiConfig.js';
+import { nutzeMistralFuerKontierung } from './aiConfig.js';
 import { findeRechtsregeln, onDeviceBegruendung } from '../domain/rechtsregeln.js';
 import { tokenize, reidentify, createRegistry } from './pseudonym.js';
 
@@ -70,7 +70,7 @@ export async function begruendeBuchung(kontext, opts = {}) {
   const k = kontext || {};
   const regeln = findeRechtsregeln(k).map((r) => r.paragraph);
   let useMistral = false;
-  try { useMistral = await isMistralConfigured(); } catch { useMistral = false; }
+  try { useMistral = await nutzeMistralFuerKontierung(); } catch { useMistral = false; }
   if (useMistral) {
     try {
       // Pseudonymisierung der personenbezogenen Kontextfelder (stabile Token über

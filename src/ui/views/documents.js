@@ -21,7 +21,7 @@ import { categorize as categorizeAI } from '../../ai/mistral.js';
 import { ladeAnker } from '../../ai/anker.js';
 import { tokenize, maskierungsBericht } from '../../ai/pseudonym.js';
 import { ocr } from '../../ai/vision.js';
-import { isVisionConfigured } from '../../ai/aiConfig.js';
+import { isOcrAktiv } from '../../ai/aiConfig.js';
 import { buildVorschlag } from '../../ai/suggest.js';
 import { begruendeBuchung } from '../../ai/berater.js';
 import { onDeviceBegruendung } from '../../domain/rechtsregeln.js';
@@ -67,7 +67,7 @@ export async function mountDocuments(host) {
 }
 
 async function repaint(extra) {
-  const [belege, visionBereit] = await Promise.all([listBelege(), isVisionConfigured().catch(() => false)]);
+  const [belege, visionBereit] = await Promise.all([listBelege(), isOcrAktiv().catch(() => false)]);
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('docs.title') }),
     schnellerfassung(),

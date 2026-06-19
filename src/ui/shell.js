@@ -43,6 +43,7 @@ import { aboutContent } from './intro.js';
 import { getAiConfig, saveAiConfig, MISTRAL_MODELS } from '../ai/aiConfig.js';
 import { testVision } from '../ai/vision.js';
 import { testMistral } from '../ai/mistral.js';
+import { KI_MODI, erlaubteAnbieter, normalizeAnbieterWahl } from '../ai/anbieter.js';
 
 const NAV = [
   ['dashboard', 'nav.dashboard'],
@@ -742,17 +743,33 @@ function firmaSection(s) {
 function aiConfigSection() {
   const host = el('div', { class: 'setting' });
   (async () => {
-    const cfg = await getAiConfig().catch(() => ({ visionKey: '', mistralKey: '', mistralModel: 'mistral-small-latest' }));
+    const cfg = await getAiConfig().catch(() => ({ visionKey: '', mistralKey: '', mistralModel: 'mistral-small-latest', anbieterWahl: undefined }));
     const visionKey = el('input', { type: 'password', autocomplete: 'off', placeholder: 'AIza… (Google Vision EU)', value: cfg.visionKey || '' });
     const mistralKey = el('input', { type: 'password', autocomplete: 'off', placeholder: 'Mistral API-Key (EU)', value: cfg.mistralKey || '' });
     const model = el('select', {}, MISTRAL_MODELS.map((m) => el('option', { value: m.id }, m.label)));
     model.value = cfg.mistralModel;
     const status = el('p', { class: 'muted small' });
 
+    // KI-Anbieter je Funktion (strikt EU). Ein Select je Modus, nur erlaubte (EU/lokale) Anbieter.
+    const wahl = normalizeAnbieterWahl(cfg.anbieterWahl);
+    const wahlSelects = {};
+    const anbieterFeld = (modus) => {
+      const sel = el('select', {}, erlaubteAnbieter(modus).map((a) => el('option', { value: a.id }, t('settings.aiProv.' + a.id))));
+      sel.value = wahl[modus];
+      wahlSelects[modus] = sel;
+      return el('label', { class: 'field' }, [el('span', { text: t('settings.aiMode.' + modus) }), sel]);
+    };
+    const aktuelleWahl = () => { const w = {}; for (const m of KI_MODI) w[m] = wahlSelects[m].value; return w; };
+
+    const aktuelleConfig = () => ({
+      visionKey: visionKey.value.trim(), mistralKey: mistralKey.value.trim(),
+      mistralModel: model.value, anbieterWahl: aktuelleWahl(),
+    });
+
     const save = el('button', {
       class: 'btn', text: t('settings.aiSave'),
       onClick: async () => {
-        await saveAiConfig({ visionKey: visionKey.value.trim(), mistralKey: mistralKey.value.trim(), mistralModel: model.value });
+        await saveAiConfig(aktuelleConfig());
         status.textContent = t('settings.aiSaved') + ' ' + t('settings.aiPersistHint');
       },
     });
@@ -763,7 +780,7 @@ function aiConfigSection() {
       const btn = el('button', {
         class: 'btn btn-sm', text: t('settings.aiTest'),
         onClick: async () => {
-          await saveAiConfig({ visionKey: visionKey.value.trim(), mistralKey: mistralKey.value.trim(), mistralModel: model.value });
+          await saveAiConfig(aktuelleConfig());
           if (!getVal()) { out.textContent = '—'; return; }
           out.textContent = '…';
           const r = await runTest();
@@ -791,6 +808,9 @@ function aiConfigSection() {
       fieldWithLink(t('settings.aiMistralKey'), mistralKey, 'https://console.mistral.ai/api-keys'),
       el('p', { class: 'muted small', text: t('settings.aiMistralHint') }),
       el('label', { class: 'field' }, [el('span', { text: t('settings.aiModel') }), model]),
+      el('div', { class: 'setting-label', text: t('settings.aiProviderTitle') }),
+      el('p', { class: 'muted small', text: t('settings.aiProviderHint') }),
+      ...KI_MODI.map((m) => anbieterFeld(m)),
       el('div', { class: 'btn-row' }, [save]),
       testRow('Google Vision', testVision, () => visionKey.value.trim()),
       testRow('Mistral', testMistral, () => mistralKey.value.trim()),

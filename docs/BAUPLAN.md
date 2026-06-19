@@ -443,7 +443,14 @@
   `aktiveAutonomieStufe` (Fallback suggest), `drittdatenHinweisRelevant`. UI: zwei neue Karten in „Recht & Doku"
   (`src/ui/views/legal.js`) — Autonomiestufen mit Markierung der aktiv eingestellten Stufe + Grenzen; Drittdaten-Karte
   mit AVV-Betonung, wenn EU-KI konfiguriert. i18n de+en, CSS, SW `v145`, 125 Module. DOM statisch geprüft.
-- [ ] **S4 · P2 — KI-Anbieterwahl je Modus**, strikt innerhalb der EU (Nicht-EU bleibt geschlossen). Setting + UI.
+- [x] **S4 · P2 — KI-Anbieterwahl je Modus ✅ (2026-06-19)**, strikt innerhalb der EU (Nicht-EU bleibt geschlossen/
+  dormant). Reine Logik `src/ai/anbieter.js` (node-getestet, +28 → **1886/1886**): `KI_MODI` (ocr|kontierung|steuer),
+  `KI_REGION`/`ERLAUBTE_REGIONEN` (eu+lokal; Nicht-EU dormant), Registry `KI_ANBIETER` (vision/mistral/heuristik/aus,
+  KEIN neuer Anbieter), `STANDARD_WAHL` (verhaltensgleich) + Selektoren `normalizeAnbieterWahl`/`erlaubteAnbieter`/
+  `aktiverAnbieter`/`istAus`/`istLokal`/`istEuCloud`. Persistiert verschlüsselt in `aiConfig.anbieterWahl` (normalisiert).
+  Netz-Rand: `vision.ocr`, `mistral.categorize`, `berater.begruendeBuchung`, Steuer-Assistent (reports.js), OCR-Bereitschaft
+  (documents.js). UI: drei Anbieter-Selects + EU-Hinweis (`ui/shell.js`), i18n de+en, SW `v146`, 126 Module. Setting + UI,
+  kein Datenmodell-/GoBD-Eingriff. DOM statisch geprüft.
 - [ ] **S5 · P8 — QR-Einzelteilen (lokal erzeugt):** braucht einen vendored reinen JS-QR-Encoder (build-frei prüfen;
   sonst ehrlich als blockiert melden).
 - [ ] **Danach: BESPRECHUNG mit dem Nutzer** (Bilanz + neue Richtung).
