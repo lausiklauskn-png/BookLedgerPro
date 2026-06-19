@@ -2,18 +2,32 @@
 
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
-import { formatEuro } from '../../domain/money.js';
-import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
-import { computeUStVoranmeldung, computeEUR } from '../../domain/taxes.js';
+import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js';
+import { loadAccounts, listBuchungen, verifyAuditChain, saveEntwurf, ensureSeedKonten } from '../../domain/store.js';
+import { computeUStVoranmeldung, computeEUR, computeEURIst, verprobeUSt } from '../../domain/taxes.js';
 import { kostenstellenAuswertung } from '../../domain/costcenters.js';
-import { buildLedgerCsv, buildDatevCsv, buildUstVa, ustVaToCsv, eurToCsv } from '../../domain/export.js';
+import { buildLedgerCsv, buildDatevExtf, buildUstVa, ustVaToCsv, eurToCsv, buildOffeneVerbindlichkeitenCsv, buildElsterVaPaket, buildGuvCsv, buildBilanzCsv } from '../../domain/export.js';
+import { gewinnUndVerlust, bilanz } from '../../domain/bilanz.js';
+import { istBilanzierung } from '../../domain/bilanzierung.js';
+import { VA_ZEITRAUM, voranmeldungsperioden, periodeIndexFuer, sondervorauszahlung, jahresZahllast } from '../../domain/umsatzsteuer.js';
 import { downloadText } from '../../core/files.js';
-import { isMistralConfigured } from '../../ai/aiConfig.js';
+import { isSteuerAssistentAktiv } from '../../ai/aiConfig.js';
 import { erklaereSteuer } from '../../ai/taxAssist.js';
+import { listAuftraege, listKunden, mahnungErfassen } from '../../domain/crm-store.js';
+import { offenePosten } from '../../domain/zahlungsabgleich.js';
+import { anreicherePosten, ueberfaelligSummen, mahnschreibenDaten, kundeIstB2B, vorschlagNaechsteStufe, mahnStufeLabel, letzteMahnstufe, mahnbuchungEntwurf, MAHN_KONTEN } from '../../domain/mahnwesen.js';
+import { listEingangsrechnungen } from '../../domain/payables-store.js';
+import { offeneVerbindlichkeiten, anreichereVerbindlichkeiten, verbindlichkeitenSummen } from '../../domain/payables.js';
+import { getSettings, updateSettings } from '../../state.js';
+import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
+let _b2bById = {}; // kundeId → ist Unternehmer (B2B)? für Verzugszinsen/Pauschale
+let _auftragById = {}; // auftragId → Auftrag (für persistenten Mahn-Verlauf)
 const periode = { von: '', bis: '' };
+// USt-VA Voranmeldungszeitraum-Auswahl (eigenständig, ohne Voll-Repaint).
+let _vaTyp = null, _vaJahr = null, _vaIdx = 0;
 
 export async function mountReports(host) {
   _host = host;
@@ -36,37 +50,262 @@ async function repaint() {
   const p = (periode.von || periode.bis) ? { von: periode.von || undefined, bis: periode.bis || undefined } : undefined;
 
   const ust = computeUStVoranmeldung(buchungen, idx, p);
+  const verprobung = verprobeUSt(buchungen, idx, p);
   const eur = computeEUR(buchungen, idx, p);
+  const eurIst = computeEURIst(buchungen, idx, p);
+  // GuV + Bilanz nur im Bilanzierungs-Modus (B1-Schalter gewinnermittlung) — gatet die Ansicht.
+  const bilanzModus = istBilanzierung(getSettings());
+  const guv = bilanzModus ? gewinnUndVerlust(buchungen, idx, p) : null;
+  // Bilanz zum Stichtag: nur das Periodenende (`bis`) zählt; Bestand ist kumulativ.
+  // Eröffnungssalden kommen aus gebuchten Saldenvorträgen (Konto 9000) — eine
+  // separate Eröffnungsbilanz-Eingabe gibt es (noch) nicht.
+  const bilanzReport = bilanzModus ? bilanz(buchungen, idx, p && p.bis ? p.bis : undefined) : null;
   const va = buildUstVa(buchungen, idx, p);
   const ks = kostenstellenAuswertung(buchungen, idx, p);
   const audit = await verifyAuditChain();
-  const claudeBereit = await isMistralConfigured().catch(() => false);
+  const claudeBereit = await isSteuerAssistentAktiv().catch(() => false);
 
+  // Offene Forderungen + Fälligkeit/Überfälligkeit für das Mahnwesen.
+  let offen = [];
+  try {
+    const [auftraege, kunden] = await Promise.all([listAuftraege(), listKunden()]);
+    const nameById = {}; _b2bById = {}; _auftragById = {};
+    for (const k of kunden) { nameById[k.id] = k.name; _b2bById[k.id] = kundeIstB2B(k); }
+    for (const a of auftraege) _auftragById[a.id] = a;
+    const s = getSettings();
+    offen = anreicherePosten(offenePosten(auftraege, { nameById }), { zielTage: s.zahlungszielTage });
+  } catch { offen = []; }
+
+  // Offene Verbindlichkeiten (Kreditoren-OP-Liste) + Fälligkeit/Überfälligkeit.
+  let offenVerb = [];
+  try {
+    offenVerb = anreichereVerbindlichkeiten(offeneVerbindlichkeiten(await listEingangsrechnungen()));
+  } catch { offenVerb = []; }
+
+  // R6/P2: fachliche Feature-Gates ansichtsintern konsumieren. Im Privat-Modus die
+  // USt-Karten (VA/Verprobung/Assistent), Mahnwesen, Kreditoren-OP, Kostenstellen und
+  // den Berater-Export ausblenden; im Verein-Modus nur Mahnwesen (USt bleibt).
+  const fs = getSettings();
+  const zUst = zeigeFeature(fs, FEATURE.UMSATZSTEUER);
   mount(_host, el('section', { class: 'view', id: 'report-view' }, [
     el('h1', { text: t('reports.title') }),
     periodeControls(),
-    exportBar(buchungen, idx, eur, va),
+    exportBar(buchungen, idx, eur, va, fs),
+    (zeigeFeature(fs, FEATURE.MAHNWESEN) && offen.length) ? mahnungenCard(offen) : null,
+    (zeigeFeature(fs, FEATURE.VERBINDLICHKEITEN) && offenVerb.length) ? verbindlichkeitenCard(offenVerb) : null,
     el('div', { class: 'report-grid' }, [
-      ustCard(ust),
+      zUst ? ustCard(ust) : null,
       eurCard(eur),
     ]),
-    vaCard(va),
-    claudeBereit ? assistentCard(va, eur, p) : null,
-    ks.length ? kostenstellenCard(ks) : null,
+    guv ? guvCard(guv) : null,
+    bilanzReport ? bilanzCard(bilanzReport) : null,
+    eurIstCard(eurIst),
+    zUst ? vaCard(va) : null,
+    zUst ? vaPeriodeCard(buchungen, idx) : null,
+    zUst ? verprobungCard(verprobung) : null,
+    (claudeBereit && zUst) ? assistentCard(va, eur, p) : null,
+    (zeigeFeature(fs, FEATURE.KOSTENSTELLEN) && ks.length) ? kostenstellenCard(ks) : null,
     auditCard(audit),
   ]));
 }
 
+// ---- Offene Forderungen & Mahnwesen ----------------------------------------
+
+function mahnungenCard(posten) {
+  const sum = ueberfaelligSummen(posten);
+  const reihen = [...posten].sort((a, b) => b.tageUeberfaellig - a.tageUeberfaellig).map((p) => {
+    const auftrag = _auftragById[p.id];
+    const letzte = letzteMahnstufe(auftrag);
+    const vor = vorschlagNaechsteStufe(auftrag, p.tageUeberfaellig);
+    const statusKinder = [
+      p.ueberfaellig
+        ? el('span', { class: 'badge badge-warn', text: `${t('reports.mahnOverdue')} ${p.tageUeberfaellig} ${t('reports.mahnDays')}` })
+        : el('span', { class: 'muted small', text: t('reports.mahnOpen') }),
+    ];
+    if (letzte > 0) statusKinder.push(el('span', { class: 'muted small', text: ` · ${t('reports.mahnLast')}: ${mahnStufeLabel(letzte)}` }));
+    const aktion = vor.mahnbar
+      ? el('button', { class: 'btn btn-sm', text: `${t('reports.mahnShow')} (${vor.label})`, onClick: () => zeigeMahnung(p) })
+      : null;
+    return el('tr', {}, [
+      el('td', { text: p.referenz || '—' }),
+      el('td', { text: p.name || '—' }),
+      el('td', { class: 'num', text: formatEuro(p.betragCent) }),
+      el('td', { class: 'mono small', text: p.faelligAm }),
+      el('td', {}, statusKinder),
+      el('td', { class: 'actions no-print' }, [aktion].filter(Boolean)),
+    ]);
+  });
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.mahnTitle') }),
+    el('div', { class: 'report-line strong' }, [
+      el('span', { text: t('reports.mahnOverdueSum') }),
+      el('span', { class: 'num', text: `${formatEuro(sum.summeCent)} (${sum.anzahl})` }),
+    ]),
+    el('table', { class: 'table' }, [
+      el('thead', {}, [el('tr', {}, [
+        el('th', { text: t('reports.mahnInvoice') }), el('th', { text: t('reports.mahnCustomer') }),
+        el('th', { class: 'num', text: t('orders.gross') }), el('th', { text: t('reports.mahnDue') }),
+        el('th', { text: t('reports.mahnStatus') }), el('th', { class: 'no-print', text: '' }),
+      ])]),
+      el('tbody', {}, reihen),
+    ]),
+    el('p', { class: 'muted small', text: t('reports.mahnNote') }),
+  ]);
+}
+
+function zeigeMahnung(posten) {
+  const s = getSettings();
+  const auftrag = _auftragById[posten.id];
+  const b2b = posten.kundeId != null && _b2bById[posten.kundeId] === false ? false : true;
+  const vor = vorschlagNaechsteStufe(auftrag, posten.tageUeberfaellig);
+  const d = mahnschreibenDaten(posten, {
+    zielTage: s.zahlungszielTage,
+    basiszinsProzent: s.verzugBasiszinsProzent,
+    b2b,
+  });
+  const firma = s.firma || {};
+  const zeile = (label, cents, strong) => el('div', { class: 'report-line' + (strong ? ' strong' : '') }, [
+    el('span', { text: label }), el('span', { class: 'num', text: formatEuro(cents) }),
+  ]);
+
+  // Manuell erfassbare Verzugszinsen/Mahngebühren (vorbelegt mit §288-Berechnung, editierbar).
+  const zinsenInput = el('input', { type: 'text', value: formatCents(d.zinsenCent) });
+  const gebuehrenInput = el('input', { type: 'text', value: formatCents(d.pauschaleCent) });
+  const verlauf = (auftrag && auftrag.mahnungen) || [];
+  const status = el('p', { class: 'muted small' });
+
+  mount(_host, el('section', { class: 'view' }, [
+    el('div', { class: 'btn-row no-print' }, [
+      el('button', { class: 'btn', text: t('common.back'), onClick: () => repaint() }),
+      el('button', { class: 'btn btn-primary', text: t('reports.print'), onClick: () => window.print() }),
+    ]),
+    el('div', { class: 'card rechnung-doc' }, [
+      el('div', { class: 'muted small', text: firma.name || '' }),
+      el('h2', { class: 'card-title', text: `${vor.label}${d.referenz ? ' — Rechnung ' + d.referenz : ''}` }),
+      el('div', { text: `${t('reports.mahnCustomer')}: ${d.name || '—'}` }),
+      verlauf.length ? el('p', { class: 'muted small', text: `${t('reports.mahnLast')}: ` +
+        verlauf.map((m) => `${mahnStufeLabel(m.stufe)} (${m.datum})`).join(', ') }) : null,
+      el('p', { class: 'small', text: t('reports.mahnBody')
+        .replace('{ref}', d.referenz || '—').replace('{faellig}', d.faelligAm).replace('{tage}', String(d.tageUeberfaellig)) }),
+      zeile(t('reports.mahnClaim'), d.forderungCent),
+      // Editierbare Beträge (no-print: im Druck erscheinen die Zahlen über die Summe).
+      el('div', { class: 'form-grid no-print' }, [
+        el('label', { class: 'field' }, [el('span', { text: t('reports.mahnInterest') }), zinsenInput]),
+        el('label', { class: 'field' }, [el('span', { text: t('reports.mahnFee') }), gebuehrenInput]),
+      ]),
+      el('div', { class: 'mycel-divider' }),
+      el('p', { class: 'small', text: t('reports.mahnDeadline').replace('{frist}', d.neueFrist) }),
+      el('div', { class: 'btn-row no-print' }, [
+        el('button', {
+          class: 'btn btn-primary', text: `${t('reports.mahnRecord')} (${vor.label})`,
+          onClick: async (e) => {
+            e.target.setAttribute('disabled', '');
+            try {
+              await mahnungErfassen(posten.id, {
+                stufe: vor.stufe,
+                zinsenCent: parseEuroToCents(zinsenInput.value) || 0,
+                gebuehrenCent: parseEuroToCents(gebuehrenInput.value) || 0,
+              });
+              status.textContent = t('reports.mahnRecorded');
+            } catch (err) { status.textContent = String(err.message || err); }
+          },
+        }),
+        // R1: Verzugszinsen/Mahngebühren als Buchungsentwurf ins Journal übernehmen
+        // (manuell, GoBD — Festschreiben bleibt dem Nutzer überlassen).
+        el('button', {
+          class: 'btn', text: t('reports.mahnBook'),
+          onClick: async () => {
+            const entwurf = mahnbuchungEntwurf({
+              zinsenCent: parseEuroToCents(zinsenInput.value) || 0,
+              gebuehrenCent: parseEuroToCents(gebuehrenInput.value) || 0,
+              referenz: d.referenz, name: d.name, datum: d.datum,
+            });
+            if (!entwurf) { status.textContent = t('reports.mahnBookNone'); return; }
+            try {
+              // Standardkonten sicherstellen, falls der Nutzer sie entfernt hat.
+              await ensureSeedKonten([MAHN_KONTEN.forderung, MAHN_KONTEN.zinsertrag, MAHN_KONTEN.gebuehrertrag]);
+              await saveEntwurf(entwurf);
+              status.textContent = t('reports.mahnBooked');
+            } catch (err) { status.textContent = String(err.message || err); }
+          },
+        }),
+      ]),
+      status,
+      el('p', { class: 'muted small', text: t('reports.mahnLegal') }),
+      el('p', { class: 'muted small', text: t('reports.mahnBookHint') }),
+    ].filter(Boolean)),
+  ]));
+}
+
+// ---- Offene Verbindlichkeiten (Kreditoren-OP-Liste) ------------------------
+
+function verbindlichkeitenCard(posten) {
+  const sum = verbindlichkeitenSummen(posten);
+  const reihen = [...posten]
+    .sort((a, b) => (a.faelligAm || '').localeCompare(b.faelligAm || ''))
+    .map((p) => {
+      const badge = p.ueberfaellig
+        ? el('span', { class: 'badge badge-warn', text: `${t('reports.opOverdue')} ${p.tageUeberfaellig} ${t('reports.mahnDays')}` })
+        : el('span', { class: 'muted small', text: t('reports.mahnOpen') });
+      return el('tr', {}, [
+        el('td', { text: p.referenz || '—' }),
+        el('td', { text: p.name || '—' }),
+        el('td', { class: 'num', text: formatEuro(p.offenCent) }),
+        el('td', { class: 'mono small', text: p.faelligAm || '—' }),
+        el('td', {}, [badge]),
+      ]);
+    });
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.opTitle') }),
+    el('div', { class: 'report-line strong' }, [
+      el('span', { text: t('reports.opSum') }),
+      el('span', { class: 'num', text: `${formatEuro(sum.summeCent)} (${sum.anzahl})` }),
+    ]),
+    sum.ueberfaelligAnzahl ? el('div', { class: 'report-line' }, [
+      el('span', { text: t('reports.opOverdueSum') }),
+      el('span', { class: 'num', text: `${formatEuro(sum.ueberfaelligCent)} (${sum.ueberfaelligAnzahl})` }),
+    ]) : null,
+    el('table', { class: 'table' }, [
+      el('thead', {}, [el('tr', {}, [
+        el('th', { text: t('reports.mahnInvoice') }), el('th', { text: t('reports.opCreditor') }),
+        el('th', { class: 'num', text: t('reports.opOpen') }), el('th', { text: t('reports.mahnDue') }),
+        el('th', { text: t('reports.mahnStatus') }),
+      ])]),
+      el('tbody', {}, reihen),
+    ]),
+    el('div', { class: 'btn-row no-print' }, [
+      el('button', {
+        class: 'btn btn-sm', text: t('reports.opExport'),
+        onClick: () => downloadText(`offene-verbindlichkeiten-${new Date().toISOString().slice(0, 10)}.csv`, BOM + buildOffeneVerbindlichkeitenCsv(posten), 'text/csv'),
+      }),
+    ]),
+    el('p', { class: 'muted small', text: t('reports.opNote') }),
+  ].filter(Boolean));
+}
+
 const BOM = '﻿';
 
-function exportBar(buchungen, idx, eur, va) {
+function datevOpts() {
+  const s = getSettings();
+  const d = s.datev || {};
+  const f = s.firma || {};
+  return {
+    berater: d.beraterNr || '', mandant: d.mandantNr || '', sachkontenlaenge: d.sachkontenlaenge || 4,
+    wjBeginnMMDD: s.wirtschaftsjahrBeginn || '01-01',
+    bezeichnung: (f.name ? f.name + ' — ' : '') + 'BookLedgerPro', festschreibung: true,
+  };
+}
+
+function exportBar(buchungen, idx, eur, va, settings) {
   const stamp = new Date().toISOString().slice(0, 10);
   const dl = (name, text) => downloadText(name, BOM + text, 'text/csv');
+  // R6/P2: DATEV-EXTF nur bei Berater-Export, USt-VA-CSV nur bei USt-Ausweis.
+  const s = settings || getSettings();
   return el('div', { class: 'card export-bar no-print' }, [
     el('span', { class: 'muted small', text: t('reports.export') + ':' }),
     el('button', { class: 'btn btn-sm', text: t('reports.exportJournal'), onClick: () => dl(`journal-${stamp}.csv`, buildLedgerCsv(buchungen, idx)) }),
-    el('button', { class: 'btn btn-sm', text: t('reports.exportDatev'), onClick: () => dl(`datev-${stamp}.csv`, buildDatevCsv(buchungen, idx)) }),
-    el('button', { class: 'btn btn-sm', text: t('reports.exportUstVa'), onClick: () => dl(`ust-va-${stamp}.csv`, ustVaToCsv(va)) }),
+    zeigeFeature(s, FEATURE.BERATER_EXPORT) ? el('button', { class: 'btn btn-sm', text: t('reports.exportDatev'), onClick: () => dl(`EXTF_Buchungsstapel_${stamp}.csv`, buildDatevExtf(buchungen, idx, datevOpts())) }) : null,
+    zeigeFeature(s, FEATURE.UMSATZSTEUER) ? el('button', { class: 'btn btn-sm', text: t('reports.exportUstVa'), onClick: () => dl(`ust-va-${stamp}.csv`, ustVaToCsv(va)) }) : null,
     el('button', { class: 'btn btn-sm', text: t('reports.exportEur'), onClick: () => dl(`euer-${stamp}.csv`, eurToCsv(eur)) }),
     el('button', { class: 'btn btn-sm', text: t('reports.print'), onClick: () => window.print() }),
   ]);
@@ -77,17 +316,104 @@ function vaCard(va) {
     el('span', { text: (kz ? `Kz ${kz} · ` : '') + label }),
     el('span', { class: 'num', text: formatEuro(cents) }),
   ]);
+  // Zeilen für Steuerschuldumkehr/EU nur zeigen, wenn relevant (sonst Karte schlank halten).
+  const opt = (kz, label, cents, strong) => (cents ? line(kz, label, cents, strong) : null);
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('reports.ustVaKennzahlen') }),
+    opt('41', t('reports.kz41'), va.kz41),
+    opt('43', t('reports.kz43'), va.kz43),
     line('81', t('reports.kz81'), va.kz81),
     line('', t('reports.kz81s'), va.kz81Steuer),
     line('86', t('reports.kz86'), va.kz86),
     line('', t('reports.kz86s'), va.kz86Steuer),
+    opt('89', t('reports.kz89'), va.kz89),
+    opt('93', t('reports.kz93'), va.kz93),
+    opt('46', t('reports.kz46'), va.kz46),
+    opt('47', t('reports.kz47'), va.kz47),
     line('66', t('reports.kz66'), va.kz66),
+    opt('61', t('reports.kz61'), va.kz61),
+    opt('67', t('reports.kz67'), va.kz67),
     el('div', { class: 'mycel-divider' }),
     line('83', t('reports.kz83'), va.kz83, true),
     el('p', { class: 'muted small', text: t('reports.ustVaNote') }),
   ]);
+}
+
+// USt-VA je Voranmeldungszeitraum (Monat/Quartal/Jahr) + Sondervorauszahlung + ELSTER-Paket.
+function vaPeriodeCard(buchungen, idx) {
+  if (_vaTyp == null) _vaTyp = getSettings().vaZeitraum || VA_ZEITRAUM.VIERTELJAEHRLICH;
+  if (_vaJahr == null) _vaJahr = new Date().getFullYear();
+
+  const ergebnis = el('div');
+  const typSel = el('select', {}, [
+    el('option', { value: VA_ZEITRAUM.MONATLICH, text: t('reports.vaMonthly') }),
+    el('option', { value: VA_ZEITRAUM.VIERTELJAEHRLICH, text: t('reports.vaQuarterly') }),
+    el('option', { value: VA_ZEITRAUM.JAEHRLICH, text: t('reports.vaYearly') }),
+  ]);
+  typSel.value = _vaTyp;
+  const jahrInput = el('input', { type: 'number', value: String(_vaJahr), style: 'width:7rem' });
+  const periodeSel = el('select', {});
+
+  const fuellePerioden = () => {
+    const perioden = voranmeldungsperioden(_vaTyp, _vaJahr);
+    if (_vaIdx >= perioden.length) _vaIdx = 0;
+    clearChildren(periodeSel);
+    perioden.forEach((p, i) => periodeSel.appendChild(el('option', { value: String(i), text: p.label })));
+    periodeSel.value = String(_vaIdx);
+    return perioden;
+  };
+  const render = () => {
+    const perioden = voranmeldungsperioden(_vaTyp, _vaJahr);
+    const p = perioden[_vaIdx] || perioden[0];
+    const va = buildUstVa(buchungen, idx, { von: p.von, bis: p.bis });
+    const svVorjahr = sondervorauszahlung(jahresZahllast(buchungen, idx, _vaJahr - 1));
+    const stamp = `${p.code}-${_vaJahr}`;
+    const meta = { ...firmaMeta(), jahr: _vaJahr, zeitraumCode: p.code, zeitraumLabel: p.label };
+    const line = (label, cents, strong) => el('div', { class: 'report-line' + (strong ? ' strong' : '') }, [
+      el('span', { text: label }), el('span', { class: 'num', text: formatEuro(cents) }),
+    ]);
+    clearChildren(ergebnis);
+    ergebnis.appendChild(el('div', { class: 'muted small', text: `${p.von} – ${p.bis} · ${t('reports.vaCode')} ${p.code}` }));
+    ergebnis.appendChild(line(t('reports.kz83'), va.kz83, true));
+    if (_vaTyp === VA_ZEITRAUM.MONATLICH && svVorjahr > 0) {
+      ergebnis.appendChild(line(t('reports.vaSondervorauszahlung'), svVorjahr));
+      ergebnis.appendChild(el('p', { class: 'muted small', text: t('reports.vaSvHint') }));
+    }
+    ergebnis.appendChild(el('div', { class: 'btn-row no-print' }, [
+      el('button', {
+        class: 'btn btn-sm', text: t('reports.vaExportPaket'),
+        onClick: () => downloadText(`ust-va-elster-${stamp}.csv`, BOM + buildElsterVaPaket(va, meta), 'text/csv'),
+      }),
+      el('button', {
+        class: 'btn btn-sm', text: t('reports.exportUstVa'),
+        onClick: () => downloadText(`ust-va-${stamp}.csv`, BOM + ustVaToCsv(va), 'text/csv'),
+      }),
+      el('a', { class: 'btn btn-sm', href: 'https://www.elster.de/eportal/formulare-leistungen/alleformulare/umsatzsteuervoranmeldung', target: '_blank', rel: 'noopener noreferrer', text: t('reports.vaElsterLink') }),
+    ]));
+  };
+
+  fuellePerioden();
+  typSel.addEventListener('change', () => { _vaTyp = typSel.value; updateSettings({ vaZeitraum: _vaTyp }).catch(() => {}); _vaIdx = 0; fuellePerioden(); render(); });
+  jahrInput.addEventListener('change', () => { _vaJahr = Number(jahrInput.value) || _vaJahr; fuellePerioden(); render(); });
+  periodeSel.addEventListener('change', () => { _vaIdx = Number(periodeSel.value) || 0; render(); });
+  render();
+
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.vaPeriodTitle') }),
+    el('div', { class: 'period-bar no-print' }, [
+      el('span', { class: 'muted small', text: t('reports.vaType') + ':' }), typSel,
+      jahrInput, periodeSel,
+    ]),
+    ergebnis,
+    el('p', { class: 'muted small', text: t('reports.vaPaketHint') }),
+  ]);
+}
+
+function clearChildren(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+function firmaMeta() {
+  const f = getSettings().firma || {};
+  return { steuernummer: f.steuernummer || '', ustId: f.ustId || '' };
 }
 
 function assistentCard(va, eur, p) {
@@ -170,6 +496,107 @@ function eurCard(eur) {
     el('div', { class: 'mycel-divider' }),
     zeile(t('reports.surplus'), eur.ueberschuss, { strong: true }),
     el('p', { class: 'muted small', text: t('reports.eurNote') }),
+  ]);
+}
+
+// GuV (Bilanzierung, B2): Erträge/Aufwendungen je Konto + Jahresüberschuss/-fehlbetrag.
+function guvCard(guv) {
+  const stamp = new Date().toISOString().slice(0, 10);
+  const kontoZeile = (z) => el('div', { class: 'report-line' }, [
+    el('span', {}, [el('span', { class: 'mono small', text: z.nummer + ' ' }), el('span', { text: z.name })]),
+    el('span', { class: 'num', text: formatEuro(z.wert) }),
+  ]);
+  const ueberschuss = guv.jahresueberschuss >= 0;
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.guv') }),
+    el('h3', { class: 'small muted', text: t('reports.ertrag') }),
+    ...guv.ertraege.map(kontoZeile),
+    el('div', { class: 'report-line strong' }, [
+      el('span', { text: t('reports.guvSumErtraege') }), el('span', { class: 'num', text: formatEuro(guv.summeErtraege) }),
+    ]),
+    el('h3', { class: 'small muted', text: t('reports.aufwand') }),
+    ...guv.aufwendungen.map(kontoZeile),
+    el('div', { class: 'report-line strong' }, [
+      el('span', { text: t('reports.guvSumAufwendungen') }), el('span', { class: 'num', text: formatEuro(guv.summeAufwendungen) }),
+    ]),
+    el('div', { class: 'mycel-divider' }),
+    zeile(ueberschuss ? t('reports.guvUeberschuss') : t('reports.guvFehlbetrag'), Math.abs(guv.jahresueberschuss), { strong: true }),
+    el('div', { class: 'btn-row no-print' }, [
+      el('button', {
+        class: 'btn btn-sm', text: t('reports.guvExport'),
+        onClick: () => downloadText(`guv-${stamp}.csv`, BOM + buildGuvCsv(guv), 'text/csv'),
+      }),
+    ]),
+    el('p', { class: 'muted small', text: t('reports.guvNote') }),
+  ]);
+}
+
+// Bilanz (Bilanzierung, B3): Aktiva/Passiva aus den Bestandskonten zum Stichtag;
+// der Jahresüberschuss/-fehlbetrag fließt als Ergebnis ins Eigenkapital (Passiva).
+function bilanzCard(b) {
+  const stamp = new Date().toISOString().slice(0, 10);
+  const kontoZeile = (z) => el('div', { class: 'report-line' }, [
+    el('span', {}, [el('span', { class: 'mono small', text: z.nummer + ' ' }), el('span', { text: z.name })]),
+    el('span', { class: 'num', text: formatEuro(z.wert) }),
+  ]);
+  const summenZeile = (label, cents) => el('div', { class: 'report-line strong' }, [
+    el('span', { text: label }), el('span', { class: 'num', text: formatEuro(cents) }),
+  ]);
+  const ueberschuss = b.jahresueberschuss >= 0;
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.bilanz') + (b.stichtag ? ` (${b.stichtag})` : '') }),
+    el('h3', { class: 'small muted', text: t('reports.bilanzAktiva') }),
+    ...b.aktiva.map(kontoZeile),
+    summenZeile(t('reports.bilanzSumAktiva'), b.summeAktiva),
+    el('h3', { class: 'small muted', text: t('reports.bilanzPassiva') }),
+    ...b.passiva.map(kontoZeile),
+    zeile(ueberschuss ? t('reports.guvUeberschuss') : t('reports.guvFehlbetrag'), b.jahresueberschuss),
+    summenZeile(t('reports.bilanzSumPassiva'), b.summePassivaMitErgebnis),
+    el('div', { class: 'mycel-divider' }),
+    el('div', { class: 'report-line' + (b.ausgeglichen ? '' : ' strong') }, [
+      el('span', { text: b.ausgeglichen ? t('reports.bilanzAusgeglichen') : t('reports.bilanzUnausgeglichen') }),
+      el('span', { class: 'num', text: b.ausgeglichen ? '✓' : formatEuro(b.differenz) }),
+    ]),
+    el('div', { class: 'btn-row no-print' }, [
+      el('button', {
+        class: 'btn btn-sm', text: t('reports.bilanzExport'),
+        onClick: () => downloadText(`bilanz-${stamp}.csv`, BOM + buildBilanzCsv(b), 'text/csv'),
+      }),
+    ]),
+    el('p', { class: 'muted small', text: t('reports.bilanzNote') }),
+  ]);
+}
+
+function verprobungCard(v) {
+  const block = (label, teil) => {
+    const abw = teil.diff !== 0;
+    return el('div', { class: 'report-line' + (abw ? ' strong' : '') }, [
+      el('span', { text: label }),
+      el('span', { class: 'num', text: `${formatEuro(teil.gebucht)} / ${formatEuro(teil.erwartet)}`
+        + (abw ? ` (${teil.diff > 0 ? '+' : ''}${formatEuro(teil.diff)})` : '') }),
+    ]);
+  };
+  return el('div', { class: `card audit ${v.ok ? 'audit-ok' : 'audit-fail'}` }, [
+    el('h2', { class: 'card-title', text: t('reports.verprobung') }),
+    el('div', { class: 'audit-status' }, [
+      el('span', { class: 'audit-dot' }),
+      el('span', { text: v.ok ? t('reports.verprobungOk') : t('reports.verprobungAbw') }),
+    ]),
+    el('p', { class: 'muted small', text: t('reports.verprobungSpalten') }),
+    block(t('reports.ust'), v.umsatzsteuer),
+    block(t('reports.vorsteuer'), v.vorsteuer),
+    el('p', { class: 'muted small', text: t('reports.verprobungNote') }),
+  ]);
+}
+
+function eurIstCard(eur) {
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('reports.eurIst') }),
+    zeile(t('reports.income'), eur.einnahmen),
+    zeile(t('reports.expense'), eur.ausgaben),
+    el('div', { class: 'mycel-divider' }),
+    zeile(t('reports.surplus'), eur.ueberschuss, { strong: true }),
+    el('p', { class: 'muted small', text: t('reports.eurIstNote') }),
   ]);
 }
 

@@ -3,7 +3,10 @@
 // Sperrbildschirm/Onboarding → App-Shell.
 
 import { requestPersistence } from './core/durability.js';
+import { initMandanten } from './core/mandantenStore.js';
+import { raeumeVerwaisteSandboxesAuf } from './core/sandboxStore.js';
 import { showLockScreen } from './ui/lock.js';
+import { showIntro } from './ui/intro.js';
 import { renderShell } from './ui/shell.js';
 import { applyTheme } from './ui/theme.js';
 import { setLang } from './ui/i18n.js';
@@ -28,6 +31,19 @@ async function boot() {
   applyTheme('system');     // vorläufig, bis Settings geladen sind
   await requestPersistence(); // so früh wie möglich (Browser-Lehre 2)
   registerSW();
+
+  // Öffentliches Deckblatt/Datenblatt VOR der Anmeldung (zum Informieren).
+  await showIntro(root);
+
+  // Mehrmandanten (M2a): Registry laden, Alt-Tresor migrationsfrei registrieren und die
+  // aktive Tresor-DB ausrichten (Default = Legacy). Behält das bisherige Verhalten bei,
+  // solange nur ein Mandant existiert.
+  await initMandanten();
+
+  // Test-Modus (docs/TEST_MODUS.md), Aufräum-Sicherheit: verwaiste Sandbox-/Test-DBs (am
+  // Namen erkennbar, nicht in der Registry — z. B. nach einem Absturz) vorsorglich entfernen.
+  // Best-effort, blockiert den Start nie und fasst nie eine echte/aktive DB an.
+  raeumeVerwaisteSandboxesAuf().catch((e) => console.warn('[sandbox] Aufräumen übersprungen:', e));
 
   // Sperrbildschirm/Onboarding bis entsperrt.
   await showLockScreen(root);

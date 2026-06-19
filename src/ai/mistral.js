@@ -10,6 +10,7 @@
 import { getAiConfig } from './aiConfig.js';
 import { KONTOART } from '../domain/accounts.js';
 import { categorize as heuristicCategorize } from './categorize.js';
+import { tokenize } from './pseudonym.js';
 
 export const MISTRAL_BASE = 'https://api.mistral.ai/v1';
 
@@ -42,6 +43,25 @@ export function parseClassify(content) {
   } catch { return null; }
 }
 
+/**
+ * Bildet aus der geparsten Mistral-Antwort eine normalisierte Kategorie (rein,
+ * testbar). Akzeptiert NUR Erfolgskonten (Aufwand/Ertrag) — das Modell darf laut
+ * Prompt nichts anderes wählen — und leitet die Buchungs-Richtung VERBINDLICH aus
+ * der Kontoart ab (ERTRAG → einnahme, AUFWAND → ausgabe). So kann eine
+ * fehlerhafte Modell-Richtung (z.B. Erlöskonto als „ausgabe") keine falsche
+ * Soll/Haben-Buchung erzeugen. Unbekanntes/ungeeignetes Konto → null (Heuristik).
+ * @returns {{konto:string, art:string, label:string, richtung:'einnahme'|'ausgabe', confidence:number, quelle:'mistral'}|null}
+ */
+export function resolveKategorie(parsed, kontoIndex) {
+  const k = parsed && kontoIndex && kontoIndex[parsed.konto];
+  if (!k) return null;
+  let richtung;
+  if (k.art === KONTOART.ERTRAG) richtung = 'einnahme';
+  else if (k.art === KONTOART.AUFWAND) richtung = 'ausgabe';
+  else return null; // kein Erfolgskonto → nicht als Sachkonto verwenden
+  return { konto: k.nummer, art: k.art, label: k.name, richtung, confidence: 0.8, quelle: 'mistral' };
+}
+
 // ---- Netzwerk --------------------------------------------------------------
 
 /** Low-Level-Chat-Aufruf gegen Mistral EU. Gibt den Antworttext zurück. */
@@ -64,21 +84,26 @@ export async function chat(messages, { maxTokens = 400, temperature = 0 } = {}) 
 /**
  * Kategorisiert einen Belegtext über Mistral EU; fällt bei Nichtkonfiguration oder
  * Fehler auf die On-Device-Heuristik zurück.
+ *
+ * Datenschutz-Modus: ist `opts.anker` gesetzt (Datenschutz-Modus „pseudonym"), wird
+ * der an Mistral GESENDETE Text vorher pseudonymisiert — die lokale Extraktion und
+ * der Buchungsvorschlag laufen weiterhin auf dem ECHTEN Text des Aufrufers. Da die
+ * Antwort nur `{konto,richtung}` ist (keine Personendaten), ist hier kein
+ * reidentify nötig.
  * @returns {{konto, art, label, richtung, confidence, quelle:'mistral'|'heuristik'}}
  */
-export async function categorize(text, kontoIndex) {
+export async function categorize(text, kontoIndex, opts = {}) {
   let useMistral = false;
-  try { const { isMistralConfigured } = await import('./aiConfig.js'); useMistral = await isMistralConfigured(); }
+  try { const { nutzeMistralFuerKontierung } = await import('./aiConfig.js'); useMistral = await nutzeMistralFuerKontierung(); }
   catch { useMistral = false; }
   if (useMistral) {
     try {
       const konten = Object.values(kontoIndex);
-      const content = await chat(buildClassifyMessages(text, konten), { maxTokens: 60 });
-      const parsed = parseClassify(content);
-      const k = parsed && kontoIndex[parsed.konto];
-      if (k) {
-        return { konto: k.nummer, art: k.art, label: k.name, richtung: parsed.richtung, confidence: 0.8, quelle: 'mistral' };
-      }
+      const sendeText = (opts.anker && opts.anker.length)
+        ? tokenize(text, opts.anker, { wortgrenze: true }).text : text;
+      const content = await chat(buildClassifyMessages(sendeText, konten), { maxTokens: 60 });
+      const kat = resolveKategorie(parseClassify(content), kontoIndex);
+      if (kat) return kat;
     } catch { /* Fallback unten */ }
   }
   return { ...heuristicCategorize(text), quelle: 'heuristik' };

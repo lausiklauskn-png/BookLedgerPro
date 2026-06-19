@@ -82,6 +82,34 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .share-no { font-weight: 700; color: var(--accent); flex: none; }
 .share-code { font-size: .72rem; word-break: break-all; color: var(--text-muted); }
 
+/* ---- Mandanten-Auswahl (M2b) --------------------------------------------- */
+.mandant-list { display: flex; flex-direction: column; gap: .5rem; margin: 1rem 0; }
+.mandant-item {
+  display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+  text-align: left; width: 100%; padding: .7rem .85rem;
+}
+.mandant-item.is-active { border-color: var(--accent); }
+.mandant-name { font-weight: 600; }
+.mandant-badge {
+  flex: none; font-size: .7rem; color: var(--accent);
+  border: 1px solid var(--accent); border-radius: 999px; padding: .1rem .5rem;
+}
+.mandant-context { margin: 0 0 .25rem; }
+/* Test-Inhalt-Wahl (leer / Demo-Daten) im „Neuer Test"-Onboarding */
+.test-inhalt { display: flex; flex-direction: column; gap: .4rem; border: 1px solid var(--border); border-radius: .5rem; padding: .6rem .75rem; margin: 0; }
+.test-inhalt legend { font-size: .85rem; color: var(--text-muted); padding: 0 .3rem; }
+.test-inhalt .radio-row { display: flex; align-items: flex-start; gap: .5rem; font-size: .9rem; cursor: pointer; }
+.test-inhalt .radio-row input { margin-top: .15rem; }
+/* Mandanten-Verwaltung (M3) in den Einstellungen */
+.mandant-admin { display: flex; flex-direction: column; gap: .5rem; }
+.mandant-admin-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.mandant-admin-row input { flex: 1 1 12rem; min-width: 8rem; }
+.btn-link {
+  background: transparent; border-color: transparent; color: var(--accent);
+  text-decoration: underline; padding: .3rem; align-self: center;
+}
+.btn-link:hover { border-color: transparent; background: transparent; color: var(--accent-strong); }
+
 /* ---- App-Shell ------------------------------------------------------------ */
 .app { min-height: 100dvh; display: flex; flex-direction: column; }
 .app-header {
@@ -121,6 +149,13 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 }
 .placeholder { display: grid; place-items: center; min-height: 160px; }
 
+/* ---- Datensicherung (Schritt 3) ------------------------------------------- */
+.backup-card { display: flex; flex-direction: column; gap: .65rem; transition: border-color var(--motion), background var(--motion); }
+.backup-card-head { display: flex; flex-direction: column; gap: .15rem; }
+.backup-card.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+.backup-drop-hint { margin: 0; }
+.backup-folder { display: flex; flex-direction: column; gap: .4rem; }
+
 /* ---- Einstellungen -------------------------------------------------------- */
 .setting { display: flex; flex-direction: column; gap: .45rem; }
 .setting-label { font-weight: 600; }
@@ -144,6 +179,43 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .banner-text { flex: 1; }
 .banner-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
 .banner-critical { background: var(--critical-bg); border-color: var(--critical-border); color: var(--critical-text); }
+/* Dauerhafter TEST-MODUS-Banner (Sandbox-Tresor aktiv) — deutlich, aber nicht alarmierend. */
+.banner-test { background: var(--accent-soft); color: var(--text); border-bottom: 1px solid var(--accent); }
+.banner-test strong { color: var(--accent-strong); letter-spacing: .02em; }
+
+/* ---- Test-Modus (Sandbox) ------------------------------------------------- */
+.test-open { flex: 1 1 12rem; min-width: 8rem; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.test-link { display: block; margin: .4rem auto 0; }
+
+/* Schlichter modaler Dialog (behalten/verwerfen beim Verlassen eines Tests). */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100; padding: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(16, 24, 40, .45);
+}
+.modal {
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 1.2rem 1.4rem; max-width: 30rem; width: 100%;
+}
+.modal h2 { margin-top: 0; }
+.modal .btn-row { margin-top: 1rem; }
+
+/* Nicht-blockierende Plausibilitäts-Hinweise (Spielraum, kein Haken). */
+.hinweis { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); border-radius: var(--radius-sm, 8px); padding: .6rem .8rem; margin-top: .7rem; }
+.hinweis-liste { margin: .35rem 0 0; padding-left: 1.1rem; }
+.hinweis-liste li { margin: .15rem 0; }
+.pseudonym-info summary { cursor: pointer; }
+.pseudonym-preview { white-space: pre-wrap; word-break: break-word; max-height: 12rem; overflow: auto; margin: .4rem 0 0; padding: .5rem .6rem; background: var(--surface-2); border-radius: var(--radius-sm, 8px); }
+.bank-row { border-top: 1px solid var(--border); padding-top: .4rem; margin-top: .4rem; }
+.sammel-panel { margin-top: .4rem; }
+.sammel-liste { display: flex; flex-direction: column; gap: .2rem; margin: .3rem 0; }
+.sammel-zeile { display: flex; align-items: center; gap: .5rem; }
+
+/* Rechnungs-Dokument (druckbar). */
+.rechnung-doc .rech-kopf { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.rech-adr div { line-height: 1.4; }
+.rech-summen { margin-top: .8rem; max-width: 22rem; margin-left: auto; }
 
 /* ---- Tabellen ------------------------------------------------------------- */
 .card.no-pad { padding: 0; overflow: hidden; }
@@ -157,10 +229,15 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .actions { text-align: right; white-space: nowrap; }
 
 /* ---- Badges --------------------------------------------------------------- */
-.badge { display: inline-block; padding: .12rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; border: 1px solid var(--border); }
+.badge { display: inline-block; padding: .12rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; border: 1px solid var(--border); white-space: nowrap; }
 .badge-entwurf { background: var(--surface-2); color: var(--text-muted); }
+.badge-warn { background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
 .badge-ok { background: var(--accent-soft); color: var(--accent-strong); border-color: transparent; }
 .badge-storno { background: var(--warn-bg); color: var(--warn-text); border-color: var(--warn-border); }
+.badge-error { background: var(--critical-bg); color: var(--critical-text); border-color: var(--critical-border); }
+.badge-line { margin: .5rem 0 0; }
+.badge + .badge { margin-left: .35rem; }
+.report-lines { margin: .4rem 0; }
 
 /* ---- Buchungs-Formular ---------------------------------------------------- */
 .buchung-form { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1rem; }
@@ -173,6 +250,9 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .report-line { display: flex; justify-content: space-between; gap: 1rem; padding: .3rem 0; }
 .report-line.strong { font-weight: 700; font-size: 1.05rem; }
 .report-line .num { font-variant-numeric: tabular-nums; }
+/* Nachkalkulation: Soll/Ist-Abweichung farblich (additiv — Text bleibt ohne Farbe lesbar). */
+.abw-hoch { color: var(--error); }   /* IST über SOLL → Kostenüberschreitung */
+.abw-tief { color: var(--success, var(--accent-strong)); }   /* IST unter SOLL → besser als geplant */
 .period-bar { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .inline-field { display: inline-flex; align-items: center; gap: .35rem; }
 .inline-field input { width: 120px; }
@@ -205,7 +285,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .provider-link:hover { text-decoration: underline; }
 
 /* ---- Auftrags-Positionen -------------------------------------------------- */
-.pos-head, .pos-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: .5rem; align-items: center; }
+.pos-head, .pos-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: .5rem; align-items: center; }
+.pos-remove { padding: .2rem .5rem; line-height: 1; }
 .pos-head { font-size: .8rem; color: var(--text-muted); margin: .3rem 0 .1rem; }
 .pos-box { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .5rem; }
 .pos-row input, .pos-row select {
@@ -218,6 +299,13 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .btn-danger { border-color: var(--critical-border); color: var(--critical-text); }
 .btn-danger:hover { background: var(--critical-bg); border-color: var(--error); }
 .legal-card p { margin: .25rem 0; }
+.legal-card h3 { margin: .9rem 0 .25rem; }
+.legal-liste { margin: .25rem 0 .5rem; padding-left: 1.1rem; }
+.legal-liste li { margin: .2rem 0; }
+.legal-stufe { border: 1px solid var(--border); border-radius: var(--radius, 10px); padding: .6rem .8rem; margin: .5rem 0; }
+.legal-stufe h3 { margin: 0 0 .15rem; }
+.legal-stufe-aktiv { border-color: var(--accent-strong); background: var(--accent-soft); }
+.legal-card .note { padding: .45rem .7rem; border-left: 3px solid var(--accent-strong); background: var(--accent-soft); border-radius: 6px; }
 
 /* ---- Dashboard-KPIs ------------------------------------------------------- */
 .dash-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
@@ -230,6 +318,10 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .kpi-label { color: var(--text-muted); font-size: .82rem; margin-top: .15rem; }
 .kpi-pos .kpi-value { color: var(--accent-strong); }
 .kpi-neg .kpi-value { color: var(--error); }
+/* Hinweistext mit Warnfarbe (z. B. Liquiditäts-Unterdeckung) — additiv, nur Textfarbe. */
+.hint-error { color: var(--error); }
+/* QR-Einzelteilen (lokal erzeugt) — weißer Grund + scharfe Kanten zum Scannen. */
+.qr-img { display: block; margin-top: .6rem; background: #fff; padding: .5rem; border-radius: .4rem; image-rendering: pixelated; max-width: 100%; height: auto; }
 .small-kpi .kpi-value { font-size: 1.15rem; }
 .small-kpi .kpi { padding: .7rem .9rem; }
 
@@ -266,3 +358,104 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   }
   .nav-item { white-space: nowrap; }
 }
+
+/* ---- Deckblatt / Datenblatt (Intro + „Über") ----------------------------- */
+.intro-screen {
+  min-height: 100vh; display: flex; justify-content: center;
+  background:
+    radial-gradient(1100px 520px at 80% -10%, var(--accent-soft) 0%, transparent 55%),
+    var(--bg, #f6f8fa);
+  padding: 1.5rem 1rem; overflow-y: auto;
+}
+.intro-scroll { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 1rem; }
+.intro-skip { display: flex; gap: .5rem; align-items: flex-start; font-size: .85rem; color: var(--text-muted); }
+
+.deckblatt { display: flex; flex-direction: column; gap: 1rem; }
+.deckblatt-hero {
+  text-align: center; padding: 1.6rem 1rem; border-radius: var(--radius-lg, 18px);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+}
+.deckblatt-title { margin: .5rem 0 .2rem; font-size: 2rem; letter-spacing: .5px; }
+.deckblatt-tagline { margin: 0 0 .8rem; color: var(--text-muted); }
+.deckblatt-zielgruppen { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
+.pill {
+  padding: .25rem .8rem; border-radius: 999px; font-size: .8rem; font-weight: 600;
+  background: var(--accent-soft); color: var(--accent-strong); border: 1px solid transparent;
+}
+
+.siegel {
+  display: flex; gap: 1rem; align-items: flex-start; padding: 1rem;
+  border-radius: var(--radius, 12px); background: var(--surface);
+  border: 1px solid var(--accent); box-shadow: var(--shadow-sm);
+}
+.siegel-badge {
+  flex: none; width: 84px; height: 84px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff; text-align: center;
+  border: 3px solid var(--accent-strong);
+}
+.siegel-eu { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.siegel-badge-text { font-size: .6rem; font-weight: 700; margin-top: .15rem; }
+.siegel-body { flex: 1; min-width: 0; }
+.siegel-liste { margin: .4rem 0; padding-left: 1.1rem; font-size: .85rem; }
+.siegel-liste li { margin: .25rem 0; }
+.siegel-links { font-size: .8rem; margin-top: .3rem; }
+
+.datenblatt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.datenblatt-item { padding: .6rem .7rem; border-radius: var(--radius-sm, 8px); background: var(--surface-2); }
+@media (max-width: 600px) {
+  .datenblatt-grid { grid-template-columns: 1fr; }
+  .siegel { flex-direction: column; align-items: center; text-align: center; }
+}
+.deckblatt-cover { display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto .8rem; border-radius: var(--radius, 12px); box-shadow: var(--shadow); }
+.pw-row { display: flex; gap: 1rem; align-items: flex-start; }
+.pw-key { flex: none; width: 96px; height: auto; align-self: center; }
+.pw-form { flex: 1; min-width: 0; }
+@media (max-width: 600px) { .pw-row { flex-direction: column; align-items: center; } .pw-key { width: 72px; } }
+.siegel-anbieter { display: flex; align-items: center; gap: .55rem; margin-top: .5rem; }
+.siegel-iso { width: 38px; height: 38px; flex: none; border-radius: 6px; }
+/* Passwort-ändern: Felder einspaltig (klar neben dem Schlüssel), Knopf mit Abstand. */
+.pw-form .form-grid { grid-template-columns: 1fr; max-width: 340px; }
+.pw-form .btn-row { margin-top: .8rem; }
+
+/* ---- Gebrauchsanleitung --------------------------------------------------- */
+.guide-step { padding: .6rem 0; border-top: 1px solid var(--border); }
+.guide-step:first-of-type { border-top: none; }
+.guide-step-head { display: flex; align-items: center; gap: .55rem; margin-bottom: .3rem; }
+.guide-num { flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: .85rem; }
+.guide-list { margin: .2rem 0 .4rem; padding-left: 1.2rem; }
+.guide-list li { margin: .2rem 0; }
+.copy-block { margin: .4rem 0 .2rem; }
+.copy-text { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm, 8px); padding: .6rem .7rem; white-space: pre-wrap; font-family: var(--mono); font-size: .82rem; margin: 0 0 .4rem; overflow-x: auto; }
+.guide-highlight { color: var(--accent-strong); font-weight: 700; }
+
+/* ── Angebote — adaptiver Baukasten (BAUPLAN Block 2 / Schritt 11b) ──────────── */
+.card-subtitle { margin: .85rem 0 .2rem; font-size: .95rem; }
+.card-title.pad { padding: .8rem 1rem .2rem; }
+.card-title-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+
+.baukasten { margin: .2rem 0 .4rem; }
+.baukasten-palette { display: flex; flex-wrap: wrap; gap: .5rem; margin: .25rem 0 .6rem; }
+.baukasten-karte {
+  display: inline-flex; align-items: center; gap: .4rem; font: inherit;
+  padding: .5rem .8rem; cursor: pointer; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text);
+}
+.baukasten-karte:hover { border-color: var(--accent); }
+.baukasten-karte.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); }
+.bk-zaehler { font-size: .75rem; font-weight: 600; color: var(--text-muted); }
+.schema-form { background: var(--surface-2); }
+
+.angebot-pos-liste { gap: .35rem; }
+.angebot-pos {
+  grid-template-columns: auto 2fr 1.4fr 1fr .6fr auto;
+  padding: .4rem .55rem; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--surface);
+}
+.angebot-pos.dragging { opacity: .5; }
+.drag-griff { cursor: grab; color: var(--text-muted); user-select: none; }
+.pos-desc { font-weight: 500; }
+
+.angebot-summen { display: flex; flex-wrap: wrap; gap: .8rem; margin: .7rem 0; }
+.angebot-summen > .card { flex: 1 1 14rem; padding: .65rem .85rem; }
+.angebot-intern { border: 1px dashed var(--border); }

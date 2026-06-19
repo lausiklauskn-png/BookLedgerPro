@@ -18,7 +18,7 @@ export function canonicalize(v) {
 
 /** Nur die unveränderlichen Buchungs-Inhalte (Status/Storno-Zeiger fließen NICHT ein). */
 export function hashedFields(buchung) {
-  return {
+  const out = {
     datum: buchung.datum,
     beschreibung: buchung.beschreibung || '',
     belegRef: buchung.belegRef || null,
@@ -28,6 +28,11 @@ export function hashedFields(buchung) {
       konto: z.konto, seite: z.seite, betrag: z.betrag,
     })),
   };
+  // Begründung/Notiz ist Teil der unveränderlichen Dokumentation und wird mit
+  // gehasht — aber NUR wenn vorhanden, damit Altbestände (ohne Feld) ihren bereits
+  // berechneten Hash behalten (rückwärtskompatibel).
+  if (buchung.begruendung) out.begruendung = buchung.begruendung;
+  return out;
 }
 
 /** Berechnet den Hash einer Buchung über ihre Inhalte + den Vorgänger-Hash. */
