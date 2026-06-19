@@ -7,6 +7,12 @@ import { exportBackupFile } from '../../core/backup.js';
 import { wipeAll } from '../../core/db.js';
 import { lockVault } from '../../core/vault.js';
 import { siegel } from '../intro.js';
+import { getSettings } from '../../state.js';
+import { getAiConfig } from '../../ai/aiConfig.js';
+import {
+  AUTONOMIE_STUFEN, AUTONOMIE_GRENZEN, KLEINUNTERNEHMER_DRITTDATEN,
+  aktiveAutonomieStufe, drittdatenHinweisRelevant,
+} from '../../domain/aufklaerung.js';
 
 const GOBD = [
   'BookLedgerPro setzt die GoBD-Grundsätze technisch um:',
@@ -39,8 +45,53 @@ export function mountLegal(host) {
     textCard(t('legal.gobd'), GOBD),
     textCard(t('legal.dsgvo'), DSGVO),
     avvCard(),
+    autonomieCard(),
+    drittdatenCard(),
     rightsCard(),
   ]));
+}
+
+// P3 — KI-Autonomiestufen: alle drei Stufen erklärt, die aktuell eingestellte markiert,
+// darunter die feste Grenze (Festschreiben bleibt immer manuell — GoBD).
+function autonomieCard() {
+  const aktiv = aktiveAutonomieStufe(getSettings());
+  const stufen = AUTONOMIE_STUFEN.map((s) => {
+    const istAktiv = s.id === aktiv.id;
+    return el('div', { class: 'legal-stufe' + (istAktiv ? ' legal-stufe-aktiv' : '') }, [
+      el('h3', { class: 'small' }, [
+        el('span', { text: s.titel }),
+        istAktiv ? el('span', { class: 'badge badge-ok', text: ' ' + t('legal.autonomieAktiv') }) : null,
+      ]),
+      el('p', { class: 'muted small', text: s.kurz }),
+      el('ul', { class: 'legal-liste small' }, s.punkte.map((p) => el('li', { text: p }))),
+    ]);
+  });
+  return el('div', { class: 'card legal-card' }, [
+    el('h2', { class: 'card-title', text: t('legal.autonomie') }),
+    el('p', { class: 'small', text: t('legal.autonomieHint') }),
+    ...stufen,
+    el('h3', { class: 'small', text: t('legal.autonomieGrenzen') }),
+    el('ul', { class: 'legal-liste small' }, AUTONOMIE_GRENZEN.map((g) => el('li', { text: g }))),
+  ]);
+}
+
+// P4 — Kleinunternehmer & Drittdaten: § 19 UStG befreit nur von der USt, nicht von
+// DSGVO/Aufbewahrung. Ist externe EU-KI konfiguriert, wird der AVV-Hinweis betont.
+function drittdatenCard() {
+  const betonung = el('p', { class: 'small note', hidden: true });
+  getAiConfig().then((cfg) => {
+    if (drittdatenHinweisRelevant(cfg)) {
+      betonung.textContent = t('legal.drittdatenAiAktiv');
+      betonung.hidden = false;
+    }
+  }).catch(() => {});
+  return el('div', { class: 'card legal-card' }, [
+    el('h2', { class: 'card-title', text: t('legal.drittdaten') }),
+    el('p', { class: 'small', text: KLEINUNTERNEHMER_DRITTDATEN.einleitung }),
+    betonung,
+    el('ul', { class: 'legal-liste small' },
+      KLEINUNTERNEHMER_DRITTDATEN.punkte.map((p) => el('li', { text: p }))),
+  ]);
 }
 
 // Transparenz- & Zwischenstandsbericht — verlinkt die STETS AKTUELLE Datei

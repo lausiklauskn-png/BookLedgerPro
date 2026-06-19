@@ -299,6 +299,13 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .btn-danger { border-color: var(--critical-border); color: var(--critical-text); }
 .btn-danger:hover { background: var(--critical-bg); border-color: var(--error); }
 .legal-card p { margin: .25rem 0; }
+.legal-card h3 { margin: .9rem 0 .25rem; }
+.legal-liste { margin: .25rem 0 .5rem; padding-left: 1.1rem; }
+.legal-liste li { margin: .2rem 0; }
+.legal-stufe { border: 1px solid var(--border); border-radius: var(--radius, 10px); padding: .6rem .8rem; margin: .5rem 0; }
+.legal-stufe h3 { margin: 0 0 .15rem; }
+.legal-stufe-aktiv { border-color: var(--accent-strong); background: var(--accent-soft); }
+.legal-card .note { padding: .45rem .7rem; border-left: 3px solid var(--accent-strong); background: var(--accent-soft); border-radius: 6px; }
 
 /* ---- Dashboard-KPIs ------------------------------------------------------- */
 .dash-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }

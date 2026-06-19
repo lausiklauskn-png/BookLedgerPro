@@ -7,9 +7,14 @@
 
 ---
 
-## ⏭ START HIER — Nachfolge-Brief (Stand 2026-06-17): **eine PR pro Sitzung**, Plan in NACHFOLGE_PLAN.md
+## ⏭ START HIER — Nachfolge-Brief (Stand 2026-06-19): **eine PR pro Sitzung**, Plan in NACHFOLGE_PLAN.md
 
 > **Lies das zuerst und vollständig. Danach OHNE Rückfragen loslegen.**
+
+> **⏭ AKTUELLER SPRINT-POINTER (Block 5, 5-Sitzungs-Sprint):** S1·P9 ✅ · S2·P10 ✅ · **S3·P3+P4 ✅
+> (2026-06-19)** · **als Nächstes: S4·P2 — KI-Anbieterwahl je Modus, strikt EU.** Paste-fertiger Auftrag:
+> `docs/NAECHSTE_SITZUNG.md`; Abhaken/Plan: `docs/BAUPLAN.md` (Block 5). **Stand:** Tests **1858/1858**,
+> SW **v145**, **125 JS-Module**.
 
 > **📨 Selbstfortschreibende Nachfolge-Kette (verbindlich, vom Nutzer gewünscht):**
 > Der **paste-fertige Brief** für die jeweils nächste Sitzung steht in
