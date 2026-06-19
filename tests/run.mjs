@@ -124,6 +124,10 @@ import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, A
 import { baueAnker } from '../src/ai/anker.js';
 import { erkennePII, piiAnker, kombiniereAnker, NER_TYP, EXTERN_SCOPE } from '../src/ai/ner.js';
 import { baueBriefkasten, briefkastenAnker, briefkastenBericht, tokenizeBriefkasten, EBENE } from '../src/ai/briefkasten.js';
+import {
+  SCHLUESSEL_FORMAT, SCHLUESSEL_VERSION, typAusToken, istToken, tokenVorkommen,
+  schluesselAusMap, serialisiereSchluessel, parseSchluessel, gleicheAb, abgleichBericht, pruefeRoundtrip,
+} from '../src/ai/schluesselabgleich.js';
 import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domain/erechnung.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
 import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat, pruefeBankauszug } from '../src/domain/bankimport.js';
@@ -1764,6 +1768,111 @@ await section('Briefkasten: Transparenz-Bericht ohne Klartext (briefkastenBerich
   ok('Anker-Zähler > 0', b.anker > 0);
   ok('Bericht ohne Klartext', !JSON.stringify(b).includes('Nitzsche') && !JSON.stringify(b).includes('Acme'));
   ok('leerer Briefkasten → Nullen', briefkastenBericht(null).firmen === 0 && briefkastenBericht(null).mandanten === 0);
+});
+
+// ===== P9: Datei-Import mit exaktem Schlüssel-Abgleich (schluesselabgleich.js) =====
+await section('Schlüssel-Abgleich: Token-Erkennung im Text (tokenVorkommen)', () => {
+  const text = 'Hallo [[PERSON_1]], Ihre IBAN [[IBAN_2]] und nochmals [[PERSON_1]].';
+  const v = tokenVorkommen(text);
+  ok('zwei verschiedene Token', v.length === 2);
+  ok('Reihenfolge des ersten Auftretens', v[0].token === '[[PERSON_1]]' && v[1].token === '[[IBAN_2]]');
+  ok('Häufigkeit gezählt', v[0].anzahl === 2 && v[1].anzahl === 1);
+  ok('Typ aus Token gelesen', v[0].typ === 'PERSON' && v[1].typ === 'IBAN');
+  ok('scope-Token: Typ behält Hierarchie', typAusToken('[[FIRMA_1_IBAN_2]]') === 'FIRMA_1_IBAN');
+  ok('istToken erkennt Form', istToken('[[ID_1]]') && !istToken('[[ID]]') && !istToken('ID_1'));
+  ok('kein Token → leer', tokenVorkommen('nur Klartext, keine Marker').length === 0);
+});
+
+await section('Schlüssel-Abgleich: exakter Abgleich, verlustfrei + Bericht (gleicheAb)', () => {
+  const beleg = 'Rechnung an Max Mustermann, IBAN DE12 3456, Firma Acme GmbH.';
+  const anker = [
+    { wert: 'Max Mustermann', typ: 'PERSON' },
+    { wert: 'DE12 3456', typ: 'IBAN' },
+    { wert: 'Acme GmbH', typ: 'FIRMA' },
+  ];
+  const { text: pseudo, map } = tokenize(beleg, anker, { wortgrenze: true });
+  ok('pseudonym enthält keine Klartextwerte', !pseudo.includes('Mustermann') && !pseudo.includes('Acme'));
+
+  // Antwort-Datei zitiert die Token → exakter Abgleich stellt Klartext her.
+  const r = gleicheAb(pseudo, map);
+  ok('verlustfreie Zuordnung == Original', r.text === beleg);
+  ok('vollständig (kein fehlender Token)', r.vollstaendig === true && r.fehlend.length === 0);
+  ok('alle drei Token ersetzt', r.ersetzt.length === 3);
+  ok('keine ungenutzten Schlüssel', r.ungenutzt.length === 0);
+});
+
+await section('Schlüssel-Abgleich: fehlender Schlüssel wird gemeldet, nichts erfunden', () => {
+  // Datei enthält einen Token, für den KEIN Schlüssel vorliegt.
+  const text = 'Notiz zu [[PERSON_1]] und [[PERSON_9]].';
+  const schluessel = [{ token: '[[PERSON_1]]', wert: 'Eva Klar', typ: 'PERSON' }];
+  const r = gleicheAb(text, schluessel);
+  ok('bekannter Token ersetzt', r.text.includes('Eva Klar'));
+  ok('unbekannter Token bleibt sichtbar stehen', r.text.includes('[[PERSON_9]]'));
+  ok('nicht vollständig', r.vollstaendig === false);
+  ok('fehlender Token gemeldet', r.fehlend.length === 1 && r.fehlend[0].token === '[[PERSON_9]]');
+  ok('ersetzter Token getrennt gezählt', r.ersetzt.length === 1 && r.ersetzt[0].token === '[[PERSON_1]]');
+});
+
+await section('Schlüssel-Abgleich: ungenutzte Schlüssel werden ausgewiesen', () => {
+  const text = 'Nur [[PERSON_1]] kommt vor.';
+  const schluessel = [
+    { token: '[[PERSON_1]]', wert: 'Anna', typ: 'PERSON' },
+    { token: '[[IBAN_1]]', wert: 'DE00', typ: 'IBAN' },
+  ];
+  const r = gleicheAb(text, schluessel);
+  ok('ein ungenutzter Schlüssel', r.ungenutzt.length === 1 && r.ungenutzt[0].token === '[[IBAN_1]]');
+  ok('trotzdem vollständig (kein fehlender Token im Text)', r.vollstaendig === true);
+});
+
+await section('Schlüssel-Abgleich: Serialisierung (Anker-Tresor) Round-Trip', () => {
+  const beleg = 'An Müller GmbH, IBAN DE99 8877.';
+  const { map } = tokenize(beleg, [{ wert: 'Müller GmbH', typ: 'FIRMA' }, { wert: 'DE99 8877', typ: 'IBAN' }]);
+  const json = serialisiereSchluessel(map, { titel: 'Beleg 1', erstellt: '2026-06-19T00:00:00.000Z' });
+  const obj = JSON.parse(json);
+  ok('Format-Marker gesetzt', obj.format === SCHLUESSEL_FORMAT && obj.version === SCHLUESSEL_VERSION);
+  ok('Meta übernommen', obj.titel === 'Beleg 1' && obj.anzahl === 2);
+  const p = parseSchluessel(json);
+  ok('parse ok', p.ok === true && p.schluessel.length === 2);
+  // Über die geparste Datei lässt sich derselbe Text verlustfrei abgleichen.
+  const pseudo = tokenize(beleg, [{ wert: 'Müller GmbH', typ: 'FIRMA' }, { wert: 'DE99 8877', typ: 'IBAN' }]).text;
+  ok('Datei-Schlüssel gleicht verlustfrei ab', gleicheAb(pseudo, p.schluessel).text === beleg);
+});
+
+await section('Schlüssel-Abgleich: parse robust + Fehlerfälle', () => {
+  ok('blanke map-Liste', parseSchluessel([{ token: '[[ID_1]]', wert: 'x' }]).ok === true);
+  ok('{token:wert}-Objekt', parseSchluessel({ '[[ID_1]]': 'x' }).ok === true);
+  ok('leerer String → Fehler', parseSchluessel('').ok === false);
+  ok('kaputtes JSON → Fehler', parseSchluessel('{nope').ok === false);
+  ok('keine gültigen Token → Fehler', parseSchluessel({ schluessel: [{ token: 'kein-token', wert: 'x' }] }).ok === false);
+  ok('ungültige Token aus map verworfen', schluesselAusMap([{ token: 'foo', wert: 'a' }, { token: '[[ID_1]]', wert: 'b' }]).length === 1);
+  ok('doppeltes Token: erster gewinnt', schluesselAusMap([{ token: '[[ID_1]]', wert: 'erst' }, { token: '[[ID_1]]', wert: 'zweit' }])[0].wert === 'erst');
+});
+
+await section('Schlüssel-Abgleich: Bericht ohne Klartext (abgleichBericht)', () => {
+  const text = '[[PERSON_1]] [[PERSON_1]] und [[FIRMA_9]].';
+  const r = gleicheAb(text, [{ token: '[[PERSON_1]]', wert: 'Geheim Name', typ: 'PERSON' }]);
+  const b = abgleichBericht(r);
+  ok('1 ersetzter Token, 2 Vorkommen', b.ersetzt === 1 && b.ersetztVorkommen === 2);
+  ok('1 fehlend', b.fehlend === 1 && b.vollstaendig === false);
+  ok('Bericht enthält keinen Klartext', !JSON.stringify(b).includes('Geheim'));
+});
+
+await section('Schlüssel-Abgleich: pruefeRoundtrip Selbsttest', () => {
+  const beleg = 'Rechnung an Anna Beispiel (anna@example.de) der Beta Handel GmbH.';
+  const anker = [
+    { wert: 'Anna Beispiel', typ: 'PERSON' },
+    { wert: 'anna@example.de', typ: 'EMAIL' },
+    { wert: 'Beta Handel GmbH', typ: 'FIRMA' },
+  ];
+  const r = pruefeRoundtrip(beleg, anker, { wortgrenze: true });
+  ok('Round-Trip ok', r.ok === true && r.vollstaendig === true);
+  ok('zurück == Original', r.zurueck === beleg);
+  ok('drei Schlüssel', r.schluesselAnzahl === 3);
+  ok('pseudo ohne Klartext', !r.pseudo.includes('Anna Beispiel') && !r.pseudo.includes('Beta Handel'));
+  // Auch mit Briefkasten-Scopes (hierarchische Token) verlustfrei.
+  const bk = baueBriefkasten({ firma: { name: 'Meine Firma GmbH' }, kunden: [{ name: 'Beta Handel GmbH', istVerbraucher: false }] });
+  const r2 = pruefeRoundtrip('Auftrag der Beta Handel GmbH von Meine Firma GmbH.', briefkastenAnker(bk), { wortgrenze: true });
+  ok('Briefkasten-Round-Trip ok', r2.ok === true);
 });
 
 await section('Zahlungsabgleich: offene Posten + Matching + Ausgleichsbuchung', () => {

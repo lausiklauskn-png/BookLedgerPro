@@ -420,9 +420,13 @@
 > dieser Reihenfolge, **eine Sitzung = ein Punkt**, **danach Besprechung** (nicht selbstständig
 > weiterlaufen). Arbeitsauftrag: selbstständig nach Logik + Nutzen; **größere Konflikte/Unklarheiten über
 > `AskUserQuestion` eskalieren**, Kleines selbst entscheiden. Paste-fertiger Auftrag: `docs/NAECHSTE_SITZUNG.md`.
-- [ ] **S1 · P9 — Datei-Import mit exaktem Schlüssel-Abgleich:** pseudonymisierte/anker-basierte Daten verlustfrei
-  zurück auf echte Werte abbilden (Token ↔ Klartext, Briefkasten/Anker-Tresor `src/ai/anker.js`/`briefkasten.js`/
-  `pseudonym.js`). Reine Logik zuerst node-getestet, dann UI.
+- [x] **S1 · P9 — Datei-Import mit exaktem Schlüssel-Abgleich ✅ (2026-06-19):** reine Logik `src/ai/schluesselabgleich.js`
+  (node-getestet, +38 → **1810/1810**): `gleicheAb` (exakter Token↔Klartext-Abgleich, verlustfrei + Bericht
+  `ersetzt`/`fehlend`/`ungenutzt`/`vollstaendig` — Token ohne Schlüssel bleiben sichtbar, nichts erfunden),
+  `serialisiereSchluessel`/`parseSchluessel` (Schlüssel-Datei „Anker-Tresor", JSON `blp-schluessel` v1), `tokenVorkommen`/
+  `typAusToken`/`schluesselAusMap`/`abgleichBericht`/`pruefeRoundtrip`. UI `src/ui/schluesselabgleich.js` (Einstellungs-Karte
+  unter „Datenschutz bei KI": pseudonymisieren+Schlüssel sichern · Datei importieren+abgleichen). i18n de+en, SW `v143`.
+  DOM/Datei-Picker statisch geprüft.
 - [ ] **S2 · P10 — handelnde Person als Besteller** an Auftrag/Rechnung (Datenmodell additiv + UI-Feld; Prime
   Directive/GoBD beachten).
 - [ ] **S3 · P3 + P4 — Aufklärungstexte:** KI-Autonomiestufen (P3) + Kleinunternehmer-Pflichten bei Drittdaten (P4),
