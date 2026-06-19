@@ -15,7 +15,12 @@
 > Besprechungs-Sitzung gehalten → **neues Thema: Sage-Mycel-Andock (Phase 5), Reihenfolge ZUERST Sage/Hub, DANN
 > WorkFloh.** E2E-Frage aus der Sage-Quelle geklärt (Mycel heute nur Ed25519-**Signatur**, keine Nutzlast-
 > Verschlüsselung, `protocolVersion 0.1`; E2E = additive Erweiterung, „Spec vor Code"). Brief an Sage:
-> `docs/SAGE_E2E_ANFRAGE.md`; Sequenz/Plan: `docs/BAUPLAN.md` **Block 6**. **⏭ NÄCHSTE SITZUNG = Phase-5-Schritt 1:
+> `docs/SAGE_E2E_ANFRAGE.md`; Sequenz/Plan: `docs/BAUPLAN.md` **Block 6**.
+> **✅ SAGE HAT GEANTWORTET (2026-06-19, menschlich vermittelt): 1 JA / 2 JA / 3 JA mit Wie / 4 bestätigt.**
+> → **Grad-B-Pseudonymisierung** (P9) ist der freigegebene **Sofortpfad** (kein Bump, kein Bau); **echte E2E**
+> (X25519 „sealed box" `{v,epk,iv,ct}`, optionales Feld `encryptionPublicKey`) ist als **Entwurf 0.2** dokumentiert,
+> der formale `protocolVersion`-Bump kommt erst **nach** Knoten-Deploy + Knoten-Go (Sage-Hoheit; Sage hat seine Seite
+> abgelegt, deren PR #302). **⏭ NÄCHSTE SITZUNG = Phase-5-Schritt 1:
 > BLP zum echten SBKIM-Knoten machen** (Ed25519-Identität + `sbkim/spore.json` + `SIGNAL.json`, headless via
 > `tools/verify_remote_spore.mjs` VALID; `domainVector` vorerst `_demo`). Konkreter COPY-Block:
 > `docs/NAECHSTE_SITZUNG.md`. **Stand:** Tests **1926/1926**, SW **v147**, **127 JS-Module** (diese Sitzung kein Code).
