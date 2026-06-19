@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v140';
+const CACHE_VERSION = 'v141';
 const CACHE_NAME = `blpr-shell-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -161,6 +161,7 @@ const CORE_ASSETS = [
   './src/sbkim/identity.js',
   './src/sbkim/domainvector.js',
   './src/sbkim/signal.js',
+  './docs/TRANSPARENZ_ZWISCHENSTAND.html',
 ];
 
 self.addEventListener('install', (event) => {
@@ -186,8 +187,10 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return; // nur eigene Assets
 
   if (request.mode === 'navigate') {
+    // Navigationen netz-zuerst (immer aktuell). Offline: exakt angefragte, vorgecachte Seite
+    // (z. B. der Transparenzbericht docs/…html) — sonst die App-Shell (index.html, SPA-Routen).
     event.respondWith(
-      fetch(request).catch(() => caches.match('./index.html'))
+      fetch(request).catch(async () => (await caches.match(request)) || caches.match('./index.html'))
     );
     return;
   }
