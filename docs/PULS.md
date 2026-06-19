@@ -23,7 +23,17 @@
 > abgelegt, deren PR #302). **⏭ NÄCHSTE SITZUNG = Phase-5-Schritt 1:
 > BLP zum echten SBKIM-Knoten machen** (Ed25519-Identität + `sbkim/spore.json` + `SIGNAL.json`, headless via
 > `tools/verify_remote_spore.mjs` VALID; `domainVector` vorerst `_demo`). Konkreter COPY-Block:
-> `docs/NAECHSTE_SITZUNG.md`. **Stand:** Tests **1926/1926**, SW **v147**, **127 JS-Module** (diese Sitzung kein Code).
+> `docs/NAECHSTE_SITZUNG.md`. **Stand:** Tests **1926/1926**, SW **v147**, **127 JS-Module**.
+>
+> **⏭ NEU (2026-06-19, diese Sitzung):** Lebenden Mycel-Knoten **regelkonform vendort** →
+> `sbkim/mycelknoten.html` (echte SBKIM-Module + Live-Lampen + Wächter-Log + Widget). Egress-Audit gemacht;
+> Embedding-CDN (Regel #1) und Stufe-B-LLM-US-Endpoint (Regel #8) **deaktiviert** (fail-soft, klar als
+> `BLP-Vendor-Anpassung` markiert), Gemini-Demo-String neutralisiert. Andocken erzeugt **verified-spore ohne
+> `domainVector`** → volle Verbindung zu Sage/Mycel **ohne** CDN/Nicht-EU-KI. Tests weiter 1926/1926.
+> **Nächste konkrete Schritte:** (1) Knoten im Browser real andocken → `spore.json`/`SIGNAL.json` erzeugen +
+> committen (Phase-5-Schritt 1); (2) **EU-Phase**: semantisches Matching via **Mistral-EU** (BYOK, opt-in)
+> nachrüsten, Schwellen (`PROVIDER_MIN_MATCH=0.80`) für EU-Embeddings neu validieren. Browser-Verifikation des
+> Andock-Flows steht noch aus (DOM/IndexedDB, nicht node-testbar).
 
 > **📨 Selbstfortschreibende Nachfolge-Kette (verbindlich, vom Nutzer gewünscht):**
 > Der **paste-fertige Brief** für die jeweils nächste Sitzung steht in
