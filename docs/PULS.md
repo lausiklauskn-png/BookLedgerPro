@@ -5,9 +5,10 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/general-discussion-x9xyk9`
-· **main-Stand:** `4ba49c8` · **Tests:** `node tests/run.mjs` → **134/134 grün**
-· **SW-Cache:** `v25` · **53 JS-Module** · **12 Bild- + 5 Icon-Assets**
+**Letzte Aktualisierung:** 2026-06-19 · **Branch:** `claude/phase-5-sbkim-integration-v1v0ed`
+· **Tests:** `node tests/run.mjs` → **142/142 grün** · **SW-Cache:** `v26`
+· **Phase-5-Andock Schritt 1 erledigt:** echte `sbkim/spore.json` committet (headless VALID),
+  nodeId `MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ`.
 
 ---
 
@@ -34,7 +35,7 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 | 2 | Belege & Erkennung: verschl. Beleg-Store, Extraktion, Vorschlag, Autonomie-Schalter | ✅ |
 | 3 | Aufträge/Kunden/Mitarbeiter/Kostenstellen, Rechnung→Buchung (verschlüsselt, DSGVO) | ✅ |
 | 4 | Steuer & Export: USt-VA-Kennzahlen, EÜR, CSV/DATEV-orientiert, Recht-Doku in-app | ✅ |
-| 5 | Sage-Mycel: SBKIM byte-kompatibel **lokal vorbereitet** | ◑ lokal fertig |
+| 5 | Sage-Mycel: SBKIM byte-kompatibel; **Knoten geboren** (echte spore.json committet, headless VALID) | ◑ Andock-Schritt 1 |
 | 6 | Design-Politur: Dashboard-KPIs, Mycel-Canvas, A11y | ✅ |
 | 6.1 | **Bild-Assets/Branding** (Icons, Hero, 7 Leerzustände, OG, Onboarding) — vom Nutzer 3D-generiert | ✅ |
 | EU-KI | **Google Vision (EU) OCR + Mistral (EU) Kontierung/Steuer**, Claude entfernt | ✅ |
@@ -63,10 +64,14 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
   (Vision+Mistral einzeln ✓, der durchgehende OCR→Vorschlag-Klickpfad steht als nächstes an).
 - **Browser-UI generell nicht headless E2E-getestet** (kein Headless-Browser in der
   Build-Umgebung) — Kernlogik ist node-getestet (134/134), DOM-Pfade statisch geprüft.
-- **Sage Phase 5b/c/d offen** (menschlich vermittelt, fremde Repos):
-  - 5b: echte `sbkim/spore.json` **in-app** erzeugen (Ansicht „Mycel-Netz") + committen +
-    im Sage-Hub `status.json` registrieren + erster Handshake → `verified-spore`.
-    (Bewusst KEINE erfundene spore.json eingecheckt.)
+- **Sage Phase 5b/c/d:**
+  - 5b Schritt 1 **erledigt:** echte, signierte `sbkim/spore.json` + `SIGNAL.json` committet
+    (headless via `tools/mint_spore.mjs`, `node tools/verify_remote_spore.mjs sbkim/spore.json`
+    → **VALID**). **⚠ Privater Schlüssel** liegt in `sbkim/.node-secret.json` (gitignored) —
+    **vom Nutzer zu sichern / per „Identität importieren" in den Tresor übernehmen**, sonst
+    keine Rotation/Signatur möglich (Krypto-Disziplin #4).
+  - 5b Schritt 2 **offen** (menschlich vermittelt, fremde Repos): im Sage-Hub `status.json`
+    registrieren + erster Handshake bei Geschwister-Knoten → `verified-spore`.
   - 5c: echter `domainVector` (Transformers.js, `Xenova/multilingual-e5-small`) statt
     `_demo` → `verified-match`.
   - 5d: Symbiose-Import (Belege aus **Mein-Tresor**, Aufträge aus **WorkFloh** → Buchungen).
@@ -85,9 +90,10 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
    Buchungsvorschlag prüfen (Brutto/Datum/USt/Konto, Soll=Haben) → Entwurf → Journal →
    Festschreiben. Auffälligkeiten an Extraktion (`ai/extract.js`) / Kontierungs-Prompt
    (`ai/mistral.js buildClassifyMessages`) nachjustieren.
-2. **Sage 5b** (mit Nutzer als Vermittler): Identität + Spore in-app erzeugen, `sbkim/`
-   deployen, Hub-Registrierung, Handshake. Headless prüfen mit
-   `node tools/verify_remote_spore.mjs sbkim/spore.json` (Urteil VALID).
+2. **Sage 5b Schritt 2** (mit Nutzer als Vermittler): Knoten ist geboren & deploybar
+   (`sbkim/spore.json` committet, headless VALID). Jetzt: privaten Schlüssel sichern/in den
+   Tresor importieren; im Sage-Hub `status.json` registrieren; ersten Handshake bei einem
+   Geschwister-Knoten anstoßen → `verified-spore`.
 3. **Phase 4-Rest / Phase 5c-d** nach Bedarf: echte EÜR, PDF-Rechnung, echter domainVector,
    Symbiose-Import.
 4. **Optional:** Lighthouse/Perf, weitere UX-Politur, lokaler OCR-Fallback.
@@ -97,7 +103,8 @@ GoBD/DSGVO als Architektur, vorbereitet als **Sage-Mycel**-Knoten (SBKIM).
 - `src/domain/` money · accounts · journal · audit · taxes · store · documents · orders ·
   invoicing · employees · costcenters · encstore · crm-store · export · summary
 - `src/ai/` extract · categorize · suggest · **aiConfig · vision · mistral** · taxAssist
-- `src/sbkim/` spore · identity · domainvector · signal  (+ `tools/verify_remote_spore.mjs`)
+- `src/sbkim/` spore · identity (+ `importIdentity`) · domainvector · signal · **nodeProfile**
+  (eine Quelle der Wahrheit) — Tools: `tools/verify_remote_spore.mjs` · **`tools/mint_spore.mjs`**
 - `src/ui/` dom · i18n · theme · mycel · mycelCanvas · empty · lock · shell ·
   `views/` dashboard · accounts · journal · reports · documents · customers · orders ·
   employees · legal · network

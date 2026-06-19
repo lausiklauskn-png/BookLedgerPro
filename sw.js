@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v25';
+const CACHE_VERSION = 'v26';
 const CACHE_NAME = `blpr-shell-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -92,6 +92,7 @@ const CORE_ASSETS = [
   './src/sbkim/identity.js',
   './src/sbkim/domainvector.js',
   './src/sbkim/signal.js',
+  './src/sbkim/nodeProfile.js',
 ];
 
 self.addEventListener('install', (event) => {

@@ -25,6 +25,7 @@ import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
 import { buildSignal } from '../src/sbkim/signal.js';
+import { NODE_PROFILE, KEYWORDS } from '../src/sbkim/nodeProfile.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
@@ -432,6 +433,22 @@ await section('SBKIM: Spore bauen & verifizieren (§11.1/§11.2)', async () => {
   const tampered = { ...spore, domain: spore.domain + '_x' };
   const v3 = await verifySpore(tampered);
   ok('manipulierte Spore UNGÜLTIG', v3.valid === false);
+});
+
+await section('SBKIM: Knoten-Profil (eine Quelle der Wahrheit)', async () => {
+  // Die committete Spore (Headless-Minter) muss byte-identische Domänen-Felder zur
+  // In-App-Spore haben — beide ziehen aus nodeProfile.js. Hier: Minter-Pfad nachbilden.
+  const keys = await generateKeyPair();
+  const spore = await buildSpore(keys, { ...NODE_PROFILE, domainVector: demoVector(KEYWORDS) });
+  ok('domain aus Profil', spore.domain === NODE_PROFILE.domain);
+  ok('endpoint aus Profil', spore.endpoint === NODE_PROFILE.endpoint);
+  ok('domainKeywords aus Profil', JSON.stringify(spore.domainKeywords) === JSON.stringify(KEYWORDS));
+  ok('9 Pflichtfelder vorhanden', REQUIRED_FIELDS.every((f) => spore[f] != null));
+  ok('_demo-Markierung gesetzt', JSON.stringify(spore._demo) === '["domainVector"]');
+  ok('id == nodeId(pubkey)', spore.id === await nodeId(keys.publicKey));
+  // Beide Verifizierer (Browser + headless) müssen VALID urteilen — wie verify_remote_spore.mjs.
+  ok('Browser-Verifizierer VALID', (await verifySpore(spore)).valid === true);
+  ok('Headless-Verifizierer VALID', (await verifySporeObject(spore)).valid === true);
 });
 
 await section('SBKIM: SIGNAL.json (§11.6)', () => {

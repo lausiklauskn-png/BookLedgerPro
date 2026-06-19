@@ -277,6 +277,12 @@ const STRINGS = {
     'net.verifyPlaceholder': 'Spore-JSON eines anderen Knotens einfügen …',
     'net.valid': 'VALID ✔',
     'net.invalid': 'UNGÜLTIG ✗',
+    'net.import': 'Bestehende Identität importieren',
+    'net.importIntro': 'Headless gemintete Identität übernehmen: Inhalt von sbkim/.node-secret.json einfügen. So trägt diese App denselben nodeId wie die committete spore.json.',
+    'net.importPlaceholder': 'Inhalt von sbkim/.node-secret.json (oder {privJwk, pubJwk}) einfügen …',
+    'net.importBtn': 'Identität importieren',
+    'net.importOk': 'Identität importiert ✔',
+    'net.importErr': 'Import fehlgeschlagen: ',
   },
   en: {
     'app.name': 'BookLedgerPro',
@@ -530,6 +536,12 @@ const STRINGS = {
     'net.verifyPlaceholder': 'Paste the spore JSON of another node …',
     'net.valid': 'VALID ✔',
     'net.invalid': 'INVALID ✗',
+    'net.import': 'Import existing identity',
+    'net.importIntro': 'Adopt a headlessly minted identity: paste the contents of sbkim/.node-secret.json. This makes the app carry the same nodeId as the committed spore.json.',
+    'net.importPlaceholder': 'Paste the contents of sbkim/.node-secret.json (or {privJwk, pubJwk}) …',
+    'net.importBtn': 'Import identity',
+    'net.importOk': 'Identity imported ✔',
+    'net.importErr': 'Import failed: ',
   },
 };
 

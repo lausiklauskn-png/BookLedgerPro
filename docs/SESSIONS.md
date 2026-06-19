@@ -5,6 +5,35 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Phase-5-Andock Schritt 1: BookLedgerPro ist ein echter SBKIM-Knoten
+
+**Was getan**
+- **Echte, signierte `sbkim/spore.json` + `sbkim/SIGNAL.json` committet** — der Knoten ist
+  geboren. nodeId `MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ`, `domainVector` noch `_demo`
+  (§11.5) → reicht für `verified-spore`.
+- **`tools/mint_spore.mjs`** (headless, zero-dep, node:crypto): mintet Identität + Spore +
+  SIGNAL mit **exakt** derselben Logik wie die App (`buildSpore`, kanonische §11.1-Signatur).
+  Privater Schlüssel → `sbkim/.node-secret.json` (**gitignored**, NIE committen).
+- **`src/sbkim/nodeProfile.js`** als eine Quelle der Wahrheit für Domänen-Felder; `network.js`
+  und der Minter ziehen beide daraus → committete Spore kann nicht von der In-App-Spore driften.
+- **`importIdentity()`** + UI „Bestehende Identität importieren" (Ansicht „Mycel-Netz"):
+  Nutzer kann den headless geminteten Schlüssel in den Tresor übernehmen → App trägt denselben
+  nodeId. SW-Cache `v26`, i18n DE/EN ergänzt.
+- Tests **142/142** (neu: Knoten-Profil-Sektion, beide Verifizierer VALID).
+  Headless-Beweis: `node tools/verify_remote_spore.mjs sbkim/spore.json` → **VALID**.
+
+**Entscheidung (vom Nutzer bestätigt):** Identität headless minten + privaten Schlüssel
+übergeben (statt in-app Tresor-geboren). Begründung & Trade-off in `sbkim/README.md`.
+
+**Offen / Grenzen (ehrlich)**
+- **⚠ Privaten Schlüssel sichern:** `sbkim/.node-secret.json` lebt nur im Container/lokal.
+  Nutzer muss ihn verwahren bzw. in den Tresor importieren — sonst keine Rotation möglich.
+- **5b Schritt 2** (Hub-Registrierung + Handshake → `verified-spore`) ist menschlich
+  vermittelt, fremde Repos — noch offen.
+- In-App-Erzeugung/Import nicht headless E2E getestet (kein Browser); Kernlogik node-getestet.
+
+---
+
 ## 2026-06-14 — KI-Setup-Politur + Nachfolge-Brief
 
 **Was getan**

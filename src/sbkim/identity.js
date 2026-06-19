@@ -38,6 +38,23 @@ export async function createIdentity() {
   return { id: await nodeId(kp.publicKey), x: await publicX(kp.publicKey), keys: kp };
 }
 
+/**
+ * Importiert eine bestehende Identität aus JWKs (z.B. headless gemintet mit
+ * tools/mint_spore.mjs → sbkim/.node-secret.json) und speichert sie verschlüsselt.
+ * Stellt sicher, dass die committete spore.json und die In-App-Identität DENSELBEN
+ * nodeId tragen (keine zweite Identität). Verweigert, wenn schon eine existiert.
+ */
+export async function importIdentity({ privJwk, pubJwk }) {
+  if (await identityExists()) throw new Error('SBKIM-Identität existiert bereits');
+  if (!privJwk || !pubJwk || privJwk.crv !== 'Ed25519' || pubJwk.crv !== 'Ed25519') {
+    throw new Error('Ungültiges Schlüssel-Format (Ed25519-JWK erwartet)');
+  }
+  const keys = await importFromJwk(privJwk, pubJwk);
+  const enc = await encryptWithKey(key(), JSON.stringify({ privJwk, pubJwk }));
+  await kvSet(ID_KEY, enc);
+  return { id: await nodeId(keys.publicKey), x: await publicX(keys.publicKey), keys };
+}
+
 /** Lädt die gespeicherte Identität (CryptoKeys + Meta) oder null. */
 export async function loadIdentity() {
   const enc = await kvGet(ID_KEY);
