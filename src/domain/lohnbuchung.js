@@ -228,3 +228,34 @@ export function lohnkontoAggregat(laeufe = [], opts = {}) {
     .sort((a, b) => b.bruttoCent - a.bruttoCent || (a.name || '').localeCompare(b.name || ''));
   return { jahr, proMitarbeiter, summe };
 }
+
+/**
+ * Lohnsteuer-Anmeldung (Kennzahlen) für EINEN Abrechnungsmonat: summiert die einbehaltene
+ * Lohnsteuer + Solidaritätszuschlag + Kirchensteuer über alle Lohnläufe des Monats. Das ist
+ * die Grundlage für die monatliche Lohnsteuer-Anmeldung ans Finanzamt.
+ *
+ * EHRLICHE GRENZE: aggregiert nur die EINGEGEBENEN Beträge; die Kirchensteuer wird NICHT nach
+ * Konfession (ev/rk) aufgeteilt; die exakten amtlichen Kennzahlen/der Anmeldungszeitraum sind am
+ * ELSTER-Formular bzw. mit dem Berater zu verifizieren. Rein, cent-genau.
+ * @param {Array} laeufe Lohnläufe (roh oder normalisiert)
+ * @param {{monat?:string}} [opts] 'YYYY-MM' (leer → alle Läufe)
+ * @returns {{monat:string, lohnsteuerCent:number, solzCent:number, kirchensteuerCent:number,
+ *   summeCent:number, anzahl:number}}
+ */
+export function lohnsteuerAnmeldung(laeufe = [], opts = {}) {
+  const monat = monatNormal(opts.monat);
+  let lohnsteuerCent = 0, solzCent = 0, kirchensteuerCent = 0, anzahl = 0;
+  for (const raw of laeufe || []) {
+    if (!raw) continue;
+    const l = normalizeLohnlauf(raw);
+    if (monat && l.monat !== monat) continue;
+    lohnsteuerCent += l.lohnsteuerCent;
+    solzCent += l.solzCent;
+    kirchensteuerCent += l.kirchensteuerCent;
+    anzahl++;
+  }
+  return {
+    monat, lohnsteuerCent, solzCent, kirchensteuerCent,
+    summeCent: lohnsteuerCent + solzCent + kirchensteuerCent, anzahl,
+  };
+}

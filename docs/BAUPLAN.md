@@ -399,8 +399,12 @@
   manuell/GoBD, Banner verweist aufs Journal) + Löschen; **Lohnkonto-Karte** je Mitarbeiter (`lohnkontoAggregat`).
   Ehrlicher Hinweis im UI: „BLP berechnet KEINE Lohnsteuer/SV". i18n de+en, SW `v138`, neues View-Modul precached.
   NAV-Gating-Assertion ergänzt (+1 → **1735/1735**). DOM/IndexedDB statisch geprüft (kein Headless-Browser).
-- [ ] **L4. Monatliche Lohnsteuer-Anmeldung (Datenpaket)** — aggregiert LSt+SolZ+KiSt je Monat → strukturiertes
-  Übergabe-Datenpaket (analog USt-VA `buildElsterVaPaket`); **kein** ERiC-Direktversand.
+- [x] **L4. Monatliche Lohnsteuer-Anmeldung (Datenpaket)** ✅ (2026-06-18) — reine Logik `domain/lohnbuchung.js`
+  `lohnsteuerAnmeldung(laeufe, {monat})` (summiert LSt+SolZ+KiSt je Abrechnungsmonat → Kennzahlen) + Export
+  `domain/export.js buildLohnsteuerAnmeldungPaket(anm, meta)` (CSV-Datenpaket, Kz 42/47/61/62, **NICHT amtlich**,
+  kein ELSTER-Direktversand — analog `buildElsterVaPaket`). UI-Karte in `ui/views/lohn.js`: Monatswahl → LSt/SolZ/
+  KiSt/Summe + „Datenpaket herunterladen" (`downloadText`) + ELSTER-Link + ehrlicher Hinweis. i18n de+en, SW `v139`
+  (+10 → **1746/1746**). **Ehrliche Grenze:** keine Konfessions-Aufteilung, Kennzahlen am Formular/mit Berater prüfen.
 - [ ] **L5. SV-/LSt-Zahlungsübersicht** — offene Verbindlichkeiten 1741/1742 als fällige Zahlungsliste
   (nutzt die vorhandene Payables-/Liquiditäts-Schicht).
 - [ ] **L6. Doku `docs/LOHN.md` + Abschluss** — ehrliche Grenzen (keine ELStAM/SV-Meldungen/amtl. Tabellen),

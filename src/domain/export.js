@@ -334,6 +334,33 @@ export function buildElsterVaPaket(va, meta = {}) {
 }
 
 /**
+ * Lohnsteuer-Anmeldung als CSV-Datenpaket (Übergabe an Finanzamt/Berater) — NICHT amtlich
+ * eingereicht, kein ERiC/ELSTER-Direktversand (analog buildElsterVaPaket). Kennzahlen
+ * orientiert am amtlichen Formular (Lohnsteuer 42, SolZ 47, Kirchensteuer 61/62 — hier nicht
+ * nach Konfession getrennt). Rein.
+ * @param {{monat:string, lohnsteuerCent:number, solzCent:number, kirchensteuerCent:number, summeCent:number, anzahl:number}} anm
+ * @param {{steuernummer?:string, firma?:string}} [meta]
+ * @returns {string} CSV
+ */
+export function buildLohnsteuerAnmeldungPaket(anm, meta = {}) {
+  const z = (kz, wert) => [kz, centsToComma(wert || 0)];
+  const rows = [
+    ['# Lohnsteuer-Anmeldung — Datenpaket (NICHT amtlich eingereicht, kein ELSTER-Direktversand)'],
+    ['Arbeitgeber', meta.firma || ''],
+    ['Steuernummer', meta.steuernummer || ''],
+    ['Zeitraum (Monat)', anm.monat || ''],
+    ['Anzahl Lohnabrechnungen', String(anm.anzahl || 0)],
+    ['Kennzahl', 'Wert'],
+    z('Lohnsteuer (Kz 42)', anm.lohnsteuerCent),
+    z('Solidaritätszuschlag (Kz 47)', anm.solzCent),
+    z('Kirchensteuer (Kz 61/62)', anm.kirchensteuerCent),
+    z('Summe abzuführen', anm.summeCent),
+    ['# Hinweis: Kennzahlen/Konfessionsaufteilung am ELSTER-Formular bzw. mit dem Berater verifizieren.'],
+  ];
+  return csv(rows);
+}
+
+/**
  * Kassenbuch-CSV (chronologisch, mit laufendem Bestand). Erwartet das Ergebnis von
  * kassenbuch.kassenbericht(...). GoBD-orientiert; vor Übergabe an den Berater prüfen.
  */

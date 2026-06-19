@@ -11,19 +11,22 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatCents, parseEuroToCents } from '../../domain/money.js';
-import { navigate } from '../../state.js';
+import { navigate, getSettings } from '../../state.js';
 import {
-  lohnBuchungZeilen, validateLohnlauf, lohnkontoAggregat, LOHN_AUSZAHLUNG,
+  lohnBuchungZeilen, validateLohnlauf, lohnkontoAggregat, lohnsteuerAnmeldung, LOHN_AUSZAHLUNG,
 } from '../../domain/lohnbuchung.js';
 import {
   saveLohnlauf, listLohnlaeufe, deleteLohnlauf, bucheLohnlauf,
 } from '../../domain/lohn-store.js';
+import { buildLohnsteuerAnmeldungPaket } from '../../domain/export.js';
+import { downloadText } from '../../core/files.js';
 import { listMitarbeiter } from '../../domain/crm-store.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
 let _mitarbeiter = [];
 let _banner = null; // {kind:'ok'|'err', text}
+let _lstMonat = null; // gewählter Monat der Lohnsteuer-Anmeldung
 
 export async function mountLohn(host) {
   _host = host;
@@ -44,6 +47,7 @@ async function repaint() {
       el('div', { class: 'btn-row' }, [el('button', { class: 'btn', text: t('nav.employees'), onClick: () => navigate('employees') })]),
     ]),
     lohnlaufListe(laeufe),
+    lohnsteuerKarte(laeufe),
     lohnkontoKarte(laeufe),
   ]));
   _banner = null; // Banner nur einmal zeigen.
@@ -131,6 +135,32 @@ function lohnlaufListe(laeufe) {
         el('button', { class: 'btn btn-sm', text: t('lohn.delete'), onClick: async () => { await deleteLohnlauf(l.id); await repaint(); } }),
       ]),
     ])),
+  ]);
+}
+
+function lohnsteuerKarte(laeufe) {
+  if (!laeufe.length) return null;
+  const monat = _lstMonat || new Date().toISOString().slice(0, 7);
+  const anm = lohnsteuerAnmeldung(laeufe, { monat });
+  const monatInput = el('input', { type: 'month', value: monat });
+  monatInput.onchange = () => { _lstMonat = monatInput.value; repaint(); };
+  const f = getSettings().firma || {};
+  const meta = { firma: f.name || '', steuernummer: f.steuernummer || '' };
+  const zeile = (label, cent, strong) => el('div', { class: 'report-line' + (strong ? ' strong' : '') }, [
+    el('span', { class: 'small', text: label }), el('span', { class: 'small', text: formatCents(cent) }),
+  ]);
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('lohn.lstTitle') }),
+    el('div', { class: 'setting' }, [el('span', { class: 'muted small', text: t('lohn.month') }), monatInput]),
+    zeile(t('lohn.wageTax'), anm.lohnsteuerCent),
+    zeile(t('lohn.solz'), anm.solzCent),
+    zeile(t('lohn.churchTax'), anm.kirchensteuerCent),
+    zeile(t('lohn.lstTotal'), anm.summeCent, true),
+    el('p', { class: 'muted small', text: t('lohn.lstHint') }),
+    el('div', { class: 'btn-row' }, [
+      el('button', { class: 'btn btn-sm', text: t('lohn.lstDownload'), onClick: () => downloadText(`lohnsteuer-anmeldung-${monat}.csv`, '﻿' + buildLohnsteuerAnmeldungPaket(anm, meta), 'text/csv') }),
+      el('a', { class: 'btn btn-sm', href: 'https://www.elster.de/eportal/formulare-leistungen/alleformulare/lstanm', target: '_blank', rel: 'noopener noreferrer', text: t('lohn.lstElster') }),
+    ]),
   ]);
 }
 

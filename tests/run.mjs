@@ -153,8 +153,9 @@ import {
 } from '../src/domain/liquiditaet.js';
 import {
   LOHN_KONTEN, LOHN_AUSZAHLUNG, lohnNettoCent, validateLohnlauf, lohnBuchungZeilen, lohnBuchungEntwurf,
-  normalizeLohnlauf, lohnkontoAggregat, lohnlaufBuchungsdatum,
+  normalizeLohnlauf, lohnkontoAggregat, lohnlaufBuchungsdatum, lohnsteuerAnmeldung,
 } from '../src/domain/lohnbuchung.js';
+import { buildLohnsteuerAnmeldungPaket } from '../src/domain/export.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
   erstelleMandant, leereRegistry, findeMandant, aktiverMandant, addMandant,
@@ -3060,6 +3061,28 @@ await section('Lohnbuchung: lohnkontoAggregat (je Mitarbeiter + Gesamt)', () => 
   // Ohne Jahresfilter zählt der Vorjahres-Lauf mit.
   ok('ohne Jahr → alle 4', lohnkontoAggregat(laeufe).summe.anzahl === 4);
   ok('leer → 0', lohnkontoAggregat([]).proMitarbeiter.length === 0 && lohnkontoAggregat([]).summe.anzahl === 0);
+});
+
+await section('Lohnbuchung: lohnsteuerAnmeldung + Datenpaket', () => {
+  const laeufe = [
+    { name: 'A', monat: '2026-06', bruttoCent: 300000, lohnsteuerCent: 40000, solzCent: 2200, kirchensteuerCent: 3600, svAnCent: 60000 },
+    { name: 'B', monat: '2026-06', bruttoCent: 200000, lohnsteuerCent: 20000, solzCent: 1100, kirchensteuerCent: 1800, svAnCent: 40000 },
+    { name: 'A', monat: '2026-05', bruttoCent: 300000, lohnsteuerCent: 99999, solzCent: 0, kirchensteuerCent: 0 }, // anderer Monat
+  ];
+  const anm = lohnsteuerAnmeldung(laeufe, { monat: '2026-06' });
+  ok('LSt-Summe Juni', anm.lohnsteuerCent === 60000);
+  ok('SolZ-Summe Juni', anm.solzCent === 3300);
+  ok('KiSt-Summe Juni', anm.kirchensteuerCent === 5400);
+  ok('Summe abzuführen', anm.summeCent === 68700);
+  ok('Anzahl Juni = 2', anm.anzahl === 2 && anm.monat === '2026-06');
+  ok('anderer Monat ausgefiltert', anm.lohnsteuerCent !== 159999);
+  ok('ohne Monat → alle Läufe', lohnsteuerAnmeldung(laeufe).anzahl === 3);
+  ok('leer → 0', lohnsteuerAnmeldung([], { monat: '2026-06' }).summeCent === 0);
+
+  const paket = buildLohnsteuerAnmeldungPaket(anm, { firma: 'Muster GmbH', steuernummer: '12/345/67890' });
+  ok('Paket trägt LSt + Summe', /600,00/.test(paket) && /687,00/.test(paket));
+  ok('Paket trägt Steuernummer + Monat', /12\/345\/67890/.test(paket) && /2026-06/.test(paket));
+  ok('Paket markiert „NICHT amtlich"', /NICHT amtlich/.test(paket));
 });
 
 await section('Mistral EU: resolveKategorie (Richtung folgt verbindlich der Kontoart)', () => {
