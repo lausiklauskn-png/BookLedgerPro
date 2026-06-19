@@ -102,16 +102,16 @@ dashboard) — Reine Politik unverändert (972/972), UI/Glue statisch geprüft. 
 **Abschnitt B (Bilanzierung) ist abgeschlossen:** B1 (Modus + Kontengrundlage), B2 (GuV), B3 (Bilanz) erledigt + gemergt.
 **Mehrmandantenfähigkeit (Abschnitt A: M1–M3) ist abgeschlossen** — siehe `docs/MANDANTEN.md`.
 
-**Kopf-Status (Stand nach „P9 — Datei-Import mit exaktem Schlüssel-Abgleich"):** SW **v143** · Tests **1810/1810** grün · 123 JS-Module.
+**Kopf-Status (Stand nach „P10 — handelnde Person als Besteller"):** SW **v144** · Tests **1836/1836** grün · 124 JS-Module.
 
 **⏭ START HIER → 5-Sitzungs-Sprint (Nutzer 2026-06-19):** genau diese Punkte, **EINER pro Sitzung**, danach
-**Besprechung**. **Sitzung 1 → P9 ✅ erledigt** (Datei-Import mit exaktem Schlüssel-Abgleich, Pseudonym/Anker) — siehe
-unten. **Sprint-Pointer steht jetzt auf Sitzung 2 → P10** (handelnde Person als Besteller an Auftrag/Rechnung;
-Datenmodell **additiv** + UI-Feld; Prime Directive/GoBD beachten). Danach **3 → P3+P4** (KI-Autonomiestufen +
-Kleinunternehmer-Aufklärung) · **4 → P2** (KI-Anbieterwahl je Modus, strikt EU) · **5 → P8** (QR-Einzelteilen, vendored
-reiner JS-Encoder). **Arbeitsauftrag:** selbstständig nach Logik + Nutzen handeln; **größere Konflikte/Unklarheiten über
-`AskUserQuestion` eskalieren**, Kleines selbst entscheiden. Details + Sprint-Pointer im **paste-fertigen COPY-Block** in
-`docs/NAECHSTE_SITZUNG.md`.
+**Besprechung**. **Sitzung 1 → P9 ✅** (Datei-Import mit exaktem Schlüssel-Abgleich) · **Sitzung 2 → P10 ✅**
+(handelnde Person als Besteller an Auftrag/Rechnung — additives Datenmodell `src/domain/besteller.js` + UI-Feld;
+„z. Hd."-Zeile auf der Rechnung, Buchung bleibt frei von PII). **Sprint-Pointer steht jetzt auf Sitzung 3 → P3+P4**
+(KI-Autonomiestufen + Kleinunternehmer-Aufklärung als In-App-Texte). Danach **4 → P2** (KI-Anbieterwahl je Modus,
+strikt EU) · **5 → P8** (QR-Einzelteilen, vendored reiner JS-Encoder). **Arbeitsauftrag:** selbstständig nach Logik +
+Nutzen handeln; **größere Konflikte/Unklarheiten über `AskUserQuestion` eskalieren**, Kleines selbst entscheiden.
+Details + Sprint-Pointer im **paste-fertigen COPY-Block** in `docs/NAECHSTE_SITZUNG.md`.
 
 **P9 — Datei-Import mit exaktem Schlüssel-Abgleich ✅ (Sitzung 1, 2026-06-19):** macht den Pseudonym-Round-Trip
 **dateibasiert/sitzungsübergreifend**. Reine Logik `src/ai/schluesselabgleich.js` (node-getestet, +38 → **1810/1810**):

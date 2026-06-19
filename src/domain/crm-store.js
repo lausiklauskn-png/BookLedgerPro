@@ -5,6 +5,7 @@
 import { encPut, encGet, encList, encDel, neueId } from './encstore.js';
 import { recAll, recPut, recDel, kvGet, kvSet } from '../core/db.js';
 import { AUFTRAG_STATUS, auftragOffen, darfAuftragBearbeiten, anwendeAuftragEdit, validateAuftrag } from './orders.js';
+import { normalizeBesteller } from './besteller.js';
 import { rechnungZeilen, rechnungsUebernahmeEntwurf, validateRechnungsUebernahme,
   zahlungsUebernahmeEntwurf, validateZahlungsUebernahme } from './invoicing.js';
 import { formatRechnungsnummer } from './rechnung.js';
@@ -73,6 +74,9 @@ export async function saveAuftrag(a) {
   const auftrag = {
     id: a.id || neueId('auftrag'), type: 'auftrag',
     kundeId: a.kundeId || null, titel: a.titel || '',
+    // Handelnde Person als Besteller (P10): die Person, die im Namen des Kunden
+    // bestellt hat (Ansprechpartner). Additiv, normalisiert oder null.
+    besteller: normalizeBesteller(a.besteller),
     status: a.status || AUFTRAG_STATUS.ANGELEGT,
     positionen: a.positionen || [], kostenstelle: a.kostenstelle || null,
     // Zahlungsziel je Forderung (A1-Rest): MUSS persistiert werden, sonst fällt das
@@ -173,6 +177,8 @@ export async function importWorkFloh(parsed) {
     const kundeId = a.kundeExternId ? (externIdToId[a.kundeExternId] || null) : null;
     const auftrag = await saveAuftrag({
       titel: a.titel, kundeId, positionen: a.positionen,
+      // P10: handelnde Person aus dem Import mitnehmen (additiv, tolerant).
+      besteller: a.besteller,
       status: AUFTRAG_STATUS.ANGELEGT, externNummer: a.externNummer,
       // v4: auftragseigenes Zahlungsziel aus dem rechnung-Block übernehmen → Fälligkeit/
       // Mahnwesen der Gegenstelle entsprechen der Ausgangsseite (kein globaler Default-Bruch).

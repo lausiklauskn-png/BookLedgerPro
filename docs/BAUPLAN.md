@@ -427,8 +427,14 @@
   `typAusToken`/`schluesselAusMap`/`abgleichBericht`/`pruefeRoundtrip`. UI `src/ui/schluesselabgleich.js` (Einstellungs-Karte
   unter „Datenschutz bei KI": pseudonymisieren+Schlüssel sichern · Datei importieren+abgleichen). i18n de+en, SW `v143`.
   DOM/Datei-Picker statisch geprüft.
-- [ ] **S2 · P10 — handelnde Person als Besteller** an Auftrag/Rechnung (Datenmodell additiv + UI-Feld; Prime
-  Directive/GoBD beachten).
+- [x] **S2 · P10 — handelnde Person als Besteller ✅ (2026-06-19):** additives Datenmodell + UI-Feld. Reine Logik
+  `src/domain/besteller.js` (node-getestet, +26 → **1836/1836**): `normalizeBesteller` (String/Objekt → `{name,funktion,
+  email,telefon}` getrimmt, null ohne Name), `validateBesteller` (optional; Name-Pflicht nur bei Restangaben, E-Mail
+  formal, Längen-Cap), `bestellerLabel`, `bestellerKontaktzeile` („z. Hd. Name (Funktion)", OHNE E-Mail/Telefon →
+  Prime Directive). Verdrahtet: `orders.js` (`validateAuftrag` + `AUFTRAG_EDIT_FELDER`), `crm-store.saveAuftrag`
+  (persistiert normalisiert) + `importWorkFloh` (Durchreichen), `rechnung.baueRechnung` (Dokumentfeld `besteller`),
+  `importworkfloh.normalizeImport` (roh durchreichen). UI `ui/views/orders.js`: 4 Formularfelder + Liste-Label +
+  „z. Hd."-Zeile im Empfängerblock der Rechnung. i18n de+en, SW `v144`, 124 Module. DOM/IndexedDB statisch geprüft.
 - [ ] **S3 · P3 + P4 — Aufklärungstexte:** KI-Autonomiestufen (P3) + Kleinunternehmer-Pflichten bei Drittdaten (P4),
   In-App in „Recht & Doku"/Einstellungen.
 - [ ] **S4 · P2 — KI-Anbieterwahl je Modus**, strikt innerhalb der EU (Nicht-EU bleibt geschlossen). Setting + UI.

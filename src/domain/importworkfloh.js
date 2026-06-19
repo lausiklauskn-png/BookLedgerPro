@@ -148,6 +148,8 @@ export function normalizeImport(obj, { defaultUstSatz = 19 } = {}) {
       externNummer: a.externNummer != null ? String(a.externNummer) : null,
       kundeExternId: a.kundeExternId != null ? String(a.kundeExternId) : null,
       titel: titel || `Import ${a.externNummer || ''}`.trim(),
+      // P10: handelnde Person als Besteller — roh durchreichen (Normalisierung beim Speichern).
+      besteller: a.besteller != null ? a.besteller : null,
       positionen,
       rechnung: normalizeRechnung(a.rechnung, titel || a.externNummer, warnungen),
     });

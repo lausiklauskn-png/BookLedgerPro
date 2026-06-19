@@ -5,6 +5,43 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — Sprint S2: P10 — handelnde Person als Besteller [Branch `claude/actor-orderer-invoice-rw7ec4`]
+
+**Was getan**
+- **P10** trägt jetzt die **handelnde Person als Besteller** (Ansprechpartner, der im Namen des Kunden bestellt hat)
+  **additiv** durch Auftrag → Rechnung. Sauber getrennt vom Kunden (= Rechnungsempfänger).
+- **Reine Logik** `src/domain/besteller.js` (node-getestet, **+26 → 1836/1836**):
+  - `normalizeBesteller(value)` — akzeptiert String (= Name) oder Objekt `{name,funktion,email,telefon}`, trimmt alle
+    Felder, **`null` ohne Name** (abwärtskompatibel zu Aufträgen ohne Besteller).
+  - `validateBesteller(value)` — optional (leer/null gültig); Name-Pflicht nur, wenn Funktion/E-Mail/Telefon ohne Name
+    angegeben sind; E-Mail formal geprüft; Name-Längen-Cap.
+  - `bestellerLabel` („Max Müller (Einkauf)") + `bestellerKontaktzeile` („z. Hd. Max Müller (Einkauf)") — die
+    Dokumentzeile zeigt **nur Name + Funktion**, NICHT E-Mail/Telefon (Prime Directive: nichts Internes/Überflüssiges
+    nach außen; E-Mail/Telefon bleiben für die interne Kontaktaufnahme).
+- **Verdrahtet:** `domain/orders.js` (`validateAuftrag` ruft `validateBesteller`; `AUFTRAG_EDIT_FELDER` enthält
+  `besteller`), `domain/crm-store.js` (`saveAuftrag` persistiert `normalizeBesteller`; `importWorkFloh` reicht
+  `besteller` durch), `domain/rechnung.js` (`baueRechnung` liefert Dokumentfeld `besteller`),
+  `domain/importworkfloh.js` (`normalizeImport` reicht `besteller` roh durch).
+- **UI** `ui/views/orders.js`: vier optionale Formularfelder (Name/Funktion/E-Mail/Telefon) + Hinweistext im
+  Auftragsformular; Besteller-Label in der Auftragsliste; „z. Hd."-Zeile im Empfängerblock der druckbaren Rechnung.
+  i18n de+en, SW `v144`, neues Modul `src/domain/besteller.js` precached.
+
+**Stand**
+- **Tests 1836/1836 grün · SW v144 · 124 JS-Module.** Sprint-Pointer **S2 (P10) erledigt → steht jetzt auf S3 (P3+P4).**
+- GoBD: Besteller ist mutable CRM-Metadaten am Auftrag (kein Eingriff in die festgeschriebene Buchungs-Hash-Kette);
+  die **Buchung** trägt KEINEN Besteller — er steht nur auf dem Dokument + im CRM-Record.
+
+**Nächstes / Sprint**
+- **S3 → P3 + P4 — Aufklärungstexte:** KI-Autonomiestufen (P3) + Kleinunternehmer-Pflichten bei Drittdaten (P4) als
+  In-App-Texte in „Recht & Doku"/Einstellungen. Klein, build-frei.
+
+**Offene Grenzen / ungetestet**
+- DOM/IndexedDB/Datei-Picker statisch geprüft (kein Headless-Browser).
+- Besteller fließt bewusst NICHT in die XRechnung (CII-Käuferkontakt BT-56/57) — möglicher Folgeschritt.
+- „z. Hd."-Präfix ist fest deutsch (Deutschland-zuerst; das Rechnungsdokument ist deutschsprachig).
+
+---
+
 ## 2026-06-19 — Sprint S1: P9 — Datei-Import mit exaktem Schlüssel-Abgleich [Branch `claude/p9-file-import-key-match-opvy4e`]
 
 **Was getan**
