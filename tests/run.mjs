@@ -157,6 +157,7 @@ import {
   offeneLohnabgaben, lohnabgabeZahlungZeilen, lohnabgabeZahlungEntwurf,
 } from '../src/domain/lohnbuchung.js';
 import { buildLohnsteuerAnmeldungPaket } from '../src/domain/export.js';
+import { parseKundenCsv, parseVcard, normalizeKunde, importKundenAusText } from '../src/domain/kundenimport.js';
 import {
   LEGACY_MANDANT_ID, LEGACY_DB_NAME, REGISTRY_DB_NAME, dbNameFuer, neueMandantId, validateMandantName,
   erstelleMandant, leereRegistry, findeMandant, aktiverMandant, addMandant,
@@ -2685,6 +2686,56 @@ await section('Liquidität: groessteFaellige (größte Treiber im Fenster)', () 
   // Leer/defensiv.
   ok('leeres Argument → []', groessteFaellige().length === 0 && groessteFaellige({}).length === 0);
   ok('nur eine Seite → nur deren Posten', groessteFaellige({ forderungen, heute, horizontTage: 14 }).every((d) => d.richtung === 'ein'));
+});
+
+await section('Kundenimport: CSV', () => {
+  const csv = [
+    'Name;E-Mail;Adresse;USt-IdNr.;Telefon;Typ',
+    'Beispiel GmbH;info@beispiel.de;Weg 2, 50667 Köln;DE123456789;0221-123;firma',
+    'Erika Privat;erika@web.de;Gasse 1;;0151-9;privat',
+    ';;;;;', // leere Zeile → Müll
+  ].join('\r\n');
+  const roh = parseKundenCsv(csv);
+  ok('3 Datenzeilen geparst', roh.length === 3);
+  ok('Spalten gemappt', roh[0].name === 'Beispiel GmbH' && roh[0].email === 'info@beispiel.de' && roh[0].ustId === 'DE123456789' && roh[0].telefon === '0221-123');
+  ok('Typ firma → kein Verbraucher', roh[0].istVerbraucher === false);
+  ok('Typ privat → Verbraucher', roh[1].istVerbraucher === true);
+
+  // Komma-Trenner + Quoting (Adresse mit Komma in Anführungszeichen).
+  const csv2 = 'name,email,adresse\n"Müller, Hans",h@m.de,"Hauptstr. 3, Berlin"';
+  const roh2 = parseKundenCsv(csv2);
+  ok('Komma-Trenner erkannt + Quoting', roh2.length === 1 && roh2[0].name === 'Müller, Hans' && roh2[0].adresse === 'Hauptstr. 3, Berlin');
+
+  ok('ohne erkennbare Spalten → []', parseKundenCsv('foo;bar\n1;2').length === 0);
+  ok('nur Kopfzeile → []', parseKundenCsv('name;email').length === 0);
+});
+
+await section('Kundenimport: vCard', () => {
+  const vcf = [
+    'BEGIN:VCARD', 'VERSION:3.0', 'FN:Max Mustermann', 'ORG:Muster AG',
+    'EMAIL;TYPE=WORK:max@muster.de', 'TEL;TYPE=CELL:0170-1', 'ADR;TYPE=WORK:;;Musterweg 5;Köln;;50667;DE',
+    'END:VCARD',
+    'BEGIN:VCARD', 'VERSION:3.0', 'N:Schmidt;Anna;;;', 'EMAIL:anna@s.de', 'END:VCARD',
+  ].join('\r\n');
+  const k = parseVcard(vcf);
+  ok('2 Karten geparst', k.length === 2);
+  ok('FN → Name, EMAIL/TEL', k[0].name === 'Max Mustermann' && k[0].email === 'max@muster.de' && k[0].telefon === '0170-1');
+  ok('ADR zusammengesetzt', k[0].adresse === 'Musterweg 5, 50667 Köln, DE');
+  ok('N → „Anna Schmidt"', k[1].name === 'Anna Schmidt');
+  ok('kein BEGIN:VCARD → []', parseVcard('name;email\na;b').length === 0);
+});
+
+await section('Kundenimport: normalize + auto-detect', () => {
+  ok('Müll (kein Name/Email) → null', normalizeKunde({ adresse: 'x' }) === null);
+  ok('Name reicht', normalizeKunde({ name: ' A ' }).name === 'A');
+  ok('Default istVerbraucher false', normalizeKunde({ email: 'a@b.de' }).istVerbraucher === false);
+  // Auto-detect: vCard.
+  const a = importKundenAusText('BEGIN:VCARD\nFN:Test Kunde\nEND:VCARD');
+  ok('Auto-detect vCard', a.length === 1 && a[0].name === 'Test Kunde');
+  // Auto-detect: CSV (filtert Müllzeile).
+  const b = importKundenAusText('Name;Email\nFirma X;x@y.de\n;');
+  ok('Auto-detect CSV + Müll gefiltert', b.length === 1 && b[0].name === 'Firma X');
+  ok('leer → []', importKundenAusText('').length === 0);
 });
 
 await section('Mahnwesen: persistenter Verlauf (Stufe/Zins-/Gebührenverlauf)', () => {

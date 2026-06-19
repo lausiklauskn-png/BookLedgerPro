@@ -62,7 +62,7 @@
 <h1>BookLedgerPro</h1>
 <p class="sub"><strong>Technische Transparenz- und Zwischenstands-Dokumentation</strong><br>
 Wie die App Ihre Daten schützt, verschlüsselt und Recht (DSGVO &amp; GoBD) einhält.</p>
-<p class="foot">Stand: 19. Juni 2026 (aktualisiert) · Arbeitsdokument (wird fortgeschrieben) · Endpoint: https://lausiklauskn-png.github.io/bookledgerpro/ · Automatisierte Tests: <strong>1754/1754 grün</strong> · Service-Worker-Cache <code>v140</code></p>
+<p class="foot">Stand: 19. Juni 2026 (aktualisiert) · Arbeitsdokument (wird fortgeschrieben) · Endpoint: https://lausiklauskn-png.github.io/bookledgerpro/ · Automatisierte Tests: <strong>1772/1772 grün</strong> · Service-Worker-Cache <code>v142</code></p>
 
 <div class="good no-break">
 <strong>Aktualisierung 19.06.2026 — Vertrauen/Sicherheit, Kalkulation/Angebote, Liquidität &amp; Lohn-Buchungskern gebaut (vormals „geplant"):</strong>
@@ -73,7 +73,7 @@ Wie die App Ihre Daten schützt, verschlüsselt und Recht (DSGVO &amp; GoBD) ein
 <li><span class="ok">✓</span> <strong>Rechnungs-Hoheit wählbar</strong> (<code>rechnungsstelle</code>: BLP stellt selbst aus <em>oder</em> bereitet nur vor). <em>(K4.)</em></li>
 <li><span class="ok">✓</span> <strong>Liquiditätsvorschau</strong> auf dem Dashboard — bald fällige Eingänge/Ausgänge, Geldbestand + projizierter Saldo, wählbares Zeitfenster, Tiefpunkt, Deckungslücke, Mindestreserve, Reichweite („bis wann reicht das Geld?") und größte anstehende Bewegungen; rein anzeigend, bucht nichts.</li>
 <li><span class="ok">✓</span> <strong>Lohn-Buchungskern</strong> — Lohn/Gehalt GoBD-sicher buchen (Brutto-Methode), Lohnsteuer-Anmeldung als Datenpaket, offene Lohnabgaben (Finanzamt/SV), Lohnkonto je Mitarbeiter. <strong>Bewusst eng:</strong> BLP <em>bucht</em>, berechnet aber <em>keine</em> Lohnsteuer/SV (kein ELStAM/SV-Meldungen/amtliche Tabellen) — die Beträge kommen aus der Entgeltabrechnung. <em>(vormals „optional/bei Bedarf".)</em></li>
-<li>Testumfang von 1080 auf <strong>1754</strong> erhöht (alle grün), Service-Worker-Cache <code>v140</code>.</li>
+<li>Testumfang von 1080 auf <strong>1772</strong> erhöht (alle grün), Service-Worker-Cache <code>v142</code>.</li>
 </ul>
 </div>
 
@@ -132,7 +132,7 @@ Entscheidung; bis dahin bleibt sie geschlossen.</p>
 <h2>0b. Funktions-Fahrplan „Profi-Readiness" V1–V10 — Stand offen/erledigt</h2>
 <p class="lead">Der Fahrplan zur vollwertigen Buchhaltung (für Klein- <em>und</em> Normalbetriebe) ist
 <strong>vollständig abgeschlossen</strong> — alle MUSS- und SOLL-Punkte. Stand 19.06.2026,
-automatisierte Tests <strong>1754/1754 grün</strong>.</p>
+automatisierte Tests <strong>1772/1772 grün</strong>.</p>
 <table>
 <tr><th>Punkt</th><th>Inhalt</th><th>Status</th></tr>
 <tr><td>V1</td><td>Kontenrahmen erweitert (57 SKR03-Konten) + Konten anlegen/bearbeiten/löschen</td><td><span class="ok">✓ erledigt</span></td></tr>
@@ -344,7 +344,7 @@ Ist-EÜR (§ 4 Abs. 3) erlebbar.</div>
 <tr><td>P3</td><td>KI-Autonomiestufen in der Aufklärung erklären</td><td><span class="plan">◐ geplant</span></td></tr>
 <tr><td>P4</td><td>Kleinunternehmer-Aufklärung (Pflichten bei Drittdaten)</td><td><span class="plan">◐ geplant</span></td></tr>
 <tr><td>P5</td><td>Pseudonymisierung vor KI-Versand</td><td><span class="ok">✓ erledigt</span> (anker-basiert <strong>+ NER für Dritt-Daten</strong>)</td></tr>
-<tr><td>P6</td><td>Import vorhandener Kundendaten (CSV/vCard/JSON)</td><td><span class="plan">◐ teilweise</span> (WorkFloh-JSON-Import + Rechnungs-Übernahme stehen; CSV/vCard offen)</td></tr>
+<tr><td>P6</td><td>Import vorhandener Kundendaten (CSV/vCard/JSON)</td><td><span class="ok">✓ erledigt</span> (WorkFloh-JSON, Rechnungs-Übernahme <strong>und CSV/vCard-Import</strong> in der Kunden-Ansicht)</td></tr>
 <tr><td>P7</td><td>Dreistufiger Briefkasten / Token-Tresor (Mandant ⊃ Firma ⊃ Person)</td><td><span class="ok">✓ erledigt</span> (scope-präfixierte Token, NER-Scoping)</td></tr>
 <tr><td>P8</td><td>Datei-Kanal (Masse) + QR (Einzel-Teilen, lokal erzeugt)</td><td><span class="plan">◐ geplant</span></td></tr>
 <tr><td>P9</td><td>Datei-Import-Ablauf mit exaktem Schlüssel-Abgleich</td><td><span class="plan">◐ geplant</span></td></tr>
@@ -374,7 +374,7 @@ DATEV-EXTF, Kleinfälle, Selbstdiagnose). <strong>Neu (19.06.):</strong> <strong
 (interne Vor-/Nachkalkulation, adaptiver Baukasten, neutrale Außen-Dokumente, Angebot→Rechnung), wählbare
 <strong>Rechnungs-Hoheit</strong>, <strong>Liquiditätsvorschau</strong> (Bestand/Projektion/Reichweite/Treiber) und
 <strong>Lohn-Buchungskern</strong> (Lohn buchen + Lohnsteuer-Anmeldung-Datenpaket + offene Lohnabgaben + Lohnkonto).
-<strong>Automatisierte Tests: 1754 von 1754 grün.</strong></div>
+<strong>Automatisierte Tests: 1772 von 1772 grün.</strong></div>
 <div class="note"><strong>Noch offen / noch nicht geprüft:</strong> voller KoSIT-Validator &amp; ZUGFeRD-PDF
 <em>erzeugen</em>; zertifiziertes 116-Spalten-DATEV-EXTF und ELSTER-Direktversand (bewusst nur Datenpaket);
 <strong>volle Lohnabrechnung</strong> (automatische Brutto→Netto-Berechnung, SV-Meldungen/ELStAM — bewusst außen vor,
@@ -388,7 +388,7 @@ Abnahme-Checkliste. <strong>Der echte Praxistest (Foto→App→Finanzamt, DATEV-
 <ul>
 <li><strong>Quelloffen und build-frei:</strong> Der Code ist lesbarer Klartext — kein verstecktes, kompiliertes Paket. Was die App tut, steht offen da.</li>
 <li><strong>Kein Server, kein Konto:</strong> Es gibt keine Betreiber-Datenbank, in der Ihre Daten landen könnten.</li>
-<li><strong>Automatisierte Tests:</strong> Die Rechenkerne (Krypto, Beträge, Buchungslogik, Hash-Kette, Pseudonymisierung/NER/Briefkasten, E-Rechnung, Bankimport, Bilanz) sind durch Tests abgesichert — reproduzierbar mit <code>node tests/run.mjs</code> (1754/1754) und in der App über <strong>„Selbsttest"</strong> sichtbar.</li>
+<li><strong>Automatisierte Tests:</strong> Die Rechenkerne (Krypto, Beträge, Buchungslogik, Hash-Kette, Pseudonymisierung/NER/Briefkasten, E-Rechnung, Bankimport, Bilanz) sind durch Tests abgesichert — reproduzierbar mit <code>node tests/run.mjs</code> (1772/1772) und in der App über <strong>„Selbsttest"</strong> sichtbar.</li>
 <li><strong>Dieses Dokument trennt Fertiges von Geplantem</strong> — Sie sehen den echten Stand, nicht ein Wunschbild.</li>
 </ul>
 

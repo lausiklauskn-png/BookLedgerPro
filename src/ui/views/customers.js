@@ -3,9 +3,12 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { listKunden, saveKunde, deleteKunde } from '../../domain/crm-store.js';
+import { importKundenAusText } from '../../domain/kundenimport.js';
+import { pickFile, readFileText } from '../../core/files.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
+let _banner = null; // {kind:'ok'|'err', text} — Import-Rückmeldung (einmalig)
 
 export async function mountCustomers(host) {
   _host = host;
@@ -17,9 +20,43 @@ async function repaint() {
   kunden.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('crm.customersTitle') }),
+    _banner ? el('p', { class: _banner.kind === 'err' ? 'form-error' : 'muted small', text: _banner.text }) : null,
     form(),
+    importCard(),
     liste(kunden),
   ]));
+  _banner = null;
+}
+
+// Kundenimport aus CSV / vCard (zusätzlich zum WorkFloh-JSON). Datei lesen → reine Logik
+// importKundenAusText (node-getestet) → verschlüsselt speichern. Bereits vorhandene Namen
+// werden übersprungen. Bucht nichts.
+function importCard() {
+  const btn = el('button', {
+    class: 'btn', text: t('crm.importPick'),
+    onClick: async () => {
+      const file = await pickFile('.csv,.vcf,.vcard,text/csv,text/vcard,text/plain');
+      if (!file) return;
+      let kunden;
+      try { kunden = importKundenAusText(await readFileText(file)); }
+      catch { _banner = { kind: 'err', text: t('crm.importError') }; await repaint(); return; }
+      if (!kunden.length) { _banner = { kind: 'err', text: t('crm.importNone') }; await repaint(); return; }
+      const vorhanden = new Set((await listKunden()).map((k) => (k.name || '').trim().toLowerCase()).filter(Boolean));
+      let neu = 0, skip = 0;
+      for (const k of kunden) {
+        const key = (k.name || '').trim().toLowerCase();
+        if (key && vorhanden.has(key)) { skip++; continue; }
+        await saveKunde(k); if (key) vorhanden.add(key); neu++;
+      }
+      _banner = { kind: 'ok', text: t('crm.importDone').replace('{neu}', String(neu)).replace('{skip}', String(skip)) };
+      await repaint();
+    },
+  });
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('crm.importTitle') }),
+    el('p', { class: 'small', text: t('crm.importHint') }),
+    el('div', { class: 'btn-row' }, [btn]),
+  ]);
 }
 
 function form() {
