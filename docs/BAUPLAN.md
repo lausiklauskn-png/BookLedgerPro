@@ -477,8 +477,10 @@ Sage hat seine Seite als Entwurf abgelegt (deren PR #302, kein netzweites Signal
   (9 Pflichtfelder, kanonische Signatur, `id=base64url(SHA256(rawPub))`, `domainVector` vorerst `_demo`) +
   `sbkim/SIGNAL.json` (seq 1). **Headless-Beweis** `node tools/verify_remote_spore.mjs sbkim/spore.json` = VALID;
   Krypto-/Kanon-Helfer node-getestet. **Schritt 4 dabei:** `docs/SAGE_E2E_ANFRAGE.md` dem Nutzer zum Relayen geben.
-- [ ] **6.2 — Sage/Hub-Registrierung + erster Handshake** → `verified-spore` (menschlich vermittelt, fremde Repos;
-  Nachbar-Spore reziprok verifizieren → `sbkim/<gegenseite>_inbox.json` + `.verify.md`).
+- [x] **6.2 — Sage/Hub-Registrierung + erster Handshake** → `verified-spore` ✅ (2026-06-19): Sage hat unsere
+  Spore VALID (4/4) verifiziert + `verified-spore` vergeben + im Hub registriert (Sage PR #303, wir = 6. Peer).
+  Gegenstelle = Sage (`nysOZE3VuKqZA23i5G2XL67s41JIIykI58zXMtJkYfA`); reziprok verifiziert (VALID) →
+  `sbkim/Sage_inbox.json` + `.verify.md`; `ack[Sage]=22`, `SIGNAL.seq`=3, `forNodes`=`["*"]`. Andock beidseitig besiegelt.
 - [ ] **6.3 — WorkFloh-Pairing vom Hub aus:** Angebote ⇄ E-Mail-/Lead-Aufbereitung über den Briefkasten
   (Nutzlast = vorhandenes Austauschformat v4 `domain/connect.js`; sensible Teile pseudonym/P9).
 - [ ] **6.4 — echter `domainVector`** (Transformers.js `Xenova/multilingual-e5-small`) → `verified-match`
