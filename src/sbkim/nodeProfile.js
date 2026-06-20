@@ -7,6 +7,15 @@
 
 import { ENDPOINT } from './signal.js';
 
+/**
+ * Kanonische, dauerhafte nodeId von BookLedgerPro = die der **committeten**, im
+ * Sage-Hub registrierten und von den Peers (Sage, SB·KIMTool·Point) verifizierten
+ * Spore (`sbkim/spore.json`). Die App MUSS diese Identität tragen (Schlüssel-Import),
+ * sonst „wandert" die Identität und alte Spore/Hub-Einträge werden ungültig.
+ * Ein Node-Test hält diese Konstante mit `sbkim/spore.json` in Sync.
+ */
+export const CANONICAL_NODE_ID = 'MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ';
+
 /** Domänen-Stichworte (CLAUDE.md „Sage-Andock"): speisen domainVector + Spore. */
 export const KEYWORDS = ['Buchhaltung', 'Beleg', 'Konto', 'Rechnung', 'USt', 'EÜR', 'Kostenstelle', 'GoBD', 'Mitarbeiter', 'Auftrag'];
 

@@ -68,3 +68,19 @@ export async function loadIdentity() {
 export async function deleteIdentity() {
   await kvDel(ID_KEY);
 }
+
+/**
+ * Ersetzt die aktuelle Identität durch eine importierte (löscht + importiert).
+ * Für den Fall, dass versehentlich eine frische In-App-Identität erzeugt wurde, die
+ * von der kanonischen (committeten/registrierten) abweicht: damit holt der Nutzer
+ * den dauerhaften Schlüssel (`sbkim/.node-secret.json`) zurück in den Tresor.
+ */
+export async function replaceIdentity({ privJwk, pubJwk }) {
+  // Schlüssel ZUERST validieren (kein Verlust der alten Identität bei kaputter Eingabe).
+  if (!privJwk || !pubJwk || privJwk.crv !== 'Ed25519' || pubJwk.crv !== 'Ed25519') {
+    throw new Error('Ungültiges Schlüssel-Format (Ed25519-JWK erwartet)');
+  }
+  await importFromJwk(privJwk, pubJwk); // wirft, wenn die JWKs nicht importierbar sind
+  await deleteIdentity();
+  return importIdentity({ privJwk, pubJwk });
+}

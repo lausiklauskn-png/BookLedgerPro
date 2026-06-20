@@ -120,7 +120,8 @@ import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
 import { buildSignal } from '../src/sbkim/signal.js';
-import { NODE_PROFILE, KEYWORDS } from '../src/sbkim/nodeProfile.js';
+import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID } from '../src/sbkim/nodeProfile.js';
+import { readFileSync as _readSpore } from 'node:fs';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
@@ -1107,6 +1108,13 @@ await section('SBKIM: Knoten-Profil (eine Quelle der Wahrheit)', async () => {
   // Beide Verifizierer (Browser + headless) müssen VALID urteilen — wie verify_remote_spore.mjs.
   ok('Browser-Verifizierer VALID', (await verifySpore(spore)).valid === true);
   ok('Headless-Verifizierer VALID', (await verifySporeObject(spore)).valid === true);
+});
+
+await section('SBKIM: kanonische nodeId == committete spore.json', async () => {
+  // Schützt vor Identitäts-„Wandern": die App-Konstante muss zur deployten Spore passen.
+  const committed = JSON.parse(_readSpore(new URL('../sbkim/spore.json', import.meta.url), 'utf8'));
+  ok('CANONICAL_NODE_ID == spore.json id', CANONICAL_NODE_ID === committed.id);
+  ok('committete Spore weiterhin VALID', (await verifySporeObject(committed)).valid === true);
 });
 
 await section('SBKIM: SIGNAL.json (§11.6)', () => {
