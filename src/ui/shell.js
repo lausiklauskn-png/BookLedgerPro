@@ -6,9 +6,9 @@
 import { el, mount, clear } from './dom.js';
 import { t, setLang, LANGS } from './i18n.js';
 import { applyTheme } from './theme.js';
-import { MycelMark, SiegelBadge } from './mycel.js';
+import { MycelMark, SiegelBadge, SiegelWappenGross } from './mycel.js';
 import { identityExists, loadIdentity } from '../sbkim/identity.js';
-import { CANONICAL_NODE_ID, SEAL_STAGE } from '../sbkim/nodeProfile.js';
+import { CANONICAL_NODE_ID, SEAL_STAGE, NODE_PROFILE } from '../sbkim/nodeProfile.js';
 import { getSettings, updateSettings, navigate, getRoute, subscribe, MODES, AI_LEVELS } from '../state.js';
 import { getMandantId, lockVault, changePassword } from '../core/vault.js';
 import { ladeRegistry, speichereRegistry } from '../core/mandantenStore.js';
@@ -174,26 +174,70 @@ function briefkastenChip() {
   }, [el('span', { class: 'mycel-chip-label', text: t('bk.chip') })]);
 }
 
-// SBKIM-Siegel-Badge in der Kopfzeile (wie Sage, `data-stufe`): erscheint NUR, wenn die
-// Identität vorhanden und kanonisch ist (Selbst-Prüfung bestanden = besiegelt). Bronze =
-// verified-spore, Gold = verified-match (SEAL_STAGE). Klick öffnet die Mycel-Netz-Ansicht.
+// SBKIM-Siegel in der Kopfzeile (eigene Klasse `kopf-siegel`, NICHT `.siegel-badge` —
+// das ist das runde EU-Datenschutz-Siegel und würde kollidieren). Das Wappen SELBST ist
+// der Knopf (transparent, kein Hintergrund-Kreis). Erscheint, sobald eine Identität da
+// ist: kanonisch → besiegelt (Bronze/Gold), abweichend → ausgegraut + Warnung. Klick
+// öffnet das Siegel-Modal mit dem großen, lesbaren Wappen + „was drin ist".
 function siegelBadge() {
+  const state = { drift: false, id: null };
   const badge = el('button', {
-    class: 'siegel-badge', 'data-stufe': SEAL_STAGE, style: 'display:none',
+    class: 'kopf-siegel', 'data-stufe': SEAL_STAGE, style: 'display:none',
     title: t('siegel.checking'), 'aria-label': t('siegel.aria'),
-    onClick: () => navigate('network'),
+    onClick: () => openSiegelModal(state),
   }, [SiegelBadge()]);
   (async () => {
     try {
       if (!(await identityExists())) return;
       const ident = await loadIdentity();
+      state.id = ident ? ident.id : null;
+      badge.style.display = '';
       if (ident && ident.id === CANONICAL_NODE_ID) {
-        badge.style.display = '';
         badge.title = SEAL_STAGE === 'verified-match' ? t('siegel.match') : t('siegel.spore');
+      } else {
+        state.drift = true;
+        badge.classList.add('is-drift');
+        badge.title = t('siegel.driftTitle');
       }
     } catch { /* ohne Identität kein Siegel — Badge bleibt versteckt */ }
   })();
   return badge;
+}
+
+// Siegel-Modal: zeigt das Wappen GROSS (mit lesbarem Band) + die bezeugten Eckdaten
+// („was drin ist"). Bei abweichender Identität eine ehrliche Warnung statt falschem
+// „besiegelt". Esc oder Klick auf den Hintergrund schließt.
+function openSiegelModal(state) {
+  const overlay = el('div', { class: 'modal-overlay', role: 'dialog', 'aria-modal': 'true' });
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  const close = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
+  document.addEventListener('keydown', onKey);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  const stufe = SEAL_STAGE === 'verified-match' ? t('siegel.stageMatch') : t('siegel.stageSpore');
+  const rows = [
+    [t('siegel.fieldNode'), NODE_PROFILE.nodeName],
+    ['nodeId', CANONICAL_NODE_ID],
+    [t('siegel.fieldEndpoint'), NODE_PROFILE.endpoint],
+    [t('siegel.fieldDomain'), NODE_PROFILE.domain],
+    [t('siegel.fieldStage'), stufe],
+  ];
+  const dl = el('dl', { class: 'siegel-modal-dl' });
+  for (const [k, v] of rows) { dl.append(el('dt', { text: k }), el('dd', { class: 'mono', text: v })); }
+
+  overlay.appendChild(el('div', { class: 'modal siegel-modal' }, [
+    el('h2', { text: t('siegel.modalTitle') }),
+    state.drift ? el('div', { class: 'banner banner-warn', text: t('siegel.driftWarn').replace('%ID%', state.id || '—') }) : null,
+    SiegelWappenGross(),
+    el('p', { class: 'muted small', text: t('siegel.modalIntro') }),
+    dl,
+    el('p', { class: 'muted small', text: t('siegel.attests') }),
+    el('div', { class: 'btn-row' }, [
+      el('button', { class: 'btn btn-primary', text: t('net.title'), onClick: () => { close(); navigate('network'); } }),
+      el('button', { class: 'btn', text: t('common.close'), onClick: close }),
+    ]),
+  ]));
+  document.body.appendChild(overlay);
 }
 
 // Mandant wechseln: Sitzungs-Key (DEK) verwerfen und neu booten. Der Boot zeigt bei
