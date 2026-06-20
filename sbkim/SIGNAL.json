@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-20",
-  "seq": 8,
-  "headline": "Siegel-Band trägt jetzt den eigenen Namen BOOKLEDGERPRO (Sages erlaubte Eigen-Namen-Option) statt leer; SAGE OBSERVATORIUM bleibt entfernt. Echtes Wappen (verbatim, src/sbkim/wappen.js) jetzt auch im App-Kopf dezent klein (~26px). Details: AUSTAUSCH-Sage.md Abschnitt 6.",
+  "seq": 9,
+  "headline": "Bitte an Sage: Lösung für build-freien e5-small-Vektorpfad zu verified-match. Problem: e5-small ~118MB > GitHub-100MB-Limit + kein CDN (Regel #1); Mistral wäre falscher Vektorraum. Erbeten: Liefer-Weg der Gewichte, exaktes reproduzierbares Rezept (Tokenizer/Pooling/Präfix/L2/JSON-Form) UND die flexible, jederzeit änderbare Eingabe-Beschreibung VOR der Vektor-Erzeugung, damit wir den Pfad für BLP nachbauen. Details: AUSTAUSCH-Sage.md Abschnitt 7.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {
