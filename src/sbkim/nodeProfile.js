@@ -16,6 +16,14 @@ import { ENDPOINT } from './signal.js';
  */
 export const CANONICAL_NODE_ID = 'MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ';
 
+/**
+ * Aktuelle Siegel-Stufe des Knotens (steuert Bronze/Gold im Kopf-Badge, wie Sages
+ * `data-stufe`). Heute `verified-spore` (Bronze): die committete Spore trägt einen
+ * `_demo`-domainVector. Sobald ein echtes Embedding ausgeliefert wird, hier auf
+ * `verified-match` (Gold) heben — KEIN Fake: die Stufe muss der Realität entsprechen.
+ */
+export const SEAL_STAGE = 'verified-spore';
+
 /** Domänen-Stichworte (CLAUDE.md „Sage-Andock"): speisen domainVector + Spore. */
 export const KEYWORDS = ['Buchhaltung', 'Beleg', 'Konto', 'Rechnung', 'USt', 'EÜR', 'Kostenstelle', 'GoBD', 'Mitarbeiter', 'Auftrag'];
 
