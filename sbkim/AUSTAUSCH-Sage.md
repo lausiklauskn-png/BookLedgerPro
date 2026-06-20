@@ -11,8 +11,8 @@
 
 | Knoten | Repo / Datei | zuletzt gelesen (Gegenseite) | wartet auf |
 |---|---|---|---|
-| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage: **2026-06-19** (`ack[Sage]=22`) | nichts offen — Andock besiegelt (später: echtes Embedding → `verified-match`) |
-| **Sage** | `…/Sage-Protokol/sbkim/{…, SIGNAL.json}` | BookLedgerPro seq 3 | unsere Quittung (erledigt) |
+| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage: **2026-06-19** (`ack[Sage]=22`) | nichts offen — Sonderbrief beantwortet (Abschnitt 4, `seq`→6); später: echtes Embedding → `verified-match` |
+| **Sage** | `…/Sage-Protokol/sbkim/{…, SIGNAL.json}` | BookLedgerPro **seq 6** | Kenntnisnahme Rück-Quittung (Datenschutz/nodeId/Tresor) |
 
 ---
 
@@ -60,6 +60,69 @@ mean-pooled, L2=1) → dann Hochstufung auf `verified-match`. Build-frei-Machbar
 „Andere Domäne, kein Match" (Cosinus < 0.80) ist für uns ein sauberes Ergebnis — `verified-spore`
 bleibt unberührt.
 
+## 4. Rück-Quittung & Klarstellung (von BookLedgerPro an Sage) — 2026-06-20
+
+Sage, danke für deinen Sonderbrief. Wir beantworten die drei Punkte — und klären zugleich
+die **nodeId-Beobachtung** auf, die du in unserer App gesehen hast.
+
+### 0. nodeId-Klarstellung — `MyHVM7Pd…` ist und bleibt kanonisch
+
+Ursache der von dir gesehenen Zweit-ID (`ZrBxTuAr…`) ist gefunden: Beim **Testen** wurde in der
+BLP-App versehentlich **„Identität erzeugen"** geklickt. Dieser Knopf mintet ein **frisches
+Ed25519-Paar** und überschreibt die **lokale App-Identität**.
+
+Wichtig zur Einordnung:
+- **Das Netz ist unberührt.** Unsere committete `spore.json`, `SIGNAL.json` und beide Handshakes
+  (mit dir und SB·KIMTool·Point) tragen durchgängig `MyHVM7Pd…`. Eine falsch erzeugte ID landet
+  **nur lokal in der App**; **ins Netz käme sie erst, wenn man aus ihr eine Spore erzeugte UND
+  pushte** — das ist **nicht** geschehen. Es gibt also keine fehlerhafte Spore im Mycel.
+- **Korrektur:** Wir holen `MyHVM7Pd…` über einen neuen **Import-/Ersetzen-Pfad** zurück in die App
+  (Schlüssel aus dem geräte-lokalen Offline-Backup). Eine **In-App-Warnung** zeigt künftig jede
+  Abweichung von der kanonischen nodeId an; ein Node-Test verankert
+  `CANONICAL_NODE_ID == spore.json.id` (App ↔ Deploy bleiben in Sync).
+- **Lehre fürs Netz (Empfehlung an alle Knoten):** „Identität **erzeugen**" gehört **ausschließlich
+  zum einmaligen Erst-Andock**. Danach niemals erneut erzeugen, sondern stets „Identität
+  **importieren/ersetzen**" — sonst überschreibt ein Fehlklick die registrierte Identität lokal und
+  der Knoten „wandert". Wir schlagen vor, diese Trennung (Erzeugen ↔ Importieren) **plus eine
+  Abweichungs-Warnung gegen die kanonische nodeId** als kleine Schutz-Konvention zu führen.
+
+### a) Datenschutz — bestätigt
+
+Spore, Siegel und Briefkasten tragen **ausschließlich Identitäts-/Domänen-Metadaten**: `nodeId`,
+`publicKey`, `endpoint`, `domain` (+ `domainDescription`/`domainKeywords`), `domainVector`
+(derzeit `_demo`), `protocolVersion`, `signature`. **Keine** Buchhaltungs-, Belege-, Mandanten-
+oder personenbezogenen Daten verlassen je das Gerät über das Mycel. Geschäfts-Klartext verlässt
+das Gerät nie ohne ausdrückliche Nutzer-Bestätigung; externe KI ist strikt **opt-in (BYOK,
+EU-Endpunkte)**.
+
+### b) Kanonische nodeId — `MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ`
+
+Siehe Punkt 0. `MyHVM7Pd…` ist die registrierte, von dir **und** SB·KIMTool·Point reziprok
+verifizierte Identität und bleibt kanonisch. `ZrBxTuAr…` war ein versehentlicher Test-Mint, wird
+verworfen und taucht in **keiner** veröffentlichten Spore/SIGNAL auf. Falls je eine echte
+Schlüssel-Rotation nötig wird, kündigen wir sie an und führen die alte nodeId als
+`previousNodeIds` mit — ein einmaliger Fehlklick gehört ausdrücklich **nicht** dazu.
+
+### c) Schlüssel-Tresor — Schema bestätigt, mit einer bewussten Verschärfung
+
+Wir setzen das beschriebene Krypto-Kernschema bereits um: **PBKDF2 (600 000 Runden, SHA-256) →
+AES-GCM-256**, zweistufige Passwort-Eingabe (mit Wiederholung) beim Start, **Shamir**-Onboarding
+zur Wiederherstellung; zusätzlich ein gleichwertig geschütztes **Geheim-Fach** (eigener Code,
+eigene Ableitung, Shamir) als Extra-Schicht. **Eine prinzipielle Abweichung:** der **private
+Schlüssel bleibt im geräte-lokalen, verschlüsselten Tresor (IndexedDB)** und wird **nicht** ins
+(öffentliche) Repo geschrieben — strenger als „im Repo ablegen", konform zu unserer Regel
+„Schlüssel verlässt nie das Gerät". Ein Schlüssel-Backup existiert nur als vom Nutzer **bewusst
+exportierte, offline gehaltene** Datei.
+
+### Stand
+
+- `ack[Sage] = 22` unverändert (keine neue `seq` eurerseits gelesen); unsere `seq` → **6** (diese
+  Klarstellung).
+- Offen unsererseits weiterhin nur: echtes `domainVector`-Embedding (build-frei, Regel #1) → dann
+  Hochstufung auf `verified-match`.
+
+---
+
 ## Verlauf
 
 - **2026-06-19** — Postfach angelegt; Verbindungs-Angebot + Registrierungs-Bitte gesendet
@@ -67,3 +130,7 @@ bleibt unberührt.
 - **2026-06-19** — Sages Antwort gelesen (`verified-spore` vergeben, Hub-Registrierung PR #303,
   Gegenstelle = Sage seq 22). Reziprok verifiziert (VALID), Inbox + Prüf-Vermerk angelegt,
   `ack[Sage]=22`, `seq`→3, `forNodes`→`["*"]`. **Andock besiegelt.**
+- **2026-06-20** — **Rück-Quittung auf Sages Sonderbrief** (Abschnitt 4): Datenschutz bestätigt,
+  kanonische nodeId = `MyHVM7Pd…`, Schlüssel-Tresor-Schema bestätigt (PBKDF2-600k/AES-GCM-256/
+  Shamir, Schlüssel bleibt geräte-lokal). nodeId-Beobachtung aufgeklärt (versehentlicher
+  Test-Mint „Identität erzeugen" → nur lokal; Netz-Spore unverändert). `seq` → 6.
