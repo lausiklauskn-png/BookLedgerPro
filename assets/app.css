@@ -138,15 +138,21 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .mycel-chip.is-off .mycel-dot { background: var(--text-muted); }
 .siegel-badge {
   display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
-  /* Hart begrenzt: dezent, wie Sages Kopf-Siegel — nie dominant. */
-  width: 26px; height: 26px; min-width: 26px; padding: 0; border: none; background: none;
-  line-height: 0; transition: filter .15s, transform .15s;
+  /* Sehr dezent — nie dominant. Transparenter Knopf (Navi-Farbe scheint durch). */
+  padding: 0; border: none; background: none; line-height: 0;
+  transition: filter .15s, transform .15s;
 }
-.siegel-badge:hover { transform: scale(1.12); }
-.siegel-wappen, .siegel-wappen svg { display: block; width: 100%; height: 100%; }
+.siegel-badge:hover { transform: scale(1.15); }
+.siegel-wappen { display: block; line-height: 0; }
+/* FESTE Pixelgröße direkt am SVG — keine %-Auflösung (die das Wappen aufgebläht hat). */
+.siegel-wappen svg { display: block; width: 18px; height: 18px; }
+/* Nur das Siegel zeigen: schwarzer Hintergrund-Kasten (rect) und der dunkle
+   Schatten-Kreis (fill #000) raus → transparent, wie die Navileiste. */
+.siegel-wappen svg rect,
+.siegel-wappen svg circle[fill="#000"] { display: none; }
 /* Stufe: Bronze = ruhend (entsättigt), Gold = aktiv (volle Farbe + Glow). */
 .siegel-badge[data-stufe="verified-spore"] .siegel-wappen { filter: saturate(.5) brightness(.95); }
-.siegel-badge[data-stufe="verified-match"] .siegel-wappen { filter: drop-shadow(0 0 5px #e8b92366); }
+.siegel-badge[data-stufe="verified-match"] .siegel-wappen { filter: drop-shadow(0 0 4px #e8b92366); }
 
 .app-body { display: flex; flex: 1; max-width: var(--maxw); width: 100%; margin: 0 auto; }
 .app-nav {
