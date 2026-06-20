@@ -7,19 +7,19 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-20): Flying Widget + Siegel + Embedding-Vektorpfad — wartet auf echten Vektor
+## ⏭ LETZTER STAND (2026-06-20): ECHTER Vektor LIVE — wartet nur noch auf Sages Cosinus
 
-> **Mycel ist „an der Oberfläche":** oben in der Kopfzeile ein **Flying Widget** (`LEBT · VERKEHR · FREMD ·
-> SIEGEL`, App-eigen, überall sichtbar) — FREMD = lokaler Fremdzugriff-Wächter, SIEGEL-Klick öffnet das große
-> Wappen-Modal. (PRs #186–#193.)
-> **Sage-Andock/Embedding:** Sage hat das Embedding-Rezept geliefert (Briefkasten seq 26, quittiert
-> `ack[Sage]=26`, unsere `seq`→10). **Vektorpfad gebaut** (#196): `src/sbkim/embed.js` +
-> Karte „Echter Domänen-Vektor → verified-match" (transformers.js 2.17.2 / `Xenova/multilingual-e5-small`,
-> mean-pool+L2=1, opt-in, Modell nie ins Repo, Spore wird re-signiert). Guardrail-Test: kein Gold auf `_demo`.
-> **Stand:** Tests **1968/1968**, SW **v158**. Spore weiterhin `verified-spore`.
-> **⏭ NÄCHSTE KONKRETE SCHRITTE (Hand am Hebel):** (1) kanonische Identität `MyHVM7Pd…` in der App
-> importieren (Browser-Drift `l3fuWEco`!), (2) „Echten Vektor erzeugen" → `spore.json` committen, (3)
-> `SIGNAL.json` seq +1 → Sage rechnet Cosinus (≥0.80 → `verified-match`), dann `SEAL_STAGE` → `verified-match`.
+> **Mycel ist „an der Oberfläche":** Flying Widget (`LEBT · VERKEHR · FREMD · SIEGEL`) + Siegel-Modal
+> (PRs #186–#193). **Vektorpfad** gebaut (#196) **und genutzt:** Knoten-Betreiber hat in „Mycel-Netz" →
+> „Echten Vektor erzeugen" das Modell einmalig geladen; die committete `sbkim/spore.json` trägt jetzt den
+> **echten** `Xenova/multilingual-e5-small`-Vektor (384-dim, L2=1, **kein `_demo`**), Identität unverändert
+> kanonisch `MyHVM7Pd…`, headless **VALID** (Signatur ✓). `SIGNAL.json` **seq → 11**, AUSTAUSCH-Sage **§9**:
+> Sage um Cosinus gebeten. **Guardrail-Test** hält die Siegel-Stufe ehrlich auf `verified-spore`.
+> **Stand:** Tests **1968/1968**, SW **v158**.
+> **⏭ NÄCHSTER KONKRETER SCHRITT (Sage-Hoheit, dann 1 Zeile):** Sobald Sage `verified-match` bestätigt
+> (Cosinus ≥0.80, via Briefkasten/`status.json`) → `SEAL_STAGE` in `src/sbkim/nodeProfile.js` auf
+> `'verified-match'` heben (Guardrail erlaubt es dann, da kein `_demo` mehr) → Siegel wird golden.
+> Danach **Phase 5d:** Symbiose-Import (Belege aus Mein-Tresor, Aufträge aus WorkFloh → Buchungen).
 
 ---
 

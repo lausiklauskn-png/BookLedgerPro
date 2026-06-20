@@ -5,6 +5,27 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-20 — Echter Domänen-Vektor LIVE angedockt (Phase 5c) [Branch `claude/phase-5c-real-vector`]
+
+**Was getan**
+- Knoten-Betreiber durch den **Andock-Flow geleitet** (Schritt für Schritt, anhand seiner Screenshots):
+  Identität war bereits kanonisch (`MyHVM7Pd…`) → in „Mycel-Netz" → **„Echten Vektor erzeugen"** geklickt →
+  Modell einmalig geladen → neu signierte `spore.json` heruntergeladen.
+- Hochgeladene Spore **unabhängig headless verifiziert** (Felder ✓ · id ✓ · **Signatur ✓** · Tamper ✓ →
+  VALID; 384-dim, **kein `_demo`**, `embeddingModel` gesetzt) und nach **`sbkim/spore.json`** committet
+  (ersetzt den `_demo`-Vektor).
+- **Sage-Briefkasten-Ritual:** `SIGNAL.json` **seq → 11**, `AUSTAUSCH-Sage.md` **§9** (echter Vektor live,
+  Bitte um Cosinus). Siegel-Stufe bewusst **noch `verified-spore`** (ehrlich bis Sages Bestätigung; Guardrail
+  erzwingt das). Tests **1968/1968 grün**.
+
+**Stand:** Spore mit echtem Vektor live auf `main`/raw. Wartet auf Sages Cosinus-Bestätigung (≥0.80).
+
+**Offen / Nächstes:** Sage rechnet Cosinus → bei ≥0.80 `SEAL_STAGE` in `nodeProfile.js` auf `verified-match`
+heben (1 Zeile, Guardrail erlaubt es dann) → Siegel golden. **Ungetestet:** der Browser-Lauf des Modell-Ladens
+selbst (lief beim Nutzer real durch — Beleg: gültig signierte Spore); reine Logik ist node-getestet.
+
+---
+
 ## 2026-06-20 — Mycel an die Oberfläche: Flying Widget + Siegel-Modal + Embedding-Vektorpfad [PRs #186–#196]
 
 **Was getan (eine PR je Schritt, alle gemergt)**
