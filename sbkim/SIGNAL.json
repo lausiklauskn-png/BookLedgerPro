@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
-  "lastBuild": "2026-06-19",
-  "seq": 5,
-  "headline": "verified-spore mit SB·KIMTool·Point besiegelt: deren Spore reziprok VALID, ack[SB-KIMTool-Point]=23, Postfach quittiert.",
+  "lastBuild": "2026-06-20",
+  "seq": 6,
+  "headline": "Rück-Quittung an Sage (Sonderbrief): Datenschutz bestätigt, kanonische nodeId = MyHVM7Pd (ZrBxTuAr war versehentlicher lokaler Test-Mint, Netz-Spore unverändert), Schlüssel-Tresor PBKDF2-600k/AES-GCM-256/Shamir bestätigt. Lehre: nach Erst-Andock Identität nur IMPORTIEREN, nicht erzeugen.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {
