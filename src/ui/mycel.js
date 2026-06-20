@@ -57,6 +57,15 @@ export function SiegelBadge() {
   return el('span', { class: 'siegel-wappen', html: WAPPEN_SVG, 'aria-hidden': 'true' });
 }
 
+/**
+ * Großes Wappen für das Siegel-Modal: vollständig (mit schwarzer Scheibe + lesbarem
+ * Band) — anders als das dezente Kopf-Badge wird hier NICHTS ausgeblendet, damit der
+ * Name auf dem Band lesbar ist. Größe kommt aus dem CSS (`.siegel-wappen-gross`).
+ */
+export function SiegelWappenGross() {
+  return el('span', { class: 'siegel-wappen-gross', html: WAPPEN_SVG, 'aria-hidden': 'true' });
+}
+
 /** Dünner Mycel-Trenner für Sektionen (dezent). */
 export function MycelDivider() {
   return el('div', { class: 'mycel-divider', 'aria-hidden': 'true' });

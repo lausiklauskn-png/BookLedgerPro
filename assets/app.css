@@ -136,23 +136,33 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .mycel-chip.is-ok .mycel-dot { background: #2ecc71; box-shadow: 0 0 6px #2ecc7188; }
 .mycel-chip.is-warn .mycel-dot { background: #f1c40f; box-shadow: 0 0 6px #f1c40f88; }
 .mycel-chip.is-off .mycel-dot { background: var(--text-muted); }
-.siegel-badge {
+/* Kopf-Siegel: eigene Klasse, NICHT `.siegel-badge` (das ist das runde EU-Siegel und
+   würde einen türkisen 84px-Kreis dahinter erzeugen). Das Wappen selbst ist der Knopf. */
+.kopf-siegel {
   display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
-  /* Sehr dezent — nie dominant. Transparenter Knopf (Navi-Farbe scheint durch). */
   padding: 0; border: none; background: none; line-height: 0;
   transition: filter .15s, transform .15s;
 }
-.siegel-badge:hover { transform: scale(1.15); }
+.kopf-siegel:hover { transform: scale(1.15); }
 .siegel-wappen { display: block; line-height: 0; }
 /* FESTE Pixelgröße direkt am SVG — keine %-Auflösung (die das Wappen aufgebläht hat). */
 .siegel-wappen svg { display: block; width: 18px; height: 18px; }
-/* Nur das Siegel zeigen: schwarzer Hintergrund-Kasten (rect) und der dunkle
-   Schatten-Kreis (fill #000) raus → transparent, wie die Navileiste. */
+/* Dezentes Kopf-Badge: schwarze Scheibe (rect) + dunkler Schatten-Kreis raus → nur das
+   Siegel, transparent. (Das große Wappen im Modal ist `.siegel-wappen-gross` und bleibt voll.) */
 .siegel-wappen svg rect,
 .siegel-wappen svg circle[fill="#000"] { display: none; }
-/* Stufe: Bronze = ruhend (entsättigt), Gold = aktiv (volle Farbe + Glow). */
-.siegel-badge[data-stufe="verified-spore"] .siegel-wappen { filter: saturate(.5) brightness(.95); }
-.siegel-badge[data-stufe="verified-match"] .siegel-wappen { filter: drop-shadow(0 0 4px #e8b92366); }
+/* Stufe: Bronze = ruhend (entsättigt), Gold = aktiv (Glow); Drift = ausgegraut. */
+.kopf-siegel[data-stufe="verified-spore"] .siegel-wappen { filter: saturate(.5) brightness(.95); }
+.kopf-siegel[data-stufe="verified-match"] .siegel-wappen { filter: drop-shadow(0 0 4px #e8b92366); }
+.kopf-siegel.is-drift .siegel-wappen { filter: grayscale(1) opacity(.55); }
+
+/* Großes Wappen im Siegel-Modal: vollständig, lesbares Band. */
+.siegel-wappen-gross { display: block; margin: .25rem auto .6rem; }
+.siegel-wappen-gross svg { display: block; width: 220px; height: 220px; max-width: 68vw; max-height: 68vw; margin: 0 auto; }
+.siegel-modal { max-width: 440px; text-align: center; }
+.siegel-modal-dl { display: grid; grid-template-columns: auto 1fr; gap: .2rem .8rem; text-align: left; font-size: .82rem; margin: .5rem 0; }
+.siegel-modal-dl dt { color: var(--text-muted); }
+.siegel-modal-dl dd { margin: 0; overflow-wrap: anywhere; }
 
 .app-body { display: flex; flex: 1; max-width: var(--maxw); width: 100%; margin: 0 auto; }
 .app-nav {
