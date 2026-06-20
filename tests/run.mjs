@@ -122,6 +122,7 @@ import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
 import { buildSignal } from '../src/sbkim/signal.js';
 import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID } from '../src/sbkim/nodeProfile.js';
 import { readFileSync as _readSpore } from 'node:fs';
+import { classifyPeer, summarizePeers, fetchPeerStatus, PEERS } from '../src/sbkim/peers.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
@@ -1115,6 +1116,28 @@ await section('SBKIM: kanonische nodeId == committete spore.json', async () => {
   const committed = JSON.parse(_readSpore(new URL('../sbkim/spore.json', import.meta.url), 'utf8'));
   ok('CANONICAL_NODE_ID == spore.json id', CANONICAL_NODE_ID === committed.id);
   ok('committete Spore weiterhin VALID', (await verifySporeObject(committed)).valid === true);
+});
+
+await section('SBKIM: Briefkasten/Verkehr — Peer-Status-Logik', async () => {
+  const p = { name: 'X', signalUrl: 'http://x' };
+  // classifyPeer (pure)
+  const good = classifyPeer(p, { seq: 22, headline: 'hallo' });
+  ok('erreichbar + seq + headline', good.reachable === true && good.seq === 22 && good.headline === 'hallo');
+  ok('Fehler → nicht erreichbar', classifyPeer(p, { error: 'offline' }).reachable === false);
+  ok('fehlendes seq → null (aber erreichbar)', (() => { const r = classifyPeer(p, { headline: 'x' }); return r.reachable === true && r.seq === null; })());
+  ok('nicht-integer seq → null', classifyPeer(p, { seq: 1.5 }).seq === null);
+  // summarizePeers (pure)
+  const sum = summarizePeers([{ reachable: true }, { reachable: false }, { reachable: true }]);
+  ok('Zusammenfassung R/T', sum.reachable === 2 && sum.total === 3);
+  // fetchPeerStatus mit injiziertem fetch (Netz-Pfad ohne echtes Netz)
+  const okFetch = async () => ({ ok: true, json: async () => ({ seq: 7, headline: 'live' }) });
+  ok('fetch ok → reachable+seq', (await fetchPeerStatus(p, { fetchImpl: okFetch })).seq === 7);
+  const badStatus = async () => ({ ok: false, status: 404, json: async () => ({}) });
+  ok('HTTP 404 → nicht erreichbar', (await fetchPeerStatus(p, { fetchImpl: badStatus })).reachable === false);
+  const throwFetch = async () => { throw new Error('net down'); };
+  ok('Netz-Fehler → nicht erreichbar (kein Wurf)', (await fetchPeerStatus(p, { fetchImpl: throwFetch })).reachable === false);
+  // PEERS-Liste plausibel
+  ok('2 Peers (Sage + SB-KIMTool-Point), raw-URL', PEERS.length === 2 && PEERS.every((x) => /raw\.githubusercontent\.com/.test(x.signalUrl)));
 });
 
 await section('SBKIM: SIGNAL.json (§11.6)', () => {
