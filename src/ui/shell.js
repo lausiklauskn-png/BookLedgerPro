@@ -122,6 +122,7 @@ function header(s) {
     el('div', { class: 'brand' }, [MycelMark(28), el('span', { class: 'brand-name', text: t('app.name') })]),
     el('div', { class: 'header-right' }, [
       siegelBadge(),
+      briefkastenChip(),
       mycelChip(),
       label ? el('span', { class: 'mandant', title: t('dashboard.mandant') }, [
         el('span', { class: 'mandant-dot' }),
@@ -161,6 +162,16 @@ function mycelChip() {
     } catch { chip.classList.add('is-off'); chip.title = t('mycel.chipNone'); }
   })();
   return chip;
+}
+
+// Briefkasten/Verkehr-Knopf in der Kopfzeile: von überall den Briefkasten-Status der
+// angeschlossenen Knoten prüfen. Bewusst NUR ein Sprung in die Mycel-Netz-Ansicht (kein
+// Auto-Netz in der Shell) — die eigentliche Live-Prüfung ist dort opt-in per Knopf.
+function briefkastenChip() {
+  return el('button', {
+    class: 'mycel-chip', title: t('bk.chipTitle'), 'aria-label': t('bk.chipTitle'),
+    onClick: () => navigate('network'),
+  }, [el('span', { class: 'mycel-chip-label', text: t('bk.chip') })]);
 }
 
 // SBKIM-Siegel-Badge in der Kopfzeile (wie Sage, `data-stufe`): erscheint NUR, wenn die

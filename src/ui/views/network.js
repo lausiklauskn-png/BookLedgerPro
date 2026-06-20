@@ -11,6 +11,7 @@ import { buildSpore, verifySpore } from '../../sbkim/spore.js';
 import { demoVector } from '../../sbkim/domainvector.js';
 import { buildSignal } from '../../sbkim/signal.js';
 import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID } from '../../sbkim/nodeProfile.js';
+import { PEERS, checkAllPeers } from '../../sbkim/peers.js';
 
 let _host = null;
 
@@ -27,9 +28,44 @@ async function repaint() {
     el('div', { class: 'banner banner-warn', text: t('net.andockNote') }),
     identityCard(ident),
     ident ? deployCard(ident) : null,
+    briefkastenCard(),
     toolsCard(),
     verifyCard(),
   ]));
+}
+
+// Briefkasten/Verkehr: prüft live, ob die angeschlossenen Knoten erreichbar sind
+// (deren öffentliche SIGNAL.json). Opt-in per Knopf (kein Auto-Netz). Offline-first:
+// Fehler → „nicht erreichbar", nie ein Absturz. Nur Lesen, keine Geheimnisse.
+function briefkastenCard() {
+  const out = el('div', { class: 'report-line-group' });
+  const summary = el('p', { class: 'muted small' });
+  const check = async (btn) => {
+    summary.textContent = t('net.bkChecking');
+    out.replaceChildren();
+    if (btn) btn.disabled = true;
+    try {
+      const { rows, summary: sum } = await checkAllPeers();
+      summary.textContent = t('net.bkSummary').replace('%R%', sum.reachable).replace('%T%', sum.total);
+      out.replaceChildren(...rows.map((r) => el('div', { class: 'report-line' }, [
+        el('span', {}, [
+          el('span', { class: 'mycel-dot', style: `display:inline-block;margin-right:.4rem;background:${r.reachable ? '#2ecc71' : 'var(--text-muted)'}` }),
+          el('strong', { text: r.name }),
+        ]),
+        el('span', { class: 'muted small', text: r.reachable ? `seq ${r.seq ?? '—'} · ${r.headline || t('net.bkReachable')}` : t('net.bkOffline') }),
+      ])));
+    } catch {
+      summary.textContent = t('net.bkOffline');
+    } finally { if (btn) btn.disabled = false; }
+  };
+  const btn = el('button', { class: 'btn', text: t('net.bkCheck'), onClick: () => check(btn) });
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('net.briefkasten') }),
+    el('p', { class: 'muted small', text: t('net.bkIntro').replace('%N%', PEERS.length) }),
+    el('div', { class: 'btn-row' }, [btn]),
+    summary,
+    out,
+  ]);
 }
 
 // Verweise auf die vollständigen, eigenständigen SBKIM-Seiten (im Repo unter sbkim/,
