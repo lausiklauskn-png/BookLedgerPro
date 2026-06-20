@@ -5,6 +5,26 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-20 — 🏅 `verified-match` bestätigt (Phase 5c abgeschlossen) [Branch `claude/phase-5c-verified-match`]
+
+**Was getan**
+- Sage hat geantwortet (menschlich vermittelt): **Cosinus Sage ⟷ BookLedgerPro = 0.810579 ≥ 0.80 →
+  verified-match** (Sage `SIGNAL` seq 27, `ack[BookLedgerPro]=11`).
+- **Wert unabhängig nachgerechnet** (nicht grün übernommen): Skalarprodukt unserer `sbkim/spore.json` ×
+  Sages `sbkim/Sage_inbox.json`, beide L2=1 → **0.810579, identisch auf 6 Stellen**.
+- `SEAL_STAGE` in `src/sbkim/nodeProfile.js` → **`verified-match`** (Gold); Guardrail bleibt grün (kein `_demo`).
+- Briefkasten: Quittung **AUSTAUSCH-Sage §10**, unsere `SIGNAL` **seq → 13**, `ack[Sage]=27`. SW **v159**
+  (Shell-Änderung: Siegel-Stufe). Tests **1968/1968 grün**.
+- Vorab den Briefkasten gelesen (Sages SIGNAL + unser Postfach bei Sage) — ehrlich festgestellt, dass die
+  hohen Cosinus-Werte netzweit eng (0.806–0.849) clustern (e5-small-Anisotropie); 0.80 ist großzügig.
+
+**Stand:** BookLedgerPro voll vernetzter `verified-match`-Knoten. Siegel im Kopf wird golden.
+
+**Offen / Nächstes:** **Phase 5d** — Symbiose-Import (Belege aus Mein-Tresor, Aufträge aus WorkFloh →
+Buchungen). **Ungetestet:** Browser-Darstellung des goldenen Siegels (Logik/Stufe node-getestet).
+
+---
+
 ## 2026-06-20 — Echter Domänen-Vektor LIVE angedockt (Phase 5c) [Branch `claude/phase-5c-real-vector`]
 
 **Was getan**

@@ -7,19 +7,19 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-20): ECHTER Vektor LIVE — wartet nur noch auf Sages Cosinus
+## ⏭ LETZTER STAND (2026-06-20): 🏅 `verified-match` ERREICHT — voll vernetzter Mycel-Knoten
 
-> **Mycel ist „an der Oberfläche":** Flying Widget (`LEBT · VERKEHR · FREMD · SIEGEL`) + Siegel-Modal
-> (PRs #186–#193). **Vektorpfad** gebaut (#196) **und genutzt:** Knoten-Betreiber hat in „Mycel-Netz" →
-> „Echten Vektor erzeugen" das Modell einmalig geladen; die committete `sbkim/spore.json` trägt jetzt den
-> **echten** `Xenova/multilingual-e5-small`-Vektor (384-dim, L2=1, **kein `_demo`**), Identität unverändert
-> kanonisch `MyHVM7Pd…`, headless **VALID** (Signatur ✓). `SIGNAL.json` **seq → 11**, AUSTAUSCH-Sage **§9**:
-> Sage um Cosinus gebeten. **Guardrail-Test** hält die Siegel-Stufe ehrlich auf `verified-spore`.
-> **Stand:** Tests **1968/1968**, SW **v158**.
-> **⏭ NÄCHSTER KONKRETER SCHRITT (Sage-Hoheit, dann 1 Zeile):** Sobald Sage `verified-match` bestätigt
-> (Cosinus ≥0.80, via Briefkasten/`status.json`) → `SEAL_STAGE` in `src/sbkim/nodeProfile.js` auf
-> `'verified-match'` heben (Guardrail erlaubt es dann, da kein `_demo` mehr) → Siegel wird golden.
-> Danach **Phase 5d:** Symbiose-Import (Belege aus Mein-Tresor, Aufträge aus WorkFloh → Buchungen).
+> **BookLedgerPro ist Gold.** Der echte Vektor ist live (`Xenova/multilingual-e5-small`, 384-dim, L2=1,
+> kein `_demo`, Spore neu signiert, headless VALID), und **Sage hat den Cosinus bestätigt:
+> Sage ⟷ BookLedgerPro = 0.810579 ≥ 0.80** (Sage `SIGNAL` seq 27, `ack[BookLedgerPro]=11`). Wert **lokal
+> unabhängig nachgerechnet → identisch** (beide L2=1, Skalarprodukt). `SEAL_STAGE = 'verified-match'`
+> (`src/sbkim/nodeProfile.js`); unsere `SIGNAL` **seq → 13**, `ack[Sage]=27`, Quittung AUSTAUSCH-Sage **§10**;
+> SB-KIMTool-Point-Brief §4 (seq 12). SW **v159**, Tests **1968/1968**.
+> **Ehrliche Einordnung:** 0.81 liegt **knapp** über der Schwelle — Buchhaltung ist der Mycel-Bibliothek
+> fachlich fern; e5-small ist zudem anisotrop (kurze Texte ~0.8-Grundlinie), 0.80 ist großzügig. Kein „Fake-Grün".
+> **⏭ NÄCHSTE KONKRETE SCHRITTE:** **Phase 5d** — Symbiose-Import (Belege aus Mein-Tresor, Aufträge aus
+> WorkFloh → Buchungen). Optional: Domänen-Beschreibung um Krypto-/Tresor-Nähe schärfen → neu einbetten →
+> neu signieren → `SIGNAL` seq +1 (Sage misst dann erneut).
 
 ---
 

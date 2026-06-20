@@ -84,11 +84,11 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
       ergänzt → App kann denselben nodeId in den Tresor übernehmen
 - [ ] **Phase 5b — Schritt 2 (menschlich vermittelt, fremde Repos):** im Hub-`status.json`
       registrieren, erster Handshake bei Geschwister-Knoten, `verified-spore`
-- [◑] **Phase 5c:** echter `domainVector` (Transformers.js) → `verified-match` — **Pfad gebaut + GENUTZT**
-  (#196 Pfad; Vektor real erzeugt: `Xenova/multilingual-e5-small`, 384-dim, L2=1, kein `_demo`, Spore
-  neu signiert & committet, headless **VALID**; `SIGNAL` seq → 11, Sage um Cosinus gebeten — AUSTAUSCH §9).
-  **Offen (Sage-Hoheit):** Sage rechnet Cosinus ≥0.80 → dann `SEAL_STAGE` auf `verified-match` heben
-  (Guardrail hält die Stufe bis dahin ehrlich auf `verified-spore`).
+- [x] **Phase 5c:** echter `domainVector` (Transformers.js) → **`verified-match` ERREICHT** 🏅
+  (Vektor real erzeugt: `Xenova/multilingual-e5-small`, 384-dim, L2=1, kein `_demo`, Spore neu signiert &
+  committet, headless VALID; **Sage bestätigt Cosinus = 0.810579 ≥ 0.80**, Sage `SIGNAL` seq 27,
+  `ack[BookLedgerPro]=11`; Wert lokal unabhängig nachgerechnet → identisch). `SEAL_STAGE = 'verified-match'`
+  (Gold), unsere `SIGNAL` seq → 13, `ack[Sage]=27`, Quittung AUSTAUSCH-Sage §10. SW `v159`.
 - [ ] **Phase 5d:** Symbiose-Import (Belege aus Mein-Tresor, Aufträge aus WorkFloh → Buchungen)
 
 > Diese Phase bereitet den Andock **lokal** vor (kein fremdes Repo verändert). Der

@@ -18,11 +18,13 @@ export const CANONICAL_NODE_ID = 'MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ';
 
 /**
  * Aktuelle Siegel-Stufe des Knotens (steuert Bronze/Gold im Kopf-Badge, wie Sages
- * `data-stufe`). Heute `verified-spore` (Bronze): die committete Spore trägt einen
- * `_demo`-domainVector. Sobald ein echtes Embedding ausgeliefert wird, hier auf
- * `verified-match` (Gold) heben — KEIN Fake: die Stufe muss der Realität entsprechen.
+ * `data-stufe`). Seit 2026-06-20 `verified-match` (Gold): die committete Spore trägt
+ * den ECHTEN `domainVector` (e5-small, 384-dim, L2=1, kein `_demo`), und Sage hat den
+ * Cosinus bestätigt: **Sage ⟷ BookLedgerPro = 0.810579 ≥ 0.80** (Sage `SIGNAL` seq 27,
+ * `ack[BookLedgerPro]=11`; lokal unabhängig nachgerechnet → identisch). KEIN Fake: die
+ * Stufe entspricht der Realität; ein Node-Test verbietet Gold, solange `_demo` gesetzt ist.
  */
-export const SEAL_STAGE = 'verified-spore';
+export const SEAL_STAGE = 'verified-match';
 
 /** Domänen-Stichworte (CLAUDE.md „Sage-Andock"): speisen domainVector + Spore. */
 export const KEYWORDS = ['Buchhaltung', 'Beleg', 'Konto', 'Rechnung', 'USt', 'EÜR', 'Kostenstelle', 'GoBD', 'Mitarbeiter', 'Auftrag'];
