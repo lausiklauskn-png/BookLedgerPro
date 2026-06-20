@@ -136,25 +136,44 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .mycel-chip.is-ok .mycel-dot { background: #2ecc71; box-shadow: 0 0 6px #2ecc7188; }
 .mycel-chip.is-warn .mycel-dot { background: #f1c40f; box-shadow: 0 0 6px #f1c40f88; }
 .mycel-chip.is-off .mycel-dot { background: var(--text-muted); }
-/* Kopf-Siegel: eigene Klasse, NICHT `.siegel-badge` (das ist das runde EU-Siegel und
-   würde einen türkisen 84px-Kreis dahinter erzeugen). Das Wappen selbst ist der Knopf. */
-.kopf-siegel {
-  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
-  padding: 0; border: none; background: none; line-height: 0;
-  transition: filter .15s, transform .15s;
+/* ── Flying Widget: schwebendes Lampen-Panel oben (LEBT · VERKEHR · FREMD · SIEGEL) ── */
+.flying-widget {
+  display: inline-flex; align-items: center; gap: .15rem;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px;
+  padding: .12rem .25rem;
 }
-.kopf-siegel:hover { transform: scale(1.15); }
+.fw-lamp {
+  display: inline-flex; align-items: center; gap: .3rem; cursor: pointer;
+  font-size: .7rem; letter-spacing: .02em; color: var(--text-muted);
+  background: none; border: none; border-radius: 999px; padding: .18rem .45rem;
+  transition: color .15s, background .15s;
+}
+.fw-lamp:hover { color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.fw-label { line-height: 1; }
+.fw-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); flex: none; transition: background .15s, box-shadow .15s; }
+/* LEBT */
+.fw-lebt.is-on .fw-dot { background: #2ecc71; box-shadow: 0 0 6px #2ecc7188; animation: fw-pulse 2.6s ease-in-out infinite; }
+.fw-lebt.is-warn .fw-dot { background: #f1c40f; box-shadow: 0 0 6px #f1c40f88; animation: none; }
+.fw-lebt.is-off .fw-dot { background: var(--text-muted); }
+/* VERKEHR */
+.fw-verkehr.is-on .fw-dot { background: #e8b923; box-shadow: 0 0 6px #e8b92388; }
+.fw-verkehr.is-pulse .fw-dot { background: #e8b923; animation: fw-blink .35s ease-in-out 2; }
+/* FREMD */
+.fw-fremd .fw-dot { background: var(--text-muted); }
+.fw-fremd.is-alert .fw-dot { background: #e74c3c; box-shadow: 0 0 7px #e74c3caa; animation: fw-breath 3.2s ease-in-out infinite; }
+.fw-fremd.is-alert { color: #e74c3c; }
+/* SIEGEL-Lampe = kleines Wappen */
+.fw-siegel { padding-left: .35rem; padding-right: .5rem; }
 .siegel-wappen { display: block; line-height: 0; }
-/* FESTE Pixelgröße direkt am SVG — keine %-Auflösung (die das Wappen aufgebläht hat). */
 .siegel-wappen svg { display: block; width: 18px; height: 18px; }
-/* Dezentes Kopf-Badge: schwarze Scheibe (rect) + dunkler Schatten-Kreis raus → nur das
-   Siegel, transparent. (Das große Wappen im Modal ist `.siegel-wappen-gross` und bleibt voll.) */
 .siegel-wappen svg rect,
 .siegel-wappen svg circle[fill="#000"] { display: none; }
-/* Stufe: Bronze = ruhend (entsättigt), Gold = aktiv (Glow); Drift = ausgegraut. */
-.kopf-siegel[data-stufe="verified-spore"] .siegel-wappen { filter: saturate(.5) brightness(.95); }
-.kopf-siegel[data-stufe="verified-match"] .siegel-wappen { filter: drop-shadow(0 0 4px #e8b92366); }
-.kopf-siegel.is-drift .siegel-wappen { filter: grayscale(1) opacity(.55); }
+.fw-siegel[data-stufe="verified-spore"] .siegel-wappen { filter: saturate(.5) brightness(.95); }
+.fw-siegel[data-stufe="verified-match"] .siegel-wappen { filter: drop-shadow(0 0 4px #e8b92366); }
+.fw-siegel.is-drift .siegel-wappen { filter: grayscale(1) opacity(.55); }
+@keyframes fw-pulse { 0%,100% { box-shadow: 0 0 4px #2ecc7166; } 50% { box-shadow: 0 0 9px #2ecc71cc; } }
+@keyframes fw-breath { 0%,100% { box-shadow: 0 0 5px #e74c3c66; } 50% { box-shadow: 0 0 10px #e74c3ccc; } }
+@keyframes fw-blink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
 
 /* Großes Wappen im Siegel-Modal: vollständig, lesbares Band. */
 .siegel-wappen-gross { display: block; margin: .25rem auto .6rem; }
