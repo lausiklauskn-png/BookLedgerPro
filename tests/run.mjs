@@ -123,6 +123,7 @@ import { buildSignal } from '../src/sbkim/signal.js';
 import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID } from '../src/sbkim/nodeProfile.js';
 import { readFileSync as _readSpore } from 'node:fs';
 import { classifyPeer, summarizePeers, fetchPeerStatus, PEERS } from '../src/sbkim/peers.js';
+import { buildPassageText, cosineSimilarity, l2norm, EMBED_DIM, EMBED_MODEL } from '../src/sbkim/embed.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
@@ -1116,6 +1117,26 @@ await section('SBKIM: kanonische nodeId == committete spore.json', async () => {
   const committed = JSON.parse(_readSpore(new URL('../sbkim/spore.json', import.meta.url), 'utf8'));
   ok('CANONICAL_NODE_ID == spore.json id', CANONICAL_NODE_ID === committed.id);
   ok('committete Spore weiterhin VALID', (await verifySporeObject(committed)).valid === true);
+});
+
+await section('SBKIM: Embedding-Vektorpfad (Sage-Rezept, ohne Modell testbar)', async () => {
+  // buildPassageText: exakte Formel "passage: " + [domain, desc, kw.join(", ")].filter.join(". ")
+  const txt = buildPassageText({ domain: 'D', domainDescription: 'Beschr', domainKeywords: ['a', 'b'] });
+  ok('passage:-Präfix + Reihenfolge/Trennung', txt === 'passage: D. Beschr. a, b');
+  ok('leere Felder fallen raus (filter Boolean)', buildPassageText({ domain: 'X', domainKeywords: [] }) === 'passage: X');
+  ok('echtes Profil ergibt passage:-Text', buildPassageText(NODE_PROFILE).startsWith('passage: ' + NODE_PROFILE.domain));
+  // l2norm + cosine
+  ok('l2norm Einheitsvektor = 1', Math.abs(l2norm([0.6, 0.8]) - 1) < 1e-9);
+  ok('cosine identisch = 1', Math.abs(cosineSimilarity([1, 2, 3], [1, 2, 3]) - 1) < 1e-9);
+  ok('cosine orthogonal = 0', Math.abs(cosineSimilarity([1, 0], [0, 1])) < 1e-9);
+  ok('cosine Längen-Mismatch = NaN', Number.isNaN(cosineSimilarity([1, 2], [1, 2, 3])));
+  // buildSpore mit ECHTEM (plain-array) Vektor → KEIN _demo, signiert & VALID, 384-dim
+  const keys = await generateKeyPair();
+  const realVec = Array.from({ length: EMBED_DIM }, (_, i) => Math.sin(i)); // Platzhalter-Float32(384)
+  const spore = await buildSpore(keys, { ...NODE_PROFILE, embeddingModel: EMBED_MODEL, domainVector: realVec });
+  ok('domainVector ist 384-dim Array', Array.isArray(spore.domainVector) && spore.domainVector.length === EMBED_DIM);
+  ok('KEIN _demo bei echtem Vektor', spore._demo === undefined);
+  ok('Spore mit echtem Vektor signiert & VALID', (await verifySpore(spore)).valid === true);
 });
 
 await section('SBKIM: Briefkasten/Verkehr — Peer-Status-Logik', async () => {
