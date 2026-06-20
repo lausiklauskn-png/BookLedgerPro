@@ -6,9 +6,9 @@
 import { el, mount, clear } from './dom.js';
 import { t, setLang, LANGS } from './i18n.js';
 import { applyTheme } from './theme.js';
-import { MycelMark } from './mycel.js';
+import { MycelMark, SiegelBadge } from './mycel.js';
 import { identityExists, loadIdentity } from '../sbkim/identity.js';
-import { CANONICAL_NODE_ID } from '../sbkim/nodeProfile.js';
+import { CANONICAL_NODE_ID, SEAL_STAGE } from '../sbkim/nodeProfile.js';
 import { getSettings, updateSettings, navigate, getRoute, subscribe, MODES, AI_LEVELS } from '../state.js';
 import { getMandantId, lockVault, changePassword } from '../core/vault.js';
 import { ladeRegistry, speichereRegistry } from '../core/mandantenStore.js';
@@ -121,6 +121,7 @@ function header(s) {
   return el('header', { class: 'app-header' }, [
     el('div', { class: 'brand' }, [MycelMark(28), el('span', { class: 'brand-name', text: t('app.name') })]),
     el('div', { class: 'header-right' }, [
+      siegelBadge(),
       mycelChip(),
       label ? el('span', { class: 'mandant', title: t('dashboard.mandant') }, [
         el('span', { class: 'mandant-dot' }),
@@ -160,6 +161,28 @@ function mycelChip() {
     } catch { chip.classList.add('is-off'); chip.title = t('mycel.chipNone'); }
   })();
   return chip;
+}
+
+// SBKIM-Siegel-Badge in der Kopfzeile (wie Sage, `data-stufe`): erscheint NUR, wenn die
+// Identität vorhanden und kanonisch ist (Selbst-Prüfung bestanden = besiegelt). Bronze =
+// verified-spore, Gold = verified-match (SEAL_STAGE). Klick öffnet die Mycel-Netz-Ansicht.
+function siegelBadge() {
+  const badge = el('button', {
+    class: 'siegel-badge', 'data-stufe': SEAL_STAGE, style: 'display:none',
+    title: t('siegel.checking'), 'aria-label': t('siegel.aria'),
+    onClick: () => navigate('network'),
+  }, [SiegelBadge(20)]);
+  (async () => {
+    try {
+      if (!(await identityExists())) return;
+      const ident = await loadIdentity();
+      if (ident && ident.id === CANONICAL_NODE_ID) {
+        badge.style.display = '';
+        badge.title = SEAL_STAGE === 'verified-match' ? t('siegel.match') : t('siegel.spore');
+      }
+    } catch { /* ohne Identität kein Siegel — Badge bleibt versteckt */ }
+  })();
+  return badge;
 }
 
 // Mandant wechseln: Sitzungs-Key (DEK) verwerfen und neu booten. Der Boot zeigt bei

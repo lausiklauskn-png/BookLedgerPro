@@ -45,6 +45,29 @@ export function MycelMark(size = 32) {
   return svg;
 }
 
+/**
+ * SBKIM-Siegel-Wappen (kleines Schild mit Haken). Die Farbe (Bronze „ruhend"
+ * = verified-spore, Gold „aktiv" = verified-match) kommt aus dem CSS über das
+ * `data-stufe`-Attribut des umgebenden Elements — wie bei Sage (`data-stufe`).
+ */
+export function SiegelBadge(size = 20) {
+  const svg = svgEl('svg', {
+    width: size, height: size, viewBox: '0 0 24 24',
+    fill: 'none', 'aria-hidden': 'true', class: 'siegel-badge-svg',
+  });
+  // Wappen-Schild (erbt currentColor → Bronze/Gold via CSS)
+  svg.appendChild(svgEl('path', {
+    d: 'M12 2 L20 5 V11 C20 16 16.5 20 12 22 C7.5 20 4 16 4 11 V5 Z',
+    fill: 'currentColor',
+  }));
+  // Bezeugungs-Haken (in Flächenfarbe, für Kontrast)
+  svg.appendChild(svgEl('path', {
+    d: 'M8.4 12 L11 14.6 L15.6 9.4', stroke: 'var(--surface)',
+    'stroke-width': '1.9', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none',
+  }));
+  return svg;
+}
+
 /** Dünner Mycel-Trenner für Sektionen (dezent). */
 export function MycelDivider() {
   return el('div', { class: 'mycel-divider', 'aria-hidden': 'true' });

@@ -136,6 +136,14 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .mycel-chip.is-ok .mycel-dot { background: #2ecc71; box-shadow: 0 0 6px #2ecc7188; }
 .mycel-chip.is-warn .mycel-dot { background: #f1c40f; box-shadow: 0 0 6px #f1c40f88; }
 .mycel-chip.is-off .mycel-dot { background: var(--text-muted); }
+.siegel-badge {
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  padding: .15rem; border: none; background: none; line-height: 0;
+  transition: filter .15s, transform .15s;
+}
+.siegel-badge:hover { transform: scale(1.08); }
+.siegel-badge[data-stufe="verified-spore"] { color: #cd7f32; } /* Bronze (ruhend) */
+.siegel-badge[data-stufe="verified-match"] { color: #e8b923; filter: drop-shadow(0 0 5px #e8b92366); } /* Gold (aktiv) */
 
 .app-body { display: flex; flex: 1; max-width: var(--maxw); width: 100%; margin: 0 auto; }
 .app-nav {
