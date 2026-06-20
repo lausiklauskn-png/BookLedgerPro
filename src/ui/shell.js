@@ -976,9 +976,14 @@ function aiConfigSection() {
     host.replaceChildren(
       el('div', { class: 'setting-label', text: t('settings.aiExternal') }),
       fieldWithLink(t('settings.aiVisionKey'), visionKey, 'https://console.cloud.google.com/apis/credentials'),
-      el('p', { class: 'muted small' }, [
-        el('span', { text: t('settings.aiVisionHint') + ' ' }),
-        el('a', { class: 'provider-link', href: 'https://console.cloud.google.com/apis/library/vision.googleapis.com', target: '_blank', rel: 'noopener', text: t('settings.aiVisionEnable') }),
+      el('div', { class: 'vision-guide muted small' }, [
+        el('p', { class: 'vision-guide-intro', text: t('settings.aiVisionGuide') }),
+        el('ol', { class: 'vision-steps' }, [
+          el('li', {}, [el('a', { class: 'provider-link', href: 'https://console.cloud.google.com/apis/library/vision.googleapis.com', target: '_blank', rel: 'noopener', text: t('settings.aiVisionStep1') })]),
+          el('li', {}, [el('a', { class: 'provider-link', href: 'https://console.cloud.google.com/billing', target: '_blank', rel: 'noopener', text: t('settings.aiVisionStep2') })]),
+          el('li', {}, [el('a', { class: 'provider-link', href: 'https://console.cloud.google.com/apis/credentials', target: '_blank', rel: 'noopener', text: t('settings.aiVisionStep3') })]),
+        ]),
+        el('p', { class: 'vision-guide-note', text: t('settings.aiVisionStepNote') }),
       ]),
       fieldWithLink(t('settings.aiMistralKey'), mistralKey, 'https://console.mistral.ai/api-keys'),
       el('p', { class: 'muted small', text: t('settings.aiMistralHint') }),

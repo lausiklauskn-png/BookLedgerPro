@@ -5,6 +5,25 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-21 — Google-Vision-Schlüssel: nummerierte Direkt-Link-Anleitung in den KI-Einstellungen [Branch `claude/vision-key-guide`]
+
+**Was getan**
+- Nutzer-Stolperstein erklärt: Google liefert `401 „API keys are not supported by this API"`, wenn der Key
+  ein **Gemini-/Vertex-Schlüssel** ist statt eines **Cloud-Vision**-Schlüssels (oder Vision-API nicht aktiviert).
+  Der App-eigene Fehler-Hinweis (`visionFehlerHinweis`) diagnostiziert das bereits korrekt.
+- **UX verbessert (für alle Nutzer):** Aus dem einen Hinweis-Link wurde eine **nummerierte 3-Schritt-Kette**
+  mit je einem Direkt-Link: 1) Cloud Vision API aktivieren · 2) Billing verknüpfen · 3) API-Schlüssel erstellen
+  (+ Warnzeile „erst aktivieren, dann Schlüssel"). i18n DE/EN, kleines CSS (`.vision-steps`). SW **v160**.
+- Hintergrund: Google kann (anders als Mistral/Anthropic) keinen 1-Klick-Key liefern — Projekt → Billing →
+  API-Aktivierung sind Pflicht-Vorstufen; die Kette führt so nah wie möglich heran.
+
+**Stand:** Tests **1968/1968 grün**. **Ungetestet:** Live-OCR gegen die echte Vision-API (kein Key/Netz in
+der Bau-Umgebung) — Body-/Parser-/Fehler-Logik ist node-getestet.
+
+**Offen / Nächstes:** Warten auf Sages angekündigten Brief (Match-Modell-Neuerung/Whitening). Optional Phase 5d.
+
+---
+
 ## 2026-06-20 — 🏅 `verified-match` bestätigt (Phase 5c abgeschlossen) [Branch `claude/phase-5c-verified-match`]
 
 **Was getan**

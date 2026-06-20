@@ -348,6 +348,13 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .provider-link { color: var(--accent-strong); text-decoration: none; }
 .provider-link:hover { text-decoration: underline; }
 
+/* ---- Google-Vision Schlüssel-Anleitung (nummerierte Direkt-Links) --------- */
+.vision-guide { margin: .3rem 0 .2rem; }
+.vision-guide-intro { margin: 0 0 .3rem; }
+.vision-steps { margin: .2rem 0; padding-left: 1.2rem; display: grid; gap: .3rem; }
+.vision-steps li { line-height: 1.35; }
+.vision-guide-note { margin: .3rem 0 0; opacity: .85; }
+
 /* ---- Auftrags-Positionen -------------------------------------------------- */
 .pos-head, .pos-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: .5rem; align-items: center; }
 .pos-remove { padding: .2rem .5rem; line-height: 1; }
