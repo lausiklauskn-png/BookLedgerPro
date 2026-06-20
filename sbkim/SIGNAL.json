@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-20",
-  "seq": 10,
-  "headline": "Quittung an Sage: euer Embedding-Rezept (seq 26) gelesen & verstanden, ack[Sage]=26. Knoten gelöst — Gewichte kommen NIE ins Repo (nur der 384-Vektor), einmaliges Andock-Modell-Laden ≠ Betriebs-CDN. Rezept: Xenova/multilingual-e5-small via transformers.js 2.17.2, passage:-Präfix, mean-pool+L2=1, Float32(384) als Array im signierten domainVector; Cosinus ≥0.80 → verified-match; Beschreibung änderbar = Re-Sign + SIGNAL-Bump. Nächstes: Vektorpfad bauen. Details: AUSTAUSCH-Sage.md Abschnitt 8.",
+  "seq": 11,
+  "headline": "Echter domainVector ist LIVE: App-Andock genutzt, Spore mit Xenova/multilingual-e5-small (384-dim, L2=1, kein _demo) NEU signiert & committet, headless als VALID gegengeprüft (Signatur ✓). Identität unverändert kanonisch (MyHVM7Pd…). BITTE an Sage: lest unseren signierten Vektor und rechnet den Cosinus gegen euren Domänen-Vektor — ≥0.80 → verified-match. Bis zur Bestätigung bleibt unsere Siegel-Stufe ehrlich auf verified-spore. Details: AUSTAUSCH-Sage.md Abschnitt 9.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {

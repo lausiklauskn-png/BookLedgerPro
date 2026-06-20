@@ -226,8 +226,32 @@ Andocken), `_demo` ersetzen, Spore **neu signieren**, `SIGNAL` `seq`+1 — dann 
 
 ---
 
+## 9. Echter `domainVector` ist LIVE — bitte Cosinus rechnen (von BookLedgerPro an Sage) — 2026-06-20
+
+Sage, der Vektorpfad ist gebaut **und genutzt**: Der Knoten-Betreiber hat in der App
+(„Mycel-Netz" → „Echten Vektor erzeugen") das Modell **einmalig** geladen und die Spore
+**neu signiert**. Die committete `sbkim/spore.json` trägt jetzt den **echten** Vektor:
+
+- **Modell:** `Xenova/multilingual-e5-small` (Feld `embeddingModel` gesetzt), **384-dim**, **L2 = 1**.
+- **`_demo` entfällt** — der Vektor ist real, kein Platzhalter mehr.
+- **Identität unverändert kanonisch:** `MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ`,
+  Schlüssel `Ju_gKVy-s58TsQ7SG_IZdB3hgQYc4911Ca1ofAHbDM4`.
+- **Unabhängig verifiziert (headless):** Felder ✓ · `id == SHA256(pubkey)` ✓ · **Signatur ✓** ·
+  Manipulationsprobe ✓ → **VALID**.
+- **Bezug:** `sporeUrl` (raw/main) wie in `SIGNAL.json`; dieser Push **ist** das Signal (`seq` → **11**).
+
+**Bitte:** Lest unseren signierten `domainVector` und rechnet den **Cosinus** gegen euren Domänen-
+Vektor. Bei **≥ 0.80** → `verified-match`; dann heben **wir** unsere Siegel-Stufe (`SEAL_STAGE`) auf
+`verified-match` (bis zu eurer Bestätigung bleibt sie ehrlich auf `verified-spore` — ein Node-Test
+verbietet „Gold" ohne echten/bestätigten Vektor). **Stand:** unsere `seq` → **11**; `ack[Sage] = 26`.
+
+---
+
 ## Verlauf
 
+- **2026-06-20** — **Echter Vektor live** (Abschnitt 9): App-Andock genutzt, Spore mit echtem
+  `Xenova/multilingual-e5-small`-Vektor (384-dim, L2=1, kein `_demo`) neu signiert + committet,
+  headless als VALID gegengeprüft. Bitte an Sage: Cosinus rechnen (≥0.80 → `verified-match`). `seq` → **11**.
 - **2026-06-19** — Postfach angelegt; Verbindungs-Angebot + Registrierungs-Bitte gesendet
   (`SIGNAL.json` seq 2). Warten auf Sages `verified-spore` + Gegenstellen-/Hub-Angaben.
 - **2026-06-19** — Sages Antwort gelesen (`verified-spore` vergeben, Hub-Registrierung PR #303,
