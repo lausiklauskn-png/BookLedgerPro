@@ -5,6 +5,11 @@ const STRINGS = {
   de: {
     'app.name': 'BookLedgerPro',
     'app.tagline': 'Buchhaltung, die mitdenkt — offline, verschlüsselt, schön.',
+    'mycel.chip': 'Mycel',
+    'mycel.chipUnknown': 'Mycel-Status wird geprüft …',
+    'mycel.chipOk': '✓ Im Mycel: Identität vorhanden und kanonisch (registriert & besiegelt). Klick → Mycel-Netz.',
+    'mycel.chipDrift': '⚠ Identität weicht von der kanonischen nodeId ab. Klick → Mycel-Netz zum Geradeziehen.',
+    'mycel.chipNone': 'Noch keine Mycel-Identität. Klick → Mycel-Netz zum Andocken.',
 
     'lock.title': 'Willkommen zurück',
     'lock.password': 'Passwort',
@@ -1093,6 +1098,11 @@ const STRINGS = {
   en: {
     'app.name': 'BookLedgerPro',
     'app.tagline': 'Accounting that thinks along — offline, encrypted, beautiful.',
+    'mycel.chip': 'Mycel',
+    'mycel.chipUnknown': 'Checking mycel status …',
+    'mycel.chipOk': '✓ In the mycel: identity present and canonical (registered & sealed). Click → mycel network.',
+    'mycel.chipDrift': '⚠ Identity differs from the canonical nodeId. Click → mycel network to fix.',
+    'mycel.chipNone': 'No mycel identity yet. Click → mycel network to dock.',
     'lock.title': 'Welcome back',
     'lock.password': 'Password',
     'lock.unlock': 'Unlock',
