@@ -12,6 +12,7 @@ import { demoVector } from '../../sbkim/domainvector.js';
 import { buildSignal } from '../../sbkim/signal.js';
 import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID } from '../../sbkim/nodeProfile.js';
 import { PEERS, checkAllPeers } from '../../sbkim/peers.js';
+import { buildPassageText, embedDomainVector } from '../../sbkim/embed.js';
 
 let _host = null;
 
@@ -28,6 +29,7 @@ async function repaint() {
     el('div', { class: 'banner banner-warn', text: t('net.andockNote') }),
     identityCard(ident),
     ident ? deployCard(ident) : null,
+    ident ? embeddingCard(ident) : null,
     briefkastenCard(),
     toolsCard(),
     verifyCard(),
@@ -177,6 +179,44 @@ function deployCard(ident) {
     el('p', { class: 'muted small', text: t('net.deployIntro') }),
     el('div', { class: 'btn-row' }, [sporeBtn, signalBtn]),
     status,
+  ]);
+}
+
+// Echter Domänen-Vektor → verified-match. Opt-in (Sage-gesegnet: einmaliges Modell-Laden
+// ≠ Betriebs-CDN): lädt transformers.js + e5-small EINMALIG, bettet den passage:-Text ein
+// (mean-pool + L2=1), baut + RE-SIGNIERT die Spore mit dem echten Vektor (ohne _demo) und
+// bietet sie zum Download. Nichts wird automatisch geladen; Modell-Gewichte nie ins Repo.
+function embeddingCard(ident) {
+  const passage = buildPassageText(NODE_PROFILE);
+  const status = el('p', { class: 'muted small' });
+  const out = el('div', { class: 'muted small' });
+  const btn = el('button', {
+    class: 'btn', text: t('net.embedBtn'),
+    onClick: async () => {
+      if (!window.confirm(t('net.embedConfirm'))) return;
+      btn.setAttribute('disabled', '');
+      out.replaceChildren();
+      try {
+        const res = await embedDomainVector(NODE_PROFILE, { onStatus: (s) => { status.textContent = s; } });
+        const spore = await buildSpore(ident.keys, { ...NODE_PROFILE, embeddingModel: res.model, domainVector: res.vector });
+        const v = await verifySpore(spore);
+        if (!v.valid) { status.textContent = t('net.embedInvalid'); return; }
+        downloadJson('spore.json', spore);
+        status.textContent = t('net.embedDone').replace('%L2%', res.l2.toFixed(4));
+        out.appendChild(el('p', { class: 'mono small', text: `dim ${res.dim} · L2 ${res.l2.toFixed(4)} · [${res.vector.slice(0, 4).map((x) => x.toFixed(3)).join(', ')}, …]` }));
+        out.appendChild(el('p', { class: 'muted small', text: t('net.embedNext') }));
+      } catch (e) {
+        status.textContent = t('net.embedFail').replace('%E%', String((e && e.message) || e));
+      } finally { btn.removeAttribute('disabled'); }
+    },
+  });
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('net.embedTitle') }),
+    el('p', { class: 'muted small', text: t('net.embedIntro') }),
+    el('p', { class: 'mono small', text: passage }),
+    el('div', { class: 'btn-row' }, [btn]),
+    status,
+    out,
   ]);
 }
 

@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v157';
+const CACHE_VERSION = 'v158';
 const CACHE_NAME = `blpr-shell-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -172,6 +172,7 @@ const CORE_ASSETS = [
   './src/sbkim/signal.js',
   './src/sbkim/nodeProfile.js',
   './src/sbkim/peers.js',
+  './src/sbkim/embed.js',
   './src/sbkim/wappen.js',
   './docs/TRANSPARENZ_ZWISCHENSTAND.html',
 ];
