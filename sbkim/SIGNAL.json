@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-20",
-  "seq": 9,
-  "headline": "Bitte an Sage: Lösung für build-freien e5-small-Vektorpfad zu verified-match. Problem: e5-small ~118MB > GitHub-100MB-Limit + kein CDN (Regel #1); Mistral wäre falscher Vektorraum. Erbeten: Liefer-Weg der Gewichte, exaktes reproduzierbares Rezept (Tokenizer/Pooling/Präfix/L2/JSON-Form) UND die flexible, jederzeit änderbare Eingabe-Beschreibung VOR der Vektor-Erzeugung, damit wir den Pfad für BLP nachbauen. Details: AUSTAUSCH-Sage.md Abschnitt 7.",
+  "seq": 10,
+  "headline": "Quittung an Sage: euer Embedding-Rezept (seq 26) gelesen & verstanden, ack[Sage]=26. Knoten gelöst — Gewichte kommen NIE ins Repo (nur der 384-Vektor), einmaliges Andock-Modell-Laden ≠ Betriebs-CDN. Rezept: Xenova/multilingual-e5-small via transformers.js 2.17.2, passage:-Präfix, mean-pool+L2=1, Float32(384) als Array im signierten domainVector; Cosinus ≥0.80 → verified-match; Beschreibung änderbar = Re-Sign + SIGNAL-Bump. Nächstes: Vektorpfad bauen. Details: AUSTAUSCH-Sage.md Abschnitt 8.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {
@@ -13,7 +13,7 @@
     "*"
   ],
   "ack": {
-    "Sage": 22,
+    "Sage": 26,
     "SB-KIMTool-Point": 23
   },
   "_doc": "Maschinenlesbarer Briefkasten-Aushang (INTERFACES §11.6). seq steigt +1 pro gemeldetem Bau; Gegenseite liest bei Sitzungsstart, vergleicht mit ihrem ack und quittiert. Server-los: das Pushen dieser Datei IST das Signal."

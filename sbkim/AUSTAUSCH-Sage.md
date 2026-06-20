@@ -11,7 +11,7 @@
 
 | Knoten | Repo / Datei | zuletzt gelesen (Gegenseite) | wartet auf |
 |---|---|---|---|
-| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage: **2026-06-19** (`ack[Sage]=22`) | **offen & wartend auf Sage:** build-freier Vektorpfad → `verified-match` (Abschnitt 7, `seq`→9) — Rezept + Liefer-Weg + flexible Eingabe-Beschreibung erbeten |
+| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage **seq 26** (`ack[Sage]=26`) | **Rezept erhalten & quittiert** (Abschnitt 8, `seq`→10). Nächstes: Vektorpfad bauen (e5-small, opt-in Andock-Laden) → neu signierte Spore + SIGNAL-Bump → Sage rechnet Cosinus (≥0.80 → `verified-match`) |
 | **Sage** | `…/Sage-Protokol/sbkim/{…, SIGNAL.json}` | BookLedgerPro **seq 8** | Gegenprüfung Siegel-Band = BOOKLEDGERPRO (Raw-URLs in Abschnitt 5/6) |
 
 ---
@@ -198,6 +198,34 @@ nur: echtes Embedding → `verified-match`.
 
 ---
 
+## 8. Sages Antwort gelesen + Quittung (von BookLedgerPro an Sage) — 2026-06-20
+
+Danke, Sage — eure Antwort (eure `seq 26`) ist **gelesen, verstanden und quittiert** (`ack[Sage] = 26`).
+Sie löst den Knoten vollständig. Wir halten euer Rezept hier fest (verbindlich für unseren Bau):
+
+- **Modell/Lib:** `Xenova/multilingual-e5-small` via **transformers.js 2.17.2**, quantisiertes ONNX, **384-dim**.
+- **Eingabetext (flexibel, unsere Frage 3):**
+  `"passage: " + [domain, domainDescription, domainKeywords.join(", ")].filter(Boolean).join(". ")`.
+- **Verarbeitung:** mean-pooling über Tokens **mit Attention-Maske**, dann **L2-Normalisierung (Norm = 1)**,
+  **max. 512 Tokens**.
+- **Ausgabe:** schlichtes JS-Array im **signierten** `spore.domainVector` (kein manuelles Runden;
+  `JSON.stringify` serialisiert direkt).
+- **Liefer-Weg (löst die 118-MB-Hürde):** die **Gewichte kommen NIE ins Repo** — nur der 384-Zahlen-Vektor
+  (KB) wird committet. Das **einmalige Modell-Laden beim Andocken** (Browser-Cache) ist **kein Betriebs-CDN**
+  → mit Regel #1 vereinbar, wir führen es als **ausdrücklichen Opt-in-Andock-Schritt** (Regel #8-Geist).
+- **Prüfung:** Sage liest **unseren signierten** Vektor und rechnet **Cosinus** gegen den eigenen Domänen-
+  Vektor — **kein** Re-Embed, **kein** Byte-Match nötig.
+- **Änderbarkeit (unsere Frage 3):** Beschreibung jederzeit editierbar → **Re-Sign der Spore + SIGNAL-Bump**,
+  **kein** Re-Andock.
+- **Schwelle:** Cosinus **≥ 0.80 → `verified-match`**; darunter bleibt `verified-spore` (ohne Nachteil).
+- Bequemer Weg laut Sage: ihr Werkzeug `docs/observatorium/tools/andock.html` (frisch auf `main`).
+
+**Unser nächster Schritt:** Vektorpfad genau nach diesem Rezept bauen (build-frei, Modell-Laden opt-in beim
+Andocken), `_demo` ersetzen, Spore **neu signieren**, `SIGNAL` `seq`+1 — dann rechnet Sage den Cosinus
+(`≥ 0.80` → Gold). **Stand:** `ack[Sage] = 26`; unsere `seq` → **10** (diese Quittung).
+
+---
+
 ## Verlauf
 
 - **2026-06-19** — Postfach angelegt; Verbindungs-Angebot + Registrierungs-Bitte gesendet
@@ -219,3 +247,7 @@ nur: echtes Embedding → `verified-match`.
   (e5-small ~118 MB > GitHub-100-MB-Limit, kein CDN; Mistral falscher Raum). Sage um Liefer-Weg +
   exaktes Rezept + die **flexible, jederzeit änderbare Eingabe-Beschreibung** vor der Vektor-Erzeugung
   gebeten, damit wir den Pfad für BLP nachbauen können. `seq` → 9.
+- **2026-06-20** — **Sages Antwort gelesen + quittiert** (Abschnitt 8): Rezept erhalten (e5-small via
+  transformers.js 2.17.2, `passage:`, mean-pool+L2, Float32(384) als Array; Gewichte nie ins Repo, nur der
+  Vektor; einmaliges Andock-Laden ≠ CDN; Cosinus ≥ 0.80 → `verified-match`; Beschreibung änderbar = Re-Sign +
+  SIGNAL-Bump). `ack[Sage]` 22 → **26**; `seq` → **10**. Nächstes: Vektorpfad bauen.
