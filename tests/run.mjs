@@ -120,7 +120,7 @@ import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
 import { demoVector, VECTOR_DIM } from '../src/sbkim/domainvector.js';
 import { buildSignal } from '../src/sbkim/signal.js';
-import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID } from '../src/sbkim/nodeProfile.js';
+import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID, SEAL_STAGE } from '../src/sbkim/nodeProfile.js';
 import { readFileSync as _readSpore } from 'node:fs';
 import { classifyPeer, summarizePeers, fetchPeerStatus, PEERS } from '../src/sbkim/peers.js';
 import { buildPassageText, cosineSimilarity, l2norm, EMBED_DIM, EMBED_MODEL } from '../src/sbkim/embed.js';
@@ -1137,6 +1137,15 @@ await section('SBKIM: Embedding-Vektorpfad (Sage-Rezept, ohne Modell testbar)', 
   ok('domainVector ist 384-dim Array', Array.isArray(spore.domainVector) && spore.domainVector.length === EMBED_DIM);
   ok('KEIN _demo bei echtem Vektor', spore._demo === undefined);
   ok('Spore mit echtem Vektor signiert & VALID', (await verifySpore(spore)).valid === true);
+});
+
+await section('SBKIM: Siegel-Stufe ehrlich (kein Gold auf _demo-Vektor)', async () => {
+  // Arbeitsvertrag „kein vorgetäuschtes Grün": das Kopf-Siegel darf NIE `verified-match`
+  // (Gold) behaupten, solange die committete Spore noch den _demo-Vektor trägt.
+  const committed = JSON.parse(_readSpore(new URL('../sbkim/spore.json', import.meta.url), 'utf8'));
+  const hasDemo = Array.isArray(committed._demo) && committed._demo.includes('domainVector');
+  ok('SEAL_STAGE gültig', SEAL_STAGE === 'verified-spore' || SEAL_STAGE === 'verified-match');
+  ok('kein Gold solange _demo', !(SEAL_STAGE === 'verified-match' && hasDemo));
 });
 
 await section('SBKIM: Briefkasten/Verkehr — Peer-Status-Logik', async () => {

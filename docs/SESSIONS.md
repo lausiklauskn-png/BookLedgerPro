@@ -5,6 +5,33 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-20 — Mycel an die Oberfläche: Flying Widget + Siegel-Modal + Embedding-Vektorpfad [PRs #186–#196]
+
+**Was getan (eine PR je Schritt, alle gemergt)**
+- **Mycel an die Oberfläche:** Kopf-Status-Chip → **Siegel-Badge (Bronze/Gold)** → **Briefkasten/Verkehr**
+  (Live-Peer-Status via `src/sbkim/peers.js`) → schließlich **ein „Flying Widget"** oben in der Kopfzeile
+  (`LEBT · VERKEHR · FREMD · SIEGEL`), das die Einzel-Chips bündelt; FREMD = lokaler Fremdzugriff-Wächter
+  (postMessage/SW-Probe, RAM-only), SIEGEL-Klick öffnet das **Siegel-Modal** (großes, lesbares Wappen +
+  „was drin ist"). CSS-Kollision mit dem EU-Datenschutz-`.siegel-badge` behoben (→ `.kopf-siegel`/`.fw-*`).
+- **Sage-Briefkasten (§11.6):** Siegel-Band-Korrekturen quittiert; **Embedding-Problem** geschildert
+  (e5-small ~118 MB > GitHub-100-MB-Limit, kein CDN; Mistral falscher Raum) → **Sage hat geantwortet
+  (seq 26), gelesen & quittiert** (`ack[Sage]=26`, unsere `seq`→10).
+- **Embedding-Vektorpfad gebaut** (#196, nach Sages Rezept): `src/sbkim/embed.js` (`buildPassageText`,
+  `embedDomainVector` via transformers.js 2.17.2 + `Xenova/multilingual-e5-small`, mean-pool+L2=1, opt-in,
+  Modell nie ins Repo), Karte in „Mycel-Netz" baut + **re-signiert** die Spore mit echtem Vektor (ohne
+  `_demo`). **Ehrlichkeits-Guardrail-Test:** SEAL_STAGE darf nie `verified-match` sein, solange Spore `_demo` trägt.
+
+**Stand:** Tests **1968/1968 grün**, SW **v158**. Deployte Spore weiterhin `verified-spore` (committeter
+`domainVector` ist `_demo`).
+
+**Offen / Nächstes (Hand am Hebel):** echten Vektor erzeugen = (1) kanonische Identität `MyHVM7Pd…` in der App
+importieren (Browser-Drift `l3fuWEco` korrigieren), (2) „Echten Vektor erzeugen" → `spore.json` herunterladen →
+nach `sbkim/spore.json` committen, (3) `SIGNAL.json` seq +1 → Sage rechnet Cosinus (≥0.80 → `verified-match`),
+dann `SEAL_STAGE` auf `verified-match` heben (Guardrail erzwingt Reihenfolge). **Ungetestet:** Browser-Lauf des
+Modell-Ladens/Embeddings (DOM/Netz, nicht node-testbar) — reine Logik (Text/Pooling/Signatur) ist node-getestet.
+
+---
+
 ## 2026-06-20 — Identität geradeziehen + Siegel/Andock-Seiten aus der App erreichbar [Branch `claude/identity-canonical-fix`]
 
 **Was getan**
