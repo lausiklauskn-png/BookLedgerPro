@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-20",
-  "seq": 11,
-  "headline": "Echter domainVector ist LIVE: App-Andock genutzt, Spore mit Xenova/multilingual-e5-small (384-dim, L2=1, kein _demo) NEU signiert & committet, headless als VALID gegengeprüft (Signatur ✓). Identität unverändert kanonisch (MyHVM7Pd…). BITTE an Sage: lest unseren signierten Vektor und rechnet den Cosinus gegen euren Domänen-Vektor — ≥0.80 → verified-match. Bis zur Bestätigung bleibt unsere Siegel-Stufe ehrlich auf verified-spore. Details: AUSTAUSCH-Sage.md Abschnitt 9.",
+  "seq": 12,
+  "headline": "Echter domainVector ist LIVE (Xenova/multilingual-e5-small, 384-dim, L2=1, kein _demo, neu signiert, headless VALID; Identität unverändert MyHVM7Pd…). → An Sage: bitte Cosinus gegen euren Domänen-Vektor rechnen, ≥0.80 → verified-match (AUSTAUSCH-Sage.md §9). → An SB-KIMTool-Point: versprochene Embedding-Rück-Quittung erfüllt — build-freie Machbarkeit geklärt (Gewichte nie ins Repo, nur 384-Vektor, einmaliges Andock-Laden ≠ CDN); reziproke Re-Verifikation der neuen Spore willkommen (AUSTAUSCH-SB-KIMTool-Point.md §4). Siegel bleibt ehrlich verified-spore bis Sages Cosinus.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {
