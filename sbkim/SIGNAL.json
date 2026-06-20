@@ -1,20 +1,20 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-19",
-  "seq": 4,
-  "headline": "Andock-Brief an SB·KIMTool·Point (sie haben uns reziprok VALID verifiziert); Postfach AUSTAUSCH-SBKIMToolPoint.md angelegt.",
+  "seq": 5,
+  "headline": "verified-spore mit SB·KIMTool·Point besiegelt: deren Spore reziprok VALID, ack[SB-KIMTool-Point]=23, Postfach quittiert.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {
     "Sage": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/AUSTAUSCH-Sage.md",
-    "SBKIMToolPoint": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/AUSTAUSCH-SBKIMToolPoint.md"
+    "SB-KIMTool-Point": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/AUSTAUSCH-SB-KIMTool-Point.md"
   },
   "forNodes": [
     "*"
   ],
   "ack": {
     "Sage": 22,
-    "SBKIMToolPoint": 0
+    "SB-KIMTool-Point": 23
   },
   "_doc": "Maschinenlesbarer Briefkasten-Aushang (INTERFACES §11.6). seq steigt +1 pro gemeldetem Bau; Gegenseite liest bei Sitzungsstart, vergleicht mit ihrem ack und quittiert. Server-los: das Pushen dieser Datei IST das Signal."
 }
