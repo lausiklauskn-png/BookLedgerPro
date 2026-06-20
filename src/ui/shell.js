@@ -984,6 +984,11 @@ function aiConfigSection() {
           el('li', {}, [el('a', { class: 'provider-link', href: 'https://console.cloud.google.com/apis/credentials', target: '_blank', rel: 'noopener', text: t('settings.aiVisionStep3') })]),
         ]),
         el('p', { class: 'vision-guide-note', text: t('settings.aiVisionStepNote') }),
+        el('details', { class: 'vision-walk' }, [
+          el('summary', { text: t('settings.aiVisionWalkTitle') }),
+          el('ol', { class: 'vision-walk-steps' }, t('settings.aiVisionWalk').split('\n').map((s) => el('li', { text: s }))),
+          el('p', { class: 'vision-guide-note', text: t('settings.aiVisionWalkNote') }),
+        ]),
       ]),
       fieldWithLink(t('settings.aiMistralKey'), mistralKey, 'https://console.mistral.ai/api-keys'),
       el('p', { class: 'muted small', text: t('settings.aiMistralHint') }),

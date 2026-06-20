@@ -20,6 +20,13 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 **Stand:** Tests **1968/1968 grün**. **Ungetestet:** Live-OCR gegen die echte Vision-API (kein Key/Netz in
 der Bau-Umgebung) — Body-/Parser-/Fehler-Logik ist node-getestet.
 
+**Nachtrag (nach echtem Nutzer-Durchlauf):** Der Nutzer hat den Schlüssel **live erfolgreich** erstellt
+(Google Vision + Mistral `aktiv ✓`) — aber Googles Oberfläche schickt einen durch ein Wort-Wirrwarr
+(„Anmeldedaten" = Login? Nein, = Schlüssel; weißer Knopf „Anmeldedaten erstellen" → falscher Assistent;
+nur der **linke Menüpunkt „Anmeldedaten"** + **„+ Anmeldedaten erstellen ▾" → „API-Schlüssel"** ist richtig).
+Daraus eine **aufklappbare Klick-für-Klick-Anleitung** (`<details>`) direkt unter dem Vision-Feld gebaut —
+exakt die erprobte Abfolge inkl. der drei Sackgassen-Warnungen (Assistent/OAuth/Dienstkonto). SW **v161**.
+
 **Offen / Nächstes:** Warten auf Sages angekündigten Brief (Match-Modell-Neuerung/Whitening). Optional Phase 5d.
 
 ---
