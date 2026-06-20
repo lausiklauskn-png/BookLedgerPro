@@ -5,6 +5,27 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-19 — verified-spore mit SB·KIMTool·Point besiegelt (zweiter Peer) [Branch `claude/handshake-sbkimtoolpoint`]
+
+**Was getan**
+- SB·KIMTool·Point hat seine URLs relayt → **reziprok verifiziert**: Spore aus raw/main geholt
+  → **VALID (4/4)**; `id` unabhängig nachgerechnet → MATCH (`CyunQNDRZZ3st8xGDYyK0ymJLNxn_S1UcIJpFKpXXNY`,
+  = von Klaus genannt). Domain `SBKIM-Werkzeug-Point`, echter `domainVector`.
+- Angelegt: `sbkim/SB-KIMTool-Point_inbox.json` (1:1-Kopie, VALID) + `_inbox.verify.md` (Prüf-Vermerk).
+- Postfach `AUSTAUSCH-SBKIMToolPoint.md` → **umbenannt** zu `AUSTAUSCH-SB-KIMTool-Point.md`
+  (deren Repo-Slug), Quittung gestempelt. `SIGNAL.json` → `seq` 5, `ack[SB-KIMTool-Point]=23`,
+  mailbox-Key/URL angepasst.
+- **6.4-Notiz** in BAUPLAN: echten `domainVector` mit Krypto-/E2E-Stichworten anreichern (Wunsch
+  beider Peers), Re-Signatur mit BESTEHENDEM Schlüssel (nodeId `MyHVM7…` erhalten).
+- Tests **1945/1945 grün**; alle SBKIM-JSON valide; deren inbox VALID.
+
+**Stand:** Zwei Peers `verified-spore` beidseitig besiegelt (Sage + SB·KIMTool·Point).
+
+**Offen / Nächstes:** Rück-Quittung an Klaus (s. Chat). 6.3 WorkFloh-Pairing · 6.4 echtes Embedding
+(+ E2E-Stichworte) → `verified-match`, zuerst Build-frei-/CDN-Machbarkeit prüfen.
+
+---
+
 ## 2026-06-19 — Zweiter Peer: Andock-Brief an SB·KIMTool·Point [Branch `claude/andock-sbkimtoolpoint`]
 
 **Was getan**

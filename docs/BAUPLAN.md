@@ -485,6 +485,12 @@ Sage hat seine Seite als Entwurf abgelegt (deren PR #302, kein netzweites Signal
   (Nutzlast = vorhandenes Austauschformat v4 `domain/connect.js`; sensible Teile pseudonym/P9).
 - [ ] **6.4 — echter `domainVector`** (Transformers.js `Xenova/multilingual-e5-small`) → `verified-match`
   (build-frei prüfen — WASM/CDN-Frage; sonst ehrlich als blockiert melden).
+  **WICHTIG (Wunsch von Sage + SB·KIMTool·Point, 2026-06-19):** den **Verschlüsselungs-/E2E-Aspekt**
+  (AES-GCM-Familie, E2E/X25519-Perspektive, Tresor-Symbiose) ausdrücklich in den **eingebetteten
+  Domänen-Text** (`domainKeywords`/`domainDescription` in `src/sbkim/nodeProfile.js`) aufnehmen, sonst
+  bleibt die Nähe zu den Tresor-Knoten im Vektor unsichtbar. **Rück-Quittung ans Netz**, wann das
+  Embedding kommt. **Achtung:** Re-Signatur mit dem BESTEHENDEN Schlüssel (nodeId `MyHVM7…` MUSS
+  erhalten bleiben — kein neues Keypair, sonst brechen alle Andocks).
 - [ ] **6.5 — X25519-Erweiterung (Sage hat E2E bejaht, „mit Wie"):** nach Sages 0.2-Spec umsetzen —
   **erst nach** Knoten-Deploy (6.1) + netzweitem Knoten-Go (Sage setzt den formalen `protocolVersion`-Bump).
 
