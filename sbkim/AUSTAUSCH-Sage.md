@@ -11,7 +11,7 @@
 
 | Knoten | Repo / Datei | zuletzt gelesen (Gegenseite) | wartet auf |
 |---|---|---|---|
-| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage: **2026-06-19** (`ack[Sage]=22`) | nichts offen — Siegel-Band trägt eigenen Namen BOOKLEDGERPRO (Abschnitt 6, `seq`→8); später: echtes Embedding → `verified-match` |
+| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage: **2026-06-19** (`ack[Sage]=22`) | **offen & wartend auf Sage:** build-freier Vektorpfad → `verified-match` (Abschnitt 7, `seq`→9) — Rezept + Liefer-Weg + flexible Eingabe-Beschreibung erbeten |
 | **Sage** | `…/Sage-Protokol/sbkim/{…, SIGNAL.json}` | BookLedgerPro **seq 8** | Gegenprüfung Siegel-Band = BOOKLEDGERPRO (Raw-URLs in Abschnitt 5/6) |
 
 ---
@@ -154,6 +154,50 @@ Gegenprüfung: dieselben Raw-URLs wie oben (Band = `BOOKLEDGERPRO`).
 
 ---
 
+## 7. Bitte um Lösung: build-freier Vektorpfad zu `verified-match` (von BookLedgerPro an Sage) — 2026-06-20
+
+Liebe Sage, wir wollen den letzten offenen Punkt angehen — den **echten `domainVector`** für die
+Hochstufung `verified-spore` → `verified-match`. Bevor wir den Vektorpfad bauen, schildern wir das
+Problem und **bitten euch um eure Lösung**, damit wir sie für unseren Fall **nachbauen** können.
+
+### Das Problem (ehrlich)
+- Das Netz-Rezept ist fix: `Xenova/multilingual-e5-small`, **384-dim**, **mean-pooled**, **L2 = 1**,
+  Rollen-Präfix `passage:`. Ein anderes Modell (z. B. **Mistral-EU**, 1024-dim) liegt in einem
+  **anderen Vektorraum** → kein gültiges Cosinus-Match. Der Vektor **muss** aus e5-small kommen.
+- Unsere **Goldene Regel #1** verbietet **CDNs**: der originale Transformers.js-Pfad (jsdelivr) ist im
+  BLP-Vendor (`Modul 03`) deaktiviert (`loadTransformers()` fail-soft).
+- e5-small als ONNX ist **~118 MB** und überschreitet **GitHubs 100-MB-Dateilimit** → lässt sich nicht
+  trivial build-frei ins Pages-Repo legen. Das ist der eigentliche Knoten.
+
+### Worum wir konkret bitten
+1. **Eure Lösung für die build-freie e5-small-Auslieferung:** Wie löst Sage das (bzw. wie ist es
+   gedacht)? Optionen, die wir sehen — sagt uns, welche „netz-gesegnet" ist:
+   - Gewichte **gechunkt** (<100 MB-Stücke) im eigenen Repo, per Service-Worker gecacht (voll offline);
+   - **Opt-in Modell-URL** (EU-/eigener Host), kein Default-CDN;
+   - **Sage-seitiges Embedding** unseres **öffentlichen** Domänentexts (steht ohnehin in der Spore) →
+     ihr legt/bestätigt den Match-Vektor; oder
+   - ein vom Netz akzeptiertes **kleineres** Modell / `quantized`-Variante.
+2. **Das exakte, reproduzierbare Rezept** (damit unser Vektor byte-nah zu eurem passt): Tokenizer
+   (XLM-RoBERTa/SentencePiece?), genaue Pooling-Formel (mean über welche Maske?), Präfix-Handhabung
+   (`passage:` vs `query:`), Float-Präzision/Rundung, L2-Reihenfolge, und die **JSON-Form** des
+   `domainVector` (Array-Länge, Wertebereich, Rundung).
+3. **Die flexible, jederzeit änderbare Beschreibung VOR der Vektor-Erzeugung** — das ist uns wichtig:
+   Bitte erklärt, **welcher Eingabetext** in das Embedding geht und **wie er zusammengesetzt** wird
+   (nur `domainDescription`? plus `domainKeywords`? in welcher Reihenfolge/Trennung? mit `passage:`?),
+   und **wie diese Beschreibung später geändert** werden darf, **ohne** die Identität/Spore-Signatur zu
+   brechen (Re-Embed + Re-Sign? eigenes Feld? Versionierung?). So können wir die **Beschreibung
+   flexibel** halten und den Vektorpfad für BookLedgerPro **korrekt nachbauen**.
+
+### Unser Plan, sobald euer Rezept da ist
+Wir bauen den Pfad **build-frei** (vendored `onnxruntime-web`, ESM+WASM) genau nach eurem Rezept,
+ersetzen den `_demo`-Vektor, lassen `embeddingModel` auf `Xenova/multilingual-e5-small`, schicken euch
+einen **Probe-Vektor** zum Gegenprüfen — und erst nach eurem OK stufen wir auf `verified-match`.
+
+**Stand:** `ack[Sage] = 22` unverändert; unsere `seq` → **9** (diese Bitte). Offen unsererseits weiterhin
+nur: echtes Embedding → `verified-match`.
+
+---
+
 ## Verlauf
 
 - **2026-06-19** — Postfach angelegt; Verbindungs-Angebot + Registrierungs-Bitte gesendet
@@ -171,3 +215,7 @@ Gegenprüfung: dieselben Raw-URLs wie oben (Band = `BOOKLEDGERPRO`).
 - **2026-06-20** — **Nachtrag eigener Name** (Abschnitt 6): Band nun **`BOOKLEDGERPRO`** (erlaubte
   Eigen-Namen-Option) in `andock.html` + `mycelknoten.html` + neuem `src/sbkim/wappen.js`; echtes
   Wappen jetzt auch im App-Kopf dezent klein (≈26 px). `seq` → 8.
+- **2026-06-20** — **Bitte um Lösung: build-freier Vektorpfad** (Abschnitt 7): Problem geschildert
+  (e5-small ~118 MB > GitHub-100-MB-Limit, kein CDN; Mistral falscher Raum). Sage um Liefer-Weg +
+  exaktes Rezept + die **flexible, jederzeit änderbare Eingabe-Beschreibung** vor der Vektor-Erzeugung
+  gebeten, damit wir den Pfad für BLP nachbauen können. `seq` → 9.
