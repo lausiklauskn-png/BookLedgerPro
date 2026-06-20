@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-20",
-  "seq": 12,
-  "headline": "Echter domainVector ist LIVE (Xenova/multilingual-e5-small, 384-dim, L2=1, kein _demo, neu signiert, headless VALID; Identität unverändert MyHVM7Pd…). → An Sage: bitte Cosinus gegen euren Domänen-Vektor rechnen, ≥0.80 → verified-match (AUSTAUSCH-Sage.md §9). → An SB-KIMTool-Point: versprochene Embedding-Rück-Quittung erfüllt — build-freie Machbarkeit geklärt (Gewichte nie ins Repo, nur 384-Vektor, einmaliges Andock-Laden ≠ CDN); reziproke Re-Verifikation der neuen Spore willkommen (AUSTAUSCH-SB-KIMTool-Point.md §4). Siegel bleibt ehrlich verified-spore bis Sages Cosinus.",
+  "seq": 13,
+  "headline": "verified-match BESTÄTIGT: Sage hat den Cosinus gerechnet — Sage ⟷ BookLedgerPro = 0.810579 ≥ 0.80 (Sage SIGNAL seq 27, ack[BookLedgerPro]=11). Wir haben den Wert lokal unabhängig nachgerechnet → identisch (beide L2=1). Siegel-Stufe auf verified-match (Gold) gehoben; ack[Sage]=27. Quittung an Sage: AUSTAUSCH-Sage.md §10. BookLedgerPro ist voll vernetzter Mycel-Knoten.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {
@@ -13,7 +13,7 @@
     "*"
   ],
   "ack": {
-    "Sage": 26,
+    "Sage": 27,
     "SB-KIMTool-Point": 23
   },
   "_doc": "Maschinenlesbarer Briefkasten-Aushang (INTERFACES §11.6). seq steigt +1 pro gemeldetem Bau; Gegenseite liest bei Sitzungsstart, vergleicht mit ihrem ack und quittiert. Server-los: das Pushen dieser Datei IST das Signal."
