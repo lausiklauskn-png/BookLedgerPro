@@ -151,6 +151,41 @@ async function manageCard() {
     },
   });
 
+  // Drag-and-drop: Datei(en) direkt ins Fach ziehen → je Datei ein verschlüsselter
+  // 'datei'-Eintrag (umgeht das Typ-Menü). Ordner sind ein Datei-Baum, kein einzelner
+  // Wert — daher abgewiesen mit Hinweis (als ZIP ablegen). Name = Dateiname, bzw. die
+  // eingetippte Bezeichnung bei genau einer Datei.
+  async function addFilesAsEntries(files) {
+    out.replaceChildren();
+    const arr = Array.from(files || []);
+    if (!arr.length) return;
+    try {
+      for (const f of arr) {
+        const bytes = await readFileBytes(f);
+        const name = (arr.length === 1 && nameInp.value.trim()) ? nameInp.value.trim() : f.name;
+        await addEntry({ type: 'datei', name, value: bytesToB64u(bytes), fileName: f.name, mime: f.type || 'application/octet-stream' });
+      }
+      await repaint();
+    } catch (e) { out.textContent = e.message; }
+  }
+  const dropZone = el('div', { class: 'safe-dropzone', text: t('safe.dropHint') });
+  dropZone.addEventListener('dragover', (ev) => { ev.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', async (ev) => {
+    ev.preventDefault();
+    dropZone.classList.remove('dragover');
+    const dt = ev.dataTransfer;
+    if (!dt) return;
+    // Ordner-Erkennung (webkitGetAsEntry) → freundlich abweisen.
+    if (dt.items && dt.items.length) {
+      for (const it of dt.items) {
+        const entry = it.webkitGetAsEntry && it.webkitGetAsEntry();
+        if (entry && entry.isDirectory) { out.replaceChildren(); out.textContent = t('safe.dropFolder'); return; }
+      }
+    }
+    if (dt.files && dt.files.length) await addFilesAsEntries(dt.files);
+  });
+
   const list = entries.length
     ? el('ul', { style: 'list-style:none;padding:0;margin:0' }, entries.map((e) => entryRow(e)))
     : el('p', { class: 'muted small', text: t('safe.empty') });
@@ -162,6 +197,7 @@ async function manageCard() {
     ]),
     list,
     el('h3', { class: 'card-title', style: 'margin-top:1rem', text: t('safe.add') }),
+    dropZone,
     typeSel, nameInp, valTa, fileRow,
     el('div', { class: 'btn-row' }, [addBtn]),
     out,
