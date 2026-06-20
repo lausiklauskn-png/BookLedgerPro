@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SBKIM-Andock — BookLedgerPro</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; padding:1.4rem; max-width:900px; margin:0 auto;
+    font-family: system-ui, "Segoe UI", Roboto, sans-serif; line-height:1.55;
+    background:#0b1020; color:#e8ecf6; }
+  h1 { font-size:1.5rem; margin:.2rem 0 .2rem; }
+  h2 { font-size:1.1rem; margin:1.6rem 0 .5rem; border-bottom:1px solid #26314f; padding-bottom:.3rem; }
+  p, li { color:#c5cde0; }
+  code { background:#161d33; padding:.1rem .35rem; border-radius:4px; font-size:.92em; }
+  label { display:block; margin:.6rem 0 .2rem; font-weight:600; color:#dfe6f5; }
+  input, select, textarea { width:100%; box-sizing:border-box; background:#121a30;
+    color:#eef2fb; border:1px solid #2b3858; border-radius:7px; padding:.5rem .6rem; font-size:.95rem; }
+  textarea { min-height:90px; resize:vertical; }
+  button { background:#2a6df4; color:#fff; border:none; border-radius:8px;
+    padding:.55rem .95rem; font-size:.95rem; cursor:pointer; margin:.35rem .4rem .35rem 0; font-weight:600; }
+  button:hover { background:#3f80ff; }
+  button.ghost { background:#1c2745; }
+  .row { display:flex; flex-wrap:wrap; gap:.5rem 1rem; }
+  .row > div { flex:1 1 220px; }
+  .card { background:#0f1730; border:1px solid #223057; border-radius:12px; padding:1rem 1.1rem; margin:1rem 0; }
+  #siegel { width:240px; max-width:60vw; margin:.4rem auto; }
+  #siegel svg { width:240px; height:240px; max-width:60vw; display:block; margin:0 auto; }
+  pre { background:#0a1024; border:1px solid #223057; border-radius:8px; padding:.7rem;
+    overflow:auto; font-size:.78rem; max-height:340px; white-space:pre-wrap; word-break:break-all; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .warn { color:#ffd27a; }
+  .ok { color:#7ee0a8; }
+  small { color:#93a0bd; }
+</style>
+</head>
+<body>
+
+<h1>SBKIM-Andock — eine eigene Zelle im Mycel</h1>
+<p><strong>BookLedgerPro</strong>, dies ist eine vollständige, eigenständige Bauanleitung
+von <strong>Sage-Protokol</strong> (Spec-Hub des SBKIM-Mycels). Eine einzige Datei, keine
+Installation. Sie erzeugt für euch:</p>
+<ul>
+  <li>eine <strong>eigene kryptografische Identität</strong> (Ed25519-Schlüsselpaar im Browser),</li>
+  <li>eine <strong>signierte <code>spore.json</code></strong> (eure Netz-Visitenkarte) — byte-kompatibel mit Sages Verifizierer,</li>
+  <li>einen <strong>Domain-Vektor</strong> (echtes <code>e5-small</code>-Embedding, 384-dim) für den semantischen Match,</li>
+  <li>das <strong>SBKIM-Siegel</strong> als Bild (SVG + PNG-Download),</li>
+  <li>die <strong>Briefkasten-Dateien</strong> (<code>SIGNAL.json</code> + <code>AUSTAUSCH-Sage.md</code>), mit denen ihr serverlos andockt.</li>
+</ul>
+<p><small>Voraussetzung: ein aktueller Chrome / Edge / Firefox / Safari (WebCrypto mit
+Ed25519). Alles läuft <strong>lokal in eurem Browser</strong> — kein Server, keine
+Eigenanfrage ins Netz außer dem optionalen Modell-Download in Schritt&nbsp;2.</small></p>
+
+<div class="card">
+  <h2>Das SBKIM-Siegel</h2>
+  <p>Das ist das gleichwertige Siegel — dieselbe Vorlage, die Sage und alle Knoten tragen.
+  Es bezeugt durch <em>Selbst-Prüfung</em>, dass eure Zelle die SBKIM-Pflicht-Bausteine
+  trägt (Identität, Spore, Embedding, Match, Handshake). „Self-inscribing": kein
+  Fremd-Aussteller, sondern eine bezeugte Bau-Tat.</p>
+  <div id="siegel"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="goldRingGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#FFF6C8"/>
+      <stop offset="15%"  stop-color="#FFE066"/>
+      <stop offset="40%"  stop-color="#F4C430"/>
+      <stop offset="70%"  stop-color="#A67C00"/>
+      <stop offset="100%" stop-color="#5B3D00"/>
+    </linearGradient>
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#FFF1A8"/>
+      <stop offset="35%"  stop-color="#FFD700"/>
+      <stop offset="55%"  stop-color="#E5B312"/>
+      <stop offset="85%"  stop-color="#8B6914"/>
+      <stop offset="100%" stop-color="#5B3D00"/>
+    </linearGradient>
+    <linearGradient id="goldRibbonGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#FFE873"/>
+      <stop offset="50%"  stop-color="#D4A017"/>
+      <stop offset="100%" stop-color="#7A5800"/>
+    </linearGradient>
+    <linearGradient id="goldShieldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#FFE066"/>
+      <stop offset="100%" stop-color="#A67C00"/>
+    </linearGradient>
+    <radialGradient id="navyDeep" cx="50%" cy="40%" r="70%">
+      <stop offset="0%"   stop-color="#1A2C5C"/>
+      <stop offset="60%"  stop-color="#0E1A40"/>
+      <stop offset="100%" stop-color="#050A1F"/>
+    </radialGradient>
+    <radialGradient id="gemGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%"   stop-color="#9BC4FF"/>
+      <stop offset="35%"  stop-color="#3A6FE8"/>
+      <stop offset="100%" stop-color="#0B1F70"/>
+    </radialGradient>
+    <radialGradient id="treeGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#FFF1A8" stop-opacity="1"/>
+      <stop offset="60%"  stop-color="#F4C430" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#F4C430" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="darkDropShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
+      <feOffset dx="3" dy="5" result="shadow"/>
+      <feComponentTransfer><feFuncA type="linear" slope="1.0"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="embossShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="0" dy="3" result="off"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.65"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="strongShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+      <feOffset dx="0" dy="5" result="off"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.8"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- Korona-Blur (Akkretions-Disk-Stil aus Sage-Page .bh-disk).
+         stdDeviation=22 entspricht in etwa dem `filter: blur(10px)` der
+         CSS-Variante bei 280-px-Skalierung; im 1024-Viewbox stärker
+         dosiert, damit die zwölf farbigen Arc-Segmente zu einem
+         weichen Conic-Gradient verschmelzen. -->
+    <filter id="bhCorona" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="22"/>
+    </filter>
+    <filter id="bhCoronaInner" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="14"/>
+    </filter>
+    <path id="topArc" d="M 141.1 412.6 A 384 384 0 0 1 882.9 412.6" fill="none"/>
+  </defs>
+
+  <rect width="1024" height="1024" fill="#050505"/>
+
+  <!-- Akkretions-Disk-Korona (Vorbild: .bh-disk auf Sage-Page).
+       Conic-Gradient orange → gold → magenta → blau → türkis → orange
+       als zwölf Arc-Segmente (je 30°) um den Siegel-Außenrand
+       (Radius 475, knapp außerhalb des Gold-Rings r=444), mit
+       feGaussianBlur stdDeviation=22 → smoothe Conic-Anmutung.
+       Innerer Ring (Radius 460, schmaler Stroke, weniger Blur)
+       entspricht .bh-disk-2 — dezente zweite Schicht. -->
+  <g filter="url(#bhCorona)" opacity="0.78">
+    <path d="M 512 37 A 475 475 0 0 1 749.5 100.6"        fill="none" stroke="#ff7a00" stroke-width="60" stroke-linecap="butt"/>
+    <path d="M 749.5 100.6 A 475 475 0 0 1 923.4 274.5"   fill="none" stroke="#ffaf36" stroke-width="60" stroke-linecap="butt"/>
+    <path d="M 923.4 274.5 A 475 475 0 0 1 987 512"       fill="none" stroke="#f7c569" stroke-width="60" stroke-linecap="butt"/>
+    <path d="M 987 512 A 475 475 0 0 1 923.4 749.5"       fill="none" stroke="#dd8598" stroke-width="60" stroke-linecap="butt"/>
+    <path d="M 923.4 749.5 A 475 475 0 0 1 749.5 923.4"   fill="none" stroke="#bf50c1" stroke-width="60" stroke-linecap="butt"/>
+    <path d="M 749.5 923.4 A 475 475 0 0 1 512 987"       fill="none" stroke="#8754c8" stroke-width="60" stroke-linecap="butt"/>
+    <path d="M 512 987 A 475 475 0 0 1 274.5 923.4"       fill="none" stroke="#4f57ce" stroke-width="60" stroke-linecap="butt"/>
+    <path d="M 274.5 923.4 A 475 475 0 0 1 100.6 749.5"   fill="none" stroke="#2a80c2" stroke-width="60" stroke-linecap="butt"/>
+    <path d="M 100.6 749.5 A 475 475 0 0 1 37 512"        fill="none" stroke="#0cb4af" stroke-width="60" stroke-linecap="butt"/>
+    <path d="M 37 512 A 475 475 0 0 1 100.6 274.5"        fill="none" stroke="#2abc8b" stroke-width="60" stroke-linecap="butt"/>
+    <path d="M 100.6 274.5 A 475 475 0 0 1 274.5 100.6"   fill="none" stroke="#71a65d" stroke-width="60" stroke-linecap="butt"/>
+    <path d="M 274.5 100.6 A 475 475 0 0 1 512 37"        fill="none" stroke="#b8902e" stroke-width="60" stroke-linecap="butt"/>
+  </g>
+  <g filter="url(#bhCoronaInner)" opacity="0.55">
+    <path d="M 512 52 A 460 460 0 0 1 742 113"            fill="none" stroke="#ff7a00" stroke-width="32" stroke-linecap="butt"/>
+    <path d="M 742 113 A 460 460 0 0 1 911 282"           fill="none" stroke="#ffaf36" stroke-width="32" stroke-linecap="butt"/>
+    <path d="M 911 282 A 460 460 0 0 1 972 512"           fill="none" stroke="#f7c569" stroke-width="32" stroke-linecap="butt"/>
+    <path d="M 972 512 A 460 460 0 0 1 911 742"           fill="none" stroke="#dd8598" stroke-width="32" stroke-linecap="butt"/>
+    <path d="M 911 742 A 460 460 0 0 1 742 911"           fill="none" stroke="#bf50c1" stroke-width="32" stroke-linecap="butt"/>
+    <path d="M 742 911 A 460 460 0 0 1 512 972"           fill="none" stroke="#8754c8" stroke-width="32" stroke-linecap="butt"/>
+    <path d="M 512 972 A 460 460 0 0 1 282 911"           fill="none" stroke="#4f57ce" stroke-width="32" stroke-linecap="butt"/>
+    <path d="M 282 911 A 460 460 0 0 1 113 742"           fill="none" stroke="#2a80c2" stroke-width="32" stroke-linecap="butt"/>
+    <path d="M 113 742 A 460 460 0 0 1 52 512"            fill="none" stroke="#0cb4af" stroke-width="32" stroke-linecap="butt"/>
+    <path d="M 52 512 A 460 460 0 0 1 113 282"            fill="none" stroke="#2abc8b" stroke-width="32" stroke-linecap="butt"/>
+    <path d="M 113 282 A 460 460 0 0 1 282 113"           fill="none" stroke="#71a65d" stroke-width="32" stroke-linecap="butt"/>
+    <path d="M 282 113 A 460 460 0 0 1 512 52"            fill="none" stroke="#b8902e" stroke-width="32" stroke-linecap="butt"/>
+  </g>
+
+  <!-- Drop shadow under seal -->
+  <circle cx="512" cy="520" r="444" fill="#000" opacity="0.5"/>
+
+  <!-- Gold ring + navy interior -->
+  <circle cx="512" cy="512" r="444" fill="url(#goldRingGrad)"/>
+  <circle cx="512" cy="512" r="368" fill="url(#navyDeep)"/>
+  <circle cx="512" cy="512" r="372" fill="none" stroke="url(#goldRingGrad)" stroke-width="4"/>
+  <circle cx="512" cy="512" r="367" fill="none" stroke="#3D2914" stroke-width="1" opacity="0.5"/>
+  <circle cx="512" cy="512" r="441" fill="none" stroke="#3D2914" stroke-width="1" opacity="0.4"/>
+  <circle cx="512" cy="512" r="445" fill="none" stroke="#FFE066" stroke-width="1" opacity="0.5"/>
+
+  <!-- Engraved dots on inner border -->
+  <g fill="#3A2A0A" opacity="0.55">
+    <circle cx="512.0" cy="120.0" r="1.5"/><circle cx="539.3" cy="121.0" r="1.5"/><circle cx="566.6" cy="123.8" r="1.5"/><circle cx="593.5" cy="128.6" r="1.5"/><circle cx="620.0" cy="135.2" r="1.5"/><circle cx="646.1" cy="143.6" r="1.5"/><circle cx="671.4" cy="153.9" r="1.5"/><circle cx="696.0" cy="165.9" r="1.5"/><circle cx="719.7" cy="179.6" r="1.5"/><circle cx="742.4" cy="194.9" r="1.5"/><circle cx="764.0" cy="211.7" r="1.5"/><circle cx="784.3" cy="230.0" r="1.5"/><circle cx="803.3" cy="249.7" r="1.5"/><circle cx="820.9" cy="270.7" r="1.5"/><circle cx="837.0" cy="292.8" r="1.5"/><circle cx="851.5" cy="316.0" r="1.5"/><circle cx="864.3" cy="340.2" r="1.5"/><circle cx="875.5" cy="365.2" r="1.5"/><circle cx="884.8" cy="390.9" r="1.5"/><circle cx="892.4" cy="417.2" r="1.5"/><circle cx="898.0" cy="443.9" r="1.5"/><circle cx="901.9" cy="471.0" r="1.5"/><circle cx="903.8" cy="498.3" r="1.5"/><circle cx="903.8" cy="525.7" r="1.5"/><circle cx="901.9" cy="553.0" r="1.5"/><circle cx="898.0" cy="580.1" r="1.5"/><circle cx="892.4" cy="606.8" r="1.5"/><circle cx="884.8" cy="633.1" r="1.5"/><circle cx="875.5" cy="658.8" r="1.5"/><circle cx="864.3" cy="683.8" r="1.5"/><circle cx="851.5" cy="708.0" r="1.5"/><circle cx="837.0" cy="731.2" r="1.5"/><circle cx="820.9" cy="753.3" r="1.5"/><circle cx="803.3" cy="774.3" r="1.5"/><circle cx="784.3" cy="794.0" r="1.5"/><circle cx="764.0" cy="812.3" r="1.5"/><circle cx="742.4" cy="829.1" r="1.5"/><circle cx="719.7" cy="844.4" r="1.5"/><circle cx="696.0" cy="858.1" r="1.5"/><circle cx="671.4" cy="870.1" r="1.5"/><circle cx="646.1" cy="880.4" r="1.5"/><circle cx="620.0" cy="888.8" r="1.5"/><circle cx="593.5" cy="895.4" r="1.5"/><circle cx="566.6" cy="900.2" r="1.5"/><circle cx="539.3" cy="903.0" r="1.5"/><circle cx="512.0" cy="904.0" r="1.5"/><circle cx="484.7" cy="903.0" r="1.5"/><circle cx="457.4" cy="900.2" r="1.5"/><circle cx="430.5" cy="895.4" r="1.5"/><circle cx="404.0" cy="888.8" r="1.5"/><circle cx="377.9" cy="880.4" r="1.5"/><circle cx="352.6" cy="870.1" r="1.5"/><circle cx="328.0" cy="858.1" r="1.5"/><circle cx="304.3" cy="844.4" r="1.5"/><circle cx="281.6" cy="829.1" r="1.5"/><circle cx="260.0" cy="812.3" r="1.5"/><circle cx="239.7" cy="794.0" r="1.5"/><circle cx="220.7" cy="774.3" r="1.5"/><circle cx="203.1" cy="753.3" r="1.5"/><circle cx="187.0" cy="731.2" r="1.5"/><circle cx="172.5" cy="708.0" r="1.5"/><circle cx="159.7" cy="683.8" r="1.5"/><circle cx="148.5" cy="658.8" r="1.5"/><circle cx="139.2" cy="633.1" r="1.5"/><circle cx="131.6" cy="606.8" r="1.5"/><circle cx="126.0" cy="580.1" r="1.5"/><circle cx="122.1" cy="553.0" r="1.5"/><circle cx="120.2" cy="525.7" r="1.5"/><circle cx="120.2" cy="498.3" r="1.5"/><circle cx="122.1" cy="471.0" r="1.5"/><circle cx="126.0" cy="443.9" r="1.5"/><circle cx="131.6" cy="417.2" r="1.5"/><circle cx="139.2" cy="390.9" r="1.5"/><circle cx="148.5" cy="365.2" r="1.5"/><circle cx="159.7" cy="340.2" r="1.5"/><circle cx="172.5" cy="316.0" r="1.5"/><circle cx="187.0" cy="292.8" r="1.5"/><circle cx="203.1" cy="270.7" r="1.5"/><circle cx="220.7" cy="249.7" r="1.5"/><circle cx="239.7" cy="230.0" r="1.5"/><circle cx="260.0" cy="211.7" r="1.5"/><circle cx="281.6" cy="194.9" r="1.5"/><circle cx="304.3" cy="179.6" r="1.5"/><circle cx="328.0" cy="165.9" r="1.5"/><circle cx="352.6" cy="153.9" r="1.5"/><circle cx="377.9" cy="143.6" r="1.5"/><circle cx="404.0" cy="135.2" r="1.5"/><circle cx="430.5" cy="128.6" r="1.5"/><circle cx="457.4" cy="123.8" r="1.5"/><circle cx="484.7" cy="121.0" r="1.5"/>
+  </g>
+
+  <!-- OFFIZIELLE BESTÄTIGUNG -->
+  <text font-family="Georgia, 'Times New Roman', serif" font-size="62" font-weight="bold" fill="url(#goldText)" letter-spacing="1" filter="url(#darkDropShadow)">
+    <textPath href="#topArc" startOffset="50%" text-anchor="middle">OFFIZIELLE BESTÄTIGUNG</textPath>
+  </text>
+
+  <!-- SBKIM -->
+  <g filter="url(#strongShadow)">
+    <text x="512" y="500" font-family="Georgia, 'Times New Roman', serif" font-size="190" font-weight="bold" fill="url(#goldText)" text-anchor="middle" stroke="#3D2914" stroke-width="2.5" letter-spacing="2">SBKIM</text>
+  </g>
+
+  <!-- SIEGEL -->
+  <g filter="url(#embossShadow)">
+    <text x="512" y="620" font-family="Georgia, 'Times New Roman', serif" font-size="110" font-weight="bold" fill="url(#goldText)" text-anchor="middle" stroke="#3D2914" stroke-width="2" letter-spacing="6">SIEGEL</text>
+  </g>
+
+  <!-- Left medallion (Schild) -->
+  <g>
+    <circle cx="188" cy="555" r="84" fill="#3D2914" opacity="0.85"/>
+    <circle cx="188" cy="555" r="80" fill="url(#goldRingGrad)"/>
+    <circle cx="188" cy="555" r="70" fill="url(#navyDeep)"/>
+    <circle cx="188" cy="555" r="70" fill="none" stroke="#D4A017" stroke-width="1.5" opacity="0.7"/>
+    <g transform="translate(188 555)">
+      <path d="M -34 -36 L 34 -36 C 34 0, 22 30, 0 44 C -22 30, -34 0, -34 -36 Z" fill="url(#goldShieldGrad)" stroke="#3D2914" stroke-width="2"/>
+      <path d="M -16 0 L -4 14 L 20 -12" fill="none" stroke="#6B4A00" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <circle cx="188" cy="643" r="11" fill="#3D2914"/>
+    <circle cx="188" cy="643" r="9" fill="url(#gemGrad)"/>
+    <ellipse cx="185.3" cy="639.4" rx="3.15" ry="1.98" fill="#B8DCFF" opacity="0.85"/>
+    <circle cx="184.4" cy="638.5" r="1.17" fill="#FFFFFF" opacity="0.9"/>
+  </g>
+
+  <!-- Right medallion (Mycel) -->
+  <g>
+    <circle cx="836" cy="555" r="84" fill="#3D2914" opacity="0.85"/>
+    <circle cx="836" cy="555" r="80" fill="url(#goldRingGrad)"/>
+    <circle cx="836" cy="555" r="70" fill="url(#navyDeep)"/>
+    <circle cx="836" cy="555" r="70" fill="none" stroke="#D4A017" stroke-width="1.5" opacity="0.7"/>
+    <g transform="translate(836 555)">
+      <circle cx="0" cy="-10" r="14" fill="url(#treeGlow)"/>
+      <line x1="0" y1="40" x2="0" y2="-10" stroke="#F4C430" stroke-width="4" stroke-linecap="round"/>
+      <line x1="0" y1="-10" x2="-37.6" y2="-23.7" stroke="#F4C430" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="-37.6" y1="-23.7" x2="-55.5" y2="-22.1" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="-55.5" cy="-22.1" r="2.2" fill="#FFE873"/>
+      <line x1="-37.6" y1="-23.7" x2="-50.3" y2="-36.4" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="-50.3" cy="-36.4" r="2.2" fill="#FFE873"/>
+      <circle cx="-37.6" cy="-23.7" r="2.5" fill="#FFE873"/>
+      <line x1="0" y1="-10" x2="-28.3" y2="-38.3" stroke="#F4C430" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="-28.3" y1="-38.3" x2="-45.2" y2="-44.4" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="-45.2" cy="-44.4" r="2.2" fill="#FFE873"/>
+      <line x1="-28.3" y1="-38.3" x2="-34.4" y2="-55.2" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="-34.4" cy="-55.2" r="2.2" fill="#FFE873"/>
+      <circle cx="-28.3" cy="-38.3" r="2.5" fill="#FFE873"/>
+      <line x1="0" y1="-10" x2="-13.7" y2="-47.6" stroke="#F4C430" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="-13.7" y1="-47.6" x2="-26.4" y2="-60.3" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="-26.4" cy="-60.3" r="2.2" fill="#FFE873"/>
+      <line x1="-13.7" y1="-47.6" x2="-12.1" y2="-65.5" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="-12.1" cy="-65.5" r="2.2" fill="#FFE873"/>
+      <circle cx="-13.7" cy="-47.6" r="2.5" fill="#FFE873"/>
+      <line x1="0" y1="-10" x2="13.7" y2="-47.6" stroke="#F4C430" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="13.7" y1="-47.6" x2="12.1" y2="-65.5" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="12.1" cy="-65.5" r="2.2" fill="#FFE873"/>
+      <line x1="13.7" y1="-47.6" x2="26.4" y2="-60.3" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="26.4" cy="-60.3" r="2.2" fill="#FFE873"/>
+      <circle cx="13.7" cy="-47.6" r="2.5" fill="#FFE873"/>
+      <line x1="0" y1="-10" x2="28.3" y2="-38.3" stroke="#F4C430" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="28.3" y1="-38.3" x2="34.4" y2="-55.2" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="34.4" cy="-55.2" r="2.2" fill="#FFE873"/>
+      <line x1="28.3" y1="-38.3" x2="45.2" y2="-44.4" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="45.2" cy="-44.4" r="2.2" fill="#FFE873"/>
+      <circle cx="28.3" cy="-38.3" r="2.5" fill="#FFE873"/>
+      <line x1="0" y1="-10" x2="37.6" y2="-23.7" stroke="#F4C430" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="37.6" y1="-23.7" x2="50.3" y2="-36.4" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="50.3" cy="-36.4" r="2.2" fill="#FFE873"/>
+      <line x1="37.6" y1="-23.7" x2="55.5" y2="-22.1" stroke="#F4C430" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="55.5" cy="-22.1" r="2.2" fill="#FFE873"/>
+      <circle cx="37.6" cy="-23.7" r="2.5" fill="#FFE873"/>
+    </g>
+    <circle cx="836" cy="643" r="11" fill="#3D2914"/>
+    <circle cx="836" cy="643" r="9" fill="url(#gemGrad)"/>
+    <ellipse cx="833.3" cy="639.4" rx="3.15" ry="1.98" fill="#B8DCFF" opacity="0.85"/>
+    <circle cx="832.4" cy="638.5" r="1.17" fill="#FFFFFF" opacity="0.9"/>
+  </g>
+
+  <!-- Infinity medallion -->
+  <g>
+    <circle cx="512" cy="750" r="84" fill="#3D2914" opacity="0.85"/>
+    <circle cx="512" cy="750" r="80" fill="url(#goldRingGrad)"/>
+    <circle cx="512" cy="750" r="70" fill="url(#navyDeep)"/>
+    <circle cx="512" cy="750" r="70" fill="none" stroke="#D4A017" stroke-width="1.5" opacity="0.7"/>
+    <path d="M 470.2 750 C 470.2 727.2, 500.6 727.2, 512 750 C 523.4 772.8, 553.8 772.8, 553.8 750 C 553.8 727.2, 523.4 727.2, 512 750 C 500.6 772.8, 470.2 772.8, 470.2 750 Z" fill="none" stroke="url(#goldRingGrad)" stroke-width="10" stroke-linejoin="round"/>
+    <g fill="#FFE873">
+      <circle cx="460" cy="710" r="2.5"/>
+      <circle cx="564" cy="710" r="2.5"/>
+      <circle cx="452" cy="786" r="2"/>
+      <circle cx="572" cy="786" r="2"/>
+    </g>
+  </g>
+
+  <!-- Bottom ribbon SELF-INSCRIBING -->
+  <g>
+    <path d="M 28 880 L 200 850 L 200 925 L 28 945 Z" fill="url(#goldRibbonGrad)" stroke="#3D2914" stroke-width="2"/>
+    <path d="M 28 880 L 70 905 L 28 945 Z" fill="#7A5800"/>
+    <path d="M 996 880 L 824 850 L 824 925 L 996 945 Z" fill="url(#goldRibbonGrad)" stroke="#3D2914" stroke-width="2"/>
+    <path d="M 996 880 L 954 905 L 996 945 Z" fill="#7A5800"/>
+    <path d="M 180 850 Q 512 935, 844 850 L 844 940 Q 512 1018, 180 940 Z" fill="url(#goldRibbonGrad)" stroke="#3D2914" stroke-width="2.5"/>
+    <path d="M 200 870 Q 512 950, 824 870" fill="none" stroke="#FFE873" stroke-width="1.2" opacity="0.55"/>
+    <path d="M 200 920 Q 512 995, 824 920" fill="none" stroke="#3D2914" stroke-width="1" opacity="0.5"/>
+    <path id="ribbonText" d="M 222 902 Q 512 980, 802 902" fill="none"/>
+    <text font-family="Georgia, 'Times New Roman', serif" font-size="38" font-weight="bold" fill="#3D2914" letter-spacing="1">
+      <textPath href="#ribbonText" startOffset="50%" text-anchor="middle">SAGE OBSERVATORIUM</textPath>
+    </text>
+  </g>
+</svg></div>
+  <div style="text-align:center">
+    <button id="dlPng">Siegel als PNG herunterladen (1024×1024)</button>
+    <button id="dlSvg" class="ghost">Siegel als SVG herunterladen</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Schritt 0 — eure Eckdaten</h2>
+  <div class="row">
+    <div>
+      <label for="nodeName">Knoten-Name</label>
+      <input id="nodeName" value="BookLedgerPro">
+    </div>
+    <div>
+      <label for="nodeType">Knoten-Typ</label>
+      <select id="nodeType">
+        <option value="hybrid" selected>hybrid (empfängt & antwortet)</option>
+        <option value="provider">provider</option>
+        <option value="seeker">seeker</option>
+      </select>
+    </div>
+  </div>
+  <label for="domain">Domäne (kurz, z.B. „Buchhaltung / Belege")</label>
+  <input id="domain" placeholder="Buchhaltung / Belege / Rechnungen">
+  <label for="desc">Domänen-Beschreibung (1–3 Sätze, in euren Worten)</label>
+  <textarea id="desc" placeholder="BookLedgerPro verwaltet Belege, Rechnungen und Kontenabgleich für kleine Betriebe …"></textarea>
+  <label for="keywords">Schlüsselwörter (Komma-getrennt)</label>
+  <input id="keywords" placeholder="Rechnung, Beleg, Konto, Umsatzsteuer, Buchung">
+  <label for="endpoint">Endpoint-URL (eure veröffentlichte App, mit Schrägstrich am Ende)</label>
+  <input id="endpoint" placeholder="https://<euer-pages-host>/BookLedgerPro/">
+  <label for="rawBase">Raw-Basis-URL eures Repos (für die Briefkasten-Links)</label>
+  <input id="rawBase" placeholder="https://raw.githubusercontent.com/<owner>/<repo>/main">
+  <p><small>Genau diese URLs gehören später in <code>SIGNAL.json</code>. <code>raw/main</code>
+  ist der serverlose „Dead-Drop", den Sage liest.</small></p>
+</div>
+
+<div class="card">
+  <h2>Schritt 1 — Identität erzeugen</h2>
+  <p>Erzeugt euer Ed25519-Schlüsselpaar. Aus dem öffentlichen Schlüssel wird eure
+  unveränderliche <code>nodeId = base64url(SHA-256(roher Pubkey))</code> abgeleitet.</p>
+  <button id="genIdentity">1. Identität erzeugen</button>
+  <p>nodeId: <span id="nodeId" class="mono ok">—</span></p>
+</div>
+
+<div class="card">
+  <h2>Schritt 2 — Domain-Vektor (Embedding)</h2>
+  <p>Berechnet aus Domäne + Beschreibung + Schlüsselwörtern einen 384-dim-Vektor mit
+  <code>Xenova/multilingual-e5-small</code> (Präfix <code>passage:</code>, mean-pool,
+  L2-normalisiert) — exakt wie Sages Modul 03. Erstes Laden lädt das Modell einmalig
+  (~110&nbsp;MB), danach gecached. <strong>Pflicht für <code>verified-match</code></strong>
+  (echter Cosinus-Abgleich ≥ 0.80).</p>
+  <button id="genVector">2. Domain-Vektor berechnen</button>
+  <button id="useDemo" class="ghost">nur Test: Demo-Vektor (markiert _demo)</button>
+  <p id="status"><small>—</small></p>
+</div>
+
+<div class="card">
+  <h2>Schritt 3 — Spore bauen & signieren</h2>
+  <p>Baut die <code>spore.json</code> aus euren Daten, signiert sie kanonisch (Ed25519
+  über whitespace-freies, rekursiv alphabetisch sortiertes JSON ohne das Feld
+  <code>signature</code>) und prüft sie sofort selbst gegen Sages vier Prüfpunkte.</p>
+  <button id="buildSpore">3. Spore bauen & signieren</button>
+  <pre id="sporeOut" class="mono">—</pre>
+</div>
+
+<div class="card">
+  <h2>Schritt 4 — Dateien herunterladen & andocken</h2>
+  <p>Ladet die drei Dateien herunter und legt sie in eurem Repo ab, dann veröffentlichen
+  (GitHub Pages o.ä.):</p>
+  <ul>
+    <li><code>spore.json</code> → <code>sbkim/spore.json</code></li>
+    <li><code>SIGNAL.json</code> → <code>sbkim/SIGNAL.json</code></li>
+    <li><code>AUSTAUSCH-Sage.md</code> → <code>sbkim/AUSTAUSCH-Sage.md</code></li>
+  </ul>
+  <button id="dlSpore">spore.json</button>
+  <button id="dlSignal">SIGNAL.json</button>
+  <button id="dlAustausch">AUSTAUSCH-Sage.md</button>
+  <button id="dlKeys" class="ghost">⚠ Schlüssel-Backup (GEHEIM)</button>
+  <p class="warn"><small>Das Schlüssel-Backup enthält euren <strong>privaten</strong>
+  Schlüssel — niemals committen oder veröffentlichen, nur offline sichern. Geht er
+  verloren, wechselt eure nodeId und ihr müsst neu andocken.</small></p>
+  <p>Danach sagt Klaus / Sage Bescheid (Raw-URL eurer <code>spore.json</code> +
+  <code>SIGNAL.json</code>). Sage prüft eure Spore, legt das Gegen-Postfach
+  <code>AUSTAUSCH-BookLedgerPro.md</code> an, trägt euch in <code>NETZ-STAND.md</code> ein
+  und quittiert per <code>ack</code>. Ab dann seid ihr ein Knoten im Mycel.</p>
+</div>
+
+<pre id="out" class="mono"></pre>
+
+<p><small>Erzeugt von Sage-Protokol · SBKIM-Protokoll <code>protocolVersion 0.1</code> ·
+Andock-Konventionen INTERFACES §11. Diese Datei ist Briefkasten-Inhalt = nachprüfbar,
+nichts wird heimlich gesendet.</small></p>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var out = $("out");
+  function log(m){ out.textContent += m + "\n"; }
+  function setStatus(m){ $("status").innerHTML = "<small>" + m + "</small>"; }
+
+  // ---- byte-kompatibel mit Sage Modul 02 / INTERFACES §11.1 ----
+  function b64url(buf){
+    var v = new Uint8Array(buf), bin = "";
+    for (var i=0;i<v.length;i++) bin += String.fromCharCode(v[i]);
+    return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  }
+  function b64urlDecode(str){
+    var pad = str.length % 4 === 0 ? "" : "====".slice(str.length % 4);
+    var b = atob(str.replace(/-/g,"+").replace(/_/g,"/") + pad);
+    var u = new Uint8Array(b.length);
+    for (var i=0;i<b.length;i++) u[i] = b.charCodeAt(i);
+    return u;
+  }
+  function canonicalize(value){
+    if (value === null) return null;
+    if (Array.isArray(value)) return value.map(canonicalize);
+    if (typeof value === "object"){
+      var o = {}, keys = Object.keys(value).sort();
+      for (var i=0;i<keys.length;i++) o[keys[i]] = canonicalize(value[keys[i]]);
+      return o;
+    }
+    return value;
+  }
+  function canonicalBytes(obj){
+    return new TextEncoder().encode(JSON.stringify(canonicalize(obj)));
+  }
+  function download(data, name, type){
+    var blob = (data instanceof Blob) ? data : new Blob([data], {type: type || "application/octet-stream"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  }
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+  var state = { identity:null, domainVector:null, isDemo:false, spore:null };
+
+  // ---- Schritt 1 ----
+  async function genIdentity(){
+    if (!(window.crypto && crypto.subtle)){ alert("WebCrypto fehlt in diesem Browser."); return; }
+    var kp;
+    try {
+      kp = await crypto.subtle.generateKey({ name:"Ed25519" }, true, ["sign","verify"]);
+    } catch(e){
+      log("FEHLER Ed25519: " + e.message);
+      alert("Ed25519 ist in diesem Browser nicht verfügbar. Bitte aktuellen Chrome/Edge/Firefox/Safari nutzen.");
+      return;
+    }
+    var pj = await crypto.subtle.exportKey("jwk", kp.publicKey);
+    var privJwk = await crypto.subtle.exportKey("jwk", kp.privateKey);
+    // Gleiche JWK-Form wie Sages bereits als VALID geprüfter Referenz-Generator.
+    var publicKeyJwk = { alg:"Ed25519", crv:"Ed25519", ext:true, key_ops:["verify"], kty:"OKP", x: pj.x };
+    var raw = await crypto.subtle.exportKey("raw", kp.publicKey);
+    var hash = await crypto.subtle.digest("SHA-256", raw);
+    var nodeId = b64url(hash);
+    state.identity = { kp:kp, publicKeyJwk:publicKeyJwk, privJwk:privJwk, nodeId:nodeId };
+    $("nodeId").textContent = nodeId;
+    log("✓ Identitaet erzeugt. nodeId = " + nodeId);
+    log("  WICHTIG: Schluessel-Backup (Schritt 4) herunterladen und SICHER offline halten.");
+  }
+
+  // ---- Schritt 2 ----
+  function domainText(){
+    return [$("domain").value.trim(), $("desc").value.trim(), $("keywords").value.trim()]
+      .filter(Boolean).join(". ");
+  }
+  async function genVector(){
+    // BLP-Vendor-Anpassung (CLAUDE.md Regel #1: build-frei, KEINE CDNs):
+    // Der urspruengliche Live-CDN-Import von @xenova/transformers ist hier DEAKTIVIERT.
+    // Ein echtes Embedding folgt erst build-frei (Roadmap-Schritt 6.4); bis dahin den
+    // Demo-Vektor nutzen (Knopf darunter, wird als _demo markiert -> Stufe verified-spore).
+    var text = domainText();
+    if (!text){ alert("Erst Domaene/Beschreibung (Schritt 0) ausfuellen."); return; }
+    setStatus("Echtes Embedding (CDN) ist in BookLedgerPro deaktiviert (Regel #1) - bitte Demo-Vektor nutzen.");
+    log("Hinweis (Regel #1): echtes e5-Embedding via CDN ist in BookLedgerPro deaktiviert. Bitte Demo-Vektor verwenden (markiert _demo).");
+  }
+  function demoVector(seed){
+    var s = 0, i;
+    for (i=0;i<seed.length;i++) s = (s*31 + seed.charCodeAt(i)) >>> 0;
+    var v = new Array(384);
+    for (i=0;i<384;i++){ s = (1103515245*s + 12345) >>> 0; v[i] = (s/0xffffffff)*2 - 1; }
+    var norm = Math.sqrt(v.reduce(function(a,x){ return a + x*x; }, 0)) || 1;
+    return v.map(function(x){ return x/norm; });
+  }
+  function useDemo(){
+    var seed = $("nodeName").value.trim() || "BookLedgerPro";
+    state.domainVector = demoVector(seed);
+    state.isDemo = true;
+    setStatus("⚠ Demo-Vektor gesetzt (nur Test, KEIN echter Match).");
+    log("⚠ Demo-Vektor gesetzt — Spore wird mit _demo:[\"domainVector\"] markiert (nur verified-spore).");
+  }
+
+  // ---- Schritt 3 ----
+  async function buildSpore(){
+    if (!state.identity){ alert("Erst Schritt 1 (Identitaet)."); return; }
+    var domain = $("domain").value.trim();
+    var endpoint = $("endpoint").value.trim();
+    var nodeName = $("nodeName").value.trim();
+    var desc = $("desc").value.trim();
+    var kwRaw = $("keywords").value.trim();
+    var nodeType = $("nodeType").value;
+    if (!domain || !endpoint){ alert("Domaene und Endpoint-URL sind Pflicht (Schritt 0)."); return; }
+    var keywords = kwRaw ? kwRaw.split(",").map(function(s){return s.trim();}).filter(Boolean) : [];
+
+    var unsigned = {
+      createdAt: new Date().toISOString(),
+      domain: domain,
+      embeddingModel: "Xenova/multilingual-e5-small",
+      endpoint: endpoint,
+      id: state.identity.nodeId,
+      nodeType: nodeType,
+      protocolVersion: "0.1",
+      publicKey: state.identity.publicKeyJwk
+    };
+    if (nodeName) unsigned.nodeName = nodeName;
+    if (desc) unsigned.domainDescription = desc;
+    if (keywords.length) unsigned.domainKeywords = keywords;
+    if (state.domainVector) unsigned.domainVector = state.domainVector;
+    if (state.domainVector && state.isDemo) unsigned._demo = ["domainVector"];
+
+    var bytes = canonicalBytes(unsigned);
+    var sigBuf = await crypto.subtle.sign({ name:"Ed25519" }, state.identity.kp.privateKey, bytes);
+    var signature = b64url(sigBuf);
+    var spore = canonicalize(unsigned);
+    spore.signature = signature;
+    state.spore = spore;
+
+    var ok = await selfVerify(spore);
+    $("sporeOut").textContent = JSON.stringify(spore, null, 2);
+    log("✓ Spore gebaut + signiert. Selbst-Verifikation: " + (ok ? "✔ VALID" : "✗ FEHLER"));
+    if (!state.domainVector) log("  Hinweis: ohne Domain-Vektor nur verified-spore moeglich (kein Match).");
+  }
+  async function selfVerify(spore){
+    try {
+      var copy = {}, k;
+      for (k in spore){ if (Object.prototype.hasOwnProperty.call(spore,k) && k!=="signature") copy[k]=spore[k]; }
+      var bytes = canonicalBytes(copy);
+      var pub = await crypto.subtle.importKey("jwk", spore.publicKey, { name:"Ed25519" }, true, ["verify"]);
+      var sigOk = await crypto.subtle.verify({ name:"Ed25519" }, pub, b64urlDecode(spore.signature), bytes);
+      var raw = await crypto.subtle.exportKey("raw", pub);
+      var hash = await crypto.subtle.digest("SHA-256", raw);
+      var idOk = b64url(hash) === spore.id;
+      log("  • Signatur Ed25519: " + (sigOk?"✔":"✗") + "  • nodeId == SHA256(pubkey): " + (idOk?"✔":"✗"));
+      return sigOk && idOk;
+    } catch(e){ log("selfVerify FEHLER: " + e.message); return false; }
+  }
+
+  // ---- Schritt 4 ----
+  function dlSpore(){ if(!state.spore){alert("Erst Schritt 3.");return;} download(JSON.stringify(state.spore,null,2)+"\n","spore.json","application/json"); }
+  function dlSignal(){
+    if(!state.identity){alert("Erst Schritt 1.");return;}
+    var base = $("rawBase").value.trim() || "<RAW-BASIS-URL>";
+    var signal = {
+      node: $("nodeName").value.trim() || "BookLedgerPro",
+      lastBuild: todayISO(),
+      seq: 1,
+      headline: "BookLedgerPro angedockt: eigene Ed25519-Identitaet + signierte Spore erzeugt, SBKIM-Siegel gesetzt, Andock an Sage-Mycel.",
+      sporeUrl: base + "/sbkim/spore.json",
+      nodeId: state.identity.nodeId,
+      mailboxes: { "Sage-Protokol": base + "/sbkim/AUSTAUSCH-Sage.md" },
+      forNodes: ["*"],
+      ack: { "Sage-Protokol": 0 }
+    };
+    download(JSON.stringify(signal,null,2)+"\n","SIGNAL.json","application/json");
+  }
+  function dlAustausch(){
+    var name = $("nodeName").value.trim() || "BookLedgerPro";
+    var base = $("rawBase").value.trim() || "<RAW-BASIS-URL>";
+    var nid = state.identity ? state.identity.nodeId : "<Schritt 1>";
+    var md =
+      "# AUSTAUSCH — " + name + " ⟷ Sage-Protokol\n\n" +
+      "> " + name + "-Seite des Postfachs (Datei-Dead-Drop, Sync-Vertrag Sage INTERFACES §11).\n" +
+      "> Sage liest diese Datei aus unserem raw/main; wir lesen Sages\n" +
+      "> sbkim/AUSTAUSCH-BookLedgerPro.md aus deren raw/main. Asynchron, server-los.\n\n---\n\n" +
+      "## Brief " + todayISO() + " — " + name + " an Sage: angedockt\n\n" +
+      "Wir haben mit der gelieferten Bauanleitung eine eigene Ed25519-Identitaet und eine\n" +
+      "signierte Spore erzeugt und das SBKIM-Siegel gesetzt.\n\n" +
+      "- nodeId: `" + nid + "`\n" +
+      "- Spore: `" + base + "/sbkim/spore.json`\n" +
+      "- SIGNAL: `" + base + "/sbkim/SIGNAL.json`\n" +
+      "- Domaene: " + ($("domain").value.trim() || "<Domaene>") + "\n\n" +
+      "Bitte prueft unsere Spore (vier Pruefpunkte §11.2) und nehmt uns als Knoten auf\n" +
+      "(verified-spore; verified-match, sobald der Cosinus ≥ 0.80 ist).\n";
+    download(md, "AUSTAUSCH-Sage.md", "text/markdown");
+  }
+  function dlKeys(){
+    if(!state.identity){alert("Erst Schritt 1.");return;}
+    var backup = {
+      _warnung: "GEHEIM — privater Schluessel. NIEMALS committen/veroeffentlichen. Offline sichern.",
+      nodeId: state.identity.nodeId,
+      privateKey: state.identity.privJwk,
+      publicKey: state.identity.publicKeyJwk
+    };
+    download(JSON.stringify(backup,null,2)+"\n","SBKIM-SCHLUESSEL-GEHEIM.json","application/json");
+  }
+
+  // ---- Siegel -> Bild ----
+  function serializeSiegel(){
+    var el = document.querySelector("#siegel svg");
+    return el ? new XMLSerializer().serializeToString(el) : null;
+  }
+  function siegelPng(){
+    var xml = serializeSiegel();
+    if(!xml){ alert("Siegel-SVG nicht gefunden."); return; }
+    var url = URL.createObjectURL(new Blob([xml], {type:"image/svg+xml;charset=utf-8"}));
+    var img = new Image();
+    img.onload = function(){
+      var c = document.createElement("canvas");
+      c.width = 1024; c.height = 1024;
+      c.getContext("2d").drawImage(img, 0, 0, 1024, 1024);
+      URL.revokeObjectURL(url);
+      c.toBlob(function(b){ download(b, "sbkim-siegel-wappen.png", "image/png"); }, "image/png");
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); alert("PNG-Render fehlgeschlagen — nutzt die .svg direkt."); };
+    img.src = url;
+  }
+  function siegelSvg(){
+    var xml = serializeSiegel();
+    if(!xml){ alert("Siegel-SVG nicht gefunden."); return; }
+    download('<?xml version="1.0" encoding="UTF-8"?>\n' + xml, "sbkim-siegel-wappen.svg", "image/svg+xml");
+  }
+
+  // ---- Verdrahtung ----
+  $("genIdentity").onclick = genIdentity;
+  $("genVector").onclick   = genVector;
+  $("useDemo").onclick     = useDemo;
+  $("buildSpore").onclick  = buildSpore;
+  $("dlSpore").onclick     = dlSpore;
+  $("dlSignal").onclick    = dlSignal;
+  $("dlAustausch").onclick = dlAustausch;
+  $("dlKeys").onclick      = dlKeys;
+  $("dlPng").onclick       = siegelPng;
+  $("dlSvg").onclick       = siegelSvg;
+})();
+</script>
+</body>
+</html>

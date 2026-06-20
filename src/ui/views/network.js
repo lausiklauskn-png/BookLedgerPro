@@ -6,11 +6,11 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { downloadJson } from '../../core/files.js';
-import { identityExists, createIdentity, loadIdentity, importIdentity } from '../../sbkim/identity.js';
+import { identityExists, createIdentity, loadIdentity, importIdentity, replaceIdentity } from '../../sbkim/identity.js';
 import { buildSpore, verifySpore } from '../../sbkim/spore.js';
 import { demoVector } from '../../sbkim/domainvector.js';
 import { buildSignal } from '../../sbkim/signal.js';
-import { NODE_PROFILE, KEYWORDS } from '../../sbkim/nodeProfile.js';
+import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID } from '../../sbkim/nodeProfile.js';
 
 let _host = null;
 
@@ -27,8 +27,26 @@ async function repaint() {
     el('div', { class: 'banner banner-warn', text: t('net.andockNote') }),
     identityCard(ident),
     ident ? deployCard(ident) : null,
+    toolsCard(),
     verifyCard(),
   ]));
+}
+
+// Verweise auf die vollständigen, eigenständigen SBKIM-Seiten (im Repo unter sbkim/,
+// auf GitHub Pages direkt erreichbar). Bewusst getrennt von der App-Shell.
+function toolsCard() {
+  const link = (href, label) => el('a', {
+    class: 'btn', href, target: '_blank', rel: 'noopener',
+  }, label);
+  return el('div', { class: 'card' }, [
+    el('h2', { class: 'card-title', text: t('net.tools') }),
+    el('p', { class: 'muted small', text: t('net.toolsIntro') }),
+    el('div', { class: 'btn-row' }, [
+      link('./sbkim/mycelknoten.html', t('net.openNode')),
+      link('./sbkim/andock.html', t('net.openAndock')),
+    ]),
+    el('p', { class: 'muted small', text: t('net.toolsWarn') }),
+  ]);
 }
 
 function identityCard(ident) {
@@ -61,11 +79,41 @@ function identityCard(ident) {
       importOut,
     ]);
   }
-  return el('div', { class: 'card' }, [
+  const canonical = ident.id === CANONICAL_NODE_ID;
+  const children = [
     el('h2', { class: 'card-title', text: t('net.identity') }),
     el('div', { class: 'report-line' }, [el('span', { text: t('net.nodeId') }), el('code', { class: 'mono small', text: ident.id })]),
     el('div', { class: 'report-line' }, [el('span', { text: 'publicKey.x' }), el('code', { class: 'mono small', text: ident.x })]),
-  ]);
+  ];
+  if (canonical) {
+    children.push(el('p', { class: 'muted small', text: t('net.idCanonical') }));
+  } else {
+    // Diese App-Identität weicht von der registrierten/committeten Spore ab → der Knoten
+    // „wandert". Anbieten, den kanonischen Schlüssel (sbkim/.node-secret.json) zu importieren.
+    const replaceTa = el('textarea', { class: 'beleg-text', rows: '5', placeholder: t('net.importPlaceholder') });
+    const replaceOut = el('div', { class: 'muted small' });
+    children.push(
+      el('div', { class: 'banner banner-warn', text: t('net.idMismatch').replace('%ID%', CANONICAL_NODE_ID) }),
+      el('h3', { class: 'card-title', style: 'margin-top:1rem', text: t('net.replace') }),
+      el('p', { class: 'muted small', text: t('net.replaceIntro') }),
+      replaceTa,
+      el('div', { class: 'btn-row' }, [el('button', {
+        class: 'btn btn-primary', text: t('net.replaceBtn'),
+        onClick: async () => {
+          replaceOut.replaceChildren();
+          let parsed;
+          try { parsed = JSON.parse(replaceTa.value); } catch { replaceOut.textContent = 'JSON?'; return; }
+          try {
+            const res = await replaceIdentity({ privJwk: parsed.privJwk, pubJwk: parsed.pubJwk });
+            if (res.id !== CANONICAL_NODE_ID) { replaceOut.textContent = t('net.replaceWrong'); }
+            await repaint();
+          } catch (e) { replaceOut.textContent = t('net.importErr') + e.message; }
+        },
+      })]),
+      replaceOut,
+    );
+  }
+  return el('div', { class: 'card' }, children);
 }
 
 function deployCard(ident) {

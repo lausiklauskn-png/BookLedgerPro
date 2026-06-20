@@ -5,6 +5,31 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-20 — Identität geradeziehen + Siegel/Andock-Seiten aus der App erreichbar [Branch `claude/identity-canonical-fix`]
+
+**Was getan**
+- **Identitäts-Diskrepanz behoben** (von Sage gemeldet: App zeigte `ZrBxTuAr…`, registriert ist
+  `MyHVM7Pd…`). Ursache: „Identität erzeugen" (App **oder** die Standalone-HTMLs) mintet jeweils
+  einen NEUEN Schlüssel. Fix: `CANONICAL_NODE_ID` in `nodeProfile.js` (= committete spore.json),
+  In-App **Abweichungs-Warnung** + **`replaceIdentity()`** (Mycel-Netz) zum Import des kanonischen
+  Schlüssels (`sbkim/.node-secret.json`). Node-Test hält `CANONICAL_NODE_ID` mit `spore.json` in Sync.
+- **`sbkim/andock.html` vendort** (Siegel + Identität/Spore-Erzeugung). **CDN-Import von
+  @xenova/transformers nach Regel #1 deaktiviert** (fail-soft, BLP-Vendor-Anpassung — analog
+  `mycelknoten.html`/#176); Demo-Vektor bleibt nutzbar.
+- **App-Verlinkung:** neue Karte in „Mycel-Netz" mit Knöpfen „Komplettes Knoten-Programm öffnen"
+  (`sbkim/mycelknoten.html`) + „Andock- & Siegel-Seite öffnen" (`sbkim/andock.html`) + Warnung,
+  dass diese Seiten NEUE Identitäten erzeugen (kanonische gilt). SW-Cache `v149`, i18n DE/EN.
+- Tests **1947/1947 grün**.
+
+**Klarstellung:** `mycelknoten.html` (live unter `…/BookLedgerPro/sbkim/mycelknoten.html`) kam aus
+#176 (frühere Sitzung), war aber **nirgends aus der App verlinkt** → daher in der App nicht auffindbar.
+`andock.html` war bis jetzt gar nicht im Repo.
+
+**Offen / Nächstes:** Sage-Sonderbrief beantworten (Datenschutz/kanonische nodeId/Schlüssel-Tresor);
+Nutzer importiert MyHVM7Pd in der App. Dann 6.3 WorkFloh · 6.4 echtes Embedding (+ E2E-Stichworte).
+
+---
+
 ## 2026-06-19 — verified-spore mit SB·KIMTool·Point besiegelt (zweiter Peer) [Branch `claude/handshake-sbkimtoolpoint`]
 
 **Was getan**
