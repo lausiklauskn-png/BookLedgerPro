@@ -7,6 +7,8 @@ import { el, mount, clear } from './dom.js';
 import { t, setLang, LANGS } from './i18n.js';
 import { applyTheme } from './theme.js';
 import { MycelMark } from './mycel.js';
+import { identityExists, loadIdentity } from '../sbkim/identity.js';
+import { CANONICAL_NODE_ID } from '../sbkim/nodeProfile.js';
 import { getSettings, updateSettings, navigate, getRoute, subscribe, MODES, AI_LEVELS } from '../state.js';
 import { getMandantId, lockVault, changePassword } from '../core/vault.js';
 import { ladeRegistry, speichereRegistry } from '../core/mandantenStore.js';
@@ -119,6 +121,7 @@ function header(s) {
   return el('header', { class: 'app-header' }, [
     el('div', { class: 'brand' }, [MycelMark(28), el('span', { class: 'brand-name', text: t('app.name') })]),
     el('div', { class: 'header-right' }, [
+      mycelChip(),
       label ? el('span', { class: 'mandant', title: t('dashboard.mandant') }, [
         el('span', { class: 'mandant-dot' }),
         el('span', { class: 'mandant-id', text: label }),
@@ -135,6 +138,28 @@ function header(s) {
       }),
     ]),
   ]);
+}
+
+// Mycel-Status-Chip in der Kopfzeile: zeigt rein lokal/offline „du bist im Mycel".
+// Grün = Identität vorhanden UND kanonisch (LEBT + SIEGEL); Gelb = Identität weicht von
+// der kanonischen nodeId ab (zum Geradeziehen in die Mycel-Netz-Ansicht); Grau = noch
+// keine Identität. Klick öffnet die Mycel-Netz-Ansicht. Keine Netz-Abfrage (VERKEHR/
+// FREMD/Briefkasten kämen in einem opt-in Folge-Schritt dazu).
+function mycelChip() {
+  const dot = el('span', { class: 'mycel-dot' });
+  const chip = el('button', {
+    class: 'mycel-chip', title: t('mycel.chipUnknown'),
+    onClick: () => navigate('network'),
+  }, [dot, el('span', { class: 'mycel-chip-label', text: t('mycel.chip') })]);
+  (async () => {
+    try {
+      if (!(await identityExists())) { chip.classList.add('is-off'); chip.title = t('mycel.chipNone'); return; }
+      const ident = await loadIdentity();
+      if (ident && ident.id === CANONICAL_NODE_ID) { chip.classList.add('is-ok'); chip.title = t('mycel.chipOk'); }
+      else { chip.classList.add('is-warn'); chip.title = t('mycel.chipDrift'); }
+    } catch { chip.classList.add('is-off'); chip.title = t('mycel.chipNone'); }
+  })();
+  return chip;
 }
 
 // Mandant wechseln: Sitzungs-Key (DEK) verwerfen und neu booten. Der Boot zeigt bei

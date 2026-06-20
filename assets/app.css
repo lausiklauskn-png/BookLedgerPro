@@ -125,6 +125,17 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   padding: .2rem .5rem; border-radius: 999px;
 }
 .mandant-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+.mycel-chip {
+  display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+  font-size: .78rem; color: var(--text-muted);
+  background: var(--surface-2); border: 1px solid var(--border);
+  padding: .2rem .55rem; border-radius: 999px;
+}
+.mycel-chip:hover { border-color: var(--accent); color: var(--text); }
+.mycel-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); flex: none; transition: background .15s; }
+.mycel-chip.is-ok .mycel-dot { background: #2ecc71; box-shadow: 0 0 6px #2ecc7188; }
+.mycel-chip.is-warn .mycel-dot { background: #f1c40f; box-shadow: 0 0 6px #f1c40f88; }
+.mycel-chip.is-off .mycel-dot { background: var(--text-muted); }
 
 .app-body { display: flex; flex: 1; max-width: var(--maxw); width: 100%; margin: 0 auto; }
 .app-nav {
