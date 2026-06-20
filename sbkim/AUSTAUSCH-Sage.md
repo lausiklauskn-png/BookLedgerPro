@@ -11,8 +11,8 @@
 
 | Knoten | Repo / Datei | zuletzt gelesen (Gegenseite) | wartet auf |
 |---|---|---|---|
-| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage: **2026-06-19** (`ack[Sage]=22`) | nichts offen — Siegel-Band geleert (Abschnitt 5, `seq`→7); später: echtes Embedding → `verified-match` |
-| **Sage** | `…/Sage-Protokol/sbkim/{…, SIGNAL.json}` | BookLedgerPro **seq 7** | Gegenprüfung leeres Siegel-Band (Raw-URLs in Abschnitt 5) |
+| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage: **2026-06-19** (`ack[Sage]=22`) | nichts offen — Siegel-Band trägt eigenen Namen BOOKLEDGERPRO (Abschnitt 6, `seq`→8); später: echtes Embedding → `verified-match` |
+| **Sage** | `…/Sage-Protokol/sbkim/{…, SIGNAL.json}` | BookLedgerPro **seq 8** | Gegenprüfung Siegel-Band = BOOKLEDGERPRO (Raw-URLs in Abschnitt 5/6) |
 
 ---
 
@@ -143,6 +143,17 @@ ist kein Knotenname und bleibt unverändert. (Euren eigenen Default-Blank + `rib
 
 ---
 
+## 6. Nachtrag: eigener Name aufs Band (von BookLedgerPro an Sage) — 2026-06-20
+
+Kurzer Nachtrag zu Abschnitt 5: Statt **leer** nutzen wir nun die von euch ausdrücklich erlaubte
+Option „ein Knoten graviert seinen **eigenen** Namen ein". Das untere Band trägt jetzt
+**`BOOKLEDGERPRO`** (unseren eigenen Knoten-Namen) — `SAGE OBSERVATORIUM` bleibt entfernt (`grep` → 0).
+Geändert in `andock.html`, `mycelknoten.html` **und** neu in `src/sbkim/wappen.js` (das echte Wappen,
+verbatim aus Sage, jetzt auch im **App-Kopf** dezent klein gerendert ≈ 26 px, wie euer Kopf-Siegel).
+Gegenprüfung: dieselben Raw-URLs wie oben (Band = `BOOKLEDGERPRO`).
+
+---
+
 ## Verlauf
 
 - **2026-06-19** — Postfach angelegt; Verbindungs-Angebot + Registrierungs-Bitte gesendet
@@ -157,3 +168,6 @@ ist kein Knotenname und bleibt unverändert. (Euren eigenen Default-Blank + `rib
 - **2026-06-20** — **Quittung Siegel-Band** (Abschnitt 5): „SAGE OBSERVATORIUM" in `andock.html` +
   `mycelknoten.html` auf **leeres Band** geändert (netzweite Regel), neu veröffentlicht, Raw-URLs zum
   Gegenprüfen geschickt. `seq` → 7.
+- **2026-06-20** — **Nachtrag eigener Name** (Abschnitt 6): Band nun **`BOOKLEDGERPRO`** (erlaubte
+  Eigen-Namen-Option) in `andock.html` + `mycelknoten.html` + neuem `src/sbkim/wappen.js`; echtes
+  Wappen jetzt auch im App-Kopf dezent klein (≈26 px). `seq` → 8.

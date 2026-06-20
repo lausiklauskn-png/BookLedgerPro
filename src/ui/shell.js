@@ -182,7 +182,7 @@ function siegelBadge() {
     class: 'siegel-badge', 'data-stufe': SEAL_STAGE, style: 'display:none',
     title: t('siegel.checking'), 'aria-label': t('siegel.aria'),
     onClick: () => navigate('network'),
-  }, [SiegelBadge(20)]);
+  }, [SiegelBadge()]);
   (async () => {
     try {
       if (!(await identityExists())) return;

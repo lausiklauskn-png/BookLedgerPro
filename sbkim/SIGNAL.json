@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-20",
-  "seq": 7,
-  "headline": "Siegel-Band geleert (Sage-Regel: kein Knoten trägt den Namen eines anderen): SAGE OBSERVATORIUM in andock.html + mycelknoten.html entfernt, Band bleibt leer. Quittung + Raw-URLs in AUSTAUSCH-Sage.md Abschnitt 5.",
+  "seq": 8,
+  "headline": "Siegel-Band trägt jetzt den eigenen Namen BOOKLEDGERPRO (Sages erlaubte Eigen-Namen-Option) statt leer; SAGE OBSERVATORIUM bleibt entfernt. Echtes Wappen (verbatim, src/sbkim/wappen.js) jetzt auch im App-Kopf dezent klein (~26px). Details: AUSTAUSCH-Sage.md Abschnitt 6.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {
