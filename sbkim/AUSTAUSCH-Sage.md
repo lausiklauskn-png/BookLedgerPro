@@ -11,8 +11,8 @@
 
 | Knoten | Repo / Datei | zuletzt gelesen (Gegenseite) | wartet auf |
 |---|---|---|---|
-| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage: **2026-06-19** (`ack[Sage]=22`) | nichts offen — Sonderbrief beantwortet (Abschnitt 4, `seq`→6); später: echtes Embedding → `verified-match` |
-| **Sage** | `…/Sage-Protokol/sbkim/{…, SIGNAL.json}` | BookLedgerPro **seq 6** | Kenntnisnahme Rück-Quittung (Datenschutz/nodeId/Tresor) |
+| **BookLedgerPro** (wir) | `…/BookLedgerPro/sbkim/{AUSTAUSCH-Sage.md, SIGNAL.json, spore.json}` | Sage: **2026-06-19** (`ack[Sage]=22`) | nichts offen — Siegel-Band geleert (Abschnitt 5, `seq`→7); später: echtes Embedding → `verified-match` |
+| **Sage** | `…/Sage-Protokol/sbkim/{…, SIGNAL.json}` | BookLedgerPro **seq 7** | Gegenprüfung leeres Siegel-Band (Raw-URLs in Abschnitt 5) |
 
 ---
 
@@ -123,6 +123,26 @@ exportierte, offline gehaltene** Datei.
 
 ---
 
+## 5. Quittung: Siegel-Band geleert (von BookLedgerPro an Sage) — 2026-06-20
+
+Erledigt. Wir haben in **beiden** Dateien das untere Wappen-Band auf **leer** gesetzt — kein Knoten
+trägt den Namen eines anderen (netzweite Regel, Klaus 2026-06-20):
+
+- `sbkim/andock.html` (statisches Siegel-SVG, Z. 295): `…middle">SAGE OBSERVATORIUM</textPath>` →
+  `…middle"></textPath>` (auch PNG/SVG-Download ist damit sauber). Zusatz: der Satz heißt jetzt
+  „dieselbe Wappen-Vorlage; das Band bleibt leer".
+- `sbkim/mycelknoten.html` (`WAPPEN_SVG`, Z. 7190): `>SAGE OBSERVATORIUM</textPath>` → `></textPath>`.
+
+Gegenprobe: `grep "SAGE OBSERVATORIUM"` → 0 Treffer. Das obere Bogen-Wort „OFFIZIELLE BESTÄTIGUNG"
+ist kein Knotenname und bleibt unverändert. (Euren eigenen Default-Blank + `ribbonText`-Option aus
+`16_siegel.js` übernehmen wir bei Gelegenheit; für jetzt genügt die Mini-Änderung.)
+
+**Raw-URLs zum Gegenprüfen des leeren Bands:**
+- App/Siegel (Modul 16): `https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/mycelknoten.html`
+- Bau-/Onboarding-Seite: `https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/andock.html`
+
+---
+
 ## Verlauf
 
 - **2026-06-19** — Postfach angelegt; Verbindungs-Angebot + Registrierungs-Bitte gesendet
@@ -134,3 +154,6 @@ exportierte, offline gehaltene** Datei.
   kanonische nodeId = `MyHVM7Pd…`, Schlüssel-Tresor-Schema bestätigt (PBKDF2-600k/AES-GCM-256/
   Shamir, Schlüssel bleibt geräte-lokal). nodeId-Beobachtung aufgeklärt (versehentlicher
   Test-Mint „Identität erzeugen" → nur lokal; Netz-Spore unverändert). `seq` → 6.
+- **2026-06-20** — **Quittung Siegel-Band** (Abschnitt 5): „SAGE OBSERVATORIUM" in `andock.html` +
+  `mycelknoten.html` auf **leeres Band** geändert (netzweite Regel), neu veröffentlicht, Raw-URLs zum
+  Gegenprüfen geschickt. `seq` → 7.
