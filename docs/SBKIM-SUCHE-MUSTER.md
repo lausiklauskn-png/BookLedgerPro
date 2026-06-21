@@ -63,6 +63,17 @@ Damit ist **dieselbe Maschine** mehrfach nutzbar — in BLP heute **zwei Bereich
 4. Ergebnis nach `mode` anzeigen (Richter-Urteil **mit Begründung** bzeigen; bei Fail-soft/
    nur-Vorfilter die Vorfilter-Treffer — **nie** eine leere Sackgasse).
 
+## Schwelle / `minScore` — wichtige Kalibrierungs-Lehre
+
+Der Vektor-Vorfilter hat eine Untergrenze `minScore` (Default `PROVIDER_MIN_MATCH = 0.80`,
+Sage-Vertrag für **strenges Knoten-Matching**). **Für eine SUCHE ist 0.80 zu hoch:** ein kurzer
+Korpus-Eintrag („Bewirtungskosten") gegen einen ganzen Satz („Ich habe mein Team zum Essen
+eingeladen") liegt bei e5-small oft bei ~0.75–0.79 → der Vorfilter würde **alles verwerfen**
+(`vorfilter-leer`) und der Richter käme nie dran. Die SBKIM-Suche übergibt darum **`minScore: 0`**:
+der Vorfilter reicht **immer die besten Top-k** durch, **der Richter** trifft die Auswahl. Das ist
+dieselbe Lehre wie bei Sage (0.80 ist mal zu hoch, mal zu tief — eine feste Schwelle taugt nicht
+als Tor; sie ist nur ein Signal).
+
 ## Goldene-Regeln-Konformität
 
 - **Regel #1 (build-frei, kein CDN):** Das e5-Modell wird **nur opt-in einmalig** geladen

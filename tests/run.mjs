@@ -1197,8 +1197,11 @@ await section('SBKIM: Hybrid-Match — Korpus + Vorfilter (Vertrags-Fläche)', a
     { label: 'Daneben', anchorId: 'd', text: 'y', passageVec: unit(1) },     // cosine 0
   ];
   const pre = await queryLocal('werbung', 5, { corpus, embedQuery });
-  ok('Vorfilter: nur ≥ Schwelle', pre.length === 1 && pre[0].anchorId === 't');
+  ok('Vorfilter (Default): nur ≥ Schwelle', pre.length === 1 && pre[0].anchorId === 't');
   ok('Vorfilter-Schwelle = 0.80', PROVIDER_MIN_MATCH === 0.80);
+  // Such-Fall: minScore:0 → IMMER Top-k (auch unter 0.80), nach Score sortiert.
+  const topk = await queryLocal('werbung', 5, { corpus, embedQuery, minScore: 0 });
+  ok('Vorfilter (Suche, minScore:0): Top-k, nie leer', topk.length === 2 && topk[0].anchorId === 't' && topk[1].anchorId === 'd');
 });
 
 await section('SBKIM: Hybrid-Match — Richter + Fail-soft (kein Throw)', async () => {
