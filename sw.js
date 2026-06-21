@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v167';
+const CACHE_VERSION = 'v168';
 const CACHE_NAME = `blpr-shell-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -107,6 +107,7 @@ const CORE_ASSETS = [
   './src/ai/anbieter.js',
   './src/ai/vision.js',
   './src/ai/mistral.js',
+  './src/ai/speech.js',
   './src/ai/berater.js',
   './src/ai/pseudonym.js',
   './src/ai/anker.js',
