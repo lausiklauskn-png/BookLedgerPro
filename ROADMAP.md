@@ -89,6 +89,11 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
   committet, headless VALID; **Sage bestätigt Cosinus = 0.810579 ≥ 0.80**, Sage `SIGNAL` seq 27,
   `ack[BookLedgerPro]=11`; Wert lokal unabhängig nachgerechnet → identisch). `SEAL_STAGE = 'verified-match'`
   (Gold), unsere `SIGNAL` seq → 13, `ack[Sage]=27`, Quittung AUSTAUSCH-Sage §10. SW `v159`.
+- [◑] **Phase 5e — SBKIM Hybrid-Match-Richter** (Sage-Andock-Brief 2026-06-21): neue Ansicht „SBKIM-Suche"
+  (Vorfilter `embed.js` + opt-in Richter Mistral EU/BYOK + Fail-soft). **BLP-native nach Sage-Spec** (OPTION 1,
+  von Sage freigegeben — kein neuer CDN, Vertrags-Fläche 1:1). `src/sbkim/{match,hybridSearch,searchCorpus}.js`
+  + View; node-getestet (1989/1989, alle 4 Modi + Fail-soft). **Offen:** erster echter Mistral-Richter-Lauf im
+  Browser (Rück-Aktion an Sage).
 - [ ] **Phase 5d:** Symbiose-Import (Belege aus Mein-Tresor, Aufträge aus WorkFloh → Buchungen)
 
 > Diese Phase bereitet den Andock **lokal** vor (kein fremdes Repo verändert). Der

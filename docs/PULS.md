@@ -7,7 +7,21 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-20): 🏅 `verified-match` ERREICHT — voll vernetzter Mycel-Knoten
+## ⏭ LETZTER STAND (2026-06-21): SBKIM Hybrid-Match-Richter gebaut — wartet auf ersten Browser-Lauf
+
+> **Sage-Andock-Brief (Hybrid-Match-Richter ans Such-Feld) umgesetzt — BLP-native nach Sage-Spec (von Sage
+> freigegeben, OPTION 1).** Neue Ansicht **„SBKIM-Suche"** (eigener Menüpunkt): lokaler Vorfilter (`embed.js`,
+> Opt-in-Modell, kein neuer CDN) + opt-in Richter (Mistral EU/BYOK über `mistral.js`) + Fail-soft.
+> Neue Module: `src/sbkim/match.js`, `hybridSearch.js`, `searchCorpus.js`, View `sbkimsuche.js`,
+> `loadEmbedder()` in `embed.js`. Vertrags-Fläche 1:1 (Verdict/4 Modi/Fail-soft-nie-Throw/attestation).
+> Tests **1989/1989**, SW **v162**. Ehrlich: **BLP-native, NICHT verbatim Sage-Kopie** (byte-Vendoring war
+> nicht möglich + Modul-03-CDN verstößt gegen Regel #1).
+> **⏭ NÄCHSTER KONKRETER SCHRITT (Browser/Nutzer + Rück-Aktion an Sage):** „SBKIM-Suche" öffnen → Stichwort
+> eingeben → ERSTER echter Mistral-Richter-Lauf (Modell lädt einmalig ~30 MB). An Klaus/Sage melden:
+> available:true? sinnvolle Urteile? Fail-soft sauber bei abgezogenem Netz? (Kein Schlüssel/Netz in der
+> Bau-Umgebung → nur node-getestet.) Danach: Sages Whitening/Schwellen-Brief.
+
+## ⏭ STAND (2026-06-20): 🏅 `verified-match` ERREICHT — voll vernetzter Mycel-Knoten
 
 > **BookLedgerPro ist Gold.** Der echte Vektor ist live (`Xenova/multilingual-e5-small`, 384-dim, L2=1,
 > kein `_demo`, Spore neu signiert, headless VALID), und **Sage hat den Cosinus bestätigt:

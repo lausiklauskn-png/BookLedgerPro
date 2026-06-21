@@ -235,6 +235,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 }
 .banner-text { flex: 1; }
 .banner-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
+.banner-info { background: var(--accent-soft); color: var(--text); border-color: var(--accent); }
 .banner-critical { background: var(--critical-bg); border-color: var(--critical-border); color: var(--critical-text); }
 /* Dauerhafter TEST-MODUS-Banner (Sandbox-Tresor aktiv) — deutlich, aber nicht alarmierend. */
 .banner-test { background: var(--accent-soft); color: var(--text); border-bottom: 1px solid var(--accent); }
@@ -358,6 +359,12 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .vision-walk > summary { cursor: pointer; color: var(--accent-strong); }
 .vision-walk-steps { margin: .4rem 0; padding-left: 1.2rem; display: grid; gap: .35rem; }
 .vision-walk-steps li { line-height: 1.4; }
+
+/* ---- SBKIM-Suche (Hybrid-Match) ------------------------------------------ */
+.sbkimsuche-out { margin-top: .8rem; }
+.sbkimsuche-list { margin: .4rem 0 0; padding-left: 1.1rem; display: grid; gap: .5rem; }
+.sbkimsuche-list li { line-height: 1.35; }
+.sbkimsuche-list li p { margin: .15rem 0 0; }
 
 /* ---- Auftrags-Positionen -------------------------------------------------- */
 .pos-head, .pos-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: .5rem; align-items: center; }

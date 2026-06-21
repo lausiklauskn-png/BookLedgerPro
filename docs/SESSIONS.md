@@ -5,6 +5,35 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-21 — SBKIM Hybrid-Match-Richter ans Such-Feld (BLP-native nach Sage-Spec) [Branch `claude/sbkim-hybrid-match`]
+
+**Was getan (Sage-Andock-Brief 2026-06-21 umgesetzt)**
+- **Rück-Aktion (a/b/c) ermittelt:** (a) BLP hatte **kein** Such-Feld → neue Ansicht „SBKIM-Suche" (eigener
+  Menüpunkt, vom Nutzer gewählt); (b) Mistral-Schlüssel zur Laufzeit = `getAiConfig().mistralKey` (RAM, BYOK);
+  (c) Korpus = Konten (`loadAccounts`), pro Eintrag `passageVec` via Embedder.
+- **Bau-Weg = OPTION 1 (BLP-native nach Sage-Spec)** — von Sage (Spec-Owner) freigegeben, weil BLP `embed.js`
+  (gleiches Modell) + `mistral.js` (EU) schon hat; Vendoring von Sage-Modul-03 brächte nur Dopplung + neuen CDN
+  (Regel-#1-Bruch). Byte-genaues Vendoring war ohnehin nicht möglich (nur WebFetch-Zusammenfassungen) — ehrlich
+  als **BLP-native Umsetzung** markiert, NICHT als verbatim Sage-Kopie.
+- **Neu:** `src/sbkim/match.js` (queryLocal-Vorfilter + hybridMatch-Richter + parseVerdicts/attestation),
+  `src/sbkim/hybridSearch.js` (Helfer, 4 Modi), `src/sbkim/searchCorpus.js` (Konten→Korpus),
+  `src/ui/views/sbkimsuche.js` (Ansicht), Embedder-Singleton `loadEmbedder()` in `embed.js` (Opt-in, kein neuer CDN).
+  Nav+Route+i18n DE/EN, SW **v162**.
+- **Vertrags-Fläche 1:1 zu Sage:** Verdict `{label,anchorId,passt,score,begruendung}`; Modi `vorfilter-leer|
+  nur-vorfilter|fail-soft-vorfilter|richter`; **Fail-soft: Richter wirft NIE**; attestation-Schema 1:1.
+- Tests **1989/1989 grün** (+21: Korpus, Vorfilter-Schwelle, Richter, Fail-soft ohne Throw, Score-Clamp,
+  alle 4 Modi). Syntax-Check der Browser-Dateien grün.
+
+**Stand:** Code steht, node-getestet. **Offen (Rück-Aktion an Sage):** der **erste echte Mistral-Richter-Lauf**
+muss im **Browser** laufen (Modell-Laden ~30 MB + Mistral-Aufruf, kein Schlüssel/Netz in der Bau-Umgebung) —
+das ist ein Nutzer-Schritt. Danach an Klaus melden: available:true? sinnvolle Urteile? Fail-soft sauber bei
+abgezogenem Netz?
+
+**Offen / Nächstes:** Browser-Lauf der SBKIM-Suche; ggf. attestation signieren (sobald Sage Signier-Helfer hat);
+Sages Whitening/Schwellen-Neukalibrierung (separater Brief).
+
+---
+
 ## 2026-06-21 — Google-Vision-Schlüssel: nummerierte Direkt-Link-Anleitung in den KI-Einstellungen [Branch `claude/vision-key-guide`]
 
 **Was getan**
