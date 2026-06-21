@@ -63,6 +63,41 @@ Damit ist **dieselbe Maschine** mehrfach nutzbar — in BLP heute **zwei Bereich
 4. Ergebnis nach `mode` anzeigen (Richter-Urteil **mit Begründung** bzeigen; bei Fail-soft/
    nur-Vorfilter die Vorfilter-Treffer — **nie** eine leere Sackgasse).
 
+## Spracheingabe — additive Eingabe-Schicht (optional, build-frei, mehrsprachig)
+
+Die Suche nimmt **einen String** entgegen — woher der kommt, ist ihr egal. Darum ist die
+**Spracheingabe eine reine Eingabe-Schicht obendrauf**: sie füllt nur das Textfeld, die
+Pipeline (Vorfilter → Richter) bleibt **unberührt**. Modul: `src/ai/speech.js`.
+
+**Zwei Engines (Nutzer schaltet um) — beide ohne Bundler/CDN:**
+
+| Engine | Womit | Schlüssel? | Datenschutz |
+|---|---|---|---|
+| **Browser** | Web Speech API (`makeBrowserRecognizer({lang})`) | nein | Gerät/Browser-Hersteller — EU-Vorbehalt, darum als Hinweis ausgewiesen |
+| **EU (BYOK)** | Google **Cloud Speech-to-Text**, **EU-Endpoint** (`eu-speech.googleapis.com`) via `startRecording()` → `recognizeEU()` | ja, lokal verschlüsselt | EU-Datenresidenz, opt-in (Regel #8) |
+
+> **Fail-soft-Geist wie beim Richter:** Die Spracheingabe ist **nie Pflicht** — Tippen geht
+> immer. Fehlt Mikro/Schlüssel oder bricht das Netz, bleibt das Textfeld bedienbar
+> (`speechFehlerHinweis()` gibt einen klaren Hinweis statt eines Throws).
+
+**Mehrsprachig (ein Wähler, derselbe Maschinenraum):** ein `<select>` setzt `languageCode`
+(`de-DE` / `en-US` / `ru-RU` …). Die EU-Engine bekommt zusätzlich
+`alternativeLanguageCodes` (die übrigen Sprachen) → tolerant gegenüber gemischten Sätzen.
+Die **Such-Logik selbst war schon mehrsprachig** (multilingual-e5-small + Mistral) — der Wähler
+betrifft nur die **Erkennung** des gesprochenen Worts. Reines Daten-Array, beliebig erweiterbar:
+
+```js
+const SPEECH_LANGS = [['de-DE','Deutsch'], ['en-US','English'], ['ru-RU','Русский']];
+const alt = SPEECH_LANGS.map(([c]) => c).filter((c) => c !== gewählt);
+recognizeEU(audio, { apiKey, languageCode: gewählt, alternativeLanguageCodes: alt });
+```
+
+**UX-Lehre (teuer gelernt): erkannten Text NICHT wegwerfen.** Wer die Ansicht bei jedem
+Ergebnis neu zeichnet, darf das Eingabefeld **nicht** mit `value:''` neu bauen — sonst
+verschwindet die (gesprochene!) Frage, sobald das Urteil erscheint. Lösung: die Eingabe in
+**einem Zustand** halten (`_query`), beim Neuzeichnen daraus vorbelegen, **nur beim Schließen/
+Neu-Öffnen** der Ansicht zurücksetzen. So bleibt die Frage stehen, bis der Nutzer neu eingibt.
+
 ## Schwelle / `minScore` — wichtige Kalibrierungs-Lehre
 
 Der Vektor-Vorfilter hat eine Untergrenze `minScore` (Default `PROVIDER_MIN_MATCH = 0.80`,

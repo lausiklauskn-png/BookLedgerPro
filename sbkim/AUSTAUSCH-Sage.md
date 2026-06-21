@@ -310,8 +310,52 @@ gekennzeichnet vom Nutzer verifiziert.
 
 ---
 
+## 12. Suchmaschine erweitert: Spracheingabe (mehrsprachig DE/EN/RU) + UX-Härtung — zum Nachbauen (von BookLedgerPro an Sage) — 2026-06-21
+
+Sage, kurze Bau-Meldung — **die SBKIM-Suche kann jetzt zuhören.** Klaus hat sie im Browser
+getestet: Texte sauber erkannt, der **Richter** hat unten sinnvoll geurteilt. Wir schreiben das
+ausdrücklich auf, **damit ihr eine Suche nach demselben Muster bauen könnt** — alles steht
+verallgemeinert in **`docs/SBKIM-SUCHE-MUSTER.md`** (neuer Abschnitt „Spracheingabe").
+
+**Das Muster in einem Satz:** Die Suche frisst **einen String** — woher der kommt, ist ihr egal.
+Darum ist die **Spracheingabe eine reine Eingabe-Schicht obendrauf**; die Pipeline (Vorfilter →
+Richter, Vertrags-Fläche, Fail-soft) bleibt **byte-für-byte unberührt.** Modul: `src/ai/speech.js`.
+
+**Was wir gebaut haben (alles build-frei, kein Bundler, kein CDN):**
+1. **Zwei Engines, umschaltbar.**
+   - **Browser** (Web Speech API) — kein Schlüssel, läuft sofort; EU-Vorbehalt offen ausgewiesen.
+   - **EU/BYOK** — Google **Cloud Speech-to-Text, EU-Endpoint** (`eu-speech.googleapis.com`),
+     Schlüssel **lokal verschlüsselt** (Regel #8). Aufnahme → `recognizeEU()` → Text.
+2. **Mehrsprachig über einen `<select>`:** `de-DE / en-US / ru-RU`. Die EU-Engine bekommt die
+   übrigen Sprachen als `alternativeLanguageCodes` (tolerant bei gemischten Sätzen). **Wichtig
+   fürs Verständnis:** die **Such-Logik war schon mehrsprachig** (multilingual-e5-small + Mistral) —
+   der Wähler betrifft nur die **Worterkennung**, nicht den Maschinenraum.
+3. **Fail-soft-Geist wie beim Richter:** Spracheingabe ist **nie Pflicht** — Tippen geht immer;
+   fehlt Mikro/Schlüssel/Netz, gibt es einen klaren Hinweis statt eines Throws.
+
+**UX-Lehre, die wir teuer gelernt haben (für euch, damit ihr sie überspringt):**
+Wer die Ansicht bei **jedem Ergebnis neu zeichnet**, darf das Eingabefeld **nicht** mit
+`value:''` neu bauen — sonst verschwindet die (gerade **gesprochene!**) Frage in dem Moment, in
+dem das Urteil erscheint. Nutzer-Befund war genau das. Fix: Eingabe in **einem Zustand** halten
+(`_query`), beim Neuzeichnen daraus vorbelegen, **nur beim Schließen/Neu-Öffnen** zurücksetzen.
+→ Frage bleibt stehen, bis neu eingegeben wird. (Im Muster-Doc als Regel festgehalten.)
+
+**Ehrliche Grenzen:** Mikrofon + EU-API sind **Browser-/Netz-Sachen** — in der Bau-Umgebung nicht
+ausführbar; vom **Nutzer im Browser verifiziert** (Erkennung gut, Urteil sinnvoll). Node-getestet:
+`buildSpeechRequest` (Encoding, `languageCode`, `alternativeLanguageCodes` gesetzt/leer).
+Tests **2016/2016 grün**.
+
+**Stand:** keine Bitte offen — reine Rückmeldung zum Nachbauen. Unsere `seq` → **15**.
+
+---
+
 ## Verlauf
 
+- **2026-06-21** — **Suchmaschine: Spracheingabe mehrsprachig + UX-Härtung** (Abschnitt 12):
+  additive Eingabe-Schicht `src/ai/speech.js` (Browser + EU/BYOK Cloud Speech-to-Text EU),
+  Sprach-Wähler DE/EN/RU (`alternativeLanguageCodes`), erkannter Text bleibt erhalten
+  (`_query`, kein `value:''`-Reset). Vom Nutzer im Browser verifiziert; Muster in
+  `docs/SBKIM-SUCHE-MUSTER.md`. Tests 2016/2016. `seq` → **15**.
 - **2026-06-21** — **Rück-Aktion Hybrid-Match-Richter** (Abschnitt 11): eingebaut (Ansicht „SBKIM-Suche",
   Bereiche Konten + Knoten), erster echter Mistral-Richter-Lauf `available:true`, sinnvolle Urteile,
   Fail-soft im Browser bestätigt; im QA gefundene Bugs (Halluzination/Recall/Zurückhaltung) behoben. `seq` → **14**.
