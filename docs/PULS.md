@@ -7,7 +7,18 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-21): DREI-Schichten-Erkennen GEBAUT (Sage Karte 04) — Engine + Suche-Wiring + Tests
+## ⏭ LETZTER STAND (2026-06-21): EU-Politik „frei/bindend" für die Spracheingabe (Regel #8)
+
+> Sage hat unser Sprach-Muster nachgebaut (ihr Modul 21) und die **EU-Politik frei/bindend**
+> beigesteuert — wir haben sie **zurück übernommen**: `policyEngines`/`pickEngine` in
+> `src/ai/speech.js` (rein, getestet), `aiConfig.speechPolicy` (Default `frei`), Wähler in der
+> SBKIM-Suche. **`bindend`** = nur EU-Engine (Web-Speech gesperrt, strikte EU-Verarbeitung);
+> **`frei`** = beide. Tests **2049/2049** (+9), SW **v172**. (Keine Sage-Quittung diesmal — nur
+> Code; Nutzer-Wahl.)
+> **⏭ NÄCHSTE KONKRETE SCHRITTE:** wie unten (Drei-Schichten-Aktivierung: Spore mit echten
+> cap/needs neu signieren; optional UI-Knopf „mein Knoten ↔ Netz"; Sages Lane-/Apoptose-Bestätigung).
+
+## ⏭ STAND (2026-06-21): DREI-Schichten-Erkennen GEBAUT (Sage Karte 04) — Engine + Suche-Wiring + Tests
 
 > Das Drei-Schichten-Matching ist **echt gebaut** (nicht mehr nur dokumentiert): in
 > `src/sbkim/match.js` neu `matchDimensions` (zwei Lanes cap/needs, Schicht-Score, overall,

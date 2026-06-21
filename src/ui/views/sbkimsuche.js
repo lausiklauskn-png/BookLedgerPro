@@ -12,11 +12,11 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { loadAccounts } from '../../domain/store.js';
-import { getAiConfig } from '../../ai/aiConfig.js';
+import { getAiConfig, saveAiConfig } from '../../ai/aiConfig.js';
 import { loadEmbedder } from '../../sbkim/embed.js';
 import { accountCorpusEntries, embedCorpus, fetchNodeSpores, nodeCorpusEntries, embedMissingVectors } from '../../sbkim/searchCorpus.js';
 import { sbkimHybridSearch } from '../../sbkim/hybridSearch.js';
-import { makeBrowserRecognizer, startRecording, recognizeEU, speechFehlerHinweis } from '../../ai/speech.js';
+import { makeBrowserRecognizer, startRecording, recognizeEU, speechFehlerHinweis, policyEngines, pickEngine, browserSpeechSupported } from '../../ai/speech.js';
 
 let _host = null;
 let _busy = false;
@@ -25,12 +25,14 @@ let _corpusKonten = null;       // gecachte, eingebettete Korpora (Session)
 let _corpusKnoten = null;
 let _speechEngine = 'browser';  // 'browser' (Web Speech API) | 'eu' (Cloud Speech-to-Text EU/BYOK)
 let _speechLang = 'de-DE';      // Spracheingabe-Sprache
+let _speechPolicy = 'frei';     // EU-Politik: 'frei' (beide Engines) | 'bindend' (nur EU)
 let _query = '';                // aktuelle Eingabe — bleibt über Neuzeichnen (Ergebnis) erhalten
 const SPEECH_LANGS = [['de-DE', 'Deutsch'], ['en-US', 'English'], ['ru-RU', 'Русский']];
 
 export async function mountSbkimSuche(host) {
   _host = host;
   _query = '';   // frisch geöffnet → leeres Feld (geschlossen = zurückgesetzt)
+  try { _speechPolicy = (await getAiConfig()).speechPolicy === 'bindend' ? 'bindend' : 'frei'; } catch { _speechPolicy = 'frei'; }
   repaint();
 }
 
@@ -47,6 +49,20 @@ function bereichBtn(id, label) {
 function speechControls(input) {
   const status = el('span', { class: 'muted small' });
   const notice = el('p', { class: 'muted small speech-notice' });
+  // EU-Politik (Regel #8): bindend = nur EU-Engine, Web-Speech gesperrt; frei = beide.
+  const enginesErlaubt = policyEngines(_speechPolicy);
+  const browserErlaubt = enginesErlaubt.includes('browser');
+  const policySel = el('select', { class: 'speech-policy' }, [
+    el('option', { value: 'frei' }, t('speech.policyFrei')),
+    el('option', { value: 'bindend' }, t('speech.policyBindend')),
+  ]);
+  policySel.value = _speechPolicy;
+  policySel.addEventListener('change', async () => {
+    _speechPolicy = policySel.value === 'bindend' ? 'bindend' : 'frei';
+    try { await saveAiConfig({ speechPolicy: _speechPolicy }); } catch { /* Tresor gesperrt: nur Sitzung */ }
+    repaint();   // Engine-Auswahl/Sichtbarkeit neu aufbauen (Eingabe bleibt via _query)
+  });
+
   const browserBtn = el('button', { class: 'btn btn-sm', text: t('speech.engineBrowser') });
   const euBtn = el('button', { class: 'btn btn-sm', text: t('speech.engineEu') });
   const langSel = el('select', { class: 'speech-lang' }, SPEECH_LANGS.map(([code, name]) => el('option', { value: code }, name)));
@@ -55,12 +71,13 @@ function speechControls(input) {
   const micBtn = el('button', { class: 'btn', text: '🎤 ' + t('speech.start') });
   const resetMic = () => { micBtn.textContent = '🎤 ' + t('speech.start'); micBtn.removeAttribute('disabled'); };
   const setEngine = (id) => {
-    _speechEngine = id;
-    browserBtn.classList.toggle('btn-primary', id === 'browser');
-    euBtn.classList.toggle('btn-primary', id === 'eu');
-    notice.textContent = id === 'eu' ? t('speech.noticeEu') : t('speech.noticeBrowser');
+    // Politik entscheidet: bindend erzwingt eu; browser nur, wenn erlaubt UND unterstützt.
+    _speechEngine = pickEngine(_speechPolicy, id, browserSpeechSupported());
+    browserBtn.classList.toggle('btn-primary', _speechEngine === 'browser');
+    euBtn.classList.toggle('btn-primary', _speechEngine === 'eu');
+    notice.textContent = _speechEngine === 'eu' ? t('speech.noticeEu') : t('speech.noticeBrowser');
   };
-  browserBtn.addEventListener('click', () => setEngine('browser'));
+  if (browserErlaubt) browserBtn.addEventListener('click', () => setEngine('browser'));
   euBtn.addEventListener('click', () => setEngine('eu'));
 
   let activeRec = null;   // Web-Speech-Recognizer
@@ -104,10 +121,13 @@ function speechControls(input) {
   });
 
   setEngine(_speechEngine);
+  const row = [el('span', { class: 'muted small', text: t('speech.engineLabel') })];
+  if (browserErlaubt) row.push(browserBtn);
+  row.push(euBtn, langSel,
+    el('span', { class: 'muted small', text: t('speech.policyLabel') }), policySel,
+    micBtn, status);
   return el('div', { class: 'speech-block' }, [
-    el('div', { class: 'btn-row speech-row' }, [
-      el('span', { class: 'muted small', text: t('speech.engineLabel') }), browserBtn, euBtn, langSel, micBtn, status,
-    ]),
+    el('div', { class: 'btn-row speech-row' }, row),
     notice,
   ]);
 }

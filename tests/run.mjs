@@ -128,7 +128,7 @@ import { queryLocal, hybridMatch, parseVerdicts, buildAttestation, buildRichterM
   matchDimensions, schichtApoptose, queryLocalDimensions, DimensionsAllNullError, SCHICHT_MIN_MATCH, MATCH_DIMENSIONS_LANES } from '../src/sbkim/match.js';
 import { sbkimHybridSearch } from '../src/sbkim/hybridSearch.js';
 import { accountCorpusEntries, buildNodeText, nodeCorpusEntries, fetchNodeSpores, embedMissingVectors } from '../src/sbkim/searchCorpus.js';
-import { encodingFor, buildSpeechRequest, parseTranscript, speechFehlerHinweis, browserSpeechSupported } from '../src/ai/speech.js';
+import { encodingFor, buildSpeechRequest, parseTranscript, speechFehlerHinweis, browserSpeechSupported, policyEngines, pickEngine, SPEECH_ENGINES, SPEECH_POLICIES } from '../src/ai/speech.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
@@ -1411,6 +1411,17 @@ await section('Spracheingabe (Speech-to-Text) — reine Logik', () => {
   ok('Fehler-Hinweis: API keys not supported', /Speech-to-Text API aktivieren/.test(speechFehlerHinweis('API keys are not supported by this API')));
   ok('Fehler-Hinweis: disabled', /nicht aktiviert/.test(speechFehlerHinweis('Cloud Speech-to-Text API has not been used')));
   ok('browserSpeechSupported in node → false', browserSpeechSupported() === false);
+
+  // EU-Politik frei/bindend (headless-äquivalent zu Sages Modul 21, Regel #8).
+  ok('Engines/Politiken benannt', JSON.stringify(SPEECH_ENGINES) === '["browser","eu"]' && JSON.stringify(SPEECH_POLICIES) === '["frei","bindend"]');
+  ok('frei → beide Engines', JSON.stringify(policyEngines('frei')) === '["browser","eu"]');
+  ok('bindend → nur EU', JSON.stringify(policyEngines('bindend')) === '["eu"]');
+  ok('pickEngine: frei + eu → eu', pickEngine('frei', 'eu', true) === 'eu');
+  ok('pickEngine: frei + browser (unterstützt) → browser', pickEngine('frei', 'browser', true) === 'browser');
+  ok('pickEngine: frei + browser (NICHT unterstützt) → eu', pickEngine('frei', 'browser', false) === 'eu');
+  ok('pickEngine: bindend + browser → eu (erzwungen)', pickEngine('bindend', 'browser', true) === 'eu');
+  ok('pickEngine: bindend + eu → eu', pickEngine('bindend', 'eu', true) === 'eu');
+  ok('pickEngine: Default-Wunsch (undefined) → browser (frei)', pickEngine('frei', undefined, true) === 'browser');
 });
 
 // ===== Geheim-Fach (Tresor im Tresor) — Krypto- & Recovery-Kern =====
