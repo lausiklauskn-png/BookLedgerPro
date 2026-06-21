@@ -5,6 +5,24 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-21 — Knopf „mein Knoten ↔ Netz": Drei-Schichten in der Suche nutzbar
+
+**Was getan**
+- `src/ui/views/sbkimsuche.js`: neuer Knopf **„🜲 mein Knoten ↔ Netz"** (nur Knoten-Bereich). Lädt die
+  eigene `sbkim/spore.json`, baut `queryNode` (`queryVec`/`queryCapVec`/`queryNeedsVec`), filtert den
+  eigenen Knoten aus dem Korpus und ruft `sbkimHybridSearch(corpus, { queryNode })` → der
+  Drei-Schichten-Vorfilter `queryLocalDimensions` wird real benutzt.
+- Treffer zeigen ein **Modus-Badge** (`Domäne`/`Schichten`), so ist sichtbar, welcher Pfad lief.
+- i18n DE/EN. SW **v174**. Tests **2055/2055** (Engine getestet; der Knopf ist View — nicht node-testbar).
+
+**Stand:** Drei-Schichten-Engine jetzt in der Suche **auslösbar**. Läuft heute im domain-Modus
+(Sporen ohne cap/needs); schaltet auf schichten, sobald beide Seiten cap/needs tragen.
+
+**Offen / ehrlich:** Live-Klick/Mic/Embedding nicht node-testbar. Volle Schichten brauchen
+signierte cap/needs auf BEIDEN Seiten (unsere Signierung + Sage).
+
+---
+
 ## 2026-06-21 — Spore-Signierung mit cap/needs: Drei-Schichten in-App aktivierbar
 
 **Was getan**

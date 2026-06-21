@@ -7,7 +7,19 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-21): Spore-Signierung mit cap/needs — Drei-Schichten AKTIVIERBAR (In-App)
+## ⏭ LETZTER STAND (2026-06-21): Knoten↔Netz-Knopf (Drei-Schichten in der Suche nutzbar)
+
+> Neuer Knopf **„🜲 mein Knoten ↔ Netz"** im Knoten-Bereich der SBKIM-Suche: nimmt unsere EIGENE
+> Spore als `queryNode` und matcht gegen die Peer-Sporen über `queryLocalDimensions`
+> (Drei-Schichten-Engine). Läuft **heute schon** (domain-Modus, da Sporen noch keine cap/needs);
+> Treffer zeigen ein Modus-Badge (`Domäne`/`Schichten`). Schaltet automatisch auf `schichten`,
+> sobald beide Seiten cap/needs tragen. SW **v174**, Tests **2055/2055** (Engine getestet; Knopf =
+> View, nicht node-testbar).
+> **⏭ NÄCHSTE KONKRETE SCHRITTE:** (1) **Spore signieren** (App → Netzwerk → „Echte Vektoren
+> erzeugen" → `spore.json` committen — siehe unten); (2) Sage um cap/needs in ihrer Spore bitten →
+> dann zeigt der Knopf `Schichten` statt `Domäne`.
+
+## ⏭ STAND (2026-06-21): Spore-Signierung mit cap/needs — Drei-Schichten AKTIVIERBAR (In-App)
 
 > Der Knopf „Echte Vektoren erzeugen" (Netzwerk-Ansicht) bettet jetzt **drei** Texte ein
 > (Domäne + cap + needs via `embedTexts`) und **signiert** sie in die Spore (`capVector`/
