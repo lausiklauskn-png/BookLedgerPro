@@ -1233,9 +1233,18 @@ await section('SBKIM: Hybrid-Match — Richter + Fail-soft (kein Throw)', async 
   ok('Score auf [0,1] geklemmt', clamped[0].score === 1);
   ok('Begründung ≤ 200 Zeichen', clamped[0].begruendung.length === 200);
 
-  // buildRichterMessages: System + User, listet Kandidaten.
+  // buildRichterMessages: System + User, listet nummerierte Kandidaten.
   const msgs = buildRichterMessages('werbung', cands);
   ok('Messages: system+user', msgs.length === 2 && msgs[0].role === 'system' && /Werbekosten/.test(msgs[1].content));
+  ok('Kandidaten nummeriert ([1])', /\[1\]/.test(msgs[1].content));
+
+  // HALLUZINATIONS-SCHUTZ: id-basiert → kanonisches Label, selbst wenn das Modell ein
+  // falsches Label/eine erfundene Nummer mitschickt (echter Befund: SKR04 6800 statt SKR03 4630).
+  const hallu = parseVerdicts(JSON.stringify({ verdicts: [{ id: 1, label: '6800 Falsche Nummer', passt: true, score: 0.9, begruendung: 'x' }] }), cands);
+  ok('id-basiert: kanonisches Label, kein Modell-Echo', hallu.length === 1 && hallu[0].label === 'A' && hallu[0].anchorId === 'a');
+  // Erfundener Kandidat ohne id/Label-Treffer → verworfen (keine falschen Konten).
+  const invented = parseVerdicts(JSON.stringify({ verdicts: [{ label: '6800 Erfunden', passt: true, score: 1 }] }), cands);
+  ok('erfundenes Konto verworfen', Array.isArray(invented) && invented.length === 0);
 });
 
 await section('SBKIM: Hybrid-Match — alle 4 Modi (Helfer)', async () => {
