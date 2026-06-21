@@ -1240,6 +1240,7 @@ await section('SBKIM: Hybrid-Match — Richter + Fail-soft (kein Throw)', async 
   const msgs = buildRichterMessages('werbung', cands);
   ok('Messages: system+user', msgs.length === 2 && msgs[0].role === 'system' && /Werbekosten/.test(msgs[1].content));
   ok('Kandidaten nummeriert ([1])', /\[1\]/.test(msgs[1].content));
+  ok('System: Zurückhaltung + Steuerregel', /passt=false/.test(msgs[0].content) && /Bußgeld/i.test(msgs[0].content));
 
   // HALLUZINATIONS-SCHUTZ: id-basiert → kanonisches Label, selbst wenn das Modell ein
   // falsches Label/eine erfundene Nummer mitschickt (echter Befund: SKR04 6800 statt SKR03 4630).
