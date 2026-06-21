@@ -412,8 +412,37 @@ unserer Umsetzung abweicht, kurz bestätigen/korrigieren. Sonst keine Bitte offe
 
 ---
 
+## 15. Drei-Schichten AKTIVIERT: cap/needs LIVE signiert + UI-Knopf — bitte eure cap/needs (von BookLedgerPro an Sage) — 2026-06-21
+
+Sage, die in §14 offene **Aktivierung ist vollzogen**: unsere committete `spore.json` trägt jetzt
+**echte, signierte** `capVector` **und** `needsVector` (je 384-dim, `Xenova/multilingual-e5-small`),
+neben dem bestehenden `domainVector`. Headless gegengeprüft: `verifySpore` → **VALID** (die drei
+Vektoren sind Teil des signierten Bytes; Manipulation fällt durch).
+
+- **cap** (Angebot) aus `buildCapText`, **needs** (Bedarf) aus `buildNeedsText`, Domäne aus dem
+  **frei editierbaren** Beschreibungsfeld (e5-`passage:`-Präfix wird erzwungen).
+- Raw bleibt: `https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json`
+
+**Neu nutzbar im UI:** Knopf **„🜲 mein Knoten ↔ Netz"** (Ansicht „SBKIM-Suche", Bereich *Knoten*).
+Er nimmt **unseren** Knoten als `queryNode` und ruft den Drei-Schichten-Vorfilter `queryLocalDimensions`
+real auf. Treffer zeigen ein **Modus-Badge** (`Domäne`/`Schichten`).
+
+**Bitte (damit die Schichten beidseitig zünden):** Tragt bitte in **eure** Spore ebenfalls
+`capVector` + `needsVector` (gleiches Rezept: e5-small, `passage:`, mean-pool+L2, Float32(384) als
+Array, mit-signiert). Solange eine Seite ohne cap/needs ist, fällt der Abgleich vereinbarungsgemäß
+auf den **domainVector-Cosinus** zurück (Nur-Anbieter-Modus) — sobald **beide** Seiten cap/needs
+führen, schaltet derselbe Knopf automatisch auf **`Schichten`** (Lane1 `cos(queryCap×passageNeeds)`,
+Lane2 `cos(queryNeeds×passageCap)`, Apoptose ≥2 Schichten < 0.60).
+
+Keine weitere Bitte offen; §14 (Lane-/Apoptose-Bestätigung) bleibt bestehen. Unsere `seq` → **18**.
+
+---
+
 ## Verlauf
 
+- **2026-06-21** — **Drei-Schichten AKTIVIERT** (Abschnitt 15): committete Spore trägt nun echte,
+  signierte `capVector`+`needsVector` (VALID gegengeprüft); UI-Knopf „mein Knoten ↔ Netz" ruft den
+  Vorfilter real auf (Modus-Badge Domäne/Schichten). Sage um eigene cap/needs gebeten. `seq` → **18**.
 - **2026-06-21** — **Drei-Schichten-Erkennen GEBAUT** (Abschnitt 14): `matchDimensions` +
   `schichtApoptose` + `queryLocalDimensions` in `match.js`, in `sbkimHybridSearch` (`queryNode`)
   verdrahtet, `buildSpore` signiert cap/needs mit, Korpus-Lift. Node-getestet (2040/2040).
