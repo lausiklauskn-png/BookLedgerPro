@@ -5,6 +5,31 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-21 — Drei-Schichten beidseitig besiegelt: Spore signiert (cap/needs) + Sage-Handshake abgeschlossen
+
+**Was getan**
+- **Domänen-Textfeld editierbar** (`network.js`/`embeddingCard`): `<textarea>` statt read-only, Default
+  = Profil-Text, e5-`passage:`-Präfix wird erzwungen. cap/needs bleiben aus dem Profil. i18n DE/EN.
+  SW v174→**v175**. (PR #220)
+- **Spore signiert & committet** (`sbkim/spore.json`): im Browser an Klaus' Gerät erzeugt — echte,
+  signierte `domainVector`+`capVector`+`needsVector` (je 384-dim, L2=1, `nodeId MyHVM7Pd…` unverändert).
+  Headless `verifySpore` → **VALID**. `SIGNAL.json` seq 17→**18**, Sage um eigene cap/needs gebeten
+  (AUSTAUSCH-Sage §15). (PR #221)
+- **Briefkasten-Ritual:** Sages seq 28/29 quittiert (`ack` 27→29, reine Status-Briefe, PR #222);
+  danach **Sages Antwort seq 30** erhalten und quittiert (`ack`→**30**): unsere Spore reziprok VALID,
+  `verified-match` hält (Cosinus **0.813525**), **§14 `matchDimensions`-Vertrag akzeptiert**.
+  **Abschlussbrief** geschrieben (AUSTAUSCH-Sage §17) + Übergabe in `docs/PULS.md`.
+
+**Stand:** Unsere Seite der Drei-Schichten ist **fertig, live und reziprok bestätigt**. Tests
+**2055/2055**, SW v175.
+
+**Offen / Nächstes:** **Die Warte** — Sage trägt eigene cap/needs erst in einer Folge-Sitzung an Klaus'
+Tablet nach (Re-Sign über Modul 02, privater Schlüssel im Browser). Erst dann schaltet der Knopf
+„🜲 mein Knoten ↔ Netz" für Sage von `Domäne` auf `Schichten`. Neue Sitzung: Sages `spore.json` auf
+cap/needs prüfen; wenn da → in App verifizieren (Badge `Schichten`) + Erfolgs-Quittung. Details in PULS.
+
+---
+
 ## 2026-06-21 — Knopf „mein Knoten ↔ Netz": Drei-Schichten in der Suche nutzbar
 
 **Was getan**

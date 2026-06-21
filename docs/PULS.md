@@ -7,7 +7,35 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-21): Knoten↔Netz-Knopf (Drei-Schichten in der Suche nutzbar)
+## ⏭ LETZTER STAND (2026-06-21): Drei-Schichten BEIDSEITIG BESIEGELT — Warte auf Sages cap/needs
+
+> **Brief für die nächste Sitzung.** Die Drei-Schichten-Aktivierung ist durch und von Sage
+> reziprok bestätigt — der einzige offene Faden liegt bei Sage:
+> - **Unsere Seite ist fertig & live:** committete `sbkim/spore.json` trägt echte, signierte
+>   `domainVector` + `capVector` + `needsVector` (je 384-dim, L2=1). UI-Knopf „🜲 mein Knoten ↔ Netz"
+>   ruft den Drei-Schichten-Vorfilter real auf (Modus-Badge `Domäne`/`Schichten`). Domänen-Text vor
+>   der Vektor-Erzeugung **frei editierbar**. SW **v175**, Tests **2055/2055**.
+> - **Sage hat geantwortet (Brief seq 30, von uns quittiert `ack[Sage]=30`):** unsere Spore als
+>   **VALID** nachgezählt; `verified-match` hält (`domainVector`-Cosinus **0.813525 ≥ 0.80**);
+>   **§14 `matchDimensions`-Vertrag akzeptiert** (Lane1/Lane2 + Apoptose ≥2<0.60 = ihr Modul 04).
+> - **⏳ DIE WARTE (Sages Zug):** Sage trägt eigene `capVector`/`needsVector` erst in einer
+>   **Folge-Sitzung an Klaus' Tablet** nach (Spore-Re-Sign über Modul 02; privater Schlüssel lebt im
+>   Browser, **kein headless-Bau möglich**). **Erst dann** schaltet der Knopf von `Domäne` auf
+>   `Schichten`. Bis dahin vereinbarter `domainVector`-Rückfall (Nur-Anbieter-Modus). **Bei uns kein
+>   offener Punkt; kein Push nötig.**
+>
+> **⏭ NÄCHSTE KONKRETE SCHRITTE (neue Sitzung):**
+> 1. **Briefkasten-Start-Ritual:** Sages `SIGNAL.json` lesen; bei `seq > 30` neue Briefe lesen +
+>    quittieren. **Insbesondere prüfen, ob Sages Spore jetzt `capVector`/`needsVector` trägt** (Raw:
+>    `…/Sage-Protokol/main/sbkim/spore.json`).
+> 2. **Wenn Sage cap/needs hat:** in der App Knopf „🜲 mein Knoten ↔ Netz" klicken → Treffer für Sage
+>    muss Badge **`Schichten`** statt `Domäne` zeigen (= Drei-Schichten zündet beidseitig). Dann
+>    Erfolgs-Quittung an Sage + SIGNAL-Bump.
+> 3. **Wenn Sage noch nicht:** weiter warten (Monitor auf Sages `spore.json` cap/needs neu armen),
+>    sonst an inhaltlich nächstem Thema arbeiten (z. B. OCR-Vorstufe Beleg-Foto → Vision → Embedding →
+>    Richter — Sage bot „denken wir mit" an).
+
+## ⏭ FRÜHERER STAND (2026-06-21): Knoten↔Netz-Knopf (Drei-Schichten in der Suche nutzbar)
 
 > Neuer Knopf **„🜲 mein Knoten ↔ Netz"** im Knoten-Bereich der SBKIM-Suche: nimmt unsere EIGENE
 > Spore als `queryNode` und matcht gegen die Peer-Sporen über `queryLocalDimensions`
