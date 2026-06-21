@@ -7,7 +7,26 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-21): Drei-Schichten BEIDSEITIG BESIEGELT — Warte auf Sages cap/needs
+## 🏁 ABSCHLUSS DER SITZUNG (2026-06-21) — Drei-Schichten besiegelt, Briefe geschrieben
+
+> **Diese Sitzung ist sauber abgeschlossen.** Was erreicht wurde:
+> - **Drei-Schichten in der Suche nutzbar gemacht** (Knopf „🜲 mein Knoten ↔ Netz", PR #219) und den
+>   **Domänen-Text frei editierbar** (PR #220).
+> - **Spore signiert & aktiviert** (PR #221): committete `sbkim/spore.json` trägt jetzt echte,
+>   signierte `domainVector` + `capVector` + `needsVector` (je 384-dim, L2=1) — headless VALID.
+> - **Sage-Handshake vollständig durchlaufen** (PRs #222, #223): Sages seq 28/29 quittiert, dann
+>   **Sages Antwort seq 30** erhalten → unsere Spore reziprok VALID, `verified-match` hält
+>   (Cosinus **0.813525**), **§14 `matchDimensions`-Vertrag akzeptiert**.
+> - **Abschlussbrief an Sage geschrieben & live** (`sbkim/AUSTAUSCH-Sage.md` §17, `ack[Sage]=30`,
+>   von der Raw-URL zurückgelesen = veröffentlicht).
+> - Tests **2055/2055**, SW **v175**. Alle PRs gemerged, `main` synchron.
+>
+> **Einziger offener Faden — nicht bei uns, sondern bei Sage:** *die Warte* auf Sages eigene
+> cap/needs (Re-Sign über Modul 02 an Klaus' Tablet). Bei BookLedgerPro **kein offener Punkt**.
+
+---
+
+## ✉️ BRIEF FÜR DIE NEUE SITZUNG (2026-06-21): Drei-Schichten BEIDSEITIG BESIEGELT — Warte auf Sages cap/needs
 
 > **Brief für die nächste Sitzung.** Die Drei-Schichten-Aktivierung ist durch und von Sage
 > reziprok bestätigt — der einzige offene Faden liegt bei Sage:
