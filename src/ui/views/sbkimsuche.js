@@ -145,10 +145,13 @@ function renderResult(res) {
     el('p', { class: 'muted small', text: t('sbkimsuche.judgeMeta').replace('%P%', att.provider || 'mistral').replace('%R%', att.region || 'eu').replace('%M%', att.model || '') }),
     trefferListe(res.treffer, true),
   ];
-  // Transparenz: hat der Richter ALLE abgelehnt, zeige die geprüften Kandidaten (sehen, was der Vorfilter vorlegte).
-  if ((!res.treffer || res.treffer.length === 0) && Array.isArray(res.geprueft) && res.geprueft.length) {
-    kinder.push(el('p', { class: 'muted small', text: t('sbkimsuche.geprueft') }));
-    kinder.push(el('ul', { class: 'sbkimsuche-list' }, res.geprueft.map((c) => el('li', {}, [el('span', { class: 'muted small', text: c.label }) ]))));
+  // Transparenz: IMMER die geprüften Kandidaten (vom Vorfilter vorgelegt) zeigen — so sieht man,
+  // ob ein „keiner passt" am Recall (Schicht 1) oder am Urteil (Schicht 2) liegt.
+  if (Array.isArray(res.geprueft) && res.geprueft.length) {
+    kinder.push(el('details', { class: 'sbkimsuche-geprueft' }, [
+      el('summary', { class: 'muted small', text: t('sbkimsuche.geprueft').replace('%N%', String(res.geprueft.length)) }),
+      el('ul', { class: 'sbkimsuche-list' }, res.geprueft.map((c) => el('li', {}, [el('span', { class: 'muted small', text: c.label })]))),
+    ]));
   }
   return el('div', { class: 'card' }, kinder);
 }
