@@ -4,6 +4,7 @@
 
 import { KONTOART } from '../domain/accounts.js';
 import { EMBED_DIM } from './embed.js';
+import { synonymeFor } from './kontoSynonyme.js';
 
 const ART_LABEL = {
   [KONTOART.AKTIV]: 'Aktivkonto (Bestand)',
@@ -16,11 +17,16 @@ const ART_LABEL = {
 export function accountCorpusEntries(konten) {
   return (Array.isArray(konten) ? konten : [])
     .filter((k) => k && k.nummer)
-    .map((k) => ({
-      label: `${k.nummer} ${k.name || ''}`.trim(),
-      text: `${k.name || ''} — ${ART_LABEL[k.art] || k.art || ''} (Konto ${k.nummer})`.replace(/^\s*—\s*/, '').trim(),
-      anchorId: String(k.nummer),
-    }));
+    .map((k) => {
+      const syn = synonymeFor(k.nummer);
+      const base = `${k.name || ''} — ${ART_LABEL[k.art] || k.art || ''} (Konto ${k.nummer})`.replace(/^\s*—\s*/, '').trim();
+      // Synonyme heben den RECALL des Vektor-Vorfilters bei Alltagssprache (ändern nichts an der Buchung).
+      return {
+        label: `${k.nummer} ${k.name || ''}`.trim(),
+        text: syn ? `${base}. Stichworte: ${syn}` : base,
+        anchorId: String(k.nummer),
+      };
+    });
 }
 
 /**
