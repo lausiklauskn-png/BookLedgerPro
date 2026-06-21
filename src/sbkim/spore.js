@@ -80,10 +80,17 @@ export async function buildSpore(keys, cfg) {
     publicKey: { alg: 'Ed25519', crv: 'Ed25519', ext: true, key_ops: ['verify'], kty: 'OKP', x },
     stammCategories: cfg.stammCategories || [],
   };
-  if (cfg.domainVector) {
-    spore.domainVector = cfg.domainVector.vector || cfg.domainVector;
-    if (cfg.domainVector._demo || cfg.demoVector) spore._demo = ['domainVector'];
+  // Vektoren werden MITSIGNIERT (Teil der kanonischen Form). domainVector = Gesamt-Domäne;
+  // capVector/needsVector = Angebot/Bedarf für das Drei-Schichten-Erkennen (Sage Karte 04),
+  // beide optional. _demo listet alle als Demo markierten Vektor-Felder.
+  const demoFields = [];
+  for (const feld of ['domainVector', 'capVector', 'needsVector']) {
+    const dv = cfg[feld];
+    if (!dv) continue;
+    spore[feld] = dv.vector || dv;
+    if (dv._demo || cfg.demoVector) demoFields.push(feld);
   }
+  if (demoFields.length) spore._demo = demoFields;
   spore.signature = await signCanonical(keys.privateKey, spore);
   return spore;
 }

@@ -5,6 +5,29 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-21 — DREI-Schichten-Erkennen GEBAUT (Sage Karte 04): Engine + Suche-Wiring + Tests
+
+**Was getan (echter Code, nicht nur Doku)**
+- `src/sbkim/match.js`: **`matchDimensions`** (zwei Lanes cap/needs → Lane1 `cos(queryCap×passageNeeds)`,
+  Lane2 `cos(queryNeeds×passageCap)`; Schicht-Score = Mittel der berechenbaren Lanes; overall;
+  **Nur-Anbieter-Modus**; **synchroner Wurf** `DimensionsAllNullError` bei vier null),
+  **`schichtApoptose`** (je Schicht 0.60; 1 drunter erlaubt, 2+ → Apoptose),
+  **`queryLocalDimensions`** (Knoten↔Knoten-Vorfilter; Apoptose wirkt; Rückfall auf domainVector).
+- `src/sbkim/hybridSearch.js`: `sbkimHybridSearch({ queryNode })` nutzt den Drei-Schichten-Vorfilter.
+- `src/sbkim/spore.js`: `buildSpore` signiert optionale `capVector`/`needsVector` MIT (verifizierbar).
+- `src/sbkim/searchCorpus.js`: `nodeCorpusEntries` hebt echte (nicht-`_demo`) cap/needs.
+- `src/sbkim/embed.js`: `buildCapText` (Angebot) / `buildNeedsText` (Bedarf).
+- Tests +24 → **2040/2040** grün. SW **v171**. Muster/Brief/PULS aktualisiert.
+
+**Stand:** Engine gebaut, getestet, in die Suche verdrahtet. An Sage gemeldet (AUSTAUSCH §14, seq 17).
+
+**Offen / ehrlich:** **Aktivierung** — die committete Spore trägt noch KEINE echten cap/needs; bis
+zum Neu-Einbetten + **Neu-Signieren** (Browser) läuft der Knoten-Pfad im **Nur-Anbieter-Modus**
+(domainVector). Freitext-UI bleibt bewusst einschichtig. Optionaler UI-Knopf „mein Knoten ↔ Netz"
+sowie Sages Bestätigung der Lane-/Apoptose-Zuordnung stehen aus. DOM/Browser-Teile nicht node-testbar.
+
+---
+
 ## 2026-06-21 — Spracheingabe (DE/EN/RU) für die SBKIM-Suche + EU-Weg vom Nutzer verifiziert [PRs #211–#213]
 
 **Was getan**

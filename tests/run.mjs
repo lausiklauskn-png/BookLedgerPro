@@ -123,8 +123,9 @@ import { buildSignal } from '../src/sbkim/signal.js';
 import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID, SEAL_STAGE } from '../src/sbkim/nodeProfile.js';
 import { readFileSync as _readSpore } from 'node:fs';
 import { classifyPeer, summarizePeers, fetchPeerStatus, PEERS } from '../src/sbkim/peers.js';
-import { buildPassageText, cosineSimilarity, l2norm, EMBED_DIM, EMBED_MODEL } from '../src/sbkim/embed.js';
-import { queryLocal, hybridMatch, parseVerdicts, buildAttestation, buildRichterMessages, PROVIDER_MIN_MATCH } from '../src/sbkim/match.js';
+import { buildPassageText, buildCapText, buildNeedsText, cosineSimilarity, l2norm, EMBED_DIM, EMBED_MODEL } from '../src/sbkim/embed.js';
+import { queryLocal, hybridMatch, parseVerdicts, buildAttestation, buildRichterMessages, PROVIDER_MIN_MATCH,
+  matchDimensions, schichtApoptose, queryLocalDimensions, DimensionsAllNullError, SCHICHT_MIN_MATCH, MATCH_DIMENSIONS_LANES } from '../src/sbkim/match.js';
 import { sbkimHybridSearch } from '../src/sbkim/hybridSearch.js';
 import { accountCorpusEntries, buildNodeText, nodeCorpusEntries, fetchNodeSpores, embedMissingVectors } from '../src/sbkim/searchCorpus.js';
 import { encodingFor, buildSpeechRequest, parseTranscript, speechFehlerHinweis, browserSpeechSupported } from '../src/ai/speech.js';
@@ -1279,6 +1280,88 @@ await section('SBKIM: Hybrid-Match — alle 4 Modi (Helfer)', async () => {
   // fail-soft-vorfilter (apiKey, aber _chat wirft)
   const fs = await sbkimHybridSearch('q', corpusHit, { embedQuery, apiKey: 'k', _chat: async () => { throw new Error('netz weg'); } });
   ok('Modus fail-soft-vorfilter', fs.mode === 'fail-soft-vorfilter' && fs.treffer.length === 1 && /netz weg/.test(fs.reason));
+});
+
+await section('SBKIM: DREI-Schichten-Erkennen — matchDimensions + Apoptose (Sage Karte 04)', () => {
+  const unit = (i) => { const a = new Array(EMBED_DIM).fill(0); a[i] = 1; return a; };
+  ok('Schwelle je Schicht = 0.60', SCHICHT_MIN_MATCH === 0.60);
+  ok('drei Lanes benannt', JSON.stringify(MATCH_DIMENSIONS_LANES) === '["fachlich","prozess","skalierung"]');
+
+  // Beide Lanes berechenbar: lane1=cos(qCap,pNeeds), lane2=cos(qNeeds,pCap). Hier beide 1 → overall 1.
+  const beide = matchDimensions(unit(0), unit(1), unit(1), unit(0));
+  ok('beide Lanes: overall = Mittel (1.0), availableLanes 2', Math.abs(beide.overall - 1) < 1e-9 && beide.availableLanes === 2);
+  ok('drei Schichten identisch in Stufe A', beide.fachlich === beide.prozess && beide.prozess === beide.skalierung);
+
+  // lane1=cos(u0,u0)=1, lane2=cos(u0,u1)=0 → Mittel 0.5
+  const gemischt = matchDimensions(unit(0), unit(0), unit(1), unit(0));
+  ok('Mittel der Lanes (0.5)', Math.abs(gemischt.overall - 0.5) < 1e-9 && gemischt.availableLanes === 2);
+
+  // Genau eine Lane (passageCap null) → Single-Lane-Wert.
+  const eine = matchDimensions(unit(0), unit(0), null, unit(0));
+  ok('eine Lane: Single-Wert (1.0), availableLanes 1', Math.abs(eine.overall - 1) < 1e-9 && eine.availableLanes === 1);
+
+  // Nur-Anbieter-Modus: Anfrage-Seite komplett ohne Vektoren → alle Schichten null.
+  const nur = matchDimensions(null, null, unit(0), unit(1));
+  ok('Nur-Anbieter-Modus: Schichten null, availableLanes 0', nur.overall === null && nur.availableLanes === 0);
+
+  // Alle vier null → synchroner Throw.
+  let warf = false;
+  try { matchDimensions(null, null, null, null); } catch (e) { warf = e.name === 'DimensionsAllNullError'; }
+  ok('alle vier null → DimensionsAllNullError (synchron)', warf);
+  ok('DimensionsAllNullError-Factory setzt name', DimensionsAllNullError('x').name === 'DimensionsAllNullError');
+
+  // Apoptose-Vertrag: 0 oder 1 Schicht drunter erlaubt; 2+ → Apoptose.
+  ok('alle ≥ 0.60 → keine Apoptose', schichtApoptose({ fachlich: 0.9, prozess: 0.9, skalierung: 0.9 }).apoptose === false);
+  ok('EINE Schicht drunter erlaubt (Brücken-Anlass)', schichtApoptose({ fachlich: 0.5, prozess: 0.9, skalierung: 0.9 }).apoptose === false);
+  const apo = schichtApoptose({ fachlich: 0.5, prozess: 0.5, skalierung: 0.9 });
+  ok('ZWEI Schichten drunter → Apoptose', apo.apoptose === true && apo.unterSchwelle === 2);
+});
+
+await section('SBKIM: DREI-Schichten-Vorfilter queryLocalDimensions + Suche-Wiring', async () => {
+  const unit = (i) => { const a = new Array(EMBED_DIM).fill(0); a[i] = 1; return a; };
+  // Anfrage-Knoten: bietet u0 (cap), sucht u1 (needs), Domäne u0.
+  const query = { queryCapVec: unit(0), queryNeedsVec: unit(1), queryVec: unit(0) };
+  const corpus = [
+    // A: sucht was wir bieten (needsVec u0) + bietet was wir suchen (capVec u1) → beide Lanes 1 → overall 1.
+    { label: 'Passt', anchorId: 'a', capVec: unit(1), needsVec: unit(0), passageVec: unit(0) },
+    // B: cap/needs orthogonal → beide Lanes 0 → 2+ Schichten < 0.60 → Apoptose (raus).
+    { label: 'Apoptose', anchorId: 'b', capVec: unit(2), needsVec: unit(3), passageVec: unit(0) },
+    // C: kein cap/needs → Nur-Anbieter → Rückfall auf domainVector-Cosinus (u0×u0=1).
+    { label: 'NurDomain', anchorId: 'c', passageVec: unit(0) },
+  ];
+  const res = queryLocalDimensions(corpus, query, 5);
+  const byId = Object.fromEntries(res.map((r) => [r.anchorId, r]));
+  ok('Apoptose-Knoten ist RAUS (2 Schichten < 0.60)', !byId.b);
+  ok('Passt: modus=schichten, overall 1', byId.a && byId.a.modus === 'schichten' && Math.abs(byId.a.score - 1) < 1e-9);
+  ok('Nur-Anbieter: Rückfall domainVector (modus=domain)', byId.c && byId.c.modus === 'domain' && Math.abs(byId.c.score - 1) < 1e-9);
+
+  // Verdrahtung: sbkimHybridSearch nutzt bei queryNode den Drei-Schichten-Vorfilter (Apoptose wirkt).
+  const out = await sbkimHybridSearch('', corpus, { queryNode: query });
+  ok('Suche via queryNode: Apoptose wirkt im Ergebnis', out.mode === 'nur-vorfilter' && !out.treffer.some((t) => t.anchorId === 'b') && out.treffer.length === 2);
+});
+
+await section('SBKIM: cap/needs — Texte, signierte Spore, Korpus-Lift', async () => {
+  const prof = { domain: 'Buchhaltung', domainDescription: 'Belege', domainKeywords: ['USt'], stammCategories: ['Konto'], guestCategories: ['Rechnung', 'Beleg'] };
+  ok('capText = Angebot (domain+desc+kw+stamm)', buildCapText(prof) === 'passage: Buchhaltung. Belege. USt. Konto');
+  ok('needsText = Bedarf (guestCategories)', buildNeedsText(prof) === 'passage: Rechnung, Beleg');
+  ok('needsText fällt auf domain zurück ohne Gäste', buildNeedsText({ domain: 'X' }) === 'passage: X');
+
+  // Signierte Spore trägt cap/needs MIT — beide mitsigniert & verifizierbar.
+  const keys = await generateKeyPair();
+  const cap = Array.from({ length: EMBED_DIM }, (_, i) => Math.cos(i));
+  const needs = Array.from({ length: EMBED_DIM }, (_, i) => Math.sin(i));
+  const dom = Array.from({ length: EMBED_DIM }, () => 0.05);
+  const spore = await buildSpore(keys, { domain: 'D', endpoint: 'e', nodeName: 'N', domainVector: dom, capVector: cap, needsVector: needs });
+  ok('Spore trägt capVector/needsVector (384-dim)', spore.capVector.length === EMBED_DIM && spore.needsVector.length === EMBED_DIM);
+  ok('cap/needs mitsigniert → Spore VALID', (await verifySpore(spore)).valid === true);
+  const tampered = { ...spore, capVector: spore.capVector.map((x) => x + 1) };
+  ok('verändertes capVector → UNGÜLTIG', (await verifySpore(tampered)).valid === false);
+
+  // Korpus-Lift: echte cap/needs werden zu capVec/needsVec; _demo-markierte NICHT.
+  const entries = nodeCorpusEntries([{ nodeName: 'N', domain: 'D', domainVector: dom, capVector: cap, needsVector: needs }]);
+  ok('Korpus-Eintrag trägt capVec/needsVec', Array.isArray(entries[0].capVec) && Array.isArray(entries[0].needsVec));
+  const demoEntries = nodeCorpusEntries([{ nodeName: 'M', domain: 'D', _demo: ['capVector'], capVector: cap }]);
+  ok('demo-cap wird nicht gehoben', demoEntries[0].capVec === undefined);
 });
 
 await section('SBKIM: Knoten-Korpus (Peer-Sporen, Ur-Gedanke)', async () => {

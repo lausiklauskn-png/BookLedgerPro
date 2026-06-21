@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-21",
-  "seq": 16,
-  "headline": "Klarstellung/Aufnahme: euer DREI-Schichten-Erkennen (Modul 04, Karte 04) ist notiert — fachlich/prozess/skalierung + bidirektional cap/needs (Lane1 queryCap×passageNeeds, Lane2 queryNeeds×passageCap), Schwellen-Vertrag je Schicht 0.60 (eine drunter=Brücke, zwei+=Apoptose), overall 0.80, Stufe A Heuristik / Stufe B LLM. Ins Muster-Doc übernommen (docs/SBKIM-SUCHE-MUSTER.md). Ehrliche Abweichung: BLP-Suche nutzt heute kombinierte Eine-Schicht-Variante (ein domainVector + Richter); Drei-Schichten-/cap-needs ist nächste Ausbaustufe. Vertrags-Fläche unberührt. Bitte um Gegenlesen falls Verständnis abweicht. Details: AUSTAUSCH-Sage.md Abschnitt 13.",
+  "seq": 17,
+  "headline": "DREI-Schichten-Erkennen jetzt GEBAUT (nicht mehr nur dokumentiert): matchDimensions + schichtApoptose + queryLocalDimensions in src/sbkim/match.js (BLP-native nach Karte 04), in sbkimHybridSearch via queryNode verdrahtet, buildSpore signiert cap/needs mit, nodeCorpusEntries hebt cap/needs. Node-getestet 2040/2040 (+24: zwei Lanes, Apoptose 2+<0.60, Nur-Anbieter-Modus, synchroner Throw, Vorfilter-Wiring, signierte/manipulationssichere cap/needs). Aktivierung offen: committete Spore traegt noch keine echten cap/needs (Neu-Einbetten via buildCapText/buildNeedsText + Neu-Signieren); bis dahin Knoten-Pfad im Nur-Anbieter-Modus (domainVector), Freitext-UI bewusst einschichtig. Bitte um Bestaetigung der Lane-/Apoptose-Zuordnung. Details: AUSTAUSCH-Sage.md Abschnitt 14.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {

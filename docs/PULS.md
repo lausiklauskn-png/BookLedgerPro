@@ -7,7 +7,23 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-21): Spracheingabe (DE/EN/RU) — EU-Weg vom Nutzer END-TO-END verifiziert
+## ⏭ LETZTER STAND (2026-06-21): DREI-Schichten-Erkennen GEBAUT (Sage Karte 04) — Engine + Suche-Wiring + Tests
+
+> Das Drei-Schichten-Matching ist **echt gebaut** (nicht mehr nur dokumentiert): in
+> `src/sbkim/match.js` neu `matchDimensions` (zwei Lanes cap/needs, Schicht-Score, overall,
+> Nur-Anbieter-Modus, synchroner Wurf bei vier null), `schichtApoptose` (1 Schicht <0.60 erlaubt,
+> 2+ → Apoptose), `queryLocalDimensions` (Apoptose wirkt, Rückfall auf domainVector-Cosinus). In
+> die Suche verdrahtet: `sbkimHybridSearch({ queryNode })`. `buildSpore` signiert optionale
+> `capVector`/`needsVector` MIT; `nodeCorpusEntries` hebt echte cap/needs; `embed.js` hat
+> `buildCapText`/`buildNeedsText`. **Node-getestet 2040/2040** (+24). SW **v171**.
+> **⚠️ Aktivierung offen:** committete Spore trägt noch KEINE echten cap/needs → Knoten-Pfad läuft
+> bis zum **Neu-Einbetten + Neu-Signieren** (Browser) im **Nur-Anbieter-Modus** (domainVector);
+> Freitext-UI bewusst einschichtig. An Sage gemeldet: AUSTAUSCH-Sage **§14**, `SIGNAL` **seq → 17**.
+> **⏭ NÄCHSTE KONKRETE SCHRITTE:** (1) Spore mit echten cap/needs neu signieren (App-Andock,
+> Browser) → Knoten-Pfad schaltet auf „schichten"; (2) optional UI-Knopf „mein Knoten ↔ Netz"
+> (queryNode aus eigener Spore); (3) Sages Bestätigung der Lane-/Apoptose-Zuordnung abwarten.
+
+## ⏭ STAND (2026-06-21): Spracheingabe (DE/EN/RU) — EU-Weg vom Nutzer END-TO-END verifiziert
 
 > Die SBKIM-Suche hat jetzt **Spracheingabe** als additive Eingabe-Schicht (`src/ai/speech.js`) — Pipeline
 > (Vorfilter→Richter, Fail-soft) **unberührt**. **Zwei Engines:** Browser (Web Speech) **und** EU/BYOK

@@ -18,8 +18,73 @@
 import { cosineSimilarity, loadEmbedder, EMBED_DIM } from './embed.js';
 
 export const SBKIM_MATCH_SPEC = 'sbkim-hybrid-match';
-export const PROVIDER_MIN_MATCH = 0.80;     // Schwelle Vorfilter (Sage-Spec)
+export const PROVIDER_MIN_MATCH = 0.80;     // Schwelle Vorfilter / overall (Sage-Spec)
 export const HYBRID_MAX_CANDIDATES = 20;
+
+// ---- DREI-Schichten-Erkennen (Sage Modul 04 / Karte 04 § Drei-Schichten-Modell) ----
+// BLP-native, aber 1:1 zur Sage-Mechanik. Knoten↔Knoten-Match über zwei Lanes (Angebot ↔
+// Bedarf) und drei orthogonale Schichten. Die echte semantische Differenzierung der drei
+// Achsen macht der RICHTER (Stufe B); Stufe A ist die Heuristik (alle drei = Lane-Cosinus).
+export const SCHICHT_MIN_MATCH = 0.60;                              // Schwelle JE Schicht
+export const MATCH_DIMENSIONS_LANES = ['fachlich', 'prozess', 'skalierung'];
+
+/** Synchroner Wurf, wenn alle vier Dimensions-Vektoren fehlen (Aufrufer-Fehler). */
+export function DimensionsAllNullError(message) {
+  const e = new Error(message); e.name = 'DimensionsAllNullError'; return e;
+}
+
+/** null-sichere Cosinus-Hülle: null, wenn eine Seite null/ungültig (statt NaN). */
+function cosineSafe(a, b) {
+  if (a == null || b == null) return null;
+  const s = cosineSimilarity(a, b);
+  return Number.isFinite(s) ? s : null;
+}
+
+/**
+ * Drei-Schichten-Erkennen (Sage Karte 04). Zwei Lanes über cap/needs:
+ *   Lane 1 = cos(queryCap × passageNeeds)  — „ich biete → du suchst"
+ *   Lane 2 = cos(queryNeeds × passageCap)  — „ich suche ← du bietest"
+ * Schicht-Score = Mittel der berechenbaren Lanes (eine, beide oder null). In Stufe A sind
+ * fachlich/prozess/skalierung identisch dem Schicht-Score; overall = Mittel der nicht-null
+ * Schichten. Eine Seite ganz ohne Vektoren → Nur-Anbieter-Modus (alle Schichten null,
+ * availableLanes:0 — der Aufrufer fällt auf den domainVector-Cosinus zurück).
+ * @throws DimensionsAllNullError wenn alle vier Vektoren null sind.
+ */
+export function matchDimensions(queryCap, queryNeeds, passageCap, passageNeeds) {
+  const qCapNull = queryCap == null, qNeedsNull = queryNeeds == null;
+  const pCapNull = passageCap == null, pNeedsNull = passageNeeds == null;
+  if (qCapNull && qNeedsNull && pCapNull && pNeedsNull) {
+    throw DimensionsAllNullError('matchDimensions: alle vier Vektoren null — der Aufrufer hätte vorher prüfen müssen (Karte 04 § Nur-Anbieter-Modus).');
+  }
+  if ((qCapNull && qNeedsNull) || (pCapNull && pNeedsNull)) {
+    return { fachlich: null, prozess: null, skalierung: null, overall: null, availableLanes: 0, bruecke: null };
+  }
+  const lane1 = cosineSafe(queryCap, passageNeeds);   // ich biete → du suchst
+  const lane2 = cosineSafe(queryNeeds, passageCap);   // ich suche ← du bietest
+  const lanes = [];
+  if (lane1 !== null) lanes.push(lane1);
+  if (lane2 !== null) lanes.push(lane2);
+  const availableLanes = lanes.length;
+  const schichtScore = availableLanes === 0 ? null
+    : availableLanes === 1 ? lanes[0]
+      : (lanes[0] + lanes[1]) / 2;
+  return {
+    fachlich: schichtScore, prozess: schichtScore, skalierung: schichtScore,
+    overall: schichtScore, availableLanes, bruecke: null,
+  };
+}
+
+/**
+ * Schwellen-/Apoptose-Vertrag (Sage Karte 04 § Schwellen-Vertrag): EINE Schicht unter
+ * SCHICHT_MIN_MATCH ist erlaubt (typischer Brücken-Anlass); ZWEI oder mehr drunter → Apoptose
+ * (kein Match). Zählt nur nicht-null Schichten.
+ * @returns {{apoptose:boolean, unterSchwelle:number}}
+ */
+export function schichtApoptose(dims) {
+  const werte = MATCH_DIMENSIONS_LANES.map((k) => dims && dims[k]).filter((v) => typeof v === 'number');
+  const unter = werte.filter((v) => v < SCHICHT_MIN_MATCH).length;
+  return { apoptose: unter >= 2, unterSchwelle: unter };
+}
 
 const REGION = { mistral: 'eu', claude: 'us', openai: 'us', local: 'local' };
 
@@ -60,6 +125,47 @@ export async function queryLocal(text, k = 5, options = {}) {
     if (Number.isFinite(score) && score >= minScore) {
       scored.push({ label: c.label, score, anchorId: c.anchorId == null ? null : c.anchorId });
     }
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, kk);
+}
+
+/**
+ * Knoten↔Knoten-Vorfilter mit DREI-Schichten-Erkennen (Sage Karte 04). Der „Anfrage-Knoten"
+ * bringt eigene Vektoren mit (`queryCapVec`/`queryNeedsVec` + Rückfall `queryVec`); je
+ * Korpus-Knoten wird `matchDimensions` gerechnet, die Apoptose-Regel angewandt (2+ Schichten
+ * < 0.60 → raus) und nach `overall` sortiert. Knoten ohne cap/needs (oder Nur-Anbieter-Modus)
+ * → Rückfall auf den domainVector-Cosinus (`queryVec` × `passageVec`). SYNCHRON, rein
+ * (keine Einbettung hier — der Aufrufer liefert fertige Vektoren), darum voll testbar.
+ * @param {Array<{label:string,anchorId?:string,passageVec?:number[],capVec?:number[],needsVec?:number[]}>} corpus
+ * @param {{queryCapVec?:number[], queryNeedsVec?:number[], queryVec?:number[]}} query
+ * @param {number} [k=5]
+ * @returns {Array<{label:string, score:number, anchorId:string|null, dims:object|null, modus:'schichten'|'domain'}>}
+ */
+export function queryLocalDimensions(corpus, query, k = 5) {
+  const kk = Number.isInteger(k) && k > 0 ? k : 5;
+  const q = query || {};
+  const hasQueryCN = Array.isArray(q.queryCapVec) && Array.isArray(q.queryNeedsVec);
+  const list = Array.isArray(corpus) ? corpus : [];
+  const scored = [];
+  for (const c of list) {
+    if (!c) continue;
+    let score = null, dims = null, modus = 'domain';
+    const hasCN = Array.isArray(c.capVec) && Array.isArray(c.needsVec);
+    if (hasQueryCN && hasCN) {
+      dims = matchDimensions(q.queryCapVec, q.queryNeedsVec, c.capVec, c.needsVec);
+      if (dims.overall != null) {
+        if (schichtApoptose(dims).apoptose) continue;   // Apoptose: zwei+ Schichten unter 0.60 → kein Match
+        score = dims.overall; modus = 'schichten';
+      }
+    }
+    if (score == null) {   // Nur-Anbieter / kein cap-needs → Rückfall auf domainVector-Cosinus
+      if (!Array.isArray(q.queryVec) || !Array.isArray(c.passageVec)) continue;
+      const s = cosineSimilarity(q.queryVec, c.passageVec);
+      if (!Number.isFinite(s)) continue;
+      score = s;
+    }
+    scored.push({ label: c.label, score, anchorId: c.anchorId == null ? null : c.anchorId, dims, modus });
   }
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, kk);

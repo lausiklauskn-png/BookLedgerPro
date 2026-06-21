@@ -62,24 +62,31 @@ export function buildNodeText(spore) {
   return [spore && spore.domain, spore && spore.domainDescription, kw].filter(Boolean).join('. ');
 }
 
-/** Echter, nutzbarer domainVector (kein _demo, korrekte Dimension) — sonst null. */
-function usableNodeVector(spore) {
-  const v = spore && spore.domainVector;
-  const demo = Array.isArray(spore && spore._demo) && spore._demo.includes('domainVector');
+/** Echter, nutzbarer Vektor in `feld` (kein _demo, korrekte Dimension) — sonst null. */
+function usableVector(spore, feld) {
+  const v = spore && spore[feld];
+  const demo = Array.isArray(spore && spore._demo) && spore._demo.includes(feld);
   return (!demo && Array.isArray(v) && v.length === EMBED_DIM) ? v : null;
 }
 
 /**
  * Sporen → Korpus-Einträge (rein). Hat eine Spore einen echten domainVector, wird er
  * direkt als passageVec genutzt; sonst `needsEmbed:true` (Text später einbetten).
+ * Trägt die Spore zusätzlich echte `capVector`/`needsVector` (Drei-Schichten-Erkennen,
+ * Sage Karte 04), werden sie als `capVec`/`needsVec` mitgereicht — der Vorfilter nutzt
+ * sie dann für das Knoten↔Knoten-Match (sonst Rückfall auf den domainVector).
  */
 export function nodeCorpusEntries(spores) {
   return (Array.isArray(spores) ? spores : [])
     .filter((s) => s && s.nodeName)
     .map((s) => {
       const e = { label: s.nodeName, text: buildNodeText(s) || s.nodeName, anchorId: s.id || s.nodeName };
-      const vec = usableNodeVector(s);
+      const vec = usableVector(s, 'domainVector');
       if (vec) e.passageVec = vec; else e.needsEmbed = true;
+      const cap = usableVector(s, 'capVector');
+      const needs = usableVector(s, 'needsVector');
+      if (cap) e.capVec = cap;
+      if (needs) e.needsVec = needs;
       return e;
     });
 }
