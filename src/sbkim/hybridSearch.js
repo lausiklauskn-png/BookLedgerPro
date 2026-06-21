@@ -16,15 +16,15 @@ import { queryLocal, hybridMatch } from './match.js';
  * @param {string} text   Suchanfrage
  * @param {Array<{label:string,text:string,anchorId?:string,passageVec:number[]}>} corpus
  * @param {{apiKey?:string, provider?:string, euOnly?:boolean, queryLabel?:string, model?:string,
- *          k?:number, embedQuery?:Function, _chat?:Function}} [opts]
+ *          k?:number, minScore?:number, embedQuery?:Function, _chat?:Function}} [opts]
  * @returns {Promise<{mode:string, treffer:Array, reason?:string, attestation?:object}>}
  */
 export async function sbkimHybridSearch(text, corpus, opts = {}) {
   opts = opts || {};
   const k = opts.k || 5;
 
-  // 1. VORFILTER (lokal, server-los).
-  const prelim = await queryLocal(text, k, { corpus, embedQuery: opts.embedQuery });
+  // 1. VORFILTER (lokal, server-los). minScore wird durchgereicht (Suche: niedrige Grenze).
+  const prelim = await queryLocal(text, k, { corpus, embedQuery: opts.embedQuery, minScore: opts.minScore });
   if (prelim.length === 0) return { mode: 'vorfilter-leer', treffer: [] };
 
   // Ohne Schlüssel: server-loser Default — Vorfilter ist das Ergebnis.

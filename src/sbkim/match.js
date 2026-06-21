@@ -37,13 +37,18 @@ function todayISO() { return new Date().toISOString().slice(0, 10); }
  * Grobe Kandidaten via lokaler Cosinus-Ähnlichkeit über den vorgerechneten Korpus.
  * @param {string} text  Suchanfrage
  * @param {number} [k=5] Top-k
- * @param {{corpus:Array<{label:string,anchorId?:string,passageVec:number[]}>, embedQuery?:(t:string)=>Promise<number[]>}} options
+ * `minScore` steuert die Untergrenze (Default = PROVIDER_MIN_MATCH 0.80, Sage-Vertrag für
+ * strenges Knoten-Matching). Für eine SUCHE übergibt der Aufrufer eine niedrigere Grenze
+ * (z. B. 0), damit der Vorfilter IMMER die besten Top-k durchreicht und der Richter (nicht
+ * eine starre Schwelle) die eigentliche Auswahl trifft — „der Vorfilter ist nie eine Sackgasse".
+ * @param {{corpus:Array<{label:string,anchorId?:string,passageVec:number[]}>, embedQuery?:(t:string)=>Promise<number[]>, minScore?:number}} options
  * @returns {Promise<Array<{label:string, score:number, anchorId:string|null}>>}
  */
 export async function queryLocal(text, k = 5, options = {}) {
   const q = String(text == null ? '' : text).trim();
   if (!q) return [];
   const kk = Number.isInteger(k) && k > 0 ? k : 5;
+  const minScore = typeof options.minScore === 'number' ? options.minScore : PROVIDER_MIN_MATCH;
   const corpus = Array.isArray(options.corpus) ? options.corpus : [];
   if (corpus.length === 0) return [];
   const embedQuery = options.embedQuery || (await loadEmbedder(options)).embedQuery;
@@ -52,7 +57,7 @@ export async function queryLocal(text, k = 5, options = {}) {
   for (const c of corpus) {
     if (!c || !Array.isArray(c.passageVec) || c.passageVec.length !== EMBED_DIM) continue;
     const score = cosineSimilarity(qv, c.passageVec);
-    if (Number.isFinite(score) && score >= PROVIDER_MIN_MATCH) {
+    if (Number.isFinite(score) && score >= minScore) {
       scored.push({ label: c.label, score, anchorId: c.anchorId == null ? null : c.anchorId });
     }
   }

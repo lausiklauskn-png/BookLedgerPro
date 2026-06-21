@@ -58,7 +58,8 @@ function repaint(result, status) {
       setStatus(cfg.mistralKey ? t('sbkimsuche.judging') : t('sbkimsuche.prefiltering'));
       const res = await sbkimHybridSearch(q, corpus, {
         apiKey: cfg.mistralKey, provider: 'mistral', euOnly: true,
-        queryLabel: 'BookLedgerPro', model: cfg.mistralModel, k: 5,
+        queryLabel: 'BookLedgerPro', model: cfg.mistralModel, k: 6,
+        minScore: 0,   // Suche: Vorfilter reicht IMMER Top-k durch; der Richter wählt aus.
       });
       repaint(res, '');
     } catch (e) {
