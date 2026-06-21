@@ -59,6 +59,29 @@ export function speechFehlerHinweis(msg) {
   return '';
 }
 
+// ---- EU-Politik: frei vs. bindend (Regel #8 — Datenresidenz EU/DSGVO) -------
+// „bindend" lässt NUR die EU-Engine (Cloud Speech-to-Text EU) zu — die Web-Speech-API
+// (Audio ggf. zum Browser-Hersteller, kein EU-Garant) ist dann gesperrt. „frei" = beide
+// wählbar. Reine, testbare Logik (headless-äquivalent zu Sages Modul 21, Klaus 2026-06-21).
+export const SPEECH_ENGINES = ['browser', 'eu'];
+export const SPEECH_POLICIES = ['frei', 'bindend'];
+
+/** Erlaubte Engines je EU-Politik: bindend = nur EU; frei = beide. */
+export function policyEngines(policy) {
+  return policy === 'bindend' ? ['eu'] : ['browser', 'eu'];
+}
+
+/**
+ * Wählt die zu nutzende Engine: bindend erzwingt 'eu' (browser fällt auf eu). frei: die
+ * gewünschte Engine, falls erlaubt UND (für browser) im Browser unterstützt; sonst 'eu'.
+ */
+export function pickEngine(policy, desired, browserSupported = true) {
+  const allowed = policyEngines(policy);
+  let want = (desired === 'eu' || desired === 'browser') ? desired : 'browser';
+  if (want === 'browser' && !browserSupported) want = 'eu';
+  return allowed.includes(want) ? want : 'eu';
+}
+
 // ---- Browser (Web Speech API) ----------------------------------------------
 
 /** Ist die Browser-Spracherkennung verfügbar? (kein window in node → false) */

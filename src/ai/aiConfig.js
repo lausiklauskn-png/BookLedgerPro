@@ -20,6 +20,7 @@ const DEFAULT_CFG = {
   visionKey: '',                 // Google Cloud Vision API-Key (EU)
   mistralKey: '',                // Mistral API-Key (EU)
   speechKey: '',                 // Google Cloud Speech-to-Text API-Key (EU) — Spracheingabe (BYOK)
+  speechPolicy: 'frei',          // EU-Politik Spracheingabe: 'frei' (beide Engines) | 'bindend' (nur EU)
   mistralModel: 'mistral-small-latest',
   anbieterWahl: { ...STANDARD_WAHL }, // KI-Anbieter je Funktion (ocr|kontierung|steuer), strikt EU — ai/anbieter.js
 };

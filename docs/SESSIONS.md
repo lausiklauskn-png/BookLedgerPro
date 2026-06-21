@@ -5,6 +5,23 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-21 — EU-Politik „frei/bindend" für die Spracheingabe (Regel #8, Cross-Pollination von Sage)
+
+**Was getan**
+- Sage hat unser Sprach-Muster nachgebaut (ihr „Modul 21") und die **EU-Politik frei/bindend**
+  ergänzt. Zurück übernommen: `policyEngines(policy)` + `pickEngine(policy, desired, browserSupported)`
+  in `src/ai/speech.js` (rein, headless-äquivalent), `aiConfig.speechPolicy` (Default `frei`).
+- View `sbkimsuche.js`: Politik-Wähler in der Spracheingabe; **`bindend`** sperrt die Web-Speech-Engine
+  (nur EU, strikte Datenresidenz), erzwingt `eu` via `pickEngine`; **`frei`** = beide. i18n DE/EN.
+- Tests +9 → **2049/2049**. SW **v172**. Muster-Doc-Abschnitt „Spracheingabe" ergänzt.
+
+**Stand:** EU-Politik live & getestet. (Keine Sage-Quittung — reiner Code, Nutzer-Wahl.)
+
+**Offen / ehrlich:** Web-/Mic-Teile nicht node-testbar (Politik-Logik schon). Drei-Schichten-Aktivierung
+(cap/needs neu signieren) weiter offen.
+
+---
+
 ## 2026-06-21 — DREI-Schichten-Erkennen GEBAUT (Sage Karte 04): Engine + Suche-Wiring + Tests
 
 **Was getan (echter Code, nicht nur Doku)**

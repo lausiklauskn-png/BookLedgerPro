@@ -130,6 +130,12 @@ Pipeline (Vorfilter → Richter) bleibt **unberührt**. Modul: `src/ai/speech.js
 > immer. Fehlt Mikro/Schlüssel oder bricht das Netz, bleibt das Textfeld bedienbar
 > (`speechFehlerHinweis()` gibt einen klaren Hinweis statt eines Throws).
 
+**EU-Politik „frei / bindend" (Regel #8, Datenresidenz):** reine Logik `policyEngines(policy)`
++ `pickEngine(policy, desired, browserSupported)` in `speech.js`. **`bindend`** lässt **nur** die
+EU-Engine zu (Web-Speech gesperrt → strikte EU-Verarbeitung); **`frei`** lässt beide wählbar.
+Gespeichert in `aiConfig.speechPolicy`. (Cross-Pollination: Sage hat unser Sprach-Muster
+nachgebaut und diese Politik beigesteuert — wir haben sie zurück übernommen.)
+
 **Mehrsprachig (ein Wähler, derselbe Maschinenraum):** ein `<select>` setzt `languageCode`
 (`de-DE` / `en-US` / `ru-RU` …). Die EU-Engine bekommt zusätzlich
 `alternativeLanguageCodes` (die übrigen Sprachen) → tolerant gegenüber gemischten Sätzen.
