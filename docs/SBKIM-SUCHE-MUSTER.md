@@ -125,8 +125,18 @@ als Tor; sie ist nur ein Signal).
   ausgegeben. Interoperabilität entsteht über die **Vertrags-Fläche**, nicht über byte-gleichen
   Quelltext.
 
-## Offen / ehrlich ungetestet
+## Verifikations-Stand (ehrlich)
 
-Der **erste echte Mistral-Richter-Lauf** und das Modell-Laden brauchen **Browser + Netz** —
-in der Bau-Umgebung nicht ausführbar. Node-getestet sind: Korpus-Bauer (Konten + Knoten),
-Vorfilter-Schwelle, Richter-Parsing, **alle 4 Modi**, **Fail-soft ohne Throw**, Score-Clamp.
+**Im Browser vom Nutzer real verifiziert (2026-06-21):**
+- Richter-Lauf `available:true` (mistral-large, eu), sinnvolle Urteile + Fail-soft bei WLAN-aus.
+- **Spracheingabe BEIDE Engines:** Browser **und** EU/BYOK (Cloud Speech-to-Text EU). Der EU-Weg
+  ist **end-to-end** bestätigt: 🎤 → EU-STT → Text → Vorfilter → Richter → **dasselbe Urteil wie
+  beim Tippen** (gleicher Text ⇒ gleiches Verdict — der Beweis, dass Sprache nur eine
+  Eingabe-Schicht ist).
+
+**Node-getestet** (in der Bau-Umgebung ausführbar): Korpus-Bauer (Konten + Knoten),
+Vorfilter-Schwelle, Richter-Parsing, **alle 4 Modi**, **Fail-soft ohne Throw**, Score-Clamp,
+`buildSpeechRequest` (Encoding, `languageCode`, `alternativeLanguageCodes`).
+
+**Bleibt browser-/netzgebunden** (nicht in Node ausführbar, daher nur per Nutzer prüfbar):
+Modell-Laden (e5, opt-in), Mikrofon-Aufnahme, die realen Cloud-Antworten selbst.

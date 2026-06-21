@@ -7,7 +7,22 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-21): Hybrid-Match-Richter KOMPLETT — QA-gehärtet + an Sage gemeldet
+## ⏭ LETZTER STAND (2026-06-21): Spracheingabe (DE/EN/RU) — EU-Weg vom Nutzer END-TO-END verifiziert
+
+> Die SBKIM-Suche hat jetzt **Spracheingabe** als additive Eingabe-Schicht (`src/ai/speech.js`) — Pipeline
+> (Vorfilter→Richter, Fail-soft) **unberührt**. **Zwei Engines:** Browser (Web Speech) **und** EU/BYOK
+> (Google **Cloud Speech-to-Text, EU-Endpoint**). **Sprach-Wähler DE/EN/RU** (`alternativeLanguageCodes`).
+> **UX-Fix:** erkannter/getippter Text bleibt im Feld (kein `value:''`-Reset bei Neuzeichnen; `_query`).
+> **✅ Vom Nutzer im Browser verifiziert — BEIDE Engines:** EU-Weg **end-to-end** (🎤 → EU-STT → Text →
+> Richter → **dasselbe Urteil wie beim Tippen**). Schlüssel freigeschaltet, Erkennung sehr gut.
+> **An Sage gemeldet** (zum Nachbauen): AUSTAUSCH-Sage **§12**, `SIGNAL` **seq → 15** (Push = Signal);
+> Muster verallgemeinert in `docs/SBKIM-SUCHE-MUSTER.md` (Abschnitt „Spracheingabe"). SW **v170**,
+> Tests **2016/2016**.
+> **⏭ NÄCHSTE KONKRETE SCHRITTE:** (optional) weitere Sprachen im `SPEECH_LANGS`-Array; Mehrfach-Absichts-
+> Trennung verbessern (Vorfilter-Grenze); attestation signieren sobald Sage Signier-Helfer hat; sonst
+> **Phase 5d** (Symbiose-Import Mein-Tresor/WorkFloh).
+
+## ⏭ STAND (2026-06-21): Hybrid-Match-Richter KOMPLETT — QA-gehärtet + an Sage gemeldet
 
 > Die SBKIM-Suche (Konten + Knoten) ist **eingebaut, im echten Nutzer-QA gehärtet und im Browser verifiziert**:
 > `available:true` (mistral-large/eu), sinnvolle Urteile inkl. Metaphern, **Fail-soft bei WLAN-aus bestätigt**
