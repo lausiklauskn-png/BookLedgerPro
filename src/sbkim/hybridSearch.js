@@ -55,6 +55,7 @@ export async function sbkimHybridSearch(text, corpus, opts = {}) {
   if (!judgment.available) return { mode: 'fail-soft-vorfilter', reason: judgment.reason, treffer: prelim };
 
   // 5. Richter-Urteil — nur passende Kandidaten, nach Score sortiert.
+  //    `geprueft` = alle vorgelegten Kandidaten (Transparenz, wenn der Richter alle ablehnt).
   const treffer = judgment.verdicts.filter((v) => v.passt).sort((a, b) => b.score - a.score);
-  return { mode: 'richter', treffer, attestation: judgment.attestation };
+  return { mode: 'richter', treffer, attestation: judgment.attestation, geprueft: judgment.fallbackCandidates || [] };
 }

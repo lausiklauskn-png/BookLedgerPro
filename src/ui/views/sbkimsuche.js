@@ -58,7 +58,7 @@ function repaint(result, status) {
       setStatus(cfg.mistralKey ? t('sbkimsuche.judging') : t('sbkimsuche.prefiltering'));
       const res = await sbkimHybridSearch(q, corpus, {
         apiKey: cfg.mistralKey, provider: 'mistral', euOnly: true,
-        queryLabel: 'BookLedgerPro', model: cfg.mistralModel, k: 6,
+        queryLabel: 'BookLedgerPro', model: cfg.mistralModel, k: 10,
         minScore: 0,   // Suche: Vorfilter reicht IMMER Top-k durch; der Richter wählt aus.
       });
       repaint(res, '');
@@ -140,9 +140,15 @@ function renderResult(res) {
   }
   // mode === 'richter'
   const att = res.attestation || {};
-  return el('div', { class: 'card' }, [
+  const kinder = [
     el('h2', { class: 'card-title', text: t('sbkimsuche.modeJudge') }),
     el('p', { class: 'muted small', text: t('sbkimsuche.judgeMeta').replace('%P%', att.provider || 'mistral').replace('%R%', att.region || 'eu').replace('%M%', att.model || '') }),
     trefferListe(res.treffer, true),
-  ]);
+  ];
+  // Transparenz: hat der Richter ALLE abgelehnt, zeige die geprüften Kandidaten (sehen, was der Vorfilter vorlegte).
+  if ((!res.treffer || res.treffer.length === 0) && Array.isArray(res.geprueft) && res.geprueft.length) {
+    kinder.push(el('p', { class: 'muted small', text: t('sbkimsuche.geprueft') }));
+    kinder.push(el('ul', { class: 'sbkimsuche-list' }, res.geprueft.map((c) => el('li', {}, [el('span', { class: 'muted small', text: c.label }) ]))));
+  }
+  return el('div', { class: 'card' }, kinder);
 }

@@ -1188,6 +1188,9 @@ await section('SBKIM: Hybrid-Match — Korpus + Vorfilter (Vertrags-Fläche)', a
   ok('Korpus: label = nummer+name', entries[0].label === '4980 Werbekosten');
   ok('Korpus: anchorId = nummer', entries[0].anchorId === '4980');
   ok('Korpus: text trägt Bedeutung', /Aufwand/i.test(entries[0].text));
+  // Recall-Synonyme: bekanntes Konto (4650 Bewirtung) bekommt Alltags-Stichworte im Text.
+  const bew = accountCorpusEntries([{ nummer: '4650', name: 'Bewirtungskosten', art: 'aufwand' }]);
+  ok('Korpus: Synonyme angehängt (4650 → Geschäftsessen)', /Stichworte:/.test(bew[0].text) && /Geschäftsessen/i.test(bew[0].text));
 
   // Vorfilter mit injiziertem Embedder (deterministisch, kein Modell-Laden).
   const unit = (i) => { const a = new Array(EMBED_DIM).fill(0); a[i] = 1; return a; };
@@ -1265,6 +1268,11 @@ await section('SBKIM: Hybrid-Match — alle 4 Modi (Helfer)', async () => {
   const chat = async () => JSON.stringify({ verdicts: [{ label: 'Treffer', passt: true, score: 0.88, begruendung: 'ja' }] });
   const ri = await sbkimHybridSearch('q', corpusHit, { embedQuery, apiKey: 'k', _chat: chat });
   ok('Modus richter', ri.mode === 'richter' && ri.treffer[0].passt === true && !!ri.attestation);
+
+  // richter, aber keiner passt → treffer leer, geprueft zeigt die Kandidaten (Transparenz).
+  const chatNo = async () => JSON.stringify({ verdicts: [{ id: 1, passt: false, score: 0.2, begruendung: 'nein' }] });
+  const riNo = await sbkimHybridSearch('q', corpusHit, { embedQuery, apiKey: 'k', _chat: chatNo });
+  ok('richter ohne Treffer: geprueft sichtbar', riNo.mode === 'richter' && riNo.treffer.length === 0 && Array.isArray(riNo.geprueft) && riNo.geprueft.length === 1);
 
   // fail-soft-vorfilter (apiKey, aber _chat wirft)
   const fs = await sbkimHybridSearch('q', corpusHit, { embedQuery, apiKey: 'k', _chat: async () => { throw new Error('netz weg'); } });
