@@ -1320,6 +1320,9 @@ await section('Spracheingabe (Speech-to-Text) — reine Logik', () => {
   ok('encoding unbekannt → UNSPECIFIED', encodingFor('audio/x-weird') === 'ENCODING_UNSPECIFIED');
   const body = buildSpeechRequest('AAAA', { mimeType: 'audio/webm', languageCode: 'de-DE' });
   ok('Request: encoding+lang', body.config.encoding === 'WEBM_OPUS' && body.config.languageCode === 'de-DE' && body.audio.content === 'AAAA');
+  const bodyAlt = buildSpeechRequest('AAAA', { mimeType: 'audio/webm', languageCode: 'en-US', alternativeLanguageCodes: ['de-DE'] });
+  ok('Request: alternativeLanguageCodes mehrsprachig', JSON.stringify(bodyAlt.config.alternativeLanguageCodes) === '["de-DE"]' && bodyAlt.config.languageCode === 'en-US');
+  ok('Request: keine leeren alt-Codes', buildSpeechRequest('AAAA', { mimeType: 'audio/webm' }).config.alternativeLanguageCodes === undefined);
   ok('parseTranscript fügt Alternativen', parseTranscript({ results: [{ alternatives: [{ transcript: 'Tanken für' }] }, { alternatives: [{ transcript: 'den Firmenwagen' }] }] }) === 'Tanken für den Firmenwagen');
   ok('parseTranscript leer → ""', parseTranscript({}) === '');
   ok('Fehler-Hinweis: API keys not supported', /Speech-to-Text API aktivieren/.test(speechFehlerHinweis('API keys are not supported by this API')));

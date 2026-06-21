@@ -24,6 +24,8 @@ let _bereich = 'konten';        // 'konten' | 'knoten'
 let _corpusKonten = null;       // gecachte, eingebettete Korpora (Session)
 let _corpusKnoten = null;
 let _speechEngine = 'browser';  // 'browser' (Web Speech API) | 'eu' (Cloud Speech-to-Text EU/BYOK)
+let _speechLang = 'de-DE';      // Spracheingabe-Sprache
+const SPEECH_LANGS = [['de-DE', 'Deutsch'], ['en-US', 'English']];
 
 export async function mountSbkimSuche(host) {
   _host = host;
@@ -45,6 +47,9 @@ function speechControls(input) {
   const notice = el('p', { class: 'muted small speech-notice' });
   const browserBtn = el('button', { class: 'btn btn-sm', text: t('speech.engineBrowser') });
   const euBtn = el('button', { class: 'btn btn-sm', text: t('speech.engineEu') });
+  const langSel = el('select', { class: 'speech-lang' }, SPEECH_LANGS.map(([code, name]) => el('option', { value: code }, name)));
+  langSel.value = _speechLang;
+  langSel.addEventListener('change', () => { _speechLang = langSel.value; });
   const micBtn = el('button', { class: 'btn', text: '🎤 ' + t('speech.start') });
   const resetMic = () => { micBtn.textContent = '🎤 ' + t('speech.start'); micBtn.removeAttribute('disabled'); };
   const setEngine = (id) => {
@@ -63,7 +68,7 @@ function speechControls(input) {
     // ---- Browser (Web Speech API) ----
     if (_speechEngine === 'browser') {
       if (activeRec) { activeRec.stop(); return; }
-      const rec = makeBrowserRecognizer({ lang: 'de-DE' });
+      const rec = makeBrowserRecognizer({ lang: _speechLang });
       if (!rec) { status.textContent = t('speech.unsupported'); return; }
       activeRec = rec;
       micBtn.textContent = '⏹ ' + t('speech.stop'); status.textContent = t('speech.listening');
@@ -82,7 +87,8 @@ function speechControls(input) {
         const audio = await ctl.done;
         const cfg = await getAiConfig();
         if (!cfg.speechKey) { status.textContent = t('speech.noKey'); resetMic(); return; }
-        const text = await recognizeEU(audio, { apiKey: cfg.speechKey, languageCode: 'de-DE' });
+        const alt = SPEECH_LANGS.map(([c]) => c).filter((c) => c !== _speechLang);
+        const text = await recognizeEU(audio, { apiKey: cfg.speechKey, languageCode: _speechLang, alternativeLanguageCodes: alt });
         input.value = text || ''; status.textContent = text ? '' : t('speech.empty');
       } catch (e) {
         const hint = speechFehlerHinweis((e && e.message) || '');
@@ -98,7 +104,7 @@ function speechControls(input) {
   setEngine(_speechEngine);
   return el('div', { class: 'speech-block' }, [
     el('div', { class: 'btn-row speech-row' }, [
-      el('span', { class: 'muted small', text: t('speech.engineLabel') }), browserBtn, euBtn, micBtn, status,
+      el('span', { class: 'muted small', text: t('speech.engineLabel') }), browserBtn, euBtn, langSel, micBtn, status,
     ]),
     notice,
   ]);
