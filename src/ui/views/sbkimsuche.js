@@ -13,7 +13,7 @@ import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { loadAccounts } from '../../domain/store.js';
 import { getAiConfig, saveAiConfig } from '../../ai/aiConfig.js';
-import { loadEmbedder } from '../../sbkim/embed.js';
+import { loadEmbedder, EMBED_DIM } from '../../sbkim/embed.js';
 import { accountCorpusEntries, embedCorpus, fetchNodeSpores, nodeCorpusEntries, embedMissingVectors } from '../../sbkim/searchCorpus.js';
 import { sbkimHybridSearch } from '../../sbkim/hybridSearch.js';
 import { makeBrowserRecognizer, startRecording, recognizeEU, speechFehlerHinweis, policyEngines, pickEngine, browserSpeechSupported } from '../../ai/speech.js';
@@ -166,6 +166,36 @@ function repaint(result, status) {
   const btn = el('button', { class: 'btn btn-primary', text: t('sbkimsuche.run'), onClick: run });
   input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); run(); } });
 
+  // Knoten↔Knoten-Match (Drei-Schichten-Erkennen): unsere EIGENE Spore ist die Anfrage.
+  // Heute (ohne cap/needs in den Sporen) läuft es im domain-Modus; mit cap/needs → schichten.
+  const runNodeMatch = async () => {
+    if (_busy) return;
+    _busy = true; nodeBtn.setAttribute('disabled', '');
+    try {
+      const setStatus = (s) => { statusP.textContent = s; };
+      setStatus(t('sbkimsuche.loadingNodes'));
+      const [self] = await fetchNodeSpores(['./sbkim/spore.json']);
+      if (!self) { repaint(null, t('sbkimsuche.noSelf')); return; }
+      const vec = (v) => (Array.isArray(v) && v.length === EMBED_DIM) ? v : undefined;
+      const queryNode = { queryVec: vec(self.domainVector), queryCapVec: vec(self.capVector), queryNeedsVec: vec(self.needsVector) };
+      const embedder = await loadEmbedder({ onStatus: setStatus });
+      const full = await ensureCorpus(embedder, setStatus);
+      const selbst = self.id || self.nodeName;
+      const corpus = (full || []).filter((e) => (e.anchorId || e.label) !== selbst);   // ohne mich selbst
+      if (corpus.length === 0) { repaint(null, t('sbkimsuche.noCorpus')); return; }
+      const cfg = await getAiConfig();
+      setStatus(cfg.mistralKey ? t('sbkimsuche.judging') : t('sbkimsuche.prefiltering'));
+      const res = await sbkimHybridSearch('', corpus, {
+        apiKey: cfg.mistralKey, provider: 'mistral', euOnly: true,
+        queryLabel: 'BookLedgerPro', model: cfg.mistralModel, k: 10, queryNode,
+      });
+      repaint(res, '');
+    } catch (e) {
+      repaint(null, t('sbkimsuche.error').replace('%E%', String((e && e.message) || e)));
+    } finally { _busy = false; }
+  };
+  const nodeBtn = el('button', { class: 'btn', text: t('sbkimsuche.nodeMatch'), onClick: runNodeMatch });
+
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('sbkimsuche.title') }),
     el('p', { class: 'muted', text: t('sbkimsuche.intro') }),
@@ -181,7 +211,7 @@ function repaint(result, status) {
       el('p', { class: 'muted small', text: t(_bereich === 'knoten' ? 'sbkimsuche.hintKnoten' : 'sbkimsuche.hintKonten') }),
       el('label', { class: 'field' }, [el('span', { text: t('sbkimsuche.label') }), input]),
       speechControls(input),
-      el('div', { class: 'btn-row' }, [btn]),
+      el('div', { class: 'btn-row' }, _bereich === 'knoten' ? [btn, nodeBtn] : [btn]),
       statusP,
     ]),
     out,
@@ -215,6 +245,7 @@ function trefferListe(treffer, withReason) {
   return el('ul', { class: 'sbkimsuche-list' }, treffer.map((v) => el('li', {}, [
     el('strong', { text: v.label }),
     el('span', { class: 'muted small', text: ` · ${t('sbkimsuche.score')} ${pct(v.score)}` }),
+    v.modus ? el('span', { class: 'muted small', text: ` · ${t(v.modus === 'schichten' ? 'sbkimsuche.modusSchichten' : 'sbkimsuche.modusDomain')}` }) : null,
     withReason && v.begruendung ? el('p', { class: 'muted small', text: v.begruendung }) : null,
   ].filter(Boolean))));
 }
