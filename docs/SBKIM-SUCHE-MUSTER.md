@@ -22,6 +22,44 @@ entscheidet** — sie korrigiert genau das **Anisotropie-Rauschen** von Schicht 
 Texten ist Cosinus ~0.8 fast Grundrauschen, siehe Sages `LEHRE-EMBEDDING-MATCH-KALIBRIERUNG`).
 Erst beide Stufen zusammen ergeben einen ehrlichen Treffer.
 
+## Größeres Bild: Sages Erkennen hat DREI Schichten (nicht eine)
+
+> **Wichtig fürs Nachbauen und für die Interoperabilität.** Unser Vorfilter (Schicht 1 oben)
+> drückt heute alles auf **einen** Cosinus über **einen** kombinierten `domainVector`. Sages
+> volles Modul 04 (`SbkimMatch`, **Karte 04 § Drei-Schichten-Modell**) erkennt **feiner** —
+> und **bidirektional**. Das halten wir hier fest, damit der Unterschied bewusst ist.
+
+**(A) Drei orthogonale Schichten (Lanes):** `fachlich · prozess · skalierung`. Jede ist eine
+eigene Bedeutungs-Achse; sie werden **getrennt** bewertet, nicht zu einer Zahl verschmolzen.
+
+**(B) Bidirektional über `cap`/`needs` (Angebot ↔ Bedarf):** statt eines Vektors trägt ein
+Knoten **zwei** — was er **bietet** (`cap`) und was er **sucht** (`needs`). Daraus zwei Lanes:
+
+| Lane | Rechnung | Bedeutung |
+|---|---|---|
+| **Lane 1** | `cos(queryCap × passageNeeds)` | **ich biete → du suchst** |
+| **Lane 2** | `cos(queryNeeds × passageCap)` | **ich suche ← du bietest** |
+
+`Schicht-Score = Mittel der berechenbaren Lanes` (eine, beide oder `null`); `overall = Mittel
+der nicht-null Schichten`. Fehlt einer Seite **beide** Vektoren → **Nur-Anbieter-Modus**
+(alle Schichten `null`, Rückfall auf `match(domainVectorA, domainVectorB)`).
+
+**(C) Schwellen-Vertrag (Apoptose-Regel):** je Schicht `SCHICHT_MIN_MATCH = 0.60`, overall
+`PROVIDER_MIN_MATCH = 0.80`. **Eine** Schicht unter 0.60 ist **erlaubt** (typischer
+**Brücken**-Anlass, `BridgeProposal`); **zwei oder mehr** drunter → **Apoptose** im Aufrufer
+(kein Match). So ist eine fehlende Achse Anlass für eine Brücke, zwei fehlende ein Veto.
+
+**(D) Zwei Stufen wie bei uns:** **Stufe A** ist eine Heuristik (alle drei Schichten = derselbe
+Lane-Cosinus über demselben Embedding-Raum); die **echte Differenzierung** der drei Achsen kommt
+in **Stufe B** per LLM (`explainMatchLLM`, bei uns der Mistral-EU-Richter). Genau hier sitzt
+unser Richter — er ist die Stufe B.
+
+> **Ehrlicher Stand BLP:** Unsere Suche nutzt heute die **kombinierte Eine-Schicht-Variante**
+> (ein `domainVector` + Richter). Die volle **Drei-Schichten-/cap-needs-Erkennung** ist die
+> **nächste Ausbaustufe**, sobald unsere Sporen getrennte `cap`/`needs`-Vektoren tragen. Die
+> Vertrags-Fläche (unten) bleibt davon unberührt — sie ist die Interop-Garantie, nicht die
+> Zahl der Schichten.
+
 ## Vertrags-Fläche (1:1 zu Sage — sonst nicht interoperabel)
 
 - **Verdict:** `{ label, anchorId, passt, score, begruendung }`

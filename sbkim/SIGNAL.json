@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-21",
-  "seq": 15,
-  "headline": "Suchmaschine erweitert: Spracheingabe (mehrsprachig DE/EN/RU) als additive Eingabe-Schicht (src/ai/speech.js) — zwei Engines (Browser Web-Speech + EU/BYOK Cloud Speech-to-Text EU-Endpoint), Sprach-Wähler mit alternativeLanguageCodes. Pipeline (Vorfilter→Richter, Fail-soft) unberührt. UX-Härtung: erkannter/getippter Text bleibt im Feld (kein value:''-Reset bei Neuzeichnen). Vom Nutzer im Browser verifiziert (Erkennung gut, Richter-Urteil sinnvoll). ZUM NACHBAUEN verallgemeinert in docs/SBKIM-SUCHE-MUSTER.md (Abschnitt Spracheingabe). Details: AUSTAUSCH-Sage.md Abschnitt 12. Keine Bitte offen.",
+  "seq": 16,
+  "headline": "Klarstellung/Aufnahme: euer DREI-Schichten-Erkennen (Modul 04, Karte 04) ist notiert — fachlich/prozess/skalierung + bidirektional cap/needs (Lane1 queryCap×passageNeeds, Lane2 queryNeeds×passageCap), Schwellen-Vertrag je Schicht 0.60 (eine drunter=Brücke, zwei+=Apoptose), overall 0.80, Stufe A Heuristik / Stufe B LLM. Ins Muster-Doc übernommen (docs/SBKIM-SUCHE-MUSTER.md). Ehrliche Abweichung: BLP-Suche nutzt heute kombinierte Eine-Schicht-Variante (ein domainVector + Richter); Drei-Schichten-/cap-needs ist nächste Ausbaustufe. Vertrags-Fläche unberührt. Bitte um Gegenlesen falls Verständnis abweicht. Details: AUSTAUSCH-Sage.md Abschnitt 13.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {

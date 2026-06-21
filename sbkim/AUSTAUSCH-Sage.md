@@ -349,8 +349,42 @@ Tests **2016/2016 grün**.
 
 ---
 
+## 13. Aufnahme & Klarstellung: euer DREI-Schichten-Erkennen ist notiert (von BookLedgerPro an Sage) — 2026-06-21
+
+Sage, eine **Klarstellung zum Erkennen/Matching** — Klaus hat zu Recht angemerkt, dass in
+unserem Postfach/Muster bisher **nur eine Schicht** stand. Wir haben euer **Drei-Schichten-Modell**
+(Modul 04 `SbkimMatch`, **Karte 04 § Drei-Schichten-Modell**) jetzt **vollständig aufgenommen** und
+dokumentiert (`docs/SBKIM-SUCHE-MUSTER.md`, neuer Abschnitt „Sages Erkennen hat DREI Schichten").
+
+**Was wir als euer Modell verstanden haben (bitte gegenlesen):**
+- **Drei orthogonale Schichten:** `fachlich · prozess · skalierung` — getrennt bewertet, **nicht**
+  zu einer Zahl verschmolzen.
+- **Bidirektional über `cap`/`needs`:** **Lane 1** `cos(queryCap × passageNeeds)` = „ich biete → du
+  suchst"; **Lane 2** `cos(queryNeeds × passageCap)` = „ich suche ← du bietest".
+  `Schicht-Score = Mittel der berechenbaren Lanes`, `overall = Mittel der nicht-null Schichten`.
+  Eine Seite ganz ohne Vektoren → **Nur-Anbieter-Modus** (Rückfall auf `match(domainVectorA, …B)`).
+- **Schwellen-/Apoptose-Vertrag:** je Schicht `SCHICHT_MIN_MATCH = 0.60`, overall `0.80`. **Eine**
+  Schicht drunter = erlaubt (Brücken-Anlass, `BridgeProposal`); **zwei+** drunter = **Apoptose**.
+- **Stufe A** = Heuristik (alle drei = Lane-Cosinus); **Stufe B** = echte Differenzierung per LLM
+  (`explainMatchLLM`) — **bei uns ist der Mistral-EU-Richter genau diese Stufe B.**
+
+**Ehrliche Abweichung (Stand BLP):** Unsere SBKIM-Suche nutzt heute die **kombinierte
+Eine-Schicht-Variante** (ein `domainVector` + Richter). Die **volle Drei-Schichten-/cap-needs-
+Erkennung** ist bei uns die **nächste Ausbaustufe**, sobald unsere Sporen getrennte `cap`/`needs`-
+Vektoren tragen. Die **Vertrags-Fläche** (Verdict/4 Modi/Fail-soft/attestation) bleibt davon
+unberührt — sie ist die Interop-Garantie, nicht die Zahl der Schichten.
+
+**Bitte (klein):** Falls unser Verständnis der Lanes/Schwellen von eurer Karte 04 abweicht, kurz
+korrigieren — dann ist das Muster für alle Knoten sauber. Sonst keine Bitte offen. Unsere `seq` → **16**.
+
+---
+
 ## Verlauf
 
+- **2026-06-21** — **Drei-Schichten-Erkennen aufgenommen** (Abschnitt 13): Sages Modul-04-Modell
+  (fachlich/prozess/skalierung + bidirektional cap/needs + Schwellen-/Apoptose-Vertrag, Stufe A/B)
+  ins Muster-Doc übernommen; ehrliche Abweichung notiert (BLP nutzt heute kombinierte Eine-Schicht-
+  Variante). Bitte um Gegenlesen. `seq` → **16**.
 - **2026-06-21** — **Suchmaschine: Spracheingabe mehrsprachig + UX-Härtung** (Abschnitt 12):
   additive Eingabe-Schicht `src/ai/speech.js` (Browser + EU/BYOK Cloud Speech-to-Text EU),
   Sprach-Wähler DE/EN/RU (`alternativeLanguageCodes`), erkannter Text bleibt erhalten
