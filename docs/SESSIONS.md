@@ -7,6 +7,10 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ## 2026-06-21 — Drei-Schichten beidseitig besiegelt: Spore signiert (cap/needs) + Sage-Handshake abgeschlossen
 
+> 🏁 **Sitzung formell abgeschlossen.** Drei-Schichten beidseitig besiegelt (PRs #219–#223),
+> Abschlussbrief an Sage live (§17, `ack[Sage]=30`). Einziger offener Faden liegt bei Sage
+> (eigene cap/needs); bei uns kein offener Punkt. Andockpunkt für die neue Sitzung: `docs/PULS.md`.
+
 **Was getan**
 - **Domänen-Textfeld editierbar** (`network.js`/`embeddingCard`): `<textarea>` statt read-only, Default
   = Profil-Text, e5-`passage:`-Präfix wird erzwungen. cap/needs bleiben aus dem Profil. i18n DE/EN.
