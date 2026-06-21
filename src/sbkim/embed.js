@@ -73,3 +73,45 @@ export async function embedDomainVector(profile, opts = {}) {
 
   return { vector, model: EMBED_MODEL, dim: EMBED_DIM, l2: l2norm(vector), text };
 }
+
+// ---- Wiederverwendbarer Embedder (für SBKIM-Suche / Vorfilter) --------------
+// e5 nutzt unterschiedliche Präfixe für Anfrage vs. Passage.
+export const EMBED_QUERY_PREFIX = 'query: ';
+export const EMBED_PASSAGE_PREFIX = 'passage: ';
+
+let _embedderPromise = null;
+
+/**
+ * Lädt EINMALIG (opt-in) transformers.js + e5-small und liefert wiederverwendbare
+ * Einbettungs-Funktionen (`embedQuery`, `embedPassage`), jeweils L2-normiert (384-dim).
+ * Singleton: das Modell wird nur einmal geladen und für alle Aufrufe wiederbenutzt
+ * (kein Betriebs-CDN — exakt derselbe Opt-in-Pfad wie `embedDomainVector`). Bei Fehler
+ * wird der Cache zurückgesetzt, damit ein erneuter Versuch möglich ist.
+ * @param {{transformersUrl?:string, onStatus?:(s:string)=>void}} [opts]
+ * @returns {Promise<{embedQuery:(t:string)=>Promise<number[]>, embedPassage:(t:string)=>Promise<number[]>}>}
+ */
+export async function loadEmbedder(opts = {}) {
+  if (_embedderPromise) return _embedderPromise;
+  const url = opts.transformersUrl || TRANSFORMERS_URL;
+  const say = typeof opts.onStatus === 'function' ? opts.onStatus : () => {};
+  const p = (async () => {
+    say('lädt transformers.js …');
+    const tf = await import(/* @vite-ignore */ url);
+    const pipeline = tf.pipeline || (tf.default && tf.default.pipeline);
+    if (typeof pipeline !== 'function') throw new Error('transformers.js: pipeline() nicht gefunden');
+    say('lädt Modell (einmalig) …');
+    const extractor = await pipeline('feature-extraction', EMBED_MODEL, { quantized: true });
+    const embed = async (text) => {
+      const out = await extractor(String(text || ''), { pooling: 'mean', normalize: true });
+      const v = Array.from(out.data || out);
+      if (v.length !== EMBED_DIM) throw new Error('Unerwartete Vektor-Länge: ' + v.length);
+      return v;
+    };
+    return {
+      embedQuery: (t) => embed(EMBED_QUERY_PREFIX + String(t || '')),
+      embedPassage: (t) => embed(EMBED_PASSAGE_PREFIX + String(t || '')),
+    };
+  })();
+  _embedderPromise = p;
+  try { return await p; } catch (e) { _embedderPromise = null; throw e; }
+}

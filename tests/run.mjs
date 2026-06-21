@@ -124,6 +124,9 @@ import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID, SEAL_STAGE } from '../src/sb
 import { readFileSync as _readSpore } from 'node:fs';
 import { classifyPeer, summarizePeers, fetchPeerStatus, PEERS } from '../src/sbkim/peers.js';
 import { buildPassageText, cosineSimilarity, l2norm, EMBED_DIM, EMBED_MODEL } from '../src/sbkim/embed.js';
+import { queryLocal, hybridMatch, parseVerdicts, buildAttestation, buildRichterMessages, PROVIDER_MIN_MATCH } from '../src/sbkim/match.js';
+import { sbkimHybridSearch } from '../src/sbkim/hybridSearch.js';
+import { accountCorpusEntries } from '../src/sbkim/searchCorpus.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
@@ -1176,6 +1179,84 @@ await section('SBKIM: SIGNAL.json (§11.6)', () => {
   ok('seq vorhanden', sig.seq === 1);
   ok('sporeUrl gesetzt', /BookLedgerPro\/main\/sbkim\/spore\.json$/.test(sig.sporeUrl));
   ok('forNodes = *', JSON.stringify(sig.forNodes) === '["*"]');
+});
+
+await section('SBKIM: Hybrid-Match — Korpus + Vorfilter (Vertrags-Fläche)', async () => {
+  // Korpus aus Konten (rein, ohne Modell).
+  const konten = [{ nummer: '4980', name: 'Werbekosten', art: 'aufwand' }, { nummer: '8400', name: 'Erlöse 19%', art: 'ertrag' }];
+  const entries = accountCorpusEntries(konten);
+  ok('Korpus: label = nummer+name', entries[0].label === '4980 Werbekosten');
+  ok('Korpus: anchorId = nummer', entries[0].anchorId === '4980');
+  ok('Korpus: text trägt Bedeutung', /Aufwand/i.test(entries[0].text));
+
+  // Vorfilter mit injiziertem Embedder (deterministisch, kein Modell-Laden).
+  const unit = (i) => { const a = new Array(EMBED_DIM).fill(0); a[i] = 1; return a; };
+  const embedQuery = async () => unit(0);
+  const corpus = [
+    { label: 'Treffer', anchorId: 't', text: 'x', passageVec: unit(0) },     // cosine 1
+    { label: 'Daneben', anchorId: 'd', text: 'y', passageVec: unit(1) },     // cosine 0
+  ];
+  const pre = await queryLocal('werbung', 5, { corpus, embedQuery });
+  ok('Vorfilter: nur ≥ Schwelle', pre.length === 1 && pre[0].anchorId === 't');
+  ok('Vorfilter-Schwelle = 0.80', PROVIDER_MIN_MATCH === 0.80);
+});
+
+await section('SBKIM: Hybrid-Match — Richter + Fail-soft (kein Throw)', async () => {
+  const cands = [{ label: 'A', text: 'Werbekosten', cosine: 0.9, anchorId: 'a' }];
+
+  // (1) kein apiKey → fail-soft, available:false, KEIN Throw.
+  const noKey = await hybridMatch('werbung', cands, {});
+  ok('ohne Key: available=false', noKey.available === false && noKey.verdicts === null);
+  ok('ohne Key: fallbackCandidates vorhanden', Array.isArray(noKey.fallbackCandidates) && noKey.fallbackCandidates.length === 1);
+
+  // (2) _chat wirft → fail-soft (Netz-Fehler wird gefangen, KEIN Throw nach außen).
+  const boom = await hybridMatch('werbung', cands, { apiKey: 'k', _chat: async () => { throw new Error('offline'); } });
+  ok('Netz-Fehler: available=false', boom.available === false && /offline/.test(boom.reason));
+
+  // (3) gültige Richter-Antwort → available:true, Verdict- & attestation-Schema 1:1.
+  const chat = async () => JSON.stringify({ verdicts: [{ label: 'A', passt: true, score: 0.91, begruendung: 'passt' }] });
+  const ok3 = await hybridMatch({ text: 'werbung', label: 'BookLedgerPro' }, cands, { apiKey: 'k', model: 'mistral-small-latest', _chat: chat });
+  ok('Richter: available=true', ok3.available === true);
+  const v = ok3.verdicts[0];
+  ok('Verdict-Schema', ['label', 'anchorId', 'passt', 'score', 'begruendung'].every((f) => f in v));
+  ok('Verdict-Werte', v.label === 'A' && v.anchorId === 'a' && v.passt === true && v.score === 0.91);
+  const att = ok3.attestation;
+  ok('attestation kind/version', att.kind === 'sbkim-hybrid-match-judgment' && att.version === 1);
+  ok('attestation region=eu', att.region === 'eu' && att.provider === 'mistral' && att.queryLabel === 'BookLedgerPro');
+
+  // parseVerdicts: Müll → null; Score-Clamp; Begründung gekürzt.
+  ok('parseVerdicts: kein JSON → null', parseVerdicts('keine antwort', cands) === null);
+  const clamped = parseVerdicts(JSON.stringify({ verdicts: [{ label: 'A', passt: true, score: 5, begruendung: 'x'.repeat(300) }] }), cands);
+  ok('Score auf [0,1] geklemmt', clamped[0].score === 1);
+  ok('Begründung ≤ 200 Zeichen', clamped[0].begruendung.length === 200);
+
+  // buildRichterMessages: System + User, listet Kandidaten.
+  const msgs = buildRichterMessages('werbung', cands);
+  ok('Messages: system+user', msgs.length === 2 && msgs[0].role === 'system' && /Werbekosten/.test(msgs[1].content));
+});
+
+await section('SBKIM: Hybrid-Match — alle 4 Modi (Helfer)', async () => {
+  const unit = (i) => { const a = new Array(EMBED_DIM).fill(0); a[i] = 1; return a; };
+  const embedQuery = async () => unit(0);
+  const corpusHit = [{ label: 'Treffer', anchorId: 't', text: 'Werbekosten', passageVec: unit(0) }];
+  const corpusMiss = [{ label: 'Daneben', anchorId: 'd', text: 'x', passageVec: unit(1) }];
+
+  // vorfilter-leer
+  const leer = await sbkimHybridSearch('q', corpusMiss, { embedQuery });
+  ok('Modus vorfilter-leer', leer.mode === 'vorfilter-leer' && leer.treffer.length === 0);
+
+  // nur-vorfilter (kein apiKey)
+  const nur = await sbkimHybridSearch('q', corpusHit, { embedQuery });
+  ok('Modus nur-vorfilter', nur.mode === 'nur-vorfilter' && nur.treffer.length === 1);
+
+  // richter (apiKey + _chat)
+  const chat = async () => JSON.stringify({ verdicts: [{ label: 'Treffer', passt: true, score: 0.88, begruendung: 'ja' }] });
+  const ri = await sbkimHybridSearch('q', corpusHit, { embedQuery, apiKey: 'k', _chat: chat });
+  ok('Modus richter', ri.mode === 'richter' && ri.treffer[0].passt === true && !!ri.attestation);
+
+  // fail-soft-vorfilter (apiKey, aber _chat wirft)
+  const fs = await sbkimHybridSearch('q', corpusHit, { embedQuery, apiKey: 'k', _chat: async () => { throw new Error('netz weg'); } });
+  ok('Modus fail-soft-vorfilter', fs.mode === 'fail-soft-vorfilter' && fs.treffer.length === 1 && /netz weg/.test(fs.reason));
 });
 
 // ===== Geheim-Fach (Tresor im Tresor) — Krypto- & Recovery-Kern =====

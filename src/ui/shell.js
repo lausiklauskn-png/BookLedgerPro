@@ -39,6 +39,7 @@ import { mountLohn } from './views/lohn.js';
 import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
+import { mountSbkimSuche } from './views/sbkimsuche.js';
 import { mountSafebox } from './views/safebox.js';
 import { mountDashboard } from './views/dashboard.js';
 import { mountAnleitung } from './views/anleitung.js';
@@ -66,6 +67,7 @@ const NAV = [
   ['reports', 'nav.reports'],
   ['berichte', 'nav.berichte'],
   ['network', 'nav.network'],
+  ['sbkimsuche', 'nav.sbkimsuche'],
   ['safebox', 'nav.safebox'],
   ['legal', 'nav.legal'],
   ['anleitung', 'nav.anleitung'],
@@ -368,6 +370,7 @@ function renderRoute() {
   if (route === 'about') return mount(content, el('section', { class: 'view' }, [aboutContent()]));
   if (route === 'anleitung') return void mountAnleitung(content);
   if (route === 'network') return void mountNetwork(content);
+  if (route === 'sbkimsuche') return void mountSbkimSuche(content);
   if (route === 'safebox') return void mountSafebox(content);
   return mount(content, viewPlaceholder(route));
 }
