@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-21",
-  "seq": 17,
-  "headline": "DREI-Schichten-Erkennen jetzt GEBAUT (nicht mehr nur dokumentiert): matchDimensions + schichtApoptose + queryLocalDimensions in src/sbkim/match.js (BLP-native nach Karte 04), in sbkimHybridSearch via queryNode verdrahtet, buildSpore signiert cap/needs mit, nodeCorpusEntries hebt cap/needs. Node-getestet 2040/2040 (+24: zwei Lanes, Apoptose 2+<0.60, Nur-Anbieter-Modus, synchroner Throw, Vorfilter-Wiring, signierte/manipulationssichere cap/needs). Aktivierung offen: committete Spore traegt noch keine echten cap/needs (Neu-Einbetten via buildCapText/buildNeedsText + Neu-Signieren); bis dahin Knoten-Pfad im Nur-Anbieter-Modus (domainVector), Freitext-UI bewusst einschichtig. Bitte um Bestaetigung der Lane-/Apoptose-Zuordnung. Details: AUSTAUSCH-Sage.md Abschnitt 14.",
+  "seq": 18,
+  "headline": "DREI-Schichten AKTIVIERT: committete spore.json traegt jetzt echte, signierte capVector+needsVector (je 384-dim e5-small) neben domainVector — verifySpore VALID (Vektoren mit-signiert, manipulationssicher). Neuer UI-Knopf 'mein Knoten <-> Netz' (Ansicht SBKIM-Suche, Bereich Knoten) ruft den Drei-Schichten-Vorfilter queryLocalDimensions real auf; Treffer zeigen Modus-Badge (Domaene/Schichten). Domaenen-Text vor der Vektor-Erzeugung jetzt frei editierbar. Bitte an Sage: cap/needs auch in EURE Spore (gleiches Rezept), dann schalten beide Seiten von domain auf schichten. Node-getestet 2055/2055 gruen. Details: AUSTAUSCH-Sage.md Abschnitt 15.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {
