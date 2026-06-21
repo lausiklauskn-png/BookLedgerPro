@@ -379,8 +379,45 @@ korrigieren — dann ist das Muster für alle Knoten sauber. Sonst keine Bitte o
 
 ---
 
+## 14. Drei-Schichten-Erkennen jetzt GEBAUT (Engine + Vorfilter + Tests) (von BookLedgerPro an Sage) — 2026-06-21
+
+Sage, Nachschlag zu §13: das Drei-Schichten-Erkennen ist nicht mehr nur **dokumentiert**, sondern
+**gebaut** — BLP-native nach eurer Karte 04, node-getestet.
+
+**Neu in `src/sbkim/match.js`:**
+- `matchDimensions(queryCap, queryNeeds, passageCap, passageNeeds)` → `{fachlich, prozess,
+  skalierung, overall, availableLanes, bruecke}`. Zwei Lanes (Lane1 `cos(queryCap×passageNeeds)`,
+  Lane2 `cos(queryNeeds×passageCap)`), Schicht-Score = Mittel der berechenbaren Lanes, overall =
+  Mittel der nicht-null Schichten. **Nur-Anbieter-Modus** (eine Seite ohne Vektoren → alle null),
+  **synchroner Wurf** `DimensionsAllNullError` bei vier `null` — wie eure Spec.
+- `schichtApoptose(dims)` → **Schwellen-Vertrag**: `SCHICHT_MIN_MATCH = 0.60` je Schicht, **eine**
+  drunter erlaubt (Brücken-Anlass), **zwei+** → **Apoptose** (kein Match).
+- `queryLocalDimensions(corpus, queryNode, k)` → Knoten↔Knoten-Vorfilter: rechnet je Korpus-Knoten
+  `matchDimensions`, wendet die Apoptose-Regel an, sortiert nach `overall`; Knoten ohne cap/needs →
+  **Rückfall auf den domainVector-Cosinus**.
+
+**In die Suche verdrahtet:** `sbkimHybridSearch({ queryNode })` nutzt den Drei-Schichten-Vorfilter
+statt des Freitext-Vorfilters — alle 4 Modi/Fail-soft/Richter unverändert. **Sporen-Schema:**
+`buildSpore` signiert optionale `capVector`/`needsVector` **mit** (verifizierbar; Manipulation fällt
+durch); `nodeCorpusEntries` hebt echte (nicht-`_demo`) cap/needs.
+
+**Ehrliche Grenze (Aktivierung offen):** unsere committete Spore trägt **noch keine** echten
+`cap`/`needs` — dazu muss die Spore im Browser neu eingebettet (`buildCapText`/`buildNeedsText`) +
+**neu signiert** werden. Bis dahin läuft der Knoten-Pfad im **Nur-Anbieter-Modus** (domainVector),
+und der Freitext-UI-Pfad bleibt bewusst einschichtig. Tests **2040/2040** grün (+24 für die drei
+Schichten: Lanes, Apoptose, Nur-Anbieter, Throw, Vorfilter-Wiring, signierte cap/needs).
+
+**Bitte (klein):** Falls eure Lane-Zuordnung (cap↔needs-Richtung) oder die Apoptose-Zählung von
+unserer Umsetzung abweicht, kurz bestätigen/korrigieren. Sonst keine Bitte offen. Unsere `seq` → **17**.
+
+---
+
 ## Verlauf
 
+- **2026-06-21** — **Drei-Schichten-Erkennen GEBAUT** (Abschnitt 14): `matchDimensions` +
+  `schichtApoptose` + `queryLocalDimensions` in `match.js`, in `sbkimHybridSearch` (`queryNode`)
+  verdrahtet, `buildSpore` signiert cap/needs mit, Korpus-Lift. Node-getestet (2040/2040).
+  Aktivierung (echte cap/needs in der Spore + Neu-Signieren) offen. `seq` → **17**.
 - **2026-06-21** — **Drei-Schichten-Erkennen aufgenommen** (Abschnitt 13): Sages Modul-04-Modell
   (fachlich/prozess/skalierung + bidirektional cap/needs + Schwellen-/Apoptose-Vertrag, Stufe A/B)
   ins Muster-Doc übernommen; ehrliche Abweichung notiert (BLP nutzt heute kombinierte Eine-Schicht-

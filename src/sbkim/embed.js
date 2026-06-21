@@ -29,6 +29,27 @@ export function buildPassageText(p) {
   return 'passage: ' + body;
 }
 
+/**
+ * cap-Text = was der Knoten BIETET (Angebot-Schicht des Drei-Schichten-Erkennens, Sage
+ * Karte 04): Domäne + Beschreibung + Stichworte + Stamm-Kategorien. Rein, ohne Modell.
+ */
+export function buildCapText(p) {
+  const kw = Array.isArray(p && p.domainKeywords) ? p.domainKeywords.join(', ') : '';
+  const stamm = Array.isArray(p && p.stammCategories) ? p.stammCategories.join(', ') : '';
+  const body = [p && p.domain, p && p.domainDescription, kw, stamm].filter(Boolean).join('. ');
+  return 'passage: ' + body;
+}
+
+/**
+ * needs-Text = was der Knoten SUCHT (Bedarf-Schicht): die Gast-Kategorien, die er aufnimmt.
+ * Fehlen Gast-Kategorien, fällt der Bedarf auf die Domäne zurück (besser als leer). Rein.
+ */
+export function buildNeedsText(p) {
+  const gast = Array.isArray(p && p.guestCategories) ? p.guestCategories.join(', ') : '';
+  const body = (gast || (p && p.domain) || '').toString();
+  return 'passage: ' + body;
+}
+
 /** Reine L2-Norm eines Vektors. */
 export function l2norm(vec) {
   let s = 0;

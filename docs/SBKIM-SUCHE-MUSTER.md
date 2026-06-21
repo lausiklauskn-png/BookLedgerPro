@@ -24,10 +24,11 @@ Erst beide Stufen zusammen ergeben einen ehrlichen Treffer.
 
 ## Größeres Bild: Sages Erkennen hat DREI Schichten (nicht eine)
 
-> **Wichtig fürs Nachbauen und für die Interoperabilität.** Unser Vorfilter (Schicht 1 oben)
-> drückt heute alles auf **einen** Cosinus über **einen** kombinierten `domainVector`. Sages
-> volles Modul 04 (`SbkimMatch`, **Karte 04 § Drei-Schichten-Modell**) erkennt **feiner** —
-> und **bidirektional**. Das halten wir hier fest, damit der Unterschied bewusst ist.
+> **Status: GEBAUT (nicht mehr nur dokumentiert).** Der Drei-Schichten-Erkenner ist als
+> echte, node-getestete Funktion in `src/sbkim/match.js` umgesetzt (`matchDimensions`,
+> `schichtApoptose`, `queryLocalDimensions`) und in die Suche verdrahtet (`sbkimHybridSearch`
+> mit `queryNode`). Sages volles Modul 04 (`SbkimMatch`, **Karte 04 § Drei-Schichten-Modell**)
+> erkennt **feiner** als ein einzelner Cosinus — **bidirektional** über Angebot/Bedarf.
 
 **(A) Drei orthogonale Schichten (Lanes):** `fachlich · prozess · skalierung`. Jede ist eine
 eigene Bedeutungs-Achse; sie werden **getrennt** bewertet, nicht zu einer Zahl verschmolzen.
@@ -42,7 +43,8 @@ Knoten **zwei** — was er **bietet** (`cap`) und was er **sucht** (`needs`). Da
 
 `Schicht-Score = Mittel der berechenbaren Lanes` (eine, beide oder `null`); `overall = Mittel
 der nicht-null Schichten`. Fehlt einer Seite **beide** Vektoren → **Nur-Anbieter-Modus**
-(alle Schichten `null`, Rückfall auf `match(domainVectorA, domainVectorB)`).
+(alle Schichten `null`, Rückfall auf den `domainVector`-Cosinus). Bei uns: `queryLocalDimensions`
+rechnet genau das je Korpus-Knoten und reicht den passenden `modus` (`schichten`/`domain`) mit.
 
 **(C) Schwellen-Vertrag (Apoptose-Regel):** je Schicht `SCHICHT_MIN_MATCH = 0.60`, overall
 `PROVIDER_MIN_MATCH = 0.80`. **Eine** Schicht unter 0.60 ist **erlaubt** (typischer
@@ -54,11 +56,21 @@ Lane-Cosinus über demselben Embedding-Raum); die **echte Differenzierung** der 
 in **Stufe B** per LLM (`explainMatchLLM`, bei uns der Mistral-EU-Richter). Genau hier sitzt
 unser Richter — er ist die Stufe B.
 
-> **Ehrlicher Stand BLP:** Unsere Suche nutzt heute die **kombinierte Eine-Schicht-Variante**
-> (ein `domainVector` + Richter). Die volle **Drei-Schichten-/cap-needs-Erkennung** ist die
-> **nächste Ausbaustufe**, sobald unsere Sporen getrennte `cap`/`needs`-Vektoren tragen. Die
-> Vertrags-Fläche (unten) bleibt davon unberührt — sie ist die Interop-Garantie, nicht die
-> Zahl der Schichten.
+> **Ehrlicher Stand BLP (was läuft, was noch fehlt):**
+> - ✅ **Engine gebaut & node-getestet:** `matchDimensions` (zwei Lanes, Schicht-Score, overall,
+>   Nur-Anbieter-Modus, synchroner Wurf bei vier `null`), `schichtApoptose` (1 drunter erlaubt,
+>   2+ → Apoptose), `queryLocalDimensions` (Apoptose wirkt, Rückfall auf `domainVector`).
+> - ✅ **In die Suche verdrahtet:** `sbkimHybridSearch({ queryNode })` nimmt den Drei-Schichten-
+>   Pfad statt des Freitext-Vorfilters; alle Modi/Fail-soft/Richter bleiben unverändert.
+> - ✅ **Sporen-Schema:** `buildSpore` signiert optionale `capVector`/`needsVector` mit;
+>   `nodeCorpusEntries` hebt echte (nicht-`_demo`) cap/needs als `capVec`/`needsVec`.
+> - ⏳ **Aktivierung (offen):** unsere committete Spore trägt **noch keine** echten `cap`/`needs`
+>   (dazu Spore mit `buildCapText`/`buildNeedsText` neu einbetten + **neu signieren** im Browser).
+>   Bis dahin läuft der Knoten-Pfad im **Nur-Anbieter-Modus** (domainVector). Der **Freitext-UI-
+>   Pfad** bleibt bewusst einschichtig (für getippte Anfragen richtig).
+>
+> Die Vertrags-Fläche (unten) bleibt durch all das **unberührt** — sie ist die Interop-Garantie,
+> nicht die Zahl der Schichten.
 
 ## Vertrags-Fläche (1:1 zu Sage — sonst nicht interoperabel)
 

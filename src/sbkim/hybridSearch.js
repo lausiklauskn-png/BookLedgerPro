@@ -10,21 +10,30 @@
 //
 // Der Richter ist NIE eine Eintritts-Barriere: bei jedem Problem wird etwas Sinnvolles gezeigt.
 
-import { queryLocal, hybridMatch } from './match.js';
+import { queryLocal, queryLocalDimensions, hybridMatch } from './match.js';
 
 /**
- * @param {string} text   Suchanfrage
- * @param {Array<{label:string,text:string,anchorId?:string,passageVec:number[]}>} corpus
+ * @param {string} text   Suchanfrage (Freitext-Modus)
+ * @param {Array<{label:string,text:string,anchorId?:string,passageVec:number[],capVec?:number[],needsVec?:number[]}>} corpus
  * @param {{apiKey?:string, provider?:string, euOnly?:boolean, queryLabel?:string, model?:string,
- *          k?:number, minScore?:number, embedQuery?:Function, _chat?:Function}} [opts]
+ *          k?:number, minScore?:number, embedQuery?:Function, _chat?:Function,
+ *          queryNode?:{queryCapVec?:number[],queryNeedsVec?:number[],queryVec?:number[]}}} [opts]
  * @returns {Promise<{mode:string, treffer:Array, reason?:string, attestation?:object}>}
+ *
+ * Zwei Vorfilter-Wege:
+ *  • Freitext (Default): eine Schicht, `queryLocal` (Anfrage-Text → Cosinus gegen passageVec).
+ *  • Knoten↔Knoten (`opts.queryNode` gesetzt): DREI-Schichten-Erkennen (`queryLocalDimensions`,
+ *    Sage Karte 04) — zwei Lanes cap/needs, Apoptose bei 2+ Schichten < 0.60, Rückfall auf
+ *    domainVector-Cosinus für Knoten ohne cap/needs (Nur-Anbieter-Modus).
  */
 export async function sbkimHybridSearch(text, corpus, opts = {}) {
   opts = opts || {};
   const k = opts.k || 5;
 
-  // 1. VORFILTER (lokal, server-los). minScore wird durchgereicht (Suche: niedrige Grenze).
-  const prelim = await queryLocal(text, k, { corpus, embedQuery: opts.embedQuery, minScore: opts.minScore });
+  // 1. VORFILTER (lokal, server-los).
+  const prelim = opts.queryNode
+    ? queryLocalDimensions(corpus, opts.queryNode, k)
+    : await queryLocal(text, k, { corpus, embedQuery: opts.embedQuery, minScore: opts.minScore });
   if (prelim.length === 0) return { mode: 'vorfilter-leer', treffer: [] };
 
   // Ohne Schlüssel: server-loser Default — Vorfilter ist das Ergebnis.
