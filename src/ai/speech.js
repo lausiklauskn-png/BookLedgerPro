@@ -22,16 +22,17 @@ export function encodingFor(mimeType) {
 }
 
 /** Baut den Recognize-Request-Body (rein). WEBM/OGG_OPUS: Sample-Rate wird von Google erkannt. */
-export function buildSpeechRequest(base64, { mimeType, languageCode = 'de-DE' } = {}) {
-  return {
-    config: {
-      encoding: encodingFor(mimeType),
-      languageCode,
-      enableAutomaticPunctuation: true,
-      model: 'latest_short',
-    },
-    audio: { content: base64 },
+export function buildSpeechRequest(base64, { mimeType, languageCode = 'de-DE', alternativeLanguageCodes } = {}) {
+  const config = {
+    encoding: encodingFor(mimeType),
+    languageCode,
+    enableAutomaticPunctuation: true,
+    model: 'latest_short',
   };
+  if (Array.isArray(alternativeLanguageCodes) && alternativeLanguageCodes.length) {
+    config.alternativeLanguageCodes = alternativeLanguageCodes;
+  }
+  return { config, audio: { content: base64 } };
 }
 
 /** Extrahiert den Transkript-Text aus der Speech-Antwort (rein). */
@@ -121,9 +122,9 @@ export async function startRecording() {
 }
 
 /** Schickt Audio an Google Cloud Speech-to-Text (EU-Endpoint, BYOK). Gibt den Text zurück. */
-export async function recognizeEU({ base64, mimeType }, { apiKey, languageCode = 'de-DE' } = {}) {
+export async function recognizeEU({ base64, mimeType }, { apiKey, languageCode = 'de-DE', alternativeLanguageCodes } = {}) {
   if (!apiKey) throw new Error('Kein Speech-Schlüssel hinterlegt (EU)');
-  const body = buildSpeechRequest(base64, { mimeType, languageCode });
+  const body = buildSpeechRequest(base64, { mimeType, languageCode, alternativeLanguageCodes });
   const res = await fetch(`${SPEECH_BASE}/speech:recognize?key=${encodeURIComponent(apiKey)}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
