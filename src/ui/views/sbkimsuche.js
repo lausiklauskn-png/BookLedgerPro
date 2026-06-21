@@ -25,10 +25,12 @@ let _corpusKonten = null;       // gecachte, eingebettete Korpora (Session)
 let _corpusKnoten = null;
 let _speechEngine = 'browser';  // 'browser' (Web Speech API) | 'eu' (Cloud Speech-to-Text EU/BYOK)
 let _speechLang = 'de-DE';      // Spracheingabe-Sprache
-const SPEECH_LANGS = [['de-DE', 'Deutsch'], ['en-US', 'English']];
+let _query = '';                // aktuelle Eingabe — bleibt über Neuzeichnen (Ergebnis) erhalten
+const SPEECH_LANGS = [['de-DE', 'Deutsch'], ['en-US', 'English'], ['ru-RU', 'Русский']];
 
 export async function mountSbkimSuche(host) {
   _host = host;
+  _query = '';   // frisch geöffnet → leeres Feld (geschlossen = zurückgesetzt)
   repaint();
 }
 
@@ -72,7 +74,7 @@ function speechControls(input) {
       if (!rec) { status.textContent = t('speech.unsupported'); return; }
       activeRec = rec;
       micBtn.textContent = '⏹ ' + t('speech.stop'); status.textContent = t('speech.listening');
-      rec.onresult = (e) => { const tx = (((e.results || [])[0] || [])[0] || {}).transcript || ''; if (tx) { input.value = tx; status.textContent = ''; } };
+      rec.onresult = (e) => { const tx = (((e.results || [])[0] || [])[0] || {}).transcript || ''; if (tx) { input.value = tx; _query = tx; status.textContent = ''; } };
       rec.onerror = (e) => { status.textContent = t('speech.error').replace('%E%', String((e && e.error) || '')); };
       rec.onend = () => { activeRec = null; resetMic(); };
       try { rec.start(); } catch { activeRec = null; resetMic(); }
@@ -89,7 +91,7 @@ function speechControls(input) {
         if (!cfg.speechKey) { status.textContent = t('speech.noKey'); resetMic(); return; }
         const alt = SPEECH_LANGS.map(([c]) => c).filter((c) => c !== _speechLang);
         const text = await recognizeEU(audio, { apiKey: cfg.speechKey, languageCode: _speechLang, alternativeLanguageCodes: alt });
-        input.value = text || ''; status.textContent = text ? '' : t('speech.empty');
+        input.value = text || ''; _query = input.value; status.textContent = text ? '' : t('speech.empty');
       } catch (e) {
         const hint = speechFehlerHinweis((e && e.message) || '');
         status.textContent = t('speech.error').replace('%E%', String((e && e.message) || e)) + (hint ? ' — ' + hint : '');
@@ -111,7 +113,8 @@ function speechControls(input) {
 }
 
 function repaint(result, status) {
-  const input = el('input', { type: 'text', class: 'beleg-text', placeholder: t('sbkimsuche.placeholder'), value: '' });
+  const input = el('input', { type: 'text', class: 'beleg-text', placeholder: t('sbkimsuche.placeholder'), value: _query });
+  input.addEventListener('input', () => { _query = input.value; });
   const statusP = el('p', { class: 'muted small', text: status || '' });
   const out = el('div', { class: 'sbkimsuche-out' });
   if (result) out.appendChild(renderResult(result));
