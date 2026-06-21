@@ -1362,6 +1362,16 @@ await section('SBKIM: cap/needs — Texte, signierte Spore, Korpus-Lift', async 
   ok('Korpus-Eintrag trägt capVec/needsVec', Array.isArray(entries[0].capVec) && Array.isArray(entries[0].needsVec));
   const demoEntries = nodeCorpusEntries([{ nodeName: 'M', domain: 'D', _demo: ['capVector'], capVector: cap }]);
   ok('demo-cap wird nicht gehoben', demoEntries[0].capVec === undefined);
+
+  // NODE_PROFILE trägt jetzt Angebot/Bedarf → cap/needs-Texte sind verschieden & gefüllt.
+  ok('Profil-capText trägt Stamm-Kategorie', /Beleg-Verbuchung/.test(buildCapText(NODE_PROFILE)));
+  ok('Profil-needsText trägt Gast-Kategorie', /Eingangsrechnung/.test(buildNeedsText(NODE_PROFILE)));
+  ok('cap- und needs-Text verschieden', buildCapText(NODE_PROFILE) !== buildNeedsText(NODE_PROFILE));
+  // Spore aus dem echten Profil mit allen drei Vektoren → VALID, trägt stamm/guest + cap/needs.
+  const spore2 = await buildSpore(keys, { ...NODE_PROFILE, embeddingModel: 'm', domainVector: dom, capVector: cap, needsVector: needs });
+  ok('Profil-Spore VALID mit 3 Vektoren', (await verifySpore(spore2)).valid === true);
+  ok('Spore trägt stamm/guest + cap/needs', spore2.stammCategories.length > 0 && spore2.guestCategories.length > 0 && Array.isArray(spore2.capVector) && Array.isArray(spore2.needsVector));
+  ok('kein _demo bei echten Vektoren', spore2._demo === undefined);
 });
 
 await section('SBKIM: Knoten-Korpus (Peer-Sporen, Ur-Gedanke)', async () => {

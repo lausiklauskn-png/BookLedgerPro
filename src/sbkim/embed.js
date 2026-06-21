@@ -74,25 +74,31 @@ export function cosineSimilarity(a, b) {
  * @param {{transformersUrl?:string, onStatus?:(s:string)=>void}} [opts]
  * @returns {Promise<{vector:number[], model:string, dim:number, l2:number, text:string}>}
  */
-export async function embedDomainVector(profile, opts = {}) {
+export async function embedTexts(texts, opts = {}) {
   const url = opts.transformersUrl || TRANSFORMERS_URL;
   const say = typeof opts.onStatus === 'function' ? opts.onStatus : () => {};
-  const text = buildPassageText(profile);
-
   say('lädt transformers.js …');
   const tf = await import(/* @vite-ignore */ url);
   const pipeline = tf.pipeline || (tf.default && tf.default.pipeline);
   if (typeof pipeline !== 'function') throw new Error('transformers.js: pipeline() nicht gefunden');
-
   say('lädt Modell (einmalig) …');
   const extractor = await pipeline('feature-extraction', EMBED_MODEL, { quantized: true });
+  const list = Array.isArray(texts) ? texts : [texts];
+  const out = [];
+  for (let i = 0; i < list.length; i++) {
+    say(`bettet ein (${i + 1}/${list.length}) …`);
+    const o = await extractor(String(list[i] || ''), { pooling: 'mean', normalize: true });
+    const vector = Array.from(o.data || o);
+    if (vector.length !== EMBED_DIM) throw new Error('Unerwartete Vektor-Länge: ' + vector.length);
+    out.push({ vector, l2: l2norm(vector), text: list[i] });
+  }
+  return out;
+}
 
-  say('bettet Domänentext ein …');
-  const out = await extractor(text, { pooling: 'mean', normalize: true });
-  const vector = Array.from(out.data || out);
-  if (vector.length !== EMBED_DIM) throw new Error('Unerwartete Vektor-Länge: ' + vector.length);
-
-  return { vector, model: EMBED_MODEL, dim: EMBED_DIM, l2: l2norm(vector), text };
+export async function embedDomainVector(profile, opts = {}) {
+  const text = buildPassageText(profile);
+  const [r] = await embedTexts([text], opts);
+  return { vector: r.vector, model: EMBED_MODEL, dim: EMBED_DIM, l2: r.l2, text };
 }
 
 // ---- Wiederverwendbarer Embedder (für SBKIM-Suche / Vorfilter) --------------

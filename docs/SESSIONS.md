@@ -5,6 +5,28 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-21 — Spore-Signierung mit cap/needs: Drei-Schichten in-App aktivierbar
+
+**Was getan**
+- `src/sbkim/embed.js`: `embedTexts(texts, opts)` (Modell EINMALIG laden, mehrere Texte einbetten);
+  `embedDomainVector` darauf umgebaut (Vertrag unverändert).
+- `src/sbkim/nodeProfile.js`: `STAMM_CATEGORIES` (Angebot/cap) + `GUEST_CATEGORIES` (Bedarf/needs)
+  ins `NODE_PROFILE` → speisen `buildCapText`/`buildNeedsText`.
+- `src/ui/views/network.js` (`embeddingCard`): „Echte Vektoren erzeugen" bettet nun **Domäne +
+  cap + needs** ein und **signiert** alle drei in die Spore (`capVector`/`needsVector`); zeigt L2
+  je Schicht; verifiziert vor dem Download. i18n DE/EN aktualisiert.
+- Tests +6 → **2055/2055**. SW **v173**.
+
+**Stand:** Aktivierung ist jetzt **ein Browser-Klick** (Netzwerk → Echte Vektoren erzeugen →
+spore.json committen). Engine + Signierung real & getestet.
+
+**Offen / ehrlich (Nutzer-/Netz-Schritt):** Das Signieren braucht den geräte-lokalen Schlüssel im
+**Browser** — nicht headless ausführbar. Voller node↔node-Drei-Schichten-Match feuert erst, wenn
+auch die **Gegenstelle** cap/needs trägt (Sage baut kompatibel). Optionaler UI-Knopf „mein Knoten
+↔ Netz" steht aus. Embed/Signier-Live-Teil nicht node-testbar (Assembly/Profil/Signatur schon).
+
+---
+
 ## 2026-06-21 — EU-Politik „frei/bindend" für die Spracheingabe (Regel #8, Cross-Pollination von Sage)
 
 **Was getan**

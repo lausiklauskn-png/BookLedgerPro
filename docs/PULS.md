@@ -7,7 +7,22 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-21): EU-Politik „frei/bindend" für die Spracheingabe (Regel #8)
+## ⏭ LETZTER STAND (2026-06-21): Spore-Signierung mit cap/needs — Drei-Schichten AKTIVIERBAR (In-App)
+
+> Der Knopf „Echte Vektoren erzeugen" (Netzwerk-Ansicht) bettet jetzt **drei** Texte ein
+> (Domäne + cap + needs via `embedTexts`) und **signiert** sie in die Spore (`capVector`/
+> `needsVector`, mitsigniert). `nodeProfile.js` hat dafür `STAMM_CATEGORIES` (Angebot) +
+> `GUEST_CATEGORIES` (Bedarf). Tests **2055/2055** (+6), SW **v173**.
+> **▶ AKTIVIERUNGS-SCHRITTE (Nutzer, Browser — nicht headless möglich):** App öffnen → Tresor
+> auf → **Netzwerk** → „Echte Vektoren erzeugen" (lädt e5 einmalig, ~30 MB) → `spore.json` wird
+> heruntergeladen → die Datei nach `sbkim/spore.json` **committen** → `SIGNAL.json` seq +1.
+> **Danach:** unser Knoten trägt die drei Schichten. Der Suche-Knoten-Pfad schaltet von „domain"
+> auf „schichten", **sobald die Gegenstelle ebenfalls cap/needs trägt** (Sage baut kompatibel).
+> **⏭ NÄCHSTE KONKRETE SCHRITTE:** (1) obige Signierung durchführen + committen; (2) optional
+> UI-Knopf „mein Knoten ↔ Netz" (queryNode aus eigener Spore); (3) Sage bitten, cap/needs in
+> ihre Spore aufzunehmen, damit node↔node-Schichten beidseitig rechnen.
+
+## ⏭ STAND (2026-06-21): EU-Politik „frei/bindend" für die Spracheingabe (Regel #8)
 
 > Sage hat unser Sprach-Muster nachgebaut (ihr Modul 21) und die **EU-Politik frei/bindend**
 > beigesteuert — wir haben sie **zurück übernommen**: `policyEngines`/`pickEngine` in
