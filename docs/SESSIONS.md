@@ -5,6 +5,32 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-21 — Spracheingabe (DE/EN/RU) für die SBKIM-Suche + EU-Weg vom Nutzer verifiziert [PRs #211–#213]
+
+**Was getan**
+- **Spracheingabe** als additive Eingabe-Schicht an die SBKIM-Suche (`src/ai/speech.js`): zwei umschaltbare
+  Engines — **Browser** (Web Speech API) und **EU/BYOK** (Google **Cloud Speech-to-Text, EU-Endpoint**).
+  Pipeline (Vorfilter→Richter, Fail-soft) bleibt **unberührt** — die Suche frisst nur den String (#211).
+- **Mehrsprachig:** Sprach-Wähler **DE/EN/RU**; EU-Engine bekommt die übrigen Sprachen als
+  `alternativeLanguageCodes`. Such-Logik war ohnehin mehrsprachig (multilingual-e5-small + Mistral) (#212).
+- **UX-Fix (Nutzer-Befund):** erkannter/getippter Text verschwand nach der Suche, weil `repaint()` das Feld
+  mit `value:''` neu baute → jetzt in `_query` gehalten, beim Neuzeichnen erhalten, Reset nur beim
+  Schließen/Neu-Öffnen (#212).
+- **Sage-Briefkasten-Ritual:** AUSTAUSCH-Sage **§12** (Brief zum Nachbauen), `SIGNAL` **seq → 15**,
+  Muster verallgemeinert in `docs/SBKIM-SUCHE-MUSTER.md` (Abschnitt „Spracheingabe"). Push = Signal (#213).
+
+**Browser-verifiziert (vom Nutzer, 2026-06-21):** BEIDE Spracheingabe-Engines. Der **EU-Weg end-to-end**
+bestätigt — Schlüssel freigeschaltet, Erkennung sehr gut, und 🎤→EU-STT→Text→Richter ergab **dasselbe Urteil
+wie beim Tippen** (gleicher Text ⇒ gleiches Verdict).
+
+**Stand:** Spracheingabe live & verifiziert, an Sage gemeldet. SW **v170**, Tests **2016/2016** grün.
+
+**Offen / ehrlich:** weitere Sprachen jederzeit per `SPEECH_LANGS`-Array; Modell-Laden/Mikro/Cloud-Antworten
+bleiben browser-/netzgebunden (nicht in Node ausführbar); Mehrfach-Absichts-Trennung im Richter weiter offen;
+attestation roh (Sages Signier-Helfer fehlt).
+
+---
+
 ## 2026-06-21 — SBKIM-Suche: QA-Härtung + Rück-Aktion an Sage (Hybrid-Match-Richter komplett) [mehrere PRs #205–#208]
 
 **Was getan (echtes Nutzer-QA → Härtung, dann Sage gemeldet)**
