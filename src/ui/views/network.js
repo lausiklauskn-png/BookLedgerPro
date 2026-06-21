@@ -12,7 +12,7 @@ import { demoVector } from '../../sbkim/domainvector.js';
 import { buildSignal } from '../../sbkim/signal.js';
 import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID } from '../../sbkim/nodeProfile.js';
 import { PEERS, checkAllPeers } from '../../sbkim/peers.js';
-import { buildPassageText, embedDomainVector } from '../../sbkim/embed.js';
+import { buildPassageText, buildCapText, buildNeedsText, embedTexts, EMBED_MODEL } from '../../sbkim/embed.js';
 
 let _host = null;
 
@@ -197,13 +197,21 @@ function embeddingCard(ident) {
       btn.setAttribute('disabled', '');
       out.replaceChildren();
       try {
-        const res = await embedDomainVector(NODE_PROFILE, { onStatus: (s) => { status.textContent = s; } });
-        const spore = await buildSpore(ident.keys, { ...NODE_PROFILE, embeddingModel: res.model, domainVector: res.vector });
+        // Drei Vektoren in EINEM Modell-Laden: Domäne + Angebot (cap) + Bedarf (needs).
+        const onStatus = (s) => { status.textContent = s; };
+        const [dom, cap, needs] = await embedTexts(
+          [buildPassageText(NODE_PROFILE), buildCapText(NODE_PROFILE), buildNeedsText(NODE_PROFILE)],
+          { onStatus },
+        );
+        const spore = await buildSpore(ident.keys, {
+          ...NODE_PROFILE, embeddingModel: EMBED_MODEL,
+          domainVector: dom.vector, capVector: cap.vector, needsVector: needs.vector,
+        });
         const v = await verifySpore(spore);
         if (!v.valid) { status.textContent = t('net.embedInvalid'); return; }
         downloadJson('spore.json', spore);
-        status.textContent = t('net.embedDone').replace('%L2%', res.l2.toFixed(4));
-        out.appendChild(el('p', { class: 'mono small', text: `dim ${res.dim} · L2 ${res.l2.toFixed(4)} · [${res.vector.slice(0, 4).map((x) => x.toFixed(3)).join(', ')}, …]` }));
+        status.textContent = t('net.embedDone').replace('%L2%', dom.l2.toFixed(4));
+        out.appendChild(el('p', { class: 'mono small', text: `domain L2 ${dom.l2.toFixed(4)} · cap L2 ${cap.l2.toFixed(4)} · needs L2 ${needs.l2.toFixed(4)} (3 Schichten signiert)` }));
         out.appendChild(el('p', { class: 'muted small', text: t('net.embedNext') }));
       } catch (e) {
         status.textContent = t('net.embedFail').replace('%E%', String((e && e.message) || e));

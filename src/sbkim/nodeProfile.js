@@ -29,6 +29,14 @@ export const SEAL_STAGE = 'verified-match';
 /** Domänen-Stichworte (CLAUDE.md „Sage-Andock"): speisen domainVector + Spore. */
 export const KEYWORDS = ['Buchhaltung', 'Beleg', 'Konto', 'Rechnung', 'USt', 'EÜR', 'Kostenstelle', 'GoBD', 'Mitarbeiter', 'Auftrag'];
 
+/**
+ * Angebot (cap) / Bedarf (needs) für das Drei-Schichten-Erkennen (Sage Karte 04).
+ * stammCategories = was BookLedgerPro BIETET; guestCategories = was es vom Netz AUFNIMMT.
+ * Speisen `buildCapText`/`buildNeedsText` → signierter `capVector`/`needsVector` der Spore.
+ */
+export const STAMM_CATEGORIES = ['Buchhaltung', 'Beleg-Verbuchung', 'Kontierung', 'USt-Voranmeldung', 'EÜR', 'GoBD-Festschreibung', 'Auswertungen'];
+export const GUEST_CATEGORIES = ['Eingangsrechnung', 'Bankumsatz', 'Kundendaten', 'Auftragsdaten', 'Beleg-Scan', 'OCR-Text'];
+
 /** Unveränderliche Domänen-Felder der Spore (ohne Schlüssel/Vektor). */
 export const NODE_PROFILE = {
   domain: 'BookLedgerPro-Buchhaltung',
@@ -36,4 +44,6 @@ export const NODE_PROFILE = {
   domainKeywords: KEYWORDS,
   endpoint: ENDPOINT,
   nodeName: 'BookLedgerPro',
+  stammCategories: STAMM_CATEGORIES,
+  guestCategories: GUEST_CATEGORIES,
 };
