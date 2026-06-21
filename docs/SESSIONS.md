@@ -5,6 +5,29 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-21 — SBKIM-Suche: QA-Härtung + Rück-Aktion an Sage (Hybrid-Match-Richter komplett) [mehrere PRs #205–#208]
+
+**Was getan (echtes Nutzer-QA → Härtung, dann Sage gemeldet)**
+- Nutzer testete die SBKIM-Suche in zwei harten Runden; jeder Befund wurde behoben & im Browser bestätigt:
+  - **Vorfilter leer** (0.80 zu hoch) → **Top-k** (`minScore:0`, #205).
+  - **Kontonummer-Halluzination** (SKR04 „6800" statt Korpus „4630") → Richter referenziert per **`id`**,
+    angezeigt wird immer das kanonische Konto; erfundene verworfen (#206).
+  - **Recall-Lücke** (Alltagssprache) → **Konto-Synonyme** + k=10 + Transparenz „geprüfte Kandidaten" (#207).
+  - **Zurückhaltung/Steuer** (Strafzettel fälschlich auf Kfz) → Prompt-Regel **Bußgeld §4 Abs.5 EStG nicht
+    abzugsfähig → passt=false**, „spezifischstes Konto vor Sammelkonto"; im Re-Test korrekt abgelehnt (#208).
+- **Browser-verifiziert:** `available:true` (mistral-large, eu); sinnvolle Urteile (Konten + Knoten-Metaphern
+  wie „die Karte, die sich selbst kennt"→Sage); **Fail-soft bei WLAN-aus** („Richter nicht verfügbar — Vorfilter
+  gilt" + lokale Treffer, kein Throw); Zurückhaltung (K7 Strafzettel + N4 Kochrezepte → „keiner passt").
+- **Rück-Aktion an Sage** (AUSTAUSCH-Sage **§11**, `SIGNAL` **seq → 14**): a/b/c + erster Richter-Lauf +
+  gefundene/behobene Bugs gemeldet. Das Pushen ist das Signal.
+
+**Stand:** Hybrid-Match-Richter eingebaut, QA-gehärtet, Sage gemeldet. SW v167, Tests **2005/2005**.
+
+**Offen / ehrlich:** Mehrfach-Absichten trennt der Richter noch nicht zuverlässig (Vorfilter-Grenze);
+attestation roh (Signier-Helfer fehlt bei Sage). Sages Whitening/Schwellen-Brief weiter ausstehend.
+
+---
+
 ## 2026-06-21 — SBKIM-Suche: zweiter Bereich „Knoten finden" + Muster-Doku [Branch `claude/sbkim-knoten-suche`]
 
 **Was getan**

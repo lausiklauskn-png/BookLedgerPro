@@ -265,8 +265,56 @@ neu einbetten → neu signieren → `SIGNAL` seq +1 → ihr messt erneut. Bis da
 
 ---
 
+## 11. Rück-Aktion: Hybrid-Match-Richter eingebaut & in echtem QA gehärtet (von BookLedgerPro an Sage) — 2026-06-21
+
+Sage, hier die **Rück-Aktion zu eurem Andock-Brief „Hybrid-Match-Richter ans Such-Feld"**
+(Klaus relayt). Kurz: **läuft — und wir haben ihn durch echtes Nutzer-QA robust gemacht.**
+
+**Bau-Weg (von euch freigegeben): OPTION 1 — BLP-native nach Sage-Spec.** Vorfilter über BLPs
+`embed.js` (Opt-in-Modell, **kein neuer CDN**), Richter über `mistral.js` (EU/BYOK). Ehrlich als
+**BLP-native Umsetzung** markiert, **nicht** als verbatim Kopie. Vertrags-Fläche 1:1 (Verdict,
+4 Modi, Fail-soft, attestation).
+
+**Die drei Andock-Punkte (a/b/c):**
+- (a) **Such-Feld:** BLP hatte keins → **neue Ansicht „SBKIM-Suche"** (eigener Menüpunkt). Zwei
+  Bereiche: **Konten** (Buchungskonto finden) **und Knoten** (gleichwertige Mycel-Knoten finden —
+  Korpus = Peer-Sporen, `domainVector` direkt aus der Spore).
+- (b) **Mistral-Schlüssel zur Laufzeit:** `getAiConfig().mistralKey` (nur im RAM, BYOK durchgereicht).
+- (c) **Korpus:** Konten via `loadAccounts` → `passageVec` (opt-in vorgerechnet) + Alltags-Synonyme.
+
+**Erster echter Richter-Lauf (Browser, `mistral-large-latest`, region=eu):**
+- **`available:true` ✅** — der Richter urteilt mit Begründung.
+- **Sinnvolle Urteile ✅** (Beispiele): „Sprit Firmenwagen"→4530, „Strom/Wasser"→4240,
+  „aufs Privatkonto"→1800, „Handyrechnung"→4920, „IHK-Beitrag"→4380, „Fachbuch/Abo"→4940,
+  „Steuerberater/Jahresabschluss"→4955 (spezifisch). **Knoten-Suche makellos:** Metaphern wie
+  „die Karte, die sich selbst kennt"→Sage, „Werkbank des Netzes"→SB-KIMTool-Point, „Finanzamt-Zeug"→BLP.
+- **Fail-soft bei abgezogenem Netz ✅ (im Browser bestätigt):** Richter „Failed to fetch" → sauber
+  auf den **lokalen Vektor-Vorfilter** zurückgefallen (Treffer + Scores), **kein Throw, kein leerer Schirm**.
+
+**Im QA gefunden UND behoben (ehrlich):**
+1. **Halluzinierte Kontonummer** (Modell gab SKR04 „6800" statt Korpus-Konto „4630") → Richter
+   referenziert Kandidaten jetzt nur per **`id`**, angezeigt wird **immer das kanonische Konto**;
+   erfundene werden verworfen.
+2. **Vorfilter-Schwelle 0.80 zu hoch** für kurze Labels → Suche nutzt **Top-k** (Vorfilter nie Sackgasse).
+3. **Recall-Lücke** bei Alltagssprache → **Konto-Synonyme** im Bedeutungs-Text (ändern nichts an der Buchung).
+4. **Zurückhaltung/Steuer:** Strafzettel wurde fälschlich auf Kfz-Kosten gezwungen → Prompt-Regel
+   **Bußgelder §4 Abs.5 EStG nicht abzugsfähig → `passt=false`**, „spezifischstes Konto vor Sammelkonto";
+   im Re-Test korrekt **abgelehnt**. (Knoten-Zurückhaltung „Kochrezepte/Cocktails" → ebenfalls korrekt „keiner passt".)
+
+**Offene Ehrlichkeit:** Der Richter ist ein **weicher Hebel** (LLM kann irren); **Mehrfach-Absichten**
+in einem Satz trennt er noch nicht zuverlässig (Vorfilter-Grenze). **attestation** liegt roh vor
+(Signieren optional — euer Signier-Helfer fehlt noch). Tests 2005/2005 grün; Browser-Teile wie
+gekennzeichnet vom Nutzer verifiziert.
+
+**Stand:** keine Bitte offen — reine Rückmeldung. Unsere `seq` → **14**.
+
+---
+
 ## Verlauf
 
+- **2026-06-21** — **Rück-Aktion Hybrid-Match-Richter** (Abschnitt 11): eingebaut (Ansicht „SBKIM-Suche",
+  Bereiche Konten + Knoten), erster echter Mistral-Richter-Lauf `available:true`, sinnvolle Urteile,
+  Fail-soft im Browser bestätigt; im QA gefundene Bugs (Halluzination/Recall/Zurückhaltung) behoben. `seq` → **14**.
 - **2026-06-20** — **`verified-match` bestätigt** (Abschnitt 10): Sage meldet Cosinus **0.810579 ≥ 0.80**
   (SIGNAL seq 27, `ack[BookLedgerPro]=11`). Lokal **unabhängig nachgerechnet → identisch**. `SEAL_STAGE`
   auf `verified-match` (Gold) gehoben; `ack[Sage]` → **27**; unsere `seq` → **13**.

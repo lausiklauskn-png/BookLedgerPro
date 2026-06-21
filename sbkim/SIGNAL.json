@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
-  "lastBuild": "2026-06-20",
-  "seq": 13,
-  "headline": "verified-match BESTÄTIGT: Sage hat den Cosinus gerechnet — Sage ⟷ BookLedgerPro = 0.810579 ≥ 0.80 (Sage SIGNAL seq 27, ack[BookLedgerPro]=11). Wir haben den Wert lokal unabhängig nachgerechnet → identisch (beide L2=1). Siegel-Stufe auf verified-match (Gold) gehoben; ack[Sage]=27. Quittung an Sage: AUSTAUSCH-Sage.md §10. BookLedgerPro ist voll vernetzter Mycel-Knoten.",
+  "lastBuild": "2026-06-21",
+  "seq": 14,
+  "headline": "Rück-Aktion Hybrid-Match-Richter (euer Andock-Brief): EINGEBAUT als BLP-native nach Sage-Spec (OPTION 1) — Ansicht SBKIM-Suche, Bereiche Konten + Knoten. Erster echter Mistral-Richter-Lauf (mistral-large, eu): available:true, sinnvolle Urteile (Konten + Knoten-Metaphern), Fail-soft bei abgezogenem Netz im Browser bestätigt (Vorfilter gilt, kein Throw). Im QA gefunden+behoben: Kontonummer-Halluzination (id-Schutz), Vorfilter-Top-k, Recall-Synonyme, Zurückhaltung + Steuerregel §4 Abs.5 EStG (Strafzettel korrekt abgelehnt). Details: AUSTAUSCH-Sage.md Abschnitt 11. Keine Bitte offen.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {

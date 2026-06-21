@@ -7,7 +7,19 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-21): SBKIM-Suche mit ZWEI Bereichen (Konten + Knoten) + Muster-Doku
+## ⏭ LETZTER STAND (2026-06-21): Hybrid-Match-Richter KOMPLETT — QA-gehärtet + an Sage gemeldet
+
+> Die SBKIM-Suche (Konten + Knoten) ist **eingebaut, im echten Nutzer-QA gehärtet und im Browser verifiziert**:
+> `available:true` (mistral-large/eu), sinnvolle Urteile inkl. Metaphern, **Fail-soft bei WLAN-aus bestätigt**
+> (Vorfilter gilt, kein Throw), Zurückhaltung greift (Strafzettel/Kochrezepte → „keiner passt"). Im QA
+> gefunden+behoben: Halluzination (id-Schutz), Vorfilter-Top-k, Recall-Synonyme, Steuerregel §4 Abs.5.
+> **Rück-Aktion an Sage** abgelegt: AUSTAUSCH-Sage **§11**, `SIGNAL` **seq → 14** (Push = Signal). SW **v167**,
+> Tests **2005/2005**.
+> **⏭ NÄCHSTE KONKRETE SCHRITTE:** (optional) Mehrfach-Absichts-Trennung verbessern (Vorfilter-Grenze);
+> attestation signieren sobald Sage einen Signier-Helfer hat; Sages Whitening/Schwellen-Brief abwarten;
+> sonst **Phase 5d** (Symbiose-Import Mein-Tresor/WorkFloh).
+
+## ⏭ STAND (2026-06-21): SBKIM-Suche mit ZWEI Bereichen (Konten + Knoten) + Muster-Doku
 
 > Die **mehrstufige semantische Suche** steht — als wiederverwendbares Muster (`docs/SBKIM-SUCHE-MUSTER.md`).
 > Ansicht **„SBKIM-Suche"** hat jetzt einen **Bereichs-Umschalter**: **Konten** (Buchungskonto finden) und
