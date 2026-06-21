@@ -5,6 +5,41 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-21 — Briefkasten-Check (Sage noch ohne cap/needs) + OCR→Embedding→Richter-Brücke gebaut
+
+**Was getan**
+- **Briefkasten-Start-Ritual:** Sages `SIGNAL.json` gelesen → unverändert **seq 30** (von uns bereits
+  quittiert, `ack[Sage]=30`); Sages `spore.json` geprüft → trägt weiterhin **nur `domainVector`**, noch
+  **kein `capVector`/`needsVector`**. ⇒ Drei-Schichten-Handshake bleibt **allein bei Sage** offen; auf
+  unserer Seite nichts zu tun/pushen. Unsere committete Spore (auf `main`) trägt nachweislich alle drei
+  Vektoren (je 384-dim), `SIGNAL` seq 18 — konsistent.
+- **Wartezeit produktiv genutzt** (Sage bot „denken wir mit" an): die bisher **fehlende Brücke**
+  „Beleg-OCR → Embedding → Richter" gebaut. Bislang lief OCR-Text nur in den Heuristik-/Mistral-
+  Kontierungspfad; der fertige SBKIM-Vorfilter+Richter (`embed.js`/`match.js`) war **nie mit einem Beleg
+  verbunden**. Neues Modul `src/ai/belegRichter.js`:
+  - `buildBelegQuery(ocrText, extracted)` — **rein, testbar**: destilliert aus rohem, verrauschtem OCR
+    eine knappe semantische Anfrage (Lieferant führt; Beträge/Datum/IBAN/Telefon/Floskeln entrauscht;
+    USt-Hinweis in Worten; dedupliziert, gekappt).
+  - `belegKontierung(ocrText, extracted, konten, opts)` — verdrahtet die volle Kette: Anfrage →
+    On-Device-Einbettung (`accountCorpusEntries`+`embedCorpus`) → `sbkimHybridSearch` (Vorfilter +
+    Richter opt-in, EU/Mistral, **fail-soft**) gegen die SKR03-Konten. Node-testbar via injizierten
+    `embedQuery`/`embedPassage`/`_chat` (kein CDN).
+- **Tests +20** (`tests/run.mjs`): Anfrage-Entrauschung, voller Vorfilter-Pfad (bester Treffer = Kfz-
+  Konto 4530), Richter-Modus mit injiziertem `_chat`, fail-soft bei Netzfehler, ehrliche Leerfälle.
+
+**Stand:** `node tests/run.mjs` → **2075/2075 grün**. Branch von `origin/main` (v175) abgezweigt. Kern
+real implementiert + Node-getestet. **Keine** Shell-/SW-Änderung → kein `CACHE_VERSION`-Bump nötig.
+
+**Offen / Nächstes (ehrlich):**
+- **UI-Verdrahtung noch nicht erfolgt** — `belegRichter` ist eine getestete Bibliotheks-Brücke, aber im
+  Beleg-Workflow (`src/ui/views/documents.js`) noch **nicht** als sichtbarer „Konto-Vorschlag (SBKIM-
+  Richter)"-Knopf angebunden. Das ist der nächste, **browser-zu-verifizierende** Schritt (lädt den
+  Embedder opt-in wie die SBKIM-Suche → SW-Bump fällig, sobald Shell berührt).
+- **Sage cap/needs** weiterhin abwarten (Monitor auf Sages `spore.json`); sobald vorhanden → Badge
+  `Schichten` in der App prüfen + Erfolgs-Quittung an Sage.
+
+---
+
 ## 2026-06-21 — Drei-Schichten beidseitig besiegelt: Spore signiert (cap/needs) + Sage-Handshake abgeschlossen
 
 > 🏁 **Sitzung formell abgeschlossen.** Drei-Schichten beidseitig besiegelt (PRs #219–#223),

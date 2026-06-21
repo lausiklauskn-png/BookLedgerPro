@@ -7,6 +7,31 @@
 
 ---
 
+## 🟢 LETZTER STAND (2026-06-21, neueste Sitzung) — Briefkasten geprüft + OCR→Richter-Brücke gebaut
+
+> **Briefkasten-Start-Ritual gemacht:** Sages `SIGNAL.json` = unverändert **seq 30** (bereits quittiert,
+> `ack[Sage]=30`), Sages `spore.json` trägt **weiterhin nur `domainVector`** — **noch kein cap/needs**.
+> ⇒ Drei-Schichten-Handshake bleibt **allein bei Sage** offen; bei uns kein offener Punkt, kein Push nötig.
+>
+> **Wartezeit produktiv:** die bislang fehlende Brücke **„Beleg-OCR → Embedding → Richter"** gebaut —
+> neues Modul **`src/ai/belegRichter.js`**:
+> - `buildBelegQuery(ocrText, extracted)` (rein, testbar): rohes OCR → knappe semantische Anfrage
+>   (Lieferant führt; Beträge/Datum/IBAN/Telefon/Floskeln entrauscht; USt-Hinweis in Worten).
+> - `belegKontierung(...)`: volle Kette OCR-Anfrage → On-Device-Einbettung → `sbkimHybridSearch`
+>   (Vorfilter + Richter opt-in, EU/Mistral, **fail-soft**) gegen die SKR03-Konten. Node-testbar via
+>   injizierten `embedQuery`/`embedPassage`/`_chat` (kein CDN).
+> - **Tests +20 → `node tests/run.mjs` = 2075/2075 grün.** Keine Shell-/SW-Änderung → **kein** v-Bump.
+>
+> **⏭ NÄCHSTE KONKRETE SCHRITTE:**
+> 1. **Briefkasten-Ritual** wie immer: Sages `spore.json` auf cap/needs prüfen (bei `seq>30` Briefe
+>    quittieren). Sobald Sage cap/needs hat → in App Badge **`Schichten`** verifizieren + Quittung.
+> 2. **UI-Verdrahtung von `belegRichter`** (noch offen, **browser-zu-verifizieren**): im Beleg-Workflow
+>    (`src/ui/views/documents.js`) einen sichtbaren „Konto-Vorschlag (SBKIM-Richter)"-Knopf anbinden,
+>    der `belegKontierung` mit dem opt-in geladenen Embedder ruft (wie die SBKIM-Suche → dann SW-Bump).
+> 3. Sonst: weitere KI-/Recht-Reste lt. „Offen"-Liste unten.
+
+---
+
 ## 🏁 ABSCHLUSS DER SITZUNG (2026-06-21) — Drei-Schichten besiegelt, Briefe geschrieben
 
 > **Diese Sitzung ist sauber abgeschlossen.** Was erreicht wurde:
