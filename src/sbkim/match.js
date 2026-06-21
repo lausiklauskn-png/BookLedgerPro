@@ -69,17 +69,19 @@ export async function queryLocal(text, k = 5, options = {}) {
 
 const RICHTER_SYSTEM =
   'Du bist ein semantischer Abgleich-Richter (SBKIM Hybrid-Match) für Buchhaltung. Zu einer ' +
-  'Suchanfrage und einer Liste von Kandidaten entscheidest du je Kandidat, ob er zur Anfrage ' +
-  'PASST. Vergib je Kandidat einen Score zwischen 0 und 1 und eine kurze deutsche Begründung ' +
-  '(max 200 Zeichen). Antworte AUSSCHLIESSLICH mit kompaktem JSON in der Form: ' +
-  '{"verdicts":[{"label":"<label>","passt":true,"score":0.0,"begruendung":"..."}]}.';
+  'Suchanfrage und einer NUMMERIERTEN Liste von Kandidaten entscheidest du je Kandidat, ob er ' +
+  'zur Anfrage PASST. Vergib je Kandidat einen Score zwischen 0 und 1 und eine kurze deutsche ' +
+  'Begründung (max 200 Zeichen). WICHTIG: Verwende AUSSCHLIESSLICH die vorgegebenen Kandidaten ' +
+  'und referenziere sie NUR über ihre Nummer "id". Erfinde KEINE Kandidaten, Konten oder Nummern. ' +
+  'Antworte AUSSCHLIESSLICH mit kompaktem JSON in der Form: ' +
+  '{"verdicts":[{"id":1,"passt":true,"score":0.0,"begruendung":"..."}]}.';
 
-/** Baut die Chat-Messages für den Richter (rein, testbar). */
+/** Baut die Chat-Messages für den Richter (rein, testbar). Kandidaten sind nummeriert. */
 export function buildRichterMessages(query, candidates) {
   const q = typeof query === 'string' ? query : (query && query.text) || '';
   const liste = (candidates || []).map((c, i) => {
     const cos = typeof c.cosine === 'number' ? ` | cosinus=${c.cosine.toFixed(3)}` : '';
-    return `${i + 1}. label="${c.label}" | bedeutung="${String(c.text || c.label || '').slice(0, 200)}"${cos}`;
+    return `[${i + 1}] ${c.label} — ${String(c.text || c.label || '').slice(0, 200)}${cos}`;
   }).join('\n');
   return [
     { role: 'system', content: RICHTER_SYSTEM },
@@ -87,7 +89,12 @@ export function buildRichterMessages(query, candidates) {
   ];
 }
 
-/** Parst die Richter-Antwort zu Verdicts in der Vertrags-Form (rein, testbar). */
+/**
+ * Parst die Richter-Antwort zu Verdicts in der Vertrags-Form (rein, testbar).
+ * SICHERHEIT: Kandidaten werden NUR aus unserer Liste aufgelöst (per `id`, sonst exaktes
+ * Label) — `label`/`anchorId` kommen IMMER kanonisch aus dem Korpus, nie aus dem Modell-Echo.
+ * Verdicts ohne Treffer in der Liste werden VERWORFEN (keine erfundenen Konten/Nummern).
+ */
 export function parseVerdicts(content, candidates) {
   const m = String(content == null ? '' : content).match(/\{[\s\S]*\}/);
   if (!m) return null;
@@ -95,22 +102,29 @@ export function parseVerdicts(content, candidates) {
   try { j = JSON.parse(m[0]); } catch { return null; }
   const arr = Array.isArray(j.verdicts) ? j.verdicts : null;
   if (!arr) return null;
+  const cands = Array.isArray(candidates) ? candidates : [];
   const byLabel = new Map();
-  for (const c of (candidates || [])) byLabel.set(c.label, c);
-  return arr.map((v) => {
-    const c = byLabel.get(v && v.label) || {};
-    let score = Number(v && v.score);
+  cands.forEach((c) => byLabel.set(c.label, c));
+  const verdicts = [];
+  for (const v of arr) {
+    if (!v) continue;
+    let c = null;
+    if (Number.isInteger(v.id) && v.id >= 1 && v.id <= cands.length) c = cands[v.id - 1];
+    else if (v.label != null && byLabel.has(v.label)) c = byLabel.get(v.label);
+    if (!c) continue; // kein Treffer in unserer Liste → verwerfen (Schutz vor Halluzination)
+    let score = Number(v.score);
     if (!Number.isFinite(score)) score = 0;
     score = Math.max(0, Math.min(1, score));
-    return {
-      label: String(v && v.label != null ? v.label : (c.label || '')),
+    verdicts.push({
+      label: c.label,                               // KANONISCH aus dem Korpus
       anchorId: c.anchorId == null ? null : c.anchorId,
-      passt: (v && v.passt) === true,
+      passt: v.passt === true,
       score,
-      begruendung: String((v && v.begruendung) || '').slice(0, 200),
+      begruendung: String(v.begruendung || '').slice(0, 200),
       cosine: typeof c.cosine === 'number' ? c.cosine : null,
-    };
-  });
+    });
+  }
+  return verdicts;
 }
 
 /** Baut das signierbare attestation-Objekt (rein, testbar). Schema 1:1 zu Sage. */

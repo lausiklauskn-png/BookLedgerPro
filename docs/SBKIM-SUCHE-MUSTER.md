@@ -82,6 +82,10 @@ als Tor; sie ist nur ein Signal).
 - **Regel #8 (EU/BYOK/opt-in):** Der Richter läuft ausschließlich über **Mistral (EU)** mit
   dem **lokal verschlüsselten** Schlüssel; die Anfrage verlässt das Gerät nur, wenn ein
   Schlüssel da ist — sonst bleibt alles lokal (Vorfilter).
+- **Halluzinations-Schutz (Buchhaltung!):** Der Richter referenziert Kandidaten NUR über ihre
+  **Nummer (`id`)**; angezeigt wird **immer das kanonische Label/Konto aus dem Korpus**, nie das
+  Modell-Echo. Verdicts ohne Treffer in der Liste werden **verworfen**. (Echter Befund: das Modell
+  gab „6800" — SKR04 — statt des Korpus-Kontos „4630" — SKR03 — zurück; jetzt unmöglich.)
 - **Ehrlichkeit:** BLP-native Umsetzung **nach** Sage-Spec, **nicht** als verbatim Kopie
   ausgegeben. Interoperabilität entsteht über die **Vertrags-Fläche**, nicht über byte-gleichen
   Quelltext.
