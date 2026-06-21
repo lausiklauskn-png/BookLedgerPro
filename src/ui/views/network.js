@@ -187,7 +187,11 @@ function deployCard(ident) {
 // (mean-pool + L2=1), baut + RE-SIGNIERT die Spore mit dem echten Vektor (ohne _demo) und
 // bietet sie zum Download. Nichts wird automatisch geladen; Modell-Gewichte nie ins Repo.
 function embeddingCard(ident) {
-  const passage = buildPassageText(NODE_PROFILE);
+  // Frei editierbares Domänen-Textfeld (Default = Profil-Text; eigener/KI-Text einfügbar).
+  // cap/needs bleiben aus dem Profil (Vorauswahl). e5 braucht das „passage: "-Präfix — fehlt es,
+  // wird es beim Einbetten ergänzt.
+  const passageTa = el('textarea', { class: 'beleg-text', rows: '4', spellcheck: 'false' });
+  passageTa.value = buildPassageText(NODE_PROFILE);
   const status = el('p', { class: 'muted small' });
   const out = el('div', { class: 'muted small' });
   const btn = el('button', {
@@ -197,10 +201,12 @@ function embeddingCard(ident) {
       btn.setAttribute('disabled', '');
       out.replaceChildren();
       try {
-        // Drei Vektoren in EINEM Modell-Laden: Domäne + Angebot (cap) + Bedarf (needs).
+        // Drei Vektoren in EINEM Modell-Laden: Domäne (frei editierbar) + Angebot (cap) + Bedarf (needs).
         const onStatus = (s) => { status.textContent = s; };
+        let domText = (passageTa.value || '').trim() || buildPassageText(NODE_PROFILE);
+        if (!/^passage:/i.test(domText)) domText = 'passage: ' + domText;
         const [dom, cap, needs] = await embedTexts(
-          [buildPassageText(NODE_PROFILE), buildCapText(NODE_PROFILE), buildNeedsText(NODE_PROFILE)],
+          [domText, buildCapText(NODE_PROFILE), buildNeedsText(NODE_PROFILE)],
           { onStatus },
         );
         const spore = await buildSpore(ident.keys, {
@@ -221,7 +227,7 @@ function embeddingCard(ident) {
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('net.embedTitle') }),
     el('p', { class: 'muted small', text: t('net.embedIntro') }),
-    el('p', { class: 'mono small', text: passage }),
+    el('label', { class: 'field' }, [el('span', { class: 'muted small', text: t('net.embedTextLabel') }), passageTa]),
     el('div', { class: 'btn-row' }, [btn]),
     status,
     out,
