@@ -128,6 +128,7 @@ import { queryLocal, hybridMatch, parseVerdicts, buildAttestation, buildRichterM
   matchDimensions, schichtApoptose, queryLocalDimensions, DimensionsAllNullError, SCHICHT_MIN_MATCH, MATCH_DIMENSIONS_LANES } from '../src/sbkim/match.js';
 import { sbkimHybridSearch } from '../src/sbkim/hybridSearch.js';
 import { accountCorpusEntries, buildNodeText, nodeCorpusEntries, fetchNodeSpores, embedMissingVectors } from '../src/sbkim/searchCorpus.js';
+import { buildBelegQuery, belegKontierung } from '../src/ai/belegRichter.js';
 import { encodingFor, buildSpeechRequest, parseTranscript, speechFehlerHinweis, browserSpeechSupported, policyEngines, pickEngine, SPEECH_ENGINES, SPEECH_POLICIES } from '../src/ai/speech.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
@@ -1338,6 +1339,67 @@ await section('SBKIM: DREI-Schichten-Vorfilter queryLocalDimensions + Suche-Wiri
   // Verdrahtung: sbkimHybridSearch nutzt bei queryNode den Drei-Schichten-Vorfilter (Apoptose wirkt).
   const out = await sbkimHybridSearch('', corpus, { queryNode: query });
   ok('Suche via queryNode: Apoptose wirkt im Ergebnis', out.mode === 'nur-vorfilter' && !out.treffer.some((t) => t.anchorId === 'b') && out.treffer.length === 2);
+});
+
+await section('AI: Beleg-OCR → Embedding → Richter (belegRichter, die fehlende Brücke)', async () => {
+  const ocr = `ARAL Tankstelle Musterstr. 5 12345 Musterstadt
+Rechnung Nr. 4711  Datum 12.03.2026
+Kraftstoff Diesel 45,30 Liter
+Summe 65,00 EUR  davon 19% MwSt 10,38
+IBAN DE12500105170648489890  Tel 089/123456`;
+
+  // --- buildBelegQuery: reine Anfrage-Destillation (ohne Modell, voll testbar) ---
+  const q = buildBelegQuery(ocr, { vendor: 'ARAL Tankstelle', ustSatz: 19 });
+  ok('Anfrage führt mit dem Lieferanten', q.startsWith('ARAL Tankstelle'));
+  ok('bedeutungstragende Wörter bleiben', /Kraftstoff/.test(q) && /Diesel/.test(q));
+  ok('USt-Hinweis in Worten angehängt', /19% USt/.test(q));
+  ok('Beträge entrauscht', !q.includes('65,00') && !q.includes('45,30') && !q.includes('10,38'));
+  ok('Datum entrauscht', !q.includes('12.03.2026'));
+  ok('IBAN/Telefon entrauscht', !/DE12/.test(q) && !q.includes('123456'));
+  ok('Floskeln entrauscht', !/\bRechnung\b/i.test(q) && !/\bSumme\b/i.test(q) && !/\bEUR\b/.test(q) && !/MwSt/i.test(q));
+  ok('Lieferant nicht doppelt', (q.toLowerCase().match(/tankstelle/g) || []).length === 1);
+  ok('leerer Beleg → leere Anfrage', buildBelegQuery('', {}) === '');
+  ok('maxChars wird respektiert', buildBelegQuery('Wort '.repeat(200), { vendor: 'X' }, { maxChars: 50 }).length <= 50);
+
+  // --- belegKontierung: volle Kette mit injiziertem, deterministischem Embedder (kein CDN) ---
+  // Bag-of-Words-Embedder: gemeinsame Tokens → höhere Cosinus-Nähe (rein, Node-tauglich).
+  const embed = (text) => {
+    const v = new Array(EMBED_DIM).fill(0);
+    for (const t of (String(text).toLowerCase().match(/[a-zäöüß]+/g) || [])) {
+      let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
+      v[h % EMBED_DIM] += 1;
+    }
+    const n = Math.sqrt(v.reduce((s, x) => s + x * x, 0)) || 1;
+    return v.map((x) => x / n);
+  };
+  const embedQuery = async (t) => embed(t);
+  const embedPassage = async (t) => embed(t);
+  const konten = [
+    { nummer: '4530', name: 'Tankstelle Kraftstoff Diesel', art: KONTOART.AUFWAND },
+    { nummer: '4920', name: 'Telefon Internet', art: KONTOART.AUFWAND },
+    { nummer: '4930', name: 'Bürobedarf Papier', art: KONTOART.AUFWAND },
+  ];
+  const extr = { vendor: 'ARAL Tankstelle', ustSatz: 19 };
+  const r = await belegKontierung(ocr, extr, konten, { embedQuery, embedPassage });
+  ok('ohne apiKey → nur-vorfilter', r.mode === 'nur-vorfilter');
+  ok('genutzte Anfrage wird durchgereicht', r.query.startsWith('ARAL Tankstelle'));
+  ok('bester Treffer ist das Tankstellen-Konto 4530', r.treffer[0] && r.treffer[0].anchorId === '4530');
+  ok('Treffer nach Score absteigend sortiert', r.treffer.every((t, i) => i === 0 || r.treffer[i - 1].score >= t.score));
+
+  // Richter opt-in (injizierter _chat statt echtem Mistral): bestätigt 4530, verwirft Rest.
+  const fakeChat = async () => JSON.stringify({ verdicts: [{ id: 1, passt: true, score: 0.9, begruendung: 'Kraftstoff = Kfz-Kosten' }] });
+  const rj = await belegKontierung(ocr, extr, konten, { embedQuery, embedPassage, apiKey: 'byok', _chat: fakeChat });
+  ok('mit apiKey + _chat → Richter-Modus', rj.mode === 'richter');
+  ok('Richter bestätigt 4530 (kanonisch aus Korpus)', rj.treffer.length === 1 && rj.treffer[0].anchorId === '4530' && rj.treffer[0].passt === true);
+  ok('Attestation trägt EU-Region (Mistral)', rj.attestation && rj.attestation.region === 'eu');
+
+  // Fail-soft & ehrliche Leerfälle (kein Wurf).
+  const fs = await belegKontierung(ocr, extr, konten, { embedQuery, embedPassage, apiKey: 'byok', _chat: async () => { throw new Error('Netz'); } });
+  ok('Richter-Netzfehler → fail-soft-vorfilter (Vorfilter gilt)', fs.mode === 'fail-soft-vorfilter' && fs.treffer[0].anchorId === '4530');
+  const leer = await belegKontierung(ocr, extr, [], { embedQuery, embedPassage });
+  ok('keine Konten → vorfilter-leer ohne Wurf', leer.mode === 'vorfilter-leer' && leer.treffer.length === 0);
+  const nichts = await belegKontierung('', {}, konten, { embedQuery, embedPassage });
+  ok('leerer Beleg → mode=leer', nichts.mode === 'leer' && nichts.query === '');
 });
 
 await section('SBKIM: cap/needs — Texte, signierte Spore, Korpus-Lift', async () => {
