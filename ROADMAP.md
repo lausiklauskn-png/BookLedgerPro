@@ -92,8 +92,10 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 - [◑] **Phase 5e — SBKIM Hybrid-Match-Richter** (Sage-Andock-Brief 2026-06-21): neue Ansicht „SBKIM-Suche"
   (Vorfilter `embed.js` + opt-in Richter Mistral EU/BYOK + Fail-soft). **BLP-native nach Sage-Spec** (OPTION 1,
   von Sage freigegeben — kein neuer CDN, Vertrags-Fläche 1:1). `src/sbkim/{match,hybridSearch,searchCorpus}.js`
-  + View; node-getestet (1989/1989, alle 4 Modi + Fail-soft). **Offen:** erster echter Mistral-Richter-Lauf im
-  Browser (Rück-Aktion an Sage).
+  + View; node-getestet (alle 4 Modi + Fail-soft). **Zwei Bereiche:** Konten (Buchungskonto) **und Knoten**
+  (gleichwertige Mycel-Knoten, Korpus = Peer-Sporen, `domainVector` direkt aus Spore) — Ur-Gedanke umgesetzt.
+  Muster dokumentiert: `docs/SBKIM-SUCHE-MUSTER.md`. Tests 1998/1998. **Offen:** erster echter Mistral-Richter-
+  Lauf im Browser (Rück-Aktion an Sage).
 - [ ] **Phase 5d:** Symbiose-Import (Belege aus Mein-Tresor, Aufträge aus WorkFloh → Buchungen)
 
 > Diese Phase bereitet den Andock **lokal** vor (kein fremdes Repo verändert). Der

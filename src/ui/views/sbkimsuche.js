@@ -1,26 +1,40 @@
-// src/ui/views/sbkimsuche.js — Ansicht „SBKIM-Suche" (Hybrid-Match-Richter).
-// Vorfilter (lokal, embed.js) + Richter (opt-in, Mistral EU/BYOK) + Fail-soft.
-// Eigener, neutraler Menüpunkt — der Richter ist NIE eine Eintritts-Barriere.
+// src/ui/views/sbkimsuche.js — Ansicht „SBKIM-Suche" (mehrstufige semantische Suche).
+// Zwei Such-BEREICHE über denselben Maschinenraum (austauschbarer Korpus):
+//   • Konten  — passendes Buchungskonto finden (Korpus = Konten)
+//   • Knoten  — gleichwertige Mycel-Knoten finden (Korpus = Peer-Sporen)   ← Ur-Gedanke
+// Pipeline je Bereich: Vorfilter (lokal, embed.js) → Richter (opt-in, Mistral EU/BYOK)
+// → Fail-soft. Der Richter ist NIE eine Eintritts-Barriere. Muster: docs/SBKIM-SUCHE-MUSTER.md.
 //
 // EHRLICHER HINWEIS: Modell-Laden (~30 MB, opt-in) und der echte Mistral-Richter-Lauf
-// brauchen Netz + Browser — in der Bau-Umgebung NICHT testbar. Die Vertrags-/Modus-/
-// Fail-soft-Logik (match.js/hybridSearch.js) ist node-getestet.
+// brauchen Netz + Browser — in der Bau-Umgebung NICHT testbar. Vertrags-/Modus-/Fail-soft-
+// und Korpus-Logik (match.js/hybridSearch.js/searchCorpus.js) ist node-getestet.
 
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { loadAccounts } from '../../domain/store.js';
 import { getAiConfig } from '../../ai/aiConfig.js';
 import { loadEmbedder } from '../../sbkim/embed.js';
-import { accountCorpusEntries, embedCorpus } from '../../sbkim/searchCorpus.js';
+import { accountCorpusEntries, embedCorpus, fetchNodeSpores, nodeCorpusEntries, embedMissingVectors } from '../../sbkim/searchCorpus.js';
 import { sbkimHybridSearch } from '../../sbkim/hybridSearch.js';
 
 let _host = null;
-let _corpus = null;     // gecachter, eingebetteter Korpus (Session)
 let _busy = false;
+let _bereich = 'konten';        // 'konten' | 'knoten'
+let _corpusKonten = null;       // gecachte, eingebettete Korpora (Session)
+let _corpusKnoten = null;
 
 export async function mountSbkimSuche(host) {
   _host = host;
   repaint();
+}
+
+function bereichBtn(id, label) {
+  const active = _bereich === id;
+  return el('button', {
+    class: 'btn btn-sm' + (active ? ' btn-primary' : ''),
+    text: label,
+    onClick: () => { if (_bereich !== id && !_busy) { _bereich = id; repaint(); } },
+  });
 }
 
 function repaint(result, status) {
@@ -36,18 +50,13 @@ function repaint(result, status) {
     btn.setAttribute('disabled', '');
     try {
       const setStatus = (s) => { statusP.textContent = s; };
-      if (!_corpus) {
-        setStatus(t('sbkimsuche.loadingModel'));
-        const embedder = await loadEmbedder({ onStatus: setStatus });
-        const konten = await loadAccounts();
-        const entries = accountCorpusEntries(konten);
-        setStatus(t('sbkimsuche.buildingCorpus').replace('%N%', String(entries.length)));
-        _corpus = await embedCorpus(entries, embedder.embedPassage,
-          (done, total) => setStatus(t('sbkimsuche.embedding').replace('%D%', String(done)).replace('%T%', String(total))));
-      }
+      setStatus(t('sbkimsuche.loadingModel'));
+      const embedder = await loadEmbedder({ onStatus: setStatus });   // Anfrage-Einbettung (+ ggf. Korpus)
+      const corpus = await ensureCorpus(embedder, setStatus);
+      if (!corpus || corpus.length === 0) { repaint(null, t('sbkimsuche.noCorpus')); return; }
       const cfg = await getAiConfig();
       setStatus(cfg.mistralKey ? t('sbkimsuche.judging') : t('sbkimsuche.prefiltering'));
-      const res = await sbkimHybridSearch(q, _corpus, {
+      const res = await sbkimHybridSearch(q, corpus, {
         apiKey: cfg.mistralKey, provider: 'mistral', euOnly: true,
         queryLabel: 'BookLedgerPro', model: cfg.mistralModel, k: 5,
       });
@@ -65,12 +74,40 @@ function repaint(result, status) {
     el('p', { class: 'muted', text: t('sbkimsuche.intro') }),
     el('div', { class: 'banner banner-info', text: t('sbkimsuche.optinNote') }),
     el('div', { class: 'card' }, [
+      el('div', { class: 'field' }, [
+        el('span', { text: t('sbkimsuche.bereich') }),
+        el('div', { class: 'btn-row' }, [
+          bereichBtn('konten', t('sbkimsuche.bereichKonten')),
+          bereichBtn('knoten', t('sbkimsuche.bereichKnoten')),
+        ]),
+      ]),
+      el('p', { class: 'muted small', text: t(_bereich === 'knoten' ? 'sbkimsuche.hintKnoten' : 'sbkimsuche.hintKonten') }),
       el('label', { class: 'field' }, [el('span', { text: t('sbkimsuche.label') }), input]),
       el('div', { class: 'btn-row' }, [btn]),
       statusP,
     ]),
     out,
   ]));
+}
+
+/** Baut (und cached) den Korpus des aktiven Bereichs. */
+async function ensureCorpus(embedder, setStatus) {
+  if (_bereich === 'knoten') {
+    if (_corpusKnoten) return _corpusKnoten;
+    setStatus(t('sbkimsuche.loadingNodes'));
+    const spores = await fetchNodeSpores();
+    let entries = nodeCorpusEntries(spores);
+    if (entries.some((e) => e.needsEmbed)) entries = await embedMissingVectors(entries, embedder.embedPassage);
+    _corpusKnoten = entries;
+    return _corpusKnoten;
+  }
+  if (_corpusKonten) return _corpusKonten;
+  const konten = await loadAccounts();
+  const entries = accountCorpusEntries(konten);
+  setStatus(t('sbkimsuche.buildingCorpus').replace('%N%', String(entries.length)));
+  _corpusKonten = await embedCorpus(entries, embedder.embedPassage,
+    (done, total) => setStatus(t('sbkimsuche.embedding').replace('%D%', String(done)).replace('%T%', String(total))));
+  return _corpusKonten;
 }
 
 function pct(x) { return `${Math.round((Number(x) || 0) * 100)}%`; }
