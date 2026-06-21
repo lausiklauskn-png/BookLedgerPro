@@ -13,7 +13,7 @@
     "*"
   ],
   "ack": {
-    "Sage": 27,
+    "Sage": 29,
     "SB-KIMTool-Point": 23
   },
   "_doc": "Maschinenlesbarer Briefkasten-Aushang (INTERFACES §11.6). seq steigt +1 pro gemeldetem Bau; Gegenseite liest bei Sitzungsstart, vergleicht mit ihrem ack und quittiert. Server-los: das Pushen dieser Datei IST das Signal."
