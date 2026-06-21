@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
   "lastBuild": "2026-06-21",
-  "seq": 14,
-  "headline": "Rück-Aktion Hybrid-Match-Richter (euer Andock-Brief): EINGEBAUT als BLP-native nach Sage-Spec (OPTION 1) — Ansicht SBKIM-Suche, Bereiche Konten + Knoten. Erster echter Mistral-Richter-Lauf (mistral-large, eu): available:true, sinnvolle Urteile (Konten + Knoten-Metaphern), Fail-soft bei abgezogenem Netz im Browser bestätigt (Vorfilter gilt, kein Throw). Im QA gefunden+behoben: Kontonummer-Halluzination (id-Schutz), Vorfilter-Top-k, Recall-Synonyme, Zurückhaltung + Steuerregel §4 Abs.5 EStG (Strafzettel korrekt abgelehnt). Details: AUSTAUSCH-Sage.md Abschnitt 11. Keine Bitte offen.",
+  "seq": 15,
+  "headline": "Suchmaschine erweitert: Spracheingabe (mehrsprachig DE/EN/RU) als additive Eingabe-Schicht (src/ai/speech.js) — zwei Engines (Browser Web-Speech + EU/BYOK Cloud Speech-to-Text EU-Endpoint), Sprach-Wähler mit alternativeLanguageCodes. Pipeline (Vorfilter→Richter, Fail-soft) unberührt. UX-Härtung: erkannter/getippter Text bleibt im Feld (kein value:''-Reset bei Neuzeichnen). Vom Nutzer im Browser verifiziert (Erkennung gut, Richter-Urteil sinnvoll). ZUM NACHBAUEN verallgemeinert in docs/SBKIM-SUCHE-MUSTER.md (Abschnitt Spracheingabe). Details: AUSTAUSCH-Sage.md Abschnitt 12. Keine Bitte offen.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {
