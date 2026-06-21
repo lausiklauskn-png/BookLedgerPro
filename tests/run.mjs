@@ -127,6 +127,7 @@ import { buildPassageText, cosineSimilarity, l2norm, EMBED_DIM, EMBED_MODEL } fr
 import { queryLocal, hybridMatch, parseVerdicts, buildAttestation, buildRichterMessages, PROVIDER_MIN_MATCH } from '../src/sbkim/match.js';
 import { sbkimHybridSearch } from '../src/sbkim/hybridSearch.js';
 import { accountCorpusEntries, buildNodeText, nodeCorpusEntries, fetchNodeSpores, embedMissingVectors } from '../src/sbkim/searchCorpus.js';
+import { encodingFor, buildSpeechRequest, parseTranscript, speechFehlerHinweis, browserSpeechSupported } from '../src/ai/speech.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
@@ -1311,6 +1312,19 @@ await section('SBKIM: Knoten-Korpus (Peer-Sporen, Ur-Gedanke)', async () => {
   };
   const got = await fetchNodeSpores(['./a/Sage.json', './b/SB-KIMTool.json', './c/self.json'], fakeFetch);
   ok('fetchNodeSpores fail-soft → nur gültige', got.length === 1 && got[0].nodeName === 'Sage');
+});
+
+await section('Spracheingabe (Speech-to-Text) — reine Logik', () => {
+  ok('encoding webm → WEBM_OPUS', encodingFor('audio/webm;codecs=opus') === 'WEBM_OPUS');
+  ok('encoding ogg → OGG_OPUS', encodingFor('audio/ogg;codecs=opus') === 'OGG_OPUS');
+  ok('encoding unbekannt → UNSPECIFIED', encodingFor('audio/x-weird') === 'ENCODING_UNSPECIFIED');
+  const body = buildSpeechRequest('AAAA', { mimeType: 'audio/webm', languageCode: 'de-DE' });
+  ok('Request: encoding+lang', body.config.encoding === 'WEBM_OPUS' && body.config.languageCode === 'de-DE' && body.audio.content === 'AAAA');
+  ok('parseTranscript fügt Alternativen', parseTranscript({ results: [{ alternatives: [{ transcript: 'Tanken für' }] }, { alternatives: [{ transcript: 'den Firmenwagen' }] }] }) === 'Tanken für den Firmenwagen');
+  ok('parseTranscript leer → ""', parseTranscript({}) === '');
+  ok('Fehler-Hinweis: API keys not supported', /Speech-to-Text API aktivieren/.test(speechFehlerHinweis('API keys are not supported by this API')));
+  ok('Fehler-Hinweis: disabled', /nicht aktiviert/.test(speechFehlerHinweis('Cloud Speech-to-Text API has not been used')));
+  ok('browserSpeechSupported in node → false', browserSpeechSupported() === false);
 });
 
 // ===== Geheim-Fach (Tresor im Tresor) — Krypto- & Recovery-Kern =====

@@ -924,6 +924,7 @@ function aiConfigSection() {
     const cfg = await getAiConfig().catch(() => ({ visionKey: '', mistralKey: '', mistralModel: 'mistral-small-latest', anbieterWahl: undefined }));
     const visionKey = el('input', { type: 'password', autocomplete: 'off', placeholder: 'AIza… (Google Vision EU)', value: cfg.visionKey || '' });
     const mistralKey = el('input', { type: 'password', autocomplete: 'off', placeholder: 'Mistral API-Key (EU)', value: cfg.mistralKey || '' });
+    const speechKey = el('input', { type: 'password', autocomplete: 'off', placeholder: 'AIza… (Google Speech-to-Text EU)', value: cfg.speechKey || '' });
     const model = el('select', {}, MISTRAL_MODELS.map((m) => el('option', { value: m.id }, m.label)));
     model.value = cfg.mistralModel;
     const status = el('p', { class: 'muted small' });
@@ -941,6 +942,7 @@ function aiConfigSection() {
 
     const aktuelleConfig = () => ({
       visionKey: visionKey.value.trim(), mistralKey: mistralKey.value.trim(),
+      speechKey: speechKey.value.trim(),
       mistralModel: model.value, anbieterWahl: aktuelleWahl(),
     });
 
@@ -995,6 +997,11 @@ function aiConfigSection() {
       ]),
       fieldWithLink(t('settings.aiMistralKey'), mistralKey, 'https://console.mistral.ai/api-keys'),
       el('p', { class: 'muted small', text: t('settings.aiMistralHint') }),
+      fieldWithLink(t('settings.aiSpeechKey'), speechKey, 'https://console.cloud.google.com/apis/credentials'),
+      el('p', { class: 'muted small' }, [
+        el('span', { text: t('settings.aiSpeechHint') + ' ' }),
+        el('a', { class: 'provider-link', href: 'https://console.cloud.google.com/apis/library/speech.googleapis.com', target: '_blank', rel: 'noopener', text: t('settings.aiSpeechEnable') }),
+      ]),
       el('label', { class: 'field' }, [el('span', { text: t('settings.aiModel') }), model]),
       el('div', { class: 'setting-label', text: t('settings.aiProviderTitle') }),
       el('p', { class: 'muted small', text: t('settings.aiProviderHint') }),

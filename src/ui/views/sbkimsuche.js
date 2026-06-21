@@ -16,12 +16,14 @@ import { getAiConfig } from '../../ai/aiConfig.js';
 import { loadEmbedder } from '../../sbkim/embed.js';
 import { accountCorpusEntries, embedCorpus, fetchNodeSpores, nodeCorpusEntries, embedMissingVectors } from '../../sbkim/searchCorpus.js';
 import { sbkimHybridSearch } from '../../sbkim/hybridSearch.js';
+import { makeBrowserRecognizer, startRecording, recognizeEU, speechFehlerHinweis } from '../../ai/speech.js';
 
 let _host = null;
 let _busy = false;
 let _bereich = 'konten';        // 'konten' | 'knoten'
 let _corpusKonten = null;       // gecachte, eingebettete Korpora (Session)
 let _corpusKnoten = null;
+let _speechEngine = 'browser';  // 'browser' (Web Speech API) | 'eu' (Cloud Speech-to-Text EU/BYOK)
 
 export async function mountSbkimSuche(host) {
   _host = host;
@@ -35,6 +37,71 @@ function bereichBtn(id, label) {
     text: label,
     onClick: () => { if (_bereich !== id && !_busy) { _bereich = id; repaint(); } },
   });
+}
+
+// Spracheingabe: Mikro-Knopf + Engine-Umschalter (Browser / EU-BYOK) + Datenschutz-Hinweis.
+function speechControls(input) {
+  const status = el('span', { class: 'muted small' });
+  const notice = el('p', { class: 'muted small speech-notice' });
+  const browserBtn = el('button', { class: 'btn btn-sm', text: t('speech.engineBrowser') });
+  const euBtn = el('button', { class: 'btn btn-sm', text: t('speech.engineEu') });
+  const micBtn = el('button', { class: 'btn', text: '🎤 ' + t('speech.start') });
+  const resetMic = () => { micBtn.textContent = '🎤 ' + t('speech.start'); micBtn.removeAttribute('disabled'); };
+  const setEngine = (id) => {
+    _speechEngine = id;
+    browserBtn.classList.toggle('btn-primary', id === 'browser');
+    euBtn.classList.toggle('btn-primary', id === 'eu');
+    notice.textContent = id === 'eu' ? t('speech.noticeEu') : t('speech.noticeBrowser');
+  };
+  browserBtn.addEventListener('click', () => setEngine('browser'));
+  euBtn.addEventListener('click', () => setEngine('eu'));
+
+  let activeRec = null;   // Web-Speech-Recognizer
+  let recCtl = null;      // EU-Aufnahme-Controller
+
+  micBtn.addEventListener('click', async () => {
+    // ---- Browser (Web Speech API) ----
+    if (_speechEngine === 'browser') {
+      if (activeRec) { activeRec.stop(); return; }
+      const rec = makeBrowserRecognizer({ lang: 'de-DE' });
+      if (!rec) { status.textContent = t('speech.unsupported'); return; }
+      activeRec = rec;
+      micBtn.textContent = '⏹ ' + t('speech.stop'); status.textContent = t('speech.listening');
+      rec.onresult = (e) => { const tx = (((e.results || [])[0] || [])[0] || {}).transcript || ''; if (tx) { input.value = tx; status.textContent = ''; } };
+      rec.onerror = (e) => { status.textContent = t('speech.error').replace('%E%', String((e && e.error) || '')); };
+      rec.onend = () => { activeRec = null; resetMic(); };
+      try { rec.start(); } catch { activeRec = null; resetMic(); }
+      return;
+    }
+    // ---- EU (BYOK, Cloud Speech-to-Text EU) ----
+    if (recCtl) { // läuft → stoppen & erkennen
+      const ctl = recCtl; recCtl = null;
+      micBtn.setAttribute('disabled', ''); status.textContent = t('speech.transcribing');
+      try {
+        ctl.stop();
+        const audio = await ctl.done;
+        const cfg = await getAiConfig();
+        if (!cfg.speechKey) { status.textContent = t('speech.noKey'); resetMic(); return; }
+        const text = await recognizeEU(audio, { apiKey: cfg.speechKey, languageCode: 'de-DE' });
+        input.value = text || ''; status.textContent = text ? '' : t('speech.empty');
+      } catch (e) {
+        const hint = speechFehlerHinweis((e && e.message) || '');
+        status.textContent = t('speech.error').replace('%E%', String((e && e.message) || e)) + (hint ? ' — ' + hint : '');
+      } finally { resetMic(); }
+      return;
+    }
+    // EU: Aufnahme starten
+    try { recCtl = await startRecording(); micBtn.textContent = '⏹ ' + t('speech.stopRec'); status.textContent = t('speech.recording'); }
+    catch { recCtl = null; status.textContent = t('speech.micDenied'); }
+  });
+
+  setEngine(_speechEngine);
+  return el('div', { class: 'speech-block' }, [
+    el('div', { class: 'btn-row speech-row' }, [
+      el('span', { class: 'muted small', text: t('speech.engineLabel') }), browserBtn, euBtn, micBtn, status,
+    ]),
+    notice,
+  ]);
 }
 
 function repaint(result, status) {
@@ -84,6 +151,7 @@ function repaint(result, status) {
       ]),
       el('p', { class: 'muted small', text: t(_bereich === 'knoten' ? 'sbkimsuche.hintKnoten' : 'sbkimsuche.hintKonten') }),
       el('label', { class: 'field' }, [el('span', { text: t('sbkimsuche.label') }), input]),
+      speechControls(input),
       el('div', { class: 'btn-row' }, [btn]),
       statusP,
     ]),
