@@ -126,7 +126,7 @@ import { classifyPeer, summarizePeers, fetchPeerStatus, PEERS } from '../src/sbk
 import { buildPassageText, cosineSimilarity, l2norm, EMBED_DIM, EMBED_MODEL } from '../src/sbkim/embed.js';
 import { queryLocal, hybridMatch, parseVerdicts, buildAttestation, buildRichterMessages, PROVIDER_MIN_MATCH } from '../src/sbkim/match.js';
 import { sbkimHybridSearch } from '../src/sbkim/hybridSearch.js';
-import { accountCorpusEntries } from '../src/sbkim/searchCorpus.js';
+import { accountCorpusEntries, buildNodeText, nodeCorpusEntries, fetchNodeSpores, embedMissingVectors } from '../src/sbkim/searchCorpus.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
@@ -1257,6 +1257,39 @@ await section('SBKIM: Hybrid-Match — alle 4 Modi (Helfer)', async () => {
   // fail-soft-vorfilter (apiKey, aber _chat wirft)
   const fs = await sbkimHybridSearch('q', corpusHit, { embedQuery, apiKey: 'k', _chat: async () => { throw new Error('netz weg'); } });
   ok('Modus fail-soft-vorfilter', fs.mode === 'fail-soft-vorfilter' && fs.treffer.length === 1 && /netz weg/.test(fs.reason));
+});
+
+await section('SBKIM: Knoten-Korpus (Peer-Sporen, Ur-Gedanke)', async () => {
+  const realVec = new Array(EMBED_DIM).fill(0); realVec[5] = 1;
+  const spores = [
+    { nodeName: 'Sage', id: 'nys', domain: 'Mycel-Bibliothek', domainDescription: 'Vokabular', domainKeywords: ['Glossar', 'Karten'], domainVector: realVec },
+    { nodeName: 'DemoNode', id: 'dmo', domain: 'X', domainDescription: 'y', domainKeywords: ['a'], domainVector: realVec, _demo: ['domainVector'] },
+    { nodeName: 'OhneVektor', id: 'ohn', domain: 'Z', domainDescription: 'z', domainKeywords: [] },
+    { /* kein nodeName */ domain: 'ignoriert' },
+  ];
+  ok('buildNodeText fügt domain+desc+kw', /Mycel-Bibliothek\. Vokabular\. Glossar, Karten/.test(buildNodeText(spores[0])));
+
+  const entries = nodeCorpusEntries(spores);
+  ok('ohne nodeName ignoriert', entries.length === 3);
+  ok('echter Vektor → passageVec direkt', Array.isArray(entries[0].passageVec) && entries[0].passageVec.length === EMBED_DIM && !entries[0].needsEmbed);
+  ok('_demo → needsEmbed (kein direkter Vektor)', entries[1].needsEmbed === true && !entries[1].passageVec);
+  ok('ohne Vektor → needsEmbed', entries[2].needsEmbed === true);
+  ok('anchorId = id', entries[0].anchorId === 'nys');
+
+  // embedMissingVectors füllt nur needsEmbed (injizierter Embedder).
+  const embedPassage = async () => new Array(EMBED_DIM).fill(0.1);
+  const filled = await embedMissingVectors(entries, embedPassage);
+  ok('alle haben jetzt passageVec', filled.every((e) => Array.isArray(e.passageVec) && e.passageVec.length === EMBED_DIM));
+  ok('echter Vektor unverändert', filled[0].passageVec === entries[0].passageVec);
+
+  // fetchNodeSpores: fail-soft (eine OK, eine 404, eine wirft) → nur gültige.
+  const fakeFetch = async (p) => {
+    if (p.includes('Sage')) return { ok: true, json: async () => ({ nodeName: 'Sage', id: 'nys' }) };
+    if (p.includes('SB-KIMTool')) return { ok: false, status: 404 };
+    throw new Error('offline');
+  };
+  const got = await fetchNodeSpores(['./a/Sage.json', './b/SB-KIMTool.json', './c/self.json'], fakeFetch);
+  ok('fetchNodeSpores fail-soft → nur gültige', got.length === 1 && got[0].nodeName === 'Sage');
 });
 
 // ===== Geheim-Fach (Tresor im Tresor) — Krypto- & Recovery-Kern =====

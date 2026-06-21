@@ -7,7 +7,18 @@
 
 ---
 
-## ⏭ LETZTER STAND (2026-06-21): SBKIM Hybrid-Match-Richter gebaut — wartet auf ersten Browser-Lauf
+## ⏭ LETZTER STAND (2026-06-21): SBKIM-Suche mit ZWEI Bereichen (Konten + Knoten) + Muster-Doku
+
+> Die **mehrstufige semantische Suche** steht — als wiederverwendbares Muster (`docs/SBKIM-SUCHE-MUSTER.md`).
+> Ansicht **„SBKIM-Suche"** hat jetzt einen **Bereichs-Umschalter**: **Konten** (Buchungskonto finden) und
+> **Knoten (Mycel)** (gleichwertige Knoten finden — der Ur-Gedanke; Korpus = Peer-Sporen, `domainVector`
+> direkt aus der Spore → kein Korpus-Embedding). Schicht 1 = Vektor-Vorfilter (`embed.js`), Schicht 2 =
+> KI-Richter (Mistral EU/BYOK), Fail-soft. Tests **1998/1998**, SW **v163**.
+> **⏭ NÄCHSTER KONKRETER SCHRITT (Browser/Nutzer + Rück-Aktion an Sage):** beide Bereiche im Browser testen
+> (erster echter Richter-Lauf): available:true? sinnvolle Urteile? Fail-soft bei abgezogenem Netz? Danach Sages
+> Whitening/Schwellen-Brief.
+
+## ⏭ STAND (2026-06-21): SBKIM Hybrid-Match-Richter gebaut — wartet auf ersten Browser-Lauf
 
 > **Sage-Andock-Brief (Hybrid-Match-Richter ans Such-Feld) umgesetzt — BLP-native nach Sage-Spec (von Sage
 > freigegeben, OPTION 1).** Neue Ansicht **„SBKIM-Suche"** (eigener Menüpunkt): lokaler Vorfilter (`embed.js`,

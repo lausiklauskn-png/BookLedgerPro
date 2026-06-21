@@ -5,6 +5,29 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-21 — SBKIM-Suche: zweiter Bereich „Knoten finden" + Muster-Doku [Branch `claude/sbkim-knoten-suche`]
+
+**Was getan**
+- **Ur-Gedanke umgesetzt:** zweiter Such-Bereich **„Knoten (Mycel)"** in der SBKIM-Suche — Korpus = Peer-Sporen
+  (`spore.json` + `*_inbox.json`), findet **semantisch gleichwertige Knoten**. Eleganz: signierte Sporen tragen
+  ihren echten `domainVector` bereits → wird **direkt als passageVec** genutzt (kein Korpus-Embedding, nur die
+  Anfrage). View bekam einen **Bereichs-Umschalter Konten | Knoten**.
+- **Neu in `searchCorpus.js`:** `buildNodeText`, `nodeCorpusEntries` (Vektor direkt aus Spore, sonst
+  `needsEmbed`), `fetchNodeSpores` (same-origin, fail-soft), `embedMissingVectors`.
+- **Muster dokumentiert:** `docs/SBKIM-SUCHE-MUSTER.md` — die mehrstufige semantische Suchmaschine als
+  **wiederverwendbares** Muster (Schicht 1 Vektor-Vorfilter / Schicht 2 KI-Richter; Korpus austauschbar;
+  Vertrags-Fläche; Rezept für neue Bereiche; Regel-#1/#8-Konformität). Genau das „Such-Engine"-Muster für
+  andere Apps (Konten/Sporen/Apps).
+- Klarstellung an den Nutzer: **Richter ≠ Vektor-Vergleich** — Schicht 1 macht den Cosinus, der **Richter
+  (KI)** liest Bedeutung und urteilt; korrigiert das Anisotropie-Rauschen.
+- i18n DE/EN, SW **v163**. Tests **1998/1998 grün** (+9: buildNodeText, nodeCorpusEntries inkl. _demo→needsEmbed,
+  fetchNodeSpores fail-soft, embedMissingVectors).
+
+**Stand:** Code steht, node-getestet. **Offen (wie zuvor):** erster echter Mistral-Richter-Lauf im Browser
+(beide Bereiche) — Rück-Aktion an Sage. Whitening/Schwellen-Brief von Sage weiter ausstehend.
+
+---
+
 ## 2026-06-21 — SBKIM Hybrid-Match-Richter ans Such-Feld (BLP-native nach Sage-Spec) [Branch `claude/sbkim-hybrid-match`]
 
 **Was getan (Sage-Andock-Brief 2026-06-21 umgesetzt)**
