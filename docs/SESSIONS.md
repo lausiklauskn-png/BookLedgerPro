@@ -5,6 +5,33 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-22 (Abend) — ELSTER-Fix, Layout-Zentrierung, Handyformat (Hamburger) + Mobil-Politur
+
+**Was getan (alles gemerged, main 5c82dca, SW v183, Tests 2101/2101):**
+- **#230** ELSTER-Deep-Links (USt-VA/Lohnsteuer) zeigten auf veraltete, 404-ende Pfade →
+  jetzt stabile Formular-Übersicht `…/alleformulare`.
+- **#231** Vollbild-**Zentrierung**: `.content`/`.app-body` `min-width:0` (Flexbox-Überlauf-Falle),
+  `.card.no-pad` → `overflow-x:auto`. Per Pixel-Messung verifiziert (Inhalt war rechts übergelaufen).
+- **#232** **Handyformat**: Navigation als **Hamburger-Schublade ☰** (`shell.js` Hamburger +
+  `aria-expanded`; `@media ≤640` Drawer auf/zu, scrollbar). Desktop/Tablet (Querformat) unverändert.
+- **#233** Mobil-Politur: `.btn-row{align-items:center}` (Buttons nicht mehr in die Höhe gestreckt),
+  `.mandant`-Chip + Header-Buttons `nowrap` (kein Wort-Umbruch „Test 1"/„Mandant wechseln"),
+  Lampen-Labels im Hochformat ausgeblendet (nur Punkte) → Kopfzeile bleibt niedrig.
+
+**Vom Nutzer am Gerät bestätigt:** Navi-Schublade öffnet/schließt/scrollt; Kopfzeile vollständig;
+Querformat ok. Hamburger ☰ per Pixel-Analyse in Handy-Screenshots nachgewiesen.
+
+**Offen / Nächstes:**
+- **Button-Container im Hochformat zu hoch** (Nutzer-Wunsch: Buttons einzeln, Container nicht höher).
+  Rückfragen WO/WIE noch offen → mit Nutzer klären (Default-Vorschlag: Tabellen-Aktionen eine Zeile
+  + `overflow-x:auto`). 
+- **Container-Breite großer Monitor** (880 vs 1200 vs voll) — Entscheidung offen (`--maxw`).
+- Sicht-Tests/Test-Marken abhaken; Sage cap/needs abwarten.
+- **Bild-Limit:** diese Sitzung konnte Screenshots nur per Pixel-Analyse prüfen; **frische Sitzung
+  nötig**, um Bilder wieder zu sehen.
+
+---
+
 ## 2026-06-22 — Beleg-Scans für die Quartal-Demo (Increment 2)
 
 **Was getan**

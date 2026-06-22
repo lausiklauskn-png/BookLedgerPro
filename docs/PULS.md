@@ -7,6 +7,58 @@
 
 ---
 
+## ✉️ BRIEF FÜR DIE NEUE SITZUNG (2026-06-22, Abend) — Demo komplett + UI/Mobil-Politur, Rest browser-zu-verifizieren
+
+> **Schnell-Andock:** CLAUDE.md (Regeln/Verträge) + ROADMAP.md + diese Datei (oben) + obersten
+> SESSIONS-Eintrag lesen. Branch dieser Linie: `claude/sage-verify-belegruichter-ui-bo2wzy`
+> (bzw. der für die Sitzung vorgegebene). Vor jedem Push `node tests/run.mjs`. Freibrief gilt:
+> sinnvoll & CI grün & gefahrlos → selbst mergen (squash). **Der Nutzer testet auf Handy/Tablet/
+> Monitor und schickt Screenshots — in einer FRISCHEN Sitzung sind Bilder wieder sichtbar
+> (diese Sitzung hatte das Bild-Limit erreicht, nur Pixel-Analyse möglich).**
+>
+> **Eckdaten:** Endpoint `https://lausiklauskn-png.github.io/BookLedgerPro/` · DB-Suffix `bookledgerpro`
+> (NIE ändern) · unsere nodeId `MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ` · **main `5c82dca`** ·
+> **Tests 2101/2101 grün** · **SW-Cache `v183`**.
+>
+> **Diese Sitzung gebaut & gemerged (PRs #226–#233):**
+> - **#226** Beleg-OCR → SBKIM-Richter in der UI verdrahtet (`documents.js`, Knopf „Konto-Vorschlag
+>   (SBKIM-Richter)") + Sages Gute-Nacht-Karte (seq 31) quittiert (`ack[Sage]=31`, SIGNAL seq 19).
+> - **#227** Temporäre In-App-Test-Marken (`src/ui/testmarke.js`, „🧪 Test offen"→„✅ getestet",
+>   localStorage; `TEST_MARKEN_AKTIV=false` blendet alle aus). IDs: `beleg-ocr`, `beleg-richter`,
+>   `sbkim-konten`, `sbkim-knoten`. Liste: `docs/TESTPLAN.md`.
+> - **#228** „Quartal"-Demo (3. Szenario in `demodaten.js`/`-store.js`, im Test-Modus wählbar):
+>   volles Q1 2026, alle Bereiche (19/7/steuerfrei §4, §13b, Bewirtung 70/30, Personal, AfA, GWG…)
+>   + GoBD-**Storno** einer Doppelbuchung + Stammdaten (Kunden/Aufträge/Mitarbeiter/Eingangsrechn.).
+> - **#229** Beleg-Scans der Quartal-Demo (`assets/demo/*.jpg`): 5 an Buchungen verknüpft, 1
+>   Blumen-Quittung **unverbucht** als OCR-/Richter-Test-Target.
+> - **#230** ELSTER-Links 404 behoben → stabile Formular-Übersicht.
+> - **#231** Vollbild-**Zentrierung** behoben (Flexbox `min-width:0` auf `.content`/`.app-body`;
+>   `.card.no-pad` → `overflow-x:auto`).
+> - **#232** **Handyformat**: Navigation als Hamburger-Schublade ☰ (`shell.js` + `@media ≤640`).
+> - **#233** Mobil-Politur: `.btn-row{align-items:center}` (Buttons nicht mehr höhengestreckt),
+>   `.mandant`-Chip + Header-Buttons `nowrap`, Lampen-Labels (LEBT/VERKEHR/FREMD/SIEGEL) im
+>   Hochformat ausgeblendet.
+>
+> **⏭ NÄCHSTE KONKRETE SCHRITTE (mit Nutzer, browser-zu-verifizieren):**
+> 1. **Offener UI-Wunsch (Buttons/Container im Hochformat):** Der Nutzer möchte, dass Buttons sich
+>    **einzeln** positionieren und der **Gesamtcontainer nicht in der Höhe wächst**. Meine offenen
+>    Rückfragen (WO: Tabellen-Aktionen / Buchungsvorschlag / Bankimport / überall — WIE: eine Zeile
+>    + seitlich scrollen / kompakter umbrechen / Icons) sind **noch offen**. Empfehlung als Default:
+>    Tabellen-Aktions-Buttons (`.btn-row` in `card no-pad`-Tabellen) im `@media ≤640` auf **eine Zeile
+>    + `overflow-x:auto`** statt Umbruch → Zeilenhöhe bleibt niedrig. Erst mit Nutzer bestätigen.
+> 2. **Container-Breite auf großem Monitor:** Nutzer findet die zentrierte 880-px-Spalte „nicht in
+>    voller Breite". Entscheidung offen — **a)** 880 lassen · **b)** ~1200 · **c)** volle Breite.
+>    Einzeiler an `--maxw` in `assets/tokens.css` (aktuell `--maxw: 880px`).
+> 3. **Sicht-Tests abschließen** (Test-Marken abhaken): Quartal-Demo durchklicken (Journal/EÜR/USt/
+>    Aufträge/Payables/Storno + 🔗-Belege + OCR/„Konto-Vorschlag" auf der unverbuchten Quittung).
+>    Hinweis: `beleg-ocr`-Marke nur sichtbar mit hinterlegtem Google-Vision-Schlüssel; `beleg-richter`
+>    erst nach erzeugtem Buchungsvorschlag.
+> 4. **Sage cap/needs** weiter abwarten (liegt bei Sage) → dann Badge `Schichten` verifizieren.
+>
+> Danke für die gute, iterative Zusammenarbeit — bis zur nächsten Sitzung!
+
+---
+
 ## 🟢 LETZTER STAND (2026-06-22, Forts.) — Test-Marken + „Quartal"-Demo (volles Q1, alle Bereiche)
 
 > **Zwei Nutzer-Wünsche umgesetzt:**
