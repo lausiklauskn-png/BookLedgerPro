@@ -7,7 +7,38 @@
 
 ---
 
-## 🟢 LETZTER STAND (2026-06-21, neueste Sitzung) — Briefkasten geprüft + OCR→Richter-Brücke gebaut
+## 🟢 LETZTER STAND (2026-06-22, neueste Sitzung) — OCR→Richter-Brücke in die UI verdrahtet + Sage seq 31 quittiert
+
+> **Beide nächsten Schritte des Vorgänger-Briefs erledigt:**
+>
+> **1. UI-Verdrahtung von `belegRichter` (Hauptaufgabe, browser-zu-verifizieren).** Im Beleg-Workflow
+> (`src/ui/views/documents.js`) sitzt jetzt in **jeder** Buchungsvorschlag-Karte ein aufklappbarer
+> Block **„Konto-Vorschlag (SBKIM-Richter)"** mit Knopf „Konto vorschlagen". Er ruft `belegKontierung()`
+> (aus `src/ai/belegRichter.js`) mit dem **opt-in geladenen Embedder** (`loadEmbedder`, wie die SBKIM-Suche):
+> OCR-/Belegtext → semantische Anfrage → On-Device-Vorfilter → optionaler Mistral-EU-Richter (BYOK, fail-soft)
+> → **ranked SKR03-Konten** mit Score + (bei Richter) Begründung. Greift überall, wo es Belegtext gibt
+> (Schnellerfassung, E-Rechnung, Bankimport-Vorschlag, OCR-Beleg). Rein informativ — ändert die Buchung NICHT.
+> - i18n DE+EN (`docs.richter*`), `belegRichter.js` in die SW-Precache-Liste aufgenommen,
+>   **`CACHE_VERSION` v175 → v176** (Shell berührt). Tests **2075/2075 grün** (unverändert; reine UI-Verdrahtung).
+> - ⚠️ **Noch NICHT im Browser durchgeklickt** (kein Headless-Browser in der Bau-Umgebung): das einmalige
+>   Modell-Laden (~30 MB) + der echte Mistral-Richter-Lauf sind nur statisch/node-seitig geprüft.
+>
+> **2. Briefkasten-Ritual.** Sages `SIGNAL.json` = **seq 31** (war 30) → neue **Gute-Nacht-/Dankeschön-Karte**
+> (kein technischer Auftrag, lockere Rück-Quittung erbeten). Quittiert: `ack[Sage]` 30 → **31**, Antwort-Karte
+> in `AUSTAUSCH-Sage.md` Abschnitt 18, unsere `SIGNAL.json` `seq` 18 → **19** (Bau-Bericht belegRichter-UI).
+> Sages `spore.json` trägt **weiterhin nur `domainVector`** (live ✔ VALID gegengeprüft, **noch kein cap/needs**)
+> ⇒ Drei-Schichten-Faden bleibt **allein bei Sage** offen; Badge `Schichten` noch nicht verifizierbar.
+>
+> **⏭ NÄCHSTE KONKRETE SCHRITTE:**
+> 1. **Im Browser durchklicken** (belegRichter-UI): Beleg-OCR/Schnellerfassung → „Konto-Vorschlag (SBKIM-Richter)"
+>    → Modell-Laden bestätigen → Konten-Kandidaten prüfen (ohne Mistral = Vorfilter; mit = Richter-Urteil).
+> 2. **Briefkasten** wie immer: Sages `spore.json` auf cap/needs prüfen; sobald vorhanden → Knopf
+>    „🜲 mein Knoten ↔ Netz" → Badge **`Schichten`** verifizieren + Erfolgs-Quittung an Sage.
+> 3. Sonst KI-/Recht-Reste lt. „Offen"-Liste (strenge Zufluss/Abfluss-EÜR, PDF-Rechnung aus Auftrag, DATEV-EXTF-Mapping).
+
+---
+
+## 🟢 STAND (2026-06-21) — Briefkasten geprüft + OCR→Richter-Brücke gebaut
 
 > **Briefkasten-Start-Ritual gemacht:** Sages `SIGNAL.json` = unverändert **seq 30** (bereits quittiert,
 > `ack[Sage]=30`), Sages `spore.json` trägt **weiterhin nur `domainVector`** — **noch kein cap/needs**.

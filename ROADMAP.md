@@ -96,6 +96,12 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
   (gleichwertige Mycel-Knoten, Korpus = Peer-Sporen, `domainVector` direkt aus Spore) — Ur-Gedanke umgesetzt.
   Muster dokumentiert: `docs/SBKIM-SUCHE-MUSTER.md`. Tests 1998/1998. **Offen:** erster echter Mistral-Richter-
   Lauf im Browser (Rück-Aktion an Sage).
+  - [x] **Brücke Beleg-OCR → Richter** (2026-06-21/22): Modul `src/ai/belegRichter.js`
+    (`buildBelegQuery` rein/testbar + `belegKontierung` = volle Kette über `sbkimHybridSearch`),
+    node-getestet, **und in der Beleg-UI verdrahtet** — `src/ui/views/documents.js` zeigt in jeder
+    Vorschlags-Karte den aufklappbaren Block „Konto-Vorschlag (SBKIM-Richter)" (opt-in Embedder,
+    fail-soft, rein informativ). i18n DE+EN, SW `v176`. Tests 2075/2075. **Offen (browser-zu-verif.):**
+    End-to-End-Klickpfad (Modell-Laden + echter Richter-Lauf) noch nicht headless prüfbar.
 - [ ] **Phase 5d:** Symbiose-Import (Belege aus Mein-Tresor, Aufträge aus WorkFloh → Buchungen)
 
 > Diese Phase bereitet den Andock **lokal** vor (kein fremdes Repo verändert). Der

@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
-  "lastBuild": "2026-06-21",
-  "seq": 18,
-  "headline": "DREI-Schichten AKTIVIERT: committete spore.json traegt jetzt echte, signierte capVector+needsVector (je 384-dim e5-small) neben domainVector — verifySpore VALID (Vektoren mit-signiert, manipulationssicher). Neuer UI-Knopf 'mein Knoten <-> Netz' (Ansicht SBKIM-Suche, Bereich Knoten) ruft den Drei-Schichten-Vorfilter queryLocalDimensions real auf; Treffer zeigen Modus-Badge (Domaene/Schichten). Domaenen-Text vor der Vektor-Erzeugung jetzt frei editierbar. Bitte an Sage: cap/needs auch in EURE Spore (gleiches Rezept), dann schalten beide Seiten von domain auf schichten. Node-getestet 2055/2055 gruen. Details: AUSTAUSCH-Sage.md Abschnitt 15.",
+  "lastBuild": "2026-06-22",
+  "seq": 19,
+  "headline": "Brücke Beleg-OCR -> Embedding -> SBKIM-Richter jetzt in der UI verdrahtet: im Beleg-Workflow (src/ui/views/documents.js) sitzt neben jedem Buchungsvorschlag ein Knopf 'Konto-Vorschlag (SBKIM-Richter)', der denselben Hybrid-Pfad wie die SBKIM-Suche (lokaler Vektor-Vorfilter -> optionaler Mistral-EU-Richter, opt-in, fail-soft) direkt auf den OCR-Belegtext anwendet -> ranked SKR03-Konten mit Score/Begruendung. SW-Cache v175->v176. Node-getestet 2075/2075 gruen. Ausserdem Sages Gute-Nacht-Karte (eure seq 31) quittiert (ack[Sage]=31); eure Spore traegt weiterhin nur domainVector -> Drei-Schichten-Faden bleibt bei euch offen, bei uns kein offener Punkt. Details: AUSTAUSCH-Sage.md Abschnitt 18.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {
@@ -13,7 +13,7 @@
     "*"
   ],
   "ack": {
-    "Sage": 30,
+    "Sage": 31,
     "SB-KIMTool-Point": 23
   },
   "_doc": "Maschinenlesbarer Briefkasten-Aushang (INTERFACES §11.6). seq steigt +1 pro gemeldetem Bau; Gegenseite liest bei Sitzungsstart, vergleicht mit ihrem ack und quittiert. Server-los: das Pushen dieser Datei IST das Signal."

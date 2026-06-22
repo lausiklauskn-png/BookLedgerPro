@@ -6,7 +6,9 @@
 ## Quelle & Zeitpunkt
 
 - **Quelle:** `https://raw.githubusercontent.com/lausiklauskn-png/Sage-Protokol/main/sbkim/spore.json`
-- **Gelesen / geprüft am:** 2026-06-19
+- **Gelesen / geprüft am:** 2026-06-19 · **erneut gegengeprüft:** 2026-06-22 (live ✔ VALID,
+  unverändert; Spore trägt weiterhin nur `domainVector` — noch kein `capVector`/`needsVector`,
+  Drei-Schichten-Faden bleibt bei Sage offen)
 - **Verifizierer:** `tools/verify_remote_spore.mjs` (headless, `node:crypto`, zero-dep);
   Gegenstück zur Browser-Verifikation (`src/sbkim/spore.js`) — Verifizierer-Paar einig.
 
