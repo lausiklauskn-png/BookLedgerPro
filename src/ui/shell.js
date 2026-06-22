@@ -122,6 +122,16 @@ function header(s) {
   // der asynchrone Nachlade-Schritt (refreshMandant) noch nicht zurück ist.
   const label = _mandant.name || getMandantId();
   return el('header', { class: 'app-header' }, [
+    // Hamburger nur im Handyformat sichtbar (CSS) — klappt die Navigation als Schublade auf.
+    el('button', {
+      class: 'nav-toggle', 'aria-label': t('a11y.menu'), 'aria-expanded': 'false',
+      onClick: (e) => {
+        const app = document.querySelector('.app');
+        if (!app) return;
+        const open = app.classList.toggle('nav-open');
+        e.currentTarget.setAttribute('aria-expanded', open ? 'true' : 'false');
+      },
+    }, '☰'),
     el('div', { class: 'brand' }, [MycelMark(28), el('span', { class: 'brand-name', text: t('app.name') })]),
     el('div', { class: 'header-right' }, [
       flyingWidget(),
