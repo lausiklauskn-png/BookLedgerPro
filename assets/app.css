@@ -544,3 +544,13 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .angebot-summen { display: flex; flex-wrap: wrap; gap: .8rem; margin: .7rem 0; }
 .angebot-summen > .card { flex: 1 1 14rem; padding: .65rem .85rem; }
 .angebot-intern { border: 1px dashed var(--border); }
+
+/* --- TEMPORÄRE Test-Marken (src/ui/testmarke.js) — beim Aufräumen mitlöschen --- */
+.test-marke {
+  display: inline-flex; align-items: center; gap: .3rem;
+  margin: .25rem 0; padding: .12rem .5rem;
+  font-size: .72rem; line-height: 1.5; font-weight: 600;
+  border-radius: 999px; cursor: pointer;
+  border: 1px solid #c9981f; color: #7a5a00; background: #fff6d8;
+}
+.test-marke.done { border-color: #2e9e5b; color: #156b39; background: #e3f6ea; }

@@ -17,6 +17,7 @@ import { loadEmbedder, EMBED_DIM } from '../../sbkim/embed.js';
 import { accountCorpusEntries, embedCorpus, fetchNodeSpores, nodeCorpusEntries, embedMissingVectors } from '../../sbkim/searchCorpus.js';
 import { sbkimHybridSearch } from '../../sbkim/hybridSearch.js';
 import { makeBrowserRecognizer, startRecording, recognizeEU, speechFehlerHinweis, policyEngines, pickEngine, browserSpeechSupported } from '../../ai/speech.js';
+import { testMarke } from '../testmarke.js';
 
 let _host = null;
 let _busy = false;
@@ -212,6 +213,10 @@ function repaint(result, status) {
       el('label', { class: 'field' }, [el('span', { text: t('sbkimsuche.label') }), input]),
       speechControls(input),
       el('div', { class: 'btn-row' }, _bereich === 'knoten' ? [btn, nodeBtn] : [btn]),
+      // TEMPORÄR: Browser-Test-Marken (co-located → fehlt der Knopf, fehlt die Marke).
+      el('div', { class: 'btn-row' }, _bereich === 'knoten'
+        ? [testMarke('sbkim-knoten', '🜲 mein Knoten ↔ Netz')]
+        : [testMarke('sbkim-konten', 'SBKIM-Suche: Konten')]),
       statusP,
     ]),
     out,
