@@ -5,6 +5,37 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-22 (Spät-Abend) — UI-Politur: Segment-Schalter, Inhaltsbreite 1200px, mobile Button-Reihen
+
+**Was getan (Branch `claude/bookledgerpro-ui-polish-m7ms49`, SW v183→v184, Tests 2101/2101):**
+- **Segmentierte Schalter** (`.segmented`): mit langen Optionen (z. B. „KI-Autonomie": Nur Vorschläge /
+  Auto-Entwurf + Review / Autonom bei hoher Konfidenz) brachen sie im Hochformat in den runden
+  999px-Rahmen um → riesiger „Stadion"-Pill mit frei schwebendem Text (Nutzer-Screenshots 21:02).
+  Fix: im `@media ≤640` als saubere volle-Breite-**Liste** (Spalte, gemäßigter Radius, je Option eine
+  Zeile, aktive hervorgehoben). Desktop/Tablet-Pill unverändert.
+- **Inhaltsbreite** (`--maxw` in `tokens.css`): 880px → **1200px** (Nutzer-Entscheidung; großer Monitor
+  wirkte „nicht in voller Breite"). Kopfzeile spannt weiterhin randlos.
+- **Mobile Aktions-Button-Reihen** (`.btn-row` im `@media ≤640`): in EINER Zeile lassen + bei
+  Platzmangel **seitlich scrollen** (`overflow-x:auto`), statt umzubrechen → Container wächst nicht
+  in die Höhe (Nutzer-Entscheidung). Scope via `:not(:has(input/select/textarea))` → reine
+  Button-Leisten (Tabellen-Aktionen, Toolbars, Vorschlag/Beleg, Import); Formular-Reihen mit
+  Eingabefeldern brechen weiter normal um. Progressive Enhancement (ohne `:has` gilt das alte Umbrechen).
+
+**Aus Nutzer-Screenshots (Handy, 20:58–21:13) beobachtet:**
+- ✅ Gut: Shamir-Backup, Gebrauchsanleitung, Header (21:13), Segment-Schalter mit kurzen Optionen.
+- 🐞 Echter Bug (gefixt): Segment-Schalter-Umbruch (s. o.).
+- ℹ️ **Cache-Artefakt (kein Code-Bug):** Lampen-Labels (LEBT/VERKEHR/FREMD) zeigten im Hochformat noch
+  an → die `@media`-Ausblendung aus #233 ist in `main`, das Gerät lief auf altem SW-Cache. Daraus folgte
+  auch der horizontale Überlauf/Links-Beschnitt bei 21:08 (breites Widget). **Hard-Refresh → v184** behebt es.
+
+**Nicht im Browser verifiziert (ehrlich):** Die CSS-Wirkung ist node-seitig nicht testbar (kein Headless-
+Browser). Optisch zu prüfen: Segment-Liste im Hochformat, 1200px-Breite am Monitor, Button-Reihen-Scroll.
+`:has()`-Scope greift nur in modernen Browsern (Chrome 105+/Safari 15.4+) — sonst altes Verhalten.
+
+**Offen / Nächstes:** Browser-Sicht-Tests obiger drei Punkte; Test-Marken abhaken; Sage cap/needs abwarten.
+
+---
+
 ## 2026-06-22 (Abend) — ELSTER-Fix, Layout-Zentrierung, Handyformat (Hamburger) + Mobil-Politur
 
 **Was getan (alles gemerged, main 5c82dca, SW v183, Tests 2101/2101):**

@@ -17,8 +17,8 @@
 > (diese Sitzung hatte das Bild-Limit erreicht, nur Pixel-Analyse möglich).**
 >
 > **Eckdaten:** Endpoint `https://lausiklauskn-png.github.io/BookLedgerPro/` · DB-Suffix `bookledgerpro`
-> (NIE ändern) · unsere nodeId `MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ` · **main `5c82dca`** ·
-> **Tests 2101/2101 grün** · **SW-Cache `v183`**.
+> (NIE ändern) · unsere nodeId `MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ` · **main `7b94ec3`** ·
+> **Tests 2101/2101 grün** · **SW-Cache `v184`** (Linie `claude/bookledgerpro-ui-polish-m7ms49`).
 >
 > **Diese Sitzung gebaut & gemerged (PRs #226–#233):**
 > - **#226** Beleg-OCR → SBKIM-Richter in der UI verdrahtet (`documents.js`, Knopf „Konto-Vorschlag
@@ -40,15 +40,14 @@
 >   Hochformat ausgeblendet.
 >
 > **⏭ NÄCHSTE KONKRETE SCHRITTE (mit Nutzer, browser-zu-verifizieren):**
-> 1. **Offener UI-Wunsch (Buttons/Container im Hochformat):** Der Nutzer möchte, dass Buttons sich
->    **einzeln** positionieren und der **Gesamtcontainer nicht in der Höhe wächst**. Meine offenen
->    Rückfragen (WO: Tabellen-Aktionen / Buchungsvorschlag / Bankimport / überall — WIE: eine Zeile
->    + seitlich scrollen / kompakter umbrechen / Icons) sind **noch offen**. Empfehlung als Default:
->    Tabellen-Aktions-Buttons (`.btn-row` in `card no-pad`-Tabellen) im `@media ≤640` auf **eine Zeile
->    + `overflow-x:auto`** statt Umbruch → Zeilenhöhe bleibt niedrig. Erst mit Nutzer bestätigen.
-> 2. **Container-Breite auf großem Monitor:** Nutzer findet die zentrierte 880-px-Spalte „nicht in
->    voller Breite". Entscheidung offen — **a)** 880 lassen · **b)** ~1200 · **c)** volle Breite.
->    Einzeiler an `--maxw` in `assets/tokens.css` (aktuell `--maxw: 880px`).
+> 1. ✅ **ERLEDIGT (Spät-Abend, Linie `ui-polish-m7ms49`):** Buttons/Container im Hochformat — mobile
+>    `.btn-row` im `@media ≤640` jetzt **eine Zeile + `overflow-x:auto`** (Container wächst nicht in die
+>    Höhe), Scope via `:not(:has(input/select/textarea))` (nur Button-Leisten, keine Formular-Reihen).
+>    Nutzer-Wahl: „überall wo nötig & sinnvoll". **Browser-zu-verifizieren.**
+> 2. ✅ **ERLEDIGT (Spät-Abend):** Inhaltsbreite `--maxw` 880→**1200px** (Nutzer-Wahl). Plus Bonus-Fix:
+>    Segment-Schalter brachen im Hochformat häßlich um → jetzt volle-Breite-Liste. SW-Cache `v183→v184`.
+>    **Browser-zu-verifizieren** (Segment-Liste, 1200px, Button-Scroll). Hinweis: Lampen-Label/Überlauf
+>    in den Screenshots war **Cache-Artefakt** (Fix lag schon in `main`) → Hard-Refresh auf v184.
 > 3. **Sicht-Tests abschließen** (Test-Marken abhaken): Quartal-Demo durchklicken (Journal/EÜR/USt/
 >    Aufträge/Payables/Storno + 🔗-Belege + OCR/„Konto-Vorschlag" auf der unverbuchten Quittung).
 >    Hinweis: `beleg-ocr`-Marke nur sichtbar mit hinterlegtem Google-Vision-Schlüssel; `beleg-richter`
