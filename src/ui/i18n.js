@@ -369,6 +369,7 @@ const STRINGS = {
     'dashboard.liquidityDriverOut': 'Ausgang',
     'a11y.skip': 'Zum Inhalt springen',
     'a11y.nav': 'Hauptnavigation',
+    'a11y.menu': 'Menü ein-/ausblenden',
 
     'common.cancel': 'Abbrechen',
     'common.save': 'Speichern',
@@ -1587,6 +1588,7 @@ const STRINGS = {
     'dashboard.liquidityDriverOut': 'Outflow',
     'a11y.skip': 'Skip to content',
     'a11y.nav': 'Main navigation',
+    'a11y.menu': 'Toggle menu',
     'common.cancel': 'Cancel',
     'common.save': 'Save',
     'common.close': 'Close',
