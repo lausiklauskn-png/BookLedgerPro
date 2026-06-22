@@ -187,7 +187,7 @@ function lohnsteuerKarte(laeufe) {
     el('p', { class: 'muted small', text: t('lohn.lstHint') }),
     el('div', { class: 'btn-row' }, [
       el('button', { class: 'btn btn-sm', text: t('lohn.lstDownload'), onClick: () => downloadText(`lohnsteuer-anmeldung-${monat}.csv`, '﻿' + buildLohnsteuerAnmeldungPaket(anm, meta), 'text/csv') }),
-      el('a', { class: 'btn btn-sm', href: 'https://www.elster.de/eportal/formulare-leistungen/alleformulare/lstanm', target: '_blank', rel: 'noopener noreferrer', text: t('lohn.lstElster') }),
+      el('a', { class: 'btn btn-sm', href: 'https://www.elster.de/eportal/formulare-leistungen/alleformulare', target: '_blank', rel: 'noopener noreferrer', text: t('lohn.lstElster') }),
     ]),
   ]);
 }
