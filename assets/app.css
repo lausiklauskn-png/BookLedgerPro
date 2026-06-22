@@ -183,7 +183,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .siegel-modal-dl dt { color: var(--text-muted); }
 .siegel-modal-dl dd { margin: 0; overflow-wrap: anywhere; }
 
-.app-body { display: flex; flex: 1; max-width: var(--maxw); width: 100%; margin: 0 auto; }
+.app-body { display: flex; flex: 1; max-width: var(--maxw); width: 100%; margin: 0 auto; min-width: 0; }
 .app-nav {
   display: flex; flex-direction: column; gap: .15rem; padding: 1rem .6rem;
   border-right: 1px solid var(--border); min-width: 170px;
@@ -197,7 +197,9 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .nav-item.active { background: var(--accent-soft); color: var(--accent-strong); font-weight: 600; }
 :root[data-theme="dark"] .nav-item.active { color: var(--accent-strong); }
 
-.content { flex: 1; padding: 1.25rem 1.4rem; }
+/* min-width:0 lässt die Inhaltsspalte schrumpfen (sonst sprengt breiter Inhalt — z. B.
+   Tabellen — die zentrierte max-width-Spalte nach rechts; Flexbox-min-width:auto-Falle). */
+.content { flex: 1; padding: 1.25rem 1.4rem; min-width: 0; }
 .view { display: flex; flex-direction: column; gap: 1.1rem; }
 
 .card {
@@ -276,7 +278,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .rech-summen { margin-top: .8rem; max-width: 22rem; margin-left: auto; }
 
 /* ---- Tabellen ------------------------------------------------------------- */
-.card.no-pad { padding: 0; overflow: hidden; }
+/* Breite Tabellen-Karten horizontal scrollbar statt abschneiden (zeigt alle Spalten). */
+.card.no-pad { padding: 0; overflow-x: auto; }
 .pad { padding: 1.1rem; }
 .table { width: 100%; border-collapse: collapse; font-size: .92rem; }
 .table th, .table td { text-align: left; padding: .6rem .8rem; border-bottom: 1px solid var(--border); vertical-align: top; }
