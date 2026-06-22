@@ -21,7 +21,9 @@ import { categorize as categorizeAI } from '../../ai/mistral.js';
 import { ladeAnker } from '../../ai/anker.js';
 import { tokenize, maskierungsBericht } from '../../ai/pseudonym.js';
 import { ocr } from '../../ai/vision.js';
-import { isOcrAktiv } from '../../ai/aiConfig.js';
+import { isOcrAktiv, getAiConfig } from '../../ai/aiConfig.js';
+import { belegKontierung } from '../../ai/belegRichter.js';
+import { loadEmbedder } from '../../sbkim/embed.js';
 import { buildVorschlag } from '../../ai/suggest.js';
 import { begruendeBuchung } from '../../ai/berater.js';
 import { onDeviceBegruendung } from '../../domain/rechtsregeln.js';
@@ -158,6 +160,10 @@ async function vorschlagKarte(vorschlag, belegId, quelltext) {
   card.appendChild(el('label', { class: 'field' }, [el('span', { text: t('journal.begruendung') }), fBegruendung]));
   card.appendChild(el('div', { class: 'btn-row' }, [beraterBtn, beraterStatus]));
 
+  // Konto-Vorschlag über den SBKIM-Richter (Beleg-OCR → Embedding → Vorfilter + Richter).
+  // Opt-in (Modell/Netz), fail-soft, rein informativ — ändert die Buchung NICHT automatisch.
+  if (quelltext) card.appendChild(sbkimRichterBlock(quelltext));
+
   const status = el('p', { class: 'muted small' });
   async function uebernehmen() {
     // belegRef geht in die Buchung (GoBD-Belegprinzip, Teil der Hash-Kette);
@@ -179,6 +185,68 @@ async function vorschlagKarte(vorschlag, belegId, quelltext) {
   card.appendChild(status);
   card.appendChild(el('p', { class: 'muted small', text: t('docs.postManual') }));
   return card;
+}
+
+// ---- SBKIM-Richter: Konto-Vorschlag aus dem Belegtext ----------------------
+// Schließt die Kette Beleg-OCR → semantische Anfrage → On-Device-Einbettung →
+// SBKIM-Vorfilter + Richter (Mistral EU, opt-in, fail-soft) → SKR03-Konten.
+// Opt-in wie die SBKIM-Suche: erst beim Klick wird das Embedding-Modell (einmalig,
+// ~30 MB) geladen; der Richter nutzt — wenn hinterlegt — den Mistral-Schlüssel (EU).
+
+function richterErgebnis(res) {
+  if (!res || res.mode === 'leer' || res.mode === 'vorfilter-leer') {
+    return el('p', { class: 'muted small', text: t('docs.richterEmpty') });
+  }
+  const wrap = el('div', {});
+  if (res.mode === 'nur-vorfilter') wrap.appendChild(el('div', { class: 'hinweis small', text: t('docs.richterNoKey') }));
+  else if (res.mode === 'fail-soft-vorfilter') wrap.appendChild(el('div', { class: 'hinweis warn small', text: t('docs.richterFailsoft').replace('%R%', res.reason || '') }));
+  const treffer = res.treffer || [];
+  if (!treffer.length) { wrap.appendChild(el('p', { class: 'muted small', text: t('docs.richterNone') })); return wrap; }
+  wrap.appendChild(el('ul', { class: 'sbkimsuche-list' }, treffer.map((v) => el('li', {}, [
+    el('strong', { text: v.label }),
+    el('span', { class: 'muted small', text: ` · ${t('docs.richterScore')} ${Math.round((Number(v.score) || 0) * 100)} %` }),
+    v.begruendung ? el('p', { class: 'muted small', text: v.begruendung }) : null,
+  ].filter(Boolean)))));
+  if (res.query) wrap.appendChild(el('p', { class: 'muted small', text: t('docs.richterQuery').replace('%Q%', res.query) }));
+  return wrap;
+}
+
+function sbkimRichterBlock(quelltext) {
+  const out = el('div', { class: 'vorschlag-slot' });
+  const status = el('span', { class: 'muted small' });
+  let busy = false;
+  const btn = el('button', {
+    class: 'btn btn-sm', type: 'button', text: t('docs.richterBtn'),
+    onClick: async () => {
+      if (busy) return;
+      busy = true; btn.setAttribute('disabled', '');
+      out.replaceChildren();
+      const setStatus = (s) => { status.textContent = s; };
+      try {
+        setStatus(t('docs.richterLoading'));
+        const embedder = await loadEmbedder({ onStatus: setStatus });
+        const ex = extractFromText(quelltext);
+        const cfg = await getAiConfig();
+        setStatus(cfg.mistralKey ? t('docs.richterJudging') : t('docs.richterPrefiltering'));
+        const res = await belegKontierung(quelltext, { vendor: ex.vendor, ustSatz: ex.ustSatz }, Object.values(_idx), {
+          embedQuery: embedder.embedQuery, embedPassage: embedder.embedPassage,
+          apiKey: cfg.mistralKey, provider: 'mistral', model: cfg.mistralModel,
+          queryLabel: ex.vendor || 'Beleg', k: 5,
+          onProgress: (d, total) => setStatus(t('docs.richterEmbedding').replace('%D%', String(d)).replace('%T%', String(total))),
+        });
+        setStatus('');
+        out.appendChild(richterErgebnis(res));
+      } catch (e) {
+        setStatus(t('docs.richterError').replace('%E%', String((e && e.message) || e)));
+      } finally { busy = false; btn.removeAttribute('disabled'); }
+    },
+  });
+  return el('details', { class: 'richter-block' }, [
+    el('summary', { class: 'small', text: t('docs.richterTitle') }),
+    el('p', { class: 'muted small', text: t('docs.richterHint') }),
+    el('div', { class: 'btn-row' }, [btn, status]),
+    out,
+  ]);
 }
 
 // ---- E-Rechnung (XRechnung XML) einlesen → Buchungsvorschlag ---------------

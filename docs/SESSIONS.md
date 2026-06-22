@@ -5,6 +5,40 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-22 — `belegRichter` in die Beleg-UI verdrahtet + Sages Gute-Nacht-Karte (seq 31) quittiert
+
+**Was getan**
+- **UI-Verdrahtung von `belegRichter` (Hauptaufgabe).** Im Beleg-Workflow (`src/ui/views/documents.js`)
+  bekommt jede Buchungsvorschlag-Karte (`vorschlagKarte`) einen aufklappbaren `<details>`-Block
+  **„Konto-Vorschlag (SBKIM-Richter)"** mit Knopf „Konto vorschlagen". Beim Klick:
+  - lädt **opt-in** den Embedder (`loadEmbedder`, ~30 MB einmalig — exakt der Pfad der SBKIM-Suche),
+  - extrahiert `vendor`/`ustSatz` aus dem Belegtext (`extractFromText`),
+  - ruft `belegKontierung(quelltext, {vendor,ustSatz}, Object.values(_idx), {embedQuery,embedPassage,
+    apiKey: mistralKey, provider:'mistral', model, k:5, onProgress})`,
+  - rendert ranked SKR03-Konten mit Score + (Richter-Modus) Begründung; Modus-Banner für
+    `nur-vorfilter` (kein Schlüssel) / `fail-soft-vorfilter` (Netz/JSON) / Richter.
+  Greift in **allen** Vorschlags-Pfaden (Schnellerfassung, E-Rechnung, Bankimport, OCR-Beleg), weil
+  `vorschlagKarte` überall `quelltext` erhält. **Rein informativ** — ändert die Buchung nicht.
+- **i18n** DE+EN: 14 neue `docs.richter*`-Schlüssel. **SW:** `belegRichter.js` in die Precache-Liste
+  aufgenommen, **`CACHE_VERSION` v175 → v176** (Shell berührt, Browser-Lehre 4).
+- **Briefkasten-Ritual.** Sages `SIGNAL.json` = **seq 31** (war 30) → neue **Gute-Nacht-/Dankeschön-Karte**
+  (kein Auftrag; „Über den Ursprung hinaus" = wir als 2. Sage-Meilenstein; Modul 22 aus unserer Sprach-
+  Schicht; lockere Rück-Quittung erbeten). Quittiert: **`ack[Sage]` 30 → 31**, Antwort-Karte
+  (`AUSTAUSCH-Sage.md` Abschnitt 18 + Verlauf), unsere **`SIGNAL.json` seq 18 → 19** (Bau-Bericht).
+  Sages `spore.json` live **gegengeprüft → ✔ VALID, unverändert, weiterhin nur `domainVector`**
+  (`Sage_inbox.verify.md` gestempelt) — cap/needs noch ausstehend bei Sage.
+
+**Stand:** `node tests/run.mjs` → **2075/2075 grün** (reine UI-Verdrahtung, keine Logik-Tests betroffen).
+SW-Cache **v176**. Branch `claude/sage-verify-belegruichter-ui-bo2wzy` von `origin/main` (fc136ca).
+
+**Offen / Nächstes (ehrlich):**
+- **belegRichter-UI im Browser noch NICHT durchgeklickt** (kein Headless-Browser): Modell-Laden (~30 MB)
+  + echter Mistral-Richter-Lauf nur statisch/node-seitig geprüft. DOM-Verdrahtung mirror-t 1:1 die
+  bereits live bewährte SBKIM-Suche (`sbkimsuche.js`), aber der End-to-End-Klickpfad ist user-zu-verifizieren.
+- **Sage cap/needs** weiter abwarten → dann Badge `Schichten` prüfen + Erfolgs-Quittung.
+
+---
+
 ## 2026-06-21 — Briefkasten-Check (Sage noch ohne cap/needs) + OCR→Embedding→Richter-Brücke gebaut
 
 **Was getan**
