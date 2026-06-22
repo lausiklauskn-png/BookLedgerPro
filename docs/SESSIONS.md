@@ -5,6 +5,32 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-22 — In-App-Test-Marken + „Quartal"-Demo (volles Q1, alle Bereiche)
+
+**Was getan**
+- **Test-Marken** (gemerged, PR #227): `src/ui/testmarke.js` — anklickbare Marke „🧪 Test offen"→„✅ getestet"
+  (localStorage), co-located beim Knopf (fehlt der Knopf, fehlt die Marke). Marken: `beleg-ocr`, `beleg-richter`,
+  `sbkim-konten`, `sbkim-knoten`. `docs/TESTPLAN.md`. Master-Schalter zum Ausblenden. SW v176→v177.
+- **„Quartal"-Demo** (neu): drittes Szenario in `src/domain/demodaten.js` (`quartalSzenario`), wählbar im
+  Test-Modus (`src/ui/lock.js`, Radio „Vierteljahr"). Volles Q1 2026: **21 Buchungen** (19/7/steuerfrei §4,
+  §13b Reverse-Charge, Bewirtung 70/30, Kfz/Tank, Telefon, Reise 7+19, Personal Brutto-Methode, AfA, GWG,
+  Bankgebühren) + **Storno** einer Doppelbuchung (GoBD) + Stammdaten (3 Kunden, 3 Aufträge inkl. berechnet
+  +Teilzahlung, 2 Mitarbeiter+Zeiten, 3 Eingangsrechnungen bezahlt/offen/storniert). Glue `demodaten-store.js`
+  schreibt alles über die **echten** APIs (`saveEntwurf→festschreiben`, `storno`, CRM-/Payables-APIs); Stammdaten
+  in eigenem try/catch (fail-soft). i18n DE+EN.
+- **+21 Node-Tests** (Balance, validateBuchung, Q1-Datum, genau 1 Storno, §13b/7%/steuerfrei vorhanden,
+  SuSa Soll==Haben, USt-VA-Konsistenz, Plan-Stammdaten, klein/gross-Regression). SW v177→v178.
+
+**Stand:** `node tests/run.mjs` → **2096/2096 grün**. Reine Demo-/Test-Infrastruktur; Echtbetrieb unberührt.
+
+**Offen / Nächstes (ehrlich):**
+- **Beleg-Scans für die Quartal-Demo** noch nicht eingebunden — Nutzer generiert KI-Bilder (Prompts geliefert),
+  dann nach `assets/demo/` + in der Glue als verschlüsselte Belege an passende Buchungen hängen (Increment 2).
+- **Quartal-Demo + Test-Marken im Browser nicht durchgeklickt** (kein Headless-Browser): Glue-Pfad statisch
+  geprüft, reine Vorlage node-getestet. Im Browser zu verifizieren (Journal/EÜR/USt/Aufträge/Payables/Storno).
+
+---
+
 ## 2026-06-22 — `belegRichter` in die Beleg-UI verdrahtet + Sages Gute-Nacht-Karte (seq 31) quittiert
 
 **Was getan**

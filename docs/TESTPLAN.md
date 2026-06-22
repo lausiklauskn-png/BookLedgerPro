@@ -21,6 +21,14 @@
 | `sbkim-konten` | **SBKIM-Suche** → Bereich **„Konten"** → Knopf **„Suchen"** | Stichwort (z. B. „Tanken") → „Suchen" → passende Konten erscheinen (Modell-Laden beim 1. Mal). |
 | `sbkim-knoten` | **SBKIM-Suche** → Bereich **„Knoten (Mycel)"** → Knopf **„🜲 mein Knoten ↔ Netz"** | „🜲 mein Knoten ↔ Netz" → andere Mycel-Knoten erscheinen; Badge zeigt **`Domäne`** (solange Sage kein cap/needs hat; später **`Schichten`**). |
 
+## Manueller Test ohne Marke: „Quartal"-Demo
+
+> Vor dem Entsperren (Test-Modus, daher keine In-App-Marke möglich):
+> **Test-Tresor anlegen → „Mit Demo-Daten Vierteljahr" wählen → Passwort → App startet befüllt.**
+> Dann prüfen: **Journal** (21 Buchungen + 1 Storno-Paar), **EÜR/USt-VA**, **Aufträge** (offen/berechnet
+> +Teilzahlung), **Eingangsrechnungen** (bezahlt/offen/storniert), **Anlagen** (Laptop + GWG),
+> **Kunden/Mitarbeiter/Kostenstellen**. Schließen/Löschen des Test-Tresors entfernt alles wieder.
+
 ## Hinweis zum Abhaken
 
 - Eine Marke, die du **nicht** finden/abhaken kannst, bedeutet: der zugehörige Knopf wird

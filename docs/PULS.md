@@ -7,7 +7,32 @@
 
 ---
 
-## 🟢 LETZTER STAND (2026-06-22, neueste Sitzung) — OCR→Richter-Brücke in die UI verdrahtet + Sage seq 31 quittiert
+## 🟢 LETZTER STAND (2026-06-22, Forts.) — Test-Marken + „Quartal"-Demo (volles Q1, alle Bereiche)
+
+> **Zwei Nutzer-Wünsche umgesetzt:**
+>
+> **A) In-App-Test-Marken** (PR #227, gemerged): Modul `src/ui/testmarke.js` — kleine anklickbare Marke
+> „🧪 Test offen" → „✅ getestet" (localStorage), **co-located** beim jeweiligen Knopf (fehlt der Knopf,
+> fehlt die Marke). Marken bei: `beleg-ocr`, `beleg-richter` (documents.js), `sbkim-konten`/`sbkim-knoten`
+> (sbkimsuche.js). Liste/Anleitung: `docs/TESTPLAN.md`. Master-Schalter `TEST_MARKEN_AKTIV=false` blendet alle aus.
+>
+> **B) „Quartal"-Demo** (offener PR, browser-zu-verifizieren): drittes Demo-Szenario neben klein/gross.
+> Im **Test-Modus** beim Anlegen eines Test-Tresors wählbar („Mit Demo-Daten Vierteljahr"). Volles **Q1 2026**
+> quer durch **alle** Bereiche: 21 Buchungen (19/7/steuerfrei §4, **§13b Reverse-Charge**, Bewirtung 70/30,
+> Kfz/Tank, Telefon, Reise 7+19, **Personal Brutto-Methode**, AfA, GWG, Bankgebühren) + **Storno** einer
+> versehentlichen Doppelbuchung (GoBD) + Stammdaten (3 Kunden, 3 Aufträge inkl. berechnet+Teilzahlung,
+> 2 Mitarbeiter+Zeiten, 3 Eingangsrechnungen bezahlt/offen/storniert). Alles über die **echten** Speicher-APIs
+> (`saveEntwurf→festschreiben`, CRM-/Payables-APIs) → GoBD-Hash-Kette real. Dateien: `src/domain/demodaten.js`
+> (+`-store.js`), `src/ui/lock.js`, i18n, **+21 Node-Tests = 2096/2096 grün**. SW-Cache **v177→v178**.
+>
+> **⏭ NÄCHSTE SCHRITTE:** (1) **Beleg-Scans in die Quartal-Demo** — Nutzer generiert KI-Bilder (Prompts im Chat
+> geliefert: Tank/Bürobedarf/Bewirtung/§13b-Cloud/Bar-Quittung/Hotel), dann nach `assets/demo/` legen +
+> in der Glue als verschlüsselte Belege an passende Buchungen hängen. (2) Test-Marken im Browser abhaken
+> (belegRichter/OCR/SBKIM-Suche). (3) Quartal-Demo im Browser durchklicken (Journal/EÜR/USt/Aufträge/Payables).
+
+---
+
+## 🟢 STAND (2026-06-22) — OCR→Richter-Brücke in die UI verdrahtet + Sage seq 31 quittiert
 
 > **Beide nächsten Schritte des Vorgänger-Briefs erledigt:**
 >
