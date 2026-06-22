@@ -464,6 +464,23 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   }
   .app.nav-open .app-nav { display: flex; }
   .nav-item { white-space: nowrap; }
+  /* Segmentierte Schalter (z. B. „KI-Autonomie") mit langen Optionen brachen im
+     Hochformat in den runden 999px-Rahmen um → ein riesiger „Stadion"-Pill mit
+     frei schwebendem Text (siehe Screenshots). Im Handyformat daher als saubere,
+     volle-Breite-Liste stapeln: gemäßigter Rahmen, jede Option eine Zeile mit
+     großzügiger Tap-Fläche; die aktive Option bleibt hervorgehoben. */
+  .segmented { width: 100%; flex-direction: column; align-items: stretch; border-radius: var(--radius); }
+  .seg { text-align: left; border-radius: var(--radius-sm); padding: .55rem .85rem; }
+  /* Aktions-Button-Reihen im Hochformat: in EINER Zeile lassen und bei Platzmangel
+     seitlich scrollen, statt umzubrechen — so wächst der Container nicht in die Höhe.
+     Nur reine Button-Leisten (Tabellen-Aktionen, Toolbars, Vorschlag/Beleg, Import);
+     Formular-Reihen mit Eingabefeldern brechen weiterhin normal um (:has-Ausnahme).
+     Progressive Enhancement: ohne :has-Unterstützung gilt das bisherige Umbrechen. */
+  .btn-row:not(:has(input)):not(:has(select)):not(:has(textarea)) {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch; padding-bottom: .1rem;
+  }
+  .btn-row:not(:has(input)):not(:has(select)):not(:has(textarea)) > * { flex: 0 0 auto; }
 }
 
 /* ---- Deckblatt / Datenblatt (Intro + „Über") ----------------------------- */
