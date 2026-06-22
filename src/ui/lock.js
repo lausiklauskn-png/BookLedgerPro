@@ -223,6 +223,7 @@ function renderNeuerTest(container, resolve, zurueck) {
     // so kann man sofort mit realistischem Journal/EÜR/USt-VA/Anlagen üben.
     const inhaltLeer = el('input', { type: 'radio', name: 'test-inhalt', value: 'leer', checked: '' });
     const inhaltDemo = el('input', { type: 'radio', name: 'test-inhalt', value: 'demo' });
+    const inhaltQuartal = el('input', { type: 'radio', name: 'test-inhalt', value: 'quartal' });
 
     const form = el('form', {
       class: 'lock-form',
@@ -236,7 +237,7 @@ function renderNeuerTest(container, resolve, zurueck) {
           const { mandant } = await erstelleSandboxTresor(name.value);
           renderOnboarding(container, resolve, {
             mandantName: mandant.name, sandbox: true,
-            demo: inhaltDemo.checked ? 'klein' : null,
+            demo: inhaltQuartal.checked ? 'quartal' : inhaltDemo.checked ? 'klein' : null,
           });
         } catch (ex) {
           err.textContent = ex?.message || String(ex);
@@ -251,6 +252,7 @@ function renderNeuerTest(container, resolve, zurueck) {
         el('legend', { text: t('test.inhalt') }),
         el('label', { class: 'radio-row' }, [inhaltLeer, el('span', { text: t('test.inhaltLeer') })]),
         el('label', { class: 'radio-row' }, [inhaltDemo, el('span', { text: t('test.inhaltDemo') })]),
+        el('label', { class: 'radio-row' }, [inhaltQuartal, el('span', { text: t('test.inhaltQuartal') })]),
       ]),
       err, btn,
       el('button', { class: 'btn btn-link', type: 'button', text: t('common.back'), onClick: zurueck }),

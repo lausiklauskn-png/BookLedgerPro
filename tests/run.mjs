@@ -4196,6 +4196,64 @@ await section('Demo-Vorbefüllung (Test-Modus): reiner Plan demoEntwuerfe/demoBe
     demoBefuellungsplan('gross').buchungenEntwuerfe.length > plan.buchungenEntwuerfe.length);
 });
 
+await section('Demo-Vorbefüllung „quartal": volles Q1 quer durch alle Bereiche', () => {
+  const m = demoMandant('quartal');
+  const idx = {}; for (const k of m.konten) idx[k.nummer] = k;
+  const entw = demoEntwuerfe(m);
+
+  ok('quartal: Buchungen vorhanden (≥ 20)', entw.length >= 20);
+  ok('quartal: jede Buchung gültig festschreibbar (validateBuchung)',
+    entw.every((e) => validateBuchung(e, idx).length === 0));
+  ok('quartal: jede Buchung ausgeglichen (Soll == Haben)',
+    entw.every((e) => istAusgeglichen(e.zeilen)));
+  ok('quartal: nur seeded Konten referenziert',
+    entw.every((e) => e.zeilen.every((z) => !!idx[z.konto])));
+  ok('quartal: chronologisch sortiert',
+    entw.every((e, i) => i === 0 || entw[i - 1].datum <= e.datum));
+  ok('quartal: alle Buchungen in Q1 2026',
+    entw.every((e) => e.datum >= '2026-01-01' && e.datum <= '2026-03-31'));
+
+  // Sonderfälle: genau eine zu stornierende Doppelbuchung; Reverse-Charge + 7%/19%/steuerfrei.
+  ok('quartal: genau eine _storno-Buchung (Doppelbuchung)',
+    entw.filter((e) => e._storno).length === 1);
+  ok('quartal: _storno trägt korrekte Gegenkonten (Miete/Bank)',
+    entw.find((e) => e._storno).zeilen.some((z) => z.konto === '4210'));
+  ok('quartal: enthält Reverse-Charge §13b (1577/1787)',
+    entw.some((e) => e.zeilen.some((z) => z.konto === '1577') && e.zeilen.some((z) => z.konto === '1787')));
+  ok('quartal: enthält 7%-Erlös (8300/1771) und steuerfrei (8100)',
+    entw.some((e) => e.zeilen.some((z) => z.konto === '8300')) && entw.some((e) => e.zeilen.some((z) => z.konto === '8100')));
+  ok('quartal: Verknüpfungs-Schlüssel _key für Auftrags-Rechnung vorhanden',
+    entw.some((e) => e._key === 'rechnung_hafenkontor'));
+  ok('quartal: Kostenstelle an mind. einer Buchung',
+    entw.some((e) => e.kostenstelle === '2000'));
+
+  // EÜR/USt-VA in sich konsistent (doppelte Buchführung trägt im Maßstab).
+  const p = { von: '2026-01-01', bis: '2026-03-31' };
+  const susa = summenSaldenliste(m.buchungen, idx, p);
+  ok('quartal SuSa: Soll == Haben', susa.summen.soll === susa.summen.haben && susa.summen.soll > 0);
+  const va = buildUstVa(m.buchungen, idx, p);
+  ok('quartal USt-VA Kz83 konsistent', va.kz83 === (va.kz81Steuer + va.kz86Steuer + va.kz47 + va.kz93 - va.kz66 - va.kz67 - va.kz61));
+
+  // Stammdaten im Plan (von der Glue über echte APIs geschrieben — hier nur die reine Vorlage).
+  const plan = demoBefuellungsplan('quartal');
+  ok('quartal Plan: 3 Kunden, 3 Aufträge, 2 Mitarbeiter, 3 Eingangsrechnungen',
+    plan.kunden.length === 3 && plan.auftraege.length === 3 && plan.mitarbeiter.length === 2 && plan.eingangsrechnungen.length === 3);
+  ok('quartal Plan: 2 Anlagen (Laptop linear + GWG), 2 Anfangsbestände',
+    plan.anlagen.length === 2 && plan.anfangsbestaende.length === 2);
+  ok('quartal Plan: ein Auftrag „berechnet" mit Buchungs-Verknüpfung + Teilzahlung',
+    plan.auftraege.some((a) => a.status === 'berechnet' && a._buchungKey === 'rechnung_hafenkontor' && (a._zahlungen || []).length === 1));
+  ok('quartal Plan: Eingangsrechnungen bezahlt/offen/storniert vertreten',
+    plan.eingangsrechnungen.some((r) => (r._zahlungen || []).length) && plan.eingangsrechnungen.some((r) => !(r._zahlungen || []).length && !r._storniert) && plan.eingangsrechnungen.some((r) => r._storniert));
+  ok('quartal Plan: Eingangsrechnungs-Positionen valide (nettoCent/ustSatz)',
+    plan.eingangsrechnungen.every((r) => r.positionen.every((pos) => Number.isInteger(pos.nettoCent) && [0, 7, 19].includes(pos.ustSatz))));
+  ok('quartal Plan: Auftrags-Positionen valide (menge/einzelpreisCent)',
+    plan.auftraege.every((a) => a.positionen.every((pos) => pos.menge > 0 && Number.isInteger(pos.einzelpreisCent))));
+
+  // klein/gross unberührt (keine Stammdaten) — Regression.
+  ok('klein/gross: weiterhin ohne Stammdaten (Regression)',
+    demoBefuellungsplan('klein').kunden.length === 0 && demoBefuellungsplan('gross').auftraege.length === 0);
+});
+
 await section('Simulation: Demo-Mandant „groß" — Konsistenz im Maßstab', () => {
   const m = demoMandant('gross');
   const idx = {}; for (const k of m.konten) idx[k.nummer] = k;
