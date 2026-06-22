@@ -388,7 +388,7 @@ function vaPeriodeCard(buchungen, idx) {
         class: 'btn btn-sm', text: t('reports.exportUstVa'),
         onClick: () => downloadText(`ust-va-${stamp}.csv`, BOM + ustVaToCsv(va), 'text/csv'),
       }),
-      el('a', { class: 'btn btn-sm', href: 'https://www.elster.de/eportal/formulare-leistungen/alleformulare/umsatzsteuervoranmeldung', target: '_blank', rel: 'noopener noreferrer', text: t('reports.vaElsterLink') }),
+      el('a', { class: 'btn btn-sm', href: 'https://www.elster.de/eportal/formulare-leistungen/alleformulare', target: '_blank', rel: 'noopener noreferrer', text: t('reports.vaElsterLink') }),
     ]));
   };
 
