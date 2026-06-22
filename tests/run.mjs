@@ -4249,9 +4249,22 @@ await section('Demo-Vorbefüllung „quartal": volles Q1 quer durch alle Bereich
   ok('quartal Plan: Auftrags-Positionen valide (menge/einzelpreisCent)',
     plan.auftraege.every((a) => a.positionen.every((pos) => pos.menge > 0 && Number.isInteger(pos.einzelpreisCent))));
 
-  // klein/gross unberührt (keine Stammdaten) — Regression.
+  // Belege (Scans): 5 Buchungen tragen _beleg + 1 unverbuchter Beleg; alle Dateien existieren.
+  const belegExists = (n) => { try { _readSpore(new URL('../assets/demo/' + n, import.meta.url)); return true; } catch { return false; } };
+  const mitBeleg = entw.filter((e) => e._beleg);
+  ok('quartal: genau 5 Buchungen mit angehängtem Beleg', mitBeleg.length === 5);
+  ok('quartal: alle gebuchten Beleg-Dateien existieren in assets/demo/',
+    mitBeleg.every((e) => belegExists(e._beleg)));
+  ok('quartal Plan: 1 unverbuchter Beleg (Quittung) + Datei existiert',
+    plan.belege.length === 1 && belegExists(plan.belege[0].name));
+  ok('quartal: Beleg-Dateinamen eindeutig (kein Doppel)',
+    new Set([...mitBeleg.map((e) => e._beleg), ...plan.belege.map((b) => b.name)]).size === mitBeleg.length + plan.belege.length);
+
+  // klein/gross unberührt (keine Stammdaten/Belege) — Regression.
   ok('klein/gross: weiterhin ohne Stammdaten (Regression)',
     demoBefuellungsplan('klein').kunden.length === 0 && demoBefuellungsplan('gross').auftraege.length === 0);
+  ok('klein/gross: weiterhin ohne Belege (Regression)',
+    (demoBefuellungsplan('klein').belege || []).length === 0 && (demoBefuellungsplan('gross').belege || []).length === 0);
 });
 
 await section('Simulation: Demo-Mandant „groß" — Konsistenz im Maßstab', () => {

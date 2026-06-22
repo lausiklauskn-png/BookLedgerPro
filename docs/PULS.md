@@ -25,10 +25,15 @@
 > (`saveEntwurf→festschreiben`, CRM-/Payables-APIs) → GoBD-Hash-Kette real. Dateien: `src/domain/demodaten.js`
 > (+`-store.js`), `src/ui/lock.js`, i18n, **+21 Node-Tests = 2096/2096 grün**. SW-Cache **v177→v178**.
 >
-> **⏭ NÄCHSTE SCHRITTE:** (1) **Beleg-Scans in die Quartal-Demo** — Nutzer generiert KI-Bilder (Prompts im Chat
-> geliefert: Tank/Bürobedarf/Bewirtung/§13b-Cloud/Bar-Quittung/Hotel), dann nach `assets/demo/` legen +
-> in der Glue als verschlüsselte Belege an passende Buchungen hängen. (2) Test-Marken im Browser abhaken
-> (belegRichter/OCR/SBKIM-Suche). (3) Quartal-Demo im Browser durchklicken (Journal/EÜR/USt/Aufträge/Payables).
+> **C) Beleg-Scans in der Quartal-Demo** (erledigt): 6 vom Nutzer KI-generierte Belege komprimiert nach
+> `assets/demo/` (JPEG ~1000px, zusammen ~930 KB). 5 davon (Tank/Bürobedarf/Bewirtung/§13b-Cloud/Hotel) hängen
+> über `belegRef`+`linkBeleg` an den **passenden** Buchungen (Beleg VOR dem Festschreiben → Belegprinzip in der
+> Hash-Kette); die **Blumen-Quittung (50 €)** liegt bewusst **unverbucht** als OCR-/Richter-Test-Target.
+> Glue fail-soft (offline/headless → Buchung ohne Beleg). +5 Tests → **2101/2101 grün**. SW v178→v179.
+>
+> **⏭ NÄCHSTE SCHRITTE (alles browser-zu-verifizieren):** (1) Quartal-Demo im Test-Modus durchklicken —
+> Journal/EÜR/USt/Aufträge/Payables/Storno **und** die angehängten Belege (🔗) + OCR/„Konto-Vorschlag" auf der
+> unverbuchten Blumen-Quittung. (2) Test-Marken abhaken (belegRichter/OCR/SBKIM-Suche). (3) Sage cap/needs abwarten.
 
 ---
 

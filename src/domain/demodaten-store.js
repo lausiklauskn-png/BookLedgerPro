@@ -23,7 +23,19 @@ import { setAnfangsbestand } from './anfangsbestand-store.js';
 import { addAnlage } from './anlagen-store.js';
 import { saveKunde, saveAuftrag, auftragZahlungHinzufuegen, saveMitarbeiter, saveZeit, ensureKostenstellenSeeded } from './crm-store.js';
 import { saveEingangsrechnung, zahlungHinzufuegen, stornoEingangsrechnung } from './payables-store.js';
+import { saveBeleg, linkBeleg } from './documents.js';
 import { demoBefuellungsplan } from './demodaten.js';
+
+// Lädt ein mitgeliefertes Demo-Beleg-Bild (assets/demo/) als File. Browser-only
+// (fetch + import.meta.url → same-origin); im Headless-/Offline-Fall wirft es und der
+// Aufrufer fängt es ab (fail-soft: Buchung entsteht dann ohne angehängten Beleg).
+async function ladeDemoBeleg(name, mediaType) {
+  const url = new URL(`../../assets/demo/${name}`, import.meta.url);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Demo-Beleg nicht ladbar (${res.status}): ${name}`);
+  const blob = await res.blob();
+  return new File([blob], name, { type: mediaType || blob.type || 'image/jpeg' });
+}
 
 /**
  * Befüllt den aktiven Tresor mit dem Demo-Mandanten. Reihenfolge: Konten sicherstellen →
@@ -33,7 +45,7 @@ import { demoBefuellungsplan } from './demodaten.js';
  * (Kunden, Aufträge, Mitarbeiter+Zeiten, Eingangsrechnungen) über die echten CRM-/Payables-
  * APIs schreiben — damit auch diese Ansichten realistisch gefüllt sind.
  * @param {'klein'|'gross'|'quartal'} groesse
- * @returns {Promise<{groesse, konten, buchungen, storniert, anlagen, anfangsbestaende, kunden, auftraege, mitarbeiter, eingangsrechnungen}>}
+ * @returns {Promise<{groesse, konten, buchungen, storniert, anlagen, anfangsbestaende, belege, kunden, auftraege, mitarbeiter, eingangsrechnungen}>}
  */
 export async function befuelleMitDemodaten(groesse = 'klein') {
   const plan = demoBefuellungsplan(groesse);
@@ -54,14 +66,32 @@ export async function befuelleMitDemodaten(groesse = 'klein') {
   // 4) Buchungen über den ECHTEN Pfad: Entwurf → festschreiben (chronologische Reihenfolge
   //    → lückenlose seq folgt dem Datum; GoBD-Hash-Kette entsteht real). `_key` merkt die
   //    festgeschriebene ID (für Auftrags-Verknüpfung); `_storno` storniert sie sofort wieder.
-  let gebucht = 0, storniert = 0;
+  let gebucht = 0, storniert = 0, belege = 0;
   const buchungIds = {};
   for (const e of plan.buchungenEntwuerfe) {
-    const entwurf = await saveEntwurf(e);
+    // Beleg (Foto/Scan) VOR dem Festschreiben anlegen, damit die Buchung den belegRef
+    // mit in die Hash-Kette nimmt (GoBD-Belegprinzip). Fail-soft: scheitert das Laden
+    // (offline/headless), entsteht die Buchung trotzdem — nur ohne angehängten Beleg.
+    let belegId = null;
+    if (e._beleg) {
+      try {
+        const file = await ladeDemoBeleg(e._beleg, 'image/jpeg');
+        const meta = await saveBeleg(file);
+        belegId = meta.id; belege++;
+      } catch (ex) { console.warn('Demo-Beleg übersprungen:', e._beleg, ex); }
+    }
+    const entwurf = await saveEntwurf(belegId ? { ...e, belegRef: belegId } : e);
     const fest = await festschreiben(entwurf.id);
+    if (belegId) { try { await linkBeleg(belegId, fest.id); } catch { /* Rückverweis optional */ } }
     if (e._key) buchungIds[e._key] = fest.id;
     gebucht++;
     if (e._storno) { await storno(fest.id); storniert++; }
+  }
+
+  // Belege OHNE Buchung (bewusst „noch nicht verbucht" — Posteingang/OCR-Test-Target).
+  for (const b of plan.belege || []) {
+    try { await saveBeleg(await ladeDemoBeleg(b.name, b.mediaType)); belege++; }
+    catch (ex) { console.warn('Demo-Beleg (unverbucht) übersprungen:', b.name, ex); }
   }
 
   // 5) Stammdaten (nur „quartal" trägt welche). Eigener try/catch: ein Stammdaten-Hänger
@@ -117,6 +147,7 @@ export async function befuelleMitDemodaten(groesse = 'klein') {
     storniert,
     anlagen: plan.anlagen.length,
     anfangsbestaende: plan.anfangsbestaende.length,
+    belege,
     kunden,
     auftraege,
     mitarbeiter,
