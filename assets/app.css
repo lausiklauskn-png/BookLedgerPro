@@ -42,7 +42,7 @@ code { font-family: var(--mono); }
 .btn-ghost { background: transparent; border-color: transparent; }
 .btn-ghost:hover { background: var(--surface-2); border-color: transparent; }
 .btn-sm { padding: .35rem .65rem; font-size: .85rem; }
-.btn-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.btn-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
 
 /* ---- Sperrbildschirm / Onboarding ---------------------------------------- */
 .lock-screen {
@@ -124,7 +124,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   display: inline-flex; align-items: center; gap: .4rem;
   font-family: var(--mono); font-size: .78rem; color: var(--text-muted);
   background: var(--surface-2); border: 1px solid var(--border);
-  padding: .2rem .5rem; border-radius: 999px;
+  padding: .2rem .5rem; border-radius: 999px; white-space: nowrap;
 }
 .mandant-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
 .mycel-chip {
@@ -443,6 +443,11 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 @media (max-width: 640px) {
   /* Kopfzeile darf umbrechen, damit Mandant/Wechseln/Sperren nicht abgeschnitten werden. */
   .app-header { flex-wrap: wrap; gap: .4rem .5rem; }
+  /* Button-Beschriftungen NICHT mitten im Wort umbrechen (z. B. „Mandant wechseln"). */
+  .app-header .btn { white-space: nowrap; }
+  /* Platz sparen: die Lampen-Labels (LEBT/VERKEHR/FREMD/SIEGEL) ausblenden — nur Punkte
+     bleiben. Verhindert das Umbrechen/Hochwachsen der Kopfzeile im Hochformat. */
+  .fw-label { display: none; }
   /* Hamburger sichtbar — klappt die volle Navigation als Schublade auf/zu. */
   .nav-toggle {
     display: inline-flex; align-items: center; justify-content: center;
