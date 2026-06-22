@@ -91,16 +91,16 @@ function quartalSzenario() {
       { konto: '0480', seite: 'S', betrag: 35000 }, { konto: '1576', seite: 'S', betrag: 6650 }, { konto: '1200', seite: 'H', betrag: 41650 }]),
     { ...fest(2, '2026-01-08', 'Ausgangsrechnung 2026-0001 Nordlicht Design GmbH (19%)', [
       { konto: '1400', seite: 'S', betrag: 595000 }, { konto: '8400', seite: 'H', betrag: 500000 }, { konto: '1776', seite: 'H', betrag: 95000 }]), kostenstelle: '2000' },
-    fest(3, '2026-01-12', 'Bürobedarf KontorPlus Bürohandel (19% Vorsteuer)', [
-      { konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }]),
+    { ...fest(3, '2026-01-12', 'Bürobedarf KontorPlus Bürohandel (19% Vorsteuer)', [
+      { konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }]), _beleg: 'beleg-buerobedarf.jpg' },
     fest(4, '2026-01-15', 'Miete Januar', [
       { konto: '4210', seite: 'S', betrag: 80000 }, { konto: '1200', seite: 'H', betrag: 80000 }]),
-    fest(5, '2026-01-20', 'Tankbeleg ARALUX Station (19% Vorsteuer, bar)', [
-      { konto: '4530', seite: 'S', betrag: 6714 }, { konto: '1576', seite: 'S', betrag: 1276 }, { konto: '1000', seite: 'H', betrag: 7990 }]),
+    { ...fest(5, '2026-01-20', 'Tankbeleg ARALUX Station (19% Vorsteuer, bar)', [
+      { konto: '4530', seite: 'S', betrag: 6714 }, { konto: '1576', seite: 'S', betrag: 1276 }, { konto: '1000', seite: 'H', betrag: 7990 }]), _beleg: 'beleg-tank.jpg' },
     fest(6, '2026-01-31', 'Zahlungseingang Rechnung 2026-0001 (Bank)', [
       { konto: '1200', seite: 'S', betrag: 595000 }, { konto: '1400', seite: 'H', betrag: 595000 }]),
-    fest(7, '2026-02-02', 'Cloud-Dienst NimbusSoft §13b (Reverse-Charge)', [
-      { konto: '4950', seite: 'S', betrag: 10000 }, { konto: '1577', seite: 'S', betrag: 1900 }, { konto: '1787', seite: 'H', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 10000 }]),
+    { ...fest(7, '2026-02-02', 'Cloud-Dienst NimbusSoft §13b (Reverse-Charge)', [
+      { konto: '4950', seite: 'S', betrag: 10000 }, { konto: '1577', seite: 'S', betrag: 1900 }, { konto: '1787', seite: 'H', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 10000 }]), _beleg: 'beleg-cloud-13b.jpg' },
     fest(8, '2026-02-05', 'Barverkauf 7% (Café Morgenrot)', [
       { konto: '1200', seite: 'S', betrag: 10700 }, { konto: '8300', seite: 'H', betrag: 10000 }, { konto: '1771', seite: 'H', betrag: 700 }]),
     fest(9, '2026-02-10', 'Online-Werbung (19% Vorsteuer)', [
@@ -114,14 +114,14 @@ function quartalSzenario() {
     fest(13, '2026-02-20', 'Gehalt Februar (Brutto-Methode)', [
       { konto: '4120', seite: 'S', betrag: 200000 }, { konto: '4130', seite: 'S', betrag: 40000 },
       { konto: '1740', seite: 'H', betrag: 140000 }, { konto: '1741', seite: 'H', betrag: 40000 }, { konto: '1742', seite: 'H', betrag: 60000 }]),
-    fest(14, '2026-02-28', 'Bewirtung 70/30 (Trattoria Da Vinci)', [
-      { konto: '4650', seite: 'S', betrag: 7000 }, { konto: '4654', seite: 'S', betrag: 3000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }]),
+    { ...fest(14, '2026-02-28', 'Bewirtung 70/30 (Trattoria Da Vinci)', [
+      { konto: '4650', seite: 'S', betrag: 7000 }, { konto: '4654', seite: 'S', betrag: 3000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }]), _beleg: 'beleg-bewirtung.jpg' },
     { ...fest(15, '2026-03-05', 'Wareneinkauf 19% (Hansa Großhandel)', [
       { konto: '3400', seite: 'S', betrag: 200000 }, { konto: '1576', seite: 'S', betrag: 38000 }, { konto: '1200', seite: 'H', betrag: 238000 }]), kostenstelle: '3000' },
     fest(16, '2026-03-10', 'Telefon/Internet (19% Vorsteuer)', [
       { konto: '4920', seite: 'S', betrag: 5000 }, { konto: '1576', seite: 'S', betrag: 950 }, { konto: '1200', seite: 'H', betrag: 5950 }]),
-    fest(17, '2026-03-18', 'Hotel/Reisekosten (7% + 19% Vorsteuer)', [
-      { konto: '4670', seite: 'S', betrag: 13000 }, { konto: '1571', seite: 'S', betrag: 700 }, { konto: '1576', seite: 'S', betrag: 570 }, { konto: '1200', seite: 'H', betrag: 14270 }]),
+    { ...fest(17, '2026-03-18', 'Hotel/Reisekosten (7% + 19% Vorsteuer)', [
+      { konto: '4670', seite: 'S', betrag: 13000 }, { konto: '1571', seite: 'S', betrag: 700 }, { konto: '1576', seite: 'S', betrag: 570 }, { konto: '1200', seite: 'H', betrag: 14270 }]), _beleg: 'beleg-hotel.jpg' },
     { ...fest(18, '2026-03-25', 'Ausgangsrechnung 2026-0002 Hafenkontor UG (19%)', [
       { konto: '1400', seite: 'S', betrag: 357000 }, { konto: '8400', seite: 'H', betrag: 300000 }, { konto: '1776', seite: 'H', betrag: 57000 }]), kostenstelle: '2000', _key: 'rechnung_hafenkontor' },
     fest(19, '2026-03-30', 'Bankgebühren', [
@@ -172,7 +172,12 @@ function quartalSzenario() {
     { _key: 'er_storno', kreditor: 'Fehlbuchung Service e.K.', rechnungsnr: 'X-001', datum: '2026-02-22',
       positionen: [{ nettoCent: 5000, ustSatz: 19, aufwandKonto: '4980' }], _storniert: true },
   ];
-  return { buchungen, anlagen, anfangsbestaende, kunden, auftraege, mitarbeiter, zeiten, eingangsrechnungen };
+  // Belege ohne Buchung (bewusst „noch nicht verbucht") — realistischer Posteingang und
+  // zugleich ein Test-Target für OCR (Vision EU) + „Konto-Vorschlag (SBKIM-Richter)".
+  const belege = [
+    { name: 'beleg-quittung-blumen.jpg', mediaType: 'image/jpeg', titel: 'Quittung Marktstand Blumen Sommer (50,00 € bar, unverbucht)' },
+  ];
+  return { buchungen, anlagen, anfangsbestaende, kunden, auftraege, mitarbeiter, zeiten, eingangsrechnungen, belege };
 }
 
 /** Demo-Mandant in drei Größen. @param {'klein'|'gross'|'quartal'} groesse */
@@ -210,6 +215,7 @@ export function demoEntwuerfe(mandant) {
       ...(b.kostenstelle ? { kostenstelle: b.kostenstelle } : {}),
       ...(b._key ? { _key: b._key } : {}),
       ...(b._storno ? { _storno: true } : {}),
+      ...(b._beleg ? { _beleg: b._beleg } : {}),
       _seq: b.seq == null ? Infinity : b.seq,
     }))
     .sort((a, b) => (a.datum.localeCompare(b.datum)) || (a._seq - b._seq))
@@ -238,6 +244,7 @@ export function demoBefuellungsplan(groesse = 'klein') {
     mitarbeiter: (mandant.mitarbeiter || []).map((m) => ({ ...m })),
     zeiten: (mandant.zeiten || []).map((z) => ({ ...z })),
     eingangsrechnungen: (mandant.eingangsrechnungen || []).map((r) => ({ ...r, positionen: (r.positionen || []).map((p) => ({ ...p })), _zahlungen: (r._zahlungen || []).map((z) => ({ ...z })) })),
+    belege: (mandant.belege || []).map((b) => ({ ...b })),
   };
 }
 

@@ -5,6 +5,27 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-22 — Beleg-Scans für die Quartal-Demo (Increment 2)
+
+**Was getan**
+- 6 vom Nutzer KI-generierte Beleg-Bilder (Tank/Bürobedarf/Bewirtung/§13b-Cloud/Blumen-Quittung/Hotel)
+  mit Pillow komprimiert (JPEG, ~1000px, q82) nach `assets/demo/` (zusammen ~930 KB).
+- `src/domain/demodaten.js`: `_beleg`-Schlüssel an den 5 passenden Buchungen + Liste `belege` für einen
+  **unverbuchten** Beleg (Blumen-Quittung 50 €) — bewusst als OCR-/„Konto-Vorschlag (SBKIM-Richter)"-Test-Target.
+  `demoEntwuerfe`/`demoBefuellungsplan` reichen `_beleg`/`belege` durch.
+- `src/domain/demodaten-store.js`: `ladeDemoBeleg()` (fetch `assets/demo/` via import.meta.url → File);
+  Beleg wird **vor** dem Festschreiben gespeichert (`belegRef` fließt in die Hash-Kette, GoBD-Belegprinzip),
+  danach `linkBeleg` (Rückverweis). Alles fail-soft (offline/headless → Buchung ohne Beleg).
+- +5 Node-Tests (5 Buchungen mit Beleg, Dateien existieren, 1 unverbuchter Beleg, Namen eindeutig,
+  klein/gross-Regression). SW v178→v179.
+
+**Stand:** `node tests/run.mjs` → **2101/2101 grün**.
+
+**Offen / Nächstes:** Quartal-Demo inkl. Belege im Browser durchklicken (🔗 an Buchungen; OCR + Konto-Vorschlag
+auf der unverbuchten Quittung). Test-Marken abhaken. Sage cap/needs weiter abwarten.
+
+---
+
 ## 2026-06-22 — In-App-Test-Marken + „Quartal"-Demo (volles Q1, alle Bereiche)
 
 **Was getan**
