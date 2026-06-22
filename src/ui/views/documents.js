@@ -31,6 +31,7 @@ import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, bytesToBase64, linkB
 import { getSettings } from '../../state.js';
 import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
+import { testMarke } from '../testmarke.js';
 
 let _host = null;
 let _idx = {};
@@ -245,6 +246,8 @@ function sbkimRichterBlock(quelltext) {
     el('summary', { class: 'small', text: t('docs.richterTitle') }),
     el('p', { class: 'muted small', text: t('docs.richterHint') }),
     el('div', { class: 'btn-row' }, [btn, status]),
+    // TEMPORÄR: Browser-Test-Marke (co-located → fehlt der Knopf, fehlt die Marke).
+    testMarke('beleg-richter', 'Konto vorschlagen (SBKIM-Richter)'),
     out,
   ]);
 }
@@ -678,6 +681,8 @@ function belegAktionen(b, visionBereit) {
       class: 'btn btn-sm', text: t('docs.ocr'),
       onClick: () => visionExtraktion(b),
     }));
+    // TEMPORÄR: Browser-Test-Marke für den Scan→OCR→Vorschlag-Pfad (co-located am OCR-Knopf).
+    wrap.appendChild(testMarke('beleg-ocr', 'Texterkennung (Vision EU)'));
   }
   wrap.appendChild(el('button', {
     class: 'btn btn-sm', text: t('common.delete'),
