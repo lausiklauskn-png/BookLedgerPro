@@ -46,18 +46,40 @@
         if (!window.SbkimStorage) return; // Module nicht geladen — still aussteigen.
         await SbkimStorage.init({ dbSuffix: DB_SUFFIX });
 
-        // Modul 17 Floating-Widget — schlankes Lampen-Design (LEBT/VERKEHR/FREMD),
+        // Modul 17 Floating-Widget — Lampen-Design (LEBT/VERKEHR/FREMD/SIEGEL),
         // self-mountend, verschiebbar, schließbar. Klick auf VERKEHR zeigt die
         // letzten 10 Handshakes/Knoten. Betrifft NUR die SBKIM-Statusanzeige,
-        // nie Buchhaltungsdaten. Fail-soft.
+        // nie Buchhaltungsdaten. Fail-soft. MUSS vor Membran (15) + Siegel (16)
+        // laufen, damit die Proxy-Spans #lamp-fremd + #sbkim-siegel-badge im
+        // DOM stehen (Karte 09 § Schritt 12).
         if (window.SbkimWidget && typeof SbkimWidget.init === "function") {
           try {
             await SbkimWidget.init({
-              slots: ["lebt", "verkehr", "fremd"],
+              slots: ["lebt", "verkehr", "fremd", "siegel"],
               allowedOrigins: ["https://lausiklauskn-png.github.io"],
               repoUrl: "https://github.com/lausiklauskn-png/BookLedgerPro",
             });
           } catch (e) { console.warn("[BLP-SBKIM] Widget-Init übersprungen:", e); }
+        }
+
+        // Modul 15 Membran (Außenhülle / Fremdzugriff-Lampe) + Modul 16 Siegel
+        // (Selbst-Bezeugung). Nach dem Widget, damit die Proxy-Spans bereitstehen.
+        // Das Siegel rendert NUR, wenn die Pflicht-Module 01/02/03/04/05/07/15
+        // wirklich geladen sind (Anti-Greenwashing). Fail-soft.
+        if (window.SbkimMembrane && typeof SbkimMembrane.init === "function") {
+          try {
+            await SbkimMembrane.init({
+              allowedOrigins: ["https://lausiklauskn-png.github.io"],
+            });
+          } catch (e) { console.warn("[BLP-SBKIM] Membran-Init übersprungen:", e); }
+        }
+        if (window.SbkimSiegel && typeof SbkimSiegel.init === "function") {
+          try {
+            SbkimSiegel.init({
+              badgeSelector: "#sbkim-siegel-badge",
+              repoUrl: "https://github.com/lausiklauskn-png/BookLedgerPro",
+            });
+          } catch (e) { console.warn("[BLP-SBKIM] Siegel-Init übersprungen:", e); }
         }
 
         if (window.SbkimApoptose && typeof SbkimApoptose.init === "function") {
