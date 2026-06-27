@@ -36,5 +36,20 @@
 
   <!-- Build-frei: native ES-Module, keine CDNs (offline-first). -->
   <script type="module" src="./src/main.js"></script>
+
+  <!-- SBKIM Andock-Runtime + Auto-Lauschen (Stufe 2, 2026-06-27) — additiv.
+       Acht Module byte-identisch aus Sage src/modules/ kopiert (Modul-09-Regel:
+       kopieren, nicht modifizieren). 05b als type=module (importiert noble relativ).
+       sbkim-init.js startet nach Anastomose.init() fail-soft listenNostr() —
+       Empfangsmodus mit Antwortrecht. Betrifft NUR die SBKIM-Identität, nie
+       Buchhaltungsdaten. -->
+  <script src="./sbkim/01_storage.js"></script>
+  <script src="./sbkim/02_spore.js"></script>
+  <script src="./sbkim/03_embedding.js"></script>
+  <script src="./sbkim/04_match.js"></script>
+  <script src="./sbkim/05_anastomose.js"></script>
+  <script src="./sbkim/07_apoptose.js"></script>
+  <script type="module" src="./sbkim/05b_nostr_relay.js"></script>
+  <script src="./sbkim/sbkim-init.js"></script>
 </body>
 </html>
