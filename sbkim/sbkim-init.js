@@ -46,6 +46,20 @@
         if (!window.SbkimStorage) return; // Module nicht geladen — still aussteigen.
         await SbkimStorage.init({ dbSuffix: DB_SUFFIX });
 
+        // Modul 17 Floating-Widget — schlankes Lampen-Design (LEBT/VERKEHR/FREMD),
+        // self-mountend, verschiebbar, schließbar. Klick auf VERKEHR zeigt die
+        // letzten 10 Handshakes/Knoten. Betrifft NUR die SBKIM-Statusanzeige,
+        // nie Buchhaltungsdaten. Fail-soft.
+        if (window.SbkimWidget && typeof SbkimWidget.init === "function") {
+          try {
+            await SbkimWidget.init({
+              slots: ["lebt", "verkehr", "fremd"],
+              allowedOrigins: ["https://lausiklauskn-png.github.io"],
+              repoUrl: "https://github.com/lausiklauskn-png/BookLedgerPro",
+            });
+          } catch (e) { console.warn("[BLP-SBKIM] Widget-Init übersprungen:", e); }
+        }
+
         if (window.SbkimApoptose && typeof SbkimApoptose.init === "function") {
           try { await SbkimApoptose.init(); }
           catch (e) { console.warn("[BLP-SBKIM] Apoptose-Init übersprungen:", e); }
@@ -61,7 +75,11 @@
             window.SbkimNostrRelay) {
           try {
             SbkimAnastomose.listenNostr()
-              .then(function () { console.info("[BLP-SBKIM] Auto-Lauschen aktiv (Empfangsmodus mit Antwortrecht)."); })
+              .then(function () {
+                console.info("[BLP-SBKIM] Auto-Lauschen aktiv (Empfangsmodus mit Antwortrecht).");
+                // Sichtbar im Widget: VERKEHR-Lampe ruhig grün (= lauscht).
+                try { window.dispatchEvent(new CustomEvent("sbkim:nostr-listening", { detail: { active: true } })); } catch (e) {}
+              })
               .catch(function (e) { console.warn("[BLP-SBKIM] Auto-Lauschen übersprungen:", e); });
           } catch (e) { console.warn("[BLP-SBKIM] Auto-Lauschen übersprungen:", e); }
         }
