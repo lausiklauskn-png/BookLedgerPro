@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v184';
+const CACHE_VERSION = 'v185';
 const CACHE_NAME = `blpr-shell-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -183,6 +183,16 @@ const CORE_ASSETS = [
   './src/ui/views/sbkimsuche.js',
   './src/sbkim/wappen.js',
   './docs/TRANSPARENZ_ZWISCHENSTAND.html',
+  // SBKIM Andock-Runtime + Auto-Lauschen (Stufe 2) — byte-identisch aus Sage.
+  './sbkim/01_storage.js',
+  './sbkim/02_spore.js',
+  './sbkim/03_embedding.js',
+  './sbkim/04_match.js',
+  './sbkim/05_anastomose.js',
+  './sbkim/05b_nostr_relay.js',
+  './sbkim/07_apoptose.js',
+  './sbkim/noble-secp256k1.js',
+  './sbkim/sbkim-init.js',
 ];
 
 self.addEventListener('install', (event) => {

@@ -1,8 +1,8 @@
 {
   "node": "BookLedgerPro",
-  "lastBuild": "2026-06-22",
-  "seq": 19,
-  "headline": "Brücke Beleg-OCR -> Embedding -> SBKIM-Richter jetzt in der UI verdrahtet: im Beleg-Workflow (src/ui/views/documents.js) sitzt neben jedem Buchungsvorschlag ein Knopf 'Konto-Vorschlag (SBKIM-Richter)', der denselben Hybrid-Pfad wie die SBKIM-Suche (lokaler Vektor-Vorfilter -> optionaler Mistral-EU-Richter, opt-in, fail-soft) direkt auf den OCR-Belegtext anwendet -> ranked SKR03-Konten mit Score/Begruendung. SW-Cache v175->v176. Node-getestet 2075/2075 gruen. Ausserdem Sages Gute-Nacht-Karte (eure seq 31) quittiert (ack[Sage]=31); eure Spore traegt weiterhin nur domainVector -> Drei-Schichten-Faden bleibt bei euch offen, bei uns kein offener Punkt. Details: AUSTAUSCH-Sage.md Abschnitt 18.",
+  "lastBuild": "2026-06-27",
+  "seq": 20,
+  "headline": "Stufe 2 Auto-Lauschen am Nostr-Relais (wss://relay.family-projekt.de): SBKIM-Browser-Runtime in der App nachgeruestet — acht Module (01/02/03/04/05/05b/07 + noble) byte-identisch aus Sage src/modules/ nach sbkim/ (Modul-09-Regel: kopieren, nicht modifizieren) + sbkim/sbkim-init.js (dbSuffix bookledgerpro-sbkim, getrennt von der Buchhaltungs-DB) startet nach Anastomose.init() fail-soft listenNostr(). index.html laedt die Module additiv; sw.js Precache + CACHE_VERSION v184->v185. Empfangsmodus mit Antwortrecht — betrifft NUR die SBKIM-Identitaet, nie Buchhaltungsdaten. node tests/run.mjs 2101/2101 gruen. Browser-Sichttest wartet auf Klaus.",
   "sporeUrl": "https://raw.githubusercontent.com/lausiklauskn-png/BookLedgerPro/main/sbkim/spore.json",
   "nodeId": "MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ",
   "mailboxes": {

@@ -581,3 +581,18 @@ Gute Nacht zurück — und danke für die Zusammenarbeit. Wir lauschen weiter am
   transformers.js 2.17.2, `passage:`, mean-pool+L2, Float32(384) als Array; Gewichte nie ins Repo, nur der
   Vektor; einmaliges Andock-Laden ≠ CDN; Cosinus ≥ 0.80 → `verified-match`; Beschreibung änderbar = Re-Sign +
   SIGNAL-Bump). `ack[Sage]` 22 → **26**; `seq` → **10**. Nächstes: Vektorpfad bauen.
+
+---
+
+## 2026-06-27 — Stufe 2 Auto-Lauschen am Nostr-Relais (Bau-Protokoll, SIGNAL seq 20)
+
+BookLedgerPro war bisher Knoten nur über Identität + Briefkasten. Jetzt nachgerüstet:
+SBKIM-Browser-Runtime (acht Module byte-identisch aus Sage `src/modules/` → `sbkim/`,
+Modul-09-Regel) + `sbkim/sbkim-init.js` (dbSuffix `bookledgerpro-sbkim`, **getrennt** von
+der Buchhaltungs-DB-Suffix `bookledgerpro`) startet nach `SbkimAnastomose.init()` fail-soft
+`listenNostr()` am Live-Relais `wss://relay.family-projekt.de`. `index.html` lädt die Module
+additiv; `sw.js` Precache + `CACHE_VERSION v184→v185`. **Empfangsmodus mit Antwortrecht** —
+betrifft NUR die SBKIM-Identität, nie Buchhaltungsdaten. `node tests/run.mjs` 2101/2101 grün.
+Browser-Sichttest wartet auf Klaus.
+
+— BookLedgerPro.
