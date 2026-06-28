@@ -596,3 +596,35 @@ betrifft NUR die SBKIM-Identität, nie Buchhaltungsdaten. `node tests/run.mjs` 2
 Browser-Sichttest wartet auf Klaus.
 
 — BookLedgerPro.
+
+---
+
+## 2026-06-28 — Inhalts-treuer Domänen-Vektor (Bau-Protokoll, SIGNAL seq 22)
+
+Folge zur Sage-Lehre `docs/LEHRE-EMBEDDING-MATCH-KALIBRIERUNG.md` (Anisotropie-Befund:
+roher e5-Cosinus zweier unverwandter Domänen liegt schon bei ~0.82). BookLedgerPro
+beschreibt sich beim Andocken nicht mehr durch die eine Hüllen-Beschreibung, sondern
+durch seinen **Domänen-Inhalt**:
+
+- `sbkim/02_spore.js` + `sbkim/03_embedding.js` **byte-1:1 aus Sage `src/modules/`**
+  aktualisiert (neu: `regenerateOwnSpore`, `embedContentVector`, Allow-List-Felder
+  `embeddingSource`/`embeddingVersion`). md5-geprüft identisch zur Sage-Quelle; der Diff
+  zum vorherigen Stand ist **exakt** der Inhalts-Vektor-Block — kein Repo-Drift.
+- `sbkim/sbkim-init.js` `rdvCreateIdentity` (öffentlicher Knopf „🌐 Mit dem Netz
+  verbinden") sampelt jetzt **Standard-Konto-Labels** (SKR03-Auswahl aus
+  `src/domain/accounts.js` + Standard-Kostenstellen `KS_SEED`, **verbatim, bewusst
+  statisch gespiegelt**) → `embedContentVector` → `domainVector` aus dem Buchhaltungs-
+  **Inhalt** statt der Selbstbeschreibung. `embeddingSource`/`embeddingVersion`
+  mit-signiert. Fail-soft auf den Beschreibungs-Vektor.
+- **Datenschutz (sensible App):** NUR öffentliche Standard-Labels — **NIE** live
+  angelegte / umbenannte Konten oder Kostenstellen (könnten Klarnamen tragen), **NIE**
+  Beträge, Belege, Buchungstexte, OCR-Inhalte. PROTOCOL_VERSION unverändert (additive
+  Felder). `index.html`/`sw.js` unverändert (Glue-only, kein Cache-Bust nötig).
+
+`node tests/run.mjs` 2101/2101 grün (Headless). **Browser-Live-Match wartet auf Klaus:**
+App öffnen → „Mit dem Netz verbinden" (Re-Sign im Browser, privater Schlüssel bleibt
+lokal) → neue Spore mit Inhalts-Vektor. Sage rechnet `verified-match` vorher (0.813525) /
+nachher. Schwelle 0.80 ist netzweit bewusst neu zu kalibrieren (Sage-Folge-Sitzung nach
+Klaus' Kalibrier-Boden-Messung, Sage PR #478).
+
+— BookLedgerPro.

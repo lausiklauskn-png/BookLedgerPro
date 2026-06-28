@@ -127,18 +127,89 @@
     domainDescription: "Offline-first, verschlüsselte Buchhaltung: Belege, Konten, USt/EÜR, GoBD, Aufträge.",
     domainKeywords: ["Buchhaltung", "Beleg", "Konto", "Rechnung", "USt", "EÜR", "GoBD", "Kostenstelle", "Offline", "Verschlüsselung"],
   };
+
+  // ── Inhalts-treuer domainVector (Brief 2026-06-28) ──────────────────────────
+  // Statt der EINEN Hüllen-Beschreibung (Marketing-Satz oben) beschreibt sich der
+  // Knoten durch seinen DOMÄNEN-INHALT: die Standard-Kontenrahmen-Labels
+  // (SKR03-Auswahl) + Standard-Kostenstellen. Das ist der „vom Inhalt statt von
+  // der Hülle"-Pfad der Lehre (Sage docs/LEHRE-EMBEDDING-MATCH-KALIBRIERUNG.md).
+  //
+  // DATENSCHUTZ (BookLedgerPro ist eine sensible App):
+  //   • NUR unkritische STANDARD-Labels — verbatim aus src/domain/accounts.js
+  //     (SKR03_SEED) + src/domain/crm-store.js (KS_SEED). Öffentliches Buchhaltungs-
+  //     Vokabular, kein Nutzer-Datum.
+  //   • BEWUSST STATISCH gespiegelt: live angelegte / umbenannte Konten oder
+  //     Kostenstellen könnten Klarnamen (Kunden, Lieferanten) tragen → werden
+  //     NIE eingebettet. Beträge, Belege, Buchungstexte, OCR-Inhalte ohnehin NIE.
+  //   • sbkim-init.js ist ein klassisches Skript (kein ES-Modul-Import), darum
+  //     hier gespiegelt statt aus accounts.js gelesen — und damit zugleich von
+  //     jedem Live-Nutzer-Datum entkoppelt.
+  var STANDARD_KONTO_LABELS = [
+    "Kasse", "Bank", "Forderungen aus Lieferungen und Leistungen",
+    "Abziehbare Vorsteuer 19%", "Umsatzsteuer 19%", "Umsatzsteuer-Vorauszahlungen",
+    "Verbindlichkeiten aus Lieferungen und Leistungen", "Eigenkapital",
+    "Privatentnahmen allgemein", "Wareneingang 19% Vorsteuer", "Löhne und Gehälter",
+    "Miete", "Gas, Strom, Wasser", "Versicherungen", "Fahrzeugkosten", "Werbekosten",
+    "Reisekosten Unternehmer", "Bewirtungskosten (abzugsfähig 70%)",
+    "Abschreibungen auf Sachanlagen", "Porto", "Telefon", "Bürobedarf",
+    "Fortbildungskosten", "Rechts- und Beratungskosten", "Buchführungskosten",
+    "Sonstige betriebliche Aufwendungen", "Erlöse 19% USt", "Provisionserlöse",
+    "Steuerfreie Umsätze §4 UStG",
+    // Standard-Kostenstellen (KS_SEED) — generische Bereichs-Labels, kein PII.
+    "Allgemein", "Vertrieb", "Produktion",
+  ];
+  function sampleContent() {
+    var out = [];
+    try {
+      for (var i = 0; i < STANDARD_KONTO_LABELS.length && out.length < 32; i++) {
+        var t = String(STANDARD_KONTO_LABELS[i] || "").trim();
+        if (t.length) out.push(t);
+      }
+    } catch (e) { /* fail-soft */ }
+    return out;
+  }
+  // Hüllen-Vektor (Selbstbeschreibung) — der Fallback, wenn der Inhalts-Pfad
+  // nicht greift (Funktion fehlt / leere Stichprobe / Fehler).
+  function embedDescriptionVector() {
+    return window.SbkimEmbedding
+      .embedPassage(RDV_CFG.domainDescription + ". " + RDV_CFG.domainKeywords.join(", "))
+      .then(function (vec) { return { vec: vec, source: "description" }; });
+  }
+
   function rdvCreateIdentity() {
     if (!window.SbkimEmbedding || !window.SbkimSpore) {
       return Promise.reject(new Error("Module 02/03 nicht geladen."));
     }
     return window.SbkimEmbedding.init()
       .then(function () {
-        return window.SbkimEmbedding.embedPassage(RDV_CFG.domainDescription + ". " + RDV_CFG.domainKeywords.join(", "));
+        // Inhalts-Vektor bevorzugen (Domänen-Labels), fail-soft auf Beschreibung.
+        if (typeof window.SbkimEmbedding.embedContentVector === "function") {
+          var samples = sampleContent();
+          if (samples.length) {
+            return window.SbkimEmbedding.embedContentVector(samples)
+              .then(function (res) {
+                if (res && res.vector) {
+                  if (window.console && console.info) {
+                    console.info("[BLP-SBKIM] Inhalts-Vektor aus " + samples.length + " Standard-Konto-Labels erzeugt (kein PII).");
+                  }
+                  return { vec: res.vector, source: "content" };
+                }
+                return embedDescriptionVector();
+              })
+              .catch(function (e) {
+                if (window.console && console.warn) console.warn("[BLP-SBKIM] embedContentVector — Fallback auf Beschreibung:", e);
+                return embedDescriptionVector();
+              });
+          }
+        }
+        return embedDescriptionVector();
       })
-      .then(function (vec) {
+      .then(function (r) {
         return window.SbkimSpore.generateOwnSpore({
           domain: RDV_CFG.domain, endpoint: RDV_CFG.endpoint, nodeType: RDV_CFG.nodeType, nodeName: RDV_CFG.nodeName,
-          domainDescription: RDV_CFG.domainDescription, domainKeywords: RDV_CFG.domainKeywords, domainVector: Array.from(vec),
+          domainDescription: RDV_CFG.domainDescription, domainKeywords: RDV_CFG.domainKeywords,
+          domainVector: Array.from(r.vec),
+          embeddingSource: r.source, embeddingVersion: 1,
         });
       });
   }
