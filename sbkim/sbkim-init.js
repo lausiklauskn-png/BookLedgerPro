@@ -111,9 +111,49 @@
     })();
   }
 
+  // ── Modul 23 Rendezvous — öffentlicher Floating-Knopf „🌐 Mit dem Netz
+  // verbinden" (Klaus 2026-06-28: sofort öffentlich, eigener kleiner Knopf).
+  // UNABHÄNGIG von der Andock-Kette gemountet (soll immer erscheinen). Mechanik
+  // = geteiltes Modul 23 (SbkimRendezvous), nutzt den vorhandenen Stack lazy;
+  // createIdentity erzeugt die lebende Spore bei Bedarf (Modul 03 Embedding —
+  // schon Teil des Stacks, kein NEUES CDN — + Modul 02 generateOwnSpore) mit der
+  // Buchhaltungs-Domänen-Beschreibung. Verfassungstreu: nutzer-ausgelöst, kein
+  // Auto-Connect. EU-/BYOK-Leitplanken unberührt (Embedding ist lokales Modell).
+  var RDV_CFG = {
+    nodeName: "BookLedgerPro",
+    domain: "BookLedgerPro-Buchhaltung",
+    endpoint: "https://lausiklauskn-png.github.io/BookLedgerPro/",
+    nodeType: "hybrid",
+    domainDescription: "Offline-first, verschlüsselte Buchhaltung: Belege, Konten, USt/EÜR, GoBD, Aufträge.",
+    domainKeywords: ["Buchhaltung", "Beleg", "Konto", "Rechnung", "USt", "EÜR", "GoBD", "Kostenstelle", "Offline", "Verschlüsselung"],
+  };
+  function rdvCreateIdentity() {
+    if (!window.SbkimEmbedding || !window.SbkimSpore) {
+      return Promise.reject(new Error("Module 02/03 nicht geladen."));
+    }
+    return window.SbkimEmbedding.init()
+      .then(function () {
+        return window.SbkimEmbedding.embedPassage(RDV_CFG.domainDescription + ". " + RDV_CFG.domainKeywords.join(", "));
+      })
+      .then(function (vec) {
+        return window.SbkimSpore.generateOwnSpore({
+          domain: RDV_CFG.domain, endpoint: RDV_CFG.endpoint, nodeType: RDV_CFG.nodeType, nodeName: RDV_CFG.nodeName,
+          domainDescription: RDV_CFG.domainDescription, domainKeywords: RDV_CFG.domainKeywords, domainVector: Array.from(vec),
+        });
+      });
+  }
+  function mountRendezvous() {
+    if (!window.SbkimRendezvousUI) return;
+    try {
+      window.SbkimRendezvousUI.init({ nodeName: RDV_CFG.nodeName, corner: "bl", createIdentity: rdvCreateIdentity });
+      if (window.console && console.info) console.info("[BLP-SBKIM] Rendezvous-UI gemountet (öffentlicher 🌐-Knopf).");
+    } catch (e) { if (window.console && console.warn) console.warn("[BLP-SBKIM] Rendezvous-UI übersprungen:", e); }
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
+    document.addEventListener("DOMContentLoaded", function () { boot(); mountRendezvous(); });
   } else {
     boot();
+    mountRendezvous();
   }
 })();
