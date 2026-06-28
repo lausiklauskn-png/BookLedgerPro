@@ -13,6 +13,7 @@
  *   embedPassage(text) -> Promise<Float32Array(384)>
  *   embedQueryBatch(texts) -> Promise<Float32Array[]>
  *   embedPassageBatch(texts) -> Promise<Float32Array[]>
+ *   embedContentVector(samples, opts?) -> Promise<{vector,count,source}>  // inhalts-treuer Domänen-Vektor
  *
  * Self-check: console.info after init() succeeds — not on script load,
  * because the model download is asynchronous. See INTERFACES.md and
@@ -66,7 +67,7 @@
     if (typeof console !== "undefined" && console.info) {
       console.info(
         "MODUL 03 EMBEDDING bereit, Funktionen: " +
-        "init/isReady/embedQuery/embedPassage/embedQueryBatch/embedPassageBatch, " +
+        "init/isReady/embedQuery/embedPassage/embedQueryBatch/embedPassageBatch/embedContentVector, " +
         "Modell: " + EMBEDDING_MODEL + ", Dim: " + EMBEDDING_DIM,
       );
     }
@@ -219,6 +220,72 @@
     return result;
   }
 
+  // --- Inhalts-treuer Domänen-Vektor (2026-06-28) --------------------------
+  // Baut EINEN repräsentativen, L2-normalisierten Passage-Vektor aus vielen
+  // echten Inhalts-Schnipseln (Rezepte / Cocktails / Fach-Labels …): jeden
+  // Schnipsel einzeln einbetten (gedeckelt), den Schwerpunkt (Mittelwert)
+  // bilden, wieder normalisieren. Das ist der „beschreibe den Knoten durch
+  // seinen INHALT statt durch seine Hülle"-Pfad (Modul 18 Sub f/g, Brief
+  // 2026-06-28).
+  //
+  // Modul-Grenze: das Verketten/Mitteln von EINGABE-Texten zu einem Zentroid
+  // liegt VOR der Ähnlichkeits-Bewertung (Modul 04). Es ist KEINE Cosinus-
+  // /Match-Rechnung — die bleibt Modul 04. Hier entsteht nur ein einzelner
+  // Bedeutungs-Punkt, exakt das, was embedPassage für einen Text tut.
+  var CONTENT_SAMPLE_MAX = 32;
+
+  async function embedContentVector(samples, opts) {
+    opts = (opts && typeof opts === "object") ? opts : {};
+    if (!Array.isArray(samples)) {
+      throw makeError(
+        "EmbeddingError",
+        "embedContentVector erwartet ein Array, bekam: " + typeof samples,
+      );
+    }
+    var cap = (typeof opts.max === "number" && opts.max > 0)
+      ? Math.floor(opts.max)
+      : CONTENT_SAMPLE_MAX;
+
+    // Schnipsel → nicht-leere Strings. Objekte {label,text} werden verkettet.
+    // Leere Einträge werden fail-soft übersprungen (kein Throw je Eintrag).
+    var texts = [];
+    for (var i = 0; i < samples.length && texts.length < cap; i++) {
+      var s = samples[i];
+      var t = null;
+      if (typeof s === "string") {
+        t = s;
+      } else if (s && typeof s === "object") {
+        var label = typeof s.label === "string" ? s.label : "";
+        var body = typeof s.text === "string" ? s.text : "";
+        t = (label + " " + body).trim();
+      }
+      if (typeof t === "string" && t.trim().length > 0) texts.push(t.trim());
+    }
+    if (texts.length === 0) {
+      throw makeError(
+        "EmptyInputError",
+        "embedContentVector: keine nicht-leeren Inhalts-Schnipsel.",
+      );
+    }
+
+    var vecs = await embedPassageBatch(texts);
+    var dim = EMBEDDING_DIM;
+    var acc = new Float32Array(dim);
+    for (var v = 0; v < vecs.length; v++) {
+      var vv = vecs[v];
+      for (var d = 0; d < dim; d++) acc[d] += vv[d];
+    }
+    var norm = 0;
+    for (var k = 0; k < dim; k++) norm += acc[k] * acc[k];
+    norm = Math.sqrt(norm);
+    if (norm === 0) {
+      // Entartet (Vektoren heben sich exakt auf) — auf den ersten zurückfallen.
+      return { vector: vecs[0], count: texts.length, source: "content" };
+    }
+    for (var m = 0; m < dim; m++) acc[m] = acc[m] / norm;
+    return { vector: acc, count: texts.length, source: "content" };
+  }
+
   function embedQuery(text) {
     return embedSingle(text, EMBEDDING_QUERY_PREFIX, "embedQuery");
   }
@@ -239,6 +306,7 @@
     embedPassage: embedPassage,
     embedQueryBatch: embedQueryBatch,
     embedPassageBatch: embedPassageBatch,
+    embedContentVector: embedContentVector,
     _meta: {
       model: EMBEDDING_MODEL,
       dim: EMBEDDING_DIM,
@@ -246,6 +314,7 @@
       queryPrefix: EMBEDDING_QUERY_PREFIX,
       passagePrefix: EMBEDDING_PASSAGE_PREFIX,
       transformersCdn: TRANSFORMERS_CDN,
+      contentSampleMax: CONTENT_SAMPLE_MAX,
     },
   };
 

@@ -7,26 +7,34 @@
 
 ---
 
-## 🟢 LETZTER STAND (2026-06-28) — Modul 23 Rendezvous + öffentlicher „🌐 Mit dem Netz verbinden"-Knopf
+## 🟢 LETZTER STAND (2026-06-28) — Inhalts-treuer Domänen-Vektor (von der Hülle zum Inhalt)
 
-Branch `claude/module-23-rendezvous-rollout-zqaa8u` (zuerst frisch auf `origin/main`
-gesetzt — Achtsamkeit). Rollout des gemeinsamen Raums (Modul 23 aus Sage) auf den
-vorhandenen Andock-Stack:
+Branch `claude/rest-rollout-threshold-calibration-l6c92u` (zuerst frisch auf
+`origin/main` gesetzt — Achtsamkeit). Folge zur Sage-Lehre
+`LEHRE-EMBEDDING-MATCH-KALIBRIERUNG.md` (Anisotropie-Befund: roher e5-Cosinus zweier
+unverwandter Domänen liegt schon bei ~0.82). BookLedgerPro beschreibt sich beim
+Andocken jetzt durch seinen **Domänen-Inhalt** statt durch die Hüllen-Beschreibung:
 
-- `sbkim/23_rendezvous.js` + `sbkim/23_rendezvous_ui.js` — **byte-1:1** aus Sage.
-- `index.html` lädt beide vor `sbkim/sbkim-init.js`; `sbkim-init.js` mountet
-  `SbkimRendezvousUI` **unabhängig** (nodeName „BookLedgerPro", `createIdentity`
-  über das **vorhandene** `SbkimEmbedding`+`SbkimSpore` — Modul 03 war schon im
-  Stack, **kein neues CDN**; EU/BYOK-Leitplanken unberührt).
-- `sw.js` `CACHE_VERSION` v187 → **v188** (Shell geändert, Regel #6).
-- **Kein Doppel-Laden**; löst die Adress-Wand per Raum `sbkim-rdv`.
-- **Verifikation:** `node tests/run.mjs` **2101 grün** (unverändert), Headless-
-  Chromium: Knopf mountet, Panel toggelt, `_meta.nodeName` „BookLedgerPro".
-  §11.6 SIGNAL seq 21.
+- `sbkim/02_spore.js` + `sbkim/03_embedding.js` — **byte-1:1 aus Sage `src/modules/`**
+  aktualisiert (neu: `regenerateOwnSpore`, `embedContentVector`, Allow-List-Felder
+  `embeddingSource`/`embeddingVersion`). md5-geprüft identisch zur Sage-Quelle; Diff =
+  exakt der Inhalts-Vektor-Block, kein Repo-Drift.
+- `sbkim/sbkim-init.js` `rdvCreateIdentity` (öffentlicher Knopf „🌐 Mit dem Netz
+  verbinden") sampelt jetzt **Standard-Konto-Labels** (SKR03-Auswahl aus
+  `src/domain/accounts.js` + Standard-Kostenstellen `KS_SEED`, **verbatim, bewusst
+  statisch**) → `embedContentVector` → `domainVector` aus dem Buchhaltungs-**Inhalt**.
+  `embeddingSource`/`embeddingVersion` mit-signiert. Fail-soft auf Beschreibungs-Vektor.
+- **Datenschutz (sensible App):** NUR öffentliche Standard-Labels — **NIE** live
+  angelegte/umbenannte Konten/Kostenstellen (Klarnamen-Risiko), **NIE** Beträge,
+  Belege, Buchungstexte, OCR. PROTOCOL_VERSION unverändert (additive Felder).
+- `index.html`/`sw.js` **unverändert** (Glue-only, kein Cache-Bust nötig).
+- **Verifikation:** `node tests/run.mjs` **2101 grün**. §11.6 SIGNAL seq 22.
 
-**Nächste konkrete Schritte:** Browser-Live-Test durch Klaus (z. B. BookLedgerPro
-↔ Sage → „ETABLIERT"; nach Pull Hard-Reload wegen Service-Worker). Damit ist der
-netzweite Modul-23-Rollout in **allen** Knoten abgeschlossen.
+**Nächste konkrete Schritte:** (1) Browser-Live durch Klaus — App öffnen → „Mit dem
+Netz verbinden" (Re-Sign, privater Schlüssel bleibt lokal) → neue Spore mit Inhalts-
+Vektor; Sage rechnet `verified-match` vorher (0.813525) / nachher. (2) Schwelle 0.80
+netzweit bewusst neu kalibrieren — Sage-Folge-Sitzung nach Klaus' Kalibrier-Boden-
+Messung (Sage PR #478). **Browser-Live-Match wartet auf Klaus.**
 
 ---
 

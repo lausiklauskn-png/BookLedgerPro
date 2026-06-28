@@ -5,6 +5,31 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-06-28 — Inhalts-treuer Domänen-Vektor (SBKIM-Andock: von der Hülle zum Inhalt)
+
+**Was getan (Branch `claude/rest-rollout-threshold-calibration-l6c92u`, frisch auf `origin/main`; Tests 2101/2101):**
+- `sbkim/02_spore.js` + `sbkim/03_embedding.js` **byte-1:1 aus Sage `src/modules/`** aktualisiert —
+  neu `regenerateOwnSpore` (gleiche nodeId neu signiert) + `embedContentVector` (L2-normierter
+  Zentroid aus vielen Inhalts-Schnipseln) + Allow-List-Felder `embeddingSource`/`embeddingVersion`.
+  md5 identisch zur Sage-Quelle (Drift-Guard), Diff = exakt der Inhalts-Vektor-Block.
+- `sbkim/sbkim-init.js` `rdvCreateIdentity` (Knopf „🌐 Mit dem Netz verbinden") baut den
+  `domainVector` jetzt aus **Standard-Konto-Labels** (`sampleContent()`: SKR03-Auswahl +
+  Standard-Kostenstellen, verbatim aus `src/domain/accounts.js`/`crm-store.js`, bewusst statisch)
+  via `embedContentVector`. `embeddingSource`/`embeddingVersion` mit-signiert; fail-soft auf den
+  Beschreibungs-Vektor.
+
+**Stand:** Headless grün, byte-1:1 + JSON valide. `index.html`/`sw.js` unverändert (Glue-only).
+SIGNAL seq 21→22, AUSTAUSCH-Sage + PULS fortgeschrieben.
+
+**Datenschutz-Grenze (sensible App):** NUR öffentliche Standard-Labels eingebettet — NIE live
+angelegte/umbenannte Konten/Kostenstellen (Klarnamen-Risiko), NIE Beträge/Belege/Buchungstexte/OCR.
+
+**Offen/Nächstes:** Browser-Live durch Klaus — „Mit dem Netz verbinden" (Re-Sign, Schlüssel lokal) →
+neue Spore mit Inhalts-Vektor; Sage misst `verified-match` vorher (0.813525)/nachher. Schwelle 0.80
+netzweit neu kalibrieren (Sage-Folge nach Kalibrier-Boden-Messung). **Browser-Live-Match wartet auf Klaus.**
+
+---
+
 ## 2026-06-22 (Spät-Abend) — UI-Politur: Segment-Schalter, Inhaltsbreite 1200px, mobile Button-Reihen
 
 **Was getan (Branch `claude/bookledgerpro-ui-polish-m7ms49`, SW v183→v184, Tests 2101/2101):**
