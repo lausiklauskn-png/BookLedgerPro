@@ -7,6 +7,29 @@
 
 ---
 
+## 🟢 LETZTER STAND (2026-06-28) — Modul 23 Rendezvous + öffentlicher „🌐 Mit dem Netz verbinden"-Knopf
+
+Branch `claude/module-23-rendezvous-rollout-zqaa8u` (zuerst frisch auf `origin/main`
+gesetzt — Achtsamkeit). Rollout des gemeinsamen Raums (Modul 23 aus Sage) auf den
+vorhandenen Andock-Stack:
+
+- `sbkim/23_rendezvous.js` + `sbkim/23_rendezvous_ui.js` — **byte-1:1** aus Sage.
+- `index.html` lädt beide vor `sbkim/sbkim-init.js`; `sbkim-init.js` mountet
+  `SbkimRendezvousUI` **unabhängig** (nodeName „BookLedgerPro", `createIdentity`
+  über das **vorhandene** `SbkimEmbedding`+`SbkimSpore` — Modul 03 war schon im
+  Stack, **kein neues CDN**; EU/BYOK-Leitplanken unberührt).
+- `sw.js` `CACHE_VERSION` v187 → **v188** (Shell geändert, Regel #6).
+- **Kein Doppel-Laden**; löst die Adress-Wand per Raum `sbkim-rdv`.
+- **Verifikation:** `node tests/run.mjs` **2101 grün** (unverändert), Headless-
+  Chromium: Knopf mountet, Panel toggelt, `_meta.nodeName` „BookLedgerPro".
+  §11.6 SIGNAL seq 21.
+
+**Nächste konkrete Schritte:** Browser-Live-Test durch Klaus (z. B. BookLedgerPro
+↔ Sage → „ETABLIERT"; nach Pull Hard-Reload wegen Service-Worker). Damit ist der
+netzweite Modul-23-Rollout in **allen** Knoten abgeschlossen.
+
+---
+
 ## ✉️ BRIEF FÜR DIE NEUE SITZUNG (2026-06-22, Abend) — Demo komplett + UI/Mobil-Politur, Rest browser-zu-verifizieren
 
 > **Schnell-Andock:** CLAUDE.md (Regeln/Verträge) + ROADMAP.md + diese Datei (oben) + obersten
