@@ -133,6 +133,7 @@ import { encodingFor, buildSpeechRequest, parseTranscript, speechFehlerHinweis, 
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
+import { buildMistralOcrRequest, parseMistralOcrText, MISTRAL_OCR_MODEL } from '../src/ai/mistralOcr.js';
 import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/ai/mistral.js';
 import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, ANKER_TYP, maskierungsBericht } from '../src/ai/pseudonym.js';
 import { baueAnker } from '../src/ai/anker.js';
@@ -1588,6 +1589,15 @@ await section('Vision EU: Request-Aufbau & Antwort-Parser', () => {
   ok('PDF-Antwort (mehrseitig) geparst', parseVisionText({ responses: [{ responses: [{ fullTextAnnotation: { text: 'A' } }, { fullTextAnnotation: { text: 'B' } }] }] }) === 'A\nB');
   let threw = false; try { parseVisionText({ responses: [{ error: { message: 'BAD_KEY' } }] }); } catch { threw = true; }
   ok('Vision-Fehler wirft', threw);
+
+  // Mistral OCR (EU-Option neben Vision) — Body-/Parser-Logik.
+  const mImg = buildMistralOcrRequest('AAAA', 'image/jpeg');
+  ok('Mistral-OCR: Modell mistral-ocr-latest', mImg.model === MISTRAL_OCR_MODEL && MISTRAL_OCR_MODEL === 'mistral-ocr-latest');
+  ok('Mistral-OCR: Bild als image_url data-URL', mImg.document.type === 'image_url' && mImg.document.image_url === 'data:image/jpeg;base64,AAAA');
+  const mPdf = buildMistralOcrRequest('BBBB', 'application/pdf');
+  ok('Mistral-OCR: PDF als document_url', mPdf.document.type === 'document_url' && mPdf.document.document_url === 'data:application/pdf;base64,BBBB');
+  ok('Mistral-OCR: Text aus pages[].markdown', parseMistralOcrText({ pages: [{ markdown: 'Rechnung 119,00' }, { markdown: 'Danke' }] }) === 'Rechnung 119,00\n\nDanke');
+  ok('Mistral-OCR: leere Antwort → ""', parseMistralOcrText({}) === '');
 });
 
 await section('Mistral EU: Kontierungs-Prompt & Parser', () => {
@@ -5906,7 +5916,10 @@ await section('P2: KI-Anbieterwahl je Modus (strikt EU)', () => {
 
   // erlaubteAnbieter je Modus (KEIN neuer Anbieter).
   const ocrIds = erlaubteAnbieter('ocr').map((a) => a.id);
-  ok('OCR: nur vision + aus', ocrIds.length === 2 && ocrIds.includes('vision') && ocrIds.includes('aus'));
+  ok('OCR: vision + mistral + aus', ocrIds.length === 3 && ocrIds.includes('vision') && ocrIds.includes('mistral') && ocrIds.includes('aus'));
+  ok('OCR mistral gültig (EU-Option)', istWahlGueltig('ocr', 'mistral'));
+  ok('OCR-Wahl mistral bleibt erhalten', normalizeAnbieterWahl({ ocr: 'mistral' }).ocr === 'mistral');
+  ok('OCR-Standard bleibt vision', normalizeAnbieterWahl(null).ocr === 'vision');
   const kIds = erlaubteAnbieter('kontierung').map((a) => a.id);
   ok('Kontierung: mistral + heuristik (+aus)', kIds.includes('mistral') && kIds.includes('heuristik') && kIds.includes('aus'));
   ok('Kontierung kennt KEIN vision', !kIds.includes('vision'));

@@ -60,10 +60,13 @@ export async function aktiverKiAnbieter(modus) {
   return aktiverAnbieter(modus, (await getAiConfig()).anbieterWahl);
 }
 
-/** True, wenn die Beleg-Texterkennung (OCR) aktiv ist: Vision gewählt UND Schlüssel hinterlegt. */
+/** True, wenn die Beleg-Texterkennung (OCR) aktiv ist: ein EU-Anbieter gewählt UND passender Schlüssel hinterlegt. */
 export async function isOcrAktiv() {
   const cfg = await getAiConfig();
-  return Boolean(cfg.visionKey) && aktiverAnbieter('ocr', cfg.anbieterWahl) === 'vision';
+  const anbieter = aktiverAnbieter('ocr', cfg.anbieterWahl);
+  if (anbieter === 'vision') return Boolean(cfg.visionKey);
+  if (anbieter === 'mistral') return Boolean(cfg.mistralKey);
+  return false;
 }
 
 /** True, wenn der Steuer-Assistent (Mistral EU) aktiv ist: Mistral gewählt UND Schlüssel hinterlegt. */

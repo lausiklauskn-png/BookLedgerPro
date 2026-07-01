@@ -30,7 +30,7 @@ export const ERLAUBTE_REGIONEN = Object.freeze(['eu', 'lokal']);
  */
 export const KI_ANBIETER = Object.freeze({
   vision:    Object.freeze({ id: 'vision',    region: 'eu',    modi: ['ocr'] }),
-  mistral:   Object.freeze({ id: 'mistral',   region: 'eu',    modi: ['kontierung', 'steuer'] }),
+  mistral:   Object.freeze({ id: 'mistral',   region: 'eu',    modi: ['ocr', 'kontierung', 'steuer'] }),
   heuristik: Object.freeze({ id: 'heuristik', region: 'lokal', modi: ['kontierung'] }),
   aus:       Object.freeze({ id: 'aus',       region: 'lokal', modi: ['ocr', 'kontierung', 'steuer'] }),
 });

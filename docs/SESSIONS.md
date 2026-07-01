@@ -5,6 +5,29 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-07-01 — Mistral OCR als EU-Option neben Google Vision (Strang B2)
+
+**Was getan (Branch `claude/semantic-matching-mistral-ocr-raxbb9`, frisch auf `origin/main`; Tests 2109/2109):**
+- **Mistral OCR (EU) als wählbarer OCR-Anbieter** neben Google Vision — netzweiter B2-Rollout
+  (Sage-Brief 2026-07-01, Modul 24). Fügt sich in die vorhandene Anbieter-Registry:
+  `src/ai/anbieter.js` — Mistral-`modi` um `'ocr'` erweitert (kein neuer Anbieter, EU-Dienst gewinnt
+  einen Modus). Das registry-getriebene KI-Einstellungen-Dropdown (`shell.js` `erlaubteAnbieter('ocr')`)
+  zeigt Mistral automatisch; `STANDARD_WAHL.ocr` bleibt `vision`.
+- Neues `src/ai/mistralOcr.js` (build-frei, ES-Modul, nach SBKIM-Modul-24-Vertrag): `buildMistralOcrRequest`
+  (Bild→image_url / PDF→document_url, data-URL), `parseMistralOcrText` (pages[].markdown|text),
+  `ocrMistral(input, key)` (POST `api.mistral.ai/v1/ocr`, `mistral-ocr-latest`, Bearer BYOK), `testMistralOcr`.
+- `src/ai/vision.js` `ocr()` dispatcht jetzt: `mistral` → `ocrMistral(cfg.mistralKey)`, `vision` → Vision,
+  sonst „aus". `aiConfig.js` `isOcrAktiv()` erkennt beide EU-Pfade (visionKey **oder** mistralKey).
+  Der vorhandene „Mistral"-Verbindungstest in den Einstellungen deckt den (geteilten) Schlüssel ab.
+- `sw.js` `CACHE_VERSION` v188 → v189. Tests `node tests/run.mjs` **2109/2109 grün** (+9: Registry-OCR-Liste,
+  normalizeAnbieterWahl(ocr:mistral), Mistral-OCR Body/Parser Bild+PDF+leer).
+
+**Stand:** EU-KI-Disziplin gewahrt (Mistral = EU/Frankreich, BYOK, opt-in, kein Schlüssel im Code, kein PII);
+Vision bleibt Default. Build-frei, keine CDNs.
+
+**Offen/Nächstes:** Browser-Sichttest (OCR-Anbieter „Mistral" wählen + echten Beleg scannen) — wartet auf
+Klaus. Optional: eigener OCR-spezifischer Verbindungstest (heute deckt der Mistral-Text-Test den Schlüssel ab).
+
 ## 2026-06-28 — Inhalts-treuer Domänen-Vektor (SBKIM-Andock: von der Hülle zum Inhalt)
 
 **Was getan (Branch `claude/rest-rollout-threshold-calibration-l6c92u`, frisch auf `origin/main`; Tests 2101/2101):**

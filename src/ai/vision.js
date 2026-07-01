@@ -10,6 +10,7 @@
 
 import { getAiConfig } from './aiConfig.js';
 import { aktiverAnbieter } from './anbieter.js';
+import { ocrMistral } from './mistralOcr.js';
 
 export const VISION_BASE = 'https://eu-vision.googleapis.com/v1';
 
@@ -53,7 +54,10 @@ export function parseVisionText(json) {
  */
 export async function ocr(input) {
   const cfg = await getAiConfig();
-  if (aktiverAnbieter('ocr', cfg.anbieterWahl) !== 'vision') throw new Error('OCR-Anbieter ist ausgeschaltet (KI-Einstellungen)');
+  const anbieter = aktiverAnbieter('ocr', cfg.anbieterWahl);
+  // Mistral OCR (EU) als Alternative zu Google Vision (KI-Einstellungen).
+  if (anbieter === 'mistral') return ocrMistral(input, cfg.mistralKey);
+  if (anbieter !== 'vision') throw new Error('OCR-Anbieter ist ausgeschaltet (KI-Einstellungen)');
   if (!cfg.visionKey) throw new Error('Kein Google-Vision-Schlüssel hinterlegt (EU)');
   const { endpoint, body } = buildVisionRequest(input.base64, input.mimeType);
   const res = await fetch(`${VISION_BASE}/${endpoint}?key=${encodeURIComponent(cfg.visionKey)}`, {
