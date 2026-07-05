@@ -1,6 +1,6 @@
 # Übergabe von Tomy-WorkFloh an BLP — Datenvertrag v1 (2026-07-05)
 
-Klaus' Wunsch: Ein im **Tomy-Werkzeugverbund** (`yami-kreativ26`, gleicher
+Klaus' Wunsch: Ein im **Tomy-Werkzeugverbund** (`Tomys-Hub`, gleicher
 GitHub-Pages-Origin) fertig bearbeiteter Werkstatt-Auftrag soll „nach Erledigt"
 in die große Buchhaltung (BLP) zur **Rechnungserstellung** wandern.
 
