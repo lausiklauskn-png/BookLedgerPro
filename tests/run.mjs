@@ -6046,5 +6046,32 @@ await section('P8: QR-Encoder (build-frei, lokal)', () => {
   ok('SVG escaped Optionswerte', !svgEsc.includes('"><x') && svgEsc.includes('&quot;'));
 });
 
+// ── Übergabe von Tomy-WorkFloh (docs/UEBERNAHME_TOMY.md, Datenvertrag v1) ──
+{
+  const { parseUebernahmeParam, merkeUebernahme, consumeUebernahme, peekUebernahme } =
+    await import('../src/domain/uebernahmeExtern.js');
+  const b64u = (obj) => Buffer.from(JSON.stringify(obj), 'utf-8').toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const gut = { v: 1, quelle: 'tomy-workfloh', titel: 'Vereins-Tassen', kundeName: 'SV Blau-Weiß 09',
+    auftragNr: '2026-0001', angebotsNr: 'A-2026-0001',
+    positionen: [{ beschreibung: 'Tasse 11oz bedruckt (Digitaldruck)', menge: 10, einzelpreisCent: 1290, ustSatz: 19 }] };
+  const u = parseUebernahmeParam('?uebernahme=' + b64u(gut));
+  ok('Übernahme v1 wird geparst', !!u && u.titel === 'Vereins-Tassen' && u.positionen.length === 1);
+  ok('Übernahme: Position übernommen (Cent/USt/Menge)',
+    u.positionen[0].einzelpreisCent === 1290 && u.positionen[0].ustSatz === 19 && u.positionen[0].menge === 10);
+  ok('Übernahme: falsche Version → null', parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, v: 2 })) === null);
+  ok('Übernahme: fremde Quelle → null', parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'boese-app' })) === null);
+  ok('Übernahme: Müll → null (fail-soft)', parseUebernahmeParam('?uebernahme=%%%nicht-base64%%%') === null);
+  ok('Übernahme: ohne Parameter → null', parseUebernahmeParam('?foo=1') === null);
+  const lang = parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, titel: 'X'.repeat(500),
+    positionen: Array.from({ length: 40 }, () => ({ beschreibung: 'P', menge: -5, einzelpreisCent: 9e12, ustSatz: 33 })) }));
+  ok('Übernahme: Härtung kappt (Titel 140, max 20 Pos, Werte geclampt)',
+    lang.titel.length === 140 && lang.positionen.length === 20 &&
+    lang.positionen[0].menge === 0 && lang.positionen[0].einzelpreisCent === 100000000 && lang.positionen[0].ustSatz === 19);
+  merkeUebernahme(u);
+  ok('Übernahme: peek lässt liegen', peekUebernahme() === u);
+  ok('Übernahme: consume verbraucht', consumeUebernahme() === u && peekUebernahme() === null);
+}
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);

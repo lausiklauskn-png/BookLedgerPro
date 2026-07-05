@@ -772,6 +772,7 @@ const STRINGS = {
 
     'angebote.title': 'Angebote',
     'angebote.intro': 'Kalkulation rein intern, Angebot neutral nach außen: kein Kunde sieht je Marge oder Selbstkosten. Eigener, freier Nummernkreis (AN-JJJJ-NNNN) — getrennt vom §14-Rechnungskreis.',
+    'angebote.uebernahme': 'Übernahme aus Tomy-WorkFloh: „%TITEL%" (Kunde: %KUNDE%, Nr. %NR%) — Formular ist vorbefüllt. Bitte prüfen, Kunde zuordnen und anlegen; gespeichert wird nichts automatisch.',
     'angebote.activeTitle': 'Aktive Angebote',
     'angebote.archivTitle': 'Archiv',
     'angebote.empty': 'Noch keine Angebote.',
@@ -1981,6 +1982,7 @@ const STRINGS = {
     'crm.importError': 'Could not read the file.',
     'angebote.title': 'Quotes',
     'angebote.intro': 'Costing stays internal, the quote is neutral to the outside: no customer ever sees margin or cost. Own free number range (AN-YYYY-NNNN) — separate from the §14 invoice range.',
+    'angebote.uebernahme': 'Handover from Tomy-WorkFloh: "%TITEL%" (customer: %KUNDE%, no. %NR%) — the form is pre-filled. Please review, assign the customer and create; nothing is saved automatically.',
     'angebote.activeTitle': 'Active quotes',
     'angebote.archivTitle': 'Archive',
     'angebote.empty': 'No quotes yet.',

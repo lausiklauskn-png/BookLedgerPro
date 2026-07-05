@@ -929,7 +929,9 @@ Relevante Dateien für V2: `src/domain/accounts.js` (Konten 1577/1787 + rolle),
 
 ---
 
-**Letzte Aktualisierung:** 2026-06-18 (Zeit-Zuordnungs-UI je Kostenträger, BAUPLAN Block 2 Folgeschritt) · **Branch (diese PR):** `claude/bookledgerpro-bauplan-block2-r7b23o`
+**Letzte Aktualisierung:** 2026-07-05 · **Branch:** `claude/sublimation-digitaldruck-rename-00nctv`
+· **Tests:** `node tests/run.mjs` → **2118/2118 grün** · **SW-Cache:** `v190`
+· **Neu:** Übergabe aus Tomy-WorkFloh (`docs/UEBERNAHME_TOMY.md`, Formular-Vorbefüllung Angebote)
 · **Tests:** `node tests/run.mjs` → **1483/1483 grün**
 · **SW-Cache:** `v122` · **115 JS-Module** · **12 Bild- + 5 Icon-Assets** · **Fahrplan V1–V10 ✅ · A (M1–M3) ✅ · B (B1–B3) ✅ · BAUPLAN Block 1 KOMPLETT (Schritt 1 + 2a/2b/2c + 2d Demo-Vorbefüllung + 3) · Block 2/Schritt 4 (`rechnungsstelle`) ✅ · Schritt 5 (Kalkulations-Kern) ✅ · Schritt 6 (Produkt-Schemata) ✅ · Schritt 7 (Angebote-Kern) ✅ · Schritt 8 (Angebot → Rechnung-Übernahme, rein) ✅ · Schritt 8-UI „Rechnung aus Angebot" ✅ · Schritt 9 (Auftrags-Kostenträger + Nachkalkulation) ✅ · Schritt 10 (Kalibrierung + Statistik/Vergleich) ✅ · Schritt 11a (Adaptiver Baukasten — reine Logik) ✅ · Schritt 11b (Adaptiver Baukasten — UI) ✅ · Nachkalkulation/Kalibrierung-UI ✅ · Standard-konto→Kostenart-Zuordnung ✅ · Kalibrierte Vorwärtskalkulation im Angebots-Editor ✅ · Zeit-Zuordnungs-UI je Kostenträger ✅ → Block 2 inkl. aller UIs/Folgeschritte komplett**
 · **Mehr-Sitzungs-Plan:** `docs/BAUPLAN.md` (nächste optional, verbleibend = echte Zeiterfassung-/Beleg-Zuordnungs-UI je Auftrag).

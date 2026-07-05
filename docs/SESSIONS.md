@@ -5,6 +5,36 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-07-05 — Übergabe aus Tomy-WorkFloh: Angebots-Formular per URL vorbefüllen
+
+**Was getan (Branch `claude/sublimation-digitaldruck-rename-00nctv`, frisch auf `origin/main`; Tests 2118/2118):**
+- **Klaus' Wunsch:** fertig bearbeitete Werkstatt-Aufträge aus dem Tomy-Verbund
+  (`yami-kreativ26`, gleicher Pages-Origin) sollen „nach Erledigt" in BLP zur
+  Rechnungserstellung. Spec zuerst: **`docs/UEBERNAHME_TOMY.md`** (Datenvertrag v1).
+- Neues `src/domain/uebernahmeExtern.js` (REIN, node-getestet): `parseUebernahmeParam`
+  härtet die URL-Daten (Quelle-Whitelist `tomy-workfloh`, v===1, Längen-/Wertegrenzen,
+  max. 20 Positionen, USt nur 0/7/19, >20 kB → null) + RAM-Ablage mit
+  Verbrauchs-Semantik (`merke/consume/peek`).
+- Glue minimal: `shell.js` fängt `?uebernahme=` beim Laden ein, säubert die URL
+  (replaceState) und stellt die Route auf **Angebote**; `views/angebote.js` befüllt
+  daraus NUR das Formular vor (`neuesAngebot({titel, positionen})`) + Hinweis-Banner
+  (i18n de/en `angebote.uebernahme`). **Kein Auto-Speichern, keine Nummernvergabe** —
+  ab da gilt die bestehende Angebot→Rechnungs-Entwurf-Strecke (GoBD unberührt).
+- Gegenstück in `yami-kreativ26/workfloh`: Knopf „🧾 Rechnung in BLP" (sichtbar ab
+  fertig/übergeben bzw. erledigt/archiviert), baut den v1-Payload aus dem Auftrag
+  (Titel, Kunde, Auftrags-/Angebots-Nr., Katalog-Position mit Cent-Preis).
+
+**Stand:** `node tests/run.mjs` **2118/2118** (9 neue Übernahme-Proben: Parser,
+Härtung, fail-soft, consume). Ende-zu-Ende headless bewiesen: Tomy-Knopf → URL →
+`parseUebernahmeParam` liefert exakt die Auftragsdaten. SW `v189`→`v190`.
+**Nicht geprüft:** Browser-Lauf der vorbefüllten Angebote-Ansicht (DOM/IndexedDB;
+statisch geprüft) — wartet auf Klaus' Tablet.
+
+**Offen/Nächstes:** Klaus' Sichttest des Übergabe-Flusses (Tomy → BLP entsperren →
+Angebote-Banner + Formular). v2-Ideen (Rechnungs-Nr. zurück an Tomy) nur auf Klaus' Wort.
+
+---
+
 ## 2026-07-01 — Mistral OCR als EU-Option neben Google Vision (Strang B2)
 
 **Was getan (Branch `claude/semantic-matching-mistral-ocr-raxbb9`, frisch auf `origin/main`; Tests 2109/2109):**
