@@ -35,6 +35,7 @@ import { ladeKalibrierungFaktoren } from '../../domain/nachkalkulation-store.js'
 import { darfAngebotUebernehmen } from '../../domain/angebotUebernahme.js';
 import { listKunden, listKostenstellen, ensureKostenstellenSeeded } from '../../domain/crm-store.js';
 import { getSettings, updateSettings } from '../../state.js';
+import { consumeUebernahme } from '../../domain/uebernahmeExtern.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
@@ -45,6 +46,7 @@ let _editId = null;            // id des bearbeiteten gespeicherten Angebots (nu
 let _openSchemaId = null;      // welche Baukasten-Karte ihr Eingabe-Formular geöffnet hat
 let _dragFrom = null;          // Quell-Index beim Drag-and-drop der Positionsliste
 let _kalibrierung = null;      // { faktorWerte, anzahlVergleiche } aus der Historie (oder null)
+let _uebernahmeHinweis = null; // Banner-Text nach Übergabe aus Tomy-WorkFloh (einmalig)
 // Interne Zuschläge (Gemeinkosten/Gewinn) — gelten beim Hinzufügen einer Position. Reine
 // INTERN-Größen (Prime Directive): sie steuern die Kalkulation, stehen NIE im Angebot.
 let _zuschlaege = { gemeinkostenProzent: 15, gewinnProzent: 20 };
@@ -55,6 +57,16 @@ export async function mountAngebote(host) {
   // _entwurf über Re-Mounts hinweg behalten (updateSettings → Shell-paint → mountAngebote):
   // sonst ginge das in Arbeit befindliche Angebot beim Persistieren des Nutzungsprofils verloren.
   if (!_entwurf) _entwurf = neuesAngebot();
+  // Übergabe aus Tomy-WorkFloh (docs/UEBERNAHME_TOMY.md): Formular vorbefüllen, mehr nicht.
+  const ext = consumeUebernahme();
+  if (ext) {
+    _entwurf = neuesAngebot({ titel: ext.titel, positionen: ext.positionen });
+    _editId = null; _openSchemaId = null;
+    _uebernahmeHinweis = t('angebote.uebernahme')
+      .replace('%TITEL%', ext.titel || '—')
+      .replace('%KUNDE%', ext.kundeName || '—')
+      .replace('%NR%', ext.auftragNr || ext.angebotsNr || '—');
+  }
   // Korrekturfaktoren aus der Historie laden (für die kalibrierte Vorwärtskalkulation).
   // Fehler dürfen die Ansicht nie blockieren — dann eben ohne Kalibrierungs-Option.
   try { _kalibrierung = await ladeKalibrierungFaktoren(); }
@@ -80,9 +92,12 @@ async function repaint(banner) {
   [_kunden, _kostenstellen] = await Promise.all([listKunden(), listKostenstellen()]);
   const angebote = await listAngebote();
   angebote.sort((a, b) => String(b.nummer || b.createdAt || '').localeCompare(String(a.nummer || a.createdAt || '')));
+  const uebernahmeBanner = _uebernahmeHinweis
+    ? el('div', { class: 'banner banner-warn', text: _uebernahmeHinweis }) : null;
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('angebote.title') }),
     el('p', { class: 'muted small', text: t('angebote.intro') }),
+    uebernahmeBanner,
     banner || null,
     editorCard(),
     listeCard(angebote.filter((a) => !istArchiviert(a)), t('angebote.activeTitle'), t('angebote.empty')),

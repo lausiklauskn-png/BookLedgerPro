@@ -16,6 +16,20 @@ import { ladeRegistry, speichereRegistry } from '../core/mandantenStore.js';
 import { aktiverMandant, mandantenAuswahlListe, umbenenneMandant, entferneMandant, validateMandantName, istSandbox, sandboxAuswahlListe, naechsterTestName } from '../domain/mandanten.js';
 import { erstelleSandboxTresor, wechsleZuSandbox, leereSandboxTresor, loescheSandboxTresor, loescheAlleSandboxes, behalteUndVerlasseSandbox } from '../core/sandboxStore.js';
 import { durabilityStatus } from '../core/durability.js';
+import { parseUebernahmeParam, merkeUebernahme } from '../domain/uebernahmeExtern.js';
+
+// Übergabe von Tomy-WorkFloh (?uebernahme=…, docs/UEBERNAHME_TOMY.md): einmal beim Laden
+// einfangen, URL sofort säubern, Route auf Angebote stellen. Vorbefüllt wird NUR das
+// Formular im Angebote-View — kein Auto-Speichern, GoBD-Pfade unberührt.
+(function captureUebernahme() {
+  try {
+    const u = parseUebernahmeParam(location.search);
+    if (!u) return;
+    merkeUebernahme(u);
+    history.replaceState(null, '', location.pathname + location.hash);
+    navigate('angebote');
+  } catch { /* fail-soft: App startet normal */ }
+})();
 import { backupJetzt, restoreWaehlen, backupEinstellungen, onDatensicherungAktion } from './datensicherung.js';
 import { mountAccounts } from './views/accounts.js';
 import { mountAnlagen } from './views/anlagen.js';
