@@ -1,10 +1,12 @@
 // src/domain/uebernahmeExtern.js
-// Übergabe von außen (Tomy-WorkFloh → BLP): Datenvertrag v1, Spec in
+// Übergabe von außen (WorkFloh → BLP): Datenvertrag v1, Spec in
 // docs/UEBERNAHME_TOMY.md. REINE Logik, node-getestet.
 //
-// WAS DAS IST: Der Tomy-Werkzeugverbund (gleicher GitHub-Pages-Origin) übergibt einen
+// WAS DAS IST: Der WorkFloh-Werkzeugverbund (gleicher GitHub-Pages-Origin) übergibt einen
 // fertig bearbeiteten Werkstatt-Auftrag per URL-Parameter `?uebernahme=<base64url(JSON)>`
-// an BLP. Diese Schicht parst und HÄRTET die Daten (Whitelist-Quelle, Versions-Check,
+// an BLP. Absender sind Tomys WorkFloh (`tomy-workfloh`) UND Mein-WorkFloh (`isd-workfloh`,
+// ISD⁺) — beide senden denselben v1-Vertrag; nur die `quelle` unterscheidet sich.
+// Diese Schicht parst und HÄRTET die Daten (Whitelist-Quelle, Versions-Check,
 // Längen-/Wertegrenzen) und hält sie im RAM bereit. Die UI (Angebote-View) befüllt damit
 // NUR das Formular vor — nichts wird automatisch gespeichert, keine Nummer vergeben,
 // GoBD-Pfade (Festschreiben, Nummernkreise) bleiben unberührt. Der Mensch prüft, legt an,
@@ -14,7 +16,7 @@
 // es wird nie HTML daraus gebaut (Views rendern über el()/textContent). Unbekannte
 // Quellen/Versionen → null (fail-soft, App startet normal).
 
-export const UEBERNAHME_QUELLEN = Object.freeze(['tomy-workfloh']);
+export const UEBERNAHME_QUELLEN = Object.freeze(['tomy-workfloh', 'isd-workfloh']);
 export const UEBERNAHME_MAX_POSITIONEN = 20;
 
 const S = (v, max) => String(v ?? '').slice(0, max).trim();

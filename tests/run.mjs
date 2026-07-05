@@ -6059,6 +6059,8 @@ await section('P8: QR-Encoder (build-frei, lokal)', () => {
   ok('Übernahme v1 wird geparst', !!u && u.titel === 'Vereins-Tassen' && u.positionen.length === 1);
   ok('Übernahme: Position übernommen (Cent/USt/Menge)',
     u.positionen[0].einzelpreisCent === 1290 && u.positionen[0].ustSatz === 19 && u.positionen[0].menge === 10);
+  ok('Übernahme: Mein-WorkFloh (isd-workfloh) akzeptiert',
+    !!parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'isd-workfloh' })));
   ok('Übernahme: falsche Version → null', parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, v: 2 })) === null);
   ok('Übernahme: fremde Quelle → null', parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'boese-app' })) === null);
   ok('Übernahme: Müll → null (fail-soft)', parseUebernahmeParam('?uebernahme=%%%nicht-base64%%%') === null);

@@ -1,8 +1,15 @@
-# Übergabe von Tomy-WorkFloh an BLP — Datenvertrag v1 (2026-07-05)
+# Übergabe von WorkFloh an BLP — Datenvertrag v1 (2026-07-05)
 
-Klaus' Wunsch: Ein im **Tomy-Werkzeugverbund** (`Tomys-Hub`, gleicher
-GitHub-Pages-Origin) fertig bearbeiteter Werkstatt-Auftrag soll „nach Erledigt"
-in die große Buchhaltung (BLP) zur **Rechnungserstellung** wandern.
+Klaus' Wunsch: Ein im **WorkFloh-Werkzeugverbund** (gleicher GitHub-Pages-Origin)
+fertig bearbeiteter Werkstatt-Auftrag soll „nach Erledigt" in die große
+Buchhaltung (BLP) zur **Rechnungserstellung** wandern.
+
+**Zwei Absender, ein Vertrag:** Tomys WorkFloh (`Tomys-Hub`, `quelle:'tomy-workfloh'`)
+**und** Mein-WorkFloh (ISD⁺, `quelle:'isd-workfloh'`) senden denselben v1-Vertrag;
+beide `quelle`-Werte sind in `UEBERNAHME_QUELLEN` freigeschaltet. Mein-WorkFloh
+schickt zusätzlich ein Feld `modus` (`angebot`/`rechnung`) mit — es wird toleriert,
+aber (bewusst) nicht ausgewertet: beide Wege landen im Angebote-View, von dort läuft
+die getestete Angebot→Rechnungs-Strecke.
 
 ## Weg (bewusst mensch-geführt, GoBD-schonend)
 
@@ -37,7 +44,7 @@ in die große Buchhaltung (BLP) zur **Rechnungserstellung** wandern.
 
 ## Härtung (Parser, node-getestet in `tests/run.mjs`)
 
-- `v !== 1` oder unbekannte `quelle` → `null` (App startet normal).
+- `v !== 1` oder **unbekannte `quelle`** (nicht `tomy-workfloh`/`isd-workfloh`) → `null` (App startet normal).
 - Strings gekappt (titel/beschreibung 140, kundeName 80, Nummern 32 Zeichen).
 - Max. 20 Positionen; `menge` 0–100 000; `einzelpreisCent` 0–1 000 000 00,
   gerundet; `ustSatz` nur 0/7/19 (sonst 19). Parameter > 20 kB → `null`.
