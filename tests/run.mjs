@@ -29,6 +29,7 @@ import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
 import { buildClassifyMessages, parseClassify } from '../src/ai/mistral.js';
+import { parseUebernahmeQuery, normalizeUebernahme } from '../src/domain/uebernahme.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -490,6 +491,37 @@ await section('Mistral EU: Kontierungs-Prompt & Parser', () => {
   ok('JSON geparst', JSON.stringify(parseClassify('{"konto":"4930","richtung":"ausgabe"}')) === '{"konto":"4930","richtung":"ausgabe"}');
   ok('JSON aus Text extrahiert', parseClassify('Antwort: {"konto":"8400","richtung":"einnahme"} ok').konto === '8400');
   ok('kein JSON -> null', parseClassify('keine Ahnung') === null);
+});
+
+await section('Übernahme aus Schwester-App (?uebernahme=, Vertrag v1)', () => {
+  // Exakt der Encoder aus Mein-WorkFloh (wfBlp): JSON → UTF-8 → base64url.
+  const encode = (payload) => btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(payload))))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const wfPayload = {
+    v: 1, quelle: 'isd-workfloh', modus: 'angebot',
+    titel: 'Schild Müller & Söhne', kundeName: 'Müller GmbH', auftragNr: '2026-0042', angebotsNr: '',
+    positionen: [{ beschreibung: 'Werbeschild 2×1 m', menge: 10, einzelpreisCent: 4990, ustSatz: 19 }],
+  };
+  const u = parseUebernahmeQuery('?uebernahme=' + encode(wfPayload));
+  ok('WorkFloh-Payload dekodiert', !!u);
+  ok('Titel/Kunde/Auftrags-Nr. übernommen', u.titel === 'Schild Müller & Söhne' && u.kundeName === 'Müller GmbH' && u.auftragNr === '2026-0042');
+  ok('Modus angebot', u.modus === 'angebot');
+  ok('Position roundtrip (Umlaut, Menge, Cent, USt)', u.positionen.length === 1
+    && u.positionen[0].beschreibung === 'Werbeschild 2×1 m'
+    && u.positionen[0].menge === 10 && u.positionen[0].einzelpreisCent === 4990 && u.positionen[0].ustSatz === 19);
+
+  ok('kein Parameter → null', parseUebernahmeQuery('?foo=bar') === null);
+  ok('leerer Query → null', parseUebernahmeQuery('') === null);
+  ok('Müll-base64 → null (kein Wurf)', parseUebernahmeQuery('?uebernahme=%%%nicht-base64%%%') === null);
+  ok('führendes ? optional', !!parseUebernahmeQuery('uebernahme=' + encode(wfPayload)));
+
+  ok('falsche Vertrag-Version → null', normalizeUebernahme({ v: 2, positionen: wfPayload.positionen }) === null);
+  ok('ohne verwertbare Position → null', normalizeUebernahme({ v: 1, positionen: [{ beschreibung: '', einzelpreisCent: 0 }] }) === null);
+  ok('modus rechnung erkannt', normalizeUebernahme({ v: 1, modus: 'rechnung', positionen: wfPayload.positionen }).modus === 'rechnung');
+  ok('unbekannter modus → angebot (Default)', normalizeUebernahme({ v: 1, modus: 'xyz', positionen: wfPayload.positionen }).modus === 'angebot');
+  ok('unerlaubter USt-Satz rastet auf 19 %', normalizeUebernahme({ v: 1, positionen: [{ beschreibung: 'x', einzelpreisCent: 100, ustSatz: 12 }] }).positionen[0].ustSatz === 19);
+  ok('erlaubter USt-Satz 7 % bleibt', normalizeUebernahme({ v: 1, positionen: [{ beschreibung: 'x', einzelpreisCent: 100, ustSatz: 7 }] }).positionen[0].ustSatz === 7);
+  ok('Menge fehlend → 1', normalizeUebernahme({ v: 1, positionen: [{ beschreibung: 'x', einzelpreisCent: 100 }] }).positionen[0].menge === 1);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

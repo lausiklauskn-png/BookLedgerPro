@@ -7,39 +7,83 @@ import { AUFTRAG_STATUS, STATUS_FLOW, auftragSummen, validateAuftrag } from '../
 import { UST_SAETZE } from '../../domain/taxes.js';
 import {
   listAuftraege, saveAuftrag, deleteAuftrag, setAuftragStatus, rechnungAusAuftrag,
-  listKunden, listKostenstellen, ensureKostenstellenSeeded,
+  listKunden, listKostenstellen, ensureKostenstellenSeeded, saveKunde,
 } from '../../domain/crm-store.js';
+import { takePendingUebernahme } from '../../domain/uebernahme.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
 let _kunden = [];
 let _kostenstellen = [];
 
+// Cent → deutsches Eingabeformat ("4990" → "49,90"), round-trip-fest mit parseEuroToCents.
+const centComma = (c) => (Number(c || 0) / 100).toFixed(2).replace('.', ',');
+
 export async function mountOrders(host) {
   _host = host;
   await ensureKostenstellenSeeded();
-  await repaint();
+  // Übernahme aus einer Schwester-App (falls beim Start erkannt) genau einmal
+  // abholen und als Formular-Vorbelegung durchreichen.
+  const prefill = takePendingUebernahme();
+  await repaint(undefined, prefill);
 }
 
-async function repaint(banner) {
+async function repaint(banner, prefill) {
   [_kunden, _kostenstellen] = await Promise.all([listKunden(), listKostenstellen()]);
   const auftraege = await listAuftraege();
   auftraege.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+  // Kunden-Zuordnung für die Übernahme: Name → vorhandener Kunde (sonst „anlegen").
+  let kundeMatchId = '';
+  let kundeMissing = '';
+  if (prefill && prefill.kundeName) {
+    const ziel = prefill.kundeName.trim().toLowerCase();
+    const m = _kunden.find((k) => (k.name || '').trim().toLowerCase() === ziel);
+    if (m) kundeMatchId = m.id; else kundeMissing = prefill.kundeName;
+  }
+
+  const topBanner = prefill ? uebernahmeBanner(prefill, kundeMissing) : (banner || null);
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('orders.title') }),
-    banner || null,
-    form(),
+    topBanner,
+    form(prefill, kundeMatchId),
     liste(auftraege),
   ]));
 }
 
 const field = (label, input) => el('label', { class: 'field' }, [el('span', { text: label }), input]);
 
-function positionsRow() {
-  const desc = el('input', { type: 'text', placeholder: t('orders.posDesc') });
-  const menge = el('input', { type: 'text', value: '1' });
-  const preis = el('input', { type: 'text', placeholder: '0,00' });
+// Banner über dem Formular, wenn ein Auftrag aus einer Schwester-App übernommen
+// wurde. Nennt Herkunft/Auftrags-Nr./Modus, den GoBD-Hinweis (Buchung bleibt
+// manuell) und — falls der Kunde in BLP fehlt — einen „Kunde anlegen"-Knopf.
+function uebernahmeBanner(prefill, kundeMissing) {
+  const quelle = prefill.quelle || t('orders.uebernahme.unknownSource');
+  let head = t('orders.uebernahme.title') + ' ' + quelle;
+  if (prefill.auftragNr) head += ' · ' + t('orders.uebernahme.auftragNr') + ' ' + prefill.auftragNr;
+  head += ' · ' + t('orders.uebernahme.modus.' + prefill.modus);
+
+  const wrap = el('div', { class: 'banner banner-warn', role: 'status', 'aria-live': 'polite' }, [
+    el('div', { class: 'banner-text', text: head }),
+    el('div', { class: 'muted small', text: t('orders.uebernahme.hint') }),
+  ]);
+  if (kundeMissing) {
+    wrap.appendChild(el('div', { class: 'btn-row' }, [
+      el('span', { class: 'small', text: t('orders.uebernahme.kundeMissing') + ' „' + kundeMissing + '"' }),
+      el('button', {
+        class: 'btn btn-sm', type: 'button', text: t('orders.uebernahme.kundeCreate'),
+        onClick: async () => { await saveKunde({ name: kundeMissing }); await repaint(undefined, prefill); },
+      }),
+    ]));
+  }
+  return wrap;
+}
+
+function positionsRow(pos) {
+  const desc = el('input', { type: 'text', placeholder: t('orders.posDesc'), value: (pos && pos.beschreibung) || '' });
+  const menge = el('input', { type: 'text', value: pos ? String(pos.menge) : '1' });
+  const preis = el('input', { type: 'text', placeholder: '0,00', value: pos && pos.einzelpreisCent ? centComma(pos.einzelpreisCent) : '' });
   const ust = el('select', {}, UST_SAETZE.map((s) => el('option', { value: String(s) }, `${s} %`)));
+  if (pos && pos.ustSatz != null) ust.value = String(pos.ustSatz);
   const row = el('div', { class: 'pos-row' }, [desc, menge, preis, ust]);
   row._read = () => ({
     beschreibung: desc.value,
@@ -50,13 +94,15 @@ function positionsRow() {
   return row;
 }
 
-function form() {
-  const titel = el('input', { type: 'text', placeholder: t('orders.titel') });
+function form(prefill, kundeMatchId) {
+  const titel = el('input', { type: 'text', placeholder: t('orders.titel'), value: (prefill && prefill.titel) || '' });
   const kunde = el('select', {}, [el('option', { value: '' }, t('orders.none')),
     ..._kunden.map((k) => el('option', { value: k.id }, k.name))]);
+  if (kundeMatchId) kunde.value = kundeMatchId;
   const ks = el('select', {}, [el('option', { value: '' }, t('journal.noKostenstelle')),
     ..._kostenstellen.map((k) => el('option', { value: k.nummer }, `${k.nummer} · ${k.name}`))]);
-  const posBox = el('div', { class: 'pos-box' }, [positionsRow()]);
+  const initPos = (prefill && prefill.positionen && prefill.positionen.length) ? prefill.positionen : [null];
+  const posBox = el('div', { class: 'pos-box' }, initPos.map((p) => positionsRow(p)));
   const addPos = el('button', { class: 'btn btn-sm', type: 'button', text: t('orders.addPos'),
     onClick: () => posBox.appendChild(positionsRow()) });
   const err = el('p', { class: 'form-error' });
@@ -70,7 +116,7 @@ function form() {
       const fehler = validateAuftrag(auftrag);
       if (fehler.length) { err.textContent = fehler.join(' '); return; }
       await saveAuftrag(auftrag);
-      await repaint();
+      await repaint(); // ohne prefill → sauberes Formular
     },
   }, [
     el('h2', { class: 'card-title', text: t('orders.new') }),

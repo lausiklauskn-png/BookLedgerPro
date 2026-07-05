@@ -10,6 +10,8 @@ import { setLang } from './ui/i18n.js';
 import { hydrateSettings } from './state.js';
 import { ensureAccountsSeeded } from './domain/store.js';
 import { ensureKostenstellenSeeded } from './domain/crm-store.js';
+import { parseUebernahmeQuery, setPendingUebernahme } from './domain/uebernahme.js';
+import { navigate } from './state.js';
 
 const root = document.getElementById('app-root');
 
@@ -40,6 +42,17 @@ async function boot() {
   // Kontenplan + Kostenstellen einmalig anlegen.
   await ensureAccountsSeeded();
   await ensureKostenstellenSeeded();
+
+  // Übernahme aus einer Schwester-App (?uebernahme=<base64url(JSON)>, z. B.
+  // Mein-WorkFloh) — vor dem ersten Paint prüfen, damit die Aufträge-Ansicht
+  // direkt vorbefüllt öffnet. URL danach säubern, damit ein (Hard-)Reload die
+  // Übernahme nicht erneut auslöst (Service-Worker/Cache halten die URL zäh).
+  const uebernahme = parseUebernahmeQuery(location.search);
+  if (uebernahme) {
+    setPendingUebernahme(uebernahme);
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch { /* egal */ }
+    navigate('orders');
+  }
 
   renderShell(root, { onLock: () => location.reload() });
 }

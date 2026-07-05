@@ -5,9 +5,20 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/general-discussion-x9xyk9`
-· **main-Stand:** `4ba49c8` · **Tests:** `node tests/run.mjs` → **134/134 grün**
-· **SW-Cache:** `v25` · **53 JS-Module** · **12 Bild- + 5 Icon-Assets**
+**Letzte Aktualisierung:** 2026-07-05 · **Branch:** `claude/workfloh-blp-bridge-completion-6e4m2n`
+· **Tests:** `node tests/run.mjs` → **149/149 grün** · **SW-Cache:** `v26`
+
+> **Letzter Stand (2026-07-05):** WorkFloh→BLP-Brücke geschlossen. BLP liest jetzt
+> `?uebernahme=<base64url(JSON)>` (Vertrag v1) und **befüllt das Aufträge-Formular als
+> Entwurf vor** (Titel/Positionen/Kunde-Match + „Kunde anlegen"). Reine Vorbelegung,
+> GoBD-Strecke unangetastet. Modul `src/domain/uebernahme.js`, Doku `docs/UEBERNAHME.md`.
+> Node 149/149 + headless-Browser durchgefahren (Onboarding→Reload→Unlock→vorbefüllt).
+> **Richtigstellung:** der Übergabe-Brief behauptete, das existiere schon (PR #242/#245,
+> „2119/2119") — traf nicht zu; erstmals in dieser Sitzung gebaut.
+>
+> **Nächste konkrete Schritte:** (1) Klaus' Feld-für-Feld-Sichttest auf der Live-Seite
+> (nach Merge/Deploy). (2) Modus-Frage klären: „Rechnung in BLP" vs. „Angebot" landen
+> beide im selben Entwurf — deutlicherer Einsprung nur nach Abstimmung (GoBD-sensibel).
 
 ---
 

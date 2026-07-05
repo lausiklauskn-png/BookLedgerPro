@@ -5,6 +5,40 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-07-05 — WorkFloh→BLP-Brücke: Intake `?uebernahme=` gebaut
+
+**Was getan**
+- **BLP liest jetzt `?uebernahme=<base64url(JSON)>`** (Datenvertrag v1) und **befüllt das
+  Aufträge-Formular als Entwurf vor** — Titel, Positionen (Beschreibung/Menge/Preis/USt),
+  Kunde per Namensabgleich. Neues Modul `src/domain/uebernahme.js` (rein, DOM-frei),
+  Hook in `src/main.js` (nach Unlock, vor erstem Paint; URL wird per `replaceState`
+  gesäubert → kein Re-Trigger), Vorbelegung in `src/ui/views/orders.js`.
+- **„Kunde anlegen"** (Banner): fehlt der übergebene Kunde in BLP, legt ein Klick ihn an
+  und ordnet ihn zu (Formular bleibt erhalten). Herkunfts-Banner (Quelle · Auftrags-Nr. ·
+  Modus) + GoBD-Hinweis „Buchung erstellst du danach manuell".
+- **GoBD unangetastet:** reine Entwurfs-Vorbelegung, nichts wird automatisch gebucht;
+  `rechnungAusAuftrag`/Journal/Hash-Kette unverändert. Kein DB-/PROTOCOL-Bump.
+- i18n de+en ergänzt (`orders.uebernahme.*`), Doku `docs/UEBERNAHME.md`, SW `v25→v26`
+  (+ `uebernahme.js` in CORE_ASSETS).
+
+**⚠️ Richtigstellung:** Der Übergabe-Brief behauptete, BLP verarbeite `?uebernahme=`
+bereits (angebliche PR #242/#245, „2119/2119 Tests"). Das traf **nicht** zu — im Repo gab
+es weder Handler noch `UEBERNAHME_TOMY.md`, und die Suite hatte 134 Tests. Diese Sitzung
+hat den Intake **erstmals** gebaut.
+
+**Verifikation**
+- `node tests/run.mjs` → **149/149 grün** (134 vorher + 15 neue Intake-Tests, echter
+  WorkFloh-Encoder als Referenz). `node --check` auf alle geänderten Dateien grün.
+- **Headless-Browser (Chromium) durchgefahren:** Onboarding → Reload mit `?uebernahme=`
+  → Unlock → Aufträge öffnen vorbefüllt (Titel/Position/Menge 10/49,90 €/19 %), Banner
+  korrekt, „Kunde anlegen" legt an + matcht, URL gesäubert. Alle Checks grün.
+
+**Offen / Nächstes**
+- **Modus-Feinheit (Frage an Klaus):** „angebot" vs. „rechnung" landen beide im selben
+  Auftrags-Entwurf (BLP hat eine GoBD-Strecke). Braucht „Rechnung in BLP" einen
+  deutlicheren Einsprung? — **nicht ohne Klaus an der GoBD-Strecke bauen.**
+- Klaus' Feld-für-Feld-Sichttest auf der Live-Seite (nach Merge/Deploy).
+
 ## 2026-06-14 — KI-Setup-Politur + Nachfolge-Brief
 
 **Was getan**
