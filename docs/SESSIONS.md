@@ -9,7 +9,7 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 **Was getan (Branch `claude/sublimation-digitaldruck-rename-00nctv`, frisch auf `origin/main`; Tests 2118/2118):**
 - **Klaus' Wunsch:** fertig bearbeitete Werkstatt-Aufträge aus dem Tomy-Verbund
-  (`yami-kreativ26`, gleicher Pages-Origin) sollen „nach Erledigt" in BLP zur
+  (`Tomys-Hub`, gleicher Pages-Origin) sollen „nach Erledigt" in BLP zur
   Rechnungserstellung. Spec zuerst: **`docs/UEBERNAHME_TOMY.md`** (Datenvertrag v1).
 - Neues `src/domain/uebernahmeExtern.js` (REIN, node-getestet): `parseUebernahmeParam`
   härtet die URL-Daten (Quelle-Whitelist `tomy-workfloh`, v===1, Längen-/Wertegrenzen,
@@ -20,7 +20,7 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
   daraus NUR das Formular vor (`neuesAngebot({titel, positionen})`) + Hinweis-Banner
   (i18n de/en `angebote.uebernahme`). **Kein Auto-Speichern, keine Nummernvergabe** —
   ab da gilt die bestehende Angebot→Rechnungs-Entwurf-Strecke (GoBD unberührt).
-- Gegenstück in `yami-kreativ26/workfloh`: Knopf „🧾 Rechnung in BLP" (sichtbar ab
+- Gegenstück in `Tomys-Hub/workfloh`: Knopf „🧾 Rechnung in BLP" (sichtbar ab
   fertig/übergeben bzw. erledigt/archiviert), baut den v1-Payload aus dem Auftrag
   (Titel, Kunde, Auftrags-/Angebots-Nr., Katalog-Position mit Cent-Preis).
 
