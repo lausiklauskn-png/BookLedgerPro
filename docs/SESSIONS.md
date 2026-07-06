@@ -5,6 +5,41 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-07-06 — WorkFloh-Übernahme: Kunde zuordnen/anlegen (A2) + Modus-Hinweis (A3)
+
+**Was getan (Branch `claude/workfloh-blp-bridge-completion-6e4m2n` auf `origin/main`; Tests 2123/2123):**
+- **A2 — Kunde:** Der übergebene `kundeName` wird jetzt einem vorhandenen Stammkunden
+  **per Name zugeordnet** (getrimmt, ohne Groß/Klein). Fehlt er, bietet der Übernahme-Banner
+  **„Kunde anlegen"** an (ein Klick → `saveKunde({name})` → zugeordnet). Reine Stammdaten,
+  **GoBD-neutral**. In `src/ui/views/angebote.js` (`findeKundeNachName`, `uebernahmeBannerNode`,
+  `resetUebernahmeHinweis`); Banner ist jetzt korrekt **einmalig** (Reset bei Speichern/
+  Abbrechen/Bearbeiten). Kunden-Select-Wechsel räumt den „anlegen"-Hinweis auf.
+- **A3 — Modus:** `parseUebernahmeParam` trägt nun `modus` (`angebot`/`rechnung`, gehärtet →
+  Default `angebot`). Der Banner zeigt einen **modus-abhängigen Hinweis**. **Rechtlich bewusst:**
+  beide Modi befüllen denselben **Angebots-Entwurf** — eine Rechnung wird **nie automatisch**
+  erzeugt (§14 UStG: fortlaufende Nummer + danach GoBD-unveränderlich). Bei `rechnung` weist
+  der Banner den Weg über die bestehende, menschgeführte Angebot→Rechnung-Strecke.
+- i18n de+en (`angebote.uebernahmeModus.*`, `…KundeGesetzt/…KundeFehlt/…KundeAnlegen`),
+  Basiszeile `angebote.uebernahme` von `%KUNDE%` entkoppelt. `docs/UEBERNAHME_TOMY.md`
+  (modus + Kunde) nachgezogen. SW `v191→v192`.
+
+**⚠️ Kontext-Richtigstellung:** Der Arbeitsbranch war zuerst versehentlich aus einem uralten
+`main` (`9ebcfe0`, 134 Tests) abgezweigt; eine dort gebaute Doppel-Implementierung (PR #246)
+wurde erkannt, **geschlossen** und der Branch auf den echten `main` zurückgesetzt. Diese
+Arbeit sitzt sauber auf `origin/main` und nutzt die vorhandene Architektur
+(`uebernahmeExtern.js` + `angebote.js`), nichts Doppeltes.
+
+**Verifikation**
+- `node tests/run.mjs` → **2123/2123 grün** (+4 Modus-Parser-Tests). `node --check` grün.
+- **Headless-Browser (Chromium) durchgefahren** (Onboarding → Reload mit `?uebernahme=` →
+  Unlock → Angebote): Szenario 1 `modus=rechnung` + fehlender Kunde → Rechnung-Hinweis +
+  Auftrags-Nr. + „Kunde anlegen" → nach Klick zugeordnet; Szenario 2 `modus=angebot` +
+  vorhandener Kunde → automatisch zugeordnet + Angebot-Hinweis. Alle 16 Checks grün.
+
+**Offen / Nächstes**
+- Klaus' Feld-für-Feld-Sichttest auf der Live-Seite (nach Deploy).
+- v2-Rückkanal (Rechnungs-Nr. zurück an WorkFloh) bleibt offen (eigener Vertrag).
+
 ## 2026-07-05 — Übergabe aus Tomy-WorkFloh: Angebots-Formular per URL vorbefüllen
 
 **Was getan (Branch `claude/sublimation-digitaldruck-rename-00nctv`, frisch auf `origin/main`; Tests 2118/2118):**

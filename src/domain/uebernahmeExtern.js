@@ -17,6 +17,7 @@
 // Quellen/Versionen → null (fail-soft, App startet normal).
 
 export const UEBERNAHME_QUELLEN = Object.freeze(['tomy-workfloh', 'isd-workfloh']);
+export const UEBERNAHME_MODI = Object.freeze(['angebot', 'rechnung']);
 export const UEBERNAHME_MAX_POSITIONEN = 20;
 
 const S = (v, max) => String(v ?? '').slice(0, max).trim();
@@ -36,9 +37,14 @@ function b64uDecode(raw) {
 
 /**
  * Liest den `uebernahme`-Parameter aus einem Query-String (location.search).
- * @returns {null|{quelle:string,titel:string,kundeName:string,auftragNr:string,
+ * @returns {null|{quelle:string,modus:string,titel:string,kundeName:string,auftragNr:string,
  *   angebotsNr:string,positionen:Array<{beschreibung:string,menge:number,
  *   einzelpreisCent:number,ustSatz:number}>}}
+ *
+ * `modus` ('angebot'|'rechnung', Default 'angebot') sagt nur, WOFÜR der Absender die
+ * Übergabe gedacht hat. Beide Modi befüllen denselben Angebots-Entwurf vor — eine Rechnung
+ * wird NIE automatisch erzeugt (Rechnungsnummer + GoBD-Festschreibung entstehen erst durch
+ * die bewusste, manuelle Angebot→Rechnung-Strecke). `modus` steuert nur den Hinweis-Text.
  */
 export function parseUebernahmeParam(search) {
   try {
@@ -57,6 +63,7 @@ export function parseUebernahmeParam(search) {
       }));
     return {
       quelle: d.quelle,
+      modus: UEBERNAHME_MODI.includes(d.modus) ? d.modus : 'angebot',
       titel: S(d.titel, 140),
       kundeName: S(d.kundeName, 80),
       auftragNr: S(d.auftragNr, 32),
