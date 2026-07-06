@@ -4,9 +4,18 @@ Klaus' Wunsch: Ein im **WorkFloh-Werkzeugverbund** (gleicher GitHub-Pages-Origin
 fertig bearbeiteter Werkstatt-Auftrag soll „nach Erledigt" in die große
 Buchhaltung (BLP) zur **Rechnungserstellung** wandern.
 
-**Zwei Absender, ein Vertrag:** Tomys WorkFloh (`Tomys-Hub`, `quelle:'tomy-workfloh'`)
+**Zwei Absender, ein Vertrag:** Tomys WorkFloh (`Tomys-Hub/workfloh`, `quelle:'tomy-workfloh'`)
 **und** Mein-WorkFloh (ISD⁺, `quelle:'isd-workfloh'`) senden denselben v1-Vertrag;
 beide `quelle`-Werte sind in `UEBERNAHME_QUELLEN` freigeschaltet.
+
+**Parallel-Regel (Klaus 2026-07-06):** Diese Datei ist der **kanonische Vertrag** für
+beide Sender. Die Brücke läuft **immer parallel** — eine Verbesserung am einen WorkFloh
+wird am anderen nachgezogen. Sender-Funktionen: ISD `wfBlp(modus)` (`Mein-WorkFloh/index.html`),
+Tomy `ykBlpInvoice()` (`Tomys-Hub/workfloh/index.html`). Beide schicken `modus`. Wer den
+Vertrag hier ändert (oder den Parser `src/domain/uebernahmeExtern.js`), spiegelt die Änderung
+in **beiden** Sendern. **Bewusst nicht identisch:** Branding, kein geteilter Tresor, und
+Tomys „Angebot erstellen" nutzt Tomys **eigenes** BookLedger (eigener Angebots-Nr.-Rückkanal),
+während ISD die geteilte BLP nutzt.
 
 **`modus` (`angebot`/`rechnung`, Pflege 2026-07-06):** WorkFloh schickt `modus` mit.
 Er steuert **nur den Hinweis-Text** im Banner (Angebot vs. Rechnung) — **beide** Wege
