@@ -7,6 +7,26 @@
 
 ---
 
+## 🟢 LETZTER STAND (2026-07-06) — WorkFloh-Übernahme: Kunde (A2) + Modus (A3)
+
+Branch `claude/workfloh-blp-bridge-completion-6e4m2n` (sauber auf `origin/main`). Die
+WorkFloh→BLP-Brücke war bereits fertig (`uebernahmeExtern.js` + Angebote-View); diese
+Sitzung schließt die zwei Feinschliffe:
+
+- **A2 Kunde:** `kundeName` wird einem vorhandenen Stammkunden **per Name zugeordnet**;
+  fehlt er, **„Kunde anlegen"** im Banner (ein Klick). GoBD-neutrale Stammdaten.
+- **A3 Modus:** Parser trägt `modus` (`angebot`/`rechnung`, gehärtet); Banner zeigt einen
+  modus-abhängigen Hinweis. **Beide Modi → Angebots-Entwurf; Rechnung NIE automatisch**
+  (§14 UStG-Nummer + GoBD-Festschreibung nur über die manuelle Angebot→Rechnung-Strecke).
+- i18n de+en, `docs/UEBERNAHME_TOMY.md` nachgezogen, SW `v192`. Tests **2123/2123**;
+  Headless-Browser (2 Szenarien) grün.
+
+**Nächste konkrete Schritte:** (1) Klaus' Feld-für-Feld-Sichttest auf der Live-Seite
+(nach Deploy). (2) Optional v2-Rückkanal (Rechnungs-Nr. zurück an WorkFloh) — eigener
+Vertrag, eigene Sitzung. — Der 2026-06-28-Stand darunter (Domänen-Vektor) bleibt gültig.
+
+---
+
 ## 🟢 LETZTER STAND (2026-06-28) — Inhalts-treuer Domänen-Vektor (von der Hülle zum Inhalt)
 
 Branch `claude/rest-rollout-threshold-calibration-l6c92u` (zuerst frisch auf

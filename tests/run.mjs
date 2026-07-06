@@ -6070,6 +6070,14 @@ await section('P8: QR-Encoder (build-frei, lokal)', () => {
   ok('Übernahme: Härtung kappt (Titel 140, max 20 Pos, Werte geclampt)',
     lang.titel.length === 140 && lang.positionen.length === 20 &&
     lang.positionen[0].menge === 0 && lang.positionen[0].einzelpreisCent === 100000000 && lang.positionen[0].ustSatz === 19);
+  // Modus (A3): steuert nur den Hinweis, erzeugt nie automatisch eine Rechnung.
+  ok('Übernahme: modus fehlt → angebot (Default)', u.modus === 'angebot');
+  ok('Übernahme: modus=rechnung wird übernommen',
+    parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, modus: 'rechnung' })).modus === 'rechnung');
+  ok('Übernahme: modus=angebot bleibt angebot',
+    parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, modus: 'angebot' })).modus === 'angebot');
+  ok('Übernahme: unbekannter modus → angebot (gehärtet)',
+    parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, modus: 'sofort-buchen' })).modus === 'angebot');
   merkeUebernahme(u);
   ok('Übernahme: peek lässt liegen', peekUebernahme() === u);
   ok('Übernahme: consume verbraucht', consumeUebernahme() === u && peekUebernahme() === null);

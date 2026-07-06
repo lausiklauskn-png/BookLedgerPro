@@ -33,7 +33,7 @@ import {
 import { listAngebote, saveAngebot, getAngebot, deleteAngebot, setzeAngebotStatusStore, rechnungAusAngebot } from '../../domain/angebote-store.js';
 import { ladeKalibrierungFaktoren } from '../../domain/nachkalkulation-store.js';
 import { darfAngebotUebernehmen } from '../../domain/angebotUebernahme.js';
-import { listKunden, listKostenstellen, ensureKostenstellenSeeded } from '../../domain/crm-store.js';
+import { listKunden, listKostenstellen, ensureKostenstellenSeeded, saveKunde } from '../../domain/crm-store.js';
 import { getSettings, updateSettings } from '../../state.js';
 import { consumeUebernahme } from '../../domain/uebernahmeExtern.js';
 import { emptyState } from '../empty.js';
@@ -46,7 +46,11 @@ let _editId = null;            // id des bearbeiteten gespeicherten Angebots (nu
 let _openSchemaId = null;      // welche Baukasten-Karte ihr Eingabe-Formular geöffnet hat
 let _dragFrom = null;          // Quell-Index beim Drag-and-drop der Positionsliste
 let _kalibrierung = null;      // { faktorWerte, anzahlVergleiche } aus der Historie (oder null)
-let _uebernahmeHinweis = null; // Banner-Text nach Übergabe aus Tomy-WorkFloh (einmalig)
+let _uebernahmeHinweis = null; // Banner-Basiszeile nach Übergabe aus WorkFloh (einmalig)
+let _uebernahmeModus = null;   // 'angebot' | 'rechnung' — steuert nur den Hinweis, keinen GoBD-Pfad
+let _uebernahmeKundeName = ''; // übergebener Kundenname (für Zuordnung / „anlegen")
+let _uebernahmeKundeOffen = false;   // Kunde fehlt noch in BLP → „anlegen"-Knopf zeigen
+let _uebernahmeKundeGesetzt = false; // Kunde per Name automatisch zugeordnet
 // Interne Zuschläge (Gemeinkosten/Gewinn) — gelten beim Hinzufügen einer Position. Reine
 // INTERN-Größen (Prime Directive): sie steuern die Kalkulation, stehen NIE im Angebot.
 let _zuschlaege = { gemeinkostenProzent: 15, gewinnProzent: 20 };
@@ -57,15 +61,22 @@ export async function mountAngebote(host) {
   // _entwurf über Re-Mounts hinweg behalten (updateSettings → Shell-paint → mountAngebote):
   // sonst ginge das in Arbeit befindliche Angebot beim Persistieren des Nutzungsprofils verloren.
   if (!_entwurf) _entwurf = neuesAngebot();
-  // Übergabe aus Tomy-WorkFloh (docs/UEBERNAHME_TOMY.md): Formular vorbefüllen, mehr nicht.
+  // Übergabe aus WorkFloh (docs/UEBERNAHME_TOMY.md): Formular vorbefüllen, mehr nicht.
   const ext = consumeUebernahme();
   if (ext) {
     _entwurf = neuesAngebot({ titel: ext.titel, positionen: ext.positionen });
     _editId = null; _openSchemaId = null;
+    _uebernahmeModus = ext.modus || 'angebot';
+    _uebernahmeKundeName = ext.kundeName || '';
     _uebernahmeHinweis = t('angebote.uebernahme')
       .replace('%TITEL%', ext.titel || '—')
-      .replace('%KUNDE%', ext.kundeName || '—')
       .replace('%NR%', ext.auftragNr || ext.angebotsNr || '—');
+    // Kunde per Name einem vorhandenen Stammkunden zuordnen (GoBD-neutral, reine Stammdaten);
+    // fehlt er, wird er im Banner zum Anlegen angeboten.
+    _kunden = await listKunden();
+    const treffer = findeKundeNachName(_uebernahmeKundeName);
+    if (treffer) { _entwurf.kundeId = treffer.id; _uebernahmeKundeGesetzt = true; _uebernahmeKundeOffen = false; }
+    else { _uebernahmeKundeGesetzt = false; _uebernahmeKundeOffen = !!_uebernahmeKundeName; }
   }
   // Korrekturfaktoren aus der Historie laden (für die kalibrierte Vorwärtskalkulation).
   // Fehler dürfen die Ansicht nie blockieren — dann eben ohne Kalibrierungs-Option.
@@ -92,8 +103,7 @@ async function repaint(banner) {
   [_kunden, _kostenstellen] = await Promise.all([listKunden(), listKostenstellen()]);
   const angebote = await listAngebote();
   angebote.sort((a, b) => String(b.nummer || b.createdAt || '').localeCompare(String(a.nummer || a.createdAt || '')));
-  const uebernahmeBanner = _uebernahmeHinweis
-    ? el('div', { class: 'banner banner-warn', text: _uebernahmeHinweis }) : null;
+  const uebernahmeBanner = uebernahmeBannerNode();
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('angebote.title') }),
     el('p', { class: 'muted small', text: t('angebote.intro') }),
@@ -107,6 +117,53 @@ async function repaint(banner) {
 
 const field = (label, input) => el('label', { class: 'field' }, [el('span', { text: label }), input]);
 
+// Übergabe-Zustand vollständig zurücksetzen — der Hinweis ist bewusst „einmalig"
+// (nach Speichern/Abbrechen/Bearbeiten/Löschen verschwindet er).
+function resetUebernahmeHinweis() {
+  _uebernahmeHinweis = null; _uebernahmeModus = null;
+  _uebernahmeKundeName = ''; _uebernahmeKundeOffen = false; _uebernahmeKundeGesetzt = false;
+}
+
+// Vorhandenen Stammkunden per Name finden (getrimmt, ohne Groß/Klein-Unterschied).
+function findeKundeNachName(name) {
+  const ziel = String(name || '').trim().toLowerCase();
+  if (!ziel) return null;
+  return _kunden.find((k) => (k.name || '').trim().toLowerCase() === ziel) || null;
+}
+
+// Banner nach WorkFloh-Übergabe: Basiszeile + Modus-Hinweis (Angebot/Rechnung) +
+// Kunden-Zeile (automatisch zugeordnet ODER „Kunde anlegen"). Reine Bedien-Führung —
+// speichert nichts, vergibt keine Nummer, rührt keinen GoBD-Pfad an.
+function uebernahmeBannerNode() {
+  if (!_uebernahmeHinweis) return null;
+  const kinder = [el('div', { class: 'banner-text', text: _uebernahmeHinweis })];
+  if (_uebernahmeModus) {
+    kinder.push(el('div', { class: 'small', text: t('angebote.uebernahmeModus.' + _uebernahmeModus) }));
+  }
+  if (_uebernahmeKundeName && _uebernahmeKundeGesetzt) {
+    kinder.push(el('div', { class: 'small', text: t('angebote.uebernahmeKundeGesetzt').replace('%KUNDE%', _uebernahmeKundeName) }));
+  } else if (_uebernahmeKundeName && _uebernahmeKundeOffen) {
+    kinder.push(el('div', { class: 'btn-row' }, [
+      el('span', { class: 'small', text: t('angebote.uebernahmeKundeFehlt').replace('%KUNDE%', _uebernahmeKundeName) }),
+      el('button', {
+        class: 'btn btn-sm', type: 'button',
+        text: t('angebote.uebernahmeKundeAnlegen').replace('%KUNDE%', _uebernahmeKundeName),
+        onClick: async () => {
+          const name = _uebernahmeKundeName;
+          try { await saveKunde({ name }); }
+          catch (e) { alert(String(e.message || e)); return; }
+          _kunden = await listKunden();
+          const k = findeKundeNachName(name);
+          if (k) { _entwurf.kundeId = k.id; _uebernahmeKundeGesetzt = true; }
+          _uebernahmeKundeOffen = false;
+          await repaint();
+        },
+      }),
+    ]));
+  }
+  return el('div', { class: 'banner banner-warn' }, kinder);
+}
+
 // ── Editor: Kopf + Baukasten-Palette + Positionsliste + Live-Deckungsbeitrag ──
 
 function editorCard() {
@@ -116,7 +173,7 @@ function editorCard() {
   const kunde = el('select', {}, [el('option', { value: '' }, t('angebote.none')),
     ..._kunden.map((k) => el('option', { value: k.id }, k.name))]);
   kunde.value = a.kundeId || '';
-  kunde.addEventListener('change', () => { a.kundeId = kunde.value || null; });
+  kunde.addEventListener('change', () => { a.kundeId = kunde.value || null; if (kunde.value) _uebernahmeKundeOffen = false; });
   const ks = el('select', {}, [el('option', { value: '' }, t('journal.noKostenstelle')),
     ..._kostenstellen.map((k) => el('option', { value: k.nummer }, `${k.nummer} · ${k.name}`))]);
   ks.value = a.kostenstelle || '';
@@ -143,13 +200,14 @@ function editorCard() {
       catch (e) { err.textContent = String(e.message || e); return; }
       const war = _editId;
       _entwurf = neuesAngebot(); _editId = null; _openSchemaId = null;
+      resetUebernahmeHinweis();
       await repaint(el('div', { class: 'banner banner-warn', text: war ? t('angebote.saved') : t('angebote.created') }));
     },
   })];
   if (_editId || (_entwurf.positionen && _entwurf.positionen.length)) {
     submitBtns.push(el('button', {
       class: 'btn', type: 'button', text: t('common.cancel'),
-      onClick: async () => { _entwurf = neuesAngebot(); _editId = null; _openSchemaId = null; await repaint(); },
+      onClick: async () => { _entwurf = neuesAngebot(); _editId = null; _openSchemaId = null; resetUebernahmeHinweis(); await repaint(); },
     }));
   }
 
@@ -443,6 +501,7 @@ function aktionen(a) {
       const voll = await getAngebot(a.id);
       _entwurf = { ...voll, positionen: [...(voll.positionen || [])] };
       _editId = a.id; _openSchemaId = null;
+      resetUebernahmeHinweis();
       await repaint();
       if (typeof window !== 'undefined' && window.scrollTo) window.scrollTo({ top: 0, behavior: 'smooth' });
     },
