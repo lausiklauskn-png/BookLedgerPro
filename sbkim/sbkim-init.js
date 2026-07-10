@@ -216,7 +216,12 @@
   function mountRendezvous() {
     if (!window.SbkimRendezvousUI) return;
     try {
-      window.SbkimRendezvousUI.init({ nodeName: RDV_CFG.nodeName, corner: "bl", createIdentity: rdvCreateIdentity });
+      if (window.SbkimRendezvous && typeof window.SbkimRendezvous.init === "function") {
+        try {
+          window.SbkimRendezvous.init({ nodeName: RDV_CFG.nodeName, dbSuffix: "bookledgerpro", createIdentity: rdvCreateIdentity, ensureIdentity: true });
+        } catch (e) { if (window.console && console.warn) console.warn("[BLP-SBKIM] Rendezvous (Modus A) übersprungen:", e); }
+      }
+      window.SbkimRendezvousUI.init({ nodeName: RDV_CFG.nodeName, dbSuffix: "bookledgerpro", corner: "bl", createIdentity: rdvCreateIdentity });
       if (window.console && console.info) console.info("[BLP-SBKIM] Rendezvous-UI gemountet (öffentlicher 🌐-Knopf).");
     } catch (e) { if (window.console && console.warn) console.warn("[BLP-SBKIM] Rendezvous-UI übersprungen:", e); }
   }
