@@ -544,7 +544,7 @@
   var RDV_QUERY_MAX_PER_MIN = 6;     // Antwort-Rate-Limit (Vorgriff Modul 11)
   var RDV_QUERY_TEXT_MAX = 300;      // Frage-Text hart gekappt (untrusted input)
   var RDV_QUERY_K_MAX = 5;           // maximal 5 Treffer je Antwort
-  var RDV_ASK_TIMEOUT_MS = 15000;
+  var RDV_ASK_TIMEOUT_MS = 60000; // 15 s war zu knapp: der Antworter lädt beim ersten Mal sein ~30-MB-Modell
 
   var answerUnsub = null;            // aktiver Antwort-Lauscher (null = AUS)
   var answeredCount = 0;
@@ -636,7 +636,11 @@
             var match = resolveQueryMatch();
             if (match) {
               try {
-                var hits = await match.queryLocal(text, k, { hybrid: true });
+                // exclude:true — die Frage eines fremden Knotens kann eine
+                // Verneinung tragen („alkoholfrei", „ohne Erdbeeren"). Modul 04
+                // parst sie und filtert VOR dem Ranking (Bau 04.I). Ohne
+                // Verneinung byte-gleich; Andock-Riegel unberührt.
+                var hits = await match.queryLocal(text, k, { hybrid: true, exclude: true });
                 results = (Array.isArray(hits) ? hits : []).slice(0, k).map(function (h) {
                   var r = { label: String(h.label || ""), score: (typeof h.score === "number") ? h.score : null };
                   if (typeof h.anchorId === "string" && h.anchorId) r.anchorId = h.anchorId;
@@ -664,6 +668,18 @@
       answerUnsub = null;
       return { ok: false, reason: "Antwort-Lauscher fehlgeschlagen: " + (e && e.message ? e.message : e) };
     }
+    // Vorwärmen (Bau 23.B-Härtung II, 2026-07-10): der Antworter lädt sein
+    // ~30-MB-Modell + baut seinen Korpus SONST erst bei der ersten eingehenden
+    // Frage — das kann 30 s–2 min dauern und läuft in den Frage-Timeout. Deshalb
+    // beim Einschalten des Antwortrechts JETZT im Hintergrund eine Aufwärm-Suche
+    // absetzen: das lädt Modell + Korpus vor, sodass die erste echte Frage
+    // sofort beantwortet wird. Fire-and-forget, fail-soft (kein Netz, rein lokal).
+    (function warmUpAnswerer() {
+      var m = resolveQueryMatch();
+      if (!m) return;
+      try { Promise.resolve(m.queryLocal("aufwärmen", 1)).catch(function () {}); }
+      catch (_e) { /* fail-soft */ }
+    })();
     signalListening(true);
     return { ok: true };
   }
