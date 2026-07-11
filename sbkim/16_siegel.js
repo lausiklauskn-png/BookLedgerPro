@@ -48,7 +48,15 @@
  *   { badgeSelector?: string,     // Default '.lamps' (Container, Option β)
  *     visible?: "visible"|"hidden", // Default "visible"
  *     mountModal?: boolean,        // Default true
- *     repoUrl?: string | null }    // Default null → Auto-Erkennung
+ *     repoUrl?: string | null,     // Default null → Auto-Erkennung
+ *     ribbonText?: string,         // Band-Text im Wappen unten (SELF-INSCRIBING).
+ *                                  // Ohne Wert bleibt das Band OFFEN (leer) +
+ *                                  // ein console.info-Vermerk; kein Auto-Label.
+ *                                  // Host graviert seinen Namen via ribbonText.
+ *     andockTool?: boolean }       // Default false. true → optionaler
+ *                                  // „Fremden Knoten andocken"-Knopf im Modal,
+ *                                  // öffnet Modul-18-Wizard (KI-unabhängiger
+ *                                  // Handshake). „🔑"-Pfad bleibt unberührt.
  *
  * Self-check: emits a console.info line on script load (synchronous,
  * before any call). Siehe INTERFACES.md §1 Modul 16 und
@@ -84,8 +92,8 @@
     {
       since:       "2026-05-24",
       module:      "16",
-      aspect:      "Grund-Siegel-Bezeugung",
-      description: "Diese App bestätigt durch Selbst-Prüfung beim Boot, dass die SBKIM-Pflicht-Module 01/02/03/04/05/07/15 geladen sind.",
+      aspect:      "Grund-Siegel-Bezeugung (Protokoll)",
+      description: "Grundlage jedes SBKIM-Siegels: Beim Start prüft die App selbst, ob die Pflicht-Module 01/02/03/04/05/07/15 geladen sind — nur dann entsteht das Siegel. Protokoll-Baustein, kein app-eigenes Datum (was DIESE App gerade lädt, steht oben unter „Pflicht-Module“).",
     },
     {
       since:       "2026-05-25",
@@ -117,6 +125,30 @@
       aspect:      "Semantische Selbst-Beschreibung im Siegel",
       description: "Direkt im Siegel lässt sich die App in eigenen Worten (oder per eingefügter README) beschreiben; der Text wird per Modul 03 (e5-small, 384-dim, L2-normalisiert) zum Domain-Vektor und mit dem vorhandenen Schlüssel neu in die Spore signiert — gleiche nodeId, treffenderer verified-match. Ein einziger, sauberer Identitäts-/Andock-Pfad ohne Modul-18-Verweis.",
     },
+    {
+      since:       "2026-06-20",
+      module:      "20",
+      aspect:      "Schlüssel-Tresor (Identitäts-Sicherung)",
+      description: "Die SBKIM-Identität (nodeId + privater Knotenschlüssel + Spore) wird lokal verschlüsselt gesichert (Modul-02-Krypto-Kern: PBKDF2-SHA256 ≥600k + AES-GCM-256), mit Shamir-Recovery 2 von 3 über das Passwort — gegen Identitäts-Verlust/-Wandern. Nur Identität/Schlüssel, kein PII, nie übers Netz.",
+    },
+    {
+      since:       "2026-07-01",
+      module:      "15",
+      aspect:      "KI-Richter im Cross-Knoten-Antwort-Pfad (opt-in)",
+      description: "Der op:\"query\"-Empfänger (Membran Sub b) kann eingehende Fremd-Anfragen optional durch den KI-Richter (Modul 04 queryLocalJudged, BYOK) nach Bedeutung beurteilen und sortieren, statt nur nach rohem Cosinus. Default AUS (roher Vorfilter), Schlüssel RAM-only/nie im Code, fail-soft; der 0.80-Andock-Riegel bleibt unberührt.",
+    },
+    {
+      since:       "2026-07-11",
+      module:      "16",
+      aspect:      "Ehrliche Aspekt-Darstellung (protokoll-weit, eingeklappt)",
+      description: "Die Aspekte-Historie wird jetzt eingeklappt gezeigt und ausdrücklich als gemeinsame, netzweite SBKIM-Protokoll-Historie beschriftet — NICHT als app-eigenes Zertifizierungsdatum (Klaus-Befund: eine frisch zertifizierte App darf keine fremden Bau-Daten als ihre eigene Historie ausgeben). Die app-eigene, aktuelle Aussage bleibt die Pflicht-Modul-Selbstprüfung oben plus der lokale Start-Zeitpunkt.",
+    },
+    {
+      since:       "2026-07-11",
+      module:      "20",
+      aspect:      "Verschlüsselte Geheimnis-Ablage im Safe (putSecret/getSecret)",
+      description: "Der Safe kann jetzt beliebige kleine Geheimnisse (z.B. einen KI-Richter-API-Schlüssel) verschlüsselt ablegen — PBKDF2-SHA256 600k → AES-GCM-256, frisches Salt/IV je Geheimnis, kein Klartext in localStorage/IndexedDB. So überlebt ein Schlüssel Reload/App-Schließen, ohne dass eine andere App auf der geteilten Adresse ihn lesen kann (Fremdnutzer-/Marktplatz-Leitsatz). Falsches Passwort/Manipulation → fail-soft (null).",
+    },
   ];
 
   // ---- Aspekt-4-Anker (Karte 16 § Sub (e) dynamische Render-Variante) ----
@@ -142,6 +174,18 @@
   var MODAL_TITLE = "SBKIM-Siegel — was bedeutet das?";
   var FIRST_BOOT_ANIMATION_MS = 600;
   var MOUNT_OBSERVER_TIMEOUT_MS = 10000;
+
+  // Band-Text im Wappen (unteres Ribbon, SELF-INSCRIBING). DEFAULT_RIBBON_TEXT
+  // ist der im inlined WAPPEN_SVG eingebackene Wert ("SAGE OBSERVATORIUM") —
+  // er dient als (a) Sages explizite Marke und (b) No-Replace-Sentinel
+  // (byte-identisch). Der Laufzeit-Default OHNE init({ribbonText}) ist NICHT
+  // dieser Wert, sondern ein OFFENES (leeres) Band (Klaus-Entscheidung
+  // 2026-06-20): kein geratenes Auto-Label, der Host graviert seinen Namen
+  // bewusst ein. Befund-Anlass 2026-06-19: Rezeptbuch/Mixarium trugen statisch
+  // "MEIN-TRESOR", weil die SVG-Datei kopiert + nie angepasst wurde.
+  var DEFAULT_RIBBON_TEXT = "SAGE OBSERVATORIUM";
+  // Eindeutiger Anker im WAPPEN_SVG (genau ein Vorkommen, im Ribbon-textPath).
+  var RIBBON_MARKER = ">" + DEFAULT_RIBBON_TEXT + "</textPath>";
 
   // Sub (e) Bronze/Gold-Stufung (Spec-Erweiterung 2026-05-26).
   var STUFE_BRONZE = "bronze";
@@ -171,6 +215,19 @@
   var visibleMode = "visible";
   var mountModalFlag = true;
   var repoUrlOverride = null;
+  var ribbonText = DEFAULT_RIBBON_TEXT;
+  // true sobald init({ribbonText}) einen expliziten Wert gesetzt hat.
+  // Ohne expliziten Wert wird der Band-Text aus dem Repo-/Pages-Namen
+  // automatisch abgeleitet (deriveRibbonFromRepo), damit jeder Endknoten
+  // ohne Config seinen EIGENEN Namen trägt und nie ein mitkopiertes
+  // Fremd-Label zeigt (Mein-Rezeptbuch-Bitte 2026-06-20).
+  var ribbonTextExplicit = false;
+  // Optionaler Andock-Knopf im Modal (opt-in, Default aus). Wenn true,
+  // hängt mountSiegelModal() einen „Fremden Knoten andocken"-Knopf ins
+  // Modal, der den KI-unabhängigen Modul-18-Wizard (SbkimToolPwa.
+  // openAndockTab) öffnet. Der bestehende „🔑"-Identitäts-Pfad bleibt
+  // unberührt (Klaus 2026-06-19: Andocken als ZUSÄTZLICHE Option).
+  var andockToolEnabled = false;
 
   var moduleStatuses = null;        // Array<{id, name, globalName, surfaceFn, lazy, status}>
   var certifiedFlag = false;
@@ -450,6 +507,38 @@
     }
   }
 
+  // XML-Text-Escaping für den Band-Text (defensiv — Forker-Eingabe).
+  function escapeXmlText(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  // Effektiver Band-Text. Bewusst KEINE Auto-Ableitung aus dem Repo-Namen
+  // (Klaus-Entscheidung 2026-06-20): das untere Ribbon ist das SELF-
+  // INSCRIBING-Element des Siegels — ein geratener Repo-Slug wirkt auf einer
+  // Auszeichnung schnell falsch. Ohne expliziten `ribbonText` bleibt das Band
+  // OFFEN (leer); ein Vermerk (console.info einmalig + Doku) bittet den Host,
+  // seinen Namen via init({ribbonText}) einzugravieren. Der explizite Wert
+  // übersteuert; ein mitkopiertes Fremd-Label entsteht so nie.
+  function effectiveRibbonText() {
+    return ribbonTextExplicit ? ribbonText : "";
+  }
+
+  // Liefert den WAPPEN_SVG mit dem effektiven Band-Text. Entspricht der
+  // effektive Text der inlined Konstante (Sage: "SAGE OBSERVATORIUM"),
+  // bleibt das SVG byte-identisch; sonst wird der Ribbon-Text ersetzt
+  // (leerer Wert → offenes Band).
+  function renderWappenSvg() {
+    var eff = effectiveRibbonText();
+    if (eff === DEFAULT_RIBBON_TEXT) return WAPPEN_SVG;
+    return WAPPEN_SVG.replace(
+      RIBBON_MARKER,
+      ">" + escapeXmlText(eff) + "</textPath>",
+    );
+  }
+
   function buildBadgeElement() {
     var doc = global.document;
     var span = doc.createElement("span");
@@ -466,7 +555,8 @@
     // die 40-px-Badge-Box; bei 40 px sind Text-Bänder mikro-klein, das
     // Medaillon ist als visueller Anker erkennbar. aria-hidden auf dem
     // SVG — `title`/`aria-label` am Span trägt das a11y-Label.
-    span.innerHTML = WAPPEN_SVG;
+    // renderWappenSvg() setzt den konfigurierten Band-Text (init ribbonText).
+    span.innerHTML = renderWappenSvg();
     return span;
   }
 
@@ -603,6 +693,109 @@
 
   // ---- Modal-Mount (Karte 16 § Sub (c)) ----
 
+  // ---- Optionaler Andock-Knopf (opt-in, Modul 18 wiederverwendet) ----
+  //
+  // KI-unabhängiger Handshake: öffnet den Modul-18-Wizard
+  // (SbkimToolPwa.openAndockTab: Repo-URL → Spore holen → verifyForeignSpore
+  // → Match → Handshake via Modul 05). Reiner Browser-Pfad (WebCrypto+fetch),
+  // keine Claude-Sitzung nötig. Fail-soft: fehlt Modul 18, zeigt der Knopf
+  // einen Hinweis statt zu werfen. Der „🔑"-Identitäts-Pfad bleibt unberührt.
+
+  function showAndockHint(text) {
+    if (!modalRoot) return;
+    var hint = modalRoot.querySelector("[data-siegel-andock-tool-hint]");
+    if (!hint) return;
+    hint.style.display = "block";
+    hint.textContent = text;
+  }
+
+  function onAndockClick() {
+    var tp = global.SbkimToolPwa;
+    if (!tp || typeof tp.openAndockTab !== "function") {
+      showAndockHint(
+        "Andock-Werkzeug (Modul 18 SbkimToolPwa) ist nicht geladen — " +
+        "bitte src/modules/18_tool_pwa.js einbinden und SbkimToolPwa.init({…}) aufrufen.",
+      );
+      warn("Andock-Knopf geklickt, aber Modul 18 (SbkimToolPwa) ist nicht geladen.");
+      return;
+    }
+    var hint = modalRoot ? modalRoot.querySelector("[data-siegel-andock-tool-hint]") : null;
+    if (hint) { hint.style.display = "none"; hint.textContent = ""; }
+    try {
+      var p = tp.openAndockTab();
+      // Siegel-Modal schließen, damit der Modul-18-Wizard sichtbar ist:
+      // der Wizard hat einen niedrigeren z-index (10000) als das Siegel-
+      // Modal (99998) und läge sonst dahinter (Befund Klaus 2026-06-20:
+      // „Knopf da, Klick öffnet nichts" — Wizard war verdeckt).
+      closeModal();
+      if (p && typeof p.catch === "function") {
+        p.catch(function (err) {
+          warn("Andock-Wizard-Start fehlgeschlagen.", err);
+        });
+      }
+    } catch (err) {
+      warn("Andock-Werkzeug-Start fehlgeschlagen.", err);
+      showAndockHint("Andock-Werkzeug nicht bereit: " + (err && err.message ? err.message : String(err)));
+    }
+  }
+
+  function buildAndockBlock(doc) {
+    var block = doc.createElement("div");
+    block.setAttribute("data-siegel-andock-tool", "");
+    block.style.cssText = [
+      "margin:0 0 1.2rem",
+      "padding:0.85rem 0.9rem",
+      "background:rgba(201,169,97,0.08)",
+      "border:1px solid var(--siegel-line, rgba(201,169,97,0.45))",
+      "border-radius:8px",
+    ].join(";");
+
+    var lead = doc.createElement("p");
+    lead.style.cssText = [
+      "margin:0 0 0.6rem",
+      "font-family:'Geist', system-ui, sans-serif",
+      "font-size:0.86rem",
+      "line-height:1.5",
+      "color:rgba(245,245,255,0.86)",
+    ].join(";");
+    lead.textContent =
+      "Fremden Knoten verbinden — ohne KI, direkt im Browser: Repo-/App-URL " +
+      "eingeben → Spore prüfen → Match → Handshake.";
+
+    var btn = doc.createElement("button");
+    btn.type = "button";
+    btn.setAttribute("data-siegel-andock-tool-btn", "");
+    btn.textContent = "🔌 Fremden Knoten andocken →";
+    btn.style.cssText = [
+      "display:inline-block",
+      "background:var(--siegel-gold, #C9A961)",
+      "color:#1A1306",
+      "border:none",
+      "border-radius:8px",
+      "padding:0.5rem 0.9rem",
+      "font-family:'Geist', system-ui, sans-serif",
+      "font-size:0.9rem",
+      "font-weight:600",
+      "cursor:pointer",
+    ].join(";");
+
+    var hint = doc.createElement("p");
+    hint.setAttribute("data-siegel-andock-tool-hint", "");
+    hint.style.cssText = [
+      "display:none",
+      "margin:0.55rem 0 0",
+      "font-size:0.8rem",
+      "line-height:1.45",
+      "color:rgba(245,245,255,0.6)",
+    ].join(";");
+
+    block.appendChild(lead);
+    block.appendChild(btn);
+    block.appendChild(hint);
+    btn.addEventListener("click", onAndockClick);
+    return block;
+  }
+
   function mountSiegelModal() {
     if (modalMounted) return;
     if (!mountModalFlag) return;
@@ -731,19 +924,37 @@
       "font-size:0.86rem",
     ].join(";");
 
-    var aspectsHeader = doc.createElement("h3");
-    aspectsHeader.textContent = "Aspekte (lebendes Dokument)";
-    aspectsHeader.style.cssText = modulesHeader.style.cssText;
+    // Aspekte-Sektion: standardmäßig EINGEKLAPPT (<details> ohne "open") und
+    // ehrlich als PROTOKOLL-weite, gemeinsame Historie gerahmt — NICHT als
+    // app-eigene Zertifizierungs-Daten. Die since-Daten stammen aus der
+    // netzweiten SBKIM-Bau-Historie und sind in jeder App identisch; die
+    // app-eigene, aktuelle Aussage ist die „Pflicht-Module"-Liste oben +
+    // die Bezeugt-seit-Zeile (lokaler Start-Zeitpunkt DIESER App).
+    var aspectsDetails = doc.createElement("details");
+    aspectsDetails.setAttribute("data-siegel-aspects-details", "");
+    aspectsDetails.style.cssText = "margin:0 0 1.2rem;";
+
+    var aspectsSummary = doc.createElement("summary");
+    aspectsSummary.textContent = "SBKIM-Protokoll — Sicherheits-Aspekte (gemeinsam, netzweit)";
+    aspectsSummary.style.cssText = modulesHeader.style.cssText + ";cursor:pointer;";
+
+    var aspectsIntro = doc.createElement("p");
+    aspectsIntro.textContent = "Historie der SBKIM-Sicherheits-Bausteine — für alle Knoten gleich. Das sind Protokoll-Daten, keine app-eigenen Zertifizierungs-Daten dieser App.";
+    aspectsIntro.style.cssText = "margin:0.5rem 0 0.7rem;font-size:0.8rem;color:rgba(245,245,255,0.6);line-height:1.5;";
 
     var aspectsList = doc.createElement("ul");
     aspectsList.setAttribute("data-siegel-aspects", "");
     aspectsList.style.cssText = [
       "list-style:none",
       "padding:0",
-      "margin:0 0 1.2rem",
+      "margin:0",
       "font-family:'Geist', system-ui, sans-serif",
       "font-size:0.86rem",
     ].join(";");
+
+    aspectsDetails.appendChild(aspectsSummary);
+    aspectsDetails.appendChild(aspectsIntro);
+    aspectsDetails.appendChild(aspectsList);
 
     var ausstellerBlock = doc.createElement("div");
     ausstellerBlock.setAttribute("data-siegel-aussteller", "");
@@ -760,10 +971,14 @@
     panel.appendChild(header);
     panel.appendChild(bronzeHinweisBlock);     // Sub (e) — sichtbar nur in Bronze
     panel.appendChild(dateLine);
+    // Optionaler Andock-Knopf (opt-in via init({andockTool:true})). Nur
+    // dann im DOM — Default-Render trägt KEIN [data-siegel-andock-tool].
+    if (andockToolEnabled) {
+      panel.appendChild(buildAndockBlock(doc));
+    }
     panel.appendChild(modulesHeader);
     panel.appendChild(modulesList);
-    panel.appendChild(aspectsHeader);
-    panel.appendChild(aspectsList);
+    panel.appendChild(aspectsDetails);
     panel.appendChild(ausstellerBlock);
 
     root.appendChild(backdrop);
@@ -1023,6 +1238,23 @@
     } else if (opts.repoUrl === null) {
       repoUrlOverride = null;
     }
+    // Band-Text im Wappen (Forker gravieren ihren Knoten-Namen ein). Fail-
+    // soft: leerer/Nicht-String-Wert lässt das Band OFFEN (kein Auto-Label).
+    if (typeof opts.ribbonText === "string" && opts.ribbonText.trim().length > 0) {
+      ribbonText = opts.ribbonText.trim();
+      ribbonTextExplicit = true;
+    } else if (typeof console !== "undefined" && console.info) {
+      // Vermerk (einmalig, init ist idempotent): Band bleibt bewusst offen.
+      console.info(
+        "[SbkimSiegel] Band offen gelassen — init({ ribbonText: \"DEIN-KNOTEN\" }) " +
+        "setzen, um den eigenen Namen ins Siegel zu gravieren (kein Auto-Label).",
+      );
+    }
+    // Optionaler Andock-Knopf (KI-unabhängiger Handshake via Modul 18).
+    // Strikt boolean true → opt-in; alles andere lässt den Default (aus).
+    if (opts.andockTool === true) {
+      andockToolEnabled = true;
+    }
 
     // Surface-Check: Snapshot zur init()-Zeit.
     moduleStatuses = buildModuleStatuses();
@@ -1179,6 +1411,8 @@
       get visibleMode()       { return visibleMode; },
       get mountModalFlag()    { return mountModalFlag; },
       get badgeSelector()     { return badgeSelector; },
+      get ribbonText()        { return effectiveRibbonText(); },
+      get andockToolEnabled() { return andockToolEnabled; },
       // Sub (e) Bronze/Gold-Stufung (Karte 16 § Sub (e)).
       get mycelConnected()    { return mycelConnected; },
       get mycelConnectedAt()  { return mycelConnectedAt; },
