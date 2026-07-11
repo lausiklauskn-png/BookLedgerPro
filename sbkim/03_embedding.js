@@ -234,6 +234,60 @@
   // Bedeutungs-Punkt, exakt das, was embedPassage für einen Text tut.
   var CONTENT_SAMPLE_MAX = 32;
 
+  // --- A3: Contextual Chunking (2026-07-01) --------------------------------
+  // Optional wird jedem Schnipsel VOR dem Einbetten ein kurzer, geteilter
+  // Kontext-Vorspann vorangestellt (Anthropic „Contextual Retrieval"-Idee,
+  // deterministisch/offline/gratis: der Schnipsel trägt dann sein Dokument-/
+  // Domänen-Umfeld mit sich). Das verankert jeden Schnipsel-Vektor in der
+  // Domäne, bevor gemittelt wird — der Zentroid soll dadurch domänen-treuer
+  // und zwischen Domänen besser trennbar werden.
+  //
+  // STRENG ADDITIV: ohne Kontext (Default) ist das assemblierte Text-Array
+  // byte-gleich zum bisherigen Verhalten → identische Vektoren, kein Bruch.
+  // Kontext-Quellen (per Schnipsel überschreibt global):
+  //   - global:      opts.context (String)
+  //   - pro Schnipsel: {label, text, context} → context überschreibt global
+  // Der Ausgabe-Vertrag (ein L2-normalisierter 384-Vektor) bleibt gleich;
+  // KEIN Spore-Feld, KEIN PROTOCOL_VERSION-/DB_VERSION-Bump — das ist nur die
+  // Vor-Einbettungs-Textform. Die Match-Schwelle (Modul 04/05) ist unberührt.
+  var CONTENT_CONTEXT_SEP = " — ";
+
+  // Reine, deterministische Text-Assemblierung — VOR jedem Embedding. Als
+  // Test-Brücke (_assembleContentTexts) exportiert, damit die Contextual-
+  // Chunking-Logik headless (ohne Modell) beweisbar ist.
+  function assembleContentTexts(samples, cap, globalContext) {
+    var gctx = (typeof globalContext === "string") ? globalContext.trim() : "";
+    var texts = [];
+    var contextUsed = false;
+    for (var i = 0; i < samples.length && texts.length < cap; i++) {
+      var s = samples[i];
+      var rest = null;
+      var perCtx = null;
+      if (typeof s === "string") {
+        rest = s;
+      } else if (s && typeof s === "object") {
+        var label = typeof s.label === "string" ? s.label : "";
+        var body = typeof s.text === "string" ? s.text : "";
+        rest = (label + " " + body).trim();
+        if (typeof s.context === "string" && s.context.trim().length > 0) {
+          perCtx = s.context.trim();
+        }
+      }
+      if (typeof rest !== "string" || rest.trim().length === 0) continue;
+      rest = rest.trim();
+      var ctx = perCtx !== null ? perCtx : gctx;
+      var finalText;
+      if (ctx && ctx.length > 0) {
+        finalText = ctx + CONTENT_CONTEXT_SEP + rest;
+        contextUsed = true;
+      } else {
+        finalText = rest;
+      }
+      texts.push(finalText);
+    }
+    return { texts: texts, contextUsed: contextUsed };
+  }
+
   async function embedContentVector(samples, opts) {
     opts = (opts && typeof opts === "object") ? opts : {};
     if (!Array.isArray(samples)) {
@@ -248,19 +302,9 @@
 
     // Schnipsel → nicht-leere Strings. Objekte {label,text} werden verkettet.
     // Leere Einträge werden fail-soft übersprungen (kein Throw je Eintrag).
-    var texts = [];
-    for (var i = 0; i < samples.length && texts.length < cap; i++) {
-      var s = samples[i];
-      var t = null;
-      if (typeof s === "string") {
-        t = s;
-      } else if (s && typeof s === "object") {
-        var label = typeof s.label === "string" ? s.label : "";
-        var body = typeof s.text === "string" ? s.text : "";
-        t = (label + " " + body).trim();
-      }
-      if (typeof t === "string" && t.trim().length > 0) texts.push(t.trim());
-    }
+    // A3: optionaler Kontext-Vorspann (opts.context / s.context) additiv.
+    var assembled = assembleContentTexts(samples, cap, opts.context);
+    var texts = assembled.texts;
     if (texts.length === 0) {
       throw makeError(
         "EmptyInputError",
@@ -280,10 +324,10 @@
     norm = Math.sqrt(norm);
     if (norm === 0) {
       // Entartet (Vektoren heben sich exakt auf) — auf den ersten zurückfallen.
-      return { vector: vecs[0], count: texts.length, source: "content" };
+      return { vector: vecs[0], count: texts.length, source: "content", contextUsed: assembled.contextUsed };
     }
     for (var m = 0; m < dim; m++) acc[m] = acc[m] / norm;
-    return { vector: acc, count: texts.length, source: "content" };
+    return { vector: acc, count: texts.length, source: "content", contextUsed: assembled.contextUsed };
   }
 
   function embedQuery(text) {
@@ -307,6 +351,15 @@
     embedQueryBatch: embedQueryBatch,
     embedPassageBatch: embedPassageBatch,
     embedContentVector: embedContentVector,
+    // Test-Brücke (A3): reine, deterministische Text-Assemblierung VOR dem
+    // Embedding — beweist die Contextual-Chunking-Logik headless.
+    _assembleContentTexts: function (samples, opts) {
+      opts = (opts && typeof opts === "object") ? opts : {};
+      var cap = (typeof opts.max === "number" && opts.max > 0)
+        ? Math.floor(opts.max) : CONTENT_SAMPLE_MAX;
+      return assembleContentTexts(
+        Array.isArray(samples) ? samples : [], cap, opts.context);
+    },
     _meta: {
       model: EMBEDDING_MODEL,
       dim: EMBEDDING_DIM,
@@ -315,6 +368,7 @@
       passagePrefix: EMBEDDING_PASSAGE_PREFIX,
       transformersCdn: TRANSFORMERS_CDN,
       contentSampleMax: CONTENT_SAMPLE_MAX,
+      contentContextSep: CONTENT_CONTEXT_SEP,
     },
   };
 
