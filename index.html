@@ -43,6 +43,14 @@
        sbkim-init.js startet nach Anastomose.init() fail-soft listenNostr() —
        Empfangsmodus mit Antwortrecht. Betrifft NUR die SBKIM-Identität, nie
        Buchhaltungsdaten. -->
+  <!-- Identitäts-Isolierung (2026-07-11): globaler SBKIM-Default-DB-Suffix, GANZ
+       FRÜH gesetzt (klassisches inline <script> läuft synchron VOR den folgenden
+       Modul-Skripten). Modul 01 nimmt daraus den Default-DB-Namen
+       `sbkim_bookledgerpro-sbkim` — so landet JEDER Storage-Zugriff in der eigenen
+       Schublade der SBKIM-Identität (getrennt von Geschwister-Apps auf dem
+       geteilten github.io-Origin), unabhängig von der init-Reihenfolge. Wert =
+       exakt der SBKIM-Storage-Identitäts-Suffix aus sbkim-init.js. -->
+  <script>window.SBKIM_DB_SUFFIX="bookledgerpro-sbkim";</script>
   <script src="./sbkim/01_storage.js"></script>
   <script src="./sbkim/02_spore.js"></script>
   <script src="./sbkim/03_embedding.js"></script>
