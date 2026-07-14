@@ -6,9 +6,9 @@
  * Tool" / wie Modul 22), **öffentlich** sichtbar (kein ?dev-Gate). Self-mountet
  * einen dezenten 🌐-Knopf, der ein Mini-Panel mit den drei Rendezvous-Gesten
  * öffnet:
- *   🌐 Mit dem Netz verbinden   → SbkimRendezvous.connectAndAnnounce({createIdentity})
+ *   🌐 Mit dem Knotennetz verbinden   → SbkimRendezvous.connectAndAnnounce({createIdentity})
  *   👥 Wer ist im Raum?         → SbkimRendezvous.discover() → Karten + 🤝 Andocken
- *   📌 Nur neu anmelden         → SbkimRendezvous.announce()
+ *   🙋 Nur neu anmelden         → SbkimRendezvous.announce()
  *   🧬 nur verwandte: aus/an    → REINE Anzeige-Filter über die Karten-Liste
  *                                 (zentrierter Verwandtschafts-Score aus Modul 23,
  *                                 gatet NICHTS; Default aus). Pro Karte zeigt ein
@@ -80,7 +80,7 @@
       if (_incoming.length > 5) _incoming.length = 5;
       renderIncoming();
       // Auch minimiert wahrnehmbar: Blasen-Titel als Hinweis.
-      try { if (btnEl) btnEl.title = "🤝 Ein Knoten hat sich mit dir verbunden — öffnen zum Ansehen."; } catch (_e) {}
+      try { if (btnEl) btnEl.title = "Ein Knoten hat sich verbunden — öffnen"; } catch (_e) {}
     };
     try { global.addEventListener("sbkim:handshake", _hsHandler); } catch (_e) {}
   }
@@ -93,14 +93,14 @@
   // meldet ungelesene Post von selbst. Speicher app-eigen (dbSuffix-Suffix →
   // keine Kollision auf geteilter github.io-Adresse). Nur eigene Fragen/Antworten,
   // kein Fremd-PII. Grenze: Relais-Aufbewahrung (Modul 23 fetchAnswers).
-  var RDV_BUBBLE_BASE = "🌐 Mit dem Netz verbinden";
+  var RDV_BUBBLE_BASE = "🌐 Mit dem Knotennetz verbinden";
   var mailBtn = null, reAskBtn = null, clearMailBtn = null;
   // Lebenszyklus-Regelung (Klaus 2026-07-11) — gegen Überladung, per Browser:
   //  · RDV_MAILBOX_MAX  : Obergrenze der lokalen Liste (einstellbar via init).
   //  · OPEN_TTL_MS      : nach dieser Zeit gilt eine unbeantwortete Frage als
   //    „abgelaufen" (die Relais-Frage ist dann weg — realistisch am Lookback-
   //    Fenster orientiert, mit Reserve). Abgelaufene nerven nicht (kein Zähler),
-  //    lassen sich aber per „🔄 nochmal fragen" neu stellen.
+  //    lassen sich aber per „🔁 nochmal fragen" neu stellen.
   //  · Beantwortete + gesehene werden automatisch entfernt (erledigt → weg).
   // WICHTIG: die RELAIS-Aufbewahrung regelt das Relais selbst — der Client kann
   // Relais-Ereignisse nicht zuverlässig löschen. Hier wird nur der LOKALE
@@ -212,7 +212,7 @@
     if (!r || typeof r.askNode !== "function") { setOut("Modul 23 mit Bau 23.B (askNode) nicht geladen."); return; }
     var toAsk = pruneMail().filter(function (e) { return e.status === "offen" || e.status === "abgelaufen"; });
     if (!toAsk.length) { renderMail(); return; }
-    if (outEl) outEl.textContent = "🔄 Stelle " + toAsk.length + " offene Frage(n) erneut …";
+    if (outEl) outEl.textContent = "🔁 Stelle " + toAsk.length + " offene Frage(n) erneut …";
     Promise.all(toAsk.map(function (e) {
       if (!e.toNodeId) return Promise.resolve();
       return Promise.resolve(r.askNode(e.toNodeId, e.text)).then(function (res) {
@@ -255,7 +255,7 @@
         var res = (e.answer.results || []).map(function (r) { return r.label; }).filter(Boolean);
         lines.push("✓ „" + e.text + "“ → " + (e.answer.fromName || e.toName) + ": " + (res.length ? res.join(", ") : "(ehrlich leer — nichts Passendes im Buch)") + (meta ? "  (" + meta + ")" : ""));
       } else if (e.status === "abgelaufen") {
-        lines.push("🕗 abgelaufen: „" + e.text + "“ an " + e.toName + (meta ? "  (" + meta + ")" : "") + " — „🔄 nochmal fragen“ stellt sie neu.");
+        lines.push("🕗 abgelaufen: „" + e.text + "“ an " + e.toName + (meta ? "  (" + meta + ")" : "") + " — „🔁 nochmal fragen“ stellt sie neu.");
       } else {
         lines.push("⏳ offen: „" + e.text + "“ an " + e.toName + (meta ? "  (" + meta + ")" : "") + " — warte auf Antwort (hole ich beim Öffnen ab).");
       }
@@ -295,7 +295,7 @@
         info.appendChild(el("b", null, "🕗 „" + e.text + "“"));
         info.appendChild(el("br"));
         info.appendChild(el("span", "font-size:.72rem;color:#9aa7b6",
-          "an " + e.toName + " — keiner hat rechtzeitig geantwortet. „🔄 nochmal fragen“ stellt sie neu."));
+          "an " + e.toName + " — keiner hat rechtzeitig geantwortet. „🔁 nochmal fragen“ stellt sie neu."));
       } else {
         info.appendChild(el("b", null, "⏳ „" + e.text + "“"));
         info.appendChild(el("br"));
@@ -311,12 +311,12 @@
       if (/^https?:\/\//i.test(ep)) {
         var link = el("a", bs + ";text-decoration:none;display:inline-block", "↗ App öffnen");
         link.href = ep; link.target = "_blank"; link.rel = "noopener noreferrer";
-        link.title = "Öffnet die App/PWA von " + e.toName + " in einem neuen Tab — dort selbst suchen, ohne auf eine Antwort zu warten.";
+        link.title = "App öffnen (neuer Tab)";
         rowEl.appendChild(link);
       }
       // 🗑 nur diese Gruppe entfernen.
       var del = el("button", bs, "🗑"); del.type = "button";
-      del.title = "Diesen Eintrag aus deinem Briefkasten entfernen.";
+      del.title = "Eintrag entfernen";
       (function (qid) { del.addEventListener("click", function () { deleteMailEntry(qid); }); })(e.qid);
       rowEl.appendChild(del);
       cardsEl.appendChild(rowEl);
@@ -392,6 +392,75 @@
     return e;
   }
 
+  // ---- Eigener Tooltip statt nativem `title` (Klaus 2026-07-12) ----
+  // Native title-Tooltips landen im Split-Screen/DeX oft halb hinter dem Panel
+  // (der Browser platziert sie selbst). Wir übernehmen die Platzierung: `title`
+  // → `data-sbtip`, nativen Tooltip AUS; eigener Tooltip am <body> (position:fixed,
+  // entkommt jedem overflow/z-index), unter dem Element, in den Viewport geklemmt,
+  // über allem (z-index max). DOM-only, fail-soft.
+  var _tipEl = null;
+  // An/Aus-Schalter für Tooltips (Klaus 2026-07-12). Zustand in localStorage,
+  // übersteht Reload; generischer Schlüssel, damit weitere Module ihn ehren können.
+  var TIPS_OFF_KEY = "sbkim_tips_off";
+  function tipsEnabled() {
+    try { return global.localStorage.getItem(TIPS_OFF_KEY) !== "1"; } catch (_e) { return true; }
+  }
+  function setTipsOff(off) {
+    try { global.localStorage.setItem(TIPS_OFF_KEY, off ? "1" : "0"); } catch (_e) { /* fail-soft */ }
+  }
+  function ensureTipEl() {
+    if (_tipEl && _tipEl.parentNode) return _tipEl;
+    var d = doc();
+    if (!d || !d.body) return null;
+    _tipEl = d.createElement("div");
+    _tipEl.setAttribute("role", "tooltip");
+    _tipEl.style.cssText = "position:fixed;z-index:2147483647;max-width:min(320px,80vw);" +
+      "background:rgba(15,18,28,.97);color:#eef2f8;font:500 .72rem/1.4 var(--mono,system-ui,sans-serif);" +
+      "padding:6px 9px;border:1px solid rgba(255,255,255,.18);border-radius:8px;" +
+      "box-shadow:0 6px 22px rgba(0,0,0,.55);pointer-events:none;opacity:0;transition:opacity .12s;display:none";
+    d.body.appendChild(_tipEl);
+    return _tipEl;
+  }
+  function showTip(target, text) {
+    if (!tipsEnabled()) return;   // Tooltips per Schalter aus
+    var t = ensureTipEl();
+    if (!t || !text || !target || typeof target.getBoundingClientRect !== "function") return;
+    t.textContent = text;
+    t.style.display = "block";
+    var r = target.getBoundingClientRect();
+    var vw = global.innerWidth || 1024, vh = global.innerHeight || 768;
+    var tw = t.offsetWidth, th = t.offsetHeight;
+    var left = Math.max(6, Math.min(r.left, vw - tw - 6));
+    var top = r.bottom + 6;
+    if (top + th > vh - 6) top = Math.max(6, r.top - th - 6); // kein Platz unten → oben
+    t.style.left = left + "px";
+    t.style.top = top + "px";
+    t.style.opacity = "1";
+  }
+  function hideTip() { if (_tipEl) { _tipEl.style.opacity = "0"; _tipEl.style.display = "none"; } }
+  // Alle nativen `title` unter root (inkl. root selbst) auf den eigenen Tooltip
+  // umstellen: Text nach data-sbtip, title entfernen, Hover/Focus-Listener setzen.
+  function adoptTips(root) {
+    try {
+      if (!root || typeof root.querySelectorAll !== "function") return;
+      var list = [];
+      if (root.getAttribute && root.getAttribute("title")) list.push(root);
+      var nodes = root.querySelectorAll("[title]");
+      for (var i = 0; i < nodes.length; i++) list.push(nodes[i]);
+      list.forEach(function (elm) {
+        var txt = elm.getAttribute("title");
+        if (txt == null) return;
+        elm.setAttribute("data-sbtip", txt);
+        elm.removeAttribute("title"); // nativen Browser-Tooltip abschalten
+        elm.addEventListener("mouseenter", function () { showTip(elm, elm.getAttribute("data-sbtip")); });
+        elm.addEventListener("mouseleave", hideTip);
+        elm.addEventListener("focus", function () { showTip(elm, elm.getAttribute("data-sbtip")); });
+        elm.addEventListener("blur", hideTip);
+        elm.addEventListener("pointerdown", hideTip);
+      });
+    } catch (_e) { /* fail-soft — dann bleibt es beim Label ohne Tooltip */ }
+  }
+
   function cornerCss(corner, panel) {
     var off = panel ? "64px" : "14px";
     switch (corner) {
@@ -437,7 +506,7 @@
   }
 
   // ---- Flying-Widget: frei verschiebbar + minimierbar (Klaus 2026-07-10) ----
-  // Das „Mit dem Netz verbinden"-Panel klebte in einer Ecke und verdeckte die
+  // Das „Mit dem Knotennetz verbinden"-Panel klebte in einer Ecke und verdeckte die
   // Seite. Jetzt: an der Kopfzeile frei ziehbar, per „–" zur Blase minimierbar,
   // Position in localStorage gemerkt. Bubble ⇄ Panel teilen sich EINE Position.
   var POS_KEY = "sbkim_rdv_ui_pos";
@@ -518,10 +587,10 @@
     btnEl = el("button", "position:fixed;" + cornerCss(cfg.corner, false) + ";z-index:2147483600;" +
       "font:600 .8rem var(--mono,system-ui,sans-serif);padding:8px 12px;border-radius:10px;" +
       "border:1px solid " + ac + ";background:rgba(10,12,20,.7);color:" + ac + ";cursor:pointer;" +
-      "backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.35)", "🌐 Mit dem Netz verbinden");
+      "backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.35)", "🌐 Mit dem Knotennetz verbinden");
     btnEl.type = "button";
     btnEl.id = "sbkim-rdv-btn";
-    btnEl.title = "SBKIM-Rendezvous: dich im gemeinsamen Raum anmelden + andere Knoten finden.";
+    btnEl.title = "Andere Knoten treffen";
 
     panelEl = el("div", "position:fixed;" + cornerCss(cfg.corner, true) + ";z-index:2147483600;" +
       "width:min(420px,92vw);display:none;max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch;" +
@@ -532,15 +601,30 @@
 
     var head = el("div", "display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;cursor:move");
     head.title = "Ziehen zum Verschieben";
-    head.appendChild(el("strong", "color:" + ac, "🌐 Mit dem Netz verbinden"));
+    head.appendChild(el("strong", "color:" + ac, "🌐 Mit dem Knotennetz verbinden"));
     var headBtns = el("div", "display:flex;align-items:center;gap:2px");
+    var tipBtn = el("button", "background:none;border:none;color:#9aa7b6;font-size:1rem;cursor:pointer;padding:0 5px", "💬");
+    tipBtn.type = "button";
+    function refreshTipBtn() {
+      var on = tipsEnabled();
+      tipBtn.style.opacity = on ? "1" : ".38";
+      tipBtn.setAttribute("data-sbtip", on ? "Tipps ausschalten" : "Tipps einschalten");
+    }
+    tipBtn.title = tipsEnabled() ? "Tipps ausschalten" : "Tipps einschalten";  // adoptTips verdrahtet den Hover
+    tipBtn.style.opacity = tipsEnabled() ? "1" : ".38";
+    tipBtn.addEventListener("click", function () {
+      setTipsOff(tipsEnabled());   // an → aus, aus → an
+      refreshTipBtn();
+      hideTip();
+    });
+    headBtns.appendChild(tipBtn);
     var minBtn = el("button", "background:none;border:none;color:#9aa7b6;font-size:1.4rem;line-height:.6;cursor:pointer;padding:0 6px", "–");
     minBtn.type = "button";
-    minBtn.title = "Minimieren — zur Blase verkleinern";
+    minBtn.title = "Minimieren";
     headBtns.appendChild(minBtn);
     var closeBtn = el("button", "background:none;border:none;color:#9aa7b6;font-size:1.1rem;cursor:pointer", "✕");
     closeBtn.type = "button";
-    closeBtn.title = "Schließen (zur Blase)";
+    closeBtn.title = "Schließen";
     headBtns.appendChild(closeBtn);
     head.appendChild(headBtns);
     panelEl.appendChild(head);
@@ -555,18 +639,18 @@
     renderIncoming();   // falls schon vor mount ein Handshake ankam
 
     panelEl.appendChild(el("p", "margin:0 0 10px;color:#9aa7b6",
-      "Triff andere SBKIM-Knoten im gemeinsamen Raum — server-los, direkt aus deinem Browser. Lass diesen Tab offen, damit du erreichbar bleibst."));
+      "Triff andere SBKIM-Knoten im gemeinsamen Raum — server-los, direkt aus deinem Browser. Du kannst dieses Fenster schließen und normal weiterarbeiten; nur die App-Seite selbst offen lassen, damit du erreichbar bleibst."));
 
     var row = el("div", "display:flex;gap:8px;flex-wrap:wrap");
-    var connectBtn = el("button", bs, "🌐 Mit dem Netz verbinden"); connectBtn.type = "button";
+    var connectBtn = el("button", bs, "🌐 Mit dem Knotennetz verbinden"); connectBtn.type = "button";
     var discoverBtn = el("button", bsGhost, "👥 Wer ist im Raum?"); discoverBtn.type = "button";
-    var announceBtn = el("button", bsGhost, "📌 Nur neu anmelden"); announceBtn.type = "button";
+    var announceBtn = el("button", bsGhost, "🙋 Nur neu anmelden"); announceBtn.type = "button";
     mailBtn = el("button", bsGhost, "📬 Antworten abholen"); mailBtn.type = "button";
-    mailBtn.title = "Offene Fragen: hier die Antworten abholen. Läuft auch automatisch beim Öffnen — der Zähler an der Blase zeigt ungelesene Post.";
-    reAskBtn = el("button", bsGhost + ";font-size:.74rem", "🔄 offene nochmal fragen"); reAskBtn.type = "button";
-    reAskBtn.title = "Alle offenen/abgelaufenen Fragen erneut stellen (neu ins Netz) — für einen jetzt wachen Antworter.";
+    mailBtn.title = "Antworten abholen";
+    reAskBtn = el("button", bsGhost + ";font-size:.74rem", "🔁 offene nochmal fragen"); reAskBtn.type = "button";
+    reAskBtn.title = "Offene Fragen neu stellen";
     clearMailBtn = el("button", bsGhost + ";font-size:.74rem", "🗑 leeren"); clearMailBtn.type = "button";
-    clearMailBtn.title = "Den lokalen Briefkasten leeren.";
+    clearMailBtn.title = "Briefkasten leeren";
     row.appendChild(connectBtn); row.appendChild(discoverBtn); row.appendChild(announceBtn); row.appendChild(mailBtn);
     row.appendChild(reAskBtn); row.appendChild(clearMailBtn);
     panelEl.appendChild(row);
@@ -577,7 +661,7 @@
     var filterRow = el("div", "margin-top:8px");
     relOnlyBtn = el("button", bsGhost + ";font-size:.74rem;padding:5px 10px", "🧬 nur verwandte: aus");
     relOnlyBtn.type = "button";
-    relOnlyBtn.title = "Nur Knoten zeigen, deren Domäne wirklich verwandt ist (zentrierter Bedeutungs-Score). Reine Anzeige — am Andocken ändert das nichts.";
+    relOnlyBtn.title = "Nur verwandte Knoten zeigen";
     filterRow.appendChild(relOnlyBtn);
     panelEl.appendChild(filterRow);
 
@@ -589,8 +673,7 @@
     var repairBtn = el("button", "padding:6px 11px;border-radius:8px;border:1px dashed var(--line,#5a4a3a);" +
       "background:transparent;color:#e6b980;cursor:pointer;font:inherit;font-size:.74rem",
       "🧹 Aufräumen & neu anmelden"); repairBtn.type = "button";
-    repairBtn.title = "Löscht den geteilten Alt-Speicher dieser Adresse (nicht deine eigene Schublade), " +
-      "meldet Service-Worker ab, behält deine stabile Identität und meldet dich neu an. Danach hart neu laden.";
+    repairBtn.title = "Aufräumen & neu anmelden";
     repairBtn.addEventListener("click", function () { onRepair(); });
     repairRow.appendChild(repairBtn);
     panelEl.appendChild(repairRow);
@@ -608,10 +691,10 @@
     // Textfeld voll nutzbar (der Knopf gibt dann nur eine ehrliche Notiz).
     voiceBtnEl = el("button", bsGhost + ";font-size:.9rem;padding:5px 8px", "🎤");
     voiceBtnEl.type = "button";
-    voiceBtnEl.title = "Frage einsprechen (Spracheingabe, Modul 21). Ohne Mikrofon/Modul einfach tippen.";
+    voiceBtnEl.title = "Frage einsprechen";
     answerBtn = el("button", bsGhost + ";font-size:.74rem;padding:5px 10px", "💬 Antworten: aus");
     answerBtn.type = "button";
-    answerBtn.title = "Antwortrecht: eingeschaltet beantwortet dein Knoten Fragen anderer Knoten mit den Top-Treffern seiner eigenen Bedeutungs-Suche (nur Titel, keine Inhalte). Gilt nur, solange dieser Tab offen ist.";
+    answerBtn.title = "Anderen Knoten antworten";
     // A11 — Primär-Knopf „🔎 Antwort holen": rankt alle Raum-Knoten nach Passung
     // zur getippten Frage und fragt den bestpassenden AUTOMATISCH (Klaus: „ich
     // weiß nicht, wer von hundert am besten passt"). Solide Akzent-Optik, direkt
@@ -620,7 +703,7 @@
     answerFetchBtn = el("button", "padding:6px 12px;border-radius:8px;border:1px solid " + accent() + ";" +
       "background:" + accent() + ";color:#0a1018;cursor:pointer;font:inherit;font-size:.78rem;font-weight:600", "🔎 Antwort holen");
     answerFetchBtn.type = "button";
-    answerFetchBtn.title = "Sucht unter allen Knoten im Raum automatisch den, dessen Wissen am besten zu deiner Frage passt, und fragt ihn. Du musst nicht selbst wählen.";
+    answerFetchBtn.title = "Beste Antwort automatisch holen";
     askRow.appendChild(askInputEl);
     askRow.appendChild(answerFetchBtn);
     askRow.appendChild(voiceBtnEl);
@@ -637,12 +720,10 @@
     var kiRow = el("div", "margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center");
     kiToggleEl = el("button", bsGhost + ";font-size:.72rem;padding:4px 9px", "🧠 KI-Richter: aus");
     kiToggleEl.type = "button";
-    kiToggleEl.title = "Optional. AUS = gratis: die Antworten werden nach rohem Bedeutungs-Cosinus sortiert. " +
-      "AN = ein KI-Anbieter beurteilt die Antworten zusätzlich nach Bedeutung — das braucht deinen EIGENEN Schlüssel und kostet dort ggf. etwas. " +
-      "Dein Schlüssel bleibt NUR in diesem Browser (nie gespeichert, nie ins Netz). Nur die Treffer-TITEL (keine Inhalte) gehen an den gewählten Anbieter.";
+    kiToggleEl.title = "KI bewertet die Antworten (eigener Schlüssel)";
     kiProvSelEl = doc().createElement("select");
     kiProvSelEl.style.cssText = "display:none;font-size:.72rem;padding:4px 6px;border-radius:8px;border:1px solid rgba(154,167,182,.35);background:rgba(10,16,24,.6);color:#e8eef6";
-    kiProvSelEl.title = "KI-Anbieter für den Richter (dein eigener Schlüssel).";
+    kiProvSelEl.title = "KI-Anbieter wählen";
     kiKeyEl = el("input", "display:none;flex:1;min-width:120px;padding:4px 8px;border-radius:8px;border:1px solid rgba(154,167,182,.35);background:rgba(10,16,24,.6);color:#e8eef6;font-size:.72rem");
     kiKeyEl.type = "password";
     kiKeyEl.autocomplete = "off";
@@ -653,18 +734,18 @@
     kiKeyLinkEl = doc().createElement("a");
     kiKeyLinkEl.textContent = "🔑 Schlüssel holen ↗";
     kiKeyLinkEl.target = "_blank"; kiKeyLinkEl.rel = "noopener noreferrer";
-    kiKeyLinkEl.title = "Öffnet die Seite des gewählten KI-Anbieters, wo du deinen eigenen Schlüssel erstellst (kostenlos anlegbar; Nutzung kann dort etwas kosten).";
+    kiKeyLinkEl.title = "Schlüssel beim Anbieter holen";
     kiKeyLinkEl.style.cssText = "display:none;font-size:.72rem;padding:4px 8px;border-radius:8px;border:1px solid rgba(154,167,182,.35);color:#9fd2ff;text-decoration:none;white-space:nowrap";
     // 🔒 im Tresor merken / 🔓 entsperren (Modul 20 Safe). Nur sichtbar, wenn
     // der Safe geladen ist (fail-soft für Forker ohne Modul 20). Sicher: der
     // Schlüssel wird verschlüsselt abgelegt (PBKDF2+AES-GCM), nie im Klartext.
     kiSaveBtnEl = el("button", bsGhost + ";font-size:.72rem;padding:4px 8px", "🔒 im Tresor merken");
     kiSaveBtnEl.type = "button";
-    kiSaveBtnEl.title = "Legt deinen KI-Schlüssel verschlüsselt im App-Tresor ab (ein Passwort). Überlebt Neuladen und App-Schließen; andere Apps können ihn nicht lesen.";
+    kiSaveBtnEl.title = "Schlüssel sicher merken";
     kiSaveBtnEl.style.display = "none";
     kiUnlockBtnEl = el("button", bsGhost + ";font-size:.72rem;padding:4px 8px", "🔓 Tresor entsperren");
     kiUnlockBtnEl.type = "button";
-    kiUnlockBtnEl.title = "Holt deinen gemerkten KI-Schlüssel aus dem verschlüsselten App-Tresor (dein Tresor-Passwort). Passwort vergessen? Kein Drama — beim Anbieter gratis einen neuen holen und neu ablegen.";
+    kiUnlockBtnEl.title = "Gemerkten Schlüssel holen";
     kiUnlockBtnEl.style.display = "none";
     kiRow.appendChild(kiToggleEl);
     kiRow.appendChild(kiProvSelEl);
@@ -693,6 +774,11 @@
 
     d.body.appendChild(btnEl);
     d.body.appendChild(panelEl);
+
+    // Native title-Tooltips durch den eigenen, sauber platzierten Tooltip ersetzen
+    // (Klaus 2026-07-12: nativ landete er im Split-Screen halb hinter dem Panel).
+    adoptTips(panelEl);
+    adoptTips(btnEl);
 
     btnEl.addEventListener("click", function () { toggle(); });
     closeBtn.addEventListener("click", function () { hide(); });
@@ -790,7 +876,7 @@
         if (res.created) appendOut("✓ Identität erzeugt: " + res.nodeId + "\n");
         else appendOut("Identität vorhanden: " + res.nodeId + "\n");
         appendOut("✓ Du bist im Raum — deine Visitenkarte hängt, du lauschst.\n");
-        appendOut("  Lass diesen Tab offen — eine geschlossene Seite ist nicht erreichbar.");
+        appendOut("  Dieses Fenster darfst du schließen und weiterarbeiten — nur die App-Seite offen lassen (eine ganz geschlossene Seite ist nicht erreichbar).");
       } else {
         appendOut("✗ " + (res.reason || "Verbinden fehlgeschlagen.") +
           (cfg.createIdentity ? "\n(Bei Netz-/Modell-Fehler: Verbindung prüfen und nochmal.)" : ""));
@@ -805,7 +891,7 @@
     startModelProgress("→ Hefte deine Visitenkarte in den gemeinsamen Raum …");
     r.announce().then(function (res) {
       stopModelProgress(); if (outEl) outEl.textContent = "";
-      if (res.ok) appendOut("✓ Du bist im Raum (nodeId " + res.nodeId + "). Lass den Tab offen.");
+      if (res.ok) appendOut("✓ Du bist im Raum (nodeId " + res.nodeId + "). Fenster darf zu — nur die App-Seite offen lassen.");
       else appendOut("✗ " + (res.reason || "Anmelden fehlgeschlagen."));
     }).catch(function (e) { stopModelProgress(); setOut("✗ Anmelden fehlgeschlagen: " + (e && e.message ? e.message : e)); });
   }
@@ -879,7 +965,7 @@
     if (!cardsEl) return;
     clear(cardsEl);
     if (lastCards.length === 0) {
-      if (outEl) outEl.textContent = "Niemand (Fremdes) im Raum. Lass den Gegenknoten zuerst „🌐 Mit dem Netz verbinden“ drücken — dann hier nochmal „👥 Wer ist im Raum?“.";
+      if (outEl) outEl.textContent = "Niemand (Fremdes) im Raum. Lass den Gegenknoten zuerst „🌐 Mit dem Knotennetz verbinden“ drücken — dann hier nochmal „👥 Wer ist im Raum?“.";
       return;
     }
     var ac = accent();
@@ -920,7 +1006,7 @@
              "background:rgba(154,167,182,.14);color:#9aa7b6");
         var badgeTxt = (c.isRelated ? "🧬 verwandt " : "· verbunden ") + c.relatedness.toFixed(2);
         var badge = el("span", badgeCss, badgeTxt);
-        badge.title = "Zentrierter Bedeutungs-Score zur eigenen Domäne — reine Anzeige, gatet das Andocken nicht.";
+        badge.title = "Wie verwandt die Domäne ist";
         info.appendChild(badge);
       }
       // A11 — Passung zur getippten Frage (nur wenn rankCardsByQuery einen Score lieferte).
@@ -928,7 +1014,7 @@
         info.appendChild(el("br"));
         var qBadge = el("span", "display:inline-block;margin-top:3px;padding:1px 7px;border-radius:6px;font-size:.68rem;" +
           "background:rgba(159,210,255,.16);color:#9fd2ff", "🔎 Frage-Passung " + c.queryFit.toFixed(2));
-        qBadge.title = "Wie gut die Domäne dieses Knotens zu deiner Frage passt — reine Anzeige/Auswahl, gatet das Andocken nicht.";
+        qBadge.title = "Wie gut der Knoten zur Frage passt";
         info.appendChild(qBadge);
       }
       rowEl.appendChild(info);
@@ -936,7 +1022,7 @@
       b.addEventListener("click", function () { onHandshake(c); });
       rowEl.appendChild(b);
       var qb = el("button", bs + ";margin-left:6px;opacity:.72;font-size:.72rem", "❓ gezielt fragen"); qb.type = "button";
-      qb.title = "Optional: stellt GEZIELT diesem Knoten die Frage aus dem Feld oben (Handauswahl). Normalerweise reicht „🔎 Antwort holen“ — das wählt den bestpassenden Knoten automatisch.";
+      qb.title = "Gezielt diesen Knoten fragen";
       qb.addEventListener("click", function () { onAsk(c); });
       rowEl.appendChild(qb);
       // Partner-Link (Klaus 2026-07-12): direkt die App/PWA des Knotens öffnen,
@@ -947,7 +1033,7 @@
       if (/^https?:\/\//i.test(ep)) {
         var link = el("a", bs + ";margin-left:6px;font-size:.72rem;text-decoration:none;display:inline-block", "↗ App öffnen");
         link.href = ep; link.target = "_blank"; link.rel = "noopener noreferrer";
-        link.title = "Öffnet die App/PWA dieses Knotens in einem neuen Tab — dort kannst du selbst suchen, ohne auf eine Antwort zu warten.";
+        link.title = "App des Knotens öffnen (neuer Tab)";
         rowEl.appendChild(link);
       }
       cardsEl.appendChild(rowEl);
@@ -1159,7 +1245,7 @@
       try {
         activeRecognizer = speech.makeBrowserRecognizer({
           lang: lang,
-          onResult: function (t) { if (askInputEl) { askInputEl.value = t; } setVoiceHint("Erkannt: " + t + "  — jetzt einen Knoten <❓ Fragen>."); },
+          onResult: function (t) { if (askInputEl) { askInputEl.value = t; } setVoiceHint("Erkannt: " + t + "  — jetzt „🔎 Antwort holen“ drücken."); },
           onError: function (h) { setVoiceHint("🎤 " + h); },
           onEnd: function () { activeRecognizer = null; },
         });
@@ -1249,7 +1335,7 @@
     r.enableAnswering().then(function (res) {
       if (res && res.ok) {
         if (answerBtn) answerBtn.textContent = "💬 Antworten: an";
-        if (outEl) outEl.textContent = "💬 Antworten AN — dein Knoten beantwortet jetzt Fragen anderer Knoten mit den Top-Treffern seiner Bedeutungs-Suche (nur Titel). Tab offen lassen.";
+        if (outEl) outEl.textContent = "💬 Antworten AN — dein Knoten beantwortet jetzt Fragen anderer Knoten mit den Top-Treffern seiner Bedeutungs-Suche (nur Titel). App-Seite offen lassen (Fenster darf zu).";
       } else {
         if (outEl) outEl.textContent = "✗ " + (res && res.reason ? res.reason : "Antworten konnte nicht eingeschaltet werden.");
       }
