@@ -11,6 +11,7 @@ import { buildSpore, verifySpore } from '../../sbkim/spore.js';
 import { demoVector } from '../../sbkim/domainvector.js';
 import { buildSignal } from '../../sbkim/signal.js';
 import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID } from '../../sbkim/nodeProfile.js';
+import { getGeraetename, setGeraetename, displayNodeName, shortKennung } from '../geraetename.js';
 import { PEERS, checkAllPeers } from '../../sbkim/peers.js';
 import { buildPassageText, buildCapText, buildNeedsText, embedTexts, EMBED_MODEL } from '../../sbkim/embed.js';
 
@@ -118,10 +119,31 @@ function identityCard(ident) {
     ]);
   }
   const canonical = ident.id === CANONICAL_NODE_ID;
+  // Gerätename (frei wählbar) — reine Anzeige, IMMER mit der Kennung gezeigt.
+  const baseName = NODE_PROFILE.nodeName;
+  const kennung = shortKennung(ident.id);
+  const nameLine = el('code', { class: 'mono small', text: displayNodeName(baseName) + ' · ' + kennung });
+  const gnInput = el('input', {
+    id: 'geraetename', type: 'text', minlength: '0', autocomplete: 'off',
+    value: getGeraetename(),
+    placeholder: t('net.geraetenamePlaceholder'),
+    'aria-label': t('net.geraetename'),
+    onInput: (e) => {
+      const v = e.target.value.slice(0, 40);
+      setGeraetename(v);
+      nameLine.textContent = displayNodeName(baseName) + ' · ' + kennung;
+      // Kopplung: der Rendezvous-Announce (sbkim-init.js) hört darauf und
+      // konfiguriert seinen Anzeige-Namen neu (fail-soft).
+      try { window.dispatchEvent(new CustomEvent('sbkim:geraetename-changed')); } catch (_e) { /* fail-soft */ }
+    },
+  });
   const children = [
     el('h2', { class: 'card-title', text: t('net.identity') }),
+    el('div', { class: 'report-line' }, [el('span', { text: t('net.displayName') }), nameLine]),
     el('div', { class: 'report-line' }, [el('span', { text: t('net.nodeId') }), el('code', { class: 'mono small', text: ident.id })]),
     el('div', { class: 'report-line' }, [el('span', { text: 'publicKey.x' }), el('code', { class: 'mono small', text: ident.x })]),
+    el('label', { class: 'field' }, [el('span', { text: t('net.geraetename') }), gnInput]),
+    el('p', { class: 'muted small', text: t('net.geraetenameHint') }),
   ];
   if (canonical) {
     children.push(el('p', { class: 'muted small', text: t('net.idCanonical') }));

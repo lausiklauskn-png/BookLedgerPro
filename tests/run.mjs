@@ -201,6 +201,7 @@ import {
   formatInfoBits, versionInfoBits, getAlignmentPatternPositions,
   qrMatrix, qrMaxBytes, qrSvg,
 } from '../src/core/qr.js';
+import { getGeraetename, setGeraetename, displayNodeName, shortKennung, LS_GERAETENAME } from '../src/ui/geraetename.js';
 
 function indexFromSeed() {
   const idx = {};
@@ -6082,6 +6083,37 @@ await section('P8: QR-Encoder (build-frei, lokal)', () => {
   ok('Übernahme: peek lässt liegen', peekUebernahme() === u);
   ok('Übernahme: consume verbraucht', consumeUebernahme() === u && peekUebernahme() === null);
 }
+
+await section('Gerätename (Anzeige-Hinweis, kein Spore-Re-Sign)', () => {
+  // fail-soft ohne localStorage (Node): displayNodeName = reiner Basis-Name
+  ok('ohne localStorage: nur Basis-Name', displayNodeName('BookLedgerPro') === 'BookLedgerPro');
+  ok('ohne localStorage: getGeraetename leer', getGeraetename() === '');
+
+  // Mini-localStorage-Mock für die With-Name-Pfade
+  const _store = {};
+  globalThis.localStorage = {
+    getItem: (k) => (k in _store ? _store[k] : null),
+    setItem: (k, v) => { _store[k] = String(v); },
+    removeItem: (k) => { delete _store[k]; },
+  };
+  try {
+    setGeraetename('  Klaus-Handy  ');
+    ok('setGeraetename trimmt', getGeraetename() === 'Klaus-Handy');
+    ok('Schlüssel = sbkim_geraetename', _store[LS_GERAETENAME] === 'Klaus-Handy');
+    ok('displayNodeName hängt Namen an', displayNodeName('BookLedgerPro') === 'BookLedgerPro · Klaus-Handy');
+
+    setGeraetename('x'.repeat(60));
+    ok('auf 40 Zeichen gekürzt', getGeraetename().length === 40);
+
+    setGeraetename('');
+    ok('leerer Name -> nur Basis-Name', displayNodeName('BookLedgerPro') === 'BookLedgerPro');
+
+    ok('shortKennung kürzt lange Kennung', shortKennung('abcdefgh12345678wxyz') === 'abcdefgh…wxyz');
+    ok('shortKennung lässt kurze Kennung', shortKennung('short') === 'short');
+  } finally {
+    delete globalThis.localStorage;
+  }
+});
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);

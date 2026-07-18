@@ -119,6 +119,20 @@
   // schon Teil des Stacks, kein NEUES CDN — + Modul 02 generateOwnSpore) mit der
   // Buchhaltungs-Domänen-Beschreibung. Verfassungstreu: nutzer-ausgelöst, kein
   // Auto-Connect. EU-/BYOK-Leitplanken unberührt (Embedding ist lokales Modell).
+  // Gerätename (frei wählbar, lokal) — reine ANZEIGE, kein Vertrauens-Beweis und
+  // KEIN Spore-Re-Sign. Der Name reist nur als Anzeige-Zusatz zur Anmelde-Karte im
+  // Raum mit; die signierte Identität (generateOwnSpore) behält RDV_CFG.nodeName.
+  // sbkim-init.js ist ein klassisches Skript (kein ES-Import) → eigener Mini-Helfer,
+  // liest denselben localStorage-Schlüssel wie src/ui/geraetename.js.
+  function bkGeraetename() {
+    try { return (window.localStorage.getItem("sbkim_geraetename") || "").trim().slice(0, 40); }
+    catch (e) { return ""; }
+  }
+  function displayNodeName(base) {
+    var g = bkGeraetename();
+    return g ? (base + " · " + g) : base;
+  }
+
   var RDV_CFG = {
     nodeName: "BookLedgerPro",
     domain: "BookLedgerPro-Buchhaltung",
@@ -215,15 +229,34 @@
   }
   function mountRendezvous() {
     if (!window.SbkimRendezvousUI) return;
+    // Anzeige-Name = Basis-Name + optionaler Gerätename. NUR an die Anzeige/den
+    // Announce geben — NIE an generateOwnSpore (rdvCreateIdentity nutzt weiter
+    // RDV_CFG.nodeName, damit die signierte Spore unverändert bleibt).
+    var announceName = displayNodeName(RDV_CFG.nodeName);
     try {
       if (window.SbkimRendezvous && typeof window.SbkimRendezvous.init === "function") {
         try {
-          window.SbkimRendezvous.init({ nodeName: RDV_CFG.nodeName, dbSuffix: "bookledgerpro", createIdentity: rdvCreateIdentity, ensureIdentity: true });
+          window.SbkimRendezvous.init({ nodeName: announceName, dbSuffix: "bookledgerpro", createIdentity: rdvCreateIdentity, ensureIdentity: true });
         } catch (e) { if (window.console && console.warn) console.warn("[BLP-SBKIM] Rendezvous (Modus A) übersprungen:", e); }
       }
-      window.SbkimRendezvousUI.init({ nodeName: RDV_CFG.nodeName, dbSuffix: "bookledgerpro", corner: "bl", createIdentity: rdvCreateIdentity });
+      window.SbkimRendezvousUI.init({ nodeName: announceName, dbSuffix: "bookledgerpro", corner: "bl", createIdentity: rdvCreateIdentity });
       if (window.console && console.info) console.info("[BLP-SBKIM] Rendezvous-UI gemountet (öffentlicher 🌐-Knopf).");
     } catch (e) { if (window.console && console.warn) console.warn("[BLP-SBKIM] Rendezvous-UI übersprungen:", e); }
+
+    // Kopplung: ändert der Nutzer den Gerätenamen (Netz-Ansicht), den Anzeige-Namen
+    // im Raum neu setzen — fail-soft, ohne Re-Sign der Spore.
+    try {
+      window.addEventListener("sbkim:geraetename-changed", function () {
+        try {
+          if (window.SbkimRendezvous && typeof window.SbkimRendezvous.configure === "function") {
+            window.SbkimRendezvous.configure({ nodeName: displayNodeName(RDV_CFG.nodeName) });
+          }
+          if (window.SbkimRendezvousUI && typeof window.SbkimRendezvousUI.configure === "function") {
+            window.SbkimRendezvousUI.configure({ nodeName: displayNodeName(RDV_CFG.nodeName) });
+          }
+        } catch (e) { /* fail-soft */ }
+      });
+    } catch (e) { /* fail-soft */ }
   }
 
   if (document.readyState === "loading") {
