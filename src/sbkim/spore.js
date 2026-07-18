@@ -10,7 +10,7 @@
 import { bytesToB64u, b64uToBytes, textToBytes, sha256B64u } from '../core/crypto.js';
 import { canonicalize } from '../domain/audit.js';
 
-export const PROTOCOL_VERSION = '0.1';
+export const PROTOCOL_VERSION = '0.2';
 export const EMBEDDING_MODEL = 'Xenova/multilingual-e5-small';
 export const REQUIRED_FIELDS = ['createdAt', 'domain', 'embeddingModel', 'endpoint', 'id', 'nodeType', 'protocolVersion', 'publicKey', 'signature'];
 
