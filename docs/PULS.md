@@ -7,6 +7,22 @@
 
 ---
 
+## ⏭️ GEPLANT (2026-07-20) — BLP echtes Embedding via Hetzner-EU-Mirror → `verified-match`
+
+**Noch nicht gebaut — eigene Sitzung (Klaus' Entscheid).** BLPs `domainVector` ist heute ein
+Demo-Stub (echtes Embedding aus, Regel #1). Plan: echtes e5-Embedding **komplett über Klaus'
+Hetzner (EU, CORS)** laden (Bibliothek + Modell), lokal im Browser rechnen (Text reist nie),
+kanonischen Siegel-Wizard nachrüsten → Klaus signiert **einmal** eine **Spore v0.2 mit echtem
+Vektor** → BLP wird echter `verified-match`-Knoten, DSGVO-sauber (kein US-Transfer). Buchhaltungs-
+daten werden **nie** eingebettet — nur die Domänen-Beschreibung. **Voller Plan + Termux-Hetzner-
+Schritte + offene Felder:** [`docs/BRIEF_BLP_ECHTES_EMBEDDING_EU.md`](BRIEF_BLP_ECHTES_EMBEDDING_EU.md).
+Bis dahin bleibt BLP ehrlich auf Spore v0.1 (handshake-kompatibel mit v0.2, kein Rückschritt).
+
+**Nächste konkrete Schritte:** (1) Klaus stellt `transformers.js` + e5-Modell auf Hetzner bereit
+(Termux, CORS für die BLP-Origin) und nennt die `<HETZNER_BASIS_URL>`. (2) Bau-Sitzung nach dem Brief.
+
+---
+
 ## 🟢 LETZTER STAND (2026-07-06) — WorkFloh-Übernahme: Kunde (A2) + Modus (A3)
 
 Branch `claude/workfloh-blp-bridge-completion-6e4m2n` (sauber auf `origin/main`). Die
