@@ -159,6 +159,13 @@ function header(s) {
         class: 'btn btn-ghost btn-sm', text: t('mandant.switch'),
         onClick: mandantWechseln,
       }) : null,
+      // Dezenter Aktualisieren-Knopf: leert SW-Registrierungen + Cache-Storage und lädt neu
+      // (Hard-Reload-Ersatz für Klaus' Tablet, wo Service-Worker + HTTP-Cache hartnäckig sind).
+      el('button', {
+        class: 'btn btn-ghost btn-sm btn-icon', text: '↻',
+        title: t('app.reloadTitle'), 'aria-label': t('app.reload'),
+        onClick: hardReloadApp,
+      }),
       el('button', {
         class: 'btn btn-ghost btn-sm', text: t('settings.lock'),
         onClick: sperren,
@@ -351,6 +358,22 @@ function sperren() {
   if (_mandant.sandbox) { verlasseSandboxDialog(); return; }
   lockVault();
   _onLock();
+}
+
+// Hard-Reload: Service-Worker-Registrierungen abmelden + Cache-Storage leeren, dann neu
+// laden. Konsequent fail-soft (wirft nie); ein 2,5-s-Timeout garantiert das Neuladen auch,
+// wenn eine der Aufräum-Zusagen hängt. Daten (IndexedDB/Tresore) bleiben unberührt — nur
+// der Shell-Cache wird verworfen (Cache-Bust am Tablet).
+export function hardReloadApp() {
+  const done = () => { try { location.reload(true); } catch (_e) { try { location.reload(); } catch (__e) { /* ignore */ } } };
+  let fired = false; const go = () => { if (fired) return; fired = true; done(); };
+  try {
+    const to = setTimeout(go, 2500);
+    const tasks = [];
+    if ('serviceWorker' in navigator) { tasks.push(navigator.serviceWorker.getRegistrations().then((rs) => Promise.all(rs.map((r) => r.unregister()))).catch(() => {})); }
+    if (window.caches && caches.keys) { tasks.push(caches.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k)))).catch(() => {})); }
+    Promise.all(tasks).then(() => { clearTimeout(to); go(); }).catch(() => { clearTimeout(to); go(); });
+  } catch (_e) { go(); }
 }
 
 function nav() {

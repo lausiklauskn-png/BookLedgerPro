@@ -42,6 +42,9 @@ code { font-family: var(--mono); }
 .btn-ghost { background: transparent; border-color: transparent; }
 .btn-ghost:hover { background: var(--surface-2); border-color: transparent; }
 .btn-sm { padding: .35rem .65rem; font-size: .85rem; }
+/* Kompakter, dezenter Icon-Knopf (z. B. Aktualisieren ↻ in der Kopfzeile). */
+.btn-icon { padding: .35rem .5rem; line-height: 1; font-size: 1rem; }
+.btn-icon:hover { color: var(--accent); }
 .btn-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
 
 /* ---- Sperrbildschirm / Onboarding ---------------------------------------- */

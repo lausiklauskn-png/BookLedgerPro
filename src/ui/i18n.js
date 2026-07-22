@@ -302,6 +302,8 @@ const STRINGS = {
     'common.yes': 'Ja',
     'common.no': 'Nein',
     'settings.lock': 'Jetzt sperren',
+    'app.reload': 'Aktualisieren',
+    'app.reloadTitle': 'Aktualisieren · Cache leeren & neu laden',
     'settings.backup': 'Backup herunterladen',
     'settings.restore': 'Aus Backup wiederherstellen',
 
@@ -1532,6 +1534,8 @@ const STRINGS = {
     'common.yes': 'Yes',
     'common.no': 'No',
     'settings.lock': 'Lock now',
+    'app.reload': 'Refresh',
+    'app.reloadTitle': 'Refresh · clear cache & reload',
     'settings.backup': 'Download backup',
     'settings.restore': 'Restore from backup',
     'durability.persistDenied': 'Storage not granted as persistent — backups matter even more.',
