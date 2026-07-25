@@ -41,7 +41,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "0.1";
+  var VERSION = "0.2";
 
   var cfg = { nodeName: "SBKIM-Knoten", createIdentity: null, dbSuffix: null, prepareCorpus: null, corner: "bl", accent: null, euOnly: false };
   var mounted = false;
@@ -93,7 +93,7 @@
   // meldet ungelesene Post von selbst. Speicher app-eigen (dbSuffix-Suffix →
   // keine Kollision auf geteilter github.io-Adresse). Nur eigene Fragen/Antworten,
   // kein Fremd-PII. Grenze: Relais-Aufbewahrung (Modul 23 fetchAnswers).
-  var RDV_BUBBLE_BASE = "🌐 Mit dem Knotennetz verbinden";
+  var RDV_BUBBLE_BASE = "🌐 Mycel";   // kurze Pille (Klaus 2026-07-24, Eigenname = unverwechselbar); voller Text in Kopfzeile + Tooltip
   var mailBtn = null, reAskBtn = null, clearMailBtn = null;
   // Lebenszyklus-Regelung (Klaus 2026-07-11) — gegen Überladung, per Browser:
   //  · RDV_MAILBOX_MAX  : Obergrenze der lokalen Liste (einstellbar via init).
@@ -523,10 +523,17 @@
     try { global.localStorage.setItem(POS_KEY, JSON.stringify({ x: Math.round(x), y: Math.round(y) })); } catch (_e) {}
   }
   function clampInts(x, y, node) {
+    // Frei fliegend (Klaus 2026-07-24): das Element darf über jeden Rand ragen,
+    // solange ein greifbarer Streifen (KEEP) sichtbar bleibt. Vorher verlangte die
+    // Klemme, dass das GANZE Panel auf den Schirm passt — ein hohes Panel klemmte
+    // dann vertikal fest (nur horizontal verschiebbar). Oben nie ganz raus, weil
+    // die Kopfzeile der Ziehgriff ist.
     var vw = global.innerWidth || 1024, vh = global.innerHeight || 768;
-    var w = (node && node.offsetWidth) || 60, h = (node && node.offsetHeight) || 60;
-    var mx = Math.max(4, vw - w - 4), my = Math.max(4, vh - h - 4);
-    return { x: Math.min(Math.max(4, x), mx), y: Math.min(Math.max(4, y), my) };
+    var w = (node && node.offsetWidth) || 60;
+    var KEEP = 56;
+    var loX = Math.min(4, KEEP - w), hiX = Math.max(loX, vw - KEEP);
+    var loY = 4, hiY = Math.max(loY, vh - KEEP);
+    return { x: Math.min(Math.max(loX, x), hiX), y: Math.min(Math.max(loY, y), hiY) };
   }
   function applyPos(node, p) {
     if (!node || !p) return;
@@ -587,10 +594,10 @@
     btnEl = el("button", "position:fixed;" + cornerCss(cfg.corner, false) + ";z-index:2147483600;" +
       "font:600 .8rem var(--mono,system-ui,sans-serif);padding:8px 12px;border-radius:10px;" +
       "border:1px solid " + ac + ";background:rgba(10,12,20,.7);color:" + ac + ";cursor:pointer;" +
-      "backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.35)", "🌐 Mit dem Knotennetz verbinden");
+      "backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.35)", RDV_BUBBLE_BASE);
     btnEl.type = "button";
     btnEl.id = "sbkim-rdv-btn";
-    btnEl.title = "Andere Knoten treffen";
+    btnEl.title = "Mit dem Knotennetz verbinden";
 
     panelEl = el("div", "position:fixed;" + cornerCss(cfg.corner, true) + ";z-index:2147483600;" +
       "width:min(420px,92vw);display:none;max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch;" +
@@ -620,11 +627,11 @@
     headBtns.appendChild(tipBtn);
     var minBtn = el("button", "background:none;border:none;color:#9aa7b6;font-size:1.4rem;line-height:.6;cursor:pointer;padding:0 6px", "–");
     minBtn.type = "button";
-    minBtn.title = "Minimieren";
+    minBtn.title = "Zur Pille minimieren";
     headBtns.appendChild(minBtn);
     var closeBtn = el("button", "background:none;border:none;color:#9aa7b6;font-size:1.1rem;cursor:pointer", "✕");
     closeBtn.type = "button";
-    closeBtn.title = "Schließen";
+    closeBtn.title = "Ausblenden (kommt beim Neuladen zurück)";
     headBtns.appendChild(closeBtn);
     head.appendChild(headBtns);
     panelEl.appendChild(head);
@@ -640,6 +647,17 @@
 
     panelEl.appendChild(el("p", "margin:0 0 10px;color:#9aa7b6",
       "Triff andere SBKIM-Knoten im gemeinsamen Raum — server-los, direkt aus deinem Browser. Du kannst dieses Fenster schließen und normal weiterarbeiten; nur die App-Seite selbst offen lassen, damit du erreichbar bleibst."));
+
+    // A15 — Zwei-Stufen-Hinweis (ehrliche Kosten-Benennung, reine Anzeige):
+    // „nur stöbern" ist anonym (kein Modell/keine Identität, man wird nicht
+    // gefunden); „voll mitmachen" legt einmal eine lokale Identität an und macht
+    // fragen/verbinden möglich. Der Übergang ist sanft (siehe onAsk/onAnswerFetch).
+    var stageNote = el("div", "margin:0 0 10px;padding:8px 10px;border-radius:8px;" +
+      "border:1px solid rgba(154,167,182,.22);background:rgba(10,16,24,.35);color:#9aa7b6;font-size:.74rem;line-height:1.5");
+    stageNote.innerHTML =
+      "<b style=\"color:#c7d2de\">🔎 Nur stöbern</b> — anonym umsehen, wer im Raum ist. Kein Download, keine Identität, du wirst selbst nicht gefunden. (Knopf „👥 Wer ist im Raum?“)<br>" +
+      "<b style=\"color:#c7d2de\">🌐 Voll mitmachen</b> — einmal eine eigene Identität anlegen (bleibt in deinem Browser). Erst dann bist du auffindbar und kannst fragen &amp; dich verbinden. (Knopf „🌐 Mit dem Knotennetz verbinden“)";
+    panelEl.appendChild(stageNote);
 
     var row = el("div", "display:flex;gap:8px;flex-wrap:wrap");
     var connectBtn = el("button", bs, "🌐 Mit dem Knotennetz verbinden"); connectBtn.type = "button";
@@ -781,7 +799,7 @@
     adoptTips(btnEl);
 
     btnEl.addEventListener("click", function () { toggle(); });
-    closeBtn.addEventListener("click", function () { hide(); });
+    closeBtn.addEventListener("click", function () { closeAll(); });
     minBtn.addEventListener("click", function () { hide(); });
     connectBtn.addEventListener("click", function () { onConnect(); });
     discoverBtn.addEventListener("click", function () { onDiscover(); });
@@ -1372,7 +1390,14 @@
   }
   function hide() {
     if (panelEl) panelEl.style.display = "none";
-    if (btnEl) btnEl.style.display = "";          // minimiert → Blase zeigt sich wieder
+    if (btnEl) btnEl.style.display = "";          // minimiert → Pille zeigt sich wieder
+  }
+  // ✕ — ganz ausblenden (Panel UND Pille). Session-only, NICHT persistiert:
+  // ein Neuladen der Seite mountet das Widget wieder. So kann der Nutzer es
+  // wegräumen, ohne es dauerhaft zu verlieren (Fremdnutzer-Brille).
+  function closeAll() {
+    if (panelEl) panelEl.style.display = "none";
+    if (btnEl) btnEl.style.display = "none";
   }
   function isOpen() { return !!(panelEl && panelEl.style.display !== "none"); }
   function toggle() { if (isOpen()) hide(); else show(); }
@@ -1407,6 +1432,7 @@
     init: init,
     show: show,
     hide: hide,
+    close: closeAll,
     isOpen: isOpen,
     get _meta() {
       return {
