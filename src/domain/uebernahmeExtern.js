@@ -16,15 +16,27 @@
 // es wird nie HTML daraus gebaut (Views rendern über el()/textContent). Unbekannte
 // Quellen/Versionen → null (fail-soft, App startet normal).
 
-export const UEBERNAHME_QUELLEN = Object.freeze(['tomy-workfloh', 'isd-workfloh']);
+// Quellen-Whitelist: WorkFloh-Sender (Angebots-Übernahme) + Shop-Warenwirtschaft
+// (`alm-warehouse` = Alis-Moderaum; `sbkim-shop` = generischer Shop-Absender, damit ein
+// künftiger zweiter Shop – z.B. Perfect-Skin-Beauty-Pflege – denselben Vertrag nutzt).
+export const UEBERNAHME_QUELLEN = Object.freeze(['tomy-workfloh', 'isd-workfloh', 'alm-warehouse', 'sbkim-shop']);
 export const UEBERNAHME_MODI = Object.freeze(['angebot', 'rechnung']);
+// Übergabe-Arten: 'angebot' = WorkFloh-Auftrag → Angebots-Formular; 'buchhaltung-summen'
+// = Shop-Zeitraum-Summen (Umsatz/Wareneinkauf) → Buchungs-Entwürfe. Default 'angebot'
+// (Rückwärtskompatibilität: bestehende WorkFloh-Payloads tragen kein `art`-Feld).
+export const UEBERNAHME_ARTEN = Object.freeze(['angebot', 'buchhaltung-summen']);
+export const UEBERNAHME_UST_SAETZE = Object.freeze([0, 7, 19]);
 export const UEBERNAHME_MAX_POSITIONEN = 20;
+// Betrags-Deckel für Perioden-Summen (Cent). 100 Mrd. Cent = 1 Mrd. € — großzügig über
+// jedem realen Shop-Monat, aber endlich (fail-soft gegen Müll-Riesenwerte).
+export const UEBERNAHME_MAX_SUMME_CENT = 100000000000;
 
 const S = (v, max) => String(v ?? '').slice(0, max).trim();
 const num = (v, min, max, dflt) => {
   const n = Number(v);
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : dflt;
 };
+const istIsoDatum = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s);
 
 /** base64url → UTF-8-String (fail-soft: wirft bei Müll, Aufrufer fängt). */
 function b64uDecode(raw) {
@@ -53,6 +65,8 @@ export function parseUebernahmeParam(search) {
     if (!raw || raw.length > 20000) return null;
     const d = JSON.parse(b64uDecode(raw));
     if (!d || d.v !== 1 || !UEBERNAHME_QUELLEN.includes(d.quelle)) return null;
+    // Neue Art: Shop-Zeitraum-Summen → eigener, klein gehaltener Vertrag.
+    if (d.art === 'buchhaltung-summen') return parseBuchhaltungSummen(d);
     const positionen = (Array.isArray(d.positionen) ? d.positionen : [])
       .slice(0, UEBERNAHME_MAX_POSITIONEN)
       .map((x) => ({
@@ -62,6 +76,7 @@ export function parseUebernahmeParam(search) {
         ustSatz: [0, 7, 19].includes(Number(x && x.ustSatz)) ? Number(x.ustSatz) : 19,
       }));
     return {
+      art: 'angebot',
       quelle: d.quelle,
       modus: UEBERNAHME_MODI.includes(d.modus) ? d.modus : 'angebot',
       titel: S(d.titel, 140),
@@ -73,6 +88,29 @@ export function parseUebernahmeParam(search) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Parst/härtet die Shop-Buchhaltungs-Summen (art:"buchhaltung-summen"). Fremde Eingabe →
+ * alle Werte gekappt/gewhitelistet. Beträge sind Perioden-Summen in Cent (Integer).
+ * @returns {{art:'buchhaltung-summen',quelle:string,shop:string,
+ *   periode:{von:string,bis:string},umsatzBruttoCent:number,wareneinkaufCent:number,
+ *   ustSatz:number,geschaetzt:boolean,hinweis:string}}
+ */
+function parseBuchhaltungSummen(d) {
+  const von = S(d.periode && d.periode.von, 10);
+  const bis = S(d.periode && d.periode.bis, 10);
+  return {
+    art: 'buchhaltung-summen',
+    quelle: d.quelle,
+    shop: S(d.shop, 60) || 'Shop',
+    periode: { von: istIsoDatum(von) ? von : '', bis: istIsoDatum(bis) ? bis : '' },
+    umsatzBruttoCent: Math.round(num(d.umsatzBruttoCent, 0, UEBERNAHME_MAX_SUMME_CENT, 0)),
+    wareneinkaufCent: Math.round(num(d.wareneinkaufCent, 0, UEBERNAHME_MAX_SUMME_CENT, 0)),
+    ustSatz: UEBERNAHME_UST_SAETZE.includes(Number(d.ustSatz)) ? Number(d.ustSatz) : 19,
+    geschaetzt: !!d.geschaetzt,
+    hinweis: S(d.hinweis, 200),
+  };
 }
 
 // RAM-Ablage mit Verbrauchs-Semantik: der Boot fängt die Übergabe EINMAL ein

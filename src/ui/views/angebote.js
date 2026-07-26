@@ -35,7 +35,7 @@ import { ladeKalibrierungFaktoren } from '../../domain/nachkalkulation-store.js'
 import { darfAngebotUebernehmen } from '../../domain/angebotUebernahme.js';
 import { listKunden, listKostenstellen, ensureKostenstellenSeeded, saveKunde } from '../../domain/crm-store.js';
 import { getSettings, updateSettings } from '../../state.js';
-import { consumeUebernahme } from '../../domain/uebernahmeExtern.js';
+import { consumeUebernahme, merkeUebernahme } from '../../domain/uebernahmeExtern.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
@@ -62,7 +62,9 @@ export async function mountAngebote(host) {
   // sonst ginge das in Arbeit befindliche Angebot beim Persistieren des Nutzungsprofils verloren.
   if (!_entwurf) _entwurf = neuesAngebot();
   // Übergabe aus WorkFloh (docs/UEBERNAHME_TOMY.md): Formular vorbefüllen, mehr nicht.
-  const ext = consumeUebernahme();
+  // Fremde Art (z.B. Shop-Buchhaltungs-Summen) gehört nicht hierher → zurücklegen.
+  let ext = consumeUebernahme();
+  if (ext && ext.art && ext.art !== 'angebot') { merkeUebernahme(ext); ext = null; }
   if (ext) {
     _entwurf = neuesAngebot({ titel: ext.titel, positionen: ext.positionen });
     _editId = null; _openSchemaId = null;

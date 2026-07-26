@@ -6082,7 +6082,85 @@ await section('P8: QR-Encoder (build-frei, lokal)', () => {
   merkeUebernahme(u);
   ok('Übernahme: peek lässt liegen', peekUebernahme() === u);
   ok('Übernahme: consume verbraucht', consumeUebernahme() === u && peekUebernahme() === null);
+  ok('Übernahme: WorkFloh-Payload trägt art=angebot', u.art === 'angebot');
 }
+
+// ── Shop-Buchhaltungs-Summen (docs/UEBERNAHME_SHOP.md, art:"buchhaltung-summen") ──
+await section('Shop-Summen-Brücke: Parser-Härtung + Summen → Buchungs-Entwürfe', async () => {
+  const { parseUebernahmeParam } = await import('../src/domain/uebernahmeExtern.js');
+  const { baueShopBuchungen, benoetigteKonten, SHOP_KONTEN, SHOP_GEGENKONTO } =
+    await import('../src/domain/shopbuchung.js');
+  const b64u = (obj) => Buffer.from(JSON.stringify(obj), 'utf-8').toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const gut = { v: 1, quelle: 'alm-warehouse', art: 'buchhaltung-summen', shop: 'Alis-Moderaum',
+    periode: { von: '2026-07-01', bis: '2026-07-31' },
+    umsatzBruttoCent: 119000, wareneinkaufCent: 50000, ustSatz: 19, geschaetzt: false };
+
+  const p = parseUebernahmeParam('?uebernahme=' + b64u(gut));
+  ok('Shop: art wird erkannt', !!p && p.art === 'buchhaltung-summen');
+  ok('Shop: Felder übernommen', p.quelle === 'alm-warehouse' && p.shop === 'Alis-Moderaum'
+    && p.umsatzBruttoCent === 119000 && p.wareneinkaufCent === 50000 && p.ustSatz === 19);
+  ok('Shop: Periode geprüft (ISO)', p.periode.von === '2026-07-01' && p.periode.bis === '2026-07-31');
+  ok('Shop: generische Quelle sbkim-shop akzeptiert',
+    parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'sbkim-shop' })) !== null);
+  ok('Shop: fremde Quelle → null',
+    parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'boese-app' })) === null);
+  ok('Shop: falsche Version → null',
+    parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, v: 2 })) === null);
+  const hart = parseUebernahmeParam('?uebernahme=' + b64u({ ...gut,
+    umsatzBruttoCent: 9e14, wareneinkaufCent: -50, ustSatz: 33,
+    periode: { von: 'kaputt', bis: '2026-07-31' }, shop: 'X'.repeat(200) }));
+  ok('Shop: Härtung (Cent-Deckel, min 0, USt-Whitelist, Datum, Shop-Länge)',
+    hart.umsatzBruttoCent === 100000000000 && hart.wareneinkaufCent === 0
+    && hart.ustSatz === 19 && hart.periode.von === '' && hart.shop.length === 60);
+
+  // Summen → zwei Entwürfe (19 %): Umsatz brutto 1190 → netto 1000 + USt 190; Einkauf netto 500 + VSt 95.
+  const r = baueShopBuchungen(p);
+  ok('Shop: zwei Buchungen (Umsatz + Einkauf)', r.buchungen.length === 2);
+  const umsatz = r.buchungen.find((b) => b.art === 'umsatz');
+  const einkauf = r.buchungen.find((b) => b.art === 'einkauf');
+  ok('Shop-Umsatz ausgeglichen', istAusgeglichen(umsatz.zeilen));
+  ok('Shop-Einkauf ausgeglichen', istAusgeglichen(einkauf.zeilen));
+  ok('Shop-Umsatz: netto 1000 / USt 190 gebucht',
+    umsatz.nettoCent === 100000 && umsatz.steuerCent === 19000
+    && !!zeile(umsatz.zeilen, '8400', 'H') && !!zeile(umsatz.zeilen, '1776', 'H')
+    && !!zeile(umsatz.zeilen, '1200', 'S'));
+  ok('Shop-Einkauf: netto 500 (3400) + VSt 95 (1576) an Verbindl. 595',
+    !!zeile(einkauf.zeilen, '3400', 'S') && zeile(einkauf.zeilen, '3400', 'S').betrag === 50000
+    && zeile(einkauf.zeilen, '1576', 'S').betrag === 9500
+    && zeile(einkauf.zeilen, '1600', 'H').betrag === 59500);
+  ok('Shop: Buchungsdatum = Perioden-Ende', umsatz.datum === '2026-07-31');
+  ok('Shop: benötigte Konten vollständig',
+    benoetigteKonten(19).includes('8400') && benoetigteKonten(19).includes('1576')
+    && benoetigteKonten(19).includes('3400') && benoetigteKonten(19).includes('1200'));
+
+  // Kleinunternehmer §19 (0 %): keine USt/VSt-Zeile, Erlöse 8200.
+  const r0 = baueShopBuchungen({ ...p, ustSatz: 0 });
+  const um0 = r0.buchungen.find((b) => b.art === 'umsatz');
+  const ei0 = r0.buchungen.find((b) => b.art === 'einkauf');
+  ok('Shop 0%: Umsatz ohne USt (8200), ausgeglichen',
+    um0.steuerCent === 0 && um0.zeilen.length === 2 && !!zeile(um0.zeilen, '8200', 'H') && istAusgeglichen(um0.zeilen));
+  ok('Shop 0%: Einkauf ohne VSt, ausgeglichen',
+    ei0.steuerCent === 0 && ei0.zeilen.length === 2 && istAusgeglichen(ei0.zeilen));
+
+  // 7 %: Erlöse 8300 / USt 1771 / Wareneingang 3300 / VSt 1571.
+  const r7 = baueShopBuchungen({ ...p, ustSatz: 7 });
+  const um7 = r7.buchungen.find((b) => b.art === 'umsatz');
+  ok('Shop 7%: Erlöse 8300 + USt 1771', !!zeile(um7.zeilen, '8300', 'H') && !!zeile(um7.zeilen, '1771', 'H'));
+
+  // Leere Summen → keine Buchung, aber Hinweis.
+  const leer = baueShopBuchungen({ ...p, umsatzBruttoCent: 0, wareneinkaufCent: 0 });
+  ok('Shop: leere Summen → keine Buchung + Hinweis', leer.buchungen.length === 0 && leer.hinweise.length > 0);
+
+  // Nur Umsatz (kein Einkauf) → genau eine Buchung.
+  const nurU = baueShopBuchungen({ ...p, wareneinkaufCent: 0 });
+  ok('Shop: nur Umsatz → eine Buchung', nurU.buchungen.length === 1 && nurU.buchungen[0].art === 'umsatz');
+
+  // Geschätzt-Flag reicht als Hinweis durch.
+  const gesch = baueShopBuchungen({ ...p, geschaetzt: true });
+  ok('Shop: geschätzt → Hinweis + im Begründungstext',
+    gesch.hinweise.some((h) => /geschätzt/i.test(h)) && /geschätzt/i.test(gesch.buchungen[0].begruendung));
+});
 
 await section('Gerätename (Anzeige-Hinweis, kein Spore-Re-Sign)', () => {
   // fail-soft ohne localStorage (Node): displayNodeName = reiner Basis-Name
