@@ -5,6 +5,34 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-07-26 — Shop-Summen-Brücke: Warenwirtschaft (Alis-Moderaum) → BLP-Buchungsentwürfe
+
+**Was getan (Branch `claude/shop-accounting-integration-cm91wu` auf `origin/main`; Tests 2153/2153 grün):**
+- **Entscheidung zuerst (kritisch):** Warenwirtschaft **nicht** in BLP nachbauen — der Shop
+  (`warehouse.html`) führt Artikel/EK/VK/Bestand/Bewegungen/Inventurwert bereits. BLP bekommt
+  nur die **Zahlen** als Entwürfe. „Zwei Firmen" = **Mandanten** (schon vorhanden); die Beauty-
+  Firma ist heute Dienstleistung ohne Ware. Gewählt: **schlanke Summen-Brücke** (Klaus).
+- **Neuer Datenvertrag `art:"buchhaltung-summen"` v1** (`docs/UEBERNAHME_SHOP.md`): Parser
+  `parseUebernahmeParam` erkennt die Art, härtet (Quellen-Whitelist `alm-warehouse`/`sbkim-shop`,
+  Cent-Deckel 100 Mrd., USt-Whitelist 0/7/19, ISO-Datum, Shop-Länge). WorkFloh-Payloads tragen
+  jetzt explizit `art:'angebot'` (rückwärtskompatibel).
+- **`src/domain/shopbuchung.js` (rein, node-getestet):** Summen → zwei Buchungs-**Entwürfe**
+  (Umsatz: Bank an Erlöse+USt; Wareneinkauf: Wareneingang+VSt an Verbindlichkeiten), SKR03-Konten
+  je Satz (19/7/0), VK=Brutto/EK=Netto (Annahmen im Entwurfstext benannt). Nichts auto-festgeschrieben.
+- **`src/ui/views/shopbuchung.js` + Verdrahtung:** neue Route/Nav „Shop-Übernahme" (nur `firma`),
+  Boot routet Shop-Summen dorthin, WorkFloh-Angebot weiter zu Angebote; `angebote.js` legt fremde
+  Art zurück. `sw.js` → `v213` + zwei neue Dateien im Precache. i18n de/en.
+- **Shop-Seite (Repo Alis-Moderaum, gleicher Branch):** `bookMovement` heftet `ekCent`/`vkCent`
+  an jede Bewegung; Daten-Tab „An Buchhaltung übergeben" (Zeitraum + USt-Wahl inkl.
+  Kleinunternehmer §19 + BLP-Adresse) baut das Payload und öffnet BLP bzw. lädt JSON. i18n de/en/ru.
+
+**Stand:** Headless-Logik grün (Parser-Härtung, Buchungserzeugung 19/7/0 %, Ausgleich, geschätzt).
+**Offen/ungetestet:** Browser-Sichttest beider Seiten (End-to-End Shop→BLP, Entwürfe im Journal)
+— **wartet auf Klaus' Browser-Lauf**. Offener Klärungspunkt EÜR vs. Bilanz (Summen-Brücke ist in
+beiden Fällen tragfähig; Bestandsveränderungs-Buchung wäre spätere Erweiterung).
+
+---
+
 ## 2026-07-06 — WorkFloh-Übernahme: Kunde zuordnen/anlegen (A2) + Modus-Hinweis (A3)
 
 **Was getan (Branch `claude/workfloh-blp-bridge-completion-6e4m2n` auf `origin/main`; Tests 2123/2123):**

@@ -7,6 +7,23 @@
 
 ---
 
+## ✅ LETZTER STAND (2026-07-26) — Shop-Summen-Brücke Warenwirtschaft → BLP
+
+Neue **Summen-Brücke** vom Shop (Alis-Moderaum `warehouse.html`) zu BLP: der Shop übergibt
+Zeitraum-**Summen** (Umsatz brutto, Wareneinkauf netto) per `?uebernahme=` (Vertrag
+`art:"buchhaltung-summen"`, `docs/UEBERNAHME_SHOP.md`); BLP macht daraus zwei **Buchungs-Entwürfe**
+(Route „Shop-Übernahme", nur `firma`) — **nichts auto-festgeschrieben** (GoBD). Reine Logik in
+`src/domain/shopbuchung.js`, node-getestet. **Tests 2153/2153 grün**, `sw.js v213`.
+**Warenwirtschaft bleibt im Shop** (nicht in BLP nachgebaut); zweite Firma = eigener Mandant.
+
+**Nächste konkrete Schritte:** (1) **Klaus' Browser-Sichttest** End-to-End (Shop „An Buchhaltung
+übergeben" → BLP-Entwürfe im Journal prüfen/festschreiben) — headless ersetzt ihn nicht.
+(2) Klärung **EÜR vs. Bilanz** (Summen-Brücke trägt beides; bei Bilanz später optional
+Bestandsveränderungs-Buchung aus dem Warenwert-Snapshot). (3) Bei zweitem Shop (Perfect-Skin-
+Beauty-Pflege): `warehouse.html`-Kopie mit eigenem DB-Präfix + `sbkim-shop`-Quelle, eigener Mandant.
+
+---
+
 ## ⏭️ GEPLANT (2026-07-20) — BLP echtes Embedding via Hetzner-EU-Mirror → `verified-match`
 
 **Noch nicht gebaut — eigene Sitzung (Klaus' Entscheid).** BLPs `domainVector` ist heute ein
