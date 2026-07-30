@@ -76,6 +76,13 @@
        aus Sage src/modules/23_rendezvous(.ui).js. Vor sbkim-init.js (das mountet). -->
   <script src="./sbkim/23_rendezvous.js"></script>
   <script src="./sbkim/23_rendezvous_ui.js"></script>
+  <!-- Siegel-Modal-INHALT (das Andock-Werkzeug im Siegel). Modul 16 rendert nur
+       das Gerüst; den Inhalt injiziert die App host-seitig, sobald das Modal im
+       DOM hängt. Aus dem Sage-Kanon assets/siegel-inhalt.js kopiert — NUR das
+       WIZ-Objekt ist BLP-eigen. Fünf Bausteine: Identität erzeugen · Spore
+       signieren+⬇ · verschlüsseltes Backup · Wiederherstellen · Identitäts-
+       Wechsler. Betrifft NUR die SBKIM-Identität, nie Buchhaltungsdaten. -->
+  <script src="./sbkim/siegel-inhalt.js"></script>
   <script src="./sbkim/sbkim-init.js"></script>
 
 <!-- ── family-projekt.de · dezenter Fuß-Verweis (netzweit identisch) ──────────
