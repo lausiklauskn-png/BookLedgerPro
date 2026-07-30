@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v214';
+const CACHE_VERSION = 'v215';
 const CACHE_NAME = `blpr-shell-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -200,6 +200,12 @@ const CORE_ASSETS = [
   './sicherheit.html',
   './sbkim/noble-secp256k1.js',
   './sbkim/17_floating_widget.js',
+  // Nachzug 2026-07-30: diese drei fehlten in der Schale — offline war damit das
+  // Netz-Panel („Mit dem Knotennetz verbinden") weg, obwohl index.html sie lädt.
+  // Goldene Regel 1 dieses Repos ist offline-first; ohne sie hielt sie nur halb.
+  './sbkim/21_spracheingabe.js',
+  './sbkim/23_rendezvous.js',
+  './sbkim/23_rendezvous_ui.js',
   './sbkim/sbkim-init.js',
 ];
 
