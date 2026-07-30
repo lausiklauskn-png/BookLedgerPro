@@ -78,6 +78,10 @@
             SbkimSiegel.init({
               badgeSelector: "#sbkim-siegel-badge",
               repoUrl: "https://github.com/lausiklauskn-png/BookLedgerPro",
+              // PFLICHT (Skill „status-leiste-siegel"): ohne ribbonText bleibt das
+              // Ordens-Band im Wappen LEER — es gibt bewusst keine Auto-Ableitung
+              // aus repoUrl. Jede App graviert ihren eigenen Namen ein.
+              ribbonText: "BookLedgerPro",
             });
           } catch (e) { console.warn("[BLP-SBKIM] Siegel-Init übersprungen:", e); }
         }
