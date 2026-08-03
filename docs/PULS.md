@@ -7,6 +7,80 @@
 
 ---
 
+## ✅ LETZTER STAND (2026-08-03, zweiter Durchgang) — Barrierefreiheit 92 → 100, LCP nochmals −41 %
+
+**Wichtige Klarstellung zuerst.** Klaus' PageSpeed-Screenshot mit **63** ist von
+**20:27:25**; die Ladezeit-Arbeit wurde erst um **21:07:28** gemergt (`cover.webp`
+kam erst mit diesem Commit ins Repo). Die 63 ist also der **alte** Stand, nicht das
+Ergebnis der ersten Runde. Die Diagnose-Texte, die Klaus danach geschickt hat,
+nennen `cover.webp` mit `width`/`height` — die stammen aus einem **neuen** Lauf.
+
+### Was diese Runde gefunden und behoben hat
+
+**1. Das LCP-Bild wartete auf den Modulbaum.** Klaus' Aufschlüsselung nannte den
+Posten beim Namen: TTFB 0 ms, Laden 150 ms, Ladedauer 150 ms — und **2.000 ms
+"Rendering des Elements"**. Das Bild war längst da und wurde nur nicht gemalt,
+weil es allein in `src/ui/intro.js` stand. Jetzt steht es **statisch im HTML**;
+`intro.js` **übernimmt** dasselbe `<img>`, statt ein zweites zu bauen (früher
+LCP-Zeitpunkt bleibt stehen, kein Versatz).
+
+**2. Das Bild war größer als nötig** (1040 px, dargestellt mit 606 Bildpunkten).
+Jetzt wählt der Browser über `srcset`/`sizes`: 640 px = 51 KiB statt 113 KiB.
+
+**Gemessen mit echter Netz-Drosselung** (150 ms Rundreise, 1,6 Mbit/s, Prozessor
+vierfach gebremst, je 5 Läufe, Streuung ±10 ms):
+
+| Schritt | LCP |
+|---|---|
+| vorher | 1.748 ms |
+| Bild statisch im HTML | 1.404 ms |
+| + zweite Bildfassung 640 px | **1.028 ms** |
+
+Warum extra gedrosselt: `tools/lh-messen-root.mjs` liefert von `127.0.0.1` aus,
+also **ohne Latenz** — die Aufschlüsselung zeigte lokal 114 ms statt 2.000 ms
+Rendering-Verzögerung, der Unterschied wäre unsichtbar geblieben. Die
+Lighthouse-Zahl allein schwankt um eine halbe Sekunde.
+
+**3. Lampen-Leiste: Barrierefreiheit 92 → 100.** BLP trug bei Modul 17 eine **zwei
+Generationen alte** Fassung. Deren Widget-Grund stand auf `rgba(0, 0, 0, 0.45)` —
+45 % Schwarz über hellem Grund ergibt genau das Mittelgrau `#8c8c8c`, das der
+Prüfer meldete; gegen dieses Grau erreicht **keine** helle Schrift 4,5:1. Der
+Kanon hatte den Fix längst. Repariert wurde im **Sage-Kanon** (nicht hier):
+24-px-Berührungsziele, und der 🌐-Knopf weicht auf schmalen Schirmen aus — er lag
+vorher **auf** der LEBT-Lampe (nur 8,2 px blieben frei). Dadurch wurde ein
+verdeckter Mangel sichtbar: der Knopf schrieb in BLPs dunklem Petrol auf dunklem
+Grund (**1,35:1**). Beides im Kanon behoben und byte-1:1 in **15 Repos** ausgerollt.
+
+**Verifikation.** `node tests/run.mjs` **2157/2157 grün** (vier neue Proben:
+Kommentar-Klammern in `index.html` + Übereinstimmung Vorabruf/`<img>`; Gegenprobe
+gemacht — ohne den Fix fallen sie). Lighthouse 13.4.1 mobil, 3 Läufe: Leistung
+**91** im Median (99/91/90), Barrierefreiheit **100**, CLS **0**, TBT **0 ms**.
+`sw.js` auf **v217**.
+
+**Ehrlich offen / NICHT geprüft:**
+- **Klaus' Sichttest am Tablet** steht aus, besonders: reicht das kleinere
+  Deckblatt-Bild optisch, und sitzt der 🌐-Knopf auf dem Handy gut?
+- **Nachmessung am echten Server** konnte ich nicht selbst machen — der
+  Ausgangs-Proxy dieser Umgebung verweigert `github.io` (403). Die Zahlen oben
+  stammen von der Bau-Maschine bzw. aus der eigenen Drosselung.
+- **Nicht behebbar von hier** (alles „Nicht bewertet", kostet keine Punkte):
+  Cache-Dauer 10 Min. (setzt GitHub Pages, nicht änderbar), HSTS/COOP/XFO/CSP
+  (HTTP-Kopfzeilen, gibt Pages nicht her), JS-Komprimierung der `sbkim/`-Dateien
+  (byte-gleiche Sage-Kopien, dürfen nicht verkleinert werden — sie laden ohnehin
+  erst nach `load`).
+- **Offener echter Befund:** die Konsole meldet
+  `wss://relay.family-projekt.de/` → `ERR_NAME_NOT_RESOLVED`. Das kostet Punkte
+  bei „Gute Praxis" (96) und ist ein **Infrastruktur-Punkt für Klaus**: löst der
+  Name nicht mehr auf, oder ist das Relais umgezogen? Ich habe daran **nichts**
+  geändert — ohne zu wissen, was richtig ist, wäre jede Änderung geraten.
+- Zwei Stylesheets blockieren weiter das Rendern (~600 ms laut Klaus' Bericht).
+  Nicht angefasst: Zusammenlegen/Einbetten erzeugt Doppelpflege.
+
+**Nächste konkrete Schritte:** (1) Klaus' Browser-Sichttest + Nachmessung am
+Server. (2) Relais-Name klären. (3) Die offenen Punkte vom 2026-07-26 (unten).
+
+---
+
 ## ✅ LETZTER STAND (2026-08-03) — Ladezeit: Leistung 63 → 88, LCP 20,1 s → 3,8 s
 
 Klaus' PageSpeed-Messung am Server meldete **63** bei **LCP 20,1 s**. Die Bau-Maschine
