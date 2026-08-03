@@ -7,6 +7,61 @@
 
 ---
 
+## ✅ LETZTER STAND (2026-08-03) — Ladezeit: Leistung 63 → 88, LCP 20,1 s → 3,8 s
+
+Klaus' PageSpeed-Messung am Server meldete **63** bei **LCP 20,1 s**. Die Bau-Maschine
+hat das reproduziert (63 / 20,1 s / CLS 0,201) — dadurch war jeder Schritt messbar.
+Vier Ursachen, in dieser Reihenfolge behoben, nach jedem Schritt neu gemessen:
+
+| Schritt | Leistung | LCP |
+|---|---|---|
+| vorher | 63 | 20,1 s |
+| Deckblatt-Bild verkleinert + vorbestellt | 76 | 8,2 s |
+| `shell.js` erst nach dem Entsperren holen | 81 | 5,3 s |
+| restlichen Start-Baum dynamisch | 87 | 4,1 s |
+| `modulepreload` für die neun Start-Module | **88** (Median aus 5) | **3,8 s** |
+
+1. **`assets/img/cover.png` war 2.427 KiB** — 74 % der ganzen Seitenlast, angezeigt mit
+   346 px Breite. Jetzt `cover.webp`, 1040×693, **113 KiB**. Dazu `width`/`height`
+   (CLS 0,201 → **0**) und `fetchpriority="high"`.
+2. **Das LCP-Bild stand nicht im HTML** — `src/ui/intro.js` baut es erst per JS, der
+   Browser erfuhr also zuletzt davon. Jetzt `<link rel="preload" as="image">` im Kopf;
+   alle drei LCP-Prüfpunkte von Lighthouse sind grün.
+3. **144 Modul-Anfragen vor dem ersten Anstrich.** `main.js` importierte den halben
+   Buchhaltungs-Kern statisch, obwohl er erst nach dem Entsperren gebraucht wird. Jetzt
+   dynamisches `import()` genau an der Aufrufstelle → **9** Module. Build-frei bleibt es
+   (goldene Regel 1): `import()` und `modulepreload` sind natives ES/HTML, kein Bundler.
+4. **Der SBKIM-Stapel (16 Dateien, ~260 KiB) blockierte den Parser** vor `src/main.js`.
+   Jetzt am `load`-Ereignis nachgeladen, Reihenfolge über `script.async=false` exakt
+   erhalten. **Die Dateien unter `sbkim/` selbst sind unangetastet** (byte-gleiche
+   Sage-Kopien) — nur der Zeitpunkt hat sich geändert. TBT 120 ms → **0 ms**.
+
+**Barrierefreiheit 91 → 92:** Deckblatt und Sperrbildschirm sind jetzt `<main>` (vorher
+hatte nur die Shell hinter der Anmeldung eine Hauptmarkierung), und `.fp-copy` wurde auf
+den Netz-Kanon nachgezogen — Tomys-Hub hatte die Farben längst repariert, BLP hing hinterher.
+
+**Verifikation:** `node tests/run.mjs` **2153/2153 grün**. Dazu eine Browser-Gegenprobe mit
+`serviceWorkers:"block"` (sonst antwortet der SW aus dem Cache und man prüft den falschen
+Stand): Deckblatt sichtbar, Bild geladen, alle acht `window.Sbkim*` nach `load` vorhanden,
+Widget-Leiste im DOM, Sperrbildschirm erscheint, **keine Seitenfehler**. `sw.js` auf `v216`.
+
+**Ehrlich offen / nicht geprüft:**
+- **Klaus' Sichttest am Tablet** steht aus (Hard-Reload). Headless ersetzt ihn nicht —
+  besonders beim Deckblatt-Bild lohnt der Blick, ob 113 KiB optisch reichen.
+- **Nachmessung am echten Server** steht aus; die 88 ist die Zahl der Bau-Maschine.
+- **Kontrast + Berührungsziele der SBKIM-Lampen-Leiste** bleiben offen. Sie stecken in
+  `sbkim/17_floating_widget.js` — byte-gleiche Sage-Kopie, hier **nicht** zu reparieren.
+  Gehört in den Sage-Kanon und von dort zurückgeholt.
+- Zwei Stylesheets (`tokens.css` + `app.css`) blockieren weiter das Rendern
+  (geschätzt 150 ms). Nicht angefasst: sie zusammenzulegen oder einzubetten erzeugt
+  Doppelpflege, der Gewinn ist klein.
+
+**Nächste konkrete Schritte:** (1) Klaus' Browser-Sichttest + Nachmessung am Server.
+(2) Lampen-Leiste im Sage-Kanon barrierefrei machen und netzweit zurückholen.
+(3) Die offenen Punkte des Standes vom 2026-07-26 (unten) sind unverändert gültig.
+
+---
+
 ## ✅ LETZTER STAND (2026-07-26) — Shop-Summen-Brücke Warenwirtschaft → BLP
 
 Neue **Summen-Brücke** vom Shop (Alis-Moderaum `warehouse.html`) zu BLP: der Shop übergibt

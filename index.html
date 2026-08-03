@@ -36,14 +36,40 @@
   <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="./assets/tokens.css" />
   <link rel="stylesheet" href="./assets/app.css" />
+  <!-- Deckblatt-Bild vorbestellen (2026-08-03). Das Bild ist das LCP-Element,
+       aber es steht NICHT im HTML — src/ui/intro.js baut es erst, nachdem alle
+       Module geladen und ausgefuehrt sind. Der Browser erfaehrt sonst erst ganz
+       am Ende davon und faengt dann erst an zu laden. Gemessen: LCP 20,1 s.
+       Der Vorabruf kostet 113 KiB auch bei den Nutzern, die das Deckblatt
+       abgeschaltet haben ("nicht mehr automatisch anzeigen") — vertretbar,
+       weil der Service-Worker das Bild ohnehin vorhaelt. -->
+  <link rel="preload" as="image" href="./assets/img/cover.webp" fetchpriority="high" />
+  <!-- Start-Modulbaum vorbestellen (2026-08-03). Ohne diese Zeilen findet der
+       Browser die Module erst eine Ebene nach der anderen: index.html erfaehrt
+       von main.js, main.js von intro.js, intro.js von mycel.js, mycel.js von
+       wappen.js — fuenf Wartezeiten hintereinander, bevor das Deckblatt steht.
+       Mit modulepreload holt er alle neun sofort und gleichzeitig.
+       Es sind genau die neun Dateien des statischen Startbaums (nachgezaehlt,
+       nicht geraten). Alles, was erst nach dem Entsperren gebraucht wird, kommt
+       weiterhin per dynamischem import() und steht bewusst NICHT hier.
+       Build-frei: modulepreload ist ein HTML-Tag, kein Bundler. -->
+  <link rel="modulepreload" href="./src/main.js" />
+  <link rel="modulepreload" href="./src/ui/intro.js" />
+  <link rel="modulepreload" href="./src/ui/i18n.js" />
+  <link rel="modulepreload" href="./src/ui/dom.js" />
+  <link rel="modulepreload" href="./src/ui/mycel.js" />
+  <link rel="modulepreload" href="./src/ui/theme.js" />
+  <link rel="modulepreload" href="./src/sbkim/wappen.js" />
+  <link rel="modulepreload" href="./src/core/durability.js" />
+  <link rel="modulepreload" href="./src/core/db.js" />
 </head>
 <body>
   <noscript>BookLedgerPro benötigt JavaScript (läuft vollständig lokal in Ihrem Browser).</noscript>
 
   <div id="app-root">
-    <div class="lock-screen">
+    <main class="lock-screen">
       <div class="lock-card"><p class="muted">Lädt …</p></div>
-    </div>
+    </main>
   </div>
 
   <!-- Build-frei: native ES-Module, keine CDNs (offline-first). -->
@@ -63,38 +89,62 @@
        geteilten github.io-Origin), unabhängig von der init-Reihenfolge. Wert =
        exakt der SBKIM-Storage-Identitäts-Suffix aus sbkim-init.js. -->
   <script>window.SBKIM_DB_SUFFIX="bookledgerpro-sbkim";</script>
-  <script src="./sbkim/01_storage.js"></script>
-  <script src="sbkim/20_schluessel_safe.js"></script>
-  <script src="./sbkim/02_spore.js"></script>
-  <script src="./sbkim/03_embedding.js"></script>
-  <script src="./sbkim/04_match.js"></script>
-  <script src="./sbkim/05_anastomose.js"></script>
-  <script src="./sbkim/07_apoptose.js"></script>
-  <!-- Modul 15 Membran (Außenhülle / Fremdzugriff-Lampe) + Modul 16 SBKIM-Siegel
-       (Selbst-Bezeugung). Byte-identisch aus Sage src/modules/ kopiert. BLP
-       erwirbt damit ein echtes, zertifiziertes Siegel im Widget (Anti-Green-
-       washing: das Siegel rendert nur, wenn die Pflicht-Module wirklich da sind).
+  <!-- ── SBKIM-Stapel: NACHLADEN statt im kritischen Pfad (Klaus 2026-08-03) ──
+       Die 16 Dateien sind zusammen ~260 KiB und standen als klassische
+       <script src>-Tags im Rumpf. Klassische Skripte blockieren den Parser:
+       sie mussten also komplett geladen UND ausgefuehrt sein, bevor das
+       Modul ./src/main.js an die Reihe kam — und erst main.js baut das
+       Deckblatt mit dem LCP-Bild. Gemessen an Klaus' Server: 11.270 ms
+       Blockierung, LCP 20,1 s.
+
+       Jetzt haengt der Stapel am load-Ereignis: die Seite ist da, DANN kommt
+       das Mycel. Die Reihenfolge bleibt exakt erhalten (script.async=false
+       garantiert bei dynamisch eingehaengten Skripten die Ausfuehrung in
+       Einhaenge-Reihenfolge). Nachgeprueft vor dem Umbau: der App-Code in
+       src/ greift beim Start auf KEINE der window.Sbkim*-Globals zu — die
+       einzige Fundstelle war ein Kommentar. Die Lampen-Leiste und der
+       🌐-Knopf erscheinen dadurch einen Wimpernschlag spaeter; alles ist
+       fail-soft, es geht nichts verloren.
+
+       ⚠ Die Dateien unter sbkim/ selbst sind byte-gleiche Kopien aus dem
+       Sage-Kanon und wurden NICHT angefasst — nur der Zeitpunkt, zu dem sie
+       geholt werden, hat sich geaendert. -->
+  <script>
+  (function () {
+    var stapel = [
+      './sbkim/01_storage.js', 'sbkim/20_schluessel_safe.js', './sbkim/02_spore.js',
+      './sbkim/03_embedding.js', './sbkim/04_match.js', './sbkim/05_anastomose.js',
+      './sbkim/07_apoptose.js', './sbkim/15_membran.js', './sbkim/16_siegel.js',
+      './sbkim/17_floating_widget.js', ['./sbkim/05b_nostr_relay.js', 'module'],
+      './sbkim/21_spracheingabe.js', './sbkim/23_rendezvous.js',
+      './sbkim/23_rendezvous_ui.js', './sbkim/siegel-inhalt.js', './sbkim/sbkim-init.js'
+    ];
+    function laden() {
+      for (var i = 0; i < stapel.length; i++) {
+        var e = stapel[i], pfad = Array.isArray(e) ? e[0] : e;
+        var s = document.createElement('script');
+        if (Array.isArray(e)) s.type = e[1];
+        s.src = pfad;
+        s.async = false;           // haelt die Reihenfolge ein
+        document.body.appendChild(s);
+      }
+    }
+    if (document.readyState === 'complete') laden();
+    else window.addEventListener('load', laden);
+  })();
+  </script>
+  <!-- Was in der Liste oben steht, in der Reihenfolge der Liste:
+       01 Storage · 20 Schlüssel-Safe · 02 Spore · 03 Embedding · 04 Match ·
+       05 Anastomose · 07 Apoptose · 15 Membran (Außenhülle / Fremdzugriff-Lampe) ·
+       16 SBKIM-Siegel (Selbst-Bezeugung, rendert nur bei wirklich vorhandenen
+       Pflicht-Modulen — Anti-Greenwashing) · 17 Floating-Widget (Lampen
+       LEBT/VERKEHR/FREMD/SIEGEL) · 05b Nostr-Relais (als Modul, importiert noble
+       relativ) · 21 Spracheingabe (🎤, VOR 23, damit das Rendezvous-UI sie
+       nutzen kann) · 23 Rendezvous + dessen UI (🌐-Knopf) · siegel-inhalt.js
+       (das Andock-Werkzeug IM Siegel — Modul 16 rendert nur das Gerüst; NUR das
+       WIZ-Objekt darin ist BLP-eigen) · sbkim-init.js (mountet und startet
+       fail-soft listenNostr — Empfangsmodus mit Antwortrecht).
        Betrifft NUR die SBKIM-Identität, nie Buchhaltungsdaten. -->
-  <script src="./sbkim/15_membran.js"></script>
-  <script src="./sbkim/16_siegel.js"></script>
-  <!-- Modul 17 Floating-Widget (Lampen-Design): LEBT/VERKEHR/FREMD/SIEGEL. -->
-  <script src="./sbkim/17_floating_widget.js"></script>
-  <script type="module" src="./sbkim/05b_nostr_relay.js"></script>
-  <!-- Modul 21 Spracheingabe (🎤 Netz-Panel). Byte-1:1 aus Sage src/modules/.
-       Vor Modul 23, damit das Rendezvous-UI die Sprach-Erkennung nutzen kann. -->
-  <script src="./sbkim/21_spracheingabe.js"></script>
-  <!-- Modul 23 Rendezvous (gemeinsamer Raum) + öffentlicher 🌐-Knopf. Byte-1:1
-       aus Sage src/modules/23_rendezvous(.ui).js. Vor sbkim-init.js (das mountet). -->
-  <script src="./sbkim/23_rendezvous.js"></script>
-  <script src="./sbkim/23_rendezvous_ui.js"></script>
-  <!-- Siegel-Modal-INHALT (das Andock-Werkzeug im Siegel). Modul 16 rendert nur
-       das Gerüst; den Inhalt injiziert die App host-seitig, sobald das Modal im
-       DOM hängt. Aus dem Sage-Kanon assets/siegel-inhalt.js kopiert — NUR das
-       WIZ-Objekt ist BLP-eigen. Fünf Bausteine: Identität erzeugen · Spore
-       signieren+⬇ · verschlüsseltes Backup · Wiederherstellen · Identitäts-
-       Wechsler. Betrifft NUR die SBKIM-Identität, nie Buchhaltungsdaten. -->
-  <script src="./sbkim/siegel-inhalt.js"></script>
-  <script src="./sbkim/sbkim-init.js"></script>
 
 <!-- ── family-projekt.de · dezenter Fuß-Verweis (netzweit identisch) ──────────
      Zweck: Wer diese App irgendwo findet (GitHub-Download, Fork, geteilter Link),
@@ -114,12 +164,16 @@
     border-color:rgba(110,231,211,.55);font-size:.86rem;padding:8px 17px;}
   .fp-badge .fp-dot{width:7px;height:7px;border-radius:50%;background:#6ee7d3;
     box-shadow:0 0 7px rgba(110,231,211,.85);flex:none;}
-  .fp-copy{margin-top:9px;font-size:.72rem;line-height:1.5;color:#9aa7b6;opacity:.78;}
+  /* Farbwerte 2026-08-03 auf den Netz-Kanon nachgezogen (Tomys-Hub hatte sie
+     in der Lighthouse-Runde davor schon repariert, BLP hing hinterher):
+     vorher #9aa7b6 bei opacity .78 — zu schwach, von PageSpeed als Kontrast-
+     Fehler gemeldet. Keine eigene Erfindung, sondern Gleichstand herstellen. */
+  .fp-copy{margin-top:9px;font-size:.72rem;line-height:1.5;color:#b3c0ce;opacity:.95;}
   @media (prefers-color-scheme: light){
     .fp-badge{color:#0f766e;border-color:rgba(15,118,110,.35);background:rgba(15,118,110,.05);}
     .fp-badge:hover,.fp-badge:focus-visible{background:rgba(15,118,110,.12);}
     .fp-badge .fp-dot{background:#0f766e;box-shadow:0 0 7px rgba(15,118,110,.5);}
-    .fp-copy{color:#5b6b7a;}
+    .fp-copy{color:#4a5866;}
   }
 </style>
 <div class="fp-badge-wrap">

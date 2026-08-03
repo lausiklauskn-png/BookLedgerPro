@@ -5,6 +5,31 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-08-03 — Ladezeit: Leistung 63 → 88, LCP 20,1 s → 3,8 s
+
+**Was getan.** Klaus meldete per PageSpeed 63 / LCP 20,1 s. Die Bau-Maschine hat es
+reproduziert, danach war jeder Schritt messbar (Lighthouse 13.4.1, mobil, je 3–5 Läufe):
+Deckblatt-Bild `cover.png` 2.427 KiB → `cover.webp` 113 KiB (1040×693) mit `width`/`height`
+und `fetchpriority="high"`; `<link rel="preload" as="image">`, weil das Bild nur per JS
+entsteht und der Browser sonst zuletzt davon erfährt; `renderShell` und der übrige
+Start-Baum per dynamischem `import()` erst bei Gebrauch (144 → 9 Modul-Anfragen vor dem
+ersten Anstrich); `modulepreload` für die neun verbleibenden; SBKIM-Stapel (16 Dateien,
+~260 KiB) am `load`-Ereignis nachgeladen statt parser-blockierend, Reihenfolge über
+`script.async=false` erhalten. Dazu Barrierefreiheit 91 → 92 (`<main>` für Deckblatt und
+Sperrbildschirm, `.fp-copy` auf den Netz-Kanon nachgezogen).
+
+**Stand.** Leistung **88** (Median aus 5), LCP **3,8 s**, CLS **0** (vorher 0,201),
+TBT **0 ms** (vorher 120). `node tests/run.mjs` **2153/2153 grün**. Browser-Gegenprobe mit
+`serviceWorkers:"block"`: Deckblatt, Bild, alle acht `window.Sbkim*`, Widget-Leiste und
+Sperrbildschirm in Ordnung, keine Seitenfehler. `sw.js v216`.
+
+**Offen/Nächstes.** Klaus' Sichttest am Tablet und die Nachmessung am echten Server stehen
+aus (die 88 stammt von der Bau-Maschine). Kontrast und Berührungsziele der SBKIM-Lampen-
+Leiste bleiben offen — sie stecken in der byte-gleichen Sage-Kopie
+`sbkim/17_floating_widget.js` und gehören im Sage-Kanon repariert, nicht hier.
+
+---
+
 ## 2026-07-26 — Shop-Summen-Brücke: Warenwirtschaft (Alis-Moderaum) → BLP-Buchungsentwürfe
 
 **Was getan (Branch `claude/shop-accounting-integration-cm91wu` auf `origin/main`; Tests 2153/2153 grün):**

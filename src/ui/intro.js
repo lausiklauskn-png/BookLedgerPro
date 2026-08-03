@@ -63,7 +63,14 @@ function kiDatenblatt() {
 export function aboutContent() {
   return el('div', { class: 'deckblatt' }, [
     el('div', { class: 'deckblatt-hero' }, [
-      el('img', { class: 'deckblatt-cover', src: './assets/img/cover.png', alt: '', loading: 'eager' }),
+      // Deckblatt-Bild = das LCP-Element der Seite (gemessen 2026-08-03).
+      // width/height stehen fest da, damit der Browser den Platz vorab freihaelt
+      // (die CSS-Regel .deckblatt-cover setzt height:auto — die Attribute wirken
+      // dadurch als Seitenverhaeltnis, nicht als starre Groesse).
+      // fetchpriority=high, weil das Bild sonst hinter den uebrigen Anfragen
+      // einsortiert wird, obwohl es das groesste sichtbare Element ist.
+      el('img', { class: 'deckblatt-cover', src: './assets/img/cover.webp', alt: '',
+        loading: 'eager', fetchpriority: 'high', width: '1040', height: '693' }),
       MycelMark(56),
       el('h1', { class: 'deckblatt-title', text: t('app.name') }),
       el('p', { class: 'deckblatt-tagline', text: 'Buchhaltung & Steuer — offline, verschlüsselt, EU-KI-gestützt.' }),
@@ -96,7 +103,13 @@ export function showIntro(container) {
         resolve();
       },
     });
-    const view = el('div', { class: 'intro-screen' }, [
+    // <main> statt <div>: das Deckblatt ist der erste Bildschirm, den ein
+    // Besucher sieht. Ohne Hauptmarkierung findet eine Vorlesehilfe hier keinen
+    // Einstiegspunkt — PageSpeed meldete "Dokument hat keine Hauptmarkierung".
+    // Die App-Shell hinter der Anmeldung hat ihr <main> laengst (shell.js);
+    // davor gab es keins. Rein semantisch, die Optik aendert sich nicht
+    // (.intro-screen bleibt die tragende CSS-Klasse).
+    const view = el('main', { class: 'intro-screen' }, [
       el('div', { class: 'intro-scroll' }, [
         aboutContent(),
         el('label', { class: 'intro-skip' }, [skip, el('span', { text: t('intro.skip') })]),

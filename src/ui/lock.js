@@ -264,7 +264,9 @@ function renderNeuerTest(container, resolve, zurueck) {
 }
 
 function shell(children, hero = './assets/img/hero-lock.png') {
-  return el('div', { class: 'lock-screen' }, [
+  // <main> statt <div>: eigener Vollbild-Zustand, braucht wie das Deckblatt
+  // eine Hauptmarkierung fuer Vorlesehilfen. Nur Semantik, keine Optik.
+  return el('main', { class: 'lock-screen' }, [
     createMycelBackground(),
     el('div', { class: 'lock-card' }, [
       el('div', { class: 'brand' }, [MycelMark(40), el('span', { class: 'brand-name', text: t('app.name') })]),
