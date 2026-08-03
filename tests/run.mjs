@@ -6193,5 +6193,42 @@ await section('Gerätename (Anzeige-Hinweis, kein Spore-Re-Sign)', () => {
   }
 });
 
+await section('index.html: Kommentare + Bild-Vorabruf', async () => {
+  // Warum es diesen Test gibt: am 2026-08-03 ist ein Erklaer-Absatz beim
+  // Einfuegen HINTER das schliessende "-->" gerutscht. Folge: der Kommentartext
+  // stand als sichtbarer Text im <body>, war das groesste Element der Seite und
+  // wurde damit zum LCP-Element. Im Bericht sah das sogar wie eine Verbesserung
+  // aus (LCP 1.028 -> 548 ms), weil ein Textblock schneller da ist als ein Bild.
+  // Nur die Gegenprobe hat es aufgedeckt. Dieser Test faengt es sofort.
+  const fs = await import('node:fs');
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+
+  // 1) Kommentar-Klammern muessen sauber abwechseln: auf jedes "<!--" folgt ein
+  //    "-->", bevor das naechste "<!--" kommt — und nie ein "-->" ohne offenen
+  //    Kommentar davor.
+  let tiefe = 0, sauber = true, stelle = -1;
+  const marken = [...html.matchAll(/<!--|-->/g)];
+  for (const m of marken) {
+    if (m[0] === '<!--') { if (tiefe !== 0) { sauber = false; stelle = m.index; break; } tiefe = 1; }
+    else { if (tiefe !== 1) { sauber = false; stelle = m.index; break; } tiefe = 0; }
+  }
+  ok('Kommentar-Klammern paarweise geschlossen'
+     + (sauber ? '' : ` (Fehler bei Zeichen ${stelle})`), sauber && tiefe === 0);
+
+  // 2) Kein verirrter Kommentartext: ausserhalb von Kommentaren darf kein "-->"
+  //    stehen (genau das Muster des Fehlers vom 2026-08-03).
+  const ohneKommentare = html.replace(/<!--[\s\S]*?-->/g, '');
+  ok('kein verirrtes "-->" ausserhalb eines Kommentars', !ohneKommentare.includes('-->'));
+
+  // 3) Der Vorabruf des Deckblatt-Bildes muss exakt dieselben Fassungen nennen
+  //    wie das <img>. Weichen sie ab, holt der Browser BEIDE Fassungen.
+  const preloadSrcset = (html.match(/imagesrcset="([^"]+)"/) || [])[1];
+  const preloadSizes = (html.match(/imagesizes="([^"]+)"/) || [])[1];
+  const imgSrcset = (html.match(/\n\s*srcset="([^"]+)"/) || [])[1];
+  const imgSizes = (html.match(/\n\s*sizes="([^"]+)"/) || [])[1];
+  ok('Vorabruf und <img> nennen dieselben Bildfassungen', !!preloadSrcset && preloadSrcset === imgSrcset);
+  ok('Vorabruf und <img> nennen dieselben Groessenangaben', !!preloadSizes && preloadSizes === imgSizes);
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);

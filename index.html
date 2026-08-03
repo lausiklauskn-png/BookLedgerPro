@@ -42,8 +42,20 @@
        am Ende davon und faengt dann erst an zu laden. Gemessen: LCP 20,1 s.
        Der Vorabruf kostet 113 KiB auch bei den Nutzern, die das Deckblatt
        abgeschaltet haben ("nicht mehr automatisch anzeigen") — vertretbar,
-       weil der Service-Worker das Bild ohnehin vorhaelt. -->
-  <link rel="preload" as="image" href="./assets/img/cover.webp" fetchpriority="high" />
+       weil der Service-Worker das Bild ohnehin vorhaelt.
+
+       Zwei Groessen (2026-08-03, zweiter Durchgang): das Bild wird auf dem
+       Handy mit rund 350 CSS-Punkten dargestellt, bei 1,75-facher Bildpunkt-
+       Dichte also mit 606 echten Bildpunkten — die grosse Fassung mit 1040
+       war dafuer mehr als noetig (PageSpeed: "74,6 KiB Einsparung"). Der
+       Browser sucht sich ueber srcset/sizes selbst die passende aus.
+       WICHTIG: imagesrcset/imagesizes hier muessen mit srcset/sizes am <img>
+       uebereinstimmen — sonst holt der Vorabruf die eine und das Bild die
+       andere Fassung, und die Seite laedt beide. -->
+  <link rel="preload" as="image" fetchpriority="high"
+        href="./assets/img/cover.webp"
+        imagesrcset="./assets/img/cover-640.webp 640w, ./assets/img/cover.webp 1040w"
+        imagesizes="(max-width: 584px) calc(100vw - 4rem), 520px" />
   <!-- Start-Modulbaum vorbestellen (2026-08-03). Ohne diese Zeilen findet der
        Browser die Module erst eine Ebene nach der anderen: index.html erfaehrt
        von main.js, main.js von intro.js, intro.js von mycel.js, mycel.js von
@@ -66,11 +78,61 @@
 <body>
   <noscript>BookLedgerPro benötigt JavaScript (läuft vollständig lokal in Ihrem Browser).</noscript>
 
+  <!-- ── Deckblatt-Anfang STATISCH im HTML (Klaus' Messung 2026-08-03) ────────
+       Das Deckblatt-Bild ist das groesste sichtbare Element der Seite (LCP).
+       Es stand bisher nur in src/ui/intro.js — der Browser konnte es also erst
+       malen, wenn main.js, intro.js, dom.js, i18n.js, mycel.js und wappen.js
+       geladen UND ausgefuehrt waren. Der Vorabruf (preload, oben im Kopf) holte
+       das Bild zwar frueh, es lag dann aber fertig herum und wartete auf das
+       Skript. PageSpeed hat genau das aufgeschluesselt:
+
+           Time to First Byte            0 ms
+           Verzoegerung beim Laden     150 ms
+           Dauer des Ladevorgangs      150 ms
+           Rendering des Elements    2.000 ms   <-- der ganze Rest
+
+       Jetzt steht das Bild im HTML. Der Browser malt es, sobald das Stylesheet
+       da ist — ohne auf ein einziges Skript zu warten. Der Rest des Deckblatts
+       (Titel, Siegel, Datenblatt) kommt weiterhin aus intro.js und haengt sich
+       um dieses Bild herum; intro.js UEBERNIMMT genau dieses <img>-Element
+       (heroBild() dort), statt ein zweites zu bauen. Dadurch bleibt es
+       dasselbe Element, der fruehe LCP-Zeitpunkt bleibt stehen, und es
+       entsteht kein Versatz (CLS).
+
+       Die Masse (width/height) ist dieselbe wie in intro.js — sonst springt
+       das Layout beim Uebernehmen. Wer eins aendert, aendert beide. -->
   <div id="app-root">
-    <main class="lock-screen">
-      <div class="lock-card"><p class="muted">Lädt …</p></div>
+    <main class="intro-screen" id="intro-statisch">
+      <div class="intro-scroll">
+        <div class="deckblatt">
+          <div class="deckblatt-hero">
+            <img id="deckblatt-cover-statisch" class="deckblatt-cover"
+                 src="./assets/img/cover.webp"
+                 srcset="./assets/img/cover-640.webp 640w, ./assets/img/cover.webp 1040w"
+                 sizes="(max-width: 584px) calc(100vw - 4rem), 520px"
+                 alt="" loading="eager"
+                 fetchpriority="high" width="1040" height="693" />
+          </div>
+        </div>
+      </div>
     </main>
   </div>
+  <script>
+  /* Wer "nicht mehr automatisch anzeigen" gewaehlt hat, bekommt gar kein
+     Deckblatt — der statische Anfang darf bei ihm nicht kurz aufblitzen.
+     Dieses Skript laeuft synchron direkt nach dem Rumpf-Element, also VOR dem
+     ersten Anstrich; getauscht wird gegen genau die Platzhalter-Karte, die
+     vorher an dieser Stelle stand. Schluessel = SKIP_KEY aus src/ui/intro.js. */
+  (function () {
+    try {
+      if (localStorage.getItem('blpr_intro_skip') === '1') {
+        document.getElementById('app-root').innerHTML =
+          '<main class="lock-screen"><div class="lock-card">' +
+          '<p class="muted">Lädt …</p></div></main>';
+      }
+    } catch (e) { /* localStorage gesperrt: Deckblatt zeigen ist der sichere Fall */ }
+  })();
+  </script>
 
   <!-- Build-frei: native ES-Module, keine CDNs (offline-first). -->
   <script type="module" src="./src/main.js"></script>

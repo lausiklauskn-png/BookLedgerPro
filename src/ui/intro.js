@@ -59,18 +59,44 @@ function kiDatenblatt() {
   ]);
 }
 
+/**
+ * Das Deckblatt-Bild = das LCP-Element der Seite (gemessen 2026-08-03).
+ *
+ * Es steht seit dem 2026-08-03 STATISCH in index.html, damit der Browser es
+ * malen kann, ohne auf den Modulbaum zu warten (vorher: 2.000 ms Rendering-
+ * Verzoegerung laut PageSpeed-Aufschluesselung). Hier wird genau dieses
+ * Element UEBERNOMMEN statt ein zweites zu bauen:
+ *
+ *   - dasselbe Element bleibt bestehen  -> der fruehe LCP-Zeitpunkt bleibt
+ *     stehen (ein neu gebautes, gleich grosses Bild waere ein spaeterer
+ *     Anwaerter und wuerde die Zahl verschlechtern),
+ *   - kein zweiter Ladevorgang, kein Versatz beim Umhaengen (CLS).
+ *
+ * Die Kennung wird beim Uebernehmen entfernt. So bekommt der zweite Aufruf
+ * (Menuepunkt „Ueber", spaeter im Programm) sauber ein frisches Bild und
+ * stiehlt nicht das Element aus dem schon gebauten Deckblatt.
+ *
+ * width/height stehen fest da, damit der Browser den Platz vorab freihaelt
+ * (die CSS-Regel .deckblatt-cover setzt height:auto — die Attribute wirken
+ * dadurch als Seitenverhaeltnis, nicht als starre Groesse). fetchpriority=high,
+ * weil das Bild sonst hinter den uebrigen Anfragen einsortiert wird, obwohl es
+ * das groesste sichtbare Element ist. Wer die Masse hier aendert, aendert sie
+ * auch in index.html — sonst springt das Layout beim Uebernehmen.
+ */
+function heroBild() {
+  const statisch = document.getElementById('deckblatt-cover-statisch');
+  if (statisch) { statisch.removeAttribute('id'); return statisch; }
+  return el('img', { class: 'deckblatt-cover', src: './assets/img/cover.webp',
+    srcset: './assets/img/cover-640.webp 640w, ./assets/img/cover.webp 1040w',
+    sizes: '(max-width: 584px) calc(100vw - 4rem), 520px',
+    alt: '', loading: 'eager', fetchpriority: 'high', width: '1040', height: '693' });
+}
+
 /** Wiederverwendbarer Deckblatt-Inhalt (für „Über"-Menü und Vor-Login-Overlay). */
 export function aboutContent() {
   return el('div', { class: 'deckblatt' }, [
     el('div', { class: 'deckblatt-hero' }, [
-      // Deckblatt-Bild = das LCP-Element der Seite (gemessen 2026-08-03).
-      // width/height stehen fest da, damit der Browser den Platz vorab freihaelt
-      // (die CSS-Regel .deckblatt-cover setzt height:auto — die Attribute wirken
-      // dadurch als Seitenverhaeltnis, nicht als starre Groesse).
-      // fetchpriority=high, weil das Bild sonst hinter den uebrigen Anfragen
-      // einsortiert wird, obwohl es das groesste sichtbare Element ist.
-      el('img', { class: 'deckblatt-cover', src: './assets/img/cover.webp', alt: '',
-        loading: 'eager', fetchpriority: 'high', width: '1040', height: '693' }),
+      heroBild(),
       MycelMark(56),
       el('h1', { class: 'deckblatt-title', text: t('app.name') }),
       el('p', { class: 'deckblatt-tagline', text: 'Buchhaltung & Steuer — offline, verschlüsselt, EU-KI-gestützt.' }),

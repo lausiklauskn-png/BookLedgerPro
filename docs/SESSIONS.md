@@ -5,6 +5,43 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-08-03 (zweiter Durchgang) — Barrierefreiheit 92 → 100, LCP nochmals −41 %
+
+**Was getan.** Klaus schickte die PageSpeed-Diagnose vom Server. Zuerst die
+Zeitachse geprüft: der Screenshot mit **63** ist von 20:27, der Ladezeit-Merge
+von 21:07 — die 63 ist der alte Stand. Danach drei Ursachen, jede einzeln
+gemessen. (a) Das LCP-Bild stand nur in `intro.js` und wartete auf sechs Module
+(Klaus' Aufschlüsselung: 2.000 ms "Rendering des Elements" gegen 150 ms Laden) →
+jetzt statisch im HTML, `intro.js` übernimmt dasselbe Element. (b) Das Bild war
+1040 px breit, dargestellt mit 606 Bildpunkten → `srcset` mit 640 px (51 KiB).
+(c) Die Lampen-Leiste: BLP trug eine zwei Generationen alte Modul-17-Fassung mit
+`rgba(0,0,0,0.45)` — über hellem Grund exakt das gemeldete `#8c8c8c`, gegen das
+keine helle Schrift 4,5:1 erreicht. Im **Sage-Kanon** repariert (24-px-Ziele;
+🌐-Knopf weicht der Leiste aus, er lag auf der LEBT-Lampe; Knopf-Schrift nicht
+mehr in der App-Akzentfarbe, die bei BLP 1,35:1 ergab) und byte-1:1 in 15 Repos
+ausgerollt.
+
+**Stand.** Lighthouse 13.4.1 mobil: Leistung **91** (Median aus 3),
+Barrierefreiheit **92 → 100**, CLS 0, TBT 0 ms. Unter echter Netz-Drosselung
+(je 5 Läufe, ±10 ms): LCP **1.748 → 1.404 → 1.028 ms**. `node tests/run.mjs`
+**2157/2157**. `sw.js v217`.
+
+**Offen/Nächstes.** Klaus' Sichttest am Tablet und die Nachmessung am Server
+stehen aus (der Ausgangs-Proxy dieser Umgebung verweigert `github.io`, 403 —
+ich konnte den Server nicht selbst abrufen). Echter offener Befund: die Konsole
+meldet `wss://relay.family-projekt.de/` als nicht auflösbar; das kostet Punkte
+bei „Gute Praxis" und ist ein Infrastruktur-Punkt für Klaus — bewusst nichts
+daran geändert. Nicht behebbar von hier: Cache-Dauer, HTTP-Kopfzeilen,
+JS-Komprimierung der byte-gleichen `sbkim/`-Kopien.
+
+**Eigener Fehler, offen benannt.** Beim Einfügen eines Erklär-Absatzes rutschte
+der Text hinter das schließende `-->`. Der Kommentar stand dadurch als sichtbarer
+Text im `<body>`, war das größte Element und wurde zum LCP-Element — im Bericht
+sah das wie eine Verbesserung aus (1.028 → 548 ms). Nur die Gegenprobe hat es
+aufgedeckt. Jetzt fängt ein Test in `tests/run.mjs` genau das ab.
+
+---
+
 ## 2026-08-03 — Ladezeit: Leistung 63 → 88, LCP 20,1 s → 3,8 s
 
 **Was getan.** Klaus meldete per PageSpeed 63 / LCP 20,1 s. Die Bau-Maschine hat es
