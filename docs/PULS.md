@@ -7,6 +7,55 @@
 
 ---
 
+## ✅ LETZTER STAND (2026-08-09) — Postfach-Verjährung: `AUSTAUSCH-Sage.md` 630 → 197 Zeilen
+
+Klaus' Auftrag: die netzweite Regel **`Sage-Protokol/docs/INTERFACES.md` §11.6.1
+„Postfach-Verjährung"** auch hier anwenden. Mein-Tresor, Sage, SB-KIMTool-Point und
+Jasons-Tresor sind schon durch; BookLedgerPro trug mit **630 Zeilen** das größte Postfach im
+ganzen Netz.
+
+**Beide Bedingungen nachgesehen, nicht angenommen.** Zusammengefasst wurde nur, was älter als
+30 Tage **und** von der Gegenseite quittiert ist. Sage führt `ack["BookLedgerPro"] = 18`, und
+unser eigener Verlauf nennt **je Eintrag die `seq`** — damit lässt sich die Grenze exakt ziehen
+statt zu schätzen: alles bis Abschnitt 17 lief unter `seq` ≤ 18.
+
+### Was stehen bleibt — und warum
+
+- **Datenverträge:** `SIGNAL.json`, `spore.json` — `git diff` darauf ist leer.
+- **Der Status-Kopf.** Er ist vom 2026-06-20 und überholt (wartet noch auf das Vektor-Rezept).
+  Er bleibt trotzdem im Wortlaut; eine **neue Stand-Zeile** darunter sagt, wo es wirklich steht:
+  `ack[Sage]` = 31, unsere `seq` = 22, Stufe `verified-match` (0.813525).
+- **Die offene cap/needs-Bitte** — jetzt als eigener **OFFEN-Block ganz oben** statt als
+  Nebensatz in zwei Abschnitten. Nachgesehen am 2026-08-09: **Sages committete Spore trägt
+  weder `capVector` noch `needsVector`.** Der Faden liegt unverändert bei Sage, nicht bei uns.
+- **Abschnitt 18** (Rück-Quittung auf die Gute-Nacht-Karte, 2026-06-22). Er lief unter unserer
+  `seq` **19**, Sages `ack` steht bei 18 — **unquittiert. Ungelesene Post verjährt nicht.**
+- **Die zwei Bau-Berichte** vom 2026-06-27 (`seq` 20) und 2026-06-28 (`seq` 22), ebenfalls
+  unquittiert.
+- **Die Abschnitts-Nummern 1–17 bleiben frei**, nicht neu vergeben — sonst brechen stille
+  Verweise aus anderen Postfächern (auch die aus unserem eigenen Status-Kopf).
+
+### Was der Ergebnis-Block trägt
+
+Der Andock (nodeId `MyHVM7Pd…` unverändert, Cosinus 0.810579 → 0.813525, `verified-match`
+beidseitig selbst nachgerechnet, Siegel Gold), der **besiegelte Drei-Schichten-Vertrag**
+(§ 14 geschlossen, Sage hat `matchDimensions` als deckungsgleich mit Modul 04 akzeptiert) und
+das, was wir an Sage weitergegeben haben: der Hybrid-Match-Richter samt vier QA-Härtungen, die
+Sprach-Eingabe-Schicht mit der UX-Lehre „Eingabe nicht mit `value:''` neu bauen", und die
+Speicher-Lehre, die bei Sage als Observatoriums-Lehre 9 verankert ist.
+
+**Beweis:** `node tests/run.mjs` — **2157 bestanden, 0 fehlgeschlagen.** Kein Code angefasst;
+die Änderung betrifft ein Markdown-Postfach. Nichts geht verloren — die Git-Historie trägt jede
+gestrichene Zeile.
+
+### Nächste konkrete Schritte
+
+1. **Sages cap/needs abwarten** — sobald deren Spore die zwei Vektoren führt, schaltet unser
+   Knopf „🜲 mein Knoten ↔ Netz" von selbst auf `Schichten`. Kein Push von uns nötig.
+2. Beim nächsten Sitzungsstart mit Andock-Bezug: Sages `SIGNAL.json` lesen, `ack` nachziehen.
+
+---
+
 ## ✅ LETZTER STAND (2026-08-03, zweiter Durchgang) — Barrierefreiheit 92 → 100, LCP nochmals −41 %
 
 **Wichtige Klarstellung zuerst.** Klaus' PageSpeed-Screenshot mit **63** ist von
