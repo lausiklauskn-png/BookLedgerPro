@@ -356,6 +356,7 @@
 
   var askInputEl = null, answerBtn = null;   // Bau 23.B — Frage-Feld + Antwortrecht-Schalter
   var voiceBtnEl = null, activeRecognizer = null;   // 🎤 Spracheingabe (Modul 21)
+  var voiceLangEl = null, voiceLangChosen = null;  // gesprochene Sprache (Wahl + Anzeige)
   var answerFetchBtn = null;   // A11 — „🔎 Antwort holen": bestpassenden Knoten automatisch fragen
   // A11-Last-Schoner (Klaus 2026-07-11, Tablet friert bei Mehrfach-Klick ein):
   // eine laufende Auto-Suche sperrt weitere Klicks, und dieselbe Frage wird nicht
@@ -995,10 +996,29 @@
     // Klemme, dass das GANZE Panel auf den Schirm passt — ein hohes Panel klemmte
     // dann vertikal fest (nur horizontal verschiebbar). Oben nie ganz raus, weil
     // die Kopfzeile der Ziehgriff ist.
+    //
+    // ⚠ WAAGERECHT gilt das NICHT MEHR (Klaus 2026-08-11: „der selbe Bug ist
+    // überall, auch auf den iOS-Handys"). Gemessen im echten Browser:
+    //
+    //   1100 px  Panel @980..1400 (420 breit)  →  nur 120 px sichtbar
+    //    500 px  Blase @980..1045              →  sichtbar −480 px (ganz weg)
+    //
+    // Ein 420 px breites Panel, geklemmt auf `vw - 56`, zeigt einen 56 px
+    // schmalen, hohen Streifen am rechten Rand — genau das, was Klaus als
+    // „wandert nach rechts und ist schmaler" beschrieben hat. Und auf dem
+    // Handy war der Knopf gar nicht mehr zu treffen.
+    //
+    // Klaus' Entscheid von 2026-07-24 bleibt trotzdem gültig — er zielte auf
+    // die HÖHE: ein hohes Panel soll über den unteren Rand ragen dürfen, statt
+    // senkrecht festzukleben. Genau diese Hälfte bleibt. Waagerecht passt das
+    // Panel dagegen IMMER (`width:min(420px,92vw)`), also gibt es keinen Grund,
+    // es halb aus dem Bild zu schieben: was hineinpasst, bleibt ganz drin.
     var vw = global.innerWidth || 1024, vh = global.innerHeight || 768;
     var w = (node && node.offsetWidth) || 60;
     var KEEP = 56;
-    var loX = Math.min(4, KEEP - w), hiX = Math.max(loX, vw - KEEP);
+    var loX, hiX;
+    if (w + 8 <= vw) { loX = 4; hiX = Math.max(loX, vw - w - 4); }   // passt → ganz sichtbar
+    else { loX = Math.min(4, KEEP - w); hiX = Math.max(loX, vw - KEEP); } // breiter als der Schirm
     var loY = 4, hiY = Math.max(loY, vh - KEEP);
     return { x: Math.min(Math.max(loX, x), hiX), y: Math.min(Math.max(loY, y), hiY) };
   }
@@ -1006,6 +1026,25 @@
     if (!node || !p) return;
     node.style.left = p.x + "px"; node.style.top = p.y + "px";
     node.style.right = "auto"; node.style.bottom = "auto";
+    // ⚠ Und das Ecken-Merkmal abnehmen (Klaus 2026-08-11, zweiter Befund:
+    // „das Mizel ist immer noch son langer Container … in Kombination mit dem
+    // Minimieren").
+    //
+    // Die Regel `#sbkim-rdv-btn[data-ecke-unten="1"]{bottom:78px !important}`
+    // hebt einen in der UNTEREN ECKE verankerten Knopf über die Lampen-Leiste.
+    // `!important` schlaegt aber auch das `bottom:auto`, das eine Zeile darueber
+    // inline gesetzt wird. Sobald hier eine freie Position anliegt, gelten also
+    // `top` UND `bottom` gleichzeitig — und ein `position:fixed`-Element mit
+    // beidem zieht sich ueber die ganze Hoehe dazwischen. Genau das: ein
+    // fingerbreiter, schirmhoher Kasten mit der Schrift in der Mitte, auf zwei
+    // Geraeten fotografiert. Nur unter 560 px, und nur nachdem eine Position
+    // gesetzt wurde (Ziehen, Minimieren, gemerkte Position beim Laden) — darum
+    // sah es beim ersten Aufruf richtig aus.
+    //
+    // Wer frei positioniert ist, steht nicht mehr in der Ecke; die Ausnahme fuer
+    // die Ecke gilt fuer ihn nicht mehr. Zurueck kommt sie beim naechsten Laden
+    // ohne gemerkte Position — dann steht der Knopf wieder in der Ecke.
+    try { if (node.removeAttribute) node.removeAttribute("data-ecke-unten"); } catch (_e) {}
   }
   function makeDraggable(node, handle) {
     handle = handle || node;
@@ -1261,6 +1300,7 @@
     voiceBtnEl = el("button", bsGhost + ";font-size:.9rem;padding:5px 8px", "🎤");
     voiceBtnEl.type = "button";
     voiceBtnEl.title = "Frage einsprechen";
+    voiceLangEl = buildVoiceLangPicker();
     answerBtn = el("button", bsGhost + ";font-size:.74rem;padding:5px 10px", "💬 Antworten: aus");
     answerBtn.type = "button";
     answerBtn.title = "Anderen Knoten antworten";
@@ -1276,6 +1316,7 @@
     askRow.appendChild(askInputEl);
     askRow.appendChild(answerFetchBtn);
     askRow.appendChild(voiceBtnEl);
+    if (voiceLangEl) askRow.appendChild(voiceLangEl);
     askRow.appendChild(answerBtn);
     panelEl.appendChild(askRow);
     voiceBtnEl.addEventListener("click", function () { onVoiceClick(); });
@@ -1375,8 +1416,24 @@
     answerBtn.addEventListener("click", function () { onToggleAnswering(); });
 
     // Flying-Widget: gemerkte Position wiederherstellen + Drag verdrahten.
+    /* Die gemerkte Position IMMER klemmen, auch beim Laden (Klaus 2026-08-11).
+     *
+     * Vorher stand hier `applyPos(btnEl, savedPos)` ohne Klemme, und geklemmt
+     * wurde nur im `resize`-Zuhoerer darunter. Beim NEULADEN feuert aber kein
+     * `resize` — wer die Blase am breiten Schirm nach rechts zieht und die
+     * Seite dann am Handy oder im Splitscheirm oeffnet, findet sie ausserhalb
+     * des Bildes. Gemessen: bei 390 px lag sie bei x=980, also 590 px
+     * jenseits des rechten Randes. Nicht zu sehen, nicht zu treffen, nicht
+     * zurueckzuholen — ausser man dreht das Geraet, damit ein `resize` kommt.
+     *
+     * Die Klemme braucht die echte Breite des Elements. Beim Mount steht die
+     * noch nicht im Layout, darum erst anhaengen, dann klemmen. */
     var savedPos = loadPos();
-    if (savedPos) applyPos(btnEl, savedPos);
+    if (savedPos) {
+      var sicher = clampInts(savedPos.x, savedPos.y, btnEl);
+      applyPos(btnEl, sicher);
+      if (sicher.x !== savedPos.x || sicher.y !== savedPos.y) savePos(sicher.x, sicher.y);
+    }
     makeDraggable(btnEl, btnEl);   // Blase direkt ziehbar
     makeDraggable(panelEl, head);  // Panel an der Kopfzeile ziehbar
     // Bei Fenster-/Splitscreen-Änderung ins Sichtfeld zurückklemmen (fail-soft).
@@ -1827,6 +1884,77 @@
   // Kurze, transiente Notiz im Ausgabe-Bereich (Spracheingabe-Status/Fehler).
   function setVoiceHint(t) { if (outEl) outEl.textContent = t; }
 
+  /* ---- Die Sprache, in der gesprochen wird -------------------------------
+   *
+   * Vorher stand hier `var lang = (langs[0] || ["de-DE"])[0]` — IMMER der erste
+   * Eintrag, also immer Deutsch, und niemand konnte etwas daran ändern. Dieses
+   * 🎤 sitzt im „Mit dem Netz verbinden"-Feld JEDER App mit Modul 23; für alle,
+   * die kein Deutsch sprechen, war es damit unbrauchbar. Klaus 2026-08-11:
+   * „wenn ich in Arabisch etwas hineinspreche, muss auch Arabisch als Text
+   * herauskommen."
+   *
+   * Die Wahl wird pro App gemerkt (`cfg.dbSuffix`), weil Geschwister-Apps auf
+   * GitHub Pages denselben Origin teilen — ohne eigenen Namen stellte eine App
+   * der anderen die Sprache um. */
+  function voiceLangKey() { return "sbkim_rdv_miclang_" + (cfg.dbSuffix || "default"); }
+  function storedVoiceLang() {
+    try { return global.localStorage ? global.localStorage.getItem(voiceLangKey()) : null; }
+    catch (_e) { return null; }
+  }
+  function rememberVoiceLang(code) {
+    try { if (global.localStorage) global.localStorage.setItem(voiceLangKey(), code); } catch (_e) {}
+  }
+  // Ohne Modul 21 gibt es keine Liste — dann bleibt es bei Deutsch, und der
+  // 🎤-Knopf sagt beim Antippen ehrlich, dass das Modul fehlt.
+  function voiceLang() {
+    var speech = global.SbkimSpeech;
+    if (speech && typeof speech.preferredLanguage === "function") {
+      return speech.preferredLanguage(voiceLangChosen || storedVoiceLang());
+    }
+    return voiceLangChosen || "de-DE";
+  }
+
+  /* Die Auswahl erscheint NUR, wenn Modul 21 geladen ist. Ein Wähler ohne
+   * Spracheingabe wäre ein toter Knopf — schlimmer als keiner (Fremdnutzer-
+   * Brille: fail-soft heißt „das Feature verschwindet still", nicht „es steht
+   * da und tut nichts"). */
+  function buildVoiceLangPicker() {
+    var speech = global.SbkimSpeech;
+    if (!speech || typeof speech.getLanguages !== "function") return null;
+    var langs = speech.getLanguages();
+    if (!langs || langs.length < 2) return null;
+    var sel = global.document.createElement("select");
+    sel.id = "sbkim-rdv-miclang";
+    sel.title = "🎤 Sprache, in der du sprichst";
+    sel.setAttribute("aria-label", sel.title);
+    sel.style.cssText = "padding:5px 6px;border-radius:8px;border:1px solid rgba(154,167,182,.35);" +
+      "background:rgba(10,16,24,.6);color:#e8eef6;font:inherit;font-size:.72rem;max-width:9.5rem";
+    for (var i = 0; i < langs.length; i++) {
+      var o = global.document.createElement("option");
+      o.value = langs[i][0]; o.textContent = langs[i][1];
+      sel.appendChild(o);
+    }
+    sel.value = voiceLang();
+    sel.addEventListener("change", function () {
+      voiceLangChosen = sel.value;
+      rememberVoiceLang(voiceLangChosen);
+      applyAskDirection();
+    });
+    return sel;
+  }
+
+  /* Ein Feld, in das arabisch gesprochen wird, muss von rechts lesen.
+   * `dir="auto"` lässt den Browser am INHALT entscheiden — richtiger als ein
+   * festes `dir`, das lügt, sobald jemand die Sprache wechselt oder deutsch
+   * dazwischentippt. */
+  function applyAskDirection() {
+    if (!askInputEl) return;
+    try {
+      askInputEl.setAttribute("dir", "auto");
+      askInputEl.setAttribute("lang", String(voiceLang()).split("-")[0]);
+    } catch (_e) {}
+  }
+
   // 🎤 Spracheingabe (Modul 21) — Frage einsprechen. Spiegelt Modul 22
   // onVoiceClick, fail-soft. Fremdnutzer-sicher: ohne Modul 21 / ohne
   // Browser-Unterstützung bleibt das Textfeld voll nutzbar.
@@ -1840,17 +1968,29 @@
     try { engine = speech.pickEngine(cfg.euOnly ? "bindend" : "frei"); }
     catch (e) { setVoiceHint(speech.speechErrorHint ? speech.speechErrorHint(e) : "🎤 nicht möglich — bitte tippen."); return; }
     if (engine === "browser" && typeof speech.isBrowserSupported === "function" && speech.isBrowserSupported()) {
-      var langs = (typeof speech.getLanguages === "function") ? speech.getLanguages() : [];
-      var lang = (langs[0] || ["de-DE"])[0];
+      var lang = voiceLang();
+      var label = (typeof speech.languageLabel === "function") ? speech.languageLabel(lang) : lang;
+      applyAskDirection();
       try {
         activeRecognizer = speech.makeBrowserRecognizer({
           lang: lang,
-          onResult: function (t) { if (askInputEl) { askInputEl.value = t; } setVoiceHint("Erkannt: " + t + "  — jetzt „🔎 Antwort holen“ drücken."); },
+          onResult: function (t) {
+            if (askInputEl) { askInputEl.value = t; }
+            /* Der STILLE Fehlschlag (Klaus' Sichttest 2026-08-11): Paschtu kam
+             * als „Salaam" in LATEINISCHEN Buchstaben zurück, ganz OHNE Fehler —
+             * der Browser hatte stillschweigend etwas anderes gehört. Ein
+             * Fehler-Hinweis kann da nicht greifen, weil es keinen Fehler gibt.
+             * Also wird die Schrift geprüft. */
+            var schief = (typeof speech.scriptMismatchHint === "function")
+              ? speech.scriptMismatchHint(t, lang) : null;
+            setVoiceHint(schief ? ("🎤 " + schief)
+              : ("Erkannt: " + t + "  — jetzt „🔎 Antwort holen“ drücken."));
+          },
           onError: function (h) { setVoiceHint("🎤 " + h); },
           onEnd: function () { activeRecognizer = null; },
         });
         activeRecognizer.start();
-        setVoiceHint("🎤 Sprich jetzt deine Frage …");
+        setVoiceHint("🎤 Sprich jetzt deine Frage in " + label + " …");
       } catch (e) {
         setVoiceHint(speech.speechErrorHint ? speech.speechErrorHint(e) : "🎤 nicht möglich — bitte tippen.");
       }
@@ -1965,7 +2105,19 @@
   }
 
   function show() {
-    if (panelEl) { panelEl.style.display = "block"; var p = loadPos(); if (p) applyPos(panelEl, p); }
+    /* Panel und Blase teilen sich EINE gemerkte Position — aber das Panel ist
+     * rund 420 px breit und die Blase knapp 90. Eine Stelle, an der die Blase
+     * gut sitzt, schiebt das Panel zu drei Vierteln aus dem Bild. Genau so
+     * entstand der schmale hohe Streifen (gemessen: 120 von 420 px sichtbar).
+     * Darum wird hier fuer die BREITE DES PANELS neu geklemmt, erst nachdem
+     * es sichtbar ist — vorher hat es keine Masse.
+     * Die gemerkte Position bleibt unveraendert: sie gehoert der Blase, und
+     * beim Minimieren soll die wieder dort stehen, wo Klaus sie hingezogen hat. */
+    if (panelEl) {
+      panelEl.style.display = "block";
+      var p = loadPos();
+      if (p) applyPos(panelEl, clampInts(p.x, p.y, panelEl));
+    }
     if (btnEl) btnEl.style.display = "none";      // Panel offen → Blase weg (Flying-Widget)
     refreshStatus();                              // Stufe 0a: Kennung + Speicher-Status frisch
     refreshIdentityBox();                         // Stufe 0b: Sicherungs-/Fächer-Hinweis frisch
