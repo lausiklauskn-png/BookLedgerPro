@@ -7,7 +7,39 @@
 
 ---
 
-## ✅ LETZTER STAND (2026-08-09) — Postfach-Verjährung: `AUSTAUSCH-Sage.md` 630 → 197 Zeilen
+## ✅ LETZTER STAND (2026-08-14) — Modul-23-UI auf den Kanon + Wächter für die Kopien
+
+`sbkim/23_rendezvous_ui.js` lag ~150 Zeilen hinter dem Sage-Kanon und ist jetzt
+byte-1:1 (`4882c3b6`). Vor dem Überschreiben geprüft, dass **keine BLP-eigene Logik**
+darin steckt — die drei auffälligen Streichungen sind im Kanon **ersetzt** (das Panel
+klemmt für seine eigene Breite neu, erst nachdem es sichtbar ist).
+
+**Der Nebenbefund wiegt schwerer.** Vier weitere Kopien weichen ab. Drei sind bloß
+hinterher (**04** Match: Zentrum noch v1 · **16** Siegel · **20** Safe). **15 Membran ist
+abgewandelt** — es trägt BLP-eigene Buchhaltungs-Synonyme (`BLP_QUERY_SYNONYMS` +
+`queryWithInclusion`). Echte, gewollte Funktion, aber genau der Griff, den
+„kopieren, nicht klonen" verbietet: ein blindes Überschreiben hätte sie gelöscht.
+
+**Neuer Wächter** in `tests/run.mjs`: alle 15 Kopien per sha256 genagelt + eine
+Vollzähligkeits-Prüfung. Der Kanon liegt in einem anderen Repo — geprüft wird also
+„unverändert seit der Nagelung", nicht „gleich dem Kanon"; die vier Abweichungen stehen
+mit Grund **im Testnamen**. Gegenprobe gelaufen (geändertes Byte, neue Datei → je rot).
+
+**Beweis:** `node tests/run.mjs` — **2173 bestanden, 0 fehlgeschlagen.** `sw.js v219`.
+**Nicht geprüft:** die Modul-23-Oberfläche im Browser — das kann nur Klaus am Tablet.
+
+### Nächste konkrete Schritte
+
+1. **Modul 15 in den Kanon heben** (Synonym-Karte einstellbar machen), dann **15+16
+   zusammen** nachziehen — 16 hängt an 15, sein Aspekt vom 2026-08-01 nennt eine
+   Fähigkeit, die in 15 liegt.
+2. **04 und 20 nachziehen**, je eine geprüfte Runde. Beide sind reines Hinterherhinken,
+   also unkritisch — aber der Wächter nennt sie jetzt bei jedem Lauf.
+3. **Klaus' Sichttest** des Netz-Panels am Tablet.
+
+---
+
+## ✅ Stand 2026-08-09 — Postfach-Verjährung: `AUSTAUSCH-Sage.md` 630 → 197 Zeilen
 
 Klaus' Auftrag: die netzweite Regel **`Sage-Protokol/docs/INTERFACES.md` §11.6.1
 „Postfach-Verjährung"** auch hier anwenden. Mein-Tresor, Sage, SB-KIMTool-Point und

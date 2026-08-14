@@ -6193,6 +6193,72 @@ await section('Gerätename (Anzeige-Hinweis, kein Spore-Re-Sign)', () => {
   }
 });
 
+await section('sbkim/: die kopierten Module sind genagelt', async () => {
+  // WARUM ES DIESEN TEST GIBT (2026-08-14). Goldene Regel des Netzes ist
+  // „kopieren, nicht klonen" — die SBKIM-Module kommen aus Sage-Protokol und
+  // werden hier NICHT abgewandelt (CLAUDE.md, letzter Absatz). Das stand bisher
+  // nur als Versprechen da, ohne Wächter. Ergebnis: Modul 23 (Rendezvous-UI)
+  // hing ~780 Zeilen hinter dem Kanon, und niemand hat es bemerkt, bis jemand
+  // von Hand nachgesehen hat. Genau dasselbe war in vier weiteren Repos so.
+  //
+  // Was dieser Test kann und was nicht: der Kanon liegt in einem ANDEREN Repo
+  // und ist hier nicht lesbar. Geprüft wird deshalb, dass die Dateien seit
+  // dieser Nagelung UNVERÄNDERT sind — eine Änderung an der Kopie fällt sofort
+  // auf. Ob eine Kopie noch dem Kanon ENTSPRICHT, kann nur ein Abgleich gegen
+  // Sage sagen; welche gerade nicht entsprechen, steht unten ehrlich dabei.
+  const fs = await import('node:fs');
+  const crypto = await import('node:crypto');
+  const dir = new URL('../sbkim/', import.meta.url);
+
+  // sha = die ersten 16 Zeichen von sha256 der Datei.
+  // kanon = true  → am 2026-08-14 byte-1:1 mit Sage-Protokol/src/modules/<datei>
+  //         false → weicht ab; Grund steht daneben. Kein Freibrief, sondern eine
+  //                 offene Aufgabe, die sichtbar bleiben soll.
+  const KOPIEN = [
+    { datei: '01_storage.js',        sha: '5a5a4bf64dfcc107', kanon: true },
+    { datei: '02_spore.js',          sha: '6789fe6e903ad2e5', kanon: true },
+    { datei: '03_embedding.js',      sha: 'e4bb8bd6a237914e', kanon: true },
+    { datei: '04_match.js',          sha: 'df367d113e3de250', kanon: false,
+      grund: 'hinterher: RELATEDNESS_CENTER noch v1, Kanon hat v2 (2026-07-23)' },
+    { datei: '05_anastomose.js',     sha: '255ac79aeb3b0203', kanon: true },
+    { datei: '05b_nostr_relay.js',   sha: '030aa2d260149f56', kanon: true },
+    { datei: '07_apoptose.js',       sha: '0acdd6ab2d95e131', kanon: true },
+    { datei: '15_membran.js',        sha: 'caa387f0c08e4ec7', kanon: false,
+      grund: 'ABGEWANDELT: trägt BLP-eigene Buchhaltungs-Synonyme (BLP_QUERY_SYNONYMS '
+           + '+ queryWithInclusion). Erst in den Kanon heben, dann neu kopieren.' },
+    { datei: '16_siegel.js',         sha: '4e11ef0d0390d155', kanon: false,
+      grund: 'hinterher; muss zusammen mit Modul 15 nachgezogen werden — der '
+           + 'Aspekt vom 2026-08-01 nennt eine Fähigkeit, die in 15 liegt' },
+    { datei: '17_floating_widget.js', sha: 'dd3e0d7fb5963904', kanon: true },
+    { datei: '20_schluessel_safe.js', sha: '38404dc0a16d69cb', kanon: false,
+      grund: 'hinterher: 14 Zeilen fehlen, keine eigenen Änderungen' },
+    { datei: '21_spracheingabe.js',  sha: '020ca26ff52f2ed7', kanon: true },
+    { datei: '23_rendezvous.js',     sha: '3caa0bb1fbe7bf52', kanon: true },
+    { datei: '23_rendezvous_ui.js',  sha: '4882c3b682035bfa', kanon: true },
+    { datei: 'noble-secp256k1.js',   sha: '8f3879ca422c4fdf', kanon: true },
+  ];
+
+  // App-eigener Klebstoff. Er DARF sich frei ändern und wird deshalb nicht
+  // genagelt — er steht hier nur, damit die Vollzähligkeits-Prüfung unten
+  // weiß, dass er kein vergessener Kanon-Nachbau ist.
+  const EIGEN = ['sbkim-init.js', 'siegel-inhalt.js'];
+
+  for (const k of KOPIEN) {
+    const roh = fs.readFileSync(new URL(k.datei, dir));
+    const ist = crypto.createHash('sha256').update(roh).digest('hex').slice(0, 16);
+    ok(`${k.datei} unverändert${k.kanon ? '' : '  [weicht vom Kanon ab: ' + k.grund + ']'}`,
+       ist === k.sha);
+  }
+
+  // Der Teil, der den Wächter am Leben hält: eine NEU dazugelegte Kopie muss
+  // auffallen, sonst wächst die Liste still an der Nagelung vorbei.
+  const gefunden = fs.readdirSync(dir).filter((f) => f.endsWith('.js')).sort();
+  const bekannt = KOPIEN.map((k) => k.datei).concat(EIGEN).sort();
+  const fehlend = gefunden.filter((f) => !bekannt.includes(f));
+  ok(`keine ungenagelte .js-Datei in sbkim/${fehlend.length ? ' (offen: ' + fehlend.join(', ') + ')' : ''}`,
+     fehlend.length === 0);
+});
+
 await section('index.html: Kommentare + Bild-Vorabruf', async () => {
   // Warum es diesen Test gibt: am 2026-08-03 ist ein Erklaer-Absatz beim
   // Einfuegen HINTER das schliessende "-->" gerutscht. Folge: der Kommentartext

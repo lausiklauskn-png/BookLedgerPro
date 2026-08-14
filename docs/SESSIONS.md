@@ -5,6 +5,45 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-08-14 — Modul-23-UI auf den Kanon, und ein Wächter für die Kopien
+
+**Was getan.** `sbkim/23_rendezvous_ui.js` stand auf `c67b2942` und lag rund
+150 Zeilen hinter dem Sage-Kanon (`4882c3b6`). Vor dem Überschreiben alle sieben
+Zeilen geprüft, die dabei verschwinden: vier sind die bekannten Mikrofon-Zeilen,
+drei kommen aus der Schmale-Handy-Arbeit vom 2026-08-11 und sind im Kanon
+**ersetzt**, nicht gestrichen — das Panel klemmt jetzt für seine **eigene**
+Breite neu, erst nachdem es sichtbar ist (vorher hat es keine Masse; gemessen
+waren 120 von 420 px sichtbar). **Keine BLP-eigene Logik in der Datei** —
+die Kopie war gefahrlos.
+
+**Der Nebenbefund ist der wichtigere Teil.** Beim Abgleich *aller* Kopien gegen
+den Kanon weichen vier weitere ab. Drei sind bloß hinterher (04 Match: Zentrum
+noch v1 · 16 Siegel · 20 Safe). **15 Membran ist abgewandelt:** die Datei trägt
+BLP-eigene Buchhaltungs-Synonyme (`BLP_QUERY_SYNONYMS` + `queryWithInclusion`).
+Das ist echte, gewollte Funktion — und es ist genau der Griff, den
+„kopieren, nicht klonen" verbietet. Sie zu überschreiben hätte das Feature
+gelöscht. Der Weg ist: **erst in den Kanon heben** (als einstellbare
+Synonym-Karte), dann neu kopieren. Nicht in dieser Runde entschieden.
+
+**Deshalb ein Wächter.** Neuer Abschnitt in `tests/run.mjs`: alle 15 kopierten
+Module sind per sha256 genagelt, dazu eine Vollzähligkeits-Prüfung, damit eine
+neu dazugelegte Kopie nicht still an der Nagelung vorbeiwächst. Der Kanon liegt
+in einem anderen Repo und ist hier nicht lesbar — geprüft wird also
+„unverändert seit der Nagelung", nicht „gleich dem Kanon". Welche vier gerade
+abweichen, steht **im Testnamen selbst**, samt Grund. Gegenprobe gelaufen: ein
+geändertes Byte und eine neue Datei werfen den Test je um.
+
+**Stand.** `node tests/run.mjs` **2173/2173** (vorher 2157). `sw.js v218 → v219`
+(die Datei steht in der Schale, Goldene Regel 6). Nicht im Browser geprüft: die
+Modul-23-Oberfläche selbst — das kann nur Klaus am Tablet.
+
+**Offen/Nächstes.** (1) Modul 15 in den Kanon heben, dann 15+16 zusammen
+nachziehen — 16 hängt an 15, sein Aspekt vom 2026-08-01 nennt eine Fähigkeit,
+die in 15 liegt. (2) 04 und 20 nachziehen, je eine geprüfte Runde.
+(3) Klaus' Sichttest des Netz-Panels.
+
+---
+
 ## 2026-08-03 (zweiter Durchgang) — Barrierefreiheit 92 → 100, LCP nochmals −41 %
 
 **Was getan.** Klaus schickte die PageSpeed-Diagnose vom Server. Zuerst die
