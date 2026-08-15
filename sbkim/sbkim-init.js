@@ -70,6 +70,28 @@
           try {
             await SbkimMembrane.init({
               allowedOrigins: ["https://lausiklauskn-png.github.io"],
+              // Unsere Fachworte beim Antworten (Kanon-Option seit 2026-08-14).
+              //
+              // Fragt ein anderer Knoten nach „Faktura", soll er auch das
+              // finden, was bei uns „Rechnung" heißt. Die Frage wird dafür vor
+              // dem Suchen aufgefächert und zusätzlich nach Wörtern gesucht
+              // (BM25 neben dem Vektor) — es kommen nur Treffer DAZU.
+              //
+              // Diese Karte stand bis zum 2026-08-14 in unserer KOPIE von
+              // Modul 15. Das war der Griff, den „kopieren, nicht klonen"
+              // verbietet: das nächste byte-1:1-Nachziehen hätte sie gelöscht.
+              // Jetzt liegt die Mechanik im Kanon und die Worte hier, wo die
+              // Domäne bekannt ist. Wer hier ein Fachwort ergänzt, ändert
+              // KEIN Modul.
+              queryInclusion: {
+                synonyms: {
+                  "rechnung": ["faktura"], "faktura": ["rechnung"],
+                  "beleg": ["quittung"], "quittung": ["beleg"],
+                  "ust": ["umsatzsteuer", "mehrwertsteuer"], "umsatzsteuer": ["ust", "mehrwertsteuer"],
+                  "mehrwertsteuer": ["umsatzsteuer", "ust"], "mwst": ["umsatzsteuer", "ust"],
+                  "foto": ["bild"], "bild": ["foto"],
+                },
+              },
             });
           } catch (e) { console.warn("[BLP-SBKIM] Membran-Init übersprungen:", e); }
         }
