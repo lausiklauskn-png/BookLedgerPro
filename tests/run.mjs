@@ -6223,12 +6223,8 @@ await section('sbkim/: die kopierten Module sind genagelt', async () => {
     { datei: '05_anastomose.js',     sha: '255ac79aeb3b0203', kanon: true },
     { datei: '05b_nostr_relay.js',   sha: '030aa2d260149f56', kanon: true },
     { datei: '07_apoptose.js',       sha: '0acdd6ab2d95e131', kanon: true },
-    { datei: '15_membran.js',        sha: 'caa387f0c08e4ec7', kanon: false,
-      grund: 'ABGEWANDELT: trägt BLP-eigene Buchhaltungs-Synonyme (BLP_QUERY_SYNONYMS '
-           + '+ queryWithInclusion). Erst in den Kanon heben, dann neu kopieren.' },
-    { datei: '16_siegel.js',         sha: '4e11ef0d0390d155', kanon: false,
-      grund: 'hinterher; muss zusammen mit Modul 15 nachgezogen werden — der '
-           + 'Aspekt vom 2026-08-01 nennt eine Fähigkeit, die in 15 liegt' },
+    { datei: '15_membran.js',        sha: 'f88b5d04bc089192', kanon: true },
+    { datei: '16_siegel.js',         sha: '95003d2088921ef4', kanon: true },
     { datei: '17_floating_widget.js', sha: 'dd3e0d7fb5963904', kanon: true },
     { datei: '20_schluessel_safe.js', sha: '38404dc0a16d69cb', kanon: false,
       grund: 'hinterher: 14 Zeilen fehlen, keine eigenen Änderungen' },
@@ -6257,6 +6253,33 @@ await section('sbkim/: die kopierten Module sind genagelt', async () => {
   const fehlend = gefunden.filter((f) => !bekannt.includes(f));
   ok(`keine ungenagelte .js-Datei in sbkim/${fehlend.length ? ' (offen: ' + fehlend.join(', ') + ')' : ''}`,
      fehlend.length === 0);
+});
+
+await section('sbkim/: unsere Fachworte gehen an die Membran', async () => {
+  // WARUM ES DIESEN TEST GIBT (2026-08-14). Die Buchhaltungs-Synonyme
+  // (rechnung↔faktura, beleg↔quittung, ust↔umsatzsteuer) standen bis heute in
+  // unserer KOPIE von Modul 15 — an der einen Stelle, die niemand ändern darf.
+  // Ein byte-1:1-Nachziehen hätte sie lautlos gelöscht, und niemand hätte es
+  // gemerkt: die Suche hätte einfach etwas weniger gefunden.
+  //
+  // Jetzt liegt die Mechanik im Kanon (`queryInclusion`) und die Worte im
+  // App-eigenen Klebstoff. Damit ist die alte Falle weg — aber eine neue offen:
+  // der Klebstoff ist frei änderbar, also kann die Karte hier verschwinden.
+  // Deshalb dieser Wächter. Er prüft die Verdrahtung, nicht das Modul.
+  const fs = await import('node:fs');
+  const glue = fs.readFileSync(new URL('../sbkim/sbkim-init.js', import.meta.url), 'utf8');
+
+  ok('sbkim-init.js übergibt queryInclusion an SbkimMembrane.init', glue.includes('queryInclusion'));
+  for (const wort of ['faktura', 'quittung', 'umsatzsteuer']) {
+    ok(`Fachwort "${wort}" ist verdrahtet`, glue.includes(wort));
+  }
+
+  // Und die Gegenseite: das Modul muss die Option überhaupt kennen. Steht sie
+  // nur im Klebstoff, verpufft sie lautlos — genau die Sorte Fehler, die wie
+  // "eingebaut" aussieht.
+  const modul = fs.readFileSync(new URL('../sbkim/15_membran.js', import.meta.url), 'utf8');
+  ok('Modul 15 kennt die Option queryInclusion', modul.includes('queryInclusion'));
+  ok('Modul 15 bietet setQueryInclusion an', modul.includes('setQueryInclusion'));
 });
 
 await section('index.html: Kommentare + Bild-Vorabruf', async () => {
