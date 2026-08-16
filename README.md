@@ -51,3 +51,11 @@ Prüft Krypto-Roundtrip und die GF(256)-Shamir-Wiederherstellung (reine Logik, o
 ## Lizenz
 
 Noch festzulegen.
+
+---
+
+## Rechte
+
+Rechteinhaber ist Klaus Nitzsche. Welche Lizenz gilt und welche Rolle die
+KI-Werkzeuge hatten, steht in [`RECHTE.md`](RECHTE.md); der Lizenztext in
+[`LICENSE`](LICENSE).
