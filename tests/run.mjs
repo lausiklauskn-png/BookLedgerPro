@@ -6224,7 +6224,7 @@ await section('sbkim/: die kopierten Module sind genagelt', async () => {
     { datei: '05b_nostr_relay.js',   sha: '030aa2d260149f56', kanon: true },
     { datei: '07_apoptose.js',       sha: '0acdd6ab2d95e131', kanon: true },
     { datei: '15_membran.js',        sha: 'f88b5d04bc089192', kanon: true },
-    { datei: '16_siegel.js',         sha: '95003d2088921ef4', kanon: true },
+    { datei: '16_siegel.js',         sha: '3e17f6474fc7f96f', kanon: true },
     { datei: '17_floating_widget.js', sha: 'dd3e0d7fb5963904', kanon: true },
     { datei: '20_schluessel_safe.js', sha: '38404dc0a16d69cb', kanon: false,
       grund: 'hinterher: 14 Zeilen fehlen, keine eigenen Änderungen' },
