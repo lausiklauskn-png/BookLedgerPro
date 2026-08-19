@@ -119,3 +119,19 @@ let _pending = null;
 export function merkeUebernahme(u) { _pending = u || null; }
 export function consumeUebernahme() { const u = _pending; _pending = null; return u; }
 export function peekUebernahme() { return _pending; }
+
+/* Der stille Fehlschlag — und warum es diesen zweiten Merker gibt.
+ *
+ * `parseUebernahmeParam` antwortet bei allem Unbekannten mit `null`. Das ist
+ * richtig so (fail-soft, die App startet normal), hatte aber eine Kehrseite:
+ * kam eine Übergabe mit unbekanntem Absender an, öffnete BLP ganz normal und
+ * LEER — ohne ein Wort. Genau so blieb der Absender-Name von Mein-WorkFloh
+ * (`workfloh` statt `isd-workfloh`) monatelang unbemerkt; niemand konnte sehen,
+ * dass überhaupt etwas angekommen war.
+ *
+ * Deshalb merkt sich der Aufrufer jetzt zusätzlich, DASS eine Übergabe da war
+ * und nicht verstanden wurde. Der Inhalt wird bewusst NICHT aufgehoben — er ist
+ * fremde Eingabe aus der Adresse, und wir zeigen nie, was drinstand. */
+let _pendingFehler = false;
+export function merkeUebernahmeFehler() { _pendingFehler = true; }
+export function consumeUebernahmeFehler() { const f = _pendingFehler; _pendingFehler = false; return f; }

@@ -58,9 +58,46 @@ Angebot→Rechnung-Strecke (§14 UStG: fortlaufende Nummer, danach unveränderli
 }
 ```
 
+## Wer darf senden — und was die Liste wirklich leistet (2026-08-19)
+
+BookLedgerPro hängt **nicht** an WorkFloh. WorkFloh ist einer von mehreren Absendern,
+und der Transport `?uebernahme=<base64url(JSON)>` trägt bereits **zwei** verschiedene
+Nutzlasten, gesteuert über das Feld `art`:
+
+| `art` | was passiert | Vertrag |
+|---|---|---|
+| `angebot` (Vorgabe) | Werkstatt-Auftrag → Angebots-Formular | diese Datei |
+| `buchhaltung-summen` | Zeitraum-Summen eines Shops → zwei Buchungs-Entwürfe | `UEBERNAHME_SHOP.md` |
+
+Freigeschaltete Absender (`UEBERNAHME_QUELLEN` in `src/domain/uebernahmeExtern.js`):
+
+| `quelle` | wer |
+|---|---|
+| `tomy-workfloh` | Tomys WorkFloh |
+| `isd-workfloh` | Mein-WorkFloh |
+| `alm-warehouse` | Alis-Moderaum, Warenwirtschaft |
+| `sbkim-shop` | **der offene Platz** für ein fremdes Shop-Werkzeug |
+
+**Wie ein fremdes Werkzeug andockt.** Passt die Nutzlast zu einem der beiden Verträge,
+genügt `quelle: "sbkim-shop"` — dafür ist der Platz da. Braucht es eine eigene Nutzlast,
+kommen ein neues `art` und ein neuer Name dazu: ein kleiner, bewusster Schritt, kein Umbau.
+
+**Die ehrliche Grenze.** Die Liste ist ein **Format-Schalter, kein Türschloss**. Sie sagt
+BLP, wie eine Nutzlast zu lesen ist — sie beweist **nicht**, wer sie geschickt hat. Jeder
+kann sich in seinem eigenen Aufruf `sbkim-shop` nennen. Der Schutz liegt woanders und ist
+da: die Härtung unten (Längen, Wertebereiche, kein HTML) und die Regel, dass **nichts
+automatisch gespeichert** wird. BLP füllt das Formular vor, der Mensch prüft und legt an;
+Nummernkreise und Festschreibung bleiben unberührt.
+
+**Und ein Fehlschlag ist nicht mehr stumm.** Kommt eine Übergabe an, die nicht verstanden
+wird, sagt BLP das in einer Zeile über der Angebote-Ansicht — ohne zu zeigen, was drinstand.
+Vorher öffnete die App ganz normal und leer. Genau dieses Schweigen hat verdeckt, dass
+Mein-WorkFloh jahrelang `quelle:'workfloh'` schickte, einen Namen, den es hier nie gab.
+
 ## Härtung (Parser, node-getestet in `tests/run.mjs`)
 
-- `v !== 1` oder **unbekannte `quelle`** (nicht `tomy-workfloh`/`isd-workfloh`) → `null` (App startet normal).
+- `v !== 1` oder **unbekannte `quelle`** (nicht aus der Liste oben) → `null`, und die App
+  startet normal — sagt aber, dass etwas ankam und nicht verstanden wurde.
 - Strings gekappt (titel/beschreibung 140, kundeName 80, Nummern 32 Zeichen).
 - Max. 20 Positionen; `menge` 0–100 000; `einzelpreisCent` 0–1 000 000 00,
   gerundet; `ustSatz` nur 0/7/19 (sonst 19). Parameter > 20 kB → `null`.
