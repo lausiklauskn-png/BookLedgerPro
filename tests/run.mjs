@@ -6066,6 +6066,20 @@ await section('P8: QR-Encoder (build-frei, lokal)', () => {
   ok('Übernahme: fremde Quelle → null', parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'boese-app' })) === null);
   ok('Übernahme: Müll → null (fail-soft)', parseUebernahmeParam('?uebernahme=%%%nicht-base64%%%') === null);
   ok('Übernahme: ohne Parameter → null', parseUebernahmeParam('?foo=1') === null);
+
+  /* Der stille Fehlschlag (Befund 2026-08-19). `parseUebernahmeParam` liefert bei
+   * allem Unbekannten null — richtig, aber BLP öffnete dann normal und LEER, ohne
+   * ein Wort. Genau so blieb Mein-WorkFlohs falscher Absender-Name monatelang
+   * verdeckt. Der zweite Merker hält fest, DASS etwas ankam und nicht verstanden
+   * wurde; der Inhalt wird bewusst nicht aufgehoben (fremde Eingabe). */
+  {
+    const { merkeUebernahmeFehler, consumeUebernahmeFehler } =
+      await import('../src/domain/uebernahmeExtern.js');
+    ok('Fehler-Merker: ohne Vorfall falsch', consumeUebernahmeFehler() === false);
+    merkeUebernahmeFehler();
+    ok('Fehler-Merker: gemerkt → wahr', consumeUebernahmeFehler() === true);
+    ok('Fehler-Merker: nur EINMAL (verbraucht sich)', consumeUebernahmeFehler() === false);
+  }
   const lang = parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, titel: 'X'.repeat(500),
     positionen: Array.from({ length: 40 }, () => ({ beschreibung: 'P', menge: -5, einzelpreisCent: 9e12, ustSatz: 33 })) }));
   ok('Übernahme: Härtung kappt (Titel 140, max 20 Pos, Werte geclampt)',

@@ -16,7 +16,7 @@ import { ladeRegistry, speichereRegistry } from '../core/mandantenStore.js';
 import { aktiverMandant, mandantenAuswahlListe, umbenenneMandant, entferneMandant, validateMandantName, istSandbox, sandboxAuswahlListe, naechsterTestName } from '../domain/mandanten.js';
 import { erstelleSandboxTresor, wechsleZuSandbox, leereSandboxTresor, loescheSandboxTresor, loescheAlleSandboxes, behalteUndVerlasseSandbox } from '../core/sandboxStore.js';
 import { durabilityStatus } from '../core/durability.js';
-import { parseUebernahmeParam, merkeUebernahme } from '../domain/uebernahmeExtern.js';
+import { parseUebernahmeParam, merkeUebernahme, merkeUebernahmeFehler } from '../domain/uebernahmeExtern.js';
 
 // Übergabe von Tomy-WorkFloh (?uebernahme=…, docs/UEBERNAHME_TOMY.md): einmal beim Laden
 // einfangen, URL sofort säubern, Route auf Angebote stellen. Vorbefüllt wird NUR das
@@ -24,7 +24,18 @@ import { parseUebernahmeParam, merkeUebernahme } from '../domain/uebernahmeExter
 (function captureUebernahme() {
   try {
     const u = parseUebernahmeParam(location.search);
-    if (!u) return;
+    if (!u) {
+      /* Nicht mehr stumm: kam eine Übergabe mit, wurde sie aber nicht verstanden
+       * (unbekannter Absender, veraltetes Format, Müll), dann sagt BLP das —
+       * statt ganz normal und leer zu öffnen. Genau dieses Schweigen hat den
+       * falschen Absender-Namen von Mein-WorkFloh monatelang verdeckt. */
+      if (/[?&]uebernahme=/.test(location.search)) {
+        merkeUebernahmeFehler();
+        history.replaceState(null, '', location.pathname + location.hash);
+        navigate('angebote');
+      }
+      return;
+    }
     merkeUebernahme(u);
     history.replaceState(null, '', location.pathname + location.hash);
     // Shop-Summen → eigene Ansicht; WorkFloh-Auftrag → Angebote.

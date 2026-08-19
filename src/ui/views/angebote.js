@@ -35,7 +35,7 @@ import { ladeKalibrierungFaktoren } from '../../domain/nachkalkulation-store.js'
 import { darfAngebotUebernehmen } from '../../domain/angebotUebernahme.js';
 import { listKunden, listKostenstellen, ensureKostenstellenSeeded, saveKunde } from '../../domain/crm-store.js';
 import { getSettings, updateSettings } from '../../state.js';
-import { consumeUebernahme, merkeUebernahme } from '../../domain/uebernahmeExtern.js';
+import { consumeUebernahme, merkeUebernahme, consumeUebernahmeFehler } from '../../domain/uebernahmeExtern.js';
 import { emptyState } from '../empty.js';
 
 let _host = null;
@@ -79,6 +79,14 @@ export async function mountAngebote(host) {
     const treffer = findeKundeNachName(_uebernahmeKundeName);
     if (treffer) { _entwurf.kundeId = treffer.id; _uebernahmeKundeGesetzt = true; _uebernahmeKundeOffen = false; }
     else { _uebernahmeKundeGesetzt = false; _uebernahmeKundeOffen = !!_uebernahmeKundeName; }
+  } else if (consumeUebernahmeFehler()) {
+    // Eine Übergabe kam an, wurde aber nicht verstanden. Es wird NUR gesagt, dass
+    // es passiert ist — nie, was drinstand: der Inhalt ist fremde Eingabe aus der
+    // Adresse. Kein Entwurf, kein Formular, kein Kunde; die Ansicht bleibt leer
+    // wie sonst auch, nur mit einer Zeile darüber.
+    _uebernahmeHinweis = t('angebote.uebernahmeUnverstanden');
+    _uebernahmeModus = null;
+    _uebernahmeKundeName = ''; _uebernahmeKundeOffen = false; _uebernahmeKundeGesetzt = false;
   }
   // Korrekturfaktoren aus der Historie laden (für die kalibrierte Vorwärtskalkulation).
   // Fehler dürfen die Ansicht nie blockieren — dann eben ohne Kalibrierungs-Option.
