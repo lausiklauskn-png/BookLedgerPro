@@ -56,7 +56,8 @@ genau wissen, wo es weitergeht. Diese vier immer aktuell halten — **`docs/PULS
 zentrale Andockpunkt** (oben „Letzter Stand" + „Nächste konkrete Schritte" pflegen).
 
 ## Arbeitsweise
-- Branch: `claude/general-discussion-x9xyk9` (bzw. der für die Sitzung vorgegebene).
+- Branch: der **für die Sitzung vorgegebene** (steht im ersten Prompt). Bis
+  2026-08-22 stand hier zusätzlich ein fester Name aus einer alten Sitzung.
 - Pro Phase ein PR. **Freibrief für dieses Repo: mergen, wenn sinnvoll & nutzerfreundlich**
   (CI grün, in sich abgeschlossen). Beschreibung mit Verifikation.
 - `node tests/run.mjs` vor dem Push laufen lassen.
@@ -82,20 +83,17 @@ SBKIM-Module werden aus dem Sage-Repo **kopiert, nicht modifiziert** (Modul 09).
 
 ---
 
-## 🏷️ Gerätename gehört ins Verbinden-Panel (netzweite Bauregel, Klaus 2026-08-16)
+## 🏷️ Gerätename · netzweite Regeln
 
-Wer ein Panel „Mit dem Netz verbinden" hat, hat auch das **Gerätenamen-Feld darin** —
-an derselben Stelle wie in jeder anderen App. Verbindliche Fassung mit Begründung:
-[`Sage-Protokol/docs/INTERFACES.md` §11.7](https://github.com/lausiklauskn-png/Sage-Protokol/blob/main/docs/INTERFACES.md),
-Rezept mit Code: Skill `geraetename`.
+Der Gerätename gehört **ins Verbinden-Panel**, hineingehängt vom app-eigenen Glue
+— **nie** in eine byte-kopierte Panel-Datei. Jedes Feld trägt
+`data-sbkim-geraetename`; der Name geht **nur** an Anzeige und Anmeldung, **nie** an
+`generateOwnSpore`. Er ist ein Hinweis, kein Vertrauens-Beweis: immer mit der Kennung
+zusammen anzeigen.
 
-Die drei Punkte, an denen es hier schon einmal schiefging:
-
-- Das Feld wird vom **app-eigenen Glue** ins Panel gehängt (`rendezvous-init.js` bzw.
-  `sbkim-init.js`) — **niemals** in `23_rendezvous_ui.js` / `sbkim-rendezvous-ui.js`
-  schreiben, das sind byte-1:1-Kopien mit Drift-Guard.
-- Jedes Namensfeld trägt `data-sbkim-geraetename`; die Doppel-Prüfung sucht **nur im
-  Panel**. Ändert sich der Name, gleichen sich **alle** markierten Felder ab.
-- Der Name geht **nur** an Anzeige und Anmeldung, **nie** an `generateOwnSpore` — kein
-  Spore-Re-Sign. Und er ist ein Hinweis, kein Vertrauens-Beweis: immer zusammen mit der
-  Kennung anzeigen.
+Diese und die übrigen netzweiten Regeln — Selbst-Merge-Freibrief, frisch von
+`origin/main`, Ton, kein PII, Ehrlichkeit — stehen seit 2026-08-22 **einmal** in
+**[`Sage-Protokol/docs/NETZWEIT.md`](https://github.com/lausiklauskn-png/Sage-Protokol/blob/main/docs/NETZWEIT.md)** statt wortgleich in bis zu
+20 Repos. Verträge: **[`INTERFACES.md`](https://github.com/lausiklauskn-png/Sage-Protokol/blob/main/docs/INTERFACES.md)** · die Fallen beim
+Abzweigen und Veröffentlichen: **[`LEHREN.md`](https://github.com/lausiklauskn-png/Sage-Protokol/blob/main/docs/LEHREN.md)** · alte Fassung dieser
+Datei: [`docs/archiv/CLAUDE-2026-08-22.md`](docs/archiv/CLAUDE-2026-08-22.md).
