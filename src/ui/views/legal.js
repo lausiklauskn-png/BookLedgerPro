@@ -95,7 +95,7 @@ function drittdatenCard() {
 }
 
 // Transparenz- & Zwischenstandsbericht — verlinkt die STETS AKTUELLE Datei
-// docs/TRANSPARENZ_ZWISCHENSTAND.html (eine Quelle der Wahrheit): wird die HTML aktualisiert,
+// docs/TRANSPARENZ_ZWISCHENSTAND.html (eine Quelle): wird die HTML aktualisiert,
 // zeigt die App beim nächsten Öffnen automatisch den neuen Stand. Öffnet in eigenem Tab; die
 // Datei trägt einen „Als PDF speichern"-Knopf. Pfad ist relativ zur index.html (Routing ändert
 // die URL nicht), funktioniert lokal wie auf GitHub Pages.

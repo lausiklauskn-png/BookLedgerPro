@@ -17,12 +17,12 @@ damit der Andock später regelkonform läuft.
 
 | Datei | Zweck |
 |---|---|
-| `sbkim/spore.json` | **Identität** (Quelle der Wahrheit), Ed25519-signiert, 9 Pflichtfelder (§11.5) |
+| `sbkim/spore.json` | **Identität** (Quelle), Ed25519-signiert, 9 Pflichtfelder (§11.5) |
 | `sbkim/SIGNAL.json` | **Briefkasten-Aushang** (maschinenlesbar): seq/ack-Herzschlag (§11.6) |
 | `sbkim/AUSTAUSCH-<Knoten>.md` | **Postfach** je Gegenstelle: Status-Kopf + Briefe + Verlauf (§11.4) |
 | `sbkim/<gegenseite>_inbox.json` | **signatur-reine 1:1-Kopie** der fremden Spore — kein Zusatzfeld (§11.3) |
 | `sbkim/<gegenseite>_inbox.verify.md` | Verifikations-Beleg (Quelle, Datum, 4 Prüfpunkte, Identität, Manipulationsprobe) |
-| `status.json` | **Status** (Quelle der Wahrheit) der eigenen Endknoten/Nachbarn |
+| `status.json` | **Status** (Quelle) der eigenen Endknoten/Nachbarn |
 
 Wahrheits-Karte des Gesamtnetzes liegt bei Sage: `sbkim/NETZ-STAND.md`.
 
@@ -58,7 +58,7 @@ lesen **und** zu quittieren. Optional erlaubt (gelebt bei Mein-Tresor): `_doc`, 
    (Datei/Commit/PR) · real|demo` ins Postfach.
 4. **Abgleich-Frage:** zu jedem gemeldeten Bau prüft die Gegenseite „kann/soll das bei uns
    rein?" → Ja / Nein / Wie, mit Datum.
-5. **Quelle der Wahrheit:** Identität = `spore.json`, Status = `status.json`, Verträge =
+5. **Quelle:** Identität = `spore.json`, Status = `status.json`, Verträge =
    ANDOCK ↔ INTERFACES; **Spec vor Code**.
 6. **Heartbeat:** kein gemeldeter Schritt bleibt länger als eine Gegen-Sitzung unquittiert.
 7. **Menschlicher Vermittler je Repo-Paar** (Klaus) startet die Sitzungen.

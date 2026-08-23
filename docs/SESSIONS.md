@@ -817,7 +817,7 @@ ist ein sauberes Ergebnis). Transformers.js/WASM **build-frei ohne CDN** (Regel 
   committet (headless gemintet via neuem `tools/mint_spore.mjs`, zero-dep). nodeId
   `MyHVM7PdwEtNzOXiZNxfP_RcEXiTLjLpAls1oUm5-cQ`; `domainVector` `_demo` → `verified-spore`.
   `node tools/verify_remote_spore.mjs sbkim/spore.json` → **VALID**.
-- `src/sbkim/nodeProfile.js` = eine Quelle der Wahrheit (Domänen-Felder) → committete und
+- `src/sbkim/nodeProfile.js` = eine Quelle (Domänen-Felder) → committete und
   In-App-Spore können nicht driften. `identity.js importIdentity()` + UI „Identität importieren"
   (Mycel-Netz): geminteten Schlüssel in den Tresor übernehmen (gleicher nodeId). Privater
   Schlüssel → `sbkim/.node-secret.json` (**gitignored**).

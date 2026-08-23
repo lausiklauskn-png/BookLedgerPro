@@ -1104,7 +1104,7 @@ await section('SBKIM: Spore bauen & verifizieren (§11.1/§11.2)', async () => {
   ok('manipulierte Spore UNGÜLTIG', v3.valid === false);
 });
 
-await section('SBKIM: Knoten-Profil (eine Quelle der Wahrheit)', async () => {
+await section('SBKIM: Knoten-Profil (eine Quelle)', async () => {
   // Die committete Spore (Headless-Minter) muss byte-identische Domänen-Felder zur
   // In-App-Spore haben — beide ziehen aus nodeProfile.js. Hier: Minter-Pfad nachbilden.
   const keys = await generateKeyPair();

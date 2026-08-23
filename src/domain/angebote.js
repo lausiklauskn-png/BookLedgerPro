@@ -193,7 +193,7 @@ export function normalizeAngebotsposition(pos = {}) {
  * @param {{werte?:object, zuschlaege?:object, kalibrierung?:object, faktoren?:object,
  *          beschreibung?:string, menge?:number}} [opts]
  *   `zuschlaege.ustProzent` steuert sowohl die interne Kalkulation als auch den externen
- *   `ustSatz` der Position (eine Quelle der Wahrheit). `faktoren` (block → Multiplikator,
+ *   `ustSatz` der Position (eine Quelle). `faktoren` (block → Multiplikator,
  *   aus der Historie via domain/kalibrierung.js `faktorWerte`): wenn gesetzt, wird die
  *   interne Kalkulation KALIBRIERT (kalkuliereSchemaKalibriert) — die gelernte Erfahrung
  *   fließt in den internen Stückpreis zurück; rein intern, das Außendokument bleibt neutral.

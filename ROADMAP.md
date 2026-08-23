@@ -79,7 +79,7 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
       `AUSTAUSCH-template.md` (+ `docs/SAGE_SYNC_BRIEFKASTEN.md`)
 - [x] **Phase 5b — Schritt 1 (Knoten geboren):** echte, signierte `sbkim/spore.json` +
       `sbkim/SIGNAL.json` committet (headless gemintet via `tools/mint_spore.mjs`,
-      eine Quelle der Wahrheit `src/sbkim/nodeProfile.js`); `node tools/verify_remote_spore.mjs
+      eine Quelle `src/sbkim/nodeProfile.js`); `node tools/verify_remote_spore.mjs
       sbkim/spore.json` → **VALID**. In-App-Import bestehender Identität (`importIdentity`)
       ergänzt → App kann denselben nodeId in den Tresor übernehmen
 - [ ] **Phase 5b — Schritt 2 (menschlich vermittelt, fremde Repos):** im Hub-`status.json`

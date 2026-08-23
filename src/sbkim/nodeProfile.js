@@ -1,5 +1,5 @@
 // src/sbkim/nodeProfile.js
-// Eine einzige Quelle der Wahrheit für das Domänen-Profil des BookLedgerPro-Knotens.
+// Eine einzige Quelle für das Domänen-Profil des BookLedgerPro-Knotens.
 // Wird sowohl von der In-App-Erzeugung (ui/views/network.js) als auch vom
 // Headless-Minter (tools/mint_spore.mjs) genutzt → die committete sbkim/spore.json
 // kann NIE von der in der App erzeugten Spore abweichen (gleiche Felder, gleiche

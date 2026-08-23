@@ -784,7 +784,7 @@ re-identifizierter Text + ehrlicher Bericht (fehlende/ungenutzte Schlüssel). i1
 `parseVcard`/`normalizeKunde`/`importKundenAusText`, +18 → **1772/1772**) + Import-Karte in `ui/views/customers.js`
 (verschlüsselt, vorhandene Namen übersprungen) + additives Feld `telefon` in `crm-store.saveKunde`. SW `v142`.
 **Davor — Transparenzbericht in der App ✅ (#166):** „Recht & Doku" verlinkt `docs/TRANSPARENZ_ZWISCHENSTAND.html`
-(eine Quelle der Wahrheit, netz-zuerst → stets aktuell, offline gecacht).
+(eine Quelle, netz-zuerst → stets aktuell, offline gecacht).
 
 ---
 
