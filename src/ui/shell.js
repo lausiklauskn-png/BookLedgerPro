@@ -384,8 +384,8 @@ export function hardReloadApp() {
   try {
     const to = setTimeout(go, 2500);
     const tasks = [];
-    if ('serviceWorker' in navigator) { tasks.push(navigator.serviceWorker.getRegistrations().then((rs) => Promise.all(rs.map((r) => r.unregister()))).catch(() => {})); }
-    if (window.caches && caches.keys) { tasks.push(caches.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k)))).catch(() => {})); }
+    if ('serviceWorker' in navigator) { tasks.push(navigator.serviceWorker.getRegistration().then((r) => r && r.unregister()) /* nur der EIGENE Worker — getRegistrations() meldete ALLE Apps des Ursprungs ab */.catch(() => {})); }
+    if (window.caches && caches.keys) { tasks.push(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith('blpr-')).map((k) => caches.delete(k)))) /* nur EIGENE Vorraete — caches gehoert dem Ursprung */.catch(() => {})); }
     Promise.all(tasks).then(() => { clearTimeout(to); go(); }).catch(() => { clearTimeout(to); go(); });
   } catch (_e) { go(); }
 }
