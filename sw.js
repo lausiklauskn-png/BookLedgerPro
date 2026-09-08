@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v224';
+const CACHE_VERSION = 'v225';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -208,6 +208,8 @@ const CORE_ASSETS = [
   './sbkim/16_siegel.js',
   './sbkim/siegel-inhalt.js',
   './sicherheit.html',
+  './impressum.html',
+  './datenschutz.html',
   './sbkim/noble-secp256k1.js',
   './sbkim/17_floating_widget.js',
   // Nachzug 2026-07-30: diese drei fehlten in der Schale — offline war damit das
