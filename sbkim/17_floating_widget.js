@@ -139,6 +139,107 @@
     siegel:  "siegel",
   };
 
+  /* ── SPRACHE (Klaus 2026-09-14) ────────────────────────────────────────
+   *
+   * WARUM. Klaus hat vom Tablet ein Bild geschickt: die Seite auf Englisch,
+   * und mitten darin die Lampen-Leiste mit „lebt · verkehr · fremd · siegel".
+   * Die Leiste steht auf JEDER Seite dauerhaft da — sie ist die sichtbarste
+   * deutsche Stelle des ganzen Netzes, noch bevor jemand ein Fenster oeffnet.
+   *
+   * WIE. Byte-gleiches Verfahren wie Modul 23 UI und Modul 16: SCHLUESSELLOS.
+   * `T("…")` nimmt den deutschen Satz und gibt die Uebersetzung zurueck, wenn
+   * es eine gibt. Kein Schluessel-System — ein Schluessel und sein Text laufen
+   * auseinander, sobald einer von beiden sich bewegt, und dann steht im
+   * Fenster ein Schluessel.
+   *
+   * FAIL-SOFT UND RUECKWAERTSKOMPATIBEL: fehlt ein Eintrag, bleibt es deutsch.
+   * Das ist der Zustand vor dieser Aenderung — neunzehn Apps tragen dieses
+   * Modul byte-1:1, und keine davon darf davon etwas merken, solange sie
+   * nichts einstellt.
+   *
+   * ⚠ DER PREIS: aendert jemand einen deutschen Satz, faellt seine
+   * Uebersetzung STILL auf Deutsch zurueck. Dagegen steht ein Waechter
+   * (tests/smoke_bau1617_sprache.mjs), der in beide Richtungen misst.
+   *
+   * ⚠ DIE PILLE WIRD EINMAL GEBAUT. Ein Sprachwechsel danach erreicht die
+   * Etiketten erst beim naechsten Laden; die beiden Modals zeichnen bei jedem
+   * Oeffnen neu und folgen sofort. Benannte Grenze, kein Fehler.
+   */
+  var TEXTE = { en: {
+      "lebt":    "alive",
+      "verkehr": "traffic",
+      "fremd":   "foreign",
+      "siegel":  "seal",
+      "LEBT — Page lebt seit init() (Modul 02 Spore). Klick öffnet Status-Modal.":
+        "ALIVE — page has been alive since init() (module 02 Spore). Click opens the status window.",
+      "VERKEHR — grün = am Relais verbunden, lauscht (Empfangsmodus, antwortet nur). Pulst bei Handschlag (Modul 05) / postMessage (Modul 15). Klick öffnet Mini-Log.":
+        "TRAFFIC — green = connected to the relay, listening (receive mode, replies only). Pulses on a handshake (module 05) / postMessage (module 15). Click opens the mini log.",
+      "FREMD — Fremdzugriff-Buffer (Modul 15 Sub e). Rot wenn Buffer nicht leer. Klick öffnet Modul-15-Modal.":
+        "FOREIGN — foreign-access buffer (module 15 sub e). Red when the buffer is not empty. Click opens the module 15 window.",
+      "SBKIM-Siegel — Modul 16 Self-Inscribing-Bezeugung. Klick öffnet Aspekte-Modal.":
+        "SBKIM seal — module 16 self-inscribing attestation. Click opens the aspects window.",
+      "SBKIM Live-Status-Widget":
+        "SBKIM live status widget",
+      "Widget minimieren — zeigt nur das SBKIM-Siegel. Erneuter Klick maximiert.":
+        "Minimise the widget — shows only the SBKIM seal. Clicking again maximises it.",
+      "Widget maximieren — zeigt alle vier Slots.":
+        "Maximise the widget — shows all four lamps.",
+      "Widget schließen — wiederherstellbar via SbkimWidget.show()":
+        "Close the widget — restorable via SbkimWidget.show()",
+      "Schließen":
+        "Close",
+      "LEBT — Page-Status":
+        "ALIVE — page status",
+      "VERKEHR — letzte ":
+        "TRAFFIC — last ",
+      " Events":
+        " events",
+      "RAM-only FIFO — Tab-Reload leert die Liste.":
+        "RAM-only FIFO — reloading the tab empties the list.",
+      "Zeit":         "Time",
+      "Quelle":       "Source",
+      "Richtung":     "Direction",
+      "Entscheidung": "Decision",
+      "Uptime":         "Uptime (running for)",
+      "Modul-02 init":  "Module 02 init",
+      "nodeId-Präfix":  "nodeId prefix",
+      "Events:alive":   "Events: alive",
+      "since (ISO)":    "since (ISO)",
+      "ja":   "yes",
+      "nein": "no",
+  } };
+
+  /* Die gewaehlte Sprache. null = „nicht gesetzt" → <html lang> entscheidet. */
+  var optLang = null;
+
+  function sprache() {
+    if (optLang === "de" || optLang === "en") return optLang;
+    try {
+      var d = global.document;
+      var l = String((d && d.documentElement && d.documentElement.lang) || "").slice(0, 2).toLowerCase();
+      if (l === "en") return "en";
+    } catch (_e) { /* nb */ }
+    return "de";
+  }
+
+  /* Der einzige Ort in diesem Modul, an dem ein uebersetzter Text in einen
+   * innerHTML-String wandert, ist der Tabellen-Kopf des VERKEHR-Fensters.
+   * Die Werte stammen aus dem Woerterbuch oben, also aus dem Modul selbst —
+   * trotzdem escaped: ein Waechter am Einzelfall ist morgen an der naechsten
+   * Uebersetzung blind. */
+  function escHtml(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  /* Bei JEDEM Aufruf neu nachsehen, nicht einmal beim Laden merken. */
+  function T(de) {
+    if (sprache() !== "en") return de;
+    var w = TEXTE.en;
+    return (w && Object.prototype.hasOwnProperty.call(w, de)) ? w[de] : de;
+  }
+
   // Sage-Page-Stil-Anker: Tafel siehe index.html § :root + .lamps + .lamp.
   // 9 px Lampen in einer Pill mit border-radius:999px + Glow + Atmung.
 
@@ -175,6 +276,7 @@
   var currentOffsetY = DEFAULT_OFFSET.y;
   var currentFreeX = null;     // wenn Free-Drag aktiv: abs. px von links
   var currentFreeY = null;     // wenn Free-Drag aktiv: abs. px von oben
+  var currentOben = null;      // an der oberen Leiste eingerastet: {seite, abstand}
   var visibleFlag = true;
   // Pflege 17 UX 2026-05-25: dritter Sichtbarkeits-Zustand „minimiert"
   // (nur SIEGEL sichtbar, oder LEBT als Fallback wenn kein SIEGEL).
@@ -291,7 +393,11 @@
     try {
       var parsed = JSON.parse(raw);
       if (!parsed || typeof parsed !== "object") return;
-      if (typeof parsed.x === "number" && typeof parsed.y === "number" &&
+      var ob = obenGueltig(parsed.oben);
+      if (ob) {
+        currentOben = ob;
+        currentFreeX = null; currentFreeY = null; currentCorner = null;
+      } else if (typeof parsed.x === "number" && typeof parsed.y === "number" &&
           isFinite(parsed.x) && isFinite(parsed.y)) {
         currentFreeX = parsed.x;
         currentFreeY = parsed.y;
@@ -321,8 +427,110 @@
       offsetY: currentOffsetY,
       x:       currentFreeX,
       y:       currentFreeY,
+      oben:    currentOben,
     };
   }
+
+  /*
+   * ══ AN DER OBEREN LEISTE EINRASTEN (Klaus 2026-09-30) ═══════════════════
+   *
+   * „Lässt sich das so machen, dass es sich automatisch verankert, wenn ich
+   *  das oben an die Navi-Leiste hänge, egal welche, egal welches
+   *  Betriebssystem, so dass ich das dann auch wieder abnehmen kann."
+   *
+   * Frei gezogen merkte sich das Widget eine Lage in Pixeln von links/oben.
+   * Wird das Fenster schmaler oder breiter, steht es danach woanders — „mal
+   * da, mal da und mal da". Eingerastet merkt es sich stattdessen die SEITE
+   * (links/rechts) und den Abstand zu DIESEM Rand; die Höhe kommt bei jedem
+   * Zeichnen aus der Leiste selbst. So bleibt es an der Leiste, bei jeder
+   * Fenstergröße.
+   *
+   * ⚠ TAFEL-EVOLUTION, BENANNT: bisher suchte kein Modul sich eine Stelle in
+   * einer fremden Leiste (Modul 23: „die Seite bietet den Platz an"). Klaus
+   * will es „egal welche" Leiste. Das Widget wird deshalb NICHT in die Leiste
+   * gehängt (das griffe in fremdes Layout ein), sondern schwebt fest über ihr.
+   * Gesucht wird so: 1) was die Seite mit `data-sbkim-leiste` anbietet;
+   * 2) sonst ein fest/klebend oben stehendes Element über mindestens die
+   * halbe Breite; 3) sonst die Oberkante des Fensters. Raten kann das nur in
+   * Fall 2, und dort nur zwischen Leisten, die oben kleben.
+   *
+   * Abnehmen: einfach wegziehen — jeder Zug unterhalb der Leiste gibt es frei.
+   */
+  var OBEN_FANG_PX = 24;
+  function obenGueltig(o) {
+    if (!o || typeof o !== "object") return null;
+    if (o.seite !== "links" && o.seite !== "rechts") return null;
+    var a = Number(o.abstand);
+    if (!isFinite(a) || a < 0) return null;
+    return { seite: o.seite, abstand: Math.round(a) };
+  }
+  function istEigenes(n) {
+    try {
+      var id = n && n.id ? String(n.id) : "";
+      if (id.indexOf("sbkim") === 0) return true;
+      return !!(widgetRoot && widgetRoot.contains(n));
+    } catch (_e) { return false; }
+  }
+  function findeObereLeiste() {
+    var d = global.document;
+    if (!d) return null;
+    try {
+      var angeboten = d.querySelector("[data-sbkim-leiste]");
+      if (angeboten) return angeboten;
+    } catch (_e) {}
+    if (typeof d.elementsFromPoint !== "function") return null;
+    var vw = global.innerWidth || 1024;
+    var xs = [0.1, 0.5, 0.9], ys = [2, 10];
+    for (var i = 0; i < xs.length; i++) {
+      for (var j = 0; j < ys.length; j++) {
+        var liste = [];
+        try { liste = d.elementsFromPoint(Math.round(vw * xs[i]), ys[j]) || []; } catch (_e) {}
+        for (var k = 0; k < liste.length; k++) {
+          var n = liste[k];
+          while (n && n.nodeType === 1 && n !== d.body && n !== d.documentElement) {
+            if (!istEigenes(n)) {
+              var cs = null;
+              try { cs = global.getComputedStyle(n); } catch (_e) {}
+              if (cs && (cs.position === "fixed" || cs.position === "sticky")) {
+                var r = n.getBoundingClientRect();
+                if (r.top <= 4 && r.width >= vw * 0.5 && r.height >= 20 && r.height <= 200) return n;
+              }
+            }
+            n = n.parentNode;
+          }
+        }
+      }
+    }
+    return null;
+  }
+  function obereKante() {
+    var l = findeObereLeiste();
+    if (!l) return { top: 0, bottom: 0, leiste: null };
+    var r = l.getBoundingClientRect();
+    return { top: Math.max(0, r.top), bottom: Math.max(0, r.bottom), leiste: l };
+  }
+  function obenLage() {
+    var k = obereKante();
+    var wr = widgetRoot.getBoundingClientRect();
+    var h = k.bottom - k.top;
+    var y = k.leiste ? k.top + Math.max(0, (h - wr.height) / 2) : 4;
+    return { y: Math.round(y) };
+  }
+  function versucheEinrasten() {
+    if (!widgetRoot) return false;
+    var r = widgetRoot.getBoundingClientRect();
+    var k = obereKante();
+    if (r.top > k.bottom + OBEN_FANG_PX) return false;
+    var vw = global.innerWidth || 1024;
+    var mitte = r.left + r.width / 2;
+    currentOben = mitte < vw / 2
+      ? { seite: "links", abstand: Math.max(0, Math.round(r.left)) }
+      : { seite: "rechts", abstand: Math.max(0, Math.round(vw - r.right)) };
+    currentFreeX = null; currentFreeY = null; currentCorner = null;
+    applyPositionToRoot();
+    return true;
+  }
+  function beiGroesse() { if (currentOben) applyPositionToRoot(); }
 
   function applyPositionToRoot() {
     if (!widgetRoot) return;
@@ -331,7 +539,17 @@
     widgetRoot.style.bottom = "";
     widgetRoot.style.left = "";
     widgetRoot.style.right = "";
+    widgetRoot.removeAttribute("data-sbkim-oben");
 
+    if (currentOben) {
+      var vw0 = global.innerWidth || 1024;
+      var a = Math.min(currentOben.abstand, Math.max(0, vw0 - 48));
+      if (currentOben.seite === "links") widgetRoot.style.left = a + "px";
+      else widgetRoot.style.right = a + "px";
+      widgetRoot.style.top = obenLage().y + "px";
+      widgetRoot.setAttribute("data-sbkim-oben", currentOben.seite);
+      return;
+    }
     if (currentFreeX !== null && currentFreeY !== null) {
       widgetRoot.style.left = currentFreeX + "px";
       widgetRoot.style.top = currentFreeY + "px";
@@ -861,7 +1079,7 @@
     btn.id = "sbkim-widget-slot-" + slotId;
     btn.className = "sbkim-widget-slot " + slotId;
     btn.setAttribute("data-slot", slotId);
-    btn.setAttribute("aria-label", SLOT_TOOLTIPS[slotId] || slotId);
+    btn.setAttribute("aria-label", SLOT_TOOLTIPS[slotId] ? T(SLOT_TOOLTIPS[slotId]) : slotId);
     // Pflege 17 Tooltips 2026-05-26 (Klaus' Sichttest-Befund DeX-Chrome):
     // Browser-Standard-`title`-Tooltip auf rechten Slots (FREMD/SIEGEL/
     // Minimize/Close) zeigte sich doppelt auf Touch-Devices (Browser-
@@ -881,7 +1099,7 @@
     }
     var label = doc.createElement("span");
     label.className = "sbkim-widget-label";
-    label.textContent = SLOT_LABELS[slotId] || slotId;
+    label.textContent = SLOT_LABELS[slotId] ? T(SLOT_LABELS[slotId]) : slotId;
     btn.appendChild(label);
     return btn;
   }
@@ -909,7 +1127,7 @@
     root.id = WIDGET_ID;
     root.className = "sbkim-widget";
     root.setAttribute("role", "complementary");
-    root.setAttribute("aria-label", "SBKIM Live-Status-Widget");
+    root.setAttribute("aria-label", T("SBKIM Live-Status-Widget"));
     // Pflege 17 UX 2026-05-25: Theme via data-theme-Attribut. Default "auto"
     // setzt das Attribut NICHT (gesteuert via :root-CSS-Variablen). Andere
     // Werte ("transparent", "light", "dark") aktivieren spezifische CSS-Regeln.
@@ -956,7 +1174,7 @@
     minimizeBtnEl = doc.createElement("button");
     minimizeBtnEl.type = "button";
     minimizeBtnEl.className = "sbkim-widget-btn sbkim-widget-minimize";
-    minimizeBtnEl.setAttribute("aria-label", "Widget minimieren — zeigt nur das SBKIM-Siegel. Erneuter Klick maximiert.");
+    minimizeBtnEl.setAttribute("aria-label", T("Widget minimieren — zeigt nur das SBKIM-Siegel. Erneuter Klick maximiert."));
     // Pflege 17 Tooltips 2026-05-26: kein title-Attribut (siehe buildSlotButton-Kommentar).
     minimizeBtnEl.textContent = minimizedFlag ? "+" : "−";
     minimizeBtnEl.addEventListener("click", function (ev) {
@@ -970,7 +1188,7 @@
       var closeBtn = doc.createElement("button");
       closeBtn.type = "button";
       closeBtn.className = "sbkim-widget-btn sbkim-widget-close";
-      closeBtn.setAttribute("aria-label", "Widget schließen — wiederherstellbar via SbkimWidget.show()");
+      closeBtn.setAttribute("aria-label", T("Widget schließen — wiederherstellbar via SbkimWidget.show()"));
       // Pflege 17 Tooltips 2026-05-26: kein title-Attribut.
       closeBtn.textContent = "✕";
       closeBtn.addEventListener("click", function (ev) {
@@ -1123,6 +1341,7 @@
       currentFreeX = newX;
       currentFreeY = newY;
       currentCorner = null;
+      currentOben = null;       // wer zieht, nimmt es von der Leiste ab
       applyPositionToRoot();
     } catch (err) {
       // Drag-Pointer-Event-Fehler (Karte 17 § Fehlerverhalten): Drag
@@ -1150,6 +1369,7 @@
       widgetRoot.removeEventListener("pointercancel", onPointerUp);
     }
     if (moved) {
+      try { versucheEinrasten(); } catch (_e) { /* fail-soft: bleibt frei */ }
       persistPosition();
     }
     // Nach kurzer Verzögerung dragState zurücksetzen, damit der pending
@@ -1181,6 +1401,13 @@
     widgetRoot = buildWidget(doc);
     doc.body.appendChild(widgetRoot);
     applyPositionToRoot();
+    /* Eingerastet steht es mittig zur Leiste — ändert sich seine Höhe
+       (minimiert, Siegel kommt dazu), wird nachgezogen. */
+    try {
+      if (typeof global.ResizeObserver === "function") {
+        new global.ResizeObserver(beiGroesse).observe(widgetRoot);
+      }
+    } catch (_e) { /* nb */ }
     applyVisibility();
     applyMinimizedState();
     applySlotActiveStatesFromCounts();
@@ -1257,8 +1484,8 @@
       minimizeBtnEl.setAttribute(
         "aria-label",
         minimizedFlag
-          ? "Widget maximieren — zeigt alle vier Slots."
-          : "Widget minimieren — zeigt nur das SBKIM-Siegel. Erneuter Klick maximiert."
+          ? T("Widget maximieren — zeigt alle vier Slots.")
+          : T("Widget minimieren — zeigt nur das SBKIM-Siegel. Erneuter Klick maximiert.")
       );
       // Idempotent: removeAttribute ist no-op wenn nicht gesetzt.
       try { minimizeBtnEl.removeAttribute("title"); }
@@ -1585,11 +1812,11 @@
     header.className = "sbkim-widget-modal-header";
     var title = doc.createElement("h2");
     title.className = "sbkim-widget-modal-title";
-    title.textContent = "LEBT — Page-Status";
+    title.textContent = T("LEBT — Page-Status");
     var closeBtn = doc.createElement("button");
     closeBtn.type = "button";
     closeBtn.className = "sbkim-widget-modal-close";
-    closeBtn.setAttribute("aria-label", "Schließen");
+    closeBtn.setAttribute("aria-label", T("Schließen"));
     closeBtn.textContent = "✕";
     closeBtn.addEventListener("click", closeLebtModal);
     header.appendChild(title);
@@ -1647,11 +1874,11 @@
       } catch (_e) { /* nb */ }
     }
     var rows = [
-      ["Uptime",          uptimeText],
-      ["Modul-02 init",   moduleReady ? "ja" : "nein"],
-      ["nodeId-Präfix",   lebtNodeIdPrefix || "—"],
-      ["Events:alive",    String(eventCounts.alive)],
-      ["since (ISO)",     lebtSince || "—"],
+      [T("Uptime"),          uptimeText],
+      [T("Modul-02 init"),   moduleReady ? T("ja") : T("nein")],
+      [T("nodeId-Präfix"),   lebtNodeIdPrefix || "—"],
+      [T("Events:alive"),    String(eventCounts.alive)],
+      [T("since (ISO)"),     lebtSince || "—"],
     ];
     for (var i = 0; i < rows.length; i++) {
       var dt = doc.createElement("dt");
@@ -1700,11 +1927,11 @@
     header.className = "sbkim-widget-modal-header";
     var title = doc.createElement("h2");
     title.className = "sbkim-widget-modal-title";
-    title.textContent = "VERKEHR — letzte " + TRAFFIC_LOG_MAX + " Events";
+    title.textContent = T("VERKEHR — letzte ") + TRAFFIC_LOG_MAX + T(" Events");
     var closeBtn = doc.createElement("button");
     closeBtn.type = "button";
     closeBtn.className = "sbkim-widget-modal-close";
-    closeBtn.setAttribute("aria-label", "Schließen");
+    closeBtn.setAttribute("aria-label", T("Schließen"));
     closeBtn.textContent = "✕";
     closeBtn.addEventListener("click", closeVerkehrModal);
     header.appendChild(title);
@@ -1714,11 +1941,12 @@
     table.className = "sbkim-widget-traffic-table";
     table.innerHTML =
       "<thead><tr>" +
-      "<th>Zeit</th><th>Quelle</th><th>Richtung</th><th>Entscheidung</th>" +
+      "<th>" + escHtml(T("Zeit")) + "</th><th>" + escHtml(T("Quelle")) +
+      "</th><th>" + escHtml(T("Richtung")) + "</th><th>" + escHtml(T("Entscheidung")) + "</th>" +
       "</tr></thead><tbody data-widget-verkehr-tbody></tbody>";
 
     var tip = doc.createElement("p");
-    tip.textContent = "RAM-only FIFO — Tab-Reload leert die Liste.";
+    tip.textContent = T("RAM-only FIFO — Tab-Reload leert die Liste.");
     tip.style.cssText = "margin: 0.9rem 0 0; font-size: 0.78rem; color: rgba(245,245,255,0.55);";
 
     panel.appendChild(header);
@@ -1797,6 +2025,12 @@
     if (typeof opts.theme === "string" && ALLOWED_THEMES.indexOf(opts.theme) >= 0) {
       optTheme = opts.theme;
     }
+
+    // Sprache (2026-09-14). Nur "de"/"en" werden uebernommen; alles andere
+    // laesst optLang auf null, und dann entscheidet <html lang>. Kein
+    // Zuruecksetzen auf "de" bei einem unbekannten Wert — sonst schluege eine
+    // Falscheingabe die Seiten-Sprache, statt fail-soft daneben zu liegen.
+    if (opts.lang === "de" || opts.lang === "en") optLang = opts.lang;
     // Pflege 17 UX 2026-05-25: Theme via data-theme-Attribut am Widget-Root,
     // damit PWAs ihren eigenen Hintergrund anwenden können. `theme:"transparent"`
     // (NEU) macht den Hintergrund vollständig durchsichtig. Die CSS-Variablen
@@ -1844,6 +2078,8 @@
         mountWidget();
         registerEventListeners();
         try { global.addEventListener("keydown", onGlobalKeydown); }
+        catch (_e) { /* nb */ }
+        try { global.addEventListener("resize", beiGroesse); }
         catch (_e) { /* nb */ }
         // Pflege 17 Heartbeat 2026-05-26: 5-s-Fallback-Timer starten.
         scheduleSelfHeartbeat();
@@ -1947,6 +2183,8 @@
     getPosition: getPosition,
     _meta: {
       widgetId:        WIDGET_ID,
+      get lang()       { return sprache(); },
+      get langKeys()   { return Object.keys(TEXTE.en).length; },
       styleId:         STYLE_ID,
       trafficLogMax:   TRAFFIC_LOG_MAX,
       dragThresholdPx: DRAG_THRESHOLD_PX,
@@ -1968,6 +2206,8 @@
       get firstBootShown() { return firstBootShown; },
       get siegelMounted()  { return siegelMounted; },
       get minimizedFlag()  { return minimizedFlag; },
+      get oben()           { return currentOben ? { seite: currentOben.seite, abstand: currentOben.abstand } : null; },
+      obenFangPx:          OBEN_FANG_PX,
       get slots()          { return enabledSlots.slice(); },
       get eventCounts()    {
         return {
