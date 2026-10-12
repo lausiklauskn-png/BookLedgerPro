@@ -5,6 +5,17 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-12 — Neue Übernahme-Quelle `workflow-calculate`
+
+**Was getan.** Der neue Angebotsplaner Workflow Calculate (eigenes Repo) schickt fertige Angebote
+über denselben v1-Vertrag (`?uebernahme=`, `art` angebot). `UEBERNAHME_QUELLEN` um
+`'workflow-calculate'` ergänzt (nur additiv), Vertrag `docs/UEBERNAHME_TOMY.md` nachgezogen,
+Node-Test dazu, `CACHE_VERSION` v234 → v235.
+
+**Stand.** `node tests/run.mjs` 2184 bestanden, 0 fehlgeschlagen.
+
+**Offen.** Am Gerät nicht gemessen: Sprung aus Workflow Calculate nach BLP mit Entsperren.
+
 ## 2026-08-14 — Modul-23-UI auf den Kanon, und ein Wächter für die Kopien
 
 **Was getan.** `sbkim/23_rendezvous_ui.js` stand auf `c67b2942` und lag rund

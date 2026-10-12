@@ -19,7 +19,9 @@
 // Quellen-Whitelist: WorkFloh-Sender (Angebots-Übernahme) + Shop-Warenwirtschaft
 // (`alm-warehouse` = Alis-Moderaum; `sbkim-shop` = generischer Shop-Absender, damit ein
 // künftiger zweiter Shop – z.B. Perfect-Skin-Beauty-Pflege – denselben Vertrag nutzt).
-export const UEBERNAHME_QUELLEN = Object.freeze(['tomy-workfloh', 'isd-workfloh', 'alm-warehouse', 'sbkim-shop']);
+// `workflow-calculate` = der Angebotsplaner Workflow Calculate (2026-10-12): schickt dieselbe
+// v1-Angebots-Nutzlast wie die WorkFlohs, nur aus der Kundenblatt-Whitelist (keine EK, keine Sätze).
+export const UEBERNAHME_QUELLEN = Object.freeze(['tomy-workfloh', 'isd-workfloh', 'alm-warehouse', 'sbkim-shop', 'workflow-calculate']);
 export const UEBERNAHME_MODI = Object.freeze(['angebot', 'rechnung']);
 // Übergabe-Arten: 'angebot' = WorkFloh-Auftrag → Angebots-Formular; 'buchhaltung-summen'
 // = Shop-Zeitraum-Summen (Umsatz/Wareneinkauf) → Buchungs-Entwürfe. Default 'angebot'

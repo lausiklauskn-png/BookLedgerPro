@@ -77,6 +77,7 @@ Freigeschaltete Absender (`UEBERNAHME_QUELLEN` in `src/domain/uebernahmeExtern.j
 | `isd-workfloh` | Mein-WorkFloh |
 | `alm-warehouse` | Alis-Moderaum, Warenwirtschaft |
 | `sbkim-shop` | **der offene Platz** für ein fremdes Shop-Werkzeug |
+| `workflow-calculate` | Workflow Calculate (Angebotsplaner, 2026-10-12) — `art` angebot, `modus` angebot; Positionen aus dem Kundenblatt, „Verpackung & Versand“ als eigene Position |
 
 **Wie ein fremdes Werkzeug andockt.** Passt die Nutzlast zu einem der beiden Verträge,
 genügt `quelle: "sbkim-shop"` — dafür ist der Platz da. Braucht es eine eigene Nutzlast,
