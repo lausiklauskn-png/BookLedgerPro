@@ -12,7 +12,7 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 `'workflow-calculate'` ergänzt (nur additiv), Vertrag `docs/UEBERNAHME_TOMY.md` nachgezogen,
 Node-Test dazu, `CACHE_VERSION` v234 → v235.
 
-**Stand.** `node tests/run.mjs` 2184 bestanden, 0 fehlgeschlagen.
+**Stand.** `node tests/run.mjs` 2183 bestanden, 0 fehlgeschlagen (vorher 2182).
 
 **Offen.** Am Gerät nicht gemessen: Sprung aus Workflow Calculate nach BLP mit Entsperren.
 
