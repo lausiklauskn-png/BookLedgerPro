@@ -6237,7 +6237,7 @@ await section('sbkim/: die kopierten Module sind genagelt', async () => {
     { datei: '04_match.js',          sha: 'df367d113e3de250', kanon: false,
       grund: 'hinterher: RELATEDNESS_CENTER noch v1, Kanon hat v2 (2026-07-23)' },
     { datei: '05_anastomose.js',     sha: '255ac79aeb3b0203', kanon: true },
-    { datei: '05b_nostr_relay.js',   sha: '030aa2d260149f56', kanon: true },
+    { datei: '05b_nostr_relay.js',   sha: '6edc89091861184d', kanon: true },
     { datei: '07_apoptose.js',       sha: '0acdd6ab2d95e131', kanon: true },
     { datei: '15_membran.js',        sha: '829a5bc01976b59c', kanon: true },
     { datei: '16_siegel.js',         sha: 'd84fa539e76e0cc5', kanon: true },
@@ -6245,8 +6245,8 @@ await section('sbkim/: die kopierten Module sind genagelt', async () => {
     { datei: '20_schluessel_safe.js', sha: '38404dc0a16d69cb', kanon: false,
       grund: 'hinterher: 14 Zeilen fehlen, keine eigenen Änderungen' },
     { datei: '21_spracheingabe.js',  sha: '020ca26ff52f2ed7', kanon: true },
-    { datei: '23_rendezvous.js',     sha: '3caa0bb1fbe7bf52', kanon: true },
-    { datei: '23_rendezvous_ui.js',  sha: 'd2d762c921043532', kanon: true },
+    { datei: '23_rendezvous.js',     sha: 'b02f1a1c93130ae7', kanon: true },
+    { datei: '23_rendezvous_ui.js',  sha: 'bff48ea0d0292afa', kanon: true },
     { datei: 'noble-secp256k1.js',   sha: '8f3879ca422c4fdf', kanon: true },
   ];
 
