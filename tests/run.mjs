@@ -6233,7 +6233,7 @@ await section('sbkim/: die kopierten Module sind genagelt', async () => {
   const KOPIEN = [
     { datei: '01_storage.js',        sha: '5a5a4bf64dfcc107', kanon: true },
     { datei: '02_spore.js',          sha: '6789fe6e903ad2e5', kanon: true },
-    { datei: '03_embedding.js',      sha: 'e4bb8bd6a237914e', kanon: true },
+    { datei: '03_embedding.js',      sha: 'a6ac64d7536da3fa', kanon: true },
     { datei: '04_match.js',          sha: 'df367d113e3de250', kanon: false,
       grund: 'hinterher: RELATEDNESS_CENTER noch v1, Kanon hat v2 (2026-07-23)' },
     { datei: '05_anastomose.js',     sha: '255ac79aeb3b0203', kanon: true },
