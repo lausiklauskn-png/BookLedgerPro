@@ -25,6 +25,9 @@ let pw;
 try { pw = require('playwright-core'); } catch { console.log('nicht lauffähig: playwright-core fehlt'); process.exit(2); }
 const CHROMIUM = ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome', process.env.CHROMIUM].find((p) => p && existsSync(p));
 const PDFLib = require('./vendor/pdf-lib.min.js');
+// Der Workflow-PDF-Klon daneben (für den Scanner-Weg „Foto → Scan-PDF"). Fehlt er, wird der Teil
+// mit sicher erkanntem Blatt NICHT gemessen und das gesagt — der Rückfall „ganzes Foto" schon.
+const WFPDF = [process.env.WFPDF_KLON, resolve(WURZEL, '../Workflow-PDF')].find((p) => p && existsSync(join(p, 'assets/scanner.js'))) || null;
 
 let gruen = 0, rot = 0;
 const ok = (name, cond, info) => {
@@ -41,11 +44,11 @@ import { saveAiConfig } from './src/ai/aiConfig.js';
 import { hydrateSettings } from './src/state.js';
 import { mountDocuments } from './src/ui/views/documents.js';
 import { fileGet } from './src/core/db.js';
-import { listBelege } from './src/domain/documents.js';
+import { listBelege, saveBeleg, getOriginalBytes, getBelegBytes } from './src/domain/documents.js';
 await setupVault('probe-passwort-123');
 await saveAiConfig({ visionKey: 'probe-vision', mistralKey: 'probe-mistral' });
 await hydrateSettings();
-window.__probe = { fileGet, listBelege };
+window.__probe = { fileGet, listBelege, saveBeleg, getOriginalBytes, getBelegBytes, neu: () => mountDocuments(document.getElementById('app')) };
 await mountDocuments(document.getElementById('app'));
 window.__probeBereit = true;
 </script></body></html>`;
@@ -55,8 +58,11 @@ const TYP = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text
 const server = createServer(async (req, res) => {
   const pfad = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (pfad === '/__probe.html') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(PROBE); }
-  const datei = join(WURZEL, pfad);
-  if (!datei.startsWith(WURZEL)) { res.writeHead(403); return res.end(); }
+  // /Workflow-PDF/ liegt auf github.io neben BookLedgerPro; hier aus dem Nachbar-Klon (Blatterkennung).
+  const wf = pfad.startsWith('/Workflow-PDF/') && WFPDF;
+  const basis = wf ? WFPDF : WURZEL;
+  const datei = join(basis, wf ? pfad.slice('/Workflow-PDF'.length) : pfad);
+  if (!datei.startsWith(basis)) { res.writeHead(403); return res.end(); }
   try { const b = await readFile(datei); res.writeHead(200, { 'content-type': TYP[extname(datei)] || 'application/octet-stream' }); res.end(b); }
   catch { res.writeHead(404); res.end(); }
 });
@@ -221,8 +227,34 @@ try {
   ok('Mehrfach-Auswahl ist erlaubt', fc2.isMultiple());
   await fc2.setFiles([{ name: 'foto.jpg', mimeType: 'image/jpeg', buffer: FOTO }, { name: 'zweitsauber.pdf', mimeType: 'application/pdf', buffer: SAUBER_PDF }]);
   ok('Mehrere: zwei weitere abgelegt', await warteBis(() => window.__blpImport && window.__blpImport.abgelegt === 2, null, 20000));
-  const roh = await page.evaluate(async () => { const b = (await window.__probe.listBelege()).find((x) => x.name === 'foto.jpg'); return (await window.__probe.fileGet(b.id)).mediaType; });
-  ok('das Original liegt unverändert (Typ bleibt)', roh === 'image/jpeg');
+  // Foto → Scan-PDF (Klaus 2026-10-14: „Ja, Scan + Original behalten"). ⚠ Tafel-Evolution: bis dahin lag
+  // das Foto als JPEG im Archiv („das Original liegt unverändert (Typ bleibt)").
+  const roh = await page.evaluate(async () => { const b = (await window.__probe.listBelege()).find((x) => x.name === 'foto (Scan).pdf');
+    if (!b) return null; const r = await window.__probe.fileGet(b.id); return { typ: r.mediaType, original: r.original, scan: r.scan, hatDaten: !!(r.originalDaten && r.originalDaten.ct) }; });
+  ok('das Foto liegt als Scan-PDF „foto (Scan).pdf"', roh && roh.typ === 'application/pdf', JSON.stringify(roh));
+  ok('… das Originalfoto liegt verschlüsselt dabei (Name, Typ, Größe)', roh && roh.hatDaten && roh.original && roh.original.name === 'foto.jpg' && roh.original.mediaType === 'image/jpeg' && roh.original.size === FOTO.length, JSON.stringify(roh && roh.original));
+  const orig = await page.evaluate(async () => { const b = (await window.__probe.listBelege()).find((x) => x.name === 'foto (Scan).pdf'); const u = await window.__probe.getOriginalBytes(b.id); return u ? Array.from(u) : null; });
+  ok('… und es ist Byte für Byte das Foto, das eingelesen wurde (mit Ort und Angehängtem)', orig && Buffer.from(orig).equals(FOTO));
+  ok('die Liste lädt das Originalfoto nicht mit', !('originalDaten' in ((await belegNamens('foto (Scan).pdf')) || {})));
+  ok('die Zeile sagt „Scan aus Foto · Original liegt bei"', await page.$('[data-scan]') !== null && /Original liegt bei/.test(await page.textContent('[data-scan]')));
+  const sc = await page.evaluate(() => window.__blpScan);
+  ok('der Scan hat 300 dpi auf A4 (das Testfoto ist quer: 3508 × 2480)', sc && sc.px[0] === 3508 && sc.px[1] === 2480, JSON.stringify(sc));
+  ok('… das Testfoto füllt das Bild, also kein sicheres Blatt: das ganze Foto liegt auf A4', sc && sc.sicher === false, JSON.stringify(sc));
+  const imp2 = await page.evaluate(() => window.__blpImport);
+  ok('der Import nennt die Zahl der Scans', imp2 && imp2.scans === 1 && imp2.ganz === 1, JSON.stringify(imp2));
+  const platz = await page.evaluate(() => window.__blpPlatz);
+  ok('vor dem Einlesen: „2 Datei(en), … frei: …"', platz && platz.anzahl === 2 && /^2 Datei\(en\), .* frei: /.test(platz.zeile), JSON.stringify(platz));
+  ok('… die Zeile steht auf der Seite', /frei: /.test(await page.textContent('[data-import-status]')));
+  const dlo = page.waitForEvent('download', { timeout: 8000 }).catch(() => null);
+  {
+    const b = await belegNamens('foto (Scan).pdf');
+    const h = b && await page.$(`[data-beleg-id="${b.id}"]`);
+    const z = h && await h.evaluateHandle((td) => td.closest('tr'));
+    const k = z && await z.asElement().$('[data-original-laden]');
+    if (k) await k.click();
+    const d = await dlo;
+    ok('„⬇ Original-Foto" lädt das Original herunter', !!d && (await page.evaluate(() => window.__blpOriginal && window.__blpOriginal.groesse)) === FOTO.length);
+  }
 
   // ---- B · Alle ungeprüften prüfen -----------------------------------------------------------
   console.log('\nB · „Alle ungeprüften prüfen"');
@@ -238,7 +270,7 @@ try {
   ok('alle fünf geprüft', fertig);
   const st = Object.fromEntries((await belege()).map((b) => [b.name, (b.pruefung && b.pruefung.stand) || 'NICHT GEPRÜFT']));
   ok('unsichtbarer Text im PDF → auffällig', st['unsichtbar.pdf'] === 'warnung', JSON.stringify(st));
-  ok('Anweisung im Bild → auffällig', st['anweisung.png'] === 'warnung', JSON.stringify(st));
+  ok('Anweisung im Bild → auffällig', st['anweisung (Scan).pdf'] === 'warnung', JSON.stringify(st));
   ok('sauberes PDF → nichts Auffälliges', st['sauber.pdf'] === 'sauber', JSON.stringify(st));
   ok('die Leiste nennt das Ergebnis', await page.$('[data-pruef-stapel="fertig"]') !== null);
   const rohPruef = await page.evaluate(async () => { const b = (await window.__probe.listBelege()).find((x) => x.name === 'unsichtbar.pdf'); return await window.__probe.fileGet(b.id); });
@@ -316,7 +348,7 @@ try {
     ok('Abbrechen beim versteckten Text: nichts an die OCR', vision.length === v0);
     ok('Abbrechen: kein neuer Vermerk', (await belegNamens('unsichtbar.pdf')).kiEntfernt.anzahl === vermerkVorher);
   }
-  if (await ocrTippen('anweisung.png')) {
+  if (await ocrTippen('anweisung (Scan).pdf')) {
     await tippe('[data-auffaellig-nein]', 'Halt „auffällig" → Abbrechen');
     await page.waitForTimeout(800);
     ok('Abbrechen beim auffälligen Beleg: nichts hinaus', vision.length === v0);
@@ -330,24 +362,41 @@ try {
   confirmJa = true;
 
   // ---- F · ein Foto geht ohne EXIF hinaus ---------------------------------------------------
-  console.log('\nF · Foto ohne Metadaten');
+  // ⚠ Tafel-Evolution (2026-10-14): neue Fotos liegen als Scan-PDF im Archiv. Hinaus geht das
+  // Seitenbild des Scans (300 dpi). Der Weg „JPEG 1:1" gilt weiter für Fotos, die schon als Foto
+  // im Archiv liegen — gemessen an einem Altbeleg, der direkt abgelegt wird (F2).
+  console.log('\nF · Foto ohne Metadaten (Scan-PDF)');
   ocrAntwort = 'Tankstelle 50,00 EUR';
   const v1 = vision.length;
-  if (await ocrTippen('foto.jpg')) {
-    // Eine Vorschlag-Karte aus D steht noch da — gewartet wird auf die Anfrage selbst.
-    await warteNode(async () => vision.length > v1, 20000);
+  if (await ocrTippen('foto (Scan).pdf')) {
+    await warteNode(async () => vision.length > v1, 30000);
     const neu = vision.slice(v1).flatMap(visionBilder);
-    ok('das Foto ging hinaus — ohne Halt (Metadaten sind kein versteckter Text)', neu.length === 1,
-      'Stand ' + JSON.stringify((await belegNamens('foto.jpg')).pruefung) + ' · offene Dialoge: ' + (await page.$$eval('[role=dialog] .modal', (l) => l.map((x) => [...x.attributes].map((a) => a.name).join(',')).join(' | ')))
-      + ' · Meldungen: ' + dialoge.slice(-3).join(' / '));
+    ok('das Seitenbild des Scans ging hinaus — ohne Halt', neu.length === 1,
+      'Stand ' + JSON.stringify(((await belegNamens('foto (Scan).pdf')) || {}).pruefung) + ' · Meldungen: ' + dialoge.slice(-3).join(' / '));
+    ok('… OHNE den Ort aus den Metadaten des Fotos', neu.length === 1 && !jpegAusBase64(neu[0]).includes(Buffer.from(GEHEIM)));
+    ok('… OHNE das Angehängte hinter dem Bildende', neu.length === 1 && !jpegAusBase64(neu[0]).includes(Buffer.from('ANGEHAENGT')));
+    ok('… als JPEG mit 300 dpi (A4 quer: 3508 × 2480)', neu.length === 1 && jpegMasse(jpegAusBase64(neu[0])).join('x') === '3508x2480', neu.length && jpegMasse(jpegAusBase64(neu[0])).join('x'));
+    const r = await page.evaluate(async () => { const b = (await window.__probe.listBelege()).find((x) => x.name === 'foto (Scan).pdf'); return (await window.__probe.fileGet(b.id)).original; });
+    ok('das Originalfoto am Beleg bleibt (Größe unverändert)', r && r.size === FOTO.length);
+  }
+
+  console.log('\nF2 · ein Foto, das schon als Foto im Archiv liegt (Altbeleg): JPEG 1:1');
+  await page.evaluate(async (b64) => { const s = atob(b64); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+    await window.__probe.saveBeleg(new File([u], 'alt-foto.jpg', { type: 'image/jpeg' })); }, FOTO.toString('base64'));
+  await page.evaluate(() => { window.__blpImport = null; });
+  const v1b = vision.length;
+  await page.evaluate(() => window.__probe.neu());   // die Liste neu zeichnen
+  if (await ocrTippen('alt-foto.jpg')) {
+    await tippe('[data-ungeprueft-weiter]', 'Halt „noch nicht geprüft" → ohne Prüfung weiter');
+    await warteNode(async () => vision.length > v1b, 30000);
+    const neu = vision.slice(v1b).flatMap(visionBilder);
+    ok('das Altfoto ging hinaus', neu.length === 1, dialoge.slice(-3).join(' / '));
     ok('… OHNE den Ort aus den Metadaten', neu.length === 1 && !jpegAusBase64(neu[0]).includes(Buffer.from(GEHEIM)));
     ok('… OHNE das Angehängte hinter dem Bildende', neu.length === 1 && !jpegAusBase64(neu[0]).includes(Buffer.from('ANGEHAENGT')));
     ok('… und die Bilddaten Byte für Byte wie im Original (nicht neu gezeichnet)', neu.length === 1 && FOTO_BILDDATEN.length > 100 && bilddaten(jpegAusBase64(neu[0])).equals(FOTO_BILDDATEN));
-    ok('… als JPEG', neu.length === 1 && jpegAusBase64(neu[0]).subarray(0, 2).toString('hex') === 'ffd8');
-    const r = await page.evaluate(async () => { const b = (await window.__probe.listBelege()).find((x) => x.name === 'foto.jpg'); return (await window.__probe.fileGet(b.id)).kiEntfernt; });
+    const r = await page.evaluate(async () => { const b = (await window.__probe.listBelege()).find((x) => x.name === 'alt-foto.jpg'); return (await window.__probe.fileGet(b.id)).kiEntfernt; });
     ok('Vermerk: die Metadaten wurden entfernt', r && r.anzahl >= 1);
-    const original = await page.evaluate(async () => { const b = (await window.__probe.listBelege()).find((x) => x.name === 'foto.jpg'); return b.size; });
-    ok('das Original im Archiv bleibt (Größe unverändert)', original === FOTO.length);
+    ok('das Altfoto im Archiv bleibt (Größe unverändert)', (await belegNamens('alt-foto.jpg')).size === FOTO.length);
   }
 
   // ---- G · ungeprüft → „Jetzt prüfen" ----------------------------------------------------------
@@ -358,12 +407,12 @@ try {
   await (await wahl3).setFiles([{ name: 'neu-anweisung.png', mimeType: 'image/png', buffer: ANWEISUNG_PNG }]);
   await warteBis(() => window.__blpImport && window.__blpImport.abgelegt === 1, null, 20000);
   const v2 = vision.length;
-  if (await ocrTippen('neu-anweisung.png')) {
+  if (await ocrTippen('neu-anweisung (Scan).pdf')) {
     await tippe('[data-ungeprueft-pruefen]', 'Halt: „noch nicht geprüft"');
     await tippe('[data-auffaellig-nein]', 'nach der Prüfung: Halt „auffällig"', 180000);
     await page.waitForTimeout(800);
     ok('nichts ging hinaus', vision.length === v2);
-    ok('der Beleg ist jetzt geprüft und auffällig', (await belegNamens('neu-anweisung.png')).pruefung.stand === 'warnung');
+    ok('der Beleg ist jetzt geprüft und auffällig', (await belegNamens('neu-anweisung (Scan).pdf')).pruefung.stand === 'warnung');
   }
 
   // ---- H · Schnellerfassung: eingefügter Text mit Anweisung --------------------------------
@@ -442,6 +491,50 @@ try {
   await tippe('[data-text-lokal]', 'Text-Halt → „Nur auf dem Gerät" (Bank)');
   await page.waitForTimeout(1200);   // Sorte B
   ok('Bank: „Nur auf dem Gerät" — nichts an Mistral', mistral.length === m2);
+
+  // ---- L · ein Foto mit klarem Blatt: gerade gezogen (Workflow PDFs Entscheidung) ------------
+  console.log('\nL · Foto mit Blatt auf dem Tisch → gerade gezogenes Scan-PDF');
+  if (!WFPDF) console.log('  ⊘ NACHBAR FEHLT: Workflow-PDF — der Weg „Blatt sicher erkannt" ist nicht gemessen (WFPDF_KLON setzen)');
+  else {
+    // Ein dunkler Tisch, darauf ein weißes Blatt im A4-Format, leicht gedreht, mit Text.
+    const blatt64 = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 1600; c.height = 1200; const x = c.getContext('2d');
+      x.fillStyle = '#3a3a3a'; x.fillRect(0, 0, 1600, 1200); x.save(); x.translate(800, 600); x.rotate(0.06);
+      const h = 1000, w = Math.round(h / Math.SQRT2); x.fillStyle = '#fff'; x.fillRect(-w / 2, -h / 2, w, h);
+      x.fillStyle = '#111'; x.font = '28px sans-serif'; for (let i = 0; i < 12; i++) x.fillText('Rechnung Zeile ' + (i + 1) + ' — 12,50 EUR', -w / 2 + 40, -h / 2 + 80 + i * 60);
+      x.restore(); return c.toDataURL('image/jpeg', 0.92).split(',')[1]; });
+    const w5 = page.waitForEvent('filechooser');
+    await page.evaluate(() => { window.__blpImport = null; window.__blpScan = null; });
+    await tippe('[data-import-viele]', 'Knopf „Mehrere" (Blatt)');
+    await (await w5).setFiles([{ name: 'blatt.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(blatt64, 'base64') }]);
+    ok('Blatt: abgelegt', await warteBis(() => window.__blpImport && window.__blpImport.abgelegt === 1, null, 120000), JSON.stringify(await page.evaluate(() => window.__blpImport)));
+    const sc = await page.evaluate(() => window.__blpScan);
+    ok('die Blatterkennung von Workflow PDF lief (Weg „scanner")', sc && sc.weg === 'scanner', JSON.stringify(sc));
+    ok('das Blatt wurde SICHER erkannt (zwei Verfahren einig)', sc && sc.sicher === true, JSON.stringify(sc));
+    ok('… und gerade gezogen auf A4 hoch mit 300 dpi (2480 × 3508)', sc && sc.px[0] === 2480 && sc.px[1] === 3508, JSON.stringify(sc && sc.px));
+    const pdf = await page.evaluate(async () => { const b = (await window.__probe.listBelege()).find((x) => x.name === 'blatt (Scan).pdf'); return b ? Array.from(await window.__probe.getBelegBytes(b.id)) : null; });
+    const pb = pdf && Buffer.from(pdf);
+    const a = pb ? pb.indexOf('stream\n', pb.indexOf('/DCTDecode')) + 7 : -1, e = pb ? pb.indexOf('\nendstream', a) : -1;
+    const seite = a > 6 && e > a ? pb.subarray(a, e) : null;
+    const hell = seite && await page.evaluate(async (b64) => { const r = await fetch('data:image/jpeg;base64,' + b64); const bm = await createImageBitmap(await r.blob());
+      const c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; const x = c.getContext('2d'); x.drawImage(bm, 0, 0);
+      const px = (X, Y) => { const d = x.getImageData(X, Y, 1, 1).data; return Math.round((d[0] + d[1] + d[2]) / 3); };
+      return [px(bm.width / 2, 40), px(40, bm.height / 2), px(bm.width - 40, bm.height / 2), px(bm.width / 2, bm.height - 40)]; }, seite.toString('base64'));
+    ok('am Rand der Seite ist Papier, kein Tisch (der Tisch ist abgeschnitten)', hell && hell.every((v) => v > 200), JSON.stringify(hell));
+  }
+
+  // ---- M · passt es nicht in den Speicher, wird gefragt -------------------------------------
+  console.log('\nM · Platz-Prüfung: passt nicht → fragen, Abbrechen legt nichts ab');
+  await page.evaluate(() => { window.__echtSchaetzung = navigator.storage.estimate.bind(navigator.storage); navigator.storage.estimate = async () => ({ quota: 1000, usage: 0 }); window.__blpImport = null; });
+  const zahlVor = (await belege()).length, d0 = dialoge.length;
+  confirmJa = false;
+  const w6 = page.waitForEvent('filechooser');
+  await tippe('[data-import-viele]', 'Knopf „Mehrere" (zu groß)');
+  await (await w6).setFiles([{ name: 'zuviel.pdf', mimeType: 'application/pdf', buffer: SAUBER_PDF }]);
+  ok('es wird gefragt, mit Zahl, Größe und freiem Platz', await warteNode(async () => dialoge.length > d0, 10000) && /1 Datei\(en\).*frei: .*passt voraussichtlich nicht/s.test(dialoge.slice(d0).join(' ')), dialoge.slice(d0).join(' / '));
+  ok('Abbrechen: nichts abgelegt', await warteBis(() => window.__blpImport && window.__blpImport.abgebrochen === true, null, 10000) && (await belege()).length === zahlVor);
+  ok('… und das steht auf der Seite', /abgebrochen, nichts abgelegt/.test(await page.textContent('[data-import-status]')));
+  confirmJa = true;
+  await page.evaluate(() => { navigator.storage.estimate = window.__echtSchaetzung; });
 
   ok('keine Anfrage an einen fremden Rechner', fremd.length === 0, fremd.join(' '));
   ok('keine Fehler auf der Seite', fehlerSeite.length === 0, fehlerSeite.join(' | '));

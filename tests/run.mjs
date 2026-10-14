@@ -6492,5 +6492,44 @@ await section('Belege: Reinigung (WFP.Reinigung) läuft in Node', async () => {
   ok('Vermerk: dasselbe Stück nicht doppelt', RE.vermerken(d, [{ seite: 1, text: 'x', grund: 'unsichtbar' }], 'Texterkennung') === 0);
 });
 
+await section('Belege: Foto → Scan-PDF und Platz vor dem Import (Klaus 2026-10-14)', async () => {
+  const { jpegZuPdf, scanName, SCAN_DPI, SCAN_JPEG_GUETE } = await import('../src/core/scanPdf.js');
+  const { platzPlan, bedarfVon, GROSS_BYTES, mb } = await import('../src/domain/importPlatz.js');
+  ok('Scan: 300 dpi, JPEG 92 %', SCAN_DPI === 300 && SCAN_JPEG_GUETE === 0.92);
+  ok('Scan-Name: „rechnung.jpg" → „rechnung (Scan).pdf"', scanName('rechnung.jpg') === 'rechnung (Scan).pdf' && scanName('') === 'Foto (Scan).pdf');
+  // Ein winziges, aber gültiges JPEG-Gerüst reicht für den Aufbau des PDFs.
+  const jpg = new Uint8Array([0xFF, 0xD8, 0xFF, 0xDA, 0x00, 0x02, 0x11, 0x22, 0xFF, 0xD9]);
+  const pdf = jpegZuPdf(jpg, 2480, 3508, [595.28, 841.89]);
+  const txt = new TextDecoder('latin1').decode(pdf);
+  ok('PDF beginnt mit %PDF-1.4 und endet mit %%EOF', txt.startsWith('%PDF-1.4\n') && txt.trimEnd().endsWith('%%EOF'));
+  ok('PDF: A4-Seite, Bild 2480 × 3508 als DCTDecode', /\/MediaBox \[0 0 595.28 841.89\]/.test(txt) && /\/Width 2480 \/Height 3508/.test(txt) && /\/Filter \/DCTDecode/.test(txt));
+  // Die Querverweise müssen auf die Objekte zeigen (sonst reparieren Leser das PDF still oder gar nicht).
+  const xref = Number(txt.match(/startxref\n(\d+)/)[1]);
+  ok('startxref zeigt auf die xref-Tabelle', txt.slice(xref, xref + 4) === 'xref');
+  const eintraege = txt.slice(xref).split('\n').slice(3, 8).map((z) => Number(z.slice(0, 10)));
+  ok('jeder xref-Eintrag zeigt genau auf „n 0 obj"', eintraege.every((o, i) => txt.slice(o, o + String(i + 1).length + 6) === `${i + 1} 0 obj`));
+  const start = txt.indexOf('stream\n', txt.indexOf('/DCTDecode')) + 7;
+  ok('die JPEG-Bytes stehen unverändert im PDF', pdf.slice(start, start + jpg.length).every((b, i) => b === jpg[i]));
+  let warf = false; try { jpegZuPdf(new Uint8Array([1, 2, 3]), 1, 1, [1, 1]); } catch { warf = true; }
+  ok('kein JPEG → Fehler statt kaputtem PDF', warf);
+  // Platz
+  const f = (size, typ, pfad) => ({ file: { size, name: pfad }, typ, pfad });
+  ok('Bedarf PDF = Dateigröße', bedarfVon(1000, 'application/pdf') === 1000);
+  ok('Bedarf Foto = Original + Scan (gedeckelt)', bedarfVon(4e6, 'image/jpeg') === 4e6 + 3 * 1024 * 1024 && bedarfVon(100, 'image/png') === 100 + 200 + 1024 * 1024);
+  const p1 = platzPlan([f(1e6, 'application/pdf', 'a.pdf'), f(2e6, 'image/jpeg', 'b.jpg')], { quota: 1e9, usage: 1e8 });
+  ok('Plan: Anzahl, Größe, Bedarf mit 10 % Luft, frei, passt', p1.anzahl === 2 && p1.bytes === 3e6 && p1.bedarf === Math.ceil((1e6 + 2e6 + 3 * 1024 * 1024) * 1.1) && p1.frei === 9e8 && p1.passt === true);
+  ok('Plan: passt nicht, wenn der Bedarf über dem freien Platz liegt', platzPlan([f(5e6, 'application/pdf', 'x.pdf')], { quota: 5e6, usage: 1e6 }).passt === false);
+  ok('Plan: ohne Auskunft des Browsers „unbekannt", nie „passt"', platzPlan([f(1, 'application/pdf', 'x.pdf')], null).passt === null && platzPlan([f(1, 'application/pdf', 'x.pdf')], {}).frei === null);
+  const p2 = platzPlan([f(GROSS_BYTES + 1, 'application/pdf', 'Ordner/gross.pdf'), f(GROSS_BYTES, 'application/pdf', 'grenze.pdf')], { quota: 1e12, usage: 0 });
+  ok('über 50 MB wird beim Namen genannt (genau 50 MB nicht)', p2.gross.length === 1 && p2.gross[0].pfad === 'Ordner/gross.pdf');
+  ok('MB-Angabe', mb(1.5 * 1024 * 1024) === '1,5 MB' && mb(250 * 1024 * 1024) === '250 MB');
+  // Speicher: das Originalfoto gehört nicht in die Liste (wie data).
+  const { readFileSync } = await import('node:fs');
+  const db = readFileSync(new URL('../src/core/db.js', import.meta.url), 'utf8');
+  ok('fileAllMeta blendet originalDaten aus', /\(\{ data, pruefDaten, kiDaten, originalDaten, \.\.\.meta \}\) => meta/.test(db));
+  const bp = readFileSync(new URL('../src/domain/belegPruefung.js', import.meta.url), 'utf8');
+  ok('die Prüfung nimmt bei einem Scan das Originalfoto', /ausFoto \? rec\.originalDaten : rec\.data/.test(bp));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);
