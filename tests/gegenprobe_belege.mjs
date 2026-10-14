@@ -20,8 +20,8 @@ const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // [Name, Datei, Anker, Ersatz, Probe ('smoke'|'run'), erwartete erste rote Zeile]
 const FAELLE = [
   ['REINIGUNG: das ORIGINAL geht an die OCR', 'src/ui/views/documents.js',
-    'const r = await belegFuersKi(bytes, b.mediaType);',
-    "const r = { bilder: ['data:' + b.mediaType + ';base64,' + bytesToBase64(bytes)], liste: [], seiten: 1, gesamt: 1 };",
+    'r = await belegFuersKi(bytes, b.mediaType, {',
+    "r = { bilder: ['data:' + b.mediaType + ';base64,' + bytesToBase64(bytes)], liste: [], seiten: 1, gesamt: 1 }; if (0) await belegFuersKi(bytes, b.mediaType, {",
     'smoke', 'Halt: versteckter Text gefunden'],
   ['REINIGUNG: versteckter Text wird nicht gemeldet', 'src/ai/kiVorbereitung.js',
     'if (g) { liste.push({ seite: i, text: t.str, grund: g }); RE.zudecken(img, st, vp.scale); zu++; }',
