@@ -3,9 +3,15 @@
 //
 // Bis hierher ging die ORIGINALDATEI hinaus: ein PDF samt Text, den man auf der Seite nicht
 // sieht, ein Foto samt EXIF (Kamera, Ort). Jetzt:
-//   · PDF  → jede Seite mit pdf.js GEZEICHNET (höchstens KI_PDF_SEITEN_MAX), versteckter Text in
-//            der Kopie zugedeckt (WFP.Reinigung.versteckt/zudecken), als JPEG ohne Metadaten.
-//   · Foto → auf einer Leinwand neu gezeichnet (lange Kante ≤ KI_BILD_KANTE), JPEG ohne Metadaten.
+//   · PDF  → jede Seite mit pdf.js GEZEICHNET (höchstens KI_PDF_SEITEN_MAX), mit 300 dpi nach der
+//            echten Seitengröße, versteckter Text in der Kopie zugedeckt (WFP.Reinigung.versteckt/
+//            zudecken), als JPEG 92 % ohne Metadaten.
+//   · Foto → JPEG: die Bildpunkte gehen 1:1 hinaus, nur Metadaten-Abschnitte und alles hinter dem
+//            Bildende werden abgeschnitten (Klaus 2026-10-14: „nur das Bösartige neu, den Rest 1:1").
+//            Andere Formate → in voller Größe neu gezeichnet, PNG bleibt verlustfrei PNG.
+// QUALITÄT (Klaus 2026-10-14: „Die Qualität muss 100 % stimmen"), gemessen mit der Texterkennung
+// auf dem Gerät an kleiner, blassgrauer Schrift (20 Zeilen): 1400 px/JPEG 85 % → 9 Zeilen falsch,
+// 300 dpi/JPEG 92 % → 0; PNG brachte nichts und wog beim Scan das Fünffache (Sage Bau 24.R).
 // Das Original im Beleg-Archiv bleibt unverändert (GoBD).
 //
 // ⚠ GRENZEN, benannt: nur die ersten 10 Seiten gehen hinaus (das wird gesagt) · Text über einem
@@ -15,8 +21,11 @@
 import { skriptLaden, reinigung, VENDOR_PDFJS } from '../domain/belegPruefung.js';
 
 export const KI_PDF_SEITEN_MAX = 10;
-export const KI_PDF_KANTE = 1400;
-export const KI_BILD_KANTE = 2000;
+export const KI_PDF_DPI = 300;
+export const KI_PDF_MAX_KANTE = 5000;     // A3 bei 300 dpi = 4961 px; darüber (Plakate) gedeckelt
+export const KI_JPEG_GUETE = 0.92;
+export const KI_BILD_MAX_KANTE = 6000;    // nur gegen Riesenbilder; ein Handyfoto bleibt unverkleinert
+export const KI_PNG_MAX_BYTES = 8 * 1024 * 1024;
 
 async function pdfjs() {
   if (!window.pdfjsLib) {
@@ -43,7 +52,8 @@ export async function pdfFuersKi(bytes, opt = {}) {
     if (opt.onSeite) opt.onSeite(i, n);
     const p = await pdf.getPage(i);
     const v1 = p.getViewport({ scale: 1 });
-    const vp = p.getViewport({ scale: KI_PDF_KANTE / v1.width });
+    // 300 dpi nach der echten Seitengröße (1 pt = 1/72 Zoll), Riesenseiten gedeckelt.
+    const vp = p.getViewport({ scale: Math.min(KI_PDF_DPI / 72, KI_PDF_MAX_KANTE / Math.max(v1.width, v1.height)) });
     const c = document.createElement('canvas');
     c.width = Math.round(vp.width); c.height = Math.round(vp.height);
     const x = c.getContext('2d', { willReadFrequently: true });
@@ -61,7 +71,7 @@ export async function pdfFuersKi(bytes, opt = {}) {
       if (g) { liste.push({ seite: i, text: t.str, grund: g }); RE.zudecken(img, st, vp.scale); zu++; }
     }
     if (zu) x.putImageData(img, 0, 0);
-    const m = RE.datenAdresseOhneMeta(c.toDataURL('image/jpeg', 0.85));
+    const m = RE.datenAdresseOhneMeta(c.toDataURL('image/jpeg', KI_JPEG_GUETE));
     m.entfernt.forEach((e) => liste.push({ seite: i, text: e.art + ' (' + e.bytes + ' Byte)', grund: 'meta' }));
     bilder.push(m.url);
     c.width = c.height = 0;
@@ -79,27 +89,63 @@ function metaImOriginal(RE, bytes, mime) {
   return r.entfernt || [];
 }
 
+/** Ende eines JPEG: das erste FF D9 nach dem ersten Bilddaten-Abschnitt (FF DA). In den
+ *  Bilddaten ist jedes FF gestopft (FF 00) oder ein Neustart (FF D0–D7). -1 = nicht gefunden. */
+export function jpegEnde(u8) {
+  let i = 2;
+  while (i + 4 <= u8.length && u8[i] === 0xFF && u8[i + 1] !== 0xDA) {
+    const m = u8[i + 1];
+    if (m === 0xD8 || m === 0x01 || (m >= 0xD0 && m <= 0xD7)) { i += 2; continue; }
+    i += 2 + ((u8[i + 2] << 8) | u8[i + 3]);
+  }
+  for (let k = i; k + 1 < u8.length; k++) if (u8[k] === 0xFF && u8[k + 1] === 0xD9) return k + 2;
+  return -1;
+}
+function zuB64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+
+/** JPEG 1:1: Metadaten und Angehängtes weg, Bildpunkte unverändert. null = nicht sauber zerlegbar. */
+export function jpegEinsZuEins(RE, u8) {
+  const r = RE.jpegOhneMeta(u8);
+  if (!r || !r.geprueft) return null;
+  const ende = jpegEnde(r.bytes);
+  if (ende < 0) return null;
+  const liste = (r.entfernt || []).map((e) => ({ seite: null, text: e.art + ' (' + e.bytes + ' Byte)', grund: 'meta' }));
+  let b = r.bytes;
+  if (ende < b.length) {
+    liste.push({ seite: null, text: 'Angehängtes hinter dem Bildende (' + (b.length - ende) + ' Byte)', grund: 'meta' });
+    b = b.subarray(0, ende);
+  }
+  return { bilder: ['data:image/jpeg;base64,' + zuB64(b)], liste, seiten: 1, gesamt: 1, einsZuEins: true };
+}
+
 /**
- * Ein Foto neu gezeichnet: keine Metadaten, lange Kante gedeckelt.
+ * Ein Foto für die Texterkennung: JPEG 1:1 ohne Metadaten und Angehängtes, sonst in voller Größe
+ * neu gezeichnet (PNG bleibt PNG).
  * ⚠ NIE das Original: lässt sich das Bild nicht dekodieren, wird geworfen — nichts geht hinaus.
  * @returns {Promise<{bilder:string[], liste:Array<{seite,text,grund}>, seiten:1, gesamt:1}>}
  */
 export async function bildFuersKi(bytes, mime) {
   const RE = await reinigung();
+  if (bytes && bytes.length > 3 && bytes[0] === 0xFF && bytes[1] === 0xD8) {
+    const eins = jpegEinsZuEins(RE, bytes);
+    if (eins) return eins;
+  }
   let bild;
   try { bild = await createImageBitmap(new Blob([bytes], { type: mime || 'image/jpeg' })); }
   catch { throw new Error('Das Bild lässt sich hier nicht lesen — es wurde nichts gesendet.'); }
-  const f = Math.min(1, KI_BILD_KANTE / Math.max(bild.width, bild.height));
+  const f = Math.min(1, KI_BILD_MAX_KANTE / Math.max(bild.width, bild.height));
   const c = document.createElement('canvas');
   c.width = Math.max(1, Math.round(bild.width * f)); c.height = Math.max(1, Math.round(bild.height * f));
   const x = c.getContext('2d');
-  x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+  const png = /png$/i.test(mime || '');
+  if (!png) { x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); }
   x.drawImage(bild, 0, 0, c.width, c.height);
   if (bild.close) bild.close();
-  const m = RE.datenAdresseOhneMeta(c.toDataURL('image/jpeg', 0.9));
+  let url = png ? c.toDataURL('image/png') : '';
+  if (!png || url.length * 0.75 > KI_PNG_MAX_BYTES) url = RE.datenAdresseOhneMeta(c.toDataURL('image/jpeg', KI_JPEG_GUETE)).url;
   c.width = c.height = 0;
   const liste = metaImOriginal(RE, bytes, mime).map((e) => ({ seite: null, text: e.art + ' (' + e.bytes + ' Byte)', grund: 'meta' }));
-  return { bilder: [m.url], liste, seiten: 1, gesamt: 1 };
+  return { bilder: [url], liste, seiten: 1, gesamt: 1, einsZuEins: false };
 }
 
 /** Beide Wege hinter einer Tür. */

@@ -7,6 +7,11 @@
 
 ---
 
+## ✅ NACHTRAG (2026-10-14) — KI-Richter prüft fremde Texte · 300 dpi · Fotos 1:1
+
+Siehe `docs/SESSIONS.md` (oberster Eintrag). Nächstes: Fotos → Scan-PDF beim Einlesen (Original
+verschlüsselt daneben) und Platz-Prüfung vor dem Einlesen.
+
 ## ✅ LETZTER STAND (2026-10-14) — Belege: Ordner-Import, Prüfung auf Knopfdruck, Reinigung vor der KI
 
 Klaus: *„PDFs in großem Umfang als Dateien importieren, Fotos, eingescannte Dokumente … die

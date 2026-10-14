@@ -5,6 +5,24 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-14 — KI-Richter prüft fremde Texte · Texterkennung mit 300 dpi · Fotos 1:1
+
+**Was getan.** Sage Bau 04.J/24.R nachgezogen (Sage #1082): `src/sbkim/match.js` prüft Anfrage und
+Kandidaten mit der Prüfliste (`window.PrueferMail`); ohne Liste kein Richter, ein Kandidat mit Anweisung
+an eine KI geht nicht an Mistral und steht mit ⚠ da. Das schließt zwei Wege: die SBKIM-Suche (Sporen
+fremder Knoten) und „Konto vorschlagen (Richter)" (Belegtext ging am Text-Halt vorbei). Kanon
+`sbkim/04_match.js` nachgezogen, `index.html` lädt die Liste vor dem Mycel-Fenster. Qualität (Klaus):
+PDF-Seiten mit 300 dpi nach Seitengröße, JPEG 92 %; JPEG-Fotos gehen 1:1 (nur Metadaten und
+Angehängtes weg), andere Fotos in voller Größe neu gezeichnet. Gemessen: 1400 px las 9 von 20 kleinen
+blassgrauen Zeilen falsch, 300 dpi keine. Probe-Rennen behoben (`__blpImport` vor jedem Import leeren).
+
+**Stand.** `run.mjs` 2236 · `smoke_belege` 75 · Gegenprobe neue Fälle 7 gefangen. Cache v242.
+
+**Offen/Nächstes.** Fotos beim Einlesen zum Scan-PDF (Original verschlüsselt daneben) und
+Platz-Prüfung vor dem Einlesen (Klaus' Wahl, folgt in eigenem PR). Tablet nicht gemessen.
+
+---
+
 ## 2026-10-14 — Belege: Ordner-Import, Prüfung auf Knopfdruck, Reinigung vor der KI
 
 **Was getan.** Siehe `docs/PULS.md` (Stand 2026-10-14) und PR #329. Mehrfach- und
