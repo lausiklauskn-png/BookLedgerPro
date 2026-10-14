@@ -16,9 +16,38 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// Die Kopie liegt unter /tmp — der Workflow-PDF-Klon daneben fehlt dort. Ohne ihn wäre der Weg
+// „Blatt sicher erkannt" ungemessen und seine Fälle blind.
+if (!process.env.WFPDF_KLON && existsSync(resolve(WURZEL, '../Workflow-PDF/assets/scanner.js'))) process.env.WFPDF_KLON = resolve(WURZEL, '../Workflow-PDF');
 
 // [Name, Datei, Anker, Ersatz, Probe ('smoke'|'run'), erwartete erste rote Zeile]
 const FAELLE = [
+  ['SCAN: das Foto wird nicht zum Scan-PDF', 'src/ui/views/documents.js',
+    "  if (/^image\\//.test(art)) {\n    try {\n      const sc = await fotoZuScan(file);",
+    "  if (false) {\n    try {\n      const sc = await fotoZuScan(file);",
+    'smoke', 'das Foto liegt als Scan-PDF'],
+  ['SCAN: das Originalfoto wird nicht aufbewahrt', 'src/ui/views/documents.js',
+    "await saveBeleg(pdf, { original: file, originalTyp: art, scan: sc });",
+    "await saveBeleg(pdf, { scan: sc });",
+    'smoke', 'das Originalfoto liegt verschlüsselt dabei'],
+  ['SCAN: wieder 200 dpi', 'src/core/scanPdf.js',
+    'export const SCAN_DPI = 300;', 'export const SCAN_DPI = 200;',
+    'run', 'Scan: 300 dpi, JPEG 92 %'],
+  ['SCAN: unsicher wird trotzdem geschnitten', 'src/core/scanPdf.js',
+    '      if (sicher) {\n        const SB = window.WFP.ScanBild;', '      if (true) {\n        const SB = window.WFP.ScanBild;',
+    'smoke', 'der Scan hat 300 dpi auf A4'],
+  ['SCAN: sicher erkannt wird NICHT gerade gezogen', 'src/core/scanPdf.js',
+    '      if (sicher) {\n        const SB = window.WFP.ScanBild;', '      if (false) {\n        const SB = window.WFP.ScanBild;',
+    'smoke', 'gerade gezogen auf A4 hoch'],
+  ['SCAN: die Prüfung nimmt den Scan statt des Originalfotos', 'src/domain/belegPruefung.js',
+    'ausFoto ? rec.originalDaten : rec.data', 'rec.data',
+    'run', 'die Prüfung nimmt bei einem Scan das Originalfoto'],
+  ['PLATZ: es wird nie gefragt', 'src/ui/views/documents.js',
+    'if (plan.passt === false || gross.length) {', 'if (false) {',
+    'smoke', 'es wird gefragt, mit Zahl, Größe und freiem Platz'],
+  ['PLATZ: der freie Platz wird ignoriert', 'src/domain/importPlatz.js',
+    'passt: frei == null ? null : bedarf <= frei', 'passt: frei == null ? null : true',
+    'run', 'Plan: passt nicht, wenn der Bedarf über dem freien Platz liegt'],
   ['REINIGUNG: das ORIGINAL geht an die OCR', 'src/ui/views/documents.js',
     'r = await belegFuersKi(bytes, b.mediaType, {',
     "r = { bilder: ['data:' + b.mediaType + ';base64,' + bytesToBase64(bytes)], liste: [], seiten: 1, gesamt: 1 }; if (0) await belegFuersKi(bytes, b.mediaType, {",
@@ -103,8 +132,8 @@ const FAELLE = [
     "onSeiteAus: (i, n) => arbeit.setzen(",
     'smoke', 'Arbeitsleiste: Seiten werden gezeichnet'],
   ['IMPORT: beim Einlesen wird geprüft', 'src/ui/views/documents.js',
-    'try { await saveBeleg(nehmen[i].file, { typ: nehmen[i].typ }); n++; }',
-    'try { const m = await saveBeleg(nehmen[i].file, { typ: nehmen[i].typ }); await pruefeBeleg(m.id); n++; }',
+    'const r = await belegAblegen(nehmen[i].file, nehmen[i].typ); n++;',
+    'const r = await belegAblegen(nehmen[i].file, nehmen[i].typ); n++; for (const bb of await listBelege()) if (!bb.pruefung) await pruefeBeleg(bb.id);',
     'smoke', 'beim Einlesen wird NICHT geprüft'],
   ['IMPORT: Übersprungenes verschwindet still', 'src/domain/kiReinigung.js',
     "if (!typ) { ueberspringen.push({ pfad, grund: 'art' }); continue; }",

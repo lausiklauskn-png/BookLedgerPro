@@ -27,7 +27,7 @@ import { loadEmbedder } from '../../sbkim/embed.js';
 import { buildVorschlag } from '../../ai/suggest.js';
 import { begruendeBuchung } from '../../ai/berater.js';
 import { onDeviceBegruendung } from '../../domain/rechtsregeln.js';
-import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, bytesToBase64, linkBeleg, aufbewahrungBis, istAufbewahrungspflichtig } from '../../domain/documents.js';
+import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, getOriginalBytes, bytesToBase64, linkBeleg, aufbewahrungBis, istAufbewahrungspflichtig } from '../../domain/documents.js';
 import { getSettings } from '../../state.js';
 import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
@@ -36,6 +36,8 @@ import { pruefStandVon, ungepruefte, belegDateienWaehlen, kiAnweisungZeilen, tex
 import { pruefeBeleg, pruefBericht, kiVermerke, vermerkeKiEntfernt, pruefKern, prueferMail } from '../../domain/belegPruefung.js';
 import { belegFuersKi } from '../../ai/kiVorbereitung.js';
 import { pruefberichtZeigen, ungeprueftHalt, auffaelligHalt, kiReinigungHalt, textHalt, drehkreis, arbeitsAnzeige } from '../belegDialoge.js';
+import { fotoZuScan } from '../../core/scanPdf.js';
+import { platzPlan, mb } from '../../domain/importPlatz.js';
 
 let _host = null;
 let _idx = {};
@@ -649,13 +651,57 @@ function umsatzRow(u, posten = []) {
 
 // ---- Upload (Datei / Foto / PDF) + Beleg-Liste -----------------------------
 
+// Ein Foto wird beim Ablegen zum Scan-PDF (Klaus 2026-10-14: „Ja, Scan + Original behalten",
+// „wie bei Workflow PDF"). Das Original liegt unverändert und verschlüsselt am selben Beleg.
+// Lässt sich kein Scan bauen, wird das Foto wie bisher abgelegt — und das wird gesagt.
+async function belegAblegen(file, typ) {
+  const art = file.type || typ || '';
+  if (/^image\//.test(art)) {
+    try {
+      const sc = await fotoZuScan(file);
+      const pdf = new File([sc.pdf], sc.name, { type: 'application/pdf' });
+      await saveBeleg(pdf, { original: file, originalTyp: art, scan: sc });
+      return { scan: true, sicher: sc.sicher, grund: sc.grund };
+    } catch (e) {
+      await saveBeleg(file, { typ });
+      return { scan: false, grund: String((e && e.message) || e) };
+    }
+  }
+  await saveBeleg(file, { typ });
+  return { scan: false };
+}
+
+// „X Dateien, Y MB, frei Z" — und fragen, wenn es nicht passt oder eine Datei sehr groß ist.
+async function platzFrage(nehmen) {
+  let est = null;
+  try { est = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate() : null; } catch { est = null; }
+  const plan = platzPlan(nehmen, est);
+  const frei = plan.frei == null ? t('docs.platzUnbekannt') : mb(plan.frei);
+  const zeile = t('docs.platzZeile').replace('{n}', String(plan.anzahl)).replace('{y}', mb(plan.bytes)).replace('{b}', mb(plan.bedarf)).replace('{z}', frei);
+  if (typeof window !== 'undefined') window.__blpPlatz = { ...plan, zeile };   // Probe
+  const gross = plan.gross.map((g) => '· ' + g.pfad + ' (' + mb(g.size) + ')');
+  if (plan.passt === false || gross.length) {
+    const teile = [zeile];
+    if (plan.passt === false) teile.push(t('docs.platzPasstNicht'));
+    if (gross.length) teile.push(t('docs.platzGross'), ...gross.slice(0, 8), ...(gross.length > 8 ? ['… +' + (gross.length - 8)] : []));
+    teile.push('', t('docs.platzWeiter'));
+    if (!confirm(teile.join('\n'))) return { weiter: false, zeile };
+  }
+  return { weiter: true, zeile, gross: plan.gross };
+}
+
 let _importStatus = null;   // {text, liste?} — überlebt das Neuzeichnen
 
 function uploadKarte() {
   const add = async (accept, capture) => {
     const file = await pickFile(accept, capture);
     if (!file) return;
-    try { await saveBeleg(file); await repaint(); }
+    try {
+      const r = await belegAblegen(file);
+      _importStatus = r.scan ? { text: r.sicher ? t('docs.scanSicher') : t('docs.scanGanz').replace('{grund}', r.grund || '') }
+        : (r.grund ? { text: t('docs.scanNicht').replace('{grund}', r.grund) } : _importStatus);
+      await repaint();
+    }
     catch (e) { alert(String(e.message || e)); }
   };
   // Viele auf einmal oder ein ganzer Ordner (Klaus 2026-10-14). Jeder Beleg wird einzeln
@@ -665,21 +711,30 @@ function uploadKarte() {
     const files = await pickFiles('image/*,application/pdf,.pdf', { ordner });
     if (!files.length) return;
     const { nehmen, ueberspringen } = belegDateienWaehlen(files);
-    const fehler = [];
-    let n = 0;
+    const platz = await platzFrage(nehmen);
+    if (!platz.weiter) {
+      _importStatus = { text: platz.zeile + ' — ' + t('docs.platzAbgebrochen') };
+      if (typeof window !== 'undefined') window.__blpImport = { abgelegt: 0, uebersprungen: ueberspringen, fehler: [], abgebrochen: true };   // Probe
+      await repaint(); return;
+    }
+    const fehler = [], ohneScan = [];
+    let n = 0, scans = 0, ganz = 0;
     for (let i = 0; i < nehmen.length; i++) {
       _importStatus = { text: t('docs.importLaeuft').replace('{i}', String(i + 1)).replace('{n}', String(nehmen.length)) };
       const st = document.querySelector('[data-import-status]');
       if (st) st.textContent = _importStatus.text;
-      try { await saveBeleg(nehmen[i].file, { typ: nehmen[i].typ }); n++; }
-      catch (e) { fehler.push(`${nehmen[i].pfad}: ${String((e && e.message) || e)}`); }
+      try {
+        const r = await belegAblegen(nehmen[i].file, nehmen[i].typ); n++;
+        if (r.scan) { scans++; if (!r.sicher) ganz++; } else if (r.grund) ohneScan.push(`${nehmen[i].pfad}: ${r.grund}`);
+      } catch (e) { fehler.push(`${nehmen[i].pfad}: ${String((e && e.message) || e)}`); }
     }
+    const zusatz = scans ? ' ' + t('docs.scanAnzahl').replace('{n}', String(scans)).replace('{g}', String(ganz)) : '';
     _importStatus = {
-      text: t('docs.importFertig').replace('{n}', String(n)),
+      text: platz.zeile + ' · ' + t('docs.importFertig').replace('{n}', String(n)) + zusatz,
       uebersprungen: ueberspringen.map((u) => u.pfad),
-      fehler,
+      fehler: fehler.concat(ohneScan.map((x) => t('docs.scanNicht').replace('{grund}', x))),
     };
-    if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler };   // Probe
+    if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler, scans, ganz, ohneScan };   // Probe
     await repaint();
   };
   const status = [];
@@ -792,7 +847,8 @@ function pruefLeiste(belege) {
 function belegListe(belege, visionBereit) {
   if (!belege.length) return emptyState('empty-documents.png', t('docs.empty'));
   const rows = belege.map((b) => el('tr', {}, [
-    el('td', { text: b.name }),
+    el('td', {}, [b.name, ...(b.original ? [el('div', { class: 'muted small', 'data-scan': b.scan && b.scan.sicher ? 'sicher' : 'ganz',
+      text: (b.scan && b.scan.sicher ? t('docs.scanMarkeSicher') : t('docs.scanMarkeGanz')) + ' · ' + t('docs.originalLiegtBei') })] : [])]),
     el('td', { class: 'muted small', text: b.mediaType }),
     el('td', { class: 'num muted small', text: formatBytes(b.size) }),
     el('td', { class: 'muted small mono', text: (b.createdAt || '').slice(0, 10) }),
@@ -823,6 +879,20 @@ function belegAktionen(b, visionBereit) {
     }));
     // TEMPORÄR: Browser-Test-Marke für den Scan→OCR→Vorschlag-Pfad (co-located am OCR-Knopf).
     wrap.appendChild(testMarke('beleg-ocr', 'Texterkennung (Vision EU)'));
+  }
+  if (b.original) {
+    wrap.appendChild(el('button', {
+      class: 'btn btn-sm', type: 'button', 'data-original-laden': '', text: t('docs.originalLaden'),
+      onClick: async () => {
+        const bytes = await getOriginalBytes(b.id);
+        if (!bytes) { alert(t('docs.originalFehlt')); return; }
+        const url = URL.createObjectURL(new Blob([bytes], { type: b.original.mediaType || 'application/octet-stream' }));
+        const a = el('a', { href: url, download: b.original.name || 'Foto' });
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+        if (typeof window !== 'undefined') window.__blpOriginal = { name: b.original.name, groesse: bytes.length };   // Probe
+      },
+    }));
   }
   wrap.appendChild(el('button', {
     class: 'btn btn-sm', text: t('common.delete'),

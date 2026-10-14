@@ -7,6 +7,14 @@
 
 ---
 
+## ✅ LETZTER STAND (2026-10-14) — Fotos → Scan-PDF (Original verschlüsselt dabei) · Platz-Prüfung vor dem Import
+
+Siehe `docs/SESSIONS.md` (oberster Eintrag).
+
+**Nächste konkrete Schritte**
+- Klaus' Sichttest am Tablet: ein echtes Kamerafoto einlesen, dann „⬇ Original-Foto" und Prüfen.
+- Messen, wie lange ein Foto am Tablet braucht.
+
 ## ✅ NACHTRAG (2026-10-14) — KI-Richter prüft fremde Texte · 300 dpi · Fotos 1:1
 
 Siehe `docs/SESSIONS.md` (oberster Eintrag). Nächstes: Fotos → Scan-PDF beim Einlesen (Original

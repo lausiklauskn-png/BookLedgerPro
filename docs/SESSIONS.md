@@ -5,6 +5,45 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-14 — Fotos werden beim Einlesen zum Scan-PDF · Platz-Prüfung vor dem Import
+
+**Was getan.** Nach Klaus' Wahl („Ja, Scan + Original behalten" · „Ja, vorher prüfen" · „In dieser
+Sitzung") gilt jetzt:
+
+- **Foto → Scan-PDF:** Ein Foto wird beim Einlesen (📷 Foto, Mehrere, Ordner) zum Scan-PDF mit
+  300 dpi, JPEG 92 % (`src/core/scanPdf.js`). Die Entscheidung ist die stille der WorkFlohs:
+  `WFP.Scanner.erkennen` aus `/Workflow-PDF/assets/` (Scanic-Modell, Kanten, blatt.js; „sicher" nur,
+  wenn zwei übereinstimmen).
+  - Sicher erkannt: Das Blatt wird gerade gezogen, die Seitengröße bestimmt „Automatisch".
+  - Unsicher, oder der Scanner lädt nicht: Das ganze Foto kommt mittig auf A4. Nichts wird
+    abgeschnitten, und die App sagt es.
+  - Das PDF schreibt die App selbst (`jpegZuPdf`, ohne Bibliothek).
+- **Original bleibt:** Das Originalfoto liegt unverändert und verschlüsselt am selben Beleg
+  (`originalDaten`, GoBD). Die Liste lädt es nicht mit; „⬇ Original-Foto" lädt es herunter.
+  Die Prüfung auf Knopfdruck prüft das Originalfoto, nicht den Scan.
+- **Platz-Prüfung:** Vor dem Einlesen steht „X Datei(en), Y MB · geschätzt belegt … · frei Z"
+  (`src/domain/importPlatz.js`, `navigator.storage.estimate`). Passt es nicht, oder ist eine Datei
+  über 50 MB, fragt die App. „Abbrechen" legt nichts ab.
+- ⚠ **Tafel-Evolution:** Bis hierher lag ein neues Foto als JPEG im Archiv. Der Weg „JPEG 1:1 an die
+  KI" gilt weiter für Fotos, die schon als Foto im Archiv liegen; die Probe misst ihn an einem
+  Altbeleg.
+
+**Stand.**
+- `run.mjs`: 2253 bestanden.
+- `smoke_belege`: 97 grün, darunter ein Foto mit Blatt auf dem Tisch. Es wurde sicher erkannt und
+  gerade gezogen, am Rand ist Papier statt Tisch.
+- Gegenprobe (SCAN 6 · PLATZ 2 · IMPORT 3): 11 gefangen, 0 durchgerutscht, 0 tote Anker.
+- Cache: v243.
+
+**Grenzen.**
+- Die Bedarfs-Schätzung ist eine Schätzung (Scan bis 3 MB je Foto, 10 % Luft).
+- Den freien Platz meldet der Browser, und zwar grob.
+- Der Weg „Scanner lädt nicht" ist nicht im Browser gemessen (nur der Rückfall bei unsicherem Blatt).
+- Am Tablet ist nichts gemessen: weder echte Kamerafotos noch die Zeit je Foto (4000-px-Quelle,
+  Entzerren in JS).
+
+---
+
 ## 2026-10-14 — KI-Richter prüft fremde Texte · Texterkennung mit 300 dpi · Fotos 1:1
 
 **Was getan.** Sage Bau 04.J/24.R nachgezogen (Sage #1082): `src/sbkim/match.js` prüft Anfrage und

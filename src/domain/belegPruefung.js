@@ -78,11 +78,15 @@ export async function reinigung() {
 export async function pruefeBeleg(id) {
   const rec = await fileGet(id);
   if (!rec) throw new Error('Beleg nicht gefunden');
-  const bytes = await decryptBytesWithKey(key(), rec.data);
+  // Bei einem Scan wird das ORIGINALFOTO geprüft (wie in Workflow PDF): es kommt von außen und
+  // trägt Metadaten, blassen Text und Bildpunkte, die im neu gezeichneten Scan nicht mehr stehen.
+  const ausFoto = !!(rec.originalDaten && rec.original);
+  const bytes = await decryptBytesWithKey(key(), ausFoto ? rec.originalDaten : rec.data);
   let p;
   try {
     const E = await pruefKern();
-    p = await E.pruefen(rec.name || 'beleg', bytes);
+    p = await E.pruefen(ausFoto ? (rec.original.name || 'foto') : (rec.name || 'beleg'), bytes);
+    if (ausFoto) p.geprueftWurde = 'original';
   } catch (e) {
     p = { stand: PRUEF_STAND.UNGEPRUEFT, funde: [], hinweise: ['Die Prüfung lief nicht: ' + ((e && e.message) || e)],
       markiert: null, art: '', zeit: new Date().toISOString(), herkunft: [], angaben: [] };

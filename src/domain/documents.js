@@ -20,6 +20,9 @@ function neueId() {
 
 /** Speichert eine Datei verschlüsselt als Beleg, gibt die Metadaten zurück.
  *  `opt.typ` ersetzt einen fehlenden Dateityp (aus einem Ordner kommt oft '').
+ *  `opt.original` (File) ist das Originalfoto eines Scans (Klaus 2026-10-14: „Scan + Original
+ *  behalten", GoBD): es liegt UNVERÄNDERT und verschlüsselt am selben Beleg (`originalDaten`),
+ *  `opt.scan` = {sicher, grund, weg} sagt, wie der Scan entstand.
  *  Geprüft wird NICHT beim Ablegen (Klaus 2026-10-14: prüfen erst auf Knopfdruck). */
 export async function saveBeleg(file, opt = {}) {
   const bytes = await readFileBytes(file);
@@ -33,6 +36,12 @@ export async function saveBeleg(file, opt = {}) {
     buchungId: null,
     data, // verschlüsselt — von fileAllMeta() ausgeblendet
   };
+  if (opt.original) {
+    const ob = await readFileBytes(opt.original);
+    rec.originalDaten = await encryptBytesWithKey(key(), ob);   // verschlüsselt — von fileAllMeta() ausgeblendet
+    rec.original = { name: opt.original.name || 'Foto', mediaType: opt.original.type || opt.originalTyp || 'application/octet-stream', size: ob.length };
+    if (opt.scan) rec.scan = { sicher: !!opt.scan.sicher, grund: String(opt.scan.grund || ''), weg: String(opt.scan.weg || '') };
+  }
   await filePut(rec);
   const { data: _, ...meta } = rec;
   return meta;
@@ -50,6 +59,13 @@ export async function getBelegBytes(id) {
   const rec = await fileGet(id);
   if (!rec) return null;
   return decryptBytesWithKey(key(), rec.data);
+}
+
+/** Das Originalfoto eines Scans (entschlüsselt) oder null. */
+export async function getOriginalBytes(id) {
+  const rec = await fileGet(id);
+  if (!rec || !rec.originalDaten) return null;
+  return decryptBytesWithKey(key(), rec.originalDaten);
 }
 
 export async function linkBeleg(belegId, buchungId) {

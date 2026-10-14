@@ -132,8 +132,9 @@ export async function fileDel(id) {
 export async function fileAllMeta() {
   // Belege können groß sein; für Listen nur Metadaten zurückgeben.
   const all = await wrap((await tx(STORES.FILES, 'readonly')).getAll());
-  // pruefDaten/kiDaten (verschlüsselter Prüfbericht und Vermerk) gehören wie data nicht in die Liste.
-  return all.map(({ data, pruefDaten, kiDaten, ...meta }) => meta);
+  // pruefDaten/kiDaten (verschlüsselter Prüfbericht und Vermerk) und originalDaten (das
+  // verschlüsselte Originalfoto eines Scans) gehören wie data nicht in die Liste.
+  return all.map(({ data, pruefDaten, kiDaten, originalDaten, ...meta }) => meta);
 }
 
 /** Exportiert den kompletten Datenbestand (für Backup). */
