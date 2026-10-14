@@ -41,8 +41,9 @@ Gegenprobe `node tests/gegenprobe_belege.mjs` (18 Fälle, Zahlen im PR #329 und 
 
 1. **Klaus' Sichttest am Tablet:** Ordner einlesen, „Alle ungeprüften prüfen", Texterkennung
    eines auffälligen Belegs (alle Halte), Marke „🧽 gereinigt".
-2. **E-Rechnung und Bank-Import:** Lieferantenname/Verwendungszweck gehen noch ungeprüft an
-   die Kontierung — gleiche Text-Prüfung davorsetzen.
+2. ✅ **E-Rechnung und Bank-Import** (am selben Tag nachgezogen): Lieferantenname und
+   Verwendungszweck/Gegenpartei laufen durch dieselbe Text-Prüfung wie der OCR-Text.
+   Probe J/K in `smoke_belege.mjs` (64 grün), Gegenprobe `FREMDTEXT:` 2 gefangen.
 3. Zeit und Speicher der Prüfung bei großen Ordnern am Gerät messen.
 
 ---
