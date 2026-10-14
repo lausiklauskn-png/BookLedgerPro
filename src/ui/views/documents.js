@@ -209,9 +209,9 @@ function richterErgebnis(res) {
   else if (res.mode === 'fail-soft-vorfilter') wrap.appendChild(el('div', { class: 'hinweis warn small', text: t('docs.richterFailsoft').replace('%R%', res.reason || '') }));
   const treffer = res.treffer || [];
   if (!treffer.length) { wrap.appendChild(el('p', { class: 'muted small', text: t('docs.richterNone') })); return wrap; }
-  wrap.appendChild(el('ul', { class: 'sbkimsuche-list' }, treffer.map((v) => el('li', {}, [
-    el('strong', { text: v.label }),
-    el('span', { class: 'muted small', text: ` · ${t('docs.richterScore')} ${Math.round((Number(v.score) || 0) * 100)} %` }),
+  wrap.appendChild(el('ul', { class: 'sbkimsuche-list' }, treffer.map((v) => el('li', v.ausgeschlossen ? { 'data-ausgeschlossen': v.ausgeschlossen } : {}, [
+    el('strong', { text: (v.ausgeschlossen ? '⚠ ' : '') + v.label }),
+    el('span', { class: 'muted small', text: v.ausgeschlossen ? ` · ${t('sbkim.ausgeschlossen')}` : ` · ${t('docs.richterScore')} ${Math.round((Number(v.score) || 0) * 100)} %` }),
     v.begruendung ? el('p', { class: 'muted small', text: v.begruendung }) : null,
   ].filter(Boolean)))));
   if (res.query) wrap.appendChild(el('p', { class: 'muted small', text: t('docs.richterQuery').replace('%Q%', res.query) }));
@@ -896,7 +896,7 @@ async function visionExtraktion(b) {
       for (let i = 0; i < r.bilder.length; i++) {
         arbeit.setzen(t('beleg.arbeitOcr').replace('{i}', String(i + 1)).replace('{n}', String(r.bilder.length)));
         const u = r.bilder[i];
-        teile.push(await ocr({ base64: u.slice(u.indexOf(',') + 1), mimeType: 'image/jpeg' }));
+        teile.push(await ocr({ base64: u.slice(u.indexOf(',') + 1), mimeType: (/^data:([^;]+);/.exec(u) || [, 'image/jpeg'])[1] }));
       }
     } finally { arbeit.weg(); }
     await vermerkeKiEntfernt(b.id, r.liste, 'Texterkennung');

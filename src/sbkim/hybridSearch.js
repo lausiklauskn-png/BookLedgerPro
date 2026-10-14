@@ -47,6 +47,12 @@ export async function sbkimHybridSearch(text, corpus, opts = {}) {
     return { label: r.label, text: src.text || r.label, cosine: r.score, anchorId: r.anchorId };
   });
 
+  // 3a. Prüfliste laden (Sage Bau 04.J): ohne sie läuft der Richter nicht. Im Browser wird sie
+  //     einmal nachgeladen; in Node reicht der Aufrufer sie über opts._pruefliste herein.
+  if (!opts._pruefliste && !globalThis.PrueferMail && typeof window !== 'undefined') {
+    try { await (await import('../domain/belegPruefung.js')).prueferMail(); } catch { /* bleibt aus → fail-soft */ }
+  }
+
   // 3. RICHTER (opt-in) — Mistral EU (BYOK).
   const judgment = await hybridMatch(
     { text, label: opts.queryLabel || null },
@@ -57,6 +63,7 @@ export async function sbkimHybridSearch(text, corpus, opts = {}) {
       euOnly: opts.euOnly !== false,
       model: opts.model,
       _chat: opts._chat,
+      _pruefliste: opts._pruefliste,
     },
   );
 
@@ -65,6 +72,9 @@ export async function sbkimHybridSearch(text, corpus, opts = {}) {
 
   // 5. Richter-Urteil — nur passende Kandidaten, nach Score sortiert.
   //    `geprueft` = alle vorgelegten Kandidaten (Transparenz, wenn der Richter alle ablehnt).
-  const treffer = judgment.verdicts.filter((v) => v.passt).sort((a, b) => b.score - a.score);
-  return { mode: 'richter', treffer, attestation: judgment.attestation, geprueft: judgment.fallbackCandidates || [] };
+  //    Ausgeschlossene (Anweisung an eine KI) stehen markiert am Ende — „Ausschließen und zeigen".
+  const treffer = judgment.verdicts.filter((v) => v.passt).sort((a, b) => b.score - a.score)
+    .concat(judgment.verdicts.filter((v) => v.ausgeschlossen));
+  return { mode: 'richter', treffer, attestation: judgment.attestation, geprueft: judgment.fallbackCandidates || [],
+    ausgeschlossen: judgment.verdicts.filter((v) => v.ausgeschlossen).length };
 }

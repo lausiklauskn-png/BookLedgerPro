@@ -247,9 +247,10 @@ function pct(x) { return `${Math.round((Number(x) || 0) * 100)}%`; }
 
 function trefferListe(treffer, withReason) {
   if (!treffer || treffer.length === 0) return el('p', { class: 'muted small', text: t('sbkimsuche.noneJudged') });
-  return el('ul', { class: 'sbkimsuche-list' }, treffer.map((v) => el('li', {}, [
-    el('strong', { text: v.label }),
-    el('span', { class: 'muted small', text: ` · ${t('sbkimsuche.score')} ${pct(v.score)}` }),
+  // Sage 04.J: ein ausgeschlossener Treffer ging nicht an die KI — kein Score, ein ⚠.
+  return el('ul', { class: 'sbkimsuche-list' }, treffer.map((v) => el('li', v.ausgeschlossen ? { 'data-ausgeschlossen': v.ausgeschlossen } : {}, [
+    el('strong', { text: (v.ausgeschlossen ? '⚠ ' : '') + v.label }),
+    el('span', { class: 'muted small', text: v.ausgeschlossen ? ` · ${t('sbkim.ausgeschlossen')}` : ` · ${t('sbkimsuche.score')} ${pct(v.score)}` }),
     v.modus ? el('span', { class: 'muted small', text: ` · ${t(v.modus === 'schichten' ? 'sbkimsuche.modusSchichten' : 'sbkimsuche.modusDomain')}` }) : null,
     withReason && v.begruendung ? el('p', { class: 'muted small', text: v.begruendung }) : null,
   ].filter(Boolean))));

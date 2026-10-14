@@ -100,6 +100,12 @@ const UNSICHTBAR_PDF = await readFile(join(WURZEL, 'tests/daten/Testdatei-unsich
 const ANWEISUNG_PNG = await readFile(join(WURZEL, 'tests/daten/Testbild-versteckte-Anweisung.png'));
 // Ein Foto mit EXIF: ein echtes JPEG aus der Leinwand, dazu ein APP1-Segment mit erfundenem Ort.
 const GEHEIM = 'GPSGEHEIM-Musterstadt-48.1234N';
+// Die Bilddaten eines JPEG (vom ersten FF DA bis einschließlich FF D9) — sie müssen 1:1 hinausgehen.
+function bilddaten(b) { const a = b.indexOf(Buffer.from([0xFF, 0xDA])); const e = b.indexOf(Buffer.from([0xFF, 0xD9]), a); return a < 0 || e < 0 ? Buffer.alloc(0) : b.subarray(a, e + 2); }
+// Breite × Höhe eines JPEG aus seinem SOF-Abschnitt.
+function jpegMasse(b) { let i = 2; while (i + 9 < b.length && b[i] === 0xFF) { const m = b[i + 1], l = b.readUInt16BE(i + 2);
+  if (m >= 0xC0 && m <= 0xC3) return [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)]; i += 2 + l; } return [0, 0]; }
+let FOTO_BILDDATEN = null;
 function mitExif(jpg) {
   const nutz = Buffer.concat([Buffer.from('Exif\0\0'), Buffer.from(GEHEIM)]);
   const seg = Buffer.concat([Buffer.from([0xFF, 0xE1, (nutz.length + 2) >> 8, (nutz.length + 2) & 255]), nutz]);
@@ -176,7 +182,9 @@ try {
   // Ein JPEG aus der Leinwand für das Foto mit EXIF.
   const jpg64 = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 320; c.height = 200; const x = c.getContext('2d');
     x.fillStyle = '#fff'; x.fillRect(0, 0, 320, 200); x.fillStyle = '#000'; x.font = '20px sans-serif'; x.fillText('Tankstelle 50,00 EUR', 20, 100); return c.toDataURL('image/jpeg', 0.9).split(',')[1]; });
-  const FOTO = mitExif(Buffer.from(jpg64, 'base64'));
+  // Hinter dem Bildende ein Anhängsel (wie das Video eines Bewegungsfotos) — darf nicht mit hinaus.
+  const FOTO = Buffer.concat([mitExif(Buffer.from(jpg64, 'base64')), Buffer.from('ftypmp42 ANGEHAENGT')]);
+  FOTO_BILDDATEN = bilddaten(FOTO);
   ok('Selbst-Riegel: das Testfoto trägt den erfundenen Ort', FOTO.includes(Buffer.from(GEHEIM)));
 
   // ---- A · ein ganzer Ordner ----------------------------------------------------------------
@@ -188,6 +196,7 @@ try {
   await writeFile(join(ordner, 'notiz.txt'), 'nur eine Notiz');
   await writeFile(join(ordner, '.DS_Store'), 'x');
   const wahl = page.waitForEvent('filechooser');
+  await page.evaluate(() => { window.__blpImport = null; });   // sonst trifft die Wartebedingung den VORIGEN Import
   await tippe('[data-import-ordner]', 'Knopf „Ganzen Ordner einlesen"');
   const fc = await wahl;
   await fc.setFiles(ordner);
@@ -206,6 +215,7 @@ try {
 
   // Mehrere Dateien (ohne Ordner): das Foto.
   const wahl2 = page.waitForEvent('filechooser');
+  await page.evaluate(() => { window.__blpImport = null; });   // sonst trifft die Wartebedingung den VORIGEN Import
   await tippe('[data-import-viele]', 'Knopf „Mehrere Belege hochladen"');
   const fc2 = await wahl2;
   ok('Mehrfach-Auswahl ist erlaubt', fc2.isMultiple());
@@ -270,6 +280,9 @@ try {
     const bilder = vision.flatMap(visionBilder);
     ok('an die OCR geht ein BILD, kein PDF', vision.every((r) => /images:annotate/.test(r.url)) && !vision.some((r) => /application\/pdf|files:annotate/.test(r.body + r.url)));
     ok('die Seitenbilder sind JPEG', bilder.length > 0 && bilder.every((b) => jpegAusBase64(b).subarray(0, 2).toString('hex') === 'ffd8'));
+    // Qualität (Klaus 2026-10-14): 300 dpi nach der Seitengröße — A4 = 2480 × 3508 px.
+    const masse = bilder.map((b) => jpegMasse(jpegAusBase64(b)));
+    ok('die Seitenbilder haben 300 dpi (A4 → 2480 × 3508)', masse.length > 0 && masse.every(([w, h]) => Math.abs(w - 2480) <= 2 && Math.abs(h - 3508) <= 2), JSON.stringify(masse));
     const th = await page.$('[data-text-halt-zeilen]');
     ok('Halt: Anweisung an eine KI im erkannten Text', !!th && /Ignore all previous instructions/.test(await th.textContent()));
     ok('vor der Wahl ging nichts an Mistral', mistral.length === 0);
@@ -328,6 +341,8 @@ try {
       'Stand ' + JSON.stringify((await belegNamens('foto.jpg')).pruefung) + ' · offene Dialoge: ' + (await page.$$eval('[role=dialog] .modal', (l) => l.map((x) => [...x.attributes].map((a) => a.name).join(',')).join(' | ')))
       + ' · Meldungen: ' + dialoge.slice(-3).join(' / '));
     ok('… OHNE den Ort aus den Metadaten', neu.length === 1 && !jpegAusBase64(neu[0]).includes(Buffer.from(GEHEIM)));
+    ok('… OHNE das Angehängte hinter dem Bildende', neu.length === 1 && !jpegAusBase64(neu[0]).includes(Buffer.from('ANGEHAENGT')));
+    ok('… und die Bilddaten Byte für Byte wie im Original (nicht neu gezeichnet)', neu.length === 1 && FOTO_BILDDATEN.length > 100 && bilddaten(jpegAusBase64(neu[0])).equals(FOTO_BILDDATEN));
     ok('… als JPEG', neu.length === 1 && jpegAusBase64(neu[0]).subarray(0, 2).toString('hex') === 'ffd8');
     const r = await page.evaluate(async () => { const b = (await window.__probe.listBelege()).find((x) => x.name === 'foto.jpg'); return (await window.__probe.fileGet(b.id)).kiEntfernt; });
     ok('Vermerk: die Metadaten wurden entfernt', r && r.anzahl >= 1);
@@ -338,6 +353,7 @@ try {
   // ---- G · ungeprüft → „Jetzt prüfen" ----------------------------------------------------------
   console.log('\nG · Ungeprüfter Beleg vor der Texterkennung');
   const wahl3 = page.waitForEvent('filechooser');
+  await page.evaluate(() => { window.__blpImport = null; });   // sonst trifft die Wartebedingung den VORIGEN Import
   await tippe('[data-import-viele]', 'Knopf „Mehrere" (dritter Lauf)');
   await (await wahl3).setFiles([{ name: 'neu-anweisung.png', mimeType: 'image/png', buffer: ANWEISUNG_PNG }]);
   await warteBis(() => window.__blpImport && window.__blpImport.abgelegt === 1, null, 20000);
@@ -363,6 +379,7 @@ try {
   // ---- I · blasser Text im PDF: im gesendeten Bild wirklich zugedeckt ------------------------
   console.log('\nI · Blasser Text wird im gesendeten Bild zugedeckt');
   const wahl4 = page.waitForEvent('filechooser');
+  await page.evaluate(() => { window.__blpImport = null; });   // sonst trifft die Wartebedingung den VORIGEN Import
   await tippe('[data-import-viele]', 'Knopf „Mehrere" (vierter Lauf)');
   await (await wahl4).setFiles([{ name: 'blass.pdf', mimeType: 'application/pdf', buffer: BLASS_PDF }]);
   await warteBis(() => window.__blpImport && window.__blpImport.abgelegt === 1, null, 20000);
