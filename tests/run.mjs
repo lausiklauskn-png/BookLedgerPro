@@ -6273,7 +6273,7 @@ await section('sbkim/: die kopierten Module sind genagelt', async () => {
   //                 offene Aufgabe, die sichtbar bleiben soll.
   const KOPIEN = [
     { datei: '01_storage.js',        sha: '5a5a4bf64dfcc107', kanon: true },
-    { datei: '02_spore.js',          sha: '6789fe6e903ad2e5', kanon: true },
+    { datei: '02_spore.js',          sha: '0cbf0664e2a79f13', kanon: true },
     { datei: '03_embedding.js',      sha: 'a6ac64d7536da3fa', kanon: true },
     { datei: '04_match.js',          sha: '721eecc3c0d6ea4c', kanon: false,
       grund: 'hinterher: RELATEDNESS_CENTER noch v1, Kanon hat v2 (2026-07-23)' },
@@ -6281,13 +6281,13 @@ await section('sbkim/: die kopierten Module sind genagelt', async () => {
     { datei: '05b_nostr_relay.js',   sha: '37eee5b196b3efad', kanon: true },
     { datei: '07_apoptose.js',       sha: '0acdd6ab2d95e131', kanon: true },
     { datei: '15_membran.js',        sha: '829a5bc01976b59c', kanon: true },
-    { datei: '16_siegel.js',         sha: 'd84fa539e76e0cc5', kanon: true },
+    { datei: '16_siegel.js',         sha: '7c12bc487d445f7a', kanon: true },
     { datei: '17_floating_widget.js', sha: 'e4ee076c1295910d', kanon: true },
     { datei: '20_schluessel_safe.js', sha: '38404dc0a16d69cb', kanon: false,
       grund: 'hinterher: 14 Zeilen fehlen, keine eigenen Änderungen' },
     { datei: '21_spracheingabe.js',  sha: '020ca26ff52f2ed7', kanon: true },
-    { datei: '23_rendezvous.js',     sha: '9464fba75e5a4ed4', kanon: true },
-    { datei: '23_rendezvous_ui.js',  sha: 'a81fc9081271544e', kanon: true },
+    { datei: '23_rendezvous.js',     sha: '05a6eb42ec687e74', kanon: true },
+    { datei: '23_rendezvous_ui.js',  sha: 'efecd89ea80d8fa1', kanon: true },
     { datei: '25_pseudonym.js',      sha: '8c3092babee80b8f', kanon: true },   // Namensvorschläge (2026-10-14)
     { datei: 'noble-secp256k1.js',   sha: '8f3879ca422c4fdf', kanon: true },
   ];
