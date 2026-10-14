@@ -712,7 +712,7 @@ async function pruefeEinen(b, { zeigen = true } = {}) {
   await repaint();
   let p;
   try { p = await pruefeBeleg(b.id); }
-  catch (e) { alert(String((e && e.message) || e)); return null; }
+  catch (e) { _pruefLaeuft.delete(b.id); await repaint(); alert(String((e && e.message) || e)); return null; }
   finally { _pruefLaeuft.delete(b.id); }
   await repaint();
   if (zeigen) await berichtOeffnen(b, p);

@@ -6365,7 +6365,9 @@ await section('Prüfkern: byte-1:1 aus Workflow PDF (SHA-256)', async () => {
   for (const u of (bp.match(/assets\/(eingang|reinigung|pruefer-mail)\.js\?v=\d+/g) || [])) ok(`Vorrat nennt ${u}`, sw.includes(`'./${u}'`));
   ok('pdf.js und Texterkennung stehen NICHT im Vorrat (22 MB)', !/vendor\/(pdfjs|tesseract)/.test(sw.replace(/\/\/.*$/gm, '')));
   const kv = readFileSync(new URL('../src/ai/kiVorbereitung.js', import.meta.url), 'utf8');
-  ok('pdf.js läuft ohne eval (CVE-2024-4367)', /isEvalSupported:\s*false/.test(kv));
+  // Gemessen am CODE, nicht am Kommentar daneben (die Gegenprobe fand den Wächter erst blind).
+  const kvCode = kv.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  ok('pdf.js läuft ohne eval (CVE-2024-4367)', /getDocument\(\{[^}]*isEvalSupported:\s*false/.test(kvCode) && !/isEvalSupported:\s*true/.test(kvCode));
   ok('keine fremde Adresse für pdf.js/Tesseract (lokal, Klaus 2026-10-14)', !/Workflow-PDF\/vendor|cdn|jsdelivr|unpkg/i.test(kv + bp));
 });
 
