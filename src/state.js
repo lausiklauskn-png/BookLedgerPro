@@ -3,6 +3,7 @@
 // gespeichert (vault.saveSettings/loadSettings). Einfaches Pub/Sub.
 
 import { saveSettings, loadSettings } from './core/vault.js';
+import { datenschutzNachziehen } from './domain/datenschutzStandard.js';
 
 export const MODES = ['einfach', 'profi', 'berater'];
 export const AI_LEVELS = ['suggest', 'draft', 'auto'];
@@ -18,7 +19,10 @@ const DEFAULTS = Object.freeze({
   kleinunternehmer: false, // §19 UStG — unterdrückt USt-Hinweise
   gewinnermittlung: 'euer', // euer (§4 Abs.3) | bilanz (§4 Abs.1/§5 EStG) — Default EÜR (Bestand unverändert)
   rechnungsstelle: 'blp', // blp | extern — Nummernkreis-Hoheit (§14): BLP vergibt echte Nummern (blp) vs. externes Programm/Steuerberater (extern → BLP nur Vorlage). Default blp (Bestand unverändert), Katalog §7a
-  datenschutzModus: 'aus', // aus | pseudonym — ersetzt bekannte Identifikatoren vor KI-Versand
+  datenschutzModus: 'pseudonym', // aus | pseudonym — ersetzt bekannte Identifikatoren vor KI-Versand. Ab Werk AN seit 2026-10-14 (Klaus); vorher 'aus'
+  datenschutzGewaehlt: false, // true, sobald der Nutzer den Schalter selbst bedient hat (domain/datenschutzStandard.js)
+  kiWeitereNamen: [], // von Hand: wird vor dem KI-Versand immer verdeckt (ai/anker.handAnker)
+  kiNieVerdecken: [], // von Hand: bleibt wörtlich stehen, schirmt Namen darin ab (z. B. „Müller-Thurgau")
   nerPii: true, // im Pseudonym-Modus zusätzlich erkannte PII Dritter (E-Mail/IBAN/USt-IdNr/Tel.) maskieren
   backupStrategie: 'download', // download | ordner — Ziel der Datensicherung (Ordner braucht File System Access; sonst Download-Fallback)
   zahlungszielTage: 14,    // Standard-Zahlungsziel für Fälligkeit/Mahnwesen
@@ -46,7 +50,7 @@ function emit() { for (const fn of _subs) fn(_state); }
 /** Lädt Settings aus dem Tresor (nach Unlock). */
 export async function hydrateSettings() {
   const loaded = await loadSettings();
-  _state.settings = { ...DEFAULTS, ...(loaded || {}) };
+  _state.settings = { ...DEFAULTS, ...datenschutzNachziehen(loaded || {}) };
   emit();
   return getSettings();
 }

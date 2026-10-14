@@ -563,8 +563,12 @@ function viewSettings() {
 
     seg(t('settings.datenschutz'), 'datenschutzModus',
       [['aus', t('settings.datenschutz.aus')], ['pseudonym', t('settings.datenschutz.pseudonym')]],
-      s.datenschutzModus || 'aus',
-      async (v) => { await updateSettings({ datenschutzModus: v }); paint(); }, t('settings.datenschutz.hint')),
+      s.datenschutzModus || 'pseudonym',
+      async (v) => { await updateSettings({ datenschutzModus: v, datenschutzGewaehlt: true, datenschutzUmgestellt: false }); paint(); }, t('settings.datenschutz.hint')),
+    s.datenschutzUmgestellt ? el('p', { class: 'muted small', 'data-datenschutz-umgestellt': '', text: t('settings.datenschutz.umgestellt') }) : null,
+
+    // Von Hand (Klaus 2026-10-14, wie „Weitere Namen" im Sende-Prüfer): nur im Pseudonym-Modus.
+    s.datenschutzModus === 'pseudonym' ? handListenSection(s) : null,
 
     // NER-Zusatz: nur im Pseudonym-Modus sinnvoll → konditional eingeblendet.
     s.datenschutzModus === 'pseudonym'
@@ -871,6 +875,25 @@ function gewinnermittlungSection(s) {
 // vs. externes Programm/Steuerberater (extern → BLP nur Vorlage). Wechsel weg von
 // BLP wird mit Bestätigung abgesichert, sobald BLP schon §14-Nummern vergeben hat
 // (GoBD-Lückenlosigkeit).
+// Zwei Felder, je ein Eintrag pro Zeile. Gespeichert wird beim Verlassen des Felds.
+function handListenSection(s) {
+  const feld = (key, label, hint, ph) => {
+    const ta = el('textarea', { class: 'beleg-text', rows: '3', placeholder: ph, 'data-hand-liste': key, 'aria-label': label,
+      text: (Array.isArray(s[key]) ? s[key] : []).join('\n') });
+    ta.addEventListener('change', async () => {
+      const liste = ta.value.split(/[\n;]+/).map((z) => z.trim()).filter((z) => z.length >= 2);
+      await updateSettings({ [key]: [...new Set(liste)] });
+    });
+    return el('div', { class: 'setting' }, [
+      el('div', { class: 'setting-label', text: label }), ta, el('p', { class: 'muted small', text: hint }),
+    ]);
+  };
+  return el('div', { 'data-hand-listen': '' }, [
+    feld('kiWeitereNamen', t('settings.datenschutz.weitereNamen'), t('settings.datenschutz.weitereNamenHint'), 'Müller\nFrau Schneider'),
+    feld('kiNieVerdecken', t('settings.datenschutz.nieVerdecken'), t('settings.datenschutz.nieVerdeckenHint'), 'Müller-Thurgau'),
+  ]);
+}
+
 function rechnungsstelleSection(s) {
   const aktuell = normalizeRechnungsstelle(s.rechnungsstelle);
   const status = el('p', { class: 'muted small' });

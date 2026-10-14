@@ -6531,5 +6531,39 @@ await section('Belege: Foto → Scan-PDF und Platz vor dem Import (Klaus 2026-10
   ok('die Prüfung nimmt bei einem Scan das Originalfoto', /ausFoto \? rec\.originalDaten : rec\.data/.test(bp));
 });
 
+await section('Pseudonym: von Hand — Weitere Namen und Nie verdecken (Klaus 2026-10-14)', async () => {
+  const { handAnker, handListe } = await import('../src/ai/anker.js');
+  const { datenschutzNachziehen } = await import('../src/domain/datenschutzStandard.js');
+  const anker = handAnker({ kiWeitereNamen: ['Müller'], kiNieVerdecken: 'Müller-Thurgau' });
+  const text = 'Herr Müller bestellt 12 Flaschen Müller-Thurgau. Gruß, Müller';
+  const r = tokenize(text, anker, { wortgrenze: true });
+  ok('„Müller" wird verdeckt', !/Herr Müller/.test(r.text) && /Herr \[\[NAME_1\]\]/.test(r.text) && /Gruß, \[\[NAME_1\]\]/.test(r.text), r.text);
+  ok('„Müller-Thurgau" bleibt wörtlich stehen', /12 Flaschen Müller-Thurgau\./.test(r.text), r.text);
+  ok('ein Schutz-Eintrag kommt nie in die Rücktabelle', r.map.length === 1 && r.map[0].wert === 'Müller');
+  ok('Round-Trip bleibt verlustfrei', reidentify(r.text, r.map) === text);
+  const ohne = tokenize(text, handAnker({ kiWeitereNamen: ['Müller'] }), { wortgrenze: true });
+  ok('Gegenrichtung: ohne „Nie verdecken" greift „Müller" auch im Wein', !/Müller-Thurgau/.test(ohne.text), ohne.text);
+  const stamm = tokenize(text, [...handAnker({ kiNieVerdecken: ['Müller-Thurgau'] }), { wert: 'Müller', typ: 'PERSON' }], { wortgrenze: true });
+  ok('„Nie verdecken" gewinnt auch über einen Stammdaten-Namen', /Müller-Thurgau/.test(stamm.text) && !/Herr Müller/.test(stamm.text));
+  const gleich = tokenize('Müller', handAnker({ kiWeitereNamen: ['Müller'], kiNieVerdecken: ['Müller'] }));
+  ok('steht dasselbe Wort in beiden Listen, gilt „nie verdecken"', gleich.text === 'Müller' && gleich.map.length === 0);
+  ok('auch in umgekehrter Reihenfolge (Name vor Schutz) gilt „nie verdecken"', tokenize('Müller', [{ wert: 'Müller', typ: 'PERSON' }, { wert: 'Müller', schutz: true }]).text === 'Müller');
+  ok('handListe: Zeilen und „;", getrimmt, entdoppelt, ab 2 Zeichen', JSON.stringify(handListe(' Müller \nX\n;Meier;Müller')) === '["Müller","Meier"]');
+  ok('Wortgrenze: „Müller" greift nicht in „Müllerei"', tokenize('Die Müllerei', handAnker({ kiWeitereNamen: ['Müller'] }), { wortgrenze: true }).text === 'Die Müllerei');
+  // Ab Werk an
+  ok('Bestand ohne eigene Wahl → Pseudonymisieren, mit Hinweis', (() => { const n = datenschutzNachziehen({ datenschutzModus: 'aus' }); return n.datenschutzModus === 'pseudonym' && n.datenschutzUmgestellt === true; })());
+  ok('neuer Bestand (leer) → Pseudonymisieren', datenschutzNachziehen({}).datenschutzModus === 'pseudonym');
+  ok('eine eigene Wahl „aus" bleibt', datenschutzNachziehen({ datenschutzModus: 'aus', datenschutzGewaehlt: true }).datenschutzModus === 'aus');
+  ok('schon an → kein Hinweis', !datenschutzNachziehen({ datenschutzModus: 'pseudonym' }).datenschutzUmgestellt);
+  const { readFileSync } = await import('node:fs');
+  const st = readFileSync(new URL('../src/state.js', import.meta.url), 'utf8');
+  ok('der Standard in state.js ist „pseudonym"', /datenschutzModus: 'pseudonym'/.test(st) && /datenschutzNachziehen\(loaded/.test(st));
+  const an = readFileSync(new URL('../src/ai/anker.js', import.meta.url), 'utf8');
+  ok('ladeAnker nimmt die Hand-Listen mit', /exakt = \[\.\.\.handAnker\(settings\), \.\.\.exakt\]/.test(an));
+  const sh = readFileSync(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
+  ok('der Schalter merkt die eigene Wahl', /datenschutzModus: v, datenschutzGewaehlt: true/.test(sh));
+  ok('die zwei Felder stehen in den Einstellungen', /handListenSection\(s\)/.test(sh) && /'kiWeitereNamen'/.test(sh) && /'kiNieVerdecken'/.test(sh));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);
