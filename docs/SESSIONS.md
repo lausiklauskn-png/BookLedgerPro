@@ -40,8 +40,35 @@ jetzt ein Test in umgekehrter Reihenfolge da, und der fängt.
   Mistral geht (Kontierung, Steuer-Assistent, Berater).
 - „Weitere Namen" greift nur als ganzes Wort, also nicht in „Müllerei". Ein Bindestrich ist eine
   Wortgrenze, deshalb braucht „Müller-Thurgau" einen Eintrag unter „Nie verdecken".
-- Kein Namensvorschlag wie im Sende-Prüfer (Herr/Frau, Grußformel) — nicht gebaut.
 - Am Tablet nicht gemessen.
+
+**Nachtrag — Namensvorschläge wie im Sende-Prüfer** (Klaus: *„wie der Sendeprüfer … Namen wie Herr
+oder Frau aus der Grußformel ableiten"*):
+- `sbkim/25_pseudonym.js` ist **Sage-Modul 25 byte-1:1** (Sage origin/main, gleich dem Sende-Prüfer),
+  in der sbkim-Nagelung von `tests/run.mjs` gepinnt (`8c3092babee80b8f`). Genutzt wird nur `suggestNames`:
+  Wörter nach Herr/Frau, aus der Begrüßung („Hallo Petra,") und aus der Grußformel.
+- `src/ai/namensvorschlag.js` (rein, Node-geprüft) und `src/ui/namensvorschlag.js` (Knöpfe „＋ Name").
+  **Ein Vorschlag verdeckt nichts**; ein Tipp nimmt den Namen in „Weitere Namen" auf. Bekannte Namen
+  und alles unter „Nie verdecken" werden nicht vorgeschlagen.
+- Wo: in der **Schnellerfassung beim Tippen, VOR dem Senden**, und in der Vorschlagskarte (für den
+  nächsten Versand).
+- ⚠ **Zwei echte Fehler, gefunden von der Browser-Probe, nicht vom Nachdenken:**
+  1. Jedes `updateSettings` zeichnet die ganze Seite neu (`subscribe → paint`). Ein Tipp auf einen
+     Vorschlag löschte damit den getippten Text der Schnellerfassung. Der Text bleibt jetzt erhalten
+     (`_schnellText`) und wird erst nach dem Buchen geleert.
+  2. Wer von „Weitere Namen" in „Nie verdecken" wechselte, speicherte das erste Feld, und das zweite
+     wurde unter dem Finger ersetzt (Fokus und Getipptes weg). Die zwei Felder speichern jetzt mit
+     `updateSettings(patch, { still: true })`, ohne neu zu zeichnen. Ein erster Versuch, den Fokus nach
+     dem Neuzeichnen zurückzutragen, griff nicht: das Speichern feuert beim Verlassen des Felds, BEVOR
+     das nächste den Fokus hat.
+- Gemessen: `node tests/run.mjs` **2284 bestanden, 0 fehlgeschlagen** · `tests/smoke_handnamen.mjs`
+  **19 grün · 0 ROT** (dreimal hintereinander) · `tests/smoke_belege.mjs` unverändert **97 grün**.
+  Fünf weitere Sabotagen von Hand, jede mit eigener roter Zeile.
+- ⚠ Die CI fährt nur `tests/run.mjs`; die Browser-Proben laufen von Hand
+  (`npm install --no-save playwright-core@1.56.1 && node tests/smoke_handnamen.mjs`).
+- ⚠ Grenzen (aus Modul 25): nur diese drei Stellen, nur großgeschriebene Wörter; ein Name mitten im
+  Satz wird nicht vorgeschlagen. Beim Hochladen/Fotografieren geht der erkannte Text sofort zur
+  Kontierung; die Vorschläge stehen dort erst danach, für den nächsten Beleg.
 
 ---
 

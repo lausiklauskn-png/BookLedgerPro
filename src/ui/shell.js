@@ -882,7 +882,8 @@ function handListenSection(s) {
       text: (Array.isArray(s[key]) ? s[key] : []).join('\n') });
     ta.addEventListener('change', async () => {
       const liste = ta.value.split(/[\n;]+/).map((z) => z.trim()).filter((z) => z.length >= 2);
-      await updateSettings({ [key]: [...new Set(liste)] });
+      // still: ohne Neuzeichnen — sonst ersetzte paint() das nächste Feld, in das gerade getippt wird.
+      await updateSettings({ [key]: [...new Set(liste)] }, { still: true });
     });
     return el('div', { class: 'setting' }, [
       el('div', { class: 'setting-label', text: label }), ta, el('p', { class: 'muted small', text: hint }),

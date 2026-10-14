@@ -29,11 +29,12 @@ import { hydrateSettings, getSettings, updateSettings, navigate } from './src/st
 import { ladeAnker } from './src/ai/anker.js';
 import { categorize } from './src/ai/mistral.js';
 import { renderShell } from './src/ui/shell.js';
+import { mountDocuments } from './src/ui/views/documents.js';
 await setupVault('probe-passwort-123');
 await saveAiConfig({ mistralKey: 'probe-mistral' });
 await hydrateSettings();
 window.__p = { getSettings, updateSettings, ladeAnker, categorize, navigate, hydrateSettings,
-  shell: () => renderShell(document.getElementById('app'), {}) };
+  shell: () => renderShell(document.getElementById('app'), {}), belege: () => mountDocuments(document.getElementById('app')) };
 window.__bereit = true;
 </script></body></html>`;
 const TYP = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
@@ -68,10 +69,16 @@ try {
   const da = await page.$('[data-hand-liste="kiWeitereNamen"]') && await page.$('[data-hand-liste="kiNieVerdecken"]');
   ok('die Felder „Weitere Namen" und „Nie verdecken" stehen in den Einstellungen', !!da);
   if (da) {
-    await page.fill('[data-hand-liste="kiWeitereNamen"]', 'Müller\nFrau Schneider');
-    await page.dispatchEvent('[data-hand-liste="kiWeitereNamen"]', 'change');
-    await page.fill('[data-hand-liste="kiNieVerdecken"]', 'Müller-Thurgau');
-    await page.dispatchEvent('[data-hand-liste="kiNieVerdecken"]', 'change');
+    // Wie ein Mensch: ins erste Feld tippen, ins zweite tippen (das speichert das erste und
+    // zeichnet die Seite neu), dann hinaus. Fokus und Getipptes im zweiten Feld müssen bleiben.
+    await page.click('[data-hand-liste="kiWeitereNamen"]');
+    await page.keyboard.type('Müller');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Frau Schneider');
+    await page.click('[data-hand-liste="kiNieVerdecken"]');
+    await page.keyboard.type('Müller-Thurgau', { delay: 15 });
+    ok('nach dem Wechsel ins zweite Feld bleibt der Fokus dort', await page.evaluate(() => document.activeElement && document.activeElement.dataset.handListe === 'kiNieVerdecken'));
+    await page.keyboard.press('Tab');
     await page.waitForFunction(() => (window.__p.getSettings().kiNieVerdecken || []).length === 1, null, { timeout: 10000 }).catch(() => {});
   }
   const s1 = await page.evaluate(() => window.__p.getSettings());
@@ -88,6 +95,32 @@ try {
   ok('„Frau Schneider" geht NICHT hinaus', !/Frau Schneider/.test(raus));
   ok('„Müller-Thurgau" geht wörtlich hinaus (ein Wein, kein Name)', /12 Flaschen Müller-Thurgau/.test(raus));
   ok('der Betrag bleibt lesbar', /89,40 EUR/.test(raus));
+
+  // Namensvorschläge wie im Sende-Prüfer: beim Tippen, VOR dem Senden, verdecken erst nach einem Tipp
+  await page.evaluate(() => window.__p.navigate('documents'));
+  await page.waitForSelector('.beleg-text', { timeout: 15000 });
+  const box = '[data-namen-vorschlag]';
+  ok('vor dem Tippen steht kein Vorschlag da', await page.$eval(box, (b) => b.hidden).catch(() => false));
+  const BRIEF = 'Sehr geehrter Herr Müller,\nbitte 12 Flaschen Müller-Thurgau, 89,40 EUR.\nMit freundlichen Grüßen\nAnna Schneider';
+  await page.fill('.beleg-text', BRIEF);
+  let vorschlagDa = true;
+  try { await page.waitForSelector('[data-vorschlag="Anna Schneider"]', { timeout: 10000 }); } catch { vorschlagDa = false; }
+  ok('aus der Grußformel wird „Anna Schneider" vorgeschlagen', vorschlagDa);
+  ok('„Müller" (schon unter Weitere Namen) und „Müller-Thurgau" werden nicht vorgeschlagen', !(await page.$('[data-vorschlag="Müller"]')) && !(await page.$('[data-vorschlag*="Thurgau"]')));
+  gesendet.length = 0;
+  // Ohne Tipp: der Vorschlag allein verdeckt nichts
+  await page.evaluate(async (t) => { const anker = await window.__p.ladeAnker(t); await window.__p.categorize(t, { '4980': { nummer: '4980', name: 'Betriebsbedarf', art: 'aufwand' } }, { anker }); }, BRIEF);
+  ok('ohne Tipp geht „Anna Schneider" noch hinaus (ein Vorschlag verdeckt nichts)', /Anna Schneider/.test(gesendet.join('')));
+  if (vorschlagDa) await page.click('[data-vorschlag="Anna Schneider"]');
+  await page.waitForFunction(() => (window.__p.getSettings().kiWeitereNamen || []).includes('Anna Schneider'), null, { timeout: 10000 }).catch(() => {});
+  ok('ein Tipp nimmt „Anna Schneider" in „Weitere Namen" auf', (await page.evaluate(() => window.__p.getSettings().kiWeitereNamen)).includes('Anna Schneider'));
+  await page.waitForFunction(() => !document.querySelector('[data-vorschlag="Anna Schneider"]'), null, { timeout: 10000 }).catch(() => {});
+  ok('… und der Knopf verschwindet', !(await page.$('[data-vorschlag="Anna Schneider"]')));
+  gesendet.length = 0;
+  await page.getByRole('button', { name: 'Analysieren', exact: true }).first().click({ timeout: 10000 });
+  await page.waitForFunction(() => document.querySelector('.vorschlag-slot') && document.querySelector('.vorschlag-slot').children.length > 0, null, { timeout: 15000 }).catch(() => {});
+  const raus2 = gesendet.join('\n');
+  ok('nach dem Tipp geht „Anna Schneider" NICHT mehr hinaus (über den echten Knopf)', gesendet.length >= 1 && !/Anna Schneider/.test(raus2) && /12 Flaschen Müller-Thurgau/.test(raus2), raus2.slice(-300));
 
   // Gegenrichtung: eine eigene Wahl „Aus" bleibt über das neu Laden hinweg
   await page.evaluate(async () => { await window.__p.updateSettings({ datenschutzModus: 'aus', datenschutzGewaehlt: true }); await window.__p.hydrateSettings(); });

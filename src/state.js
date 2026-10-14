@@ -55,11 +55,14 @@ export async function hydrateSettings() {
   return getSettings();
 }
 
-/** Aktualisiert Settings (teilweise), persistiert verschlüsselt, benachrichtigt. */
-export async function updateSettings(patch) {
+/** Aktualisiert Settings (teilweise), persistiert verschlüsselt, benachrichtigt.
+ *  `opts.still`: speichern, ohne die Oberfläche neu zu zeichnen — für Eingabefelder, deren
+ *  Wert sonst nichts auf der Seite ändert (Neuzeichnen nähme dem nächsten Feld Fokus und
+ *  Getipptes, gemessen in tests/smoke_handnamen.mjs). */
+export async function updateSettings(patch, opts = {}) {
   _state.settings = { ...DEFAULTS, ..._state.settings, ...patch };
   await saveSettings(_state.settings);
-  emit();
+  if (opts.still !== true) emit();
   return getSettings();
 }
 

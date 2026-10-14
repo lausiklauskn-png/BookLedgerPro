@@ -32,6 +32,7 @@ import { getSettings } from '../../state.js';
 import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
 import { testMarke } from '../testmarke.js';
+import { namenVorschlagBox } from '../namensvorschlag.js';
 import { pruefStandVon, ungepruefte, belegDateienWaehlen, kiAnweisungZeilen, textNachWahl, PRUEF_STAND } from '../../domain/kiReinigung.js';
 import { pruefeBeleg, pruefBericht, kiVermerke, vermerkeKiEntfernt, pruefKern, prueferMail } from '../../domain/belegPruefung.js';
 import { belegFuersKi } from '../../ai/kiVorbereitung.js';
@@ -41,6 +42,9 @@ import { platzPlan, mb } from '../../domain/importPlatz.js';
 
 let _host = null;
 let _idx = {};
+// Der Text der Schnellerfassung überlebt ein Neuzeichnen: ein Tipp auf einen Namensvorschlag
+// speichert die Einstellungen, und die Ansicht wird neu gebaut (gefunden von smoke_handnamen).
+let _schnellText = '';
 
 // Anker nur laden, wenn der Datenschutz-Modus „pseudonym" aktiv ist (sonst null →
 // KI-Module senden den Text unverändert). `text` (optional) erlaubt zusätzlich die
@@ -93,6 +97,12 @@ async function repaint(extra) {
 function schnellerfassung() {
   const ta = el('textarea', { class: 'beleg-text', placeholder: t('docs.pastePlaceholder'), rows: '5' });
   const out = el('div', { class: 'vorschlag-slot' });
+  // Namensvorschläge wie im Sende-Prüfer: VOR dem Senden, beim Tippen (verdecken erst nach einem Tipp).
+  const namen = namenVorschlagBox(() => ta.value);
+  let warte = null;
+  ta.value = _schnellText;
+  ta.addEventListener('input', () => { _schnellText = ta.value; clearTimeout(warte); warte = setTimeout(namen.aktualisiere, 400); });
+  if (_schnellText) setTimeout(namen.aktualisiere, 0);
   const btn = el('button', {
     class: 'btn btn-primary', text: t('docs.analyze'),
     onClick: async () => {
@@ -110,6 +120,7 @@ function schnellerfassung() {
     el('h2', { class: 'card-title', text: t('docs.quickEntry') }),
     el('p', { class: 'muted small', text: t('docs.quickHint') }),
     ta,
+    namen.box,
     el('div', { class: 'btn-row' }, [btn]),
     out,
   ]);
@@ -149,6 +160,8 @@ async function vorschlagKarte(vorschlag, belegId, quelltext) {
   // tatsächliche Versand in mistral.categorize). Klartext nur lokal in der Vorschau.
   const transparenz = await pseudonymBadge(quelltext);
   if (transparenz) card.appendChild(transparenz);
+  // Namen, die im Text stehen, aber noch nicht verdeckt werden — für den nächsten Versand.
+  if (quelltext) { const nv = namenVorschlagBox(() => quelltext); card.appendChild(nv.box); await nv.aktualisiere(); }
 
   // Begründung/Notiz mit §-Bezug: on-device vorbefüllt (rein, kein Netz), per
   // Knopf über die KI (Mistral EU, opt-in) verfeinerbar. Wird mit dem Entwurf gespeichert.
@@ -178,6 +191,7 @@ async function vorschlagKarte(vorschlag, belegId, quelltext) {
     // belegRef geht in die Buchung (GoBD-Belegprinzip, Teil der Hash-Kette);
     // buchungId verlinkt zusätzlich rückwärts den Beleg.
     const entwurf = await saveEntwurf({ datum: vorschlag.datum, beschreibung: vorschlag.beschreibung, begruendung: fBegruendung.value.trim(), zeilen: vorschlag.zeilen, belegRef: belegId || null });
+    if (!belegId) _schnellText = '';   // gebucht: die Schnellerfassung beginnt leer
     if (belegId) await linkBeleg(belegId, entwurf.id);
     status.textContent = t('docs.draftCreated');
     return entwurf;
