@@ -596,3 +596,9 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   border: 1px solid #c9981f; color: #7a5a00; background: #fff6d8;
 }
 .test-marke.done { border-color: #2e9e5b; color: #156b39; background: #e3f6ea; }
+
+/* Prüfung und Reinigung der Belege (Klaus 2026-10-14). */
+.modal.modal-weit { max-width: 40rem; max-height: 88vh; overflow: auto; }
+.modal .btn-row { flex-wrap: wrap; }
+.pruef-leiste { padding: .6rem .8rem 0; }
+.pruef-zelle .btn-row { flex-wrap: wrap; gap: .3rem; }

@@ -96,7 +96,9 @@ export async function categorize(text, kontoIndex, opts = {}) {
   let useMistral = false;
   try { const { nutzeMistralFuerKontierung } = await import('./aiConfig.js'); useMistral = await nutzeMistralFuerKontierung(); }
   catch { useMistral = false; }
-  if (useMistral) {
+  // opts.nurLokal: der Nutzer hat beim Halt „Nur auf dem Gerät auswerten" gewählt (Anweisung an
+  // eine KI im Belegtext, Klaus 2026-10-14) — dann geht hier nichts hinaus.
+  if (useMistral && !opts.nurLokal) {
     try {
       const konten = Object.values(kontoIndex);
       const sendeText = (opts.anker && opts.anker.length)

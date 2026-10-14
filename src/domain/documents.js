@@ -18,14 +18,16 @@ function neueId() {
   return 'beleg:' + Date.now().toString(36) + ':' + Math.random().toString(36).slice(2, 8);
 }
 
-/** Speichert eine Datei verschlüsselt als Beleg, gibt die Metadaten zurück. */
-export async function saveBeleg(file) {
+/** Speichert eine Datei verschlüsselt als Beleg, gibt die Metadaten zurück.
+ *  `opt.typ` ersetzt einen fehlenden Dateityp (aus einem Ordner kommt oft '').
+ *  Geprüft wird NICHT beim Ablegen (Klaus 2026-10-14: prüfen erst auf Knopfdruck). */
+export async function saveBeleg(file, opt = {}) {
   const bytes = await readFileBytes(file);
   const data = await encryptBytesWithKey(key(), bytes);   // { v, iv, ct }
   const rec = {
     id: neueId(),
     name: file.name || 'Beleg',
-    mediaType: file.type || 'application/octet-stream',
+    mediaType: file.type || opt.typ || 'application/octet-stream',
     size: bytes.length,
     createdAt: new Date().toISOString(),
     buchungId: null,
