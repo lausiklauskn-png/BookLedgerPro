@@ -7,6 +7,26 @@ import { t } from './i18n.js';
 import { downloadText } from '../core/files.js';
 import { berichtText } from '../domain/kiReinigung.js';
 
+/** Der Drehkreis (Klaus 2026-10-14: „man muss zumindest sehen, dass da was passiert"). */
+export function drehkreis() { return el('span', { class: 'pruef-dreh', 'aria-hidden': 'true' }); }
+
+/**
+ * Eine Arbeitsleiste unten am Schirm, solange etwas läuft, das dauert (Seiten zeichnen,
+ * Texterkennung, Kontierung). Nicht modal: die Halte-Dialoge liegen darüber.
+ * @returns {{setzen:(text:string)=>void, weg:()=>void}}
+ */
+export function arbeitsAnzeige(text) {
+  const txt = el('span', { text });
+  const leiste = el('div', { class: 'arbeits-leiste', role: 'status', 'aria-live': 'polite', 'data-arbeit': '' }, [drehkreis(), txt]);
+  document.body.appendChild(leiste);
+  const merke = (s) => { if (typeof window !== 'undefined') (window.__blpArbeit = window.__blpArbeit || []).push(s); };   // Probe
+  merke(text);
+  return {
+    setzen(s) { txt.textContent = s; merke(s); },
+    weg() { leiste.remove(); },
+  };
+}
+
 /** Ein modaler Dialog. knoepfe: [{text, wert, primaer, data}] → Promise mit dem `wert`. */
 export function dialog(titel, teile, knoepfe, attr = {}) {
   return new Promise((resolve) => {

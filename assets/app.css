@@ -602,3 +602,13 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .modal .btn-row { flex-wrap: wrap; }
 .pruef-leiste { padding: .6rem .8rem 0; }
 .pruef-zelle .btn-row { flex-wrap: wrap; gap: .3rem; }
+
+/* Man sieht, dass geprüft wird (Klaus 2026-10-14) — Drehkreis wie in Workflow PDF. */
+.pruef-laeuft { display: inline-flex; align-items: center; gap: .45rem; }
+.pruef-dreh { width: 12px; height: 12px; flex: 0 0 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: pruefDreh .9s linear infinite; display: inline-block; }
+@keyframes pruefDreh { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .pruef-dreh { animation: none; border-right-color: currentColor; opacity: .6; } }
+.pruef-stapel { display: grid; gap: .3rem; width: 100%; }
+.pruef-stapel progress { width: 100%; height: .6rem; accent-color: var(--accent); }
+.arbeits-leiste { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 90; display: flex; align-items: center; gap: .55rem;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 999px; box-shadow: var(--shadow); padding: .55rem 1rem; font-size: .9rem; max-width: calc(100vw - 2rem); }
