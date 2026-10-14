@@ -76,16 +76,20 @@ export function normalizeAnchors(anchors) {
   const liste = Array.isArray(anchors) ? anchors : (anchors == null ? [] : [anchors]);
   const gesehen = new Map(); // wert -> {wert, typ}
   for (const a of liste) {
-    let wert, typ;
+    let wert, typ, schutz = false;
     if (a && typeof a === 'object') {
       wert = a.wert != null ? a.wert : a.value;
       typ = a.typ != null ? a.typ : a.type;
+      schutz = a.schutz === true;
     } else {
       wert = a;
     }
     wert = String(wert == null ? '' : wert);
     if (wert.trim() === '') continue;
-    if (!gesehen.has(wert)) gesehen.set(wert, { wert, typ: normTyp(typ) });
+    if (!gesehen.has(wert)) gesehen.set(wert, schutz ? { wert, typ: normTyp(typ), schutz: true } : { wert, typ: normTyp(typ) });
+    // Ein Schutz-Eintrag („nie verdecken", Klaus 2026-10-14) gewinnt über einen gleichen Namen:
+    // wer ausdrücklich sagt „das ist kein Name", hat das letzte Wort.
+    else if (schutz) gesehen.get(wert).schutz = true;
   }
   return [...gesehen.values()];
 }
@@ -126,6 +130,10 @@ function tokenFuer(reg, anker) {
  * @param {Array<string|{wert?:string,value?:string,typ?:string,type?:string}>} anchors
  *        Exakte Identifikatoren. Token-Nummern werden in Reihenfolge des ersten
  *        Auftretens im Text vergeben (PERSON_1 = die erste genannte Person).
+ *        Ein Anker mit `schutz: true` („nie verdecken", Klaus 2026-10-14) bleibt
+ *        WÖRTLICH stehen und schirmt alles ab, was darin steckt: ist „Müller-Thurgau"
+ *        geschützt, greift der Name „Müller" dort nicht (Longest-Match). Er kommt nie in
+ *        die `map`.
  * @param {{registry?:object, wortgrenze?:boolean}} [options]
  *        `registry`: optionales Register für aufrufsübergreifend stabile Token.
  *        `wortgrenze` (Standard `false`): wenn `true`, greift ein Anker nur an einer
@@ -165,7 +173,10 @@ export function tokenize(text, anchors, options = {}) {
         if (src.startsWith(a.wert, i) && (!wortgrenze || anWortgrenze(src, i, a.wert))) { treffer = a; break; }
       }
     }
-    if (treffer) {
+    if (treffer && treffer.schutz) {
+      out += treffer.wert;
+      i += treffer.wert.length;
+    } else if (treffer) {
       out += tokenFuer(reg, treffer);
       i += treffer.wert.length;
     } else {

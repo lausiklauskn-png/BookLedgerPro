@@ -5,6 +5,73 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-14 (abends) — Pseudonymisieren ab Werk an · Namen von Hand
+
+**Was getan.** Klaus: *„Ja, ab Werk an"* und *„die Namen per Hand eintragen … Müller bei
+Müller-Thurgau … Müller-Thurgau ist ein Wein und Herr Müller ist ein Name. Wie bei den anderen
+PWA-Apps"* (gemeint: „Weitere Namen" im Sende-Prüfer).
+
+- **Ab Werk an:** `datenschutzModus` steht jetzt standardmäßig auf `'pseudonym'`. Weil
+  `updateSettings` den ganzen Satz speichert, trägt jeder Bestand `'aus'`. Darum stellt
+  `domain/datenschutzStandard.js` beim Laden EINMAL um, solange der Nutzer den Schalter nicht selbst
+  bedient hat (`datenschutzGewaehlt`). In den Einstellungen steht dann ein Hinweis darauf.
+  ⚠ **Tafel-Evolution, benannt:** Wer vorher bewusst „Aus" gewählt hatte, ist davon nicht zu
+  unterscheiden und wird ebenfalls umgestellt. Ein Tipp stellt zurück, danach bleibt die Wahl.
+- **Zwei Felder** in den Einstellungen (nur im Pseudonym-Modus), je ein Eintrag pro Zeile, gespeichert
+  verschlüsselt mit den Einstellungen: **Weitere Namen** (`kiWeitereNamen`, wird immer verdeckt, als
+  ganzes Wort) und **Nie verdecken** (`kiNieVerdecken`). `ai/anker.handAnker` macht daraus Anker.
+  Ein Schutz-Anker (`schutz: true`) bleibt in `pseudonym.tokenize` wörtlich stehen und schirmt durch
+  den längsten Treffer ab, was darin steckt: „Müller-Thurgau" schützt den Namen „Müller" an dieser
+  Stelle. Er kommt nie in die Rücktabelle und gewinnt über einen gleichnamigen Stammdaten-Namen.
+- Alle Wege, die `ladeAnker` nutzen (Kontierung, Journal, Berater, Schlüssel-Abgleich), bekommen die Hand-Listen mit.
+- SW `v244`, `src/domain/datenschutzStandard.js` im Vorrat.
+
+**Stand / gemessen.** `node tests/run.mjs` **2271 bestanden, 0 fehlgeschlagen** (+18).
+`tests/smoke_handnamen.mjs` (echter Browser, echter Tresor, gestellte Mistral-Antwort) **11 grün · 0 ROT**:
+Standard an, Felder speichern und überstehen das neu Laden, an Mistral geht „Herrn [[NAME_1]]", aber
+„12 Flaschen Müller-Thurgau" wörtlich, eine eigene Wahl „Aus" bleibt. Von Hand in Wegwerf-Kopien
+gegengeprüft (sechs Sabotagen, jede mit eigener roter Zeile). Eine war erst **blind**: der Riegel
+„Schutz gewinnt bei gleichem Wort" war durch die Reihenfolge in `handAnker` verdeckt. Deshalb steht
+jetzt ein Test in umgekehrter Reihenfolge da, und der fängt.
+
+**Offen / Grenzen.**
+- ⚠ Die **Beleg-Texterkennung** (Google Vision / Mistral OCR) bekommt weiter das BILD. Namen in einem
+  Bild lassen sich vor der Texterkennung nicht verdecken. Pseudonymisiert wird der TEXT, der danach an
+  Mistral geht (Kontierung, Steuer-Assistent, Berater).
+- „Weitere Namen" greift nur als ganzes Wort, also nicht in „Müllerei". Ein Bindestrich ist eine
+  Wortgrenze, deshalb braucht „Müller-Thurgau" einen Eintrag unter „Nie verdecken".
+- Am Tablet nicht gemessen.
+
+**Nachtrag — Namensvorschläge wie im Sende-Prüfer** (Klaus: *„wie der Sendeprüfer … Namen wie Herr
+oder Frau aus der Grußformel ableiten"*):
+- `sbkim/25_pseudonym.js` ist **Sage-Modul 25 byte-1:1** (Sage origin/main, gleich dem Sende-Prüfer),
+  in der sbkim-Nagelung von `tests/run.mjs` gepinnt (`8c3092babee80b8f`). Genutzt wird nur `suggestNames`:
+  Wörter nach Herr/Frau, aus der Begrüßung („Hallo Petra,") und aus der Grußformel.
+- `src/ai/namensvorschlag.js` (rein, Node-geprüft) und `src/ui/namensvorschlag.js` (Knöpfe „＋ Name").
+  **Ein Vorschlag verdeckt nichts**; ein Tipp nimmt den Namen in „Weitere Namen" auf. Bekannte Namen
+  und alles unter „Nie verdecken" werden nicht vorgeschlagen.
+- Wo: in der **Schnellerfassung beim Tippen, VOR dem Senden**, und in der Vorschlagskarte (für den
+  nächsten Versand).
+- ⚠ **Zwei echte Fehler, gefunden von der Browser-Probe, nicht vom Nachdenken:**
+  1. Jedes `updateSettings` zeichnet die ganze Seite neu (`subscribe → paint`). Ein Tipp auf einen
+     Vorschlag löschte damit den getippten Text der Schnellerfassung. Der Text bleibt jetzt erhalten
+     (`_schnellText`) und wird erst nach dem Buchen geleert.
+  2. Wer von „Weitere Namen" in „Nie verdecken" wechselte, speicherte das erste Feld, und das zweite
+     wurde unter dem Finger ersetzt (Fokus und Getipptes weg). Die zwei Felder speichern jetzt mit
+     `updateSettings(patch, { still: true })`, ohne neu zu zeichnen. Ein erster Versuch, den Fokus nach
+     dem Neuzeichnen zurückzutragen, griff nicht: das Speichern feuert beim Verlassen des Felds, BEVOR
+     das nächste den Fokus hat.
+- Gemessen: `node tests/run.mjs` **2284 bestanden, 0 fehlgeschlagen** · `tests/smoke_handnamen.mjs`
+  **19 grün · 0 ROT** (dreimal hintereinander) · `tests/smoke_belege.mjs` unverändert **97 grün**.
+  Fünf weitere Sabotagen von Hand, jede mit eigener roter Zeile.
+- ⚠ Die CI fährt nur `tests/run.mjs`; die Browser-Proben laufen von Hand
+  (`npm install --no-save playwright-core@1.56.1 && node tests/smoke_handnamen.mjs`).
+- ⚠ Grenzen (aus Modul 25): nur diese drei Stellen, nur großgeschriebene Wörter; ein Name mitten im
+  Satz wird nicht vorgeschlagen. Beim Hochladen/Fotografieren geht der erkannte Text sofort zur
+  Kontierung; die Vorschläge stehen dort erst danach, für den nächsten Beleg.
+
+---
+
 ## 2026-10-14 — Fotos werden beim Einlesen zum Scan-PDF · Platz-Prüfung vor dem Import
 
 **Was getan.** Nach Klaus' Wahl („Ja, Scan + Original behalten" · „Ja, vorher prüfen" · „In dieser

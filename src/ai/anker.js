@@ -45,6 +45,38 @@ export function baueAnker({ kunden = [], mitarbeiter = [], firma = {} } = {}) {
   return liste;
 }
 
+// Von Hand eingetragen (Klaus 2026-10-14, wie „Weitere Namen" im Sende-Prüfer und in
+// Workflow-Needs): ein Mensch weiß, dass „Müller" ein Name ist und „Müller-Thurgau" ein Wein.
+// Zwei Listen in den Einstellungen, je ein Eintrag pro Zeile:
+//   kiWeitereNamen  — wird IMMER verdeckt (auch wenn es in keinen Stammdaten steht)
+//   kiNieVerdecken  — bleibt wörtlich stehen und schirmt die Namen darin ab
+const HAND_MIN = 2;
+export const HAND_TYP = 'NAME';
+
+/** Zerlegt den Inhalt eines Eingabefelds in Einträge (Zeilen, auch „;"), getrimmt, entdoppelt. */
+export function handListe(eingabe) {
+  const roh = Array.isArray(eingabe) ? eingabe : String(eingabe == null ? '' : eingabe).split(/[\n;]+/);
+  const out = [], gesehen = new Set();
+  for (const z of roh) {
+    const w = String(z == null ? '' : z).trim();
+    if (w.length < HAND_MIN || gesehen.has(w)) continue;
+    gesehen.add(w); out.push(w);
+  }
+  return out;
+}
+
+/**
+ * Die Anker aus den beiden Hand-Listen (rein, testbar). Schutz-Einträge kommen ZUERST,
+ * damit bei gleichem Wort „nie verdecken" gewinnt.
+ * @param {{kiWeitereNamen?:string[]|string, kiNieVerdecken?:string[]|string}} settings
+ * @returns {{wert:string, typ:string, schutz?:true}[]}
+ */
+export function handAnker(settings = {}) {
+  const schutz = handListe(settings.kiNieVerdecken).map((wert) => ({ wert, typ: 'SCHUTZ', schutz: true }));
+  const namen = handListe(settings.kiWeitereNamen).map((wert) => ({ wert, typ: HAND_TYP }));
+  return [...schutz, ...namen];
+}
+
 /**
  * Lädt die Anker aus dem verschlüsselten Speicher (Kunden, Mitarbeiter) + dem
  * Firmenprofil (Settings). Browser/IndexedDB — NICHT headless-E2E getestet.
@@ -85,6 +117,8 @@ export async function ladeAnker(text) {
     } else {
       exakt = baueAnker({ kunden, mitarbeiter, firma });
     }
+    // Die Hand-Listen vorn: „nie verdecken" schlägt einen gleichnamigen Stammdaten-Anker.
+    exakt = [...handAnker(settings), ...exakt];
     if (text && settings.nerPii !== false) {
       const { kombiniereAnker, EXTERN_SCOPE } = await import('./ner.js');
       // Im Briefkasten-Modus tragen die exakten Anker Hierarchie-Scopes → die Fremd-PII

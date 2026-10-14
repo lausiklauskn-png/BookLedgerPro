@@ -7,6 +7,18 @@
 
 ---
 
+## ✅ LETZTER STAND (2026-10-14, abends) — Pseudonymisieren ab Werk an · „Weitere Namen" / „Nie verdecken" von Hand
+
+Siehe `docs/SESSIONS.md` (oberster Eintrag).
+
+**Nächste konkrete Schritte**
+- Klaus' Sichttest am Tablet: Einstellungen → Datenschutz bei KI → die zwei Felder (z. B. „Müller" und
+  „Müller-Thurgau"), dann einen Beleg kontieren lassen.
+- Namensvorschläge wie im Sende-Prüfer sind gebaut (Modul 25 `suggestNames`, nur Vorschlag).
+- Offen bei Klaus: Modul 25 auch zum VERDECKEN (Muster-Erkennung)? Hier deckt `ai/ner.js` E-Mail,
+  IBAN, USt-IdNr., Steuernummer und Telefon schon ab; Modul 25 brächte zusätzlich Beträge, Datum und
+  Rechnungsnummern. Die braucht die Kontierung aber, deshalb ist es nicht eingebaut.
+
 ## ✅ LETZTER STAND (2026-10-14) — Fotos → Scan-PDF (Original verschlüsselt dabei) · Platz-Prüfung vor dem Import
 
 Siehe `docs/SESSIONS.md` (oberster Eintrag).
