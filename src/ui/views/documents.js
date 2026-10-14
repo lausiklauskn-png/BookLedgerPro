@@ -280,15 +280,19 @@ function eRechnungKarte() {
         const p = parseEingangsrechnung(xml);
         if (!p.format) { out.appendChild(el('p', { class: 'form-error', text: p.fehler })); return; }
         const ex = eingangsrechnungExtraktion(p);
-        const kat = await categorizeAI(p.lieferant || '', _idx, { anker: await kiAnker(p.lieferant || '') });
+        // Der Lieferantenname stammt aus einer FREMDEN Datei und geht an die Kontierung (Mistral EU) —
+        // dieselbe Prüfung wie beim OCR-Text (Klaus 2026-10-14: „E-Rechnung und Bank-Import nachziehen").
+        const frei = await kiTextFreigabe(p.lieferant || '');
+        const kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal });
         const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
         if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
+        if (frei.hinweis) out.appendChild(el('p', { class: 'hinweis small', text: frei.hinweis }));
         out.appendChild(el('div', { class: 'muted small', text: `${p.format}${istPdf ? ' (ZUGFeRD/PDF)' : ''} · ${t('docs.eInvoiceFrom')} ${p.lieferant || '—'} · ${p.nummer || '—'}` }));
         const kosit = kostPflichtfelder(p);
         out.appendChild(el('div', { class: kosit.ok ? 'muted small' : 'form-error', text: kosit.ok ? `✓ ${t('docs.kositOk')}` : `⚠ ${t('docs.kositMissing')}: ${kosit.fehlende.join(', ')}` }));
         // R6/P2: Kreditoren-OP („auf Ziel" als Verbindlichkeit) nur, wenn das Feature gilt.
         if (zeigeFeature(getSettings(), FEATURE.VERBINDLICHKEITEN)) out.appendChild(verbindlichkeitErfassenZeile(p, kat));
-        out.appendChild(await vorschlagKarte(res.vorschlag, null, p.lieferant || ''));
+        out.appendChild(await vorschlagKarte(res.vorschlag, null, frei.kiText));
       } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
     },
   });
@@ -627,11 +631,16 @@ function umsatzRow(u, posten = []) {
     onClick: async () => {
       slot.replaceChildren();
       const ex = umsatzExtraktion(u);
-      const kat = await categorizeAI(u.zweck || u.gegen || '', _idx, { anker: await kiAnker(u.zweck || u.gegen || '') });
+      // Verwendungszweck und Gegenpartei schreibt der ABSENDER einer Zahlung — fremder Text, der an
+      // die Kontierung geht. Dieselbe Prüfung wie beim OCR-Text (Klaus 2026-10-14).
+      const frei = await kiTextFreigabe(u.zweck || u.gegen || '');
+      const kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal });
       kat.richtung = u.richtung; // Kontoauszug bestimmt die Richtung verbindlich
       const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
       if (!res.ok) { slot.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
-      slot.appendChild(await vorschlagKarte(res.vorschlag, null, u.zweck || ''));
+      if (frei.hinweis) slot.appendChild(el('p', { class: 'hinweis small', text: frei.hinweis }));
+      // Der Zweck geht in Begründung und Richter nur bereinigt weiter (vorher nur u.zweck, ohne Gegenpartei).
+      slot.appendChild(await vorschlagKarte(res.vorschlag, null, u.zweck ? frei.kiText : ''));
     },
   }));
 
