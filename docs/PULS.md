@@ -7,7 +7,47 @@
 
 ---
 
-## ✅ LETZTER STAND (2026-08-14) — Modul-23-UI auf den Kanon + Wächter für die Kopien
+## ✅ LETZTER STAND (2026-10-14) — Belege: Ordner-Import, Prüfung auf Knopfdruck, Reinigung vor der KI
+
+Klaus: *„PDFs in großem Umfang als Dateien importieren, Fotos, eingescannte Dokumente … die
+Erkennung von Schadsoftware oder Schadtexten muss fehlerfrei laufen … auch aus Ordnern
+komplette PDF importieren … lesbar auf manuellen Befehl."* Seine Antworten vorab: alle vier
+Schritte · pdf.js und Texterkennung **lokal** · OCR-Text **einmal anhalten** · ungeprüft → „jetzt prüfen?".
+
+- **Import:** „Mehrere Belege hochladen" und „📁 Ganzen Ordner einlesen" (`pickFiles`,
+  `belegDateienWaehlen`). Jeder Beleg einzeln verschlüsselt, **keine Prüfung beim Einlesen**;
+  Übersprungenes steht beim Namen da.
+- **Prüfung auf Knopfdruck:** Spalte „Prüfung" (○ · ⚠️ · ✓ · ◌), „🛡 Alle ungeprüften prüfen",
+  Prüfbericht (auch als Textdatei). `src/domain/belegPruefung.js`. Der Bericht liegt
+  **verschlüsselt** am Beleg (`pruefDaten`); unverschlüsselt nur `pruefung = {stand, zeit, funde}`.
+  Prüfkern `assets/eingang.js`, `pruefer-*.js`, `reinigung.js` **byte-1:1 aus Workflow PDF**,
+  pdf.js + Tesseract unter `vendor/` (nicht im Vorrat), alles SHA-gepinnt in `tests/run.mjs`.
+  **Dort pflegen, hier neu kopieren, Pins nachziehen.**
+- **Reinigung vor der OCR** (`src/ai/kiVorbereitung.js`): PDF → gezeichnete Seitenbilder
+  (≤ 10, versteckter Text zugedeckt), Foto → neu gezeichnet ohne EXIF. Halte: ungeprüft →
+  auffällig → versteckter Text → Senden-Hinweis. Vermerk am Beleg (`kiDaten`, verschlüsselt;
+  Marke „🧽 gereinigt"). Original bleibt unverändert (GoBD).
+- **OCR-Text und Schnellerfassung:** Anweisung an eine KI → ohne diese Zeilen · trotzdem · nur
+  auf dem Gerät (`categorize(…, {nurLokal})`). Fehlt die Prüfliste → nichts an Mistral.
+
+**Beweis:** `node tests/run.mjs` 2226 bestanden · `node tests/smoke_belege.mjs` 58 grün · 0 ROT
+(echter Browser; braucht `npm install --no-save --no-package-lock playwright-core@1.56.1`) ·
+Gegenprobe `node tests/gegenprobe_belege.mjs` (18 Fälle, Zahlen im PR #329 und in SESSIONS.md).
+`sw.js v240`.
+
+**Nicht geprüft:** Tablet, echte Belege, echte Vision-/Mistral-API, ein Ordner mit Hunderten PDFs.
+
+### Nächste konkrete Schritte
+
+1. **Klaus' Sichttest am Tablet:** Ordner einlesen, „Alle ungeprüften prüfen", Texterkennung
+   eines auffälligen Belegs (alle Halte), Marke „🧽 gereinigt".
+2. **E-Rechnung und Bank-Import:** Lieferantenname/Verwendungszweck gehen noch ungeprüft an
+   die Kontierung — gleiche Text-Prüfung davorsetzen.
+3. Zeit und Speicher der Prüfung bei großen Ordnern am Gerät messen.
+
+---
+
+## ✅ STAND (2026-08-14) — Modul-23-UI auf den Kanon + Wächter für die Kopien
 
 `sbkim/23_rendezvous_ui.js` lag ~150 Zeilen hinter dem Sage-Kanon und ist jetzt
 byte-1:1 (`4882c3b6`). Vor dem Überschreiben geprüft, dass **keine BLP-eigene Logik**

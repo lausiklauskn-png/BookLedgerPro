@@ -5,6 +5,24 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-14 — Belege: Ordner-Import, Prüfung auf Knopfdruck, Reinigung vor der KI
+
+**Was getan.** Siehe `docs/PULS.md` (Stand 2026-10-14) und PR #329. Mehrfach- und
+Ordner-Import ohne Prüfung beim Einlesen · Prüfstand je Beleg mit verschlüsseltem
+Prüfbericht · Prüfkern byte-1:1 aus Workflow PDF, pdf.js + Tesseract lokal ·
+Texterkennung mit gereinigten Seitenbildern und vier Halten · Halt bei einer Anweisung an
+eine KI im OCR-Text und in der Schnellerfassung. Datenschutz-Seite nachgezogen.
+
+**Stand.** `node tests/run.mjs` 2226 bestanden, 0 fehlgeschlagen (vorher 2183) ·
+`tests/smoke_belege.mjs` 58 grün · 0 ROT · Gegenprobe erster voller Lauf **14 gefangen ·
+1 durchgerutscht · 3 gestolpert · 0 tote Anker**. Durchgerutscht: der Eval-Wächter fand
+`isEvalSupported:false` im Kommentar daneben — misst jetzt den Code. Gestolpert: drei
+rote Zeilen trugen den Namen des Klick-Helfers bzw. einer gekoppelten Warte-Bedingung statt
+der Zusicherung. Alle vier geschärft und einzeln nachgefahren: gefangen.
+
+**Offen.** Tablet-Sichttest · E-Rechnung/Bank-Import-Texte vor der Kontierung prüfen ·
+Zeit/Speicher bei großen Ordnern. Nicht gemessen: echte Vision-/Mistral-API, echte Belege.
+
 ## 2026-10-12 — Neue Übernahme-Quelle `workflow-calculate`
 
 **Was getan.** Der neue Angebotsplaner Workflow Calculate (eigenes Repo) schickt fertige Angebote

@@ -38,6 +38,11 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 - [x] UI: Belege-Ansicht (Upload, Schnellerfassung, KI-Extraktion); KI-Settings (BYOK)
 - [x] 65/65 Node-Tests grün (Extraktion/Kategorisierung/Vorschlag)
 
+- [x] **Belege in großem Umfang** (2026-10-14): mehrere Dateien und ganze Ordner einlesen ·
+      Prüfung auf Knopfdruck (Prüfkern aus Workflow PDF, pdf.js + Tesseract lokal) · Reinigung vor
+      der Texterkennung (PDF als Seitenbilder, versteckter Text zugedeckt, Foto ohne Metadaten) ·
+      Halt bei einer Anweisung an eine KI im erkannten Text — `tests/smoke_belege.mjs`
+
 > **Ehrlich offen (Phase 2.x):** lokales OCR (Tesseract.js) ist NICHT eingebunden —
 > Bild→Text läuft derzeit über Claude-Vision (BYOK) oder eingefügten Text. Semantische
 > On-Device-Embeddings (Transformers.js) stehen aus; bis dahin Schlüsselwort-Heuristik.

@@ -48,7 +48,13 @@ setzt voraus, dass du deinen <strong>eigenen Schlüssel</strong> beim jeweiligen
 Anbieter einträgst und die Übertragung im Einzelfall bestätigst; die
 Voreinstellung ist aus.</p>
 <p><strong>Beleg-Texterkennung und Sprache:</strong> Google Cloud, EU-Endpunkte
-(<code>eu-vision.googleapis.com</code>, <code>eu-speech.googleapis.com</code>).</p>
+(<code>eu-vision.googleapis.com</code>, <code>eu-speech.googleapis.com</code>).
+Hinaus geht dabei nicht die Originaldatei: ein PDF wird als gezeichnete
+Seitenbilder gesendet (höchstens 10 Seiten, versteckter Text zugedeckt), ein Foto
+neu gezeichnet und ohne Bild-Metadaten (Kamera, Ort). Das Original bleibt
+unverändert im Archiv. Die Prüfung eines Belegs auf versteckte Anweisungen läuft
+nur auf diesem Gerät; PDF-Leser und Texterkennung werden mit der App ausgeliefert,
+dafür geht nichts ins Netz.</p>
 <p><strong>Kontierung, Steuer-Assistent, Berater:</strong> je nach dem Anbieter,
 den du selbst wählst — Mistral AI (<code>api.mistral.ai</code>, Frankreich),
 Anthropic PBC (<code>api.anthropic.com</code>, USA) oder Google
