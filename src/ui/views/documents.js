@@ -35,7 +35,7 @@ import { testMarke } from '../testmarke.js';
 import { pruefStandVon, ungepruefte, belegDateienWaehlen, kiAnweisungZeilen, textNachWahl, PRUEF_STAND } from '../../domain/kiReinigung.js';
 import { pruefeBeleg, pruefBericht, kiVermerke, vermerkeKiEntfernt, pruefKern, prueferMail } from '../../domain/belegPruefung.js';
 import { belegFuersKi } from '../../ai/kiVorbereitung.js';
-import { pruefberichtZeigen, ungeprueftHalt, auffaelligHalt, kiReinigungHalt, textHalt } from '../belegDialoge.js';
+import { pruefberichtZeigen, ungeprueftHalt, auffaelligHalt, kiReinigungHalt, textHalt, drehkreis, arbeitsAnzeige } from '../belegDialoge.js';
 
 let _host = null;
 let _idx = {};
@@ -713,7 +713,7 @@ function uploadKarte() {
 // ---- Prüfung auf Knopfdruck (Klaus 2026-10-14) ------------------------------
 
 const _pruefLaeuft = new Set();   // Kennungen, die gerade geprüft werden
-let _pruefStapel = null;          // {i, n} beim „Alle ungeprüften prüfen", sonst null
+let _pruefStapel = null;          // {i, n, name} beim „Alle ungeprüften prüfen", sonst null
 let _pruefStapelErgebnis = null;  // Satz nach dem letzten Stapel
 
 async function pruefeEinen(b, { zeigen = true } = {}) {
@@ -742,7 +742,7 @@ async function alleUngepruefenPruefen(belege) {
   if (!liste.length || _pruefStapel) return;
   let w = 0, u = 0;
   for (let i = 0; i < liste.length; i++) {
-    _pruefStapel = { i: i + 1, n: liste.length };
+    _pruefStapel = { i: i + 1, n: liste.length, name: liste[i].name };
     const p = await pruefeEinen(liste[i], { zeigen: false });
     if (p && p.stand === PRUEF_STAND.WARNUNG) w++;
     if (!p || p.stand === PRUEF_STAND.UNGEPRUEFT) u++;
@@ -755,7 +755,7 @@ async function alleUngepruefenPruefen(belege) {
 function pruefKnopf(b) {
   const stand = pruefStandVon(b);
   if (!stand) return el('span', { class: 'muted small', text: '—' });
-  if (_pruefLaeuft.has(b.id)) return el('span', { class: 'small', 'data-pruefung': 'laeuft', text: t('beleg.laeuft') });
+  if (_pruefLaeuft.has(b.id)) return el('span', { class: 'small pruef-laeuft', 'data-pruefung': 'laeuft', role: 'status' }, [drehkreis(), t('beleg.laeuft')]);
   const text = { offen: t('beleg.offen'), warnung: t('beleg.warnung'), sauber: t('beleg.sauber'), ungeprueft: t('beleg.ungeprueft') }[stand];
   const knopf = el('button', {
     class: 'btn btn-sm' + (stand === 'warnung' ? ' btn-danger' : ''), type: 'button', text,
@@ -774,8 +774,13 @@ function pruefLeiste(belege) {
   const offen = ungepruefte(belege);
   const teile = [];
   if (_pruefStapel) {
-    teile.push(el('span', { class: 'small', 'data-pruef-stapel': 'laeuft',
-      text: t('docs.pruefenLaeuft').replace('{i}', String(_pruefStapel.i)).replace('{n}', String(_pruefStapel.n)) }));
+    // Drehkreis + Balken: man sieht, DASS es läuft und WIE WEIT (Klaus 2026-10-14).
+    teile.push(el('div', { class: 'pruef-stapel', 'data-pruef-stapel': 'laeuft', role: 'status' }, [
+      el('div', { class: 'small pruef-laeuft' }, [drehkreis(),
+        t('docs.pruefenLaeuft').replace('{i}', String(_pruefStapel.i)).replace('{n}', String(_pruefStapel.n))]),
+      el('progress', { max: String(_pruefStapel.n), value: String(_pruefStapel.i - 1), 'data-pruef-balken': '' }),
+      el('div', { class: 'muted small', text: _pruefStapel.name || '' }),
+    ]));
   } else if (offen.length) {
     teile.push(el('button', { class: 'btn btn-sm', type: 'button', 'data-pruef-alle': '',
       text: t('docs.alleUngeprueften').replace('{n}', String(offen.length)), onClick: () => alleUngepruefenPruefen(belege) }));
@@ -873,21 +878,37 @@ async function visionExtraktion(b) {
     }
 
     const bytes = await getBelegBytes(b.id);
-    const r = await belegFuersKi(bytes, b.mediaType);
+    let arbeit = arbeitsAnzeige(t('beleg.arbeitVorbereiten'));
+    let r;
+    try {
+      r = await belegFuersKi(bytes, b.mediaType, {
+        onSeite: (i, n) => arbeit.setzen(t('beleg.arbeitSeite').replace('{i}', String(i)).replace('{n}', String(n))),
+      });
+    } finally { arbeit.weg(); }
     const versteckt = r.liste.filter((e) => e.grund !== 'meta');
     if (versteckt.length && !(await kiReinigungHalt(b.name, versteckt))) { alert(t('beleg.abgebrochen')); return; }
     const mehr = r.gesamt > r.seiten ? '\n\n' + t('beleg.seitenMax').replace('{m}', String(r.seiten)).replace('{g}', String(r.gesamt)) : '';
     if (!confirm(t('docs.confirmOcrSauber').replace('{n}', String(r.bilder.length)) + mehr)) return; // Daten gehen an die OCR (EU)
 
     const teile = [];
-    for (const u of r.bilder) teile.push(await ocr({ base64: u.slice(u.indexOf(',') + 1), mimeType: 'image/jpeg' }));
+    arbeit = arbeitsAnzeige(t('beleg.arbeitOcr').replace('{i}', '1').replace('{n}', String(r.bilder.length)));
+    try {
+      for (let i = 0; i < r.bilder.length; i++) {
+        arbeit.setzen(t('beleg.arbeitOcr').replace('{i}', String(i + 1)).replace('{n}', String(r.bilder.length)));
+        const u = r.bilder[i];
+        teile.push(await ocr({ base64: u.slice(u.indexOf(',') + 1), mimeType: 'image/jpeg' }));
+      }
+    } finally { arbeit.weg(); }
     await vermerkeKiEntfernt(b.id, r.liste, 'Texterkennung');
     const text = teile.join('\n\n').trim();
     if (!text) { alert(t('docs.ocrNoText')); await repaint(); return; }
 
     const ex = extractFromText(text);
     const frei = await kiTextFreigabe(text);
-    const kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal });   // Mistral EU, sonst Heuristik
+    arbeit = arbeitsAnzeige(t('beleg.arbeitKontierung'));
+    let kat;
+    try { kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal }); }   // Mistral EU, sonst Heuristik
+    finally { arbeit.weg(); }
     const res = buildVorschlag(ex, kat, _idx);
     if (!res.ok) { alert(res.fehler); await repaint(); return; }
     // R3: Aus dem OCR-Beleg lässt sich entweder direkt buchen (Buchungsvorschlag) ODER eine

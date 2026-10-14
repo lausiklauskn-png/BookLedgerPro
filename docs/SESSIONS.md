@@ -26,6 +26,12 @@ Lieferantenname und Verwendungszweck/Gegenpartei gehen durch `kiTextFreigabe`.
 Die übrigen 18 Fälle sind nach diesem Eingriff NICHT noch einmal voll gefahren (der Eingriff
 berührt nur die zwei Aufrufstellen).
 
+**Drehkreis (dritter PR, Klaus: „man muss zumindest sehen, dass da was passiert").**
+Drehkreis an der Zeile und am Stapel, Fortschrittsbalken (i von n, Name), Arbeitsleiste
+während Seiten zeichnen / Texterkennung / Kontierung. `smoke_belege.mjs` 72 grün · 0 ROT ·
+Gegenprobe `ANZEIGE:` 3 gefangen; ein dabei toter Anker (REINIGUNG, Zeile umgebaut) nachgezogen
+und einzeln nachgefahren: gefangen. `NUR_ANKER` 23 · 0 tot. Cache v241.
+
 **Offen.** Tablet-Sichttest · Zeit/Speicher bei großen Ordnern. Nicht gemessen: echte Vision-/Mistral-API, echte Belege.
 
 ## 2026-10-12 — Neue Übernahme-Quelle `workflow-calculate`

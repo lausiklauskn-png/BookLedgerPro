@@ -217,6 +217,12 @@ try {
   // ---- B · Alle ungeprüften prüfen -----------------------------------------------------------
   console.log('\nB · „Alle ungeprüften prüfen"');
   await tippe('[data-pruef-alle]', 'Knopf „Alle ungeprüften prüfen"');
+  // Klaus 2026-10-14: „man muss zumindest sehen, dass da was passiert".
+  ok('während der Prüfung: Drehkreis am Stapel', !!(await page.waitForSelector('[data-pruef-stapel="laeuft"] .pruef-dreh', { timeout: 10000 }).catch(() => null)));
+  ok('während der Prüfung: Balken mit Fortschritt', !!(await page.$('[data-pruef-stapel="laeuft"] progress[data-pruef-balken]')));
+  ok('während der Prüfung: Drehkreis an der Zeile', !!(await page.waitForSelector('[data-pruefung="laeuft"] .pruef-dreh', { timeout: 10000 }).catch(() => null)));
+  const dreht = await page.$eval('.pruef-dreh', (e) => getComputedStyle(e).animationName).catch(() => '');
+  ok('der Kreis dreht sich (Animation gesetzt)', dreht === 'pruefDreh', dreht);
   const fertig = await warteNode(async () => { const l = await belege(); return l.length === 5 && l.every((b) => b.pruefung)
     && !(await page.$('[data-pruef-stapel="laeuft"]')); }, 240000);
   ok('alle fünf geprüft', fertig);
@@ -271,6 +277,11 @@ try {
     ok('danach geht die Kontierung an Mistral', await warteBis(() => !!document.querySelector('.vorschlag') || !!document.querySelector('.form-error'), null, 20000) || mistral.length > 0);
     ok('… OHNE die Anweisung', mistral.length > 0 && mistral.every((r) => !/Ignore all previous/.test(r.body)), mistral.map((r) => r.body.slice(0, 200)).join(' | '));
     ok('… aber mit dem übrigen Text', mistral.some((r) => /Summe 119,00/.test(r.body)));
+    const arbeit = await page.evaluate(() => window.__blpArbeit || []);
+    ok('Arbeitsleiste: Seiten werden gezeichnet', arbeit.some((x) => /Seite 1 von \d+/.test(x)), arbeit.join(' | '));
+    ok('Arbeitsleiste: Texterkennung läuft', arbeit.some((x) => /Texterkennung läuft/.test(x)), arbeit.join(' | '));
+    ok('Arbeitsleiste: Kontierung', arbeit.some((x) => /Kontierung/.test(x)), arbeit.join(' | '));
+    ok('danach steht keine Arbeitsleiste mehr da', !(await page.$('[data-arbeit]')));
     const roh2 = await page.evaluate(async () => { const b = (await window.__probe.listBelege()).find((x) => x.name === 'unsichtbar.pdf'); return await window.__probe.fileGet(b.id); });
     ok('Vermerk am Beleg: was nicht mitging (verschlüsselt)', roh2.kiEntfernt && roh2.kiEntfernt.anzahl > 0 && roh2.kiDaten && roh2.kiDaten.ct);
     await page.evaluate(async () => { /* neu zeichnen */ document.querySelector('#app'); });

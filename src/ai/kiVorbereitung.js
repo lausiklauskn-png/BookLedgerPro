@@ -33,13 +33,14 @@ async function pdfjs() {
  * @param {Uint8Array} bytes
  * @returns {Promise<{bilder:string[], liste:Array<{seite,text,grund}>, seiten:number, gesamt:number}>}
  */
-export async function pdfFuersKi(bytes) {
+export async function pdfFuersKi(bytes, opt = {}) {
   const RE = await reinigung();
   const L = await pdfjs();
   // ⚠ isEvalSupported:false — pdf.js 3.x konnte mit einer präparierten Schrift Code ausführen (CVE-2024-4367).
   const pdf = await L.getDocument({ data: bytes.slice(0), isEvalSupported: false }).promise;
   const n = Math.min(pdf.numPages, KI_PDF_SEITEN_MAX), bilder = [], liste = [];
   for (let i = 1; i <= n; i++) {
+    if (opt.onSeite) opt.onSeite(i, n);
     const p = await pdf.getPage(i);
     const v1 = p.getViewport({ scale: 1 });
     const vp = p.getViewport({ scale: KI_PDF_KANTE / v1.width });
@@ -102,6 +103,6 @@ export async function bildFuersKi(bytes, mime) {
 }
 
 /** Beide Wege hinter einer Tür. */
-export async function belegFuersKi(bytes, mime) {
-  return /pdf$/i.test(mime || '') ? pdfFuersKi(bytes) : bildFuersKi(bytes, mime);
+export async function belegFuersKi(bytes, mime, opt = {}) {
+  return /pdf$/i.test(mime || '') ? pdfFuersKi(bytes, opt) : bildFuersKi(bytes, mime);
 }
