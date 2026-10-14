@@ -5,7 +5,7 @@
 import { el, mount } from '../dom.js';
 import { t, tOpt } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
-import { pickFile, formatBytes, readFileText, readFileBytes } from '../../core/files.js';
+import { pickFile, pickFiles, formatBytes, readFileText, readFileBytes } from '../../core/files.js';
 import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/erechnungLesen.js';
 import { extrahiereZugferdXml, kostPflichtfelder } from '../../domain/zugferd.js';
 import { parseBankauszug, umsatzExtraktion, pruefeBankauszug } from '../../domain/bankimport.js';
@@ -21,7 +21,7 @@ import { categorize as categorizeAI } from '../../ai/mistral.js';
 import { ladeAnker } from '../../ai/anker.js';
 import { tokenize, maskierungsBericht } from '../../ai/pseudonym.js';
 import { ocr } from '../../ai/vision.js';
-import { isOcrAktiv, getAiConfig } from '../../ai/aiConfig.js';
+import { isOcrAktiv, getAiConfig, isMistralConfigured } from '../../ai/aiConfig.js';
 import { belegKontierung } from '../../ai/belegRichter.js';
 import { loadEmbedder } from '../../sbkim/embed.js';
 import { buildVorschlag } from '../../ai/suggest.js';
@@ -32,6 +32,10 @@ import { getSettings } from '../../state.js';
 import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
 import { testMarke } from '../testmarke.js';
+import { pruefStandVon, ungepruefte, belegDateienWaehlen, kiAnweisungZeilen, textNachWahl, PRUEF_STAND } from '../../domain/kiReinigung.js';
+import { pruefeBeleg, pruefBericht, kiVermerke, vermerkeKiEntfernt, pruefKern, prueferMail } from '../../domain/belegPruefung.js';
+import { belegFuersKi } from '../../ai/kiVorbereitung.js';
+import { pruefberichtZeigen, ungeprueftHalt, auffaelligHalt, kiReinigungHalt, textHalt } from '../belegDialoge.js';
 
 let _host = null;
 let _idx = {};
@@ -92,10 +96,12 @@ function schnellerfassung() {
     onClick: async () => {
       out.replaceChildren();
       const ex = extractFromText(ta.value);
-      const kat = await categorizeAI(ta.value, _idx, { anker: await kiAnker(ta.value) });
+      const frei = await kiTextFreigabe(ta.value);
+      const kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal });
       const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
       if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
-      out.appendChild(await vorschlagKarte(res.vorschlag, null, ta.value));
+      if (frei.hinweis) out.appendChild(el('p', { class: 'hinweis small', text: frei.hinweis }));
+      out.appendChild(await vorschlagKarte(res.vorschlag, null, frei.kiText));
     },
   });
   return el('div', { class: 'card' }, [
@@ -634,6 +640,8 @@ function umsatzRow(u, posten = []) {
 
 // ---- Upload (Datei / Foto / PDF) + Beleg-Liste -----------------------------
 
+let _importStatus = null;   // {text, liste?} — überlebt das Neuzeichnen
+
 function uploadKarte() {
   const add = async (accept, capture) => {
     const file = await pickFile(accept, capture);
@@ -641,14 +649,130 @@ function uploadKarte() {
     try { await saveBeleg(file); await repaint(); }
     catch (e) { alert(String(e.message || e)); }
   };
+  // Viele auf einmal oder ein ganzer Ordner (Klaus 2026-10-14). Jeder Beleg wird einzeln
+  // verschlüsselt abgelegt — OHNE Prüfung beim Einlesen (geprüft wird auf Knopfdruck, wie in
+  // Workflow PDF #111). Was übersprungen wird, steht beim Namen da.
+  const viele = async (ordner) => {
+    const files = await pickFiles('image/*,application/pdf,.pdf', { ordner });
+    if (!files.length) return;
+    const { nehmen, ueberspringen } = belegDateienWaehlen(files);
+    const fehler = [];
+    let n = 0;
+    for (let i = 0; i < nehmen.length; i++) {
+      _importStatus = { text: t('docs.importLaeuft').replace('{i}', String(i + 1)).replace('{n}', String(nehmen.length)) };
+      const st = document.querySelector('[data-import-status]');
+      if (st) st.textContent = _importStatus.text;
+      try { await saveBeleg(nehmen[i].file, { typ: nehmen[i].typ }); n++; }
+      catch (e) { fehler.push(`${nehmen[i].pfad}: ${String((e && e.message) || e)}`); }
+    }
+    _importStatus = {
+      text: t('docs.importFertig').replace('{n}', String(n)),
+      uebersprungen: ueberspringen.map((u) => u.pfad),
+      fehler,
+    };
+    if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler };   // Probe
+    await repaint();
+  };
+  const status = [];
+  if (_importStatus) {
+    status.push(el('p', { class: 'small', 'data-import-status': '', text: _importStatus.text }));
+    if (_importStatus.uebersprungen && _importStatus.uebersprungen.length) {
+      status.push(el('details', { class: 'small', 'data-import-uebersprungen': '' }, [
+        el('summary', { text: t('docs.importUebersprungen').replace('{n}', String(_importStatus.uebersprungen.length)) }),
+        el('ul', { class: 'hinweis-liste' }, _importStatus.uebersprungen.map((p) => el('li', { text: p }))),
+      ]));
+    }
+    if (_importStatus.fehler && _importStatus.fehler.length) {
+      status.push(el('div', { class: 'form-error small', 'data-import-fehler': '' }, [
+        el('p', { text: t('docs.importFehler').replace('{n}', String(_importStatus.fehler.length)) }),
+        el('ul', { class: 'hinweis-liste' }, _importStatus.fehler.map((f) => el('li', { text: f }))),
+      ]));
+    }
+  } else status.push(el('p', { class: 'small', 'data-import-status': '' }));
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('docs.archive') }),
     el('p', { class: 'muted small', text: t('docs.archiveHint') }),
     el('div', { class: 'btn-row' }, [
       el('button', { class: 'btn', text: t('docs.camera'), onClick: () => add('image/*', 'environment') }),
-      el('button', { class: 'btn', text: t('docs.upload'), onClick: () => add('image/*,application/pdf', null) }),
+      el('button', { class: 'btn', text: t('docs.uploadMehrere'), 'data-import-viele': '', onClick: () => viele(false) }),
+      el('button', { class: 'btn', text: t('docs.ordner'), 'data-import-ordner': '', onClick: () => viele(true) }),
     ]),
+    ...status,
   ]);
+}
+
+// ---- Prüfung auf Knopfdruck (Klaus 2026-10-14) ------------------------------
+
+const _pruefLaeuft = new Set();   // Kennungen, die gerade geprüft werden
+let _pruefStapel = null;          // {i, n} beim „Alle ungeprüften prüfen", sonst null
+let _pruefStapelErgebnis = null;  // Satz nach dem letzten Stapel
+
+async function pruefeEinen(b, { zeigen = true } = {}) {
+  _pruefLaeuft.add(b.id);
+  await repaint();
+  let p;
+  try { p = await pruefeBeleg(b.id); }
+  catch (e) { _pruefLaeuft.delete(b.id); await repaint(); alert(String((e && e.message) || e)); return null; }
+  finally { _pruefLaeuft.delete(b.id); }
+  await repaint();
+  if (zeigen) await berichtOeffnen(b, p);
+  return p;
+}
+
+async function berichtOeffnen(b, vorhanden) {
+  const p = vorhanden || await pruefBericht(b.id);
+  const E = await pruefKern().catch(() => null);
+  const ki = await kiVermerke(b.id);
+  await pruefberichtZeigen(b.name, p, E, ki, {
+    erneut: async () => { await pruefeEinen(b); },
+  });
+}
+
+async function alleUngepruefenPruefen(belege) {
+  const liste = ungepruefte(belege);
+  if (!liste.length || _pruefStapel) return;
+  let w = 0, u = 0;
+  for (let i = 0; i < liste.length; i++) {
+    _pruefStapel = { i: i + 1, n: liste.length };
+    const p = await pruefeEinen(liste[i], { zeigen: false });
+    if (p && p.stand === PRUEF_STAND.WARNUNG) w++;
+    if (!p || p.stand === PRUEF_STAND.UNGEPRUEFT) u++;
+  }
+  _pruefStapel = null;
+  _pruefStapelErgebnis = t('docs.pruefenFertig').replace('{n}', String(liste.length)).replace('{w}', String(w)).replace('{u}', String(u));
+  await repaint();
+}
+
+function pruefKnopf(b) {
+  const stand = pruefStandVon(b);
+  if (!stand) return el('span', { class: 'muted small', text: '—' });
+  if (_pruefLaeuft.has(b.id)) return el('span', { class: 'small', 'data-pruefung': 'laeuft', text: t('beleg.laeuft') });
+  const text = { offen: t('beleg.offen'), warnung: t('beleg.warnung'), sauber: t('beleg.sauber'), ungeprueft: t('beleg.ungeprueft') }[stand];
+  const knopf = el('button', {
+    class: 'btn btn-sm' + (stand === 'warnung' ? ' btn-danger' : ''), type: 'button', text,
+    'data-pruefung': stand,
+    ...(stand === 'offen' ? { 'data-pruef-nachholen': '' } : { 'data-pruef-bericht': '' }),
+    onClick: () => (stand === 'offen' ? pruefeEinen(b) : berichtOeffnen(b)),
+  });
+  const teile = [knopf];
+  if (b.kiEntfernt && b.kiEntfernt.anzahl) {
+    teile.push(el('button', { class: 'btn btn-link btn-sm', type: 'button', 'data-ki-gereinigt': '', text: t('beleg.gereinigt'), onClick: () => berichtOeffnen(b) }));
+  }
+  return el('div', { class: 'btn-row' }, teile);
+}
+
+function pruefLeiste(belege) {
+  const offen = ungepruefte(belege);
+  const teile = [];
+  if (_pruefStapel) {
+    teile.push(el('span', { class: 'small', 'data-pruef-stapel': 'laeuft',
+      text: t('docs.pruefenLaeuft').replace('{i}', String(_pruefStapel.i)).replace('{n}', String(_pruefStapel.n)) }));
+  } else if (offen.length) {
+    teile.push(el('button', { class: 'btn btn-sm', type: 'button', 'data-pruef-alle': '',
+      text: t('docs.alleUngeprueften').replace('{n}', String(offen.length)), onClick: () => alleUngepruefenPruefen(belege) }));
+  }
+  if (!_pruefStapel && _pruefStapelErgebnis) teile.push(el('span', { class: 'muted small', 'data-pruef-stapel': 'fertig', text: _pruefStapelErgebnis }));
+  return teile.length ? el('div', { class: 'btn-row pruef-leiste' }, teile) : null;
 }
 
 function belegListe(belege, visionBereit) {
@@ -660,14 +784,16 @@ function belegListe(belege, visionBereit) {
     el('td', { class: 'muted small mono', text: (b.createdAt || '').slice(0, 10) }),
     el('td', { class: 'muted small mono', text: aufbewahrungBis(b.createdAt).slice(0, 4), title: t('docs.keepUntil') }),
     el('td', { text: b.buchungId ? '🔗' : '' }),
+    el('td', { class: 'pruef-zelle', 'data-beleg-id': b.id }, [pruefKnopf(b)]),
     el('td', { class: 'actions' }, [belegAktionen(b, visionBereit)]),
   ]));
   return el('div', { class: 'card no-pad' }, [
+    pruefLeiste(belege),
     el('table', { class: 'table' }, [
       el('thead', {}, el('tr', {}, [
         el('th', { text: t('docs.name') }), el('th', { text: t('docs.kind') }),
         el('th', { class: 'num', text: t('docs.size') }), el('th', { text: t('docs.date') }),
-        el('th', { text: t('docs.keepUntil') }), el('th', {}), el('th', {}),
+        el('th', { text: t('docs.keepUntil') }), el('th', {}), el('th', { text: t('docs.pruefung') }), el('th', {}),
       ])),
       el('tbody', {}, rows),
     ]),
@@ -695,21 +821,72 @@ function belegAktionen(b, visionBereit) {
   return wrap;
 }
 
+// Der OCR-Text (oder ein eingefügter Text) geht als Nächstes an die Kontierung (Mistral EU).
+// Steht darin eine Anweisung an eine KI, hält es EINMAL an (Klaus 2026-10-14: „Ja, einmal
+// anhalten"). Ohne Mistral-Schlüssel geht nichts hinaus — dann gibt es auch keinen Halt.
+// ⚠ Fehlt die Prüfliste, geht NICHTS an die KI (fail-closed) — es wird gesagt.
+async function kiTextFreigabe(text) {
+  let mistral = false;
+  try { mistral = await isMistralConfigured(); } catch { mistral = false; }
+  if (!mistral) return { kiText: text, nurLokal: false };
+  let PM;
+  try { PM = await prueferMail(); }
+  catch { return { kiText: text, nurLokal: true, hinweis: t('beleg.prueflisteFehlt') }; }
+  const zeilen = kiAnweisungZeilen(PM.pruefeMail(String(text || '')));
+  if (!zeilen.length) return { kiText: text, nurLokal: false };
+  const wahl = await textHalt(zeilen);
+  if (typeof window !== 'undefined') window.__blpTextHalt = { zeilen, wahl };   // Probe
+  return textNachWahl(text, zeilen, wahl);
+}
+
+// Texterkennung eines Belegs (Klaus 2026-10-14). Bis hierher ging die ORIGINALDATEI an die OCR
+// (PDF samt unsichtbarem Text, Foto samt EXIF). Jetzt, in dieser Reihenfolge:
+//   1. noch nie geprüft → einmal fragen („Jetzt prüfen" / „Ohne Prüfung weiter");
+//      auffällig → einmal anhalten.
+//   2. reinigen: PDF als gezeichnete Seitenbilder, versteckter Text zugedeckt; Foto neu gezeichnet.
+//      Versteckter Text gefunden → einmal anhalten („Ohne ihn senden" / „Abbrechen").
+//   3. der bisherige Hinweis, dass etwas das Gerät verlässt (confirm).
+//   4. OCR je Seitenbild; danach der Vermerk am Beleg (was nicht mitging).
+//   5. der erkannte Text → Halt bei einer Anweisung an eine KI → Kontierung.
+// Abbrechen heißt an jeder Stelle: nichts geht hinaus, nichts wird vermerkt.
 async function visionExtraktion(b) {
-  if (!confirm(t('docs.confirmOcr'))) return; // Daten gehen an Google Vision (EU)
   try {
+    const stand = pruefStandVon(b);
+    let p = null;
+    if (stand === PRUEF_STAND.OFFEN) {
+      const w = await ungeprueftHalt(b.name);
+      if (!w) return;
+      if (w === 'pruefen') p = await pruefeEinen(b, { zeigen: false });
+    } else if (stand === PRUEF_STAND.WARNUNG) p = await pruefBericht(b.id);
+    if (p && p.stand === PRUEF_STAND.WARNUNG) {
+      const E = await pruefKern().catch(() => null);
+      if (!(await auffaelligHalt(b.name, p, E))) { alert(t('beleg.abgebrochen')); return; }
+    }
+
     const bytes = await getBelegBytes(b.id);
-    const text = await ocr({ base64: bytesToBase64(bytes), mimeType: b.mediaType });
-    if (!text) { alert(t('docs.ocrNoText')); return; }
+    const r = await belegFuersKi(bytes, b.mediaType);
+    const versteckt = r.liste.filter((e) => e.grund !== 'meta');
+    if (versteckt.length && !(await kiReinigungHalt(b.name, versteckt))) { alert(t('beleg.abgebrochen')); return; }
+    const mehr = r.gesamt > r.seiten ? '\n\n' + t('beleg.seitenMax').replace('{m}', String(r.seiten)).replace('{g}', String(r.gesamt)) : '';
+    if (!confirm(t('docs.confirmOcrSauber').replace('{n}', String(r.bilder.length)) + mehr)) return; // Daten gehen an die OCR (EU)
+
+    const teile = [];
+    for (const u of r.bilder) teile.push(await ocr({ base64: u.slice(u.indexOf(',') + 1), mimeType: 'image/jpeg' }));
+    await vermerkeKiEntfernt(b.id, r.liste, 'Texterkennung');
+    const text = teile.join('\n\n').trim();
+    if (!text) { alert(t('docs.ocrNoText')); await repaint(); return; }
+
     const ex = extractFromText(text);
-    const kat = await categorizeAI(text, _idx, { anker: await kiAnker(text) });   // Mistral EU, sonst Heuristik
+    const frei = await kiTextFreigabe(text);
+    const kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal });   // Mistral EU, sonst Heuristik
     const res = buildVorschlag(ex, kat, _idx);
-    if (!res.ok) { alert(res.fehler); return; }
+    if (!res.ok) { alert(res.fehler); await repaint(); return; }
     // R3: Aus dem OCR-Beleg lässt sich entweder direkt buchen (Buchungsvorschlag) ODER eine
     // offene VERBINDLICHKEIT „auf Ziel" erfassen (Kreditor, erscheint im Zahlungsabgleich).
     await repaint(el('div', {}, [
+      frei.hinweis ? el('p', { class: 'hinweis small', text: frei.hinweis }) : null,
       zeigeFeature(getSettings(), FEATURE.VERBINDLICHKEITEN) ? verbindlichkeitAusExtraktionZeile(ex, kat) : null,
-      await vorschlagKarte(res.vorschlag, b.id, text),
+      await vorschlagKarte(res.vorschlag, b.id, frei.kiText),
     ]));
   } catch (e) {
     alert(t('docs.ocrError') + ' ' + String(e.message || e));

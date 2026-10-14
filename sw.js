@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v239';
+const CACHE_VERSION = 'v240';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -111,6 +111,8 @@ const CORE_ASSETS = [
   './src/domain/taxes.js',
   './src/domain/store.js',
   './src/domain/documents.js',
+  './src/domain/kiReinigung.js',
+  './src/domain/belegPruefung.js',
   './src/domain/aufbewahrung.js',
   './src/domain/aufklaerung.js',
   './src/ai/extract.js',
@@ -119,6 +121,7 @@ const CORE_ASSETS = [
   './src/ai/aiConfig.js',
   './src/ai/anbieter.js',
   './src/ai/vision.js',
+  './src/ai/kiVorbereitung.js',
   './src/ai/mistral.js',
   './src/ai/speech.js',
   './src/ai/berater.js',
@@ -170,6 +173,7 @@ const CORE_ASSETS = [
   './src/domain/export.js',
   './src/ai/taxAssist.js',
   './src/ui/views/documents.js',
+  './src/ui/belegDialoge.js',
   './src/ui/views/payables.js',
   './src/ui/views/customers.js',
   './src/ui/views/orders.js',
@@ -219,6 +223,14 @@ const CORE_ASSETS = [
   './sbkim/23_rendezvous.js',
   './sbkim/23_rendezvous_ui.js',
   './sbkim/sbkim-init.js',
+  // Prüfung und Reinigung der Belege (Klaus 2026-10-14) — byte-1:1 aus Workflow PDF, mit der
+  // Adresse, unter der sie geladen werden (der Vorrat vergleicht samt ?v=). pdf.js (1,5 MB) und die
+  // Texterkennung (21 MB) stehen NICHT hier: der Worker legt sie beim ersten Prüfen ab.
+  './assets/eingang.js?v=5',
+  './assets/pruefer-formate.js?v=2',
+  './assets/pruefer-mail.js?v=2',
+  './assets/pruefer-anhang.js?v=4',
+  './assets/reinigung.js?v=1',
 ];
 
 self.addEventListener('install', (event) => {

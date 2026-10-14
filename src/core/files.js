@@ -56,6 +56,21 @@ export function pickFile(accept = '', capture = null) {
   });
 }
 
+/** Wie pickFile, aber viele Dateien auf einmal — oder einen ganzen Ordner (Klaus 2026-10-14:
+ *  „aus Ordnern komplette PDF importieren"). `ordner` nutzt webkitdirectory: Chromium,
+ *  Firefox und Safari kennen es; der Browser fragt dabei selbst nach. Liefert [] bei Abbruch. */
+export function pickFiles(accept = '', { ordner = false } = {}) {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    if (ordner) { input.webkitdirectory = true; input.setAttribute('webkitdirectory', ''); }
+    else if (accept) input.accept = accept;
+    input.onchange = () => resolve(input.files ? Array.from(input.files) : []);
+    input.click();
+  });
+}
+
 // ---- File System Access (gemerkter Zielordner, Schritt 3) -------------------
 // Nur Chromium-Desktop hat `showDirectoryPicker`. Auf Tablet/iOS/Firefox fehlt sie →
 // der Aufrufer fällt auf den Download zurück (domain/backupStrategie.backupZiel).
