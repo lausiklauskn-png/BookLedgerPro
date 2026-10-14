@@ -20,8 +20,13 @@ eine KI im OCR-Text und in der Schnellerfassung. Datenschutz-Seite nachgezogen.
 rote Zeilen trugen den Namen des Klick-Helfers bzw. einer gekoppelten Warte-Bedingung statt
 der Zusicherung. Alle vier geschärft und einzeln nachgefahren: gefangen.
 
-**Offen.** Tablet-Sichttest · E-Rechnung/Bank-Import-Texte vor der Kontierung prüfen ·
-Zeit/Speicher bei großen Ordnern. Nicht gemessen: echte Vision-/Mistral-API, echte Belege.
+**Nachgezogen (zweiter PR, Klaus: „Danach E-Rechnung und Bank-Import nachziehen").**
+Lieferantenname und Verwendungszweck/Gegenpartei gehen durch `kiTextFreigabe`.
+`smoke_belege.mjs` 64 grün · 0 ROT · Gegenprobe `FREMDTEXT:` 2 gefangen, `NUR_ANKER` 20 · 0 tot.
+Die übrigen 18 Fälle sind nach diesem Eingriff NICHT noch einmal voll gefahren (der Eingriff
+berührt nur die zwei Aufrufstellen).
+
+**Offen.** Tablet-Sichttest · Zeit/Speicher bei großen Ordnern. Nicht gemessen: echte Vision-/Mistral-API, echte Belege.
 
 ## 2026-10-12 — Neue Übernahme-Quelle `workflow-calculate`
 
