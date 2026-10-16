@@ -6281,13 +6281,13 @@ await section('sbkim/: die kopierten Module sind genagelt', async () => {
     { datei: '05b_nostr_relay.js',   sha: '37eee5b196b3efad', kanon: true },
     { datei: '07_apoptose.js',       sha: '0acdd6ab2d95e131', kanon: true },
     { datei: '15_membran.js',        sha: '829a5bc01976b59c', kanon: true },
-    { datei: '16_siegel.js',         sha: '0783763331b17df2', kanon: true },
+    { datei: '16_siegel.js',         sha: 'd26a262f593a75c4', kanon: true },
     { datei: '17_floating_widget.js', sha: 'e4ee076c1295910d', kanon: true },
     { datei: '20_schluessel_safe.js', sha: '38404dc0a16d69cb', kanon: false,
       grund: 'hinterher: 14 Zeilen fehlen, keine eigenen Änderungen' },
     { datei: '21_spracheingabe.js',  sha: '020ca26ff52f2ed7', kanon: true },
-    { datei: '23_rendezvous.js',     sha: '87278a0c6e0f371b', kanon: true },
-    { datei: '23_rendezvous_ui.js',  sha: '5ff4befaa644ed2f', kanon: true },
+    { datei: '23_rendezvous.js',     sha: '5aa8262638eeaf70', kanon: true },
+    { datei: '23_rendezvous_ui.js',  sha: '66b2c6b95d27e35c', kanon: true },
     { datei: '25_pseudonym.js',      sha: '8c3092babee80b8f', kanon: true },   // Namensvorschläge (2026-10-14)
     { datei: 'noble-secp256k1.js',   sha: '8f3879ca422c4fdf', kanon: true },
   ];
