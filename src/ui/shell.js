@@ -161,6 +161,12 @@ function header(s) {
       },
     }, '☰'),
     el('div', { class: 'brand' }, [MycelMark(28), el('span', { class: 'brand-name', text: t('app.name') })]),
+    // Installieren OBEN in der Kopfleiste (Klaus 2026-10-18: „in den Einstellungen vermutet keiner,
+    // dass er die App installieren kann"). Immer da, solange die App nicht installiert ist — nicht nur,
+    // wenn Chrome es anbietet. Der Tipp geht an den Knopf von assets/installieren.js (byte-1:1 aus Sage,
+    // verborgen in #install-quelle): EINE Klick-Logik für Kopf- und Einstellungen-Knopf.
+    // Neben dem Namen, nicht in .header-right: am Handy steht er so in der ersten Zeile, wo Platz ist.
+    installKopfKnopf(),
     el('div', { class: 'header-right' }, [
       flyingWidget(),
       label ? el('span', { class: 'mandant', title: t('dashboard.mandant') }, [
@@ -186,6 +192,33 @@ function header(s) {
       }),
     ]),
   ]);
+}
+
+// ── Installieren-Knopf in der Kopfleiste ─────────────────────────────────────
+// Als App (display-mode standalone usw.) oder nach `appinstalled` in diesem Tab: weg. Die Klasse
+// html.app-installiert blendet auch den Einstellungen-Knopf aus (CSS, !important) — der Kanon-Knopf
+// selbst kennt nur display-mode.
+function alsAppLaeuft() {
+  try {
+    return matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: minimal-ui)').matches ||
+      matchMedia('(display-mode: window-controls-overlay)').matches || navigator.standalone === true;
+  } catch { return false; }
+}
+let _installHorcht = false;
+function installKopfKnopf() {
+  if (!_installHorcht) {
+    _installHorcht = true;
+    window.addEventListener('appinstalled', () => document.documentElement.classList.add('app-installiert'));
+  }
+  const weg = alsAppLaeuft() || document.documentElement.classList.contains('app-installiert');
+  return el('button', {
+    class: 'btn btn-ghost btn-sm btn-icon install-kopf', id: 'install-kopf', text: '⬇',
+    title: t('app.installTitle'), 'aria-label': t('app.install'), hidden: weg ? '' : null,
+    onClick: () => {
+      const k = document.getElementById('installieren') || document.getElementById('installieren-einstellungen');
+      if (k) k.click(); else navigate('settings');
+    },
+  });
 }
 
 // ── Flying Widget (Modul-17-Idee, App-eigen) ─────────────────────────────────

@@ -612,3 +612,18 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .pruef-stapel progress { width: 100%; height: .6rem; accent-color: var(--accent); }
 .arbeits-leiste { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 90; display: flex; align-items: center; gap: .55rem;
   background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 999px; box-shadow: var(--shadow); padding: .55rem 1rem; font-size: .9rem; max-width: calc(100vw - 2rem); }
+
+/* ---- Installieren in der Kopfleiste (Klaus 2026-10-18) ---------------------
+   Immer da, solange die App nicht installiert ist. Als App bzw. nach `appinstalled`
+   (html.app-installiert) weg — auch der Knopf in den Einstellungen. */
+#install-kopf { color: var(--accent); font-weight: 700; margin-left: auto; padding-block: .15rem; }
+/* Am Handy darf die rechte Gruppe umbrechen, statt aus dem Fenster zu laufen (vorher 361 px Seite bei 320 px). */
+@media (max-width: 640px) {
+  .header-right { flex-wrap: wrap; justify-content: flex-end; max-width: 100%; gap: .4rem .35rem; }
+}
+#install-kopf[hidden] { display: none !important; }
+@media (display-mode: standalone) { #install-kopf { display: none !important; } }
+html.app-installiert #install-kopf, html.app-installiert [data-install-knopf] { display: none !important; }
+/* 641–780 px: mit dem Installieren-Knopf passte die Zeile nicht mehr (gemessen 650 px Seite bei 641). Dort wie am
+   Handy nur die Lampen-Punkte zeigen — spart ~140 px, die Kopfleiste bleibt einzeilig. */
+@media (min-width: 641px) and (max-width: 780px) { .fw-label { display: none; } .app-header .btn { white-space: nowrap; } }
