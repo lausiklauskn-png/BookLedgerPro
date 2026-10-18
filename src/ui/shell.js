@@ -533,7 +533,8 @@ function viewSettings() {
     hint ? el('p', { class: 'muted small', text: hint }) : null,
   ]);
 
-  return el('section', { class: 'view' }, [
+  // data-einstellungen: hier hängt assets/installieren.js den Knopf „Installieren“ hinten an (Klaus 2026-10-18).
+  return el('section', { class: 'view', 'data-einstellungen': '' }, [
     el('h1', { text: t('settings.title') }),
 
     seg(t('settings.mode'), 'mode',

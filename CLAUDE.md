@@ -83,6 +83,18 @@ SBKIM-Module werden aus dem Sage-Repo **kopiert, nicht modifiziert** (Modul 09).
 
 ---
 
+## ⬇ Installieren-Knopf in den Einstellungen (2026-10-18)
+
+Klaus: *„Den Installieren-Button überall fest einbauen … unter Einstellungen, Installier-Button hinten."*
+`assets/installieren.js` ist byte-1:1 aus Sage-Protokol (SHA-256 `e0644084…c3c3`) — dort pflegen, hier neu kopieren.
+Eingebunden mit `data-in="[data-einstellungen]"` (Marke an der Einstellungen-Seite in `src/ui/shell.js`), Klasse `btn`:
+der Knopf hängt hinten an der Seite, auch nach jedem Neuzeichnen. Als installierte App verschwindet er. Er spricht
+nach `<html lang>` (immer Deutsch; die App-Sprache setzt `lang` nicht). Im Vorrat, Cache `v254`.
+Gemessen im Browser (echte `index.html`, Tresor gestellt): letztes Element der Einstellungen · als App versteckt ·
+Meldung lesbar · keine Installierbarkeits-Fehler. `node tests/run.mjs` 2284/0 · `smoke_belege` 92 · `smoke_handnamen` 19.
+⚠ Benannt, vorbestehend auf `main`: `tests/smoke_a5_antwortpfad.mjs` FAIL („BLP_QUERY_SYNONYMS nicht in 15_membran.js") ·
+die Kopfleiste (`.header-right`) läuft bei 360 px um 1 px über. ⚠ Am Tablet/Handy nicht gemessen.
+
 ## 🏷️ Gerätename · netzweite Regeln
 
 Der Gerätename gehört **ins Verbinden-Panel**, hineingehängt vom app-eigenen Glue
