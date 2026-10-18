@@ -76,6 +76,10 @@
   <link rel="modulepreload" href="./src/core/db.js" />
 </head>
 <body>
+  <!-- Installieren (Klaus 2026-10-18): installieren.js legt seinen Knopf vor diesen Anker — im verborgenen Behälter.
+       Sichtbar ist der Kopf-Knopf der Shell (src/ui/shell.js), der den Tipp hierher weitergibt. Die Kopfleiste wird
+       bei jedem paint() neu gebaut; ein direkt eingehängter Knopf ginge dabei verloren. -->
+  <div hidden id="install-quelle"><span id="install-anker"></span></div>
   <noscript>BookLedgerPro benötigt JavaScript (läuft vollständig lokal in Ihrem Browser).</noscript>
 
   <!-- ── Deckblatt-Anfang STATISCH im HTML (Klaus' Messung 2026-08-03) ────────
@@ -151,7 +155,7 @@
        geteilten github.io-Origin), unabhängig von der init-Reihenfolge. Wert =
        exakt der SBKIM-Storage-Identitäts-Suffix aus sbkim-init.js. -->
   <script>window.SBKIM_DB_SUFFIX="bookledgerpro-sbkim";</script>
-  <script src="./assets/installieren.js?v=1" data-name="BookLedgerPro" data-in="[data-einstellungen]" data-klasse="btn" defer></script>
+  <script src="./assets/installieren.js?v=1" data-name="BookLedgerPro" data-in="[data-einstellungen]" data-klasse="btn" data-vor="install-anker" defer></script>
   <script>/* Sprachmodell vom eigenen Server (Klaus 2026-10-13, Weg A: die App setzt die Adresse, Modul 03 bleibt neutral). Antwortet er nicht, nimmt Modul 03 Hugging Face. */window.SBKIM_MODEL_ROOT=window.SBKIM_MODEL_ROOT||"https://family-projekt.de/models/";</script>
   <!-- ── SBKIM-Stapel: NACHLADEN statt im kritischen Pfad (Klaus 2026-08-03) ──
        Die 16 Dateien sind zusammen ~260 KiB und standen als klassische

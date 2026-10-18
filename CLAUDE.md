@@ -95,6 +95,28 @@ Meldung lesbar · keine Installierbarkeits-Fehler. `node tests/run.mjs` 2284/0 �
 ⚠ Benannt, vorbestehend auf `main`: `tests/smoke_a5_antwortpfad.mjs` FAIL („BLP_QUERY_SYNONYMS nicht in 15_membran.js") ·
 die Kopfleiste (`.header-right`) läuft bei 360 px um 1 px über. ⚠ Am Tablet/Handy nicht gemessen.
 
+## ⬇ Installieren auch OBEN in der Kopfleiste (Klaus 2026-10-18)
+
+Klaus: *„da, wo der Installationsbutton in den Einstellungen zu finden ist, vermutet keiner, dass er die App installieren
+kann … setze den Installationsbutton oben in die Navi-Leiste zusätzlich. Da soll er aber verschwinden, wenn die App
+installiert ist."*
+
+- Die Kopfleiste baut `paint()` in `src/ui/shell.js` bei jedem Neuzeichnen neu — ein von `installieren.js` direkt
+  eingehängter Knopf ginge verloren. Deshalb: `data-vor="install-anker"` legt den Kanon-Knopf `#installieren` in den
+  **verborgenen** Behälter `#install-quelle` (index.html), und `#install-kopf` (⬇, `installKopfKnopf()`) neben dem Namen
+  gibt den Tipp dorthin weiter. **Eine Klick-Logik** (Angebot → Dialog des Browsers, sonst die Meldung der Kanon-Datei).
+  Fehlt sie, führt der Tipp in die Einstellungen. `installieren.js` bleibt byte-1:1.
+- Weg als App (CSS `display-mode:standalone`, `alsAppLaeuft()`) und nach `appinstalled`: `html.app-installiert` blendet
+  Kopf- **und** Einstellungen-Knopf aus (die Kanon-Datei selbst kennt nur display-mode).
+- Kopfleiste: bis 640 px darf `.header-right` umbrechen (vorher lief sie bei 320 px auf 361 px Seite hinaus, bei 360 px
+  um 1 px); 641–780 px nur die Lampen-Punkte (sonst 650 px Seite bei 641). Gemessen: 320/360 px 127 px hoch (vorher 91,
+  aber aus dem Fenster gelaufen), 412 px 91 · 641–1280 px 57 (641 px vorher 77). Cache `v255`.
+- Gemessen (Playwright, echte `index.html`, Tresor gestellt, `beforeinstallprompt` geschluckt): Kopf-Knopf sichtbar und
+  obenauf bei 320 · 360 · 412 · 1280 px · kein Querlaufen · Tipp zeigt die Meldung (`data-lesbar="seite"`) ·
+  `getInstallabilityErrors` leer · nach `appinstalled` und als App weg, Einstellungen-Knopf ebenso.
+  `node tests/run.mjs` 2284/0 · `smoke_belege` 92 · `smoke_handnamen` 19. ⚠ Vor dem Entsperren gibt es keine Kopfleiste.
+  ⚠ Am Tablet nicht gemessen.
+
 ## 🏷️ Gerätename · netzweite Regeln
 
 Der Gerätename gehört **ins Verbinden-Panel**, hineingehängt vom app-eigenen Glue
