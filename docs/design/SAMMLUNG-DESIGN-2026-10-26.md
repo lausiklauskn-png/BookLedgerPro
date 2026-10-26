@@ -15,7 +15,7 @@ Buchhaltungsprogramme.
 
 | # | Vorgabe | Was das am Ist-Stand bedeutet |
 |---|---|---|
-| A1 | **Strichsymbole** statt Bilder und Emojis | Alle 3D-Bilder raus: Sperrbildschirm-Hero, 3 Onboarding-Bilder, 7 Leerzustände (Buch, Klemmbrett, Diagramm, Kugel …). Leerzustand = Strichsymbol + kurzer Satz + passende Aktion. Navigation und Knöpfe bekommen Strichsymbole (heute: nur Text). |
+| A1 | **Strichsymbole** statt Emojis bei den Symbolen | Navigation, Knöpfe, Tabellenaktionen und Statusanzeigen bekommen Strichsymbole (heute: nur Text). **Die vorhandenen 3D-Bilder bleiben** (Klaus 2026-10-26: eigens generiert, passen zu App und Farbe): Sperrbildschirm, 3 Onboarding-Bilder, 7 Leerzustände. Sie sind Illustrationen, keine Symbole. |
 | A2 | **Knöpfe flach** halten, soweit am Handy bedienbar | Heute ca. 40–44 px sichtbar hoch (`.btn` padding .55rem), Eingabefelder ebenso. Ziel wie PBP: sichtbar ~28–32 px, unsichtbare Trefferfläche ≥ 44 px bei Touch. Formulare, Segment-Schalter, Tabellenaktionen mitziehen. |
 | A3 | **Vollbild**, Platz optimal nutzen | Heute ist alles auf `--maxw: 880px` begrenzt und mittig: am breiten Schirm bleibt links/rechts viel leer (siehe `wide-*.png`). Ziel: volle Breite, Seitenleiste links fest, Inhalt füllt den Rest; Tabellen nutzen die Breite. |
 | A4 | **Themenwahl**: Hell, Dunkel und die vier Themen aus Private Brain Pro (1.0.38) | Heute nur System/Hell/Dunkel in Teal. Übernehmen: **Klarblau** (`#2563eb` auf `#f6f8fc`), **Graphit** (`#475569`), **Petrol** (`#0f766e`, entspricht dem heutigen BLP-Teal), **Nachtblau** (dunkel, `#7ca7ff` auf `#111827`). Quelle: `Privat-Brain-Pro/native/design-tokens.css`, Namen DE/EN in `native/native-theme.js`. Offen: siehe D1. |
@@ -57,7 +57,7 @@ Buchhaltungsprogramme.
 - B8 Formular „Neue Buchung" steht immer offen über der Liste und schiebt sie nach unten.
   Modern: Liste/Tabelle zuerst, „+ Buchung" öffnet ein Seitenfenster (rechts) bzw.
   am Handy ein Vollbild-Blatt.
-- B9 Leere Tabellen zeigen große Bilder statt Kopfzeile + kurzem Satz.
+- B9 Leere Tabellen: Bild bleibt (A1). Darüber trotzdem Tabellen-Kopfzeile und direkt eine passende Aktion („+ Buchung“), damit man gleich loslegen kann.
 - B10 Auftrag am Handy: Positionszeile (Beschreibung/Menge/Preis/USt) viel zu eng,
   Feldnamen brechen um, USt-Auswahl abgeschnitten. Positionen am Handy untereinander
   (Karte je Position).
@@ -74,7 +74,7 @@ Buchhaltungsprogramme.
 - B13 Segment-Schalter „KI-Autonomie" sehr breit, am Handy zu lang.
 
 **Sperrbildschirm / Einrichtung**
-- B14 Großes 3D-Bild + Mycel-Hintergrund. Ruhiger: Logo-Strichsymbol, Formular, fertig.
+- B14 Sperrbildschirm: 3D-Bild bleibt (A1). Nur prüfen, dass es am Handy das Passwortfeld nicht unter den Rand schiebt.
 - B15 Shamir-Schritt: Knopf heißt „Speichern", speichert aber nichts (geht nur weiter).
   Ehrlicher: „Weiter – ich habe die Teile notiert" plus „Kopieren"/„Drucken" je Teil.
 
@@ -148,6 +148,7 @@ Regeln dazu:
 - D4 Handy: untere Leiste (Hauptwege) oder ☰-Menü wie bei PBP?
 - D5 Modi: Passen die vier (Privat, Kleinunternehmer, Selbstständig, Berater)? Was genau soll
   **Privat** können – nur Belege/Ausgaben sammeln, oder auch Steuererklärung vorbereiten?
+- D7 Die Bilder sind in Teal/Smaragd. Zu Petrol passen sie genau; bei Klarblau, Graphit und Nachtblau beim Umbau ansehen, ob sie noch stimmig wirken (nur prüfen, nicht ändern).
 - D6 Ersetzt der neue Modus den alten Schalter Einfach/Profi/Berater ganz? (Vorschlag: ja.)
 
 ## E. Nächste Schritte (wenn Klaus freigibt)
