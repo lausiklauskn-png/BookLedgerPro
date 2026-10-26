@@ -3,6 +3,16 @@
 Stand 2026-10-26 abends. Schritt A (BookLedgerPro als Android-App ohne Ordner) und A2 (eigene Signatur) sind auf `main`;
 Abschluss: `BRIEF_ABSCHLUSS_2026-10-26_ANDROID-SCHRITT-A.md`.
 
+## Startauftrag zum Einfügen (Kurzfassung, Copy-Paste)
+
+```
+BookLedgerPro (lausiklauskn-png/BookLedgerPro), Tresorordner Schritt B. Lies zuerst CLAUDE.md, dann BRIEF_SITZUNG_TRESORORDNER-SCHRITT-B.md, BRIEF_SITZUNG_ANDROID-TRESORORDNER.md (meine fünf Antworten gelten) und docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md (§ 1, 2, 7). Stand: Android-Hülle und Signatur sind auf main (Zertifikat 7a6217eb…), noch ohne Tresorordner.
+1. Gib mir zuerst den Termux-Block zum Löschen der offenen Freigabe-Kopie (ohne Erklärung, ich schicke die Ausgabe zurück).
+2. Stell mir die eine Frage: wo wird das gemeinsame Paket de.familyprojekt.tresor gepflegt (deine Empfehlung: Workflow PDF Pro)?
+3. Dann bau Schritt B (gemeinsamer Kopf mit Hauptschlüssel, ein Passwort, Ersatzschlüssel 5/3, verschlüsseltes Inhaltsverzeichnis je Fach), danach C, C2, D wie im Brief.
+Termux-Befehle immer als ein Block ohne Erklärung, GitHub-Schritte als kurze Liste mit Links (meine Seite ist übersetzt: „hauptsächlich“ = main). Nichts veröffentlichen ohne mein Wort, keine Schlüssel im Chat, nichts an meinen echten Tresoren ohne Kopie und Rückweg. Selbst mergen wenn CI grün. Am Ende: Abschluss, Forschungseinträge, Brief für die nächste Sitzung und die Kurzfassung als Copy-Paste-Block.
+```
+
 ## Zuerst lesen (in dieser Reihenfolge)
 
 1. `CLAUDE.md` (oben: Fahrplan, Android-Hülle)
