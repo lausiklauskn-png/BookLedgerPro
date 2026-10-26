@@ -18,7 +18,7 @@ Buchhaltungsprogramme.
 | A1 | **Strichsymbole** statt Emojis bei den Symbolen | Navigation, Knöpfe, Tabellenaktionen und Statusanzeigen bekommen Strichsymbole (heute: nur Text). **Die vorhandenen 3D-Bilder bleiben** (Klaus 2026-10-26: eigens generiert, passen zu App und Farbe): Sperrbildschirm, 3 Onboarding-Bilder, 7 Leerzustände. Sie sind Illustrationen, keine Symbole. |
 | A2 | **Knöpfe flach** halten, soweit am Handy bedienbar | Heute ca. 40–44 px sichtbar hoch (`.btn` padding .55rem), Eingabefelder ebenso. Ziel wie PBP: sichtbar ~28–32 px, unsichtbare Trefferfläche ≥ 44 px bei Touch. Formulare, Segment-Schalter, Tabellenaktionen mitziehen. |
 | A3 | **Vollbild**, Platz optimal nutzen | Heute ist alles auf `--maxw: 880px` begrenzt und mittig: am breiten Schirm bleibt links/rechts viel leer (siehe `wide-*.png`). Ziel: volle Breite, Seitenleiste links fest, Inhalt füllt den Rest; Tabellen nutzen die Breite. |
-| A4 | **Themenwahl**: Hell, Dunkel und die vier Themen aus Private Brain Pro (1.0.38) | Heute nur System/Hell/Dunkel in Teal. Übernehmen: **Klarblau** (`#2563eb` auf `#f6f8fc`), **Graphit** (`#475569`), **Petrol** (`#0f766e`, entspricht dem heutigen BLP-Teal), **Nachtblau** (dunkel, `#7ca7ff` auf `#111827`). Quelle: `Privat-Brain-Pro/native/design-tokens.css`, Namen DE/EN in `native/native-theme.js`. Offen: siehe D1. |
+| A4 | **Themenwahl: genau die vier Themen wie Private Brain Pro** (entschieden 2026-10-26) | **Klarblau** (hell, `#2563eb` auf `#f6f8fc`), **Graphit** (hell, `#475569`), **Petrol** (hell, `#0f766e`, entspricht dem heutigen BLP-Teal), **Nachtblau** (dunkel, `#7ca7ff` auf `#111827`). Ersetzt System/Hell/Dunkel. Startwert wie PBP: Gerät dunkel → Nachtblau, sonst Klarblau. Quelle: `Privat-Brain-Pro/native/design-tokens.css`, Namen DE/EN in `native/native-theme.js`. |
 
 ### Was es aus Private Brain Pro schon gibt (wiederverwendbar)
 - **Strichsymbol-Satz:** `Privat-Brain-Pro/docs/design/umbau-2026-10-24/design-kit/icons.svg`,
@@ -138,10 +138,7 @@ Regeln dazu:
 
 ## D. Offene Fragen an Klaus
 
-- D1 **Themen:** Sechs Einträge (Hell, Dunkel + Klarblau, Graphit, Petrol, Nachtblau)
-  oder genau die vier PBP-Themen, bei denen *Klarblau* = Hell und *Nachtblau* = Dunkel ist?
-  Petrol entspricht schon fast dem heutigen BLP-Hell. Vorschlag: **die vier PBP-Themen**
-  plus „Wie System" (hell → Klarblau, dunkel → Nachtblau) – dann gleich wie PBP.
+- ~~D1 Themen~~ **entschieden:** die vier PBP-Themen (siehe A4).
 - D2 Soll BLP den PBP-Symbolsatz **gemeinsam** nutzen (eine Quelle, kopiert wie bei
   Sage-Modulen) oder eine eigene Kopie, die BLP-Symbole ergänzt?
 - D3 Seitenleiste am breiten Schirm: dauerhaft mit Namen, oder einklappbar auf Symbole?
