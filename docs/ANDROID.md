@@ -44,6 +44,10 @@ node tools/native/test-native.mjs          # Probe ohne Android
 
 ## Eigene Signatur (Schritt A2) — einmalige Schritte für Klaus
 
+✅ **Erledigt am 2026-10-26:** Identität angelegt (PR #369), Zertifikat SHA-256
+`7a6217eb2c3a3c9ad49b9ac73e33a1e6560a4530181ff3afdb2f0d7aa8737f0b`, Lauf `check` grün. Die Schritte unten bleiben als
+Nachweis und für den Fall, dass die Freigabe je neu hinterlegt werden muss (nie neu `initialize`).
+
 Ohne Signatur gibt es nur Prüf-Bauten (debug). Für eine installierbare App mit Updates braucht BookLedgerPro **einen eigenen,
 dauerhaften Schlüssel** (nie den von Private Brain Pro oder Workflow PDF Pro). Er entsteht **in GitHub Actions** und liegt nur
 verschlüsselt im Repo; die Freigabe dazu kennt nur Klaus.
