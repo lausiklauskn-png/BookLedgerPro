@@ -133,6 +133,7 @@ console.log('— Grundzustand —');
 ok('Shell steht (Kopfleiste, Leiste, Inhalt)', await page.evaluate(() => !!document.querySelector('.app-header') && !!document.querySelector('.app-nav') && !!document.querySelector('#content h1')));
 ok('Symbole eingehängt (beide Sprites)', await page.evaluate(() => document.querySelectorAll('[data-symbole]').length === 2 && !!document.getElementById('pb-search') && !!document.getElementById('blp-journal')));
 ok('Startthema Blau/hell (kein Merkzettel, Gerät hell)', await page.evaluate(() => document.documentElement.getAttribute('data-farbe') === 'blau' && document.documentElement.getAttribute('data-theme') === 'light'));
+ok('Kopfleiste ohne Tresor-Kennung bei einem Mandanten (Klaus 2026-10-26)', await page.evaluate(() => !document.querySelector('.app-header .mandant')));
 ok('Vollbild: Inhalt nutzt die ganze Breite (keine 1200-px-Grenze)', await page.evaluate(() => { const b = document.querySelector('.app-body').getBoundingClientRect(); return Math.round(b.width) === document.documentElement.clientWidth; }));
 
 console.log('— Seitenleiste: Gruppen, Ein-/Ausklappen, Teilbild —');

@@ -31,6 +31,11 @@ Grundlage: `docs/design/SAMMLUNG-DESIGN-2026-10-26.md` (Klaus' Entscheidungen A1
 - `src/ui/icons.js` hängt beide Sprites einmal versteckt ein; jedes Symbol ist `<svg><use href="#id"/></svg>`.
   Symbol + sichtbarer Name gehören zusammen (eingeklappt steht der Name im `title`). **Die 3D-Bilder bleiben.**
 
+### Kopfleiste ohne Rätsel (Klaus 2026-10-26, Bild vom Tablet)
+- Die Pille mit der Tresor-Kennung („LCxGYb7e") ist weg: sie erklärte nichts. Nur bei **mehr als einem Mandanten** und
+  vorhandenem Namen steht dort „Mandant: Name" mit Symbol — dann sagt sie, welcher offen ist. Die Kennung steht
+  weiterhin auf der Übersicht in der GoBD-Karte („Aktive Identität"), weil sie Sicherungen zuordnet.
+
 ### Flache Knöpfe (A2)
 - Sichtbar ~30 px (`--control-h`), kein Schatten, Symbol + Name. Bei Touch (`pointer: coarse`) legt ein unsichtbares
   `::before` 7 px über und unter Knöpfe, Segmente und Menüpunkte → ≥ 44 px Trefferfläche, ohne Platz zu kosten.

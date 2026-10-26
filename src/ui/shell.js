@@ -187,9 +187,10 @@ function paint() {
 }
 
 function header(s) {
-  // Bevorzugt den Mandanten-Namen aus der Registry; fällt auf die DB-ID zurück, solange
-  // der asynchrone Nachlade-Schritt (refreshMandant) noch nicht zurück ist.
-  const label = _mandant.name || getMandantId();
+  // Mandanten-Pille (Klaus 2026-10-26: „LCxGYb7e — damit kann ich nichts anfangen"): nur, wenn es mehr als
+  // einen Mandanten gibt und ein lesbarer Name da ist — dann sagt sie, welcher offen ist. Die interne
+  // Tresor-Kennung erscheint hier nicht mehr; die DB-ID steht weiterhin auf der Übersicht (GoBD-Karte).
+  const label = (_mandant.count > 1 && _mandant.name) ? _mandant.name : null;
   return el('header', { class: 'app-header' }, [
     // Hamburger nur im Handyformat sichtbar (CSS) — klappt die Navigation als Schublade auf.
     el('button', {
@@ -210,9 +211,9 @@ function header(s) {
     installKopfKnopf(),
     el('div', { class: 'header-right' }, [
       flyingWidget(),
-      label ? el('span', { class: 'mandant', title: t('dashboard.mandant') }, [
-        el('span', { class: 'mandant-dot' }),
-        el('span', { class: 'mandant-id', text: label }),
+      label ? el('span', { class: 'mandant', title: t('mandant.label') }, [
+        icon('blp-mandant'),
+        el('span', { class: 'mandant-id', text: t('mandant.label') + ': ' + label }),
       ]) : null,
       // „Mandant wechseln" nur, wenn es mehr als einen Mandanten gibt (sonst wäre der
       // Wechsel ein reines Sperren auf denselben Tresor).

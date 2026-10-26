@@ -162,11 +162,12 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .thema-wahl .segmented { flex-wrap: wrap; }
 .mandant {
   display: inline-flex; align-items: center; gap: .4rem;
-  font-family: var(--mono); font-size: .78rem; color: var(--text-muted);
+  font-size: .8rem; color: var(--text-muted);
   background: var(--surface-2); border: 1px solid var(--border);
   padding: .2rem .5rem; border-radius: 999px; white-space: nowrap;
 }
-.mandant-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+.mandant .ic { width: 16px; height: 16px; }
+.mandant-id { white-space: normal; overflow-wrap: anywhere; }
 .mycel-chip {
   display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
   font-size: .78rem; color: var(--text-muted);
