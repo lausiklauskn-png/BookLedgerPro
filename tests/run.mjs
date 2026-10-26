@@ -140,6 +140,7 @@ import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/a
 import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, ANKER_TYP, maskierungsBericht } from '../src/ai/pseudonym.js';
 import { baueAnker } from '../src/ai/anker.js';
 import { erkennePII, piiAnker, kombiniereAnker, NER_TYP, EXTERN_SCOPE } from '../src/ai/ner.js';
+import { namenImText, musterAnker, MUSTER_GRUND } from '../src/ai/namensmuster.js';
 import { baueBriefkasten, briefkastenAnker, briefkastenBericht, tokenizeBriefkasten, EBENE } from '../src/ai/briefkasten.js';
 import {
   SCHLUESSEL_FORMAT, SCHLUESSEL_VERSION, typAusToken, istToken, tokenVorkommen,
@@ -2256,6 +2257,54 @@ await section('NER-Scoping: Fremd-PII trägt im Briefkasten-Modus den EXTERN-Sco
   const r = tokenize('Mail bekannt@firma.de', k);
   ok('Stammdaten-Scope gewinnt (FIRMA_1_EMAIL statt EXTERN_EMAIL)', r.map[0].typ === 'FIRMA_1_EMAIL');
 });
+
+// ─── Namen nach Muster (Klaus 2026-10-26: „bei der Anonymisierung noch Namen mit einfügen, die nicht klar definiert sind … auch nach Muster") ───
+await section('Namensmuster: Anrede, Kontext, Vor-+Nachname, Firma werden erkannt', () => {
+  const text = 'Rechnung an Thomas Berger, z. Hd. Petra Klein\nSehr geehrter Herr Dr. Max Mustermann,\nBestellung bei Muster Metall GmbH & Co. KG.\n'
+    + 'Ansprechpartner:\nJens Peters, Geschäftsführer: Dr. Eva Roth\nAnna Maria van den Berg\nFrau Schneider grüßt. Herrn Müller';
+  const tr = namenImText(text);
+  const w = (grund) => tr.filter((x) => x.grund === grund).map((x) => x.wert);
+  ok('Vor- + Nachname: „Thomas Berger"', w(MUSTER_GRUND.ZWEI_WOERTER).includes('Thomas Berger'));
+  ok('z. Hd.: „Petra Klein" — und NICHT die nächste Zeile mit', w(MUSTER_GRUND.KONTEXT).includes('Petra Klein') && !tr.some((x) => x.wert.includes('\n')));
+  ok('Anrede mit Titel: „Max Mustermann" ohne „Herr Dr."', w(MUSTER_GRUND.ANREDE).includes('Max Mustermann') && !tr.some((x) => /^Herr/.test(x.wert)));
+  ok('Firma mit Rechtsform als FIRMA: „Muster Metall GmbH & Co. KG"', tr.some((x) => x.grund === MUSTER_GRUND.FIRMA && x.typ === ANKER_TYP.FIRMA && x.wert === 'Muster Metall GmbH & Co. KG'));
+  ok('Ansprechpartner über Zeilenumbruch, Geschäftsführer mit Dr.: „Jens Peters", „Eva Roth"', w(MUSTER_GRUND.KONTEXT).includes('Jens Peters') && w(MUSTER_GRUND.KONTEXT).includes('Eva Roth'));
+  ok('Partikel-Name in einem Stück: „Anna Maria van den Berg"', w(MUSTER_GRUND.ZWEI_WOERTER).includes('Anna Maria van den Berg'));
+  ok('Anrede ohne Vornamen: „Schneider", „Müller"', w(MUSTER_GRUND.ANREDE).includes('Schneider') && w(MUSTER_GRUND.ANREDE).includes('Müller'));
+  ok('alle Treffer sind PERSON oder FIRMA und überlappungsfrei', tr.every((x) => [ANKER_TYP.PERSON, ANKER_TYP.FIRMA].includes(x.typ)) && tr.every((x, i) => i === 0 || x.start >= tr[i - 1].end));
+});
+
+await section('Namensmuster: was KEIN Name ist (Klaus\' Fälle) bleibt stehen', () => {
+  const harmlos = 'Berliner Sparkasse, IBAN …\n12 Flaschen Müller-Thurgau\nGoethestraße 12, 10115 Berlin\nZahlbar Innerhalb 14 Tagen. Rechnung Nr 2026-17. Lieferung Frei Haus.\n'
+    + 'Vielen Dank für Ihre Bestellung. Mit freundlichen Grüßen\nSehr geehrte Damen und Herren, RECHNUNG NUMMER 17 Gesamt Netto Brutto Summe';
+  const tr = namenImText(harmlos, { schutz: ['Müller-Thurgau'] });
+  ok('„Berliner Sparkasse" (Bank) nicht', !tr.some((x) => /Sparkasse/.test(x.wert)));
+  ok('„Müller-Thurgau" (Nie verdecken) nicht — auch nicht als Teil von „Flaschen Müller-Thurgau"', !tr.some((x) => /Thurgau/.test(x.wert)));
+  ok('„Goethestraße" (Adresse) nicht', !tr.some((x) => /Goethe/.test(x.wert)));
+  ok('Satzanfänge/Rechnungswörter („Zahlbar Innerhalb", „Rechnung Nr", „Lieferung Frei", „Frei Haus") nicht', !tr.some((x) => /Zahlbar|Rechnung|Lieferung|Frei|Haus/.test(x.wert)));
+  ok('Gruß- und Dankformeln nicht', !tr.some((x) => /Vielen|Dank|Mit|Grüßen|Sehr|Damen|Herren/.test(x.wert)));
+  ok('GROSSBUCHSTABEN-Überschriften nicht', !tr.some((x) => /RECHNUNG|NUMMER/.test(x.wert)));
+  ok('insgesamt kein Treffer in diesem harmlosen Text', tr.length === 0, JSON.stringify(tr.map((x) => x.wert)));
+  // Ehrlich benannt: „Hans Riegel" (Haribo) sieht aus wie ein Name und wird verdeckt — sichtbar, rücknehmbar.
+  ok('„Hans Riegel Bonn" wird (bewusst) als Person verdeckt — Rücknahme per Tipp', namenImText('Hans Riegel Bonn liefert').some((x) => x.wert === 'Hans Riegel Bonn'));
+});
+
+await section('Namensmuster: musterAnker → tokenize, Vorrang, Scope, Rücknahme', () => {
+  const beleg = 'Rechnung an Thomas Berger und Thomas Berger, Lieferant Muster GmbH, Berater Petra Klein.';
+  const anker = musterAnker(beleg, { bekannt: ['Muster GmbH'] });
+  ok('entdoppelt und ohne schon bekannte Werte', anker.filter((a) => a.wert === 'Thomas Berger').length === 1 && !anker.some((a) => a.wert === 'Muster GmbH'));
+  const { text: pseudo, map } = tokenize(beleg, [{ wert: 'Muster GmbH', typ: ANKER_TYP.FIRMA }, ...anker], { wortgrenze: true });
+  ok('Thomas Berger und Petra Klein gehen als [[PERSON_n]] hinaus', !/Thomas Berger|Petra Klein/.test(pseudo) && /\[\[PERSON_1\]\].*\[\[PERSON_1\]\].*\[\[PERSON_2\]\]/.test(pseudo), pseudo);
+  ok('die Firma bleibt beim exakten Anker [[FIRMA_1]]', /\[\[FIRMA_1\]\]/.test(pseudo) && map.some((e) => e.wert === 'Muster GmbH' && e.typ === ANKER_TYP.FIRMA));
+  ok('Zahlen und Satzbau bleiben lesbar', /^Rechnung an .* und .*, Lieferant .*, Berater .*\.$/.test(pseudo));
+  const scoped = musterAnker(beleg, { scope: EXTERN_SCOPE });
+  ok('Briefkasten-Modus: Typ EXTERN_PERSON', scoped.every((a) => /^EXTERN_(PERSON|FIRMA)$/.test(a.typ)));
+  // Rücknahme: „Thomas Berger" unter Nie verdecken → kein Anker mehr.
+  const zurueck = musterAnker(beleg, { schutz: ['Thomas Berger'] });
+  ok('„Nie verdecken" nimmt genau diesen Treffer heraus', !zurueck.some((a) => a.wert === 'Thomas Berger') && zurueck.some((a) => a.wert === 'Petra Klein'));
+  ok('ohne Text: leer, ohne Fehler', musterAnker('').length === 0 && namenImText(null).length === 0);
+});
+
 
 await section('Briefkasten: Hierarchie Mandant ⊃ Firma ⊃ Person (baueBriefkasten)', () => {
   const bk = baueBriefkasten({

@@ -5,6 +5,18 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (nachts) — C1: Namen nach Muster verdecken
+
+- **Getan:** `src/ai/namensmuster.js` (Anrede, Kontext, Vor-+Nachname, Firma mit Rechtsform; Stoppliste; „Nie verdecken"
+  schirmt ab), in `ladeAnker` als Anker (Einstellung `namensmuster`, ab Werk an, Scope im Briefkasten-Modus), gelbe Chips mit
+  Rücknahme unter dem Belegtext, Schalter in den Einstellungen, i18n DE/EN, `sw.js` v259.
+- **Beweis:** `node tests/run.mjs` **2398/0** (+23: Erkennung, Klaus' Nicht-Namen „Berliner Sparkasse", „Müller-Thurgau",
+  „Goethestraße", Satzanfänge, Großschrift; tokenize/Vorrang/Scope/Rücknahme) · `smoke_handnamen` **21 grün** (echter Browser:
+  Mistral gestellt, Thomas Berger verdeckt, Sparkasse wörtlich, Chip, Rücknahme, danach wörtlich) · `smoke_design` grün.
+- **Nicht geprüft:** Tablet; echte KI; Namen in GROSSBUCHSTABEN und Nachnamen ohne Anrede werden nicht erkannt (benannt).
+  „Hans Riegel Bonn" wird bewusst verdeckt (Rücknahme per Tipp).
+- **Nächstes:** Privat-Modus: SBKIM-Suche/Mycel sichtbar; B1 Mikrofon mit Sprachmarke je Feld + Wort-Speicher; A1/A2.
+
 ## 2026-10-26 (spät) — „Journal“ → „Buchungen“ (Klaus: „Das Wort Buchungen ist akzeptiert“)
 
 - **Getan:** sichtbares Wort überall umgestellt: Navigation und Seitentitel „Buchungen“ (EN „Entries“), Hinweise
