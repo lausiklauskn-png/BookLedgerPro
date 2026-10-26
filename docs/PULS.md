@@ -6,6 +6,9 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 ## ▶ Übergabe (2026-10-26, Sitzungsende): Android-Tresorordner vorbereitet
+- **Klaus hat die fünf Fragen beantwortet (2026-10-26, abends):** ein gemeinsamer Kopf und ein Passwort · Daten bleiben in der App,
+  Ordner bekommt die automatische Sicherung, **und BookLedgerPro soll den entsperrten Tresorordner öffnen und durchsuchen können** ·
+  Paket `de.familyprojekt.bookledgerpro` per `init` · Reihenfolge a–d · Relais ganz zum Schluss. Steht im Brief; die Sitzung baut los.
 - **Nächste Sitzung:** `BRIEF_SITZUNG_ANDROID-TRESORORDNER.md` (fünf Fragen an Klaus zuerst, dann Schritte A–D),
   Forschung `docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`, Abschluss `BRIEF_ABSCHLUSS_2026-10-26_BAU-SITZUNG.md`.
 - **Fund:** `VaultCrypto.java` (PBV1) ist in Private Brain Pro und Workflow PDF Pro schon gleich (bis auf `package`); die

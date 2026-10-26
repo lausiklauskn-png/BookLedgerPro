@@ -26,7 +26,20 @@ Die Repos `Privat-Brain-Pro` und `Workflow-PDF-Pro` per `add_repo` dazunehmen, w
   **Ordnerschicht** darüber gibt es zweimal und verschieden; die bessere Vorlage (Schlüssel-Plätze, Ersatzschlüssel 5/3,
   allgemeiner Satz-Index, Windows-Zwilling in Rust) ist die von **Workflow PDF Pro**. Details in der Forschung.
 
-## Erst fragen, dann bauen — fünf Fragen an Klaus
+## ✅ Klaus' Antworten (2026-10-26, abends) — gelten, nicht neu fragen
+
+1. **Ein gemeinsamer Kopf, ein Passwort, ein Ersatzschlüssel** für alle Pro-Apps: *„eins gemeinsames Passwort, deine Empfehlung
+   umsetzen."* Umzug seiner echten SD-Karte nur mit Probe an einer Kopie und Rückweg.
+2. **Buchhaltungsdaten bleiben in der App** (Weg A); der Tresorordner bekommt die **automatische verschlüsselte Sicherung**.
+   **Neu dazu:** *„wenn der Schlüssel aufgeschlossen ist, dann soll auch in den Ordnern in dem Tresor gesucht werden können.
+   Also der Ordner soll im BookLedgerPro auch geöffnet werden können."* → BookLedgerPro zeigt den entsperrten Tresorordner
+   (alle Fächer, nur lesend bei fremden) und durchsucht ihn (siehe Schritt C2).
+3. **Paket und Signatur:** `de.familyprojekt.bookledgerpro`, Produktionskanal, neue Identität einmal per `init` — *„3 ist auch okay."*
+4. **Reihenfolge wie vorgeschlagen:** (a) BookLedgerPro als installierbare App ohne Ordner → (b) gemeinsame Ordnerschicht →
+   (c) Private Brain Pro schreibt ins Eingangsfach → (d) Workflow PDF Pro zieht ein.
+5. **Relais (Weg 2) ganz zum Schluss:** *„den machen wir zum Schluss. Das ist der letzte Akt."* — nach Android **und** Windows.
+
+## Die fünf Fragen (beantwortet, oben) — Wortlaut zur Nachvollziehbarkeit
 
 Jede mit Empfehlung; die Antworten kommen als kurze Wahl, nicht als Technik.
 
@@ -42,7 +55,7 @@ Jede mit Empfehlung; die Antworten kommen als kurze Wahl, nicht als Technik.
    Private Brain Pro zuerst; (a) liefert früher etwas, das Klaus anfassen kann, und braucht keine Entscheidung zu 1.
 5. **Weg 2 (Relais)** davor, danach oder gar nicht? (aus dem Plan, weiter offen)
 
-## Bauschritte, wenn die Antworten da sind
+## Bauschritte (Antworten liegen vor)
 
 **Schritt A — die App selbst (ohne Ordner):**
 - `capacitor.config.json` (`appId` aus Frage 3, `webDir: "www"`, `androidScheme: "https"`, `resolveServiceWorkerRequests: true`,
@@ -63,6 +76,16 @@ falsches Passwort ändert nichts, Ersatzschlüssel öffnet, fremdes Fach wird ge
 **Schritt C — BookLedgerPro im Ordner:** Ordnerwahl, Sicherung automatisch ins Fach (Vorgabe aus `domain/backupStrategie.js`),
 Beleg-Originale, Eingangsfach lesen mit Marke „übernommen".
 
+**Schritt C2 — Tresorordner in BookLedgerPro öffnen und durchsuchen (Klaus' Zusatz zu Frage 2):** solange entsperrt, eine
+Ansicht „Tresorordner" mit allen Fächern (eigenes Fach schreibend, fremde nur lesend, nie löschen) und eine Suche darüber.
+⚠ Vorher klären, was dafür fehlt: Private Brain Pro legt Dateien unter **verschlüsselten Namen** ab (HMAC, `nameKey`) und führt
+seine eigenen Verzeichnisse (Anhänge-/Original-Index, Katalog); Workflow PDF Pro hat einen eigenen Satz-Index. Ohne gemeinsames
+Format kann BookLedgerPro fremde Fächer nicht sinnvoll auflisten. Vorschlag für Schritt B: **jedes Fach führt ein verschlüsseltes
+Inhaltsverzeichnis** im selben Format (Name, Art, Datum, Größe, kurzer Textauszug, Verweis auf die Datei), das jede App für ihr Fach
+schreibt; BookLedgerPro liest es, sucht mit Wort- und Bedeutungssuche (`domain/belegsuche.js`, Vektoren nur auf dem Gerät) und
+öffnet Treffer lesend bzw. übernimmt sie als Beleg (Kopie, Marke „übernommen"). Das Inhaltsverzeichnis gehört in die gemeinsame
+Schicht, nicht in eine App.
+
 **Schritt D — Private Brain Pro und Workflow PDF Pro** ziehen in den Kopf ein (eigene PRs in deren Repos, deren Regeln gelten —
 Workflow PDF Pro: Gleichstand aller Fassungen, Kern nie von Hand).
 
@@ -75,6 +98,8 @@ Workflow PDF Pro: Gleichstand aller Fassungen, Kern nie von Hand).
 - Ehrlich trennen: Emulator ist nicht Tablet. Am Ende jedes Schritts `docs/PULS.md`, `docs/SESSIONS.md` und `CLAUDE.md` nachziehen.
 
 ## Danach
+
+Zum Schluss, nach Android und Windows: **Weg 2 Relais** (Klaus: „der letzte Akt").
 
 Windows-Sitzung (dieselben drei Apps; Achtung: Private Brain Pro nutzt eine Java-Engine mit DPAPI, Workflow PDF Pro einen Rust-Kern —
 auch dort zwei Fassungen derselben Schicht). Die Download-Seite für die Pro-Apps macht Klaus selbst.
