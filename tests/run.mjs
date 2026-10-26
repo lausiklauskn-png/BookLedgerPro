@@ -5071,10 +5071,11 @@ await section('Modus: NAV-Ansichten-Gating', () => {
   ok('Kleinunternehmer: ohne Mitarbeiter/Lohn', !klein.includes('employees') && !klein.includes('lohn'));
   ok('Kleinunternehmer: Belege, Journal, Aufträge, Kunden, Auswertung bleiben', ['documents', 'journal', 'orders', 'customers', 'reports', 'angebote'].every((k) => klein.includes(k)));
   const privat = sichtbareAnsichten({ nutzungsmodus: 'privat' }, NAV_KEYS);
-  ok('Privat: alles Unternehmerische weg (Journal, Konten, Kassenbuch, Anlagen, Kreditoren, Verkauf, Team, Auswertung, Netz)',
-    ['journal', 'kassenbuch', 'accounts', 'anlagen', 'payables', 'orders', 'angebote', 'shopbuchung', 'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte', 'network', 'sbkimsuche'].every((k) => !privat.includes(k)));
-  ok('Privat behält Übersicht, Belege, Geheim-Fach, Recht, Anleitung, Selbsttest, Über, Einstellungen',
-    JSON.stringify(privat) === JSON.stringify(['dashboard', 'documents', 'safebox', 'legal', 'anleitung', 'selbsttest', 'about', 'settings']));
+  ok('Privat: alles Unternehmerische weg (Journal, Konten, Kassenbuch, Anlagen, Kreditoren, Verkauf, Team, Auswertung)',
+    ['journal', 'kassenbuch', 'accounts', 'anlagen', 'payables', 'orders', 'angebote', 'shopbuchung', 'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte'].every((k) => !privat.includes(k)));
+  ok('Privat behält Übersicht, Belege, Netz (Mycel/Siegel), SBKIM-Suche, Geheim-Fach, Recht, Anleitung, Selbsttest, Über, Einstellungen (Klaus 2026-10-26)',
+    JSON.stringify(privat) === JSON.stringify(['dashboard', 'documents', 'network', 'sbkimsuche', 'safebox', 'legal', 'anleitung', 'selbsttest', 'about', 'settings']));
+  ok('Netz und SBKIM-Suche sind in KEINEM Modus ausgeblendet', ['privat', 'kleinunternehmer', 'selbststaendig', 'berater', 'verein'].every((m) => zeigeAnsicht({ nutzungsmodus: m }, 'network') && zeigeAnsicht({ nutzungsmodus: m }, 'sbkimsuche')));
   const verein = sichtbareAnsichten({ nutzungsmodus: 'verein' }, NAV_KEYS);
   ok('Verein (Altwert) unverändert: mit Berichten/Kunden/Netz, ohne Anlagen/Kreditoren/Aufträge/Lohn',
     verein.includes('berichte') && verein.includes('customers') && verein.includes('network') &&
