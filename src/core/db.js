@@ -134,7 +134,8 @@ export async function fileAllMeta() {
   const all = await wrap((await tx(STORES.FILES, 'readonly')).getAll());
   // pruefDaten/kiDaten (verschlüsselter Prüfbericht und Vermerk) und originalDaten (das
   // verschlüsselte Originalfoto eines Scans) gehören wie data nicht in die Liste.
-  return all.map(({ data, pruefDaten, kiDaten, originalDaten, ...meta }) => meta);
+  // textDaten/vektorDaten (verschlüsselter Belegtext und seine Bedeutungs-Vektoren, Klaus 2026-10-26) ebenso.
+  return all.map(({ data, pruefDaten, kiDaten, originalDaten, textDaten, vektorDaten, ...meta }) => meta);
 }
 
 /** Exportiert den kompletten Datenbestand (für Backup). */

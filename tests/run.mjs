@@ -141,6 +141,7 @@ import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, A
 import { baueAnker } from '../src/ai/anker.js';
 import { erkennePII, piiAnker, kombiniereAnker, NER_TYP, EXTERN_SCOPE } from '../src/ai/ner.js';
 import { namenImText, musterAnker, MUSTER_GRUND } from '../src/ai/namensmuster.js';
+import { normalisieren, suchwoerter, wortTreffer, ausschnitt, zerlegen, cosinus, bedeutungsRang, besteNaehe, kombiniere, brauchtVektoren, eintragText, ZERLEGUNG, STUECK_MAX, NAEHE_MIN } from '../src/domain/belegsuche.js';
 import { SPRACHEN as MIKRO_SPRACHEN, standardSprache, sprachCode, sprachMarke, feldSchluessel, textEinfuegen, woerterAus, wortSpeicherAufnehmen, wortVorschlaege, wortSpeicherZahl, wortVorCursor, WORT_MAX } from '../src/ui/mikro.js';
 import { baueBriefkasten, briefkastenAnker, briefkastenBericht, tokenizeBriefkasten, EBENE } from '../src/ai/briefkasten.js';
 import {
@@ -2352,6 +2353,51 @@ await section('Mikrofon: Wort-Speicher (aufnehmen, vorschlagen, Grenze, löschen
   ok('Vorgaben: mikroSprachen, mikroStandardSprache, wortSpeicherAn, wortSpeicher', ['mikroSprachen', 'mikroStandardSprache', 'wortSpeicherAn', 'wortSpeicher'].every((k) => new RegExp('^\\s*' + k + ':', 'm').test(st)));
   ok('SBKIM-Suche behält ihr eigenes Mikrofon (data-kein-mikro)', /data-kein-mikro/.test(_readSpore(new URL('../src/ui/views/sbkimsuche.js', import.meta.url), 'utf8')));
 });
+
+// ─── 🔎 Suche über Belege: Wörter und Bedeutung (Klaus 2026-10-26, A1/A2) ───
+await section('Belegsuche: Normalisieren, Suchwörter, Wortsuche, Fundstelle', () => {
+  ok('Umlaute gefaltet, Satzzeichen weg, Datum JJJJMMTT', normalisieren('Rechnung vom 3.9.2026 über Büro-Miete, KD-4711') === 'rechnung vom 20260903 uber buro miete kd 4711');
+  ok('ISO-Datum ebenso: „2026-09-03" = „3.9.2026"', normalisieren('2026-09-03') === normalisieren('03.09.2026'));
+  ok('Suchwörter ≥ 2 Zeichen, entdoppelt', JSON.stringify(suchwoerter('Büro Miete büro a')) === JSON.stringify(['buro', 'miete']));
+  const text = 'Rechnung Nr. 17 vom 03.09.2026\nBüromiete Oktober, 890,00 EUR\nMuster GmbH, Hamburg';
+  ok('UND-Suche: beide Wörter müssen stehen', !!wortTreffer(text, suchwoerter('miete hamburg')) && !wortTreffer(text, suchwoerter('miete berlin')));
+  ok('Teilwort: „büro" findet „Büromiete"; Datum in anderer Schreibweise', !!wortTreffer(text, suchwoerter('büro')) && !!wortTreffer(text, suchwoerter('3.9.2026')));
+  ok('leere Suche: kein Treffer', wortTreffer(text, []) === null && wortTreffer(text, suchwoerter('')) === null);
+  const a = ausschnitt(text, suchwoerter('hamburg'), 40);
+  ok('Fundstelle um das erste Wort, mit …', a.includes('Hamburg') && a.length <= 42 && a.startsWith('…'), a);
+  ok('ohne Fund: Anfang des Texts', ausschnitt(text, ['nix'], 20).startsWith('Rechnung Nr.'));
+});
+
+await section('Belegsuche: Zerlegen, Nähe, Rangfolge, Kombination', () => {
+  const kurz = 'Satz eins ist kurz. Satz zwei ist auch kurz.';
+  ok('kurzer Text = ein Abschnitt', zerlegen(kurz).length === 1 && zerlegen(kurz)[0] === kurz);
+  const lang = ('Ein Satz mit etwa vierzig Zeichen hier. ').repeat(12);
+  const st = zerlegen(lang);
+  ok('langer Text: Abschnitte an Satzenden, keiner über STUECK_MAX, alle ≥ 20', st.length >= 3 && st.every((s) => s.length <= STUECK_MAX && s.length >= 20) && st.every((s) => /\.$/.test(s)));
+  ok('Riesensatz ohne Punkt wird hart geteilt', zerlegen('x'.repeat(700)).every((s) => s.length <= STUECK_MAX));
+  ok('leer → []', zerlegen('').length === 0 && zerlegen(null).length === 0);
+  ok('cosinus = Skalarprodukt; ungleiche Länge → 0', Math.abs(cosinus([1, 0], [1, 0]) - 1) < 1e-9 && cosinus([1, 0], [0, 1]) === 0 && cosinus([1], [1, 2]) === 0);
+  const q = [1, 0, 0];
+  ok('besteNaehe nimmt den nächsten Abschnitt', JSON.stringify(besteNaehe(q, [{ text: 'a', vec: [0, 1, 0] }, { text: 'b', vec: [0.9, 0.1, 0] }])) === JSON.stringify({ naehe: 0.9, stueck: 'b' }) && besteNaehe(q, []) === null);
+  const kand = [{ id: 'a', naehe: 0.91 }, { id: 'b', naehe: 0.88 }, { id: 'c', naehe: 0.86 }, { id: 'd', naehe: 0.70 }];
+  const r = bedeutungsRang(kand);
+  ok('relatives Fenster: ≤ 0,04 hinter dem besten, nie unter 0,80', JSON.stringify(r.treffer.map((x) => x.id)) === JSON.stringify(['a', 'b']) && r.schwach === false);
+  const s = bedeutungsRang([{ id: 'x', naehe: 0.5 }, { id: 'y', naehe: 0.4 }, { id: 'z', naehe: 0.3 }, { id: 'w', naehe: 0.2 }]);
+  ok('nichts über NAEHE_MIN → die 3 nächsten als „schwach"', s.schwach === true && s.treffer.length === 3 && s.treffer[0].id === 'x' && NAEHE_MIN === 0.8);
+  ok('leer → leer', bedeutungsRang([]).treffer.length === 0);
+  const k = kombiniere([{ id: '1', name: 'Wort' }], [{ id: '1', naehe: 0.9 }, { id: '2', naehe: 0.85 }]);
+  ok('Kombination: Wort zuerst, Bedeutung nur neue Kennungen', k.length === 2 && k[0].art === 'wort' && k[1].id === '2' && k[1].art === 'bedeutung');
+  ok('brauchtVektoren: Text ohne Vektoren, oder alte Zerlegung', brauchtVektoren({ textZeichen: 10 }) && brauchtVektoren({ textZeichen: 10, vektorAnzahl: 2, vektorZerlegung: 'alt' }) && !brauchtVektoren({ textZeichen: 10, vektorAnzahl: 2, vektorZerlegung: ZERLEGUNG }) && !brauchtVektoren({ textZeichen: 0 }));
+  ok('A2: Text einer Buchung/Kunde/Auftrag für die Wortsuche', eintragText('buchung', { datum: '2026-10-01', beschreibung: 'Miete Oktober', zeilen: [{ konto: '4210' }] }).includes('Miete Oktober') && eintragText('kunde', { name: 'Muster GmbH', email: 'a@b.de' }).includes('a@b.de') && eintragText('auftrag', { nr: 'A-1', titel: 'Banner', positionen: [{ titel: 'Druck' }] }).includes('Druck') && eintragText('x', {}) === '');
+  // Verdrahtung
+  const doc = _readSpore(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
+  ok('Belegansicht: Suchkarte, Text wird am Beleg gemerkt (Textebene UND OCR), Bedeutung opt-in', /belegSuche\(belege\)/.test(doc) && (doc.match(/await textMerken\(b\.id, /g) || []).length === 2 && /bedeutungssuche === 'an'/.test(doc) && /__blpEmbedderStub/.test(doc));
+  const dom = _readSpore(new URL('../src/domain/documents.js', import.meta.url), 'utf8');
+  ok('Store: Text und Vektoren verschlüsselt (encryptBytesWithKey), nur Zählwerte offen', /textDaten = await encryptBytesWithKey/.test(dom) && /vektorDaten = await encryptBytesWithKey/.test(dom) && /rec\.textZeichen = s\.length/.test(dom));
+  ok('db.js: textDaten/vektorDaten nicht in der Liste', /textDaten, vektorDaten, \.\.\.meta/.test(_readSpore(new URL('../src/core/db.js', import.meta.url), 'utf8')));
+  ok('sw.js kennt belegsuche.js', /\.\/src\/domain\/belegsuche\.js/.test(_readSpore(new URL('../sw.js', import.meta.url), 'utf8')));
+});
+
 
 
 
@@ -6630,7 +6676,7 @@ await section('Belege: Foto → Scan-PDF und Platz vor dem Import (Klaus 2026-10
   // Speicher: das Originalfoto gehört nicht in die Liste (wie data).
   const { readFileSync } = await import('node:fs');
   const db = readFileSync(new URL('../src/core/db.js', import.meta.url), 'utf8');
-  ok('fileAllMeta blendet originalDaten aus', /\(\{ data, pruefDaten, kiDaten, originalDaten, \.\.\.meta \}\) => meta/.test(db));
+  ok('fileAllMeta blendet originalDaten aus', /\(\{ data, pruefDaten, kiDaten, originalDaten, textDaten, vektorDaten, \.\.\.meta \}\) => meta/.test(db));
   const bp = readFileSync(new URL('../src/domain/belegPruefung.js', import.meta.url), 'utf8');
   ok('die Prüfung nimmt bei einem Scan das Originalfoto', /ausFoto \? rec\.originalDaten : rec\.data/.test(bp));
 });

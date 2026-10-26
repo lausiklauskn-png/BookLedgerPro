@@ -51,6 +51,55 @@ export async function saveBeleg(file, opt = {}) {
   return meta;
 }
 
+// ---- Erkannter Text und Bedeutungs-Vektoren am Beleg (Klaus 2026-10-26, Plan A1) -------------------------
+// Der Text aus Textebene/OCR wird VERSCHLÜSSELT am Beleg gespeichert (textDaten, wie originalDaten); unverschlüsselt
+// bleiben nur Zählwerte (textZeichen, textStand), damit die Liste weiß, was durchsuchbar ist. Die Vektoren der
+// Abschnitte (e5-small, 384 Zahlen) liegen ebenso verschlüsselt (vektorDaten) mit Zerlegungs-Kennung und Anzahl.
+const enc = new TextEncoder(), dec = new TextDecoder();
+
+/** Speichert den erkannten Text verschlüsselt am Beleg; leerer Text löscht ihn. @returns Metadaten */
+export async function setBelegText(id, text) {
+  const rec = await fileGet(id);
+  if (!rec) throw new Error('Beleg nicht gefunden');
+  const s = String(text == null ? '' : text).trim();
+  if (s) {
+    rec.textDaten = await encryptBytesWithKey(key(), enc.encode(s));
+    rec.textZeichen = s.length;
+    rec.textStand = new Date().toISOString();
+  } else { delete rec.textDaten; rec.textZeichen = 0; delete rec.textStand; }
+  // Neuer Text → alte Vektoren gelten nicht mehr.
+  delete rec.vektorDaten; delete rec.vektorAnzahl; delete rec.vektorZerlegung;
+  await filePut(rec);
+  const { data: _d, textDaten: _t, vektorDaten: _v, originalDaten: _o, pruefDaten: _p, kiDaten: _k, ...meta } = rec;
+  return meta;
+}
+
+/** Liest den erkannten Text (entschlüsselt) oder ''. */
+export async function getBelegText(id) {
+  const rec = await fileGet(id);
+  if (!rec || !rec.textDaten) return '';
+  return dec.decode(await decryptBytesWithKey(key(), rec.textDaten));
+}
+
+/** Speichert die Abschnitts-Vektoren verschlüsselt. stuecke = [{text, vec:number[]}], zerlegung = Kennung der Zerlegung. */
+export async function setBelegVektoren(id, stuecke, zerlegung) {
+  const rec = await fileGet(id);
+  if (!rec) throw new Error('Beleg nicht gefunden');
+  const liste = (stuecke || []).map((s) => ({ text: String(s.text || ''), vec: Array.from(s.vec || []).map((x) => Math.round(x * 1e5) / 1e5) }));
+  rec.vektorDaten = await encryptBytesWithKey(key(), enc.encode(JSON.stringify(liste)));
+  rec.vektorAnzahl = liste.length;
+  rec.vektorZerlegung = String(zerlegung || '');
+  await filePut(rec);
+  return { id, vektorAnzahl: liste.length, vektorZerlegung: rec.vektorZerlegung };
+}
+
+/** Liest die Abschnitts-Vektoren (entschlüsselt) oder []. */
+export async function getBelegVektoren(id) {
+  const rec = await fileGet(id);
+  if (!rec || !rec.vektorDaten) return [];
+  try { return JSON.parse(dec.decode(await decryptBytesWithKey(key(), rec.vektorDaten))); } catch { return []; }
+}
+
 /** Listet Beleg-Metadaten (ohne die verschlüsselten Inhalte). */
 export async function listBelege() {
   const metas = await fileAllMeta();
