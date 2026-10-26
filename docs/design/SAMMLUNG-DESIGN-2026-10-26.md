@@ -31,6 +31,12 @@ Buchhaltungsprogramme.
 - „Wie Gerät" folgt der Hell/Dunkel-Einstellung des Geräts, die Farbe bleibt.
 - Abweichung von PBP: Dort ist Nachtblau ein eigenes viertes Thema. Hier wird es die dunkle Seite von Blau.
   Für Klaus sieht es gleich aus; nur die Bedienung ist zweigeteilt.
+- **Nachtpetrol-Knöpfe (Klaus 2026-10-26):** grüne BLP-Knöpfe behalten, **nicht** die blauen aus PBP-Nachtblau;
+  **weiße Schrift** im Hauptknopf für besseren Kontrast.
+  Gemessen (WCAG-Kontrast): Weiß auf dem heutigen hellen Dunkel-Grün `#2dd4bf` = **1,9 : 1** (zu schwach, schlechter
+  als heute mit dunkler Schrift 8,9 : 1). Weiß auf dem BLP-Grün `#0f766e` (wie im hellen Petrol) = **5,5 : 1** ✓,
+  Knopf gegen dunklen Hintergrund 3,4 : 1 ✓. → Vorschlag: Hauptknopf in Nachtpetrol `#0f766e` mit weißer Schrift,
+  Hover `#0b5a54` (8,1 : 1). Das helle `#2dd4bf` bleibt für Akzente (aktiver Menüpunkt, Links, Fokusrahmen). Klaus bestätigt noch (D9).
 - Startwert: Petrol + wie Gerät (= heutiges Aussehen bleibt beim Update erhalten).
 
 ### Was es aus Private Brain Pro schon gibt (wiederverwendbar)
@@ -153,6 +159,7 @@ Regeln dazu:
 
 - ~~D1 Themen~~ **entschieden:** PBP-Farben + heutiges BLP-Dunkel, Hell/Dunkel gilt für jede Farbe (siehe A4).
 - D8 Passt die Zuordnung Farbe × Hell/Dunkel (Tabelle A4)? Graphit-Dunkel („Nachtgraphit") muss neu entstehen. Startwert Petrol + wie Gerät? (Name „Nachtpetrol" ist entschieden.)
+- D9 Nachtpetrol-Hauptknopf: dunkleres BLP-Grün `#0f766e` + weiße Schrift (5,5 : 1) statt heutigem hellem Grün? (Weiß auf dem hellen Grün wäre kaum lesbar.)
 - D2 Soll BLP den PBP-Symbolsatz **gemeinsam** nutzen (eine Quelle, kopiert wie bei
   Sage-Modulen) oder eine eigene Kopie, die BLP-Symbole ergänzt?
 - D3 Seitenleiste am breiten Schirm: dauerhaft mit Namen, oder einklappbar auf Symbole?
