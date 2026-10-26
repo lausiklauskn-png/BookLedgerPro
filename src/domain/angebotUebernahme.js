@@ -105,7 +105,10 @@ export function angebotUebernahmeEntwurf(angebot = {}, { settings, seq, jahr, da
   const { zeilen, summen } = rechnungZeilen({ positionen: extern.positionen });
 
   const angebotsnummer = angebot.nummer || '';
-  const ref = angebotsnummer ? ` (aus Angebot ${angebotsnummer})` : '';
+  const wfNr = angebot.verweise && angebot.verweise.wfAuftragNr ? String(angebot.verweise.wfAuftragNr) : '';
+  const ref = angebotsnummer
+    ? ` (aus Angebot ${angebotsnummer}${wfNr ? ` · WorkFloh-Auftrag ${wfNr}` : ''})`
+    : (wfNr ? ` (WorkFloh-Auftrag ${wfNr})` : '');
   const titelTeil = extern.titel ? `: ${extern.titel}` : '';
   // Klartext-Kennzeichnung: „Vorlage … vorläufig" im extern-Modus (Katalog §7a), sonst „Rechnung".
   const beschreibung = vorlaeufig

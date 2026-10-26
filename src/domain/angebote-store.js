@@ -57,8 +57,17 @@ function baueAngebotRecord(a = {}) {
     datum: a.datum || '',
     gueltigBis: a.gueltigBis || '',
     positionen: (a.positionen || []).map(normalizeAngebotsposition),
+    // Rundlauf WorkFloh (Vertrag v2, Klaus 2026-10-26): wohin übergeben, welcher Auftrag kam zurück.
+    verweise: a.verweise && typeof a.verweise === 'object' ? { ...a.verweise } : null,
     createdAt: a.createdAt || new Date().toISOString(),
   };
+}
+
+/** Verweise (WorkFloh-Ziel, Auftragsnummer, Zeitpunkte) am gespeicherten Angebot ergänzen — kein Statuswechsel. */
+export async function setzeAngebotVerweise(id, patch) {
+  const a = await getAngebot(id);
+  if (!a) throw new Error('Angebot nicht gefunden');
+  return saveAngebot({ ...a, verweise: { ...(a.verweise || {}), ...(patch || {}) } });
 }
 
 /**

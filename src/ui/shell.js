@@ -12,6 +12,7 @@ import { identityExists, loadIdentity } from '../sbkim/identity.js';
 import { CANONICAL_NODE_ID, SEAL_STAGE, NODE_PROFILE } from '../sbkim/nodeProfile.js';
 import { checkAllPeers } from '../sbkim/peers.js';
 import { getSettings, updateSettings, navigate, getRoute, subscribe, AI_LEVELS } from '../state.js';
+import { WORKFLOH_ZIELE, zielKey } from '../domain/vorgang.js';
 import { getMandantId, lockVault, changePassword } from '../core/vault.js';
 import { ladeRegistry, speichereRegistry } from '../core/mandantenStore.js';
 import { aktiverMandant, mandantenAuswahlListe, umbenenneMandant, entferneMandant, validateMandantName, istSandbox, sandboxAuswahlListe, naechsterTestName } from '../domain/mandanten.js';
@@ -760,6 +761,8 @@ function viewSettings() {
 
     scanSection(s, seg),
 
+    verbundSection(s, seg),
+
     seg(t('settings.datenschutz'), 'datenschutzModus',
       [['aus', t('settings.datenschutz.aus')], ['pseudonym', t('settings.datenschutz.pseudonym')]],
       s.datenschutzModus || 'pseudonym',
@@ -1079,6 +1082,15 @@ function gewinnermittlungSection(s) {
 // (GoBD-Lückenlosigkeit).
 // Zwei Felder, je ein Eintrag pro Zeile. Gespeichert wird beim Verlassen des Felds.
 // 🎙 Mikrofon und Wort-Speicher (Klaus 2026-10-26): Vorgabesprache, Wort-Speicher an/aus und löschen.
+// Rundlauf WorkFloh (Klaus 2026-10-26, D21/D23): an welchen WorkFloh angenommene Angebote als Auftrag gehen.
+function verbundSection(s, seg) {
+  return el('div', { 'data-verbund-einstellungen': '' }, [
+    seg(t('settings.workflohZiel'), 'workflohZiel',
+      Object.entries(WORKFLOH_ZIELE).map(([k, z]) => [k, z.name]),
+      zielKey(s.workflohZiel), (v) => updateSettings({ workflohZiel: v }), t('settings.workflohZiel.hint')),
+  ]);
+}
+
 // Scan-Qualität (Klaus 2026-10-26: „je nach Größe oder je nach Qualität der Vorlage“) — gilt für Fotos, die
 // still zum Scan-PDF werden, UND als Vorgabe für das Scanner-Fenster (dort je Scan änderbar).
 function scanSection(s, seg) {

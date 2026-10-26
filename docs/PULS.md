@@ -50,7 +50,17 @@
   `docs/design/PLAN-WORKFLOH-BRUECKE-RUNDLAUF-2026-10-26.md` — Ist: WorkFloh → BLP (Angebot/Rechnung, v1) und Calculate → BLP
   gebaut; BLP → WorkFloh und der Status-Rückkanal fehlen. Vorschlag Vertrag v2 „Vorgang“ (R1 Auftrag hin, R2 Verweis, R3 Status
   zurück), parallel in beiden WorkFlohs. Fragen D21–D24, Klaus entscheidet.
-- **Reihenfolge jetzt:** Klaus' Antworten (D17–D24, Teilen PBP→BLP) → Ü1 Übersetzung (E-Mails, Belege, Angebote; lokales
+- **Klaus' Antworten (2026-10-26, abends):** D21 R1 → R2 → R3 · D22 unsicher (Needs = Software-Angebote, Calculate = Hardware,
+  beide über BLP; Vorschlag erbeten) · D23 ja, parallel; **BookLedgerPro als PWA in Tomys Hub** (Hub = Verteiler, BLP kopiert
+  sich einmal herunter) · D24 „Vor-/Nachsteuer" missverstanden — gemeint: Regeln je Modus (Kleinunternehmer/Firma/Privat/
+  Vermieter) von Hand wählbar (= Modus-Schalter, gibt es) · „R1 und R2 als ein PR-Paar: BLP, mein WorkFloh und Workflow PDF" ·
+  **Mail an BookLedgerPro teilen: ja, nur für die Ablage; Rechnungsanhänge differenziert auslesen und in der Buchhaltung einpflegen.**
+- **R1 + R2 gebaut (PR „Rundlauf WorkFloh ⇄ BLP“, BLP + Mein-WorkFloh + Tomys WorkFloh):** `src/domain/vorgang.js`, Knopf am
+  angenommenen Angebot, Einstellung `workflohZiel`, Rückverweis in `uebernahmeExtern`; WorkFlohs: `vorgangEmpfangen()`,
+  Sender mit `verweise`, Datenschutz-Absatz, Caches workfloh-v217 / tomy-workfloh-v60. `run.mjs` 2521/0 · `smoke_vorgang` 22 ·
+  `browser_vorgang` 17 + 17 · Gegenproben 3 + 4 gefangen. Vertrag v2: `docs/UEBERNAHME_TOMY.md`. **R3 offen.**
+- **Reihenfolge jetzt:** Antwort D22 (Needs/Calculate) → Mail-Teilen nach BLP (.eml, Positionen) → Workflow PDF im Rundlauf
+  (Umfang klären) → BLP in Tomys Hub → R3 → Steuer/ELSTER (D17–D20) → Ü1 Übersetzung (E-Mails, Belege, Angebote; lokales
   Modell wie PBP) → Schritt 3 Haushaltsbuch → 4 Steuer Privat → 5 ELSTER (D14). C1/B1/A1/A2/A3 und Calculate/Needs sind gebaut.
 - **Workflow PDF / Pro:** Worker löschte fremde Vorräte (auch `blpr-*`!) — behoben in Workflow-PDF #133 (1.1.2, v107,
   neue Browser-CI); Pro #22 (Direktstart, 1.0.4) übernommen, #23 (Windows-Dateinamen/Tresor-Fix) offen; danach Kern 1.1.2
