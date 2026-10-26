@@ -5,6 +5,12 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
+## ▶ Neuester Stand (2026-10-26): Plansitzung Design + Privat abgeschlossen
+- **Kein App-Code geändert.** (Ist-Bilder/Befunde gegen main b924a7a geprüft.) Sammlung aller Entscheidungen: `docs/design/SAMMLUNG-DESIGN-2026-10-26.md`;
+  ELSTER-Recherche: `docs/design/ELSTER-ERIC-RECHERCHE-2026-10-26.md`.
+- **Nächste Sitzung = Bau:** `docs/BRIEF_NACHFOLGE_2026-10-26_BAU-PRIVAT.md` (Reihenfolge: Design-Grundlage →
+  Workflow-PDF-Einbindung → Haushaltsbuch → Steuer Privat → ELSTER). Abschluss: `docs/BRIEF_ABSCHLUSS_2026-10-26_PLANUNG.md`.
+
 ---
 
 ## ✅ LETZTER STAND (2026-10-14, abends) — Pseudonymisieren ab Werk an · „Weitere Namen" / „Nie verdecken" von Hand

@@ -5,6 +5,22 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 — Plansitzung Design & Privat-Modus (kein Code)
+
+**Was getan**
+- Ist-Stand mit Chromium fotografiert (`docs/design/ist-2026-10-26/`), mit Klaus alle Design- und
+  Funktionswünsche gesammelt und entschieden (`docs/design/SAMMLUNG-DESIGN-2026-10-26.md`).
+- ELSTER/ERiC/Hersteller-ID recherchiert (`docs/design/ELSTER-ERIC-RECHERCHE-2026-10-26.md`).
+- ROADMAP Phase 7 angelegt; Abschluss- und Nachfolge-Brief geschrieben.
+
+**Stand:** Tests 2284/0 nach Einmischen von main. PR #345 (nur Doku). ⚠ Zweig lag 328 Commits hinter main; Ist-Bilder/Befunde danach neu gegen main b924a7a geprüft.
+
+**Offen / Nächstes:** Bau in neuer Sitzung nach `docs/BRIEF_NACHFOLGE_2026-10-26_BAU-PRIVAT.md`.
+Offene Entscheidungen Klaus: ELSTER-Weg (D14), Name/DB-Endung PWA-Klon (D10), Modus Verein (D13).
+**Nicht geprüft:** kein Gerät/Tablet/DeX; elster.de nicht direkt abrufbar (Belege sekundär).
+
+---
+
 ## 2026-10-14 (abends) — Pseudonymisieren ab Werk an · Namen von Hand
 
 **Was getan.** Klaus: *„Ja, ab Werk an"* und *„die Namen per Hand eintragen … Müller bei
