@@ -37,12 +37,13 @@ export function ungepruefte(belege) {
 const ENDUNG_TYP = {
   pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
   webp: 'image/webp', gif: 'image/gif', heic: 'image/heic', heif: 'image/heif', tif: 'image/tiff', tiff: 'image/tiff',
+  eml: 'message/rfc822',   // eine geteilte Mail (Klaus 2026-10-26): Ablage + Anhänge als Belege (domain/mailEml.js)
 };
 
 /** Dateityp: was der Browser meldet, sonst aus der Endung (ein Ordner liefert oft ''). */
 export function belegTyp(name, typ) {
   const t = String(typ || '');
-  if (t === 'application/pdf' || t.startsWith('image/')) return t;
+  if (t === 'application/pdf' || t.startsWith('image/') || t === 'message/rfc822') return t;
   const m = /\.([a-z0-9]+)$/i.exec(String(name || ''));
   return (m && ENDUNG_TYP[m[1].toLowerCase()]) || '';
 }

@@ -6,6 +6,10 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 ## ▶ Neuester Stand (2026-10-26, nachts): C1 „Namen nach Muster" gebaut · Klaus' Antworten auf den Plan
+- **Mail-Teilen gebaut (PR „Mail an BookLedgerPro teilen"):** `.eml` → Mail-Beleg (Text verschlüsselt, durchsuchbar) + Anhänge
+  als Belege mit Verweis, Textebene sofort, **Positionen (S1)** verschlüsselt am Beleg mit Tabelle; `run.mjs` 2547/0 ·
+  `smoke_mail` 15 grün · Gegenprobe 6 gefangen · `sw.js` v267. **Nächstes:** Knopf „An BookLedgerPro teilen" in Private Brain Pro
+  (`assets/mail-workspace.js`, `.eml` per `navigator.share`), dann D22 „Positionen anhängen", Workflow PDF „beides" (#25).
 - **Gebaut (PR „Namen nach Muster"):** `src/ai/namensmuster.js` + Anker in `ladeAnker`, Einstellung `namensmuster`, gelbe
   Chips mit Rücknahme in `namenVorschlagBox`, i18n DE/EN, `sw.js` v259. `node tests/run.mjs` **2398/0** · `smoke_handnamen`
   **21 grün** · `smoke_design` grün. Details: `CLAUDE.md` „Namen nach Muster".

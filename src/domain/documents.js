@@ -40,6 +40,12 @@ export async function saveBeleg(file, opt = {}) {
   // Datei-Prüfung nötig; 'teilen' = kam über Androids Teilen-Liste. Unverschlüsselt, denn die Liste braucht es.
   if (opt.herkunft) rec.herkunft = String(opt.herkunft);
   if (opt.quelle) rec.quelle = String(opt.quelle);
+  // Aus einer geteilten Mail (Klaus 2026-10-26): Absender, Betreff, Datum und die Mail-Beleg-Kennung — unverschlüsselt,
+  // weil die Liste sie zeigt (wie der Name); der Mailtext selbst liegt verschlüsselt am Mail-Beleg (textDaten).
+  if (opt.mail && typeof opt.mail === 'object') {
+    rec.mail = { von: String(opt.mail.von || '').slice(0, 120), betreff: String(opt.mail.betreff || '').slice(0, 160),
+      datum: String(opt.mail.datum || '').slice(0, 10), anhaenge: Number(opt.mail.anhaenge) || 0, mailId: String(opt.mail.mailId || '') };
+  }
   if (opt.original) {
     const ob = await readFileBytes(opt.original);
     rec.originalDaten = await encryptBytesWithKey(key(), ob);   // verschlüsselt — von fileAllMeta() ausgeblendet
@@ -72,6 +78,27 @@ export async function setBelegText(id, text) {
   await filePut(rec);
   const { data: _d, textDaten: _t, vektorDaten: _v, originalDaten: _o, pruefDaten: _p, kiDaten: _k, ...meta } = rec;
   return meta;
+}
+
+/** Positionen einer Rechnung (domain/belegPositionen.js) verschlüsselt am Beleg; offen nur Anzahl und „stimmt". */
+export async function setBelegPositionen(id, ergebnis) {
+  const rec = await fileGet(id);
+  if (!rec) throw new Error('Beleg nicht gefunden');
+  const e = ergebnis && Array.isArray(ergebnis.positionen) ? ergebnis : null;
+  if (e && e.positionen.length) {
+    rec.positionenDaten = await encryptBytesWithKey(key(), enc.encode(JSON.stringify(e)));
+    rec.positionenAnzahl = e.positionen.length;
+    rec.positionenStimmt = e.stimmt == null ? null : !!e.stimmt;
+  } else { delete rec.positionenDaten; rec.positionenAnzahl = 0; delete rec.positionenStimmt; }
+  await filePut(rec);
+  const { data: _d, textDaten: _t, vektorDaten: _v, originalDaten: _o, pruefDaten: _p, kiDaten: _k, positionenDaten: _q, ...meta } = rec;
+  return meta;
+}
+/** Liest die Positionen (entschlüsselt) oder null. */
+export async function getBelegPositionen(id) {
+  const rec = await fileGet(id);
+  if (!rec || !rec.positionenDaten) return null;
+  try { return JSON.parse(dec.decode(await decryptBytesWithKey(key(), rec.positionenDaten))); } catch { return null; }
 }
 
 /** Liest den erkannten Text (entschlüsselt) oder ''. */
