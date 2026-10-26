@@ -309,3 +309,14 @@ die Positionen angehängt (Titel bleibt), der Banner sagt „N Position(en) … 
 (`[data-uebernahme-neu]`); ein Angebot in Bearbeitung (`_editId`) bekommt wie bisher einen neuen Entwurf. `sw.js` v268.
 Proben: `run.mjs` (+2) · `smoke_apps` **22 grün** (Needs-Übergabe hängt an den Calculate-Entwurf, Rückweg) · Needs-Repo kern 292 ·
 browser 194 · Gegenprobe UEB-BLP 4 gefangen. Vertrag: `docs/UEBERNAHME_TOMY.md`. ⚠ Kein Tablet.
+
+## 📄 Workflow PDF im Rundlauf — PDF + Daten hin, unterschrieben zurück (Klaus 2026-10-26)
+
+Klaus: „Wenn, dann beides. Also PDF teilen und Daten teilen." Am Angebot „📄 An Workflow PDF": eine Arbeitsstand-Datei
+(`*.workfloh.json`, Format wie Workflow PDF) mit dem Angebots-PDF (pdf-lib, nur Whitelist) **und** drei Feldern (Haken
+angenommen · Ort/Datum · Unterschrift) an den Linien des PDFs; Teilen oder Download. Zurück kommt das feste PDF per Teilen:
+die Marke (Keywords `blp-angebot=…` oder die Fußzeile in der Textebene) ordnet den Beleg dem Angebot zu
+(`verweise.wfpdfBelegId`, Zeilen in Beleg- und Angebotsliste), **Status bleibt von Hand**. Rein: `src/domain/workflowPdfRundlauf.js`
+(pdf-lib wird hineingereicht, in Node geprüft). Workflow PDF unverändert. `sw.js` v269. Proben: `run.mjs` (+10) ·
+`tests/smoke_wfpdf.mjs` **14 grün**. ⚠ Kein Tablet; Export aus Workflow PDF in der Probe nachgestellt; WinAnsi-Schrift.
+Bedienung/Grenzen: `docs/WORKFLOW-PDF-EINBINDUNG.md` „Weg 3".

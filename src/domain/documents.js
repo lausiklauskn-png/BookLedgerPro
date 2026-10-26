@@ -46,6 +46,11 @@ export async function saveBeleg(file, opt = {}) {
     rec.mail = { von: String(opt.mail.von || '').slice(0, 120), betreff: String(opt.mail.betreff || '').slice(0, 160),
       datum: String(opt.mail.datum || '').slice(0, 10), anhaenge: Number(opt.mail.anhaenge) || 0, mailId: String(opt.mail.mailId || '') };
   }
+  // Zurück aus Workflow PDF (Klaus 2026-10-26, Rundlauf): das unterschriebene Angebots-PDF trägt die Marke — Kennung und
+  // Nummer des Angebots stehen offen am Beleg, damit die Liste „zu Angebot …" zeigen kann.
+  if (opt.angebot && typeof opt.angebot === 'object') {
+    rec.angebot = { id: String(opt.angebot.id || '').slice(0, 80), nummer: String(opt.angebot.nummer || '').slice(0, 40) };
+  }
   if (opt.original) {
     const ob = await readFileBytes(opt.original);
     rec.originalDaten = await encryptBytesWithKey(key(), ob);   // verschlüsselt — von fileAllMeta() ausgeblendet

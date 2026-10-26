@@ -93,8 +93,22 @@ export async function pdfKopf(bytes) {
     const m = await pdf.getMetadata().catch(() => null);
     const info = (m && m.info) || {};
     try { pdf.destroy(); } catch { /* egal */ }
-    return { producer: String(info.Producer || ''), creator: String(info.Creator || ''), seiten: pdf.numPages || 0 };
+    return { producer: String(info.Producer || ''), creator: String(info.Creator || ''), keywords: String(info.Keywords || ''), title: String(info.Title || ''), seiten: pdf.numPages || 0 };
   } catch { return {}; }
+}
+
+/** Kleines Vorschaubild der ersten Seite (PNG-Data-URL) — für die Arbeitsstand-Datei an Workflow PDF (dort die Karte). Fail-soft ''. */
+export async function pdfVorschaubild(bytes, breite = 160) {
+  try {
+    const L = await pdfjs();
+    const pdf = await L.getDocument({ data: bytes.slice(0), isEvalSupported: false }).promise;
+    const p = await pdf.getPage(1);
+    const v0 = p.getViewport({ scale: 1 }), vp = p.getViewport({ scale: breite / v0.width });
+    const c = document.createElement('canvas'); c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+    await p.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    try { pdf.destroy(); } catch { /* egal */ }
+    return c.toDataURL('image/png');
+  } catch { return ''; }
 }
 
 /**

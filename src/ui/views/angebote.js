@@ -32,6 +32,9 @@ import {
 } from '../../domain/baukasten.js';
 import { listAngebote, saveAngebot, getAngebot, deleteAngebot, setzeAngebotStatusStore, rechnungAusAngebot, setzeAngebotVerweise } from '../../domain/angebote-store.js';
 import { vorgangAuftrag, vorgangUrl, zielKey, WORKFLOH_ZIELE } from '../../domain/vorgang.js';
+import { angebotPdfBauen, arbeitsstandBauen } from '../../domain/workflowPdfRundlauf.js';
+import { pdfLibLaden } from '../../core/scanPdf.js';
+import { pdfVorschaubild } from '../../ai/kiVorbereitung.js';
 import { ladeKalibrierungFaktoren } from '../../domain/nachkalkulation-store.js';
 import { darfAngebotUebernehmen } from '../../domain/angebotUebernahme.js';
 import { listKunden, listKostenstellen, ensureKostenstellenSeeded, saveKunde } from '../../domain/crm-store.js';
@@ -521,12 +524,53 @@ function archivCard(angebote) {
 function wfVerweisNode(a) {
   const v = a.verweise || null;
   if (!v) return null;
+  const teile = [];
+  // Rundlauf Workflow PDF (Klaus 2026-10-26): hin = Arbeitsstand übergeben, zurück = unterschriebenes PDF als Beleg am Angebot
+  if (v.wfpdfBelegId) teile.push(el('div', { class: 'muted small', 'data-wfpdf-verweis': 'zurueck', text: t('angebote.wfpdfZurueck').replace('%BELEG%', v.wfpdfBelegName || '') }));
+  else if (v.wfpdfUebergabeAm) teile.push(el('div', { class: 'muted small', 'data-wfpdf-verweis': 'uebergeben', text: t('angebote.wfpdfUebergeben') }));
+  const wf = wfVerweisWorkfloh(v);
+  if (wf) teile.push(wf);
+  return teile.length ? el('div', {}, teile) : null;
+}
+function wfVerweisWorkfloh(v) {
   if (v.wfAuftragNr) return el('div', { class: 'muted small', 'data-wf-verweis': 'auftrag', text: t('angebote.wfVerweis').replace('%NR%', v.wfAuftragNr) });
   if (v.wfZiel) {
     const ziel = WORKFLOH_ZIELE[v.wfZiel];
     return el('div', { class: 'muted small', 'data-wf-verweis': 'uebergeben', text: t('angebote.wfUebergeben').replace('%ZIEL%', ziel ? ziel.name : v.wfZiel) });
   }
   return null;
+}
+
+// Workflow PDF, Hinweg (Klaus 2026-10-26: „beides — PDF teilen und Daten teilen"): das Angebot als echtes PDF (pdf-lib,
+// nur die Whitelist) UND als Arbeitsstand-Datei von Workflow PDF mit den Feldern Unterschrift · Ort/Datum · Haken
+// „angenommen". Android: Teilen-Liste (Workflow PDF nimmt .json); sonst Download + Hinweis. Am Angebot wird nur der
+// Zeitpunkt vermerkt; der Status bleibt von Hand. Probe-Haken: window.__blpTeilenAbfangen hält Teilen/Download an,
+// window.__blpWfpdf trägt Datei und Zahlen.
+async function anWorkflowPdf(a) {
+  try {
+    const voll = await getAngebot(a.id);
+    if (!voll) throw new Error('Angebot nicht gefunden');
+    const kunde = _kunden.find((k) => k.id === voll.kundeId) || {};
+    const firma = (getSettings() || {}).firma || {};
+    const doc = { ...externesAngebot(voll), id: voll.id };
+    const PDFLib = await pdfLibLaden();
+    const texte = { titel: t('angebote.docTitle'), datum: t('angebote.datum'), gueltig: t('angebote.gueltigBis'), pos: t('angebote.pdfPos'), menge: t('angebote.pdfMenge'), einzel: t('angebote.pdfEinzel'),
+      ust: 'USt', netto: t('angebote.net'), summeNetto: t('angebote.net'), summeBrutto: t('angebote.gross'), ortDatum: t('angebote.pdfOrtDatum'), unterschrift: t('angebote.pdfUnterschrift'), angenommen: t('angebote.pdfAngenommen') };
+    const pdf = await angebotPdfBauen(PDFLib, doc, { kunde, firma, texte });
+    const thumb = await pdfVorschaubild(pdf.bytes, 160);
+    const stand = arbeitsstandBauen(doc, pdf.bytes, { seiten: pdf.seiten, feldSeite: pdf.feldSeite, thumb });
+    const datei = new File([stand.inhalt], stand.name, { type: 'application/json' });
+    await setzeAngebotVerweise(a.id, { wfpdfUebergabeAm: new Date().toISOString() });
+    if (typeof window !== 'undefined') window.__blpWfpdf = { name: stand.name, bytes: pdf.bytes.length, seiten: pdf.seiten, inhalt: stand.inhalt, datei };
+    if (typeof window !== 'undefined' && window.__blpTeilenAbfangen) { await repaint(); return; }
+    if (navigator.canShare && navigator.canShare({ files: [datei] })) {
+      try { await navigator.share({ files: [datei], title: stand.name }); await repaint(); return; }
+      catch (e) { if (e && e.name === 'AbortError') { await repaint(); return; } }
+    }
+    const url = URL.createObjectURL(datei); const l = document.createElement('a'); l.href = url; l.download = stand.name; document.body.appendChild(l); l.click(); l.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    await repaint(el('div', { class: 'banner banner-warn', text: t('angebote.wfpdfGespeichert').replace('%DATEI%', stand.name) }));
+  } catch (e) { alert(String((e && e.message) || e)); }
 }
 
 // R1: Nutzlast bauen (nur die externe Schicht), Ziel am Angebot vermerken, WorkFloh öffnen.
@@ -587,6 +631,10 @@ function aktionen(a) {
       text: t('angebote.anWorkfloh').replace('{ziel}', ziel.name),
       onClick: () => auftragAnWorkFloh(a),
     }));
+  }
+  // Workflow PDF (Klaus 2026-10-26): an jedem nicht archivierten Angebot — PDF + Felder zum Unterschreiben.
+  if (a.status !== ANGEBOT_STATUS.ARCHIVIERT) {
+    wrap.appendChild(el('button', { class: 'btn btn-sm', type: 'button', 'data-wfpdf-angebot': a.id, text: t('angebote.anWorkflowPdf'), onClick: () => anWorkflowPdf(a) }));
   }
   for (const next of ANGEBOT_STATUS_FLOW[a.status] || []) {
     wrap.appendChild(el('button', {

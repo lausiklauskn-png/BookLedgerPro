@@ -5,6 +5,18 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (nachts) — Workflow PDF im Rundlauf: PDF + Daten hin, unterschrieben zurück
+
+- **Getan:** `src/domain/workflowPdfRundlauf.js` (Marke, Keywords, Felder in Prozent, Arbeitsstand-Datei im Format von Workflow
+  PDF, PDF-Aufbau A4 mehrseitig mit hineingereichtem pdf-lib), `pdfLibLaden`, `pdfKopf` mit Keywords/Title, `pdfVorschaubild`,
+  Angebotsansicht (Knopf `[data-wfpdf-angebot]`, Teilen/Download, Verweise `[data-wfpdf-verweis]`), Belegimport (`angebotZuPdf`,
+  `rec.angebot`, Zeile, Status), i18n DE/EN, `sw.js` v269, Doku „Weg 3".
+- **Beweis:** `run.mjs` **2559/0** (+10) · `smoke_wfpdf` **14 grün** · `smoke_teilen` 26 · `smoke_vorgang` 22 · `smoke_mail` 15 ·
+  `smoke_design` 90. Falle beim Bau: pdf-lib überschreibt beim `create`/`load` den Producer (`updateMetadata`) — Bau mit
+  `updateMetadata: false`, Proben laden ebenso; Angebots-Kennungen tragen `:` (Marke-Regex erweitert).
+- **Grenzen:** kein Tablet; Workflow-PDF-Export nachgestellt; WinAnsi.
+- **Offen/Nächstes:** R3 · Kopie nach BookLedger-Basic · Tresorordner Android.
+
 ## 2026-10-26 (abends, spät) — D22: Needs → BookLedgerPro, Positionen anhängen · Fahrplan Pro/Basic/Tresorordner
 
 - **Getan:** Workflow-Needs #32 (`blpNutzlast`/`blpAdresse`, Knopf `#an-blp`, Haken `__wnSprung`, kern/browser/Gegenprobe,

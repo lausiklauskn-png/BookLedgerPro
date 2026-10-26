@@ -111,6 +111,13 @@ function skript(src) {
   return p;
 }
 
+/** Nur pdf-lib (für das Angebots-PDF, Workflow-PDF-Rundlauf) — dieselbe byte-1:1-Kopie wie für den Scanner-Kern. */
+export async function pdfLibLaden(basis) {
+  if (!window.PDFLib) await skript(new URL(basis || WFPDF_ASSETS, location.href).href + 'pdf-lib.min.js');
+  if (!window.PDFLib) throw new Error('pdf-lib meldet sich nicht');
+  return window.PDFLib;
+}
+
 let _scanner = null;
 /** Lädt den Scanner-Kern von Workflow PDF (zip.js, blatt.js, scan-bild.js, scanner.js) aus assets/wfpdf/ und setzt die Pfade. */
 export function scannerLaden(basis) {
