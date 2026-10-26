@@ -39,7 +39,14 @@
   `smoke_frage` 16 grün · `smoke_belegsuche` 18 · `smoke_design` 90 · `sw.js` v263. Details: `CLAUDE.md` „🤖 Frage an die Belege“.
 - **Befund Offline-Übersetzung** (Klaus' Frage 26.10.): `docs/design/BEFUND-OFFLINE-UEBERSETZUNG-2026-10-26.md` — Translator-API
   nur Chrome/Edge am PC (offline nach dem Laden), nicht Android; Pro-Apps über PBPs Modell-Worker. Empfehlung Ü1, Klaus fragen.
-- **Reihenfolge jetzt:** Klaus' Antwort zum Scanner-Kern (Workflow PDF in BLP) → Ü1 Übersetzung (E-Mails, Belege, Angebote; lokales
+- **Scanner-Kern gebaut (PR „Scanner-Kern bei den Belegen“, Klaus: „der Scannerkern wird mit eingebaut“):** „📷 Scannen" bei den
+  Belegen mit dem byte-1:1-Kern von Workflow PDF (`assets/wfpdf/`, `vendor/scanic/`, Pins), Text sofort am Beleg, Einstellung
+  **Scan-Qualität** (hoch/auto/normal/klein); `run.mjs` 2502/0 · `smoke_scanner` 13 grün · `sw.js` v265. Details:
+  `CLAUDE.md` „📷 Scanner-Kern“, `docs/SCANNER-IN-BLP.md`. **Offen aus Klaus' Nachricht:** PBP ↔ BLP per **Teilen** (nicht
+  integrieren; `.eml` im `share_target` annehmen, Anhänge + Mailtext → Beleg) — Antwort/Plan ausstehend; Steuer-Zuordnung
+  (Positionen ein-/ausschließen, Zweck, Formular-Zeilen, ELSTER-Weg) — Plan `docs/design/PLAN-STEUER-ZUORDNUNG-ELSTER-2026-10-26.md`
+  noch zu schreiben, Klaus entscheidet (D17–D19).
+- **Reihenfolge jetzt:** Plan Steuer/ELSTER + Antwort Teilen PBP→BLP → Ü1 Übersetzung (E-Mails, Belege, Angebote; lokales
   Modell wie PBP) → Schritt 3 Haushaltsbuch → 4 Steuer Privat → 5 ELSTER (D14). C1/B1/A1/A2/A3 und Calculate/Needs sind gebaut.
 - **Workflow PDF / Pro:** Worker löschte fremde Vorräte (auch `blpr-*`!) — behoben in Workflow-PDF #133 (1.1.2, v107,
   neue Browser-CI); Pro #22 (Direktstart, 1.0.4) übernommen, #23 (Windows-Dateinamen/Tresor-Fix) offen; danach Kern 1.1.2

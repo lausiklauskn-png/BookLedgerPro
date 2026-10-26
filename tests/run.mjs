@@ -6946,5 +6946,50 @@ await section('Eingebettete Apps (Klaus 2026-10-26): Patch, Pins, Helfer, Verdra
   ok('.nojekyll an der Wurzel (Pages liefert apps/ unverändert aus)', (() => { try { statSync(new URL('../.nojekyll', import.meta.url)); return true; } catch { return false; } })());
 });
 
+await section('Scan-Qualität (Klaus 2026-10-26): auto nach Vorlage, hoch/normal/klein, Einstellung durchgereicht', async () => {
+  const { scanStufe, SCAN_STUFEN, SCAN_DPI, SCAN_DPI_MIN } = await import('../src/core/scanPdf.js');
+  ok('Stufen: auto · hoch 300/0.92 · normal 200/0.88 · klein 150/0.80', SCAN_STUFEN.hoch.dpi === 300 && SCAN_STUFEN.hoch.q === 0.92 && SCAN_STUFEN.normal.dpi === 200 && SCAN_STUFEN.klein.dpi === 150 && SCAN_STUFEN.auto.dpi === 0);
+  ok('hoch = bisheriger fester Weg', scanStufe('hoch', 1000).dpi === SCAN_DPI && scanStufe('hoch', 1000).auto === false);
+  ok('auto: 4000 px lange Kante → 300 dpi (Deckel)', scanStufe('auto', 4000).dpi === 300);
+  ok('auto: 2400 px → 210 dpi (nie hochgerechnet)', scanStufe('auto', 2400).dpi === 210 && scanStufe('auto', 2400).auto === true);
+  ok('auto: 800 px → 150 dpi (Boden)', scanStufe('auto', 800).dpi === SCAN_DPI_MIN);
+  ok('auto: ohne Maß → 300 dpi', scanStufe('auto', 0).dpi === 300 && scanStufe('auto', 0).auto === true);
+  ok('Vorgabe und unbekannte Stufe → hoch (der gemessene Weg, 300 dpi)', scanStufe(undefined, 320).stufe === 'hoch' && scanStufe(undefined, 320).dpi === 300 && scanStufe('riesig', 2400).stufe === 'hoch');
+  const docs = _readSpore(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
+  ok('documents.js: Foto-Weg und Scanner bekommen settings.scanQualitaet', (docs.match(/qualitaet: \(getSettings\(\) \|\| \{\}\)\.scanQualitaet/g) || []).length === 2);
+  const sc = _readSpore(new URL('../src/ui/scanner.js', import.meta.url), 'utf8');
+  const { KERN_QUALITAET } = await import('../src/ui/scanner.js').catch(() => ({ KERN_QUALITAET: null }));
+  ok('scanner.js: Stufen auf den Kern abgebildet (auto/hoch → hoch) und am Zustand gesetzt', /st\.qualitaet = q/.test(sc) && (!KERN_QUALITAET || (KERN_QUALITAET.auto === 'hoch' && KERN_QUALITAET.klein === 'klein')));
+  const sh = _readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
+  ok('shell.js: Abschnitt [data-scan-einstellungen] mit vier Stufen, Vorgabe hoch', /data-scan-einstellungen/.test(sh) && /scanSection\(s, seg\),/.test(sh) && /s\.scanQualitaet \|\| 'hoch'/.test(sh) && /updateSettings\(\{ scanQualitaet: v \}\)/.test(sh));
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  ok('i18n DE/EN: scan.qualitaet + auto/hoch/normal/klein/hint', ['scan.qualitaet', 'scan.qualitaet.auto', 'scan.qualitaet.hoch', 'scan.qualitaet.normal', 'scan.qualitaet.klein', 'scan.qualitaet.hint'].every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
+});
+
+await section('Scanner-Kern von Workflow PDF (Klaus 2026-10-26): Pins, Pfade, Klebstoff, Verdrahtung', async () => {
+  const { createHash } = await import('node:crypto');
+  const { existsSync } = await import('node:fs');
+  const { DATEIEN, ORDNER } = await import('../tools/wfpdf-nachziehen.mjs');
+  const h = JSON.parse(_readSpore(new URL('../assets/wfpdf/HERKUNFT.json', import.meta.url), 'utf8'));
+  const kern = ['assets/wfpdf/scanner.js', 'assets/wfpdf/scan-bild.js', 'assets/wfpdf/blatt.js', 'assets/wfpdf/zip.js', 'assets/wfpdf/pdf-lib.min.js', 'assets/wfpdf/fontkit.umd.min.js', 'assets/wfpdf/fonts/NotoSans-Regular.ttf'];
+  ok('HERKUNFT.json: Workflow-PDF-Commit, Datum, alle Kerndateien und das Scanic-Modell gepinnt', /^[0-9a-f]{40}$/.test(h.commit) && h.repo === 'lausiklauskn-png/Workflow-PDF' && kern.every((k) => h.dateien[k] && /^[0-9a-f]{64}$/.test(h.dateien[k].sha256)) && Object.keys(h.dateien).some((k) => k === 'vendor/scanic/scanic.js') && Object.keys(h.dateien).length === DATEIEN.length + Object.keys(h.dateien).filter((k) => k.startsWith('vendor/scanic/')).length);
+  const shaOk = Object.entries(h.dateien).every(([ziel, e]) => existsSync(new URL('../' + ziel, import.meta.url)) && createHash('sha256').update(_readSpore(new URL('../' + ziel, import.meta.url))).digest('hex') === e.sha256);
+  ok('jede gepinnte Datei liegt da und ist byte-1:1 (SHA-256)', shaOk);
+  ok('dieselben Pins wie in den WorkFlohs (scanner.js, scan-bild.js, blatt.js, zip.js, pdf-lib, fontkit, Noto — Mein-WorkFloh wfpdf_kanon.mjs, Stand 2026-10-26)', h.dateien['assets/wfpdf/scanner.js'].sha256 === 'ef9db8c62ed8eab72aed6a3b81788ef8bc3c0cf299467066ad68c3e3a3cbe4cb' && h.dateien['assets/wfpdf/scan-bild.js'].sha256 === '96da5878d68d42e4e66ad48247bba998e543a4249a7074c38bcb58852b0dc739' && h.dateien['assets/wfpdf/blatt.js'].sha256 === '88e8ae8c03b662ce7f8bbfe0401cd0c5c59ca78a5b788b747518ace1d90a7188' && h.dateien['assets/wfpdf/zip.js'].sha256 === '5c5a721c9a13aa551f453b3d42f9c4fcbe49555276a70ff53959e01caba0dce3' && h.dateien['assets/wfpdf/pdf-lib.min.js'].sha256 === '0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f' && h.dateien['assets/wfpdf/fontkit.umd.min.js'].sha256 === 'd8df561b9fba98e24f2e5130e40948809281bbbc55a20c412359f1a0a5eb35a6' && h.dateien['assets/wfpdf/fonts/NotoSans-Regular.ttf'].sha256 === 'f3961a9cde016d41a4879aecda1474d3a36d6bf54fa0e4643de029cc2248b0e8');
+  ok('Tesseract liegt schon unter vendor/tesseract (mit deu/eng/rus), Scanic unter vendor/scanic mit Modell und Lizenz', existsSync(new URL('../vendor/tesseract/tesseract.min.js', import.meta.url)) && existsSync(new URL('../vendor/tesseract/lang/deu.traineddata', import.meta.url)) && existsSync(new URL('../vendor/scanic/doccornernet_lean.ort', import.meta.url)) && existsSync(new URL('../vendor/scanic/LICENSE-scanic.txt', import.meta.url)) && ORDNER[0][0] === 'vendor/scanic');
+  const sp = _readSpore(new URL('../src/core/scanPdf.js', import.meta.url), 'utf8');
+  ok('scanPdf.js lädt den Kern lokal (assets/wfpdf, zip.js dabei) und setzt vendor/scanic/ und vendor/ (Tesseract)', /export const WFPDF_ASSETS = '\.\/assets\/wfpdf\/'/.test(sp) && /export const WFPDF_VENDOR = '\.\/vendor\/'/.test(sp) && /skript\(a \+ 'zip\.js'\)/.test(sp) && /pfade\(\{ vendor: a, scanic: v \+ 'scanic\/', ocr: v \}\)/.test(sp) && !/\/Workflow-PDF\/assets\/'/.test(sp.replace(/\/\/.*$/gm, '')));
+  const sc = _readSpore(new URL('../src/ui/scanner.js', import.meta.url), 'utf8');
+  ok('Klebstoff: dieselben Rückrufe wie Workflow PDF (toast · dialog · frage · fortschritt · laden), Durchsuchbar immer an, fertig → File mit .pdf', /toast, dialog: scanDialog, frage: scanFrage, fortschritt: scanFortschritt, laden/.test(sc) && /st\.durchsuchbar = true/.test(sc) && /new File\(\[bytes\], dateiName\(info && info\.name\) \+ '\.pdf', \{ type: 'application\/pdf' \}\)/.test(sc) && /scanner\.css/.test(sc));
+  const css = _readSpore(new URL('../assets/wfpdf/scanner.css', import.meta.url), 'utf8');
+  ok('scanner.css (BLP-eigen nach Mein-WorkFloh): Scanner über allem (z 100000), Dialoge darüber, BLP-Tokens umgelenkt', /\.scan\{position:fixed;inset:0;z-index:100000/.test(css) && /\.scan-dlg-grund\{position:fixed;inset:0;z-index:100001/.test(css) && /--line:var\(--border\);--ink:var\(--text\)/.test(css) && /#toasts\{/.test(css));
+  const doc = _readSpore(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
+  ok('Belegansicht: „📷 Scannen“ vor „Foto aufnehmen“, fertiges PDF geht durch dateienEinlesen (quelle scanner), Text eigener Scans sofort gemerkt', /'data-scan-start'/.test(doc) && doc.indexOf("'data-scan-start'") < doc.indexOf("t('docs.camera')") && /dateienEinlesen\(\[file\], \{ quelle: 'scanner' \}\)/.test(doc) && /if \(r\.eigen && r\.id\) \{[\s\S]*await textMerken\(r\.id, text\); gelesen\+\+;/.test(doc) && /id: b && b\.id \}/.test(doc));
+  const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
+  ok('sw.js: Kern und scanner.css in der Schale (pdf-lib/fontkit/Noto/Scanic beim ersten Scannen)', ['./src/ui/scanner.js', './assets/wfpdf/scanner.js', './assets/wfpdf/scan-bild.js', './assets/wfpdf/blatt.js', './assets/wfpdf/zip.js', './assets/wfpdf/scanner.css?v=1', './assets/wfpdf/HERKUNFT.json'].every((f) => sw.includes(`'${f}'`)) && !sw.includes("'./assets/wfpdf/pdf-lib.min.js'"));
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  ok('i18n DE/EN: docs.scannen, scannenTitel, scannenHint, scanFertig, scannerLaedt, scannerFehlt, scanTextGemerkt', ['docs.scannen', 'docs.scannenTitel', 'docs.scannenHint', 'docs.scanFertig', 'docs.scannerLaedt', 'docs.scannerFehlt', 'docs.scanTextGemerkt'].every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);

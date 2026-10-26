@@ -245,3 +245,19 @@ Knopf der App aus — Aufbau, Knöpfe, Suchfeld der Apps bleiben unangetastet. `
 (index netz-zuerst, Rest Vorrat-zuerst), `.nojekyll`. Proben: `tests/run.mjs` (+23) · `tests/smoke_apps.mjs` **19 grün** ·
 Gegenprobe (Byte, Pin, Haken, Fenster in der Shell) je rot. Bedienung/Grenzen: `docs/APPS-CALCULATE-NEEDS.md`.
 ⚠ Kein Tablet; Kopie = Stand des Klons; keine Fassungsprüfung gegen die Einzel-PWA; Apps speichern unverschlüsselt (eigene Bauart).
+
+## 📷 Scanner-Kern von Workflow PDF bei den Belegen (Klaus 2026-10-26)
+
+Klaus: „der Scannerkern wird mit eingebaut … sofort in PDFs … Seitenpunkte … OCR … Vektorisieren … Wortsuche und
+Bedeutungssuche" · „die Qualität … sollte angepasst werden können, je nach Größe oder je nach Qualität der Vorlage."
+**Belege → „📷 Scannen"** öffnet den Scanner von Workflow PDF über der App; „Als Beleg ablegen" gibt das PDF (Marke
+`Workfloh PDF` → Stand „eigen") an `dateienEinlesen`, und der erkannte Text wird **sofort** verschlüsselt am Beleg gemerkt
+(„Durchsuchbar" ist im BLP-Scanner immer an). Kern **byte-1:1** unter `assets/wfpdf/` (scanner.js, scan-bild.js, blatt.js,
+zip.js, pdf-lib, fontkit, Noto) und `vendor/scanic/`, Pins in `assets/wfpdf/HERKUNFT.json` (`tools/wfpdf-nachziehen.mjs`;
+`tests/run.mjs` prüft SHA und Gleichheit mit Mein-WorkFlohs Pins) — **nie von Hand ändern**. BLP-eigen: `src/ui/scanner.js`
+(Klebstoff mit denselben Rückrufen wie Workflow PDF), `src/core/scanPdf.js` (`scannerLaden` lokal, `scanStufe`),
+`assets/wfpdf/scanner.css` (BLP-Tokens). **Scan-Qualität** in den Einstellungen (`scanQualitaet`: hoch = Vorgabe 300 dpi · 92 %
+wie gemessen, auto = nach Vorlage 150–300 dpi nie hochgerechnet, normal 200, klein 150) gilt für stille Foto-Scans und als
+Vorgabe im Scanner-Fenster. Proben: `run.mjs` (+21) · `tests/smoke_scanner.mjs` **13 grün** (echter Kern, Scanic, Tesseract) ·
+Gegenprobe 4 Fälle gefangen. `sw.js` v265. ⚠ Kein Tablet; dpi-Stufen außer „hoch" gewählt, nicht gemessen; `smoke_belege`
+Abschnitt D ist in diesem Behälter auch auf main rot (14 Zeilen, unberührt). Bedienung/Grenzen: `docs/SCANNER-IN-BLP.md`.

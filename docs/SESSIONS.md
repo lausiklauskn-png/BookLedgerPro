@@ -5,6 +5,22 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (nachts) — Scanner-Kern von Workflow PDF bei den Belegen · Scan-Qualität einstellbar
+
+- **Getan:** `tools/wfpdf-nachziehen.mjs` (Kopie byte-1:1 + Pins `assets/wfpdf/HERKUNFT.json`), `assets/wfpdf/` (scanner.js,
+  scan-bild.js, blatt.js, zip.js, pdf-lib, fontkit, Noto; BLP-eigenes `scanner.css`), `vendor/scanic/`, `src/ui/scanner.js`
+  (Klebstoff), `src/core/scanPdf.js` (`scannerLaden` lokal mit pdf-lib, `scanStufe`/`SCAN_STUFEN`), Belegansicht „📷 Scannen" +
+  Text eigener Scans sofort gemerkt, Einstellung „Scan-Qualität" (Shell + i18n), `sw.js` v265, `docs/SCANNER-IN-BLP.md`.
+- **Beweis:** `node tests/run.mjs` **2502/0** (+21) · `tests/smoke_scanner.mjs` **13 grün** (echter Kern, Scanic-Modell, Tesseract:
+  Foto → Scannen → Beleg „eigen" → Text → Wortsuche „4711") · `smoke_design` 90 · `smoke_teilen` 26 · `smoke_belegsuche` 18 ·
+  `smoke_frage` 16 · `smoke_mikro` 19 · `smoke_apps` 19. Gegenprobe (Wegwerf-Kopie): Durchsuchbar aus → 5 ROT · Text nicht gemerkt →
+  4 ROT · auto rechnet hoch → 2 ROT · Byte im Kern → Pin ROT. Beim Bau gefunden: `PDFLib` fehlte (Kern lädt pdf-lib nicht
+  selbst) und `textebeneReicht` warf kurze OCR-Texte weg — für eigene Scans zählt jedes Wort.
+- **Stand/Grenzen:** `smoke_belege` 46 grün · 14 ROT, **dieselben 14 auf main** (Abschnitt D Texterkennung/Reinigung in diesem
+  Behälter; unberührt, nicht untersucht). Kein Tablet; dpi-Stufen außer „hoch" gewählt.
+- **Offen/Nächstes:** Antwort an Klaus zu PBP ↔ BLP (Empfehlung: Teilen, `.eml` annehmen) · Plan Steuer-Zuordnung/ELSTER
+  (D17–D19) · dann Ü1 Übersetzung.
+
 ## 2026-10-26 (spät) — Workflow Calculate und Workflow Needs 1:1 eingebettet (D15b, D16a)
 
 - **Getan:** `tools/apps-nachziehen.mjs` + `tools/apps-patch.mjs` (Kopie byte-1:1, Pins in `apps/HERKUNFT.json`, eine
