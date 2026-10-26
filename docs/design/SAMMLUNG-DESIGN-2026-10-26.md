@@ -25,8 +25,8 @@ Buchhaltungsprogramme.
 | Farbe | Hell | Dunkel |
 |---|---|---|
 | **Blau** | PBP *Klarblau* (`#2563eb` auf `#f6f8fc`) | PBP *Nachtblau* (`#7ca7ff` auf `#111827`) |
-| **Graphit** | PBP *Graphit* (`#475569` auf `#f7f8fa`) | **fehlt – neu ableiten** (dunkle Grauflächen, heller Grauakzent) |
-| **Petrol** | PBP *Petrol* = heutiges BLP-Hell (`#0f766e`) | **heutiges BLP-Dunkel** (`#2dd4bf` auf `#0b1120`, Werte aus `assets/tokens.css` unverändert) |
+| **Graphit** | PBP *Graphit* (`#475569` auf `#f7f8fa`) | **fehlt – neu ableiten**, Arbeitsname *Nachtgraphit* (dunkle Grauflächen, heller Grauakzent) |
+| **Petrol** | PBP *Petrol* = heutiges BLP-Hell (`#0f766e`) | ***Nachtpetrol*** (Name von Klaus bestätigt) = heutiges BLP-Dunkel (`#2dd4bf` auf `#0b1120`, Werte aus `assets/tokens.css` unverändert) |
 
 - „Wie Gerät" folgt der Hell/Dunkel-Einstellung des Geräts, die Farbe bleibt.
 - Abweichung von PBP: Dort ist Nachtblau ein eigenes viertes Thema. Hier wird es die dunkle Seite von Blau.
@@ -152,7 +152,7 @@ Regeln dazu:
 ## D. Offene Fragen an Klaus
 
 - ~~D1 Themen~~ **entschieden:** PBP-Farben + heutiges BLP-Dunkel, Hell/Dunkel gilt für jede Farbe (siehe A4).
-- D8 Passt die Zuordnung Farbe × Hell/Dunkel (Tabelle A4)? Graphit-Dunkel muss neu entstehen. Startwert Petrol + wie Gerät?
+- D8 Passt die Zuordnung Farbe × Hell/Dunkel (Tabelle A4)? Graphit-Dunkel („Nachtgraphit") muss neu entstehen. Startwert Petrol + wie Gerät? (Name „Nachtpetrol" ist entschieden.)
 - D2 Soll BLP den PBP-Symbolsatz **gemeinsam** nutzen (eine Quelle, kopiert wie bei
   Sage-Modulen) oder eine eigene Kopie, die BLP-Symbole ergänzt?
 - D3 Seitenleiste am breiten Schirm: dauerhaft mit Namen, oder einklappbar auf Symbole?
