@@ -5,6 +5,15 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (nachts) — B1: Mikrofon an jeder Texteingabe, Sprachmarke je Feld, Wort-Speicher
+
+- **Getan:** `src/ui/mikro.js` (Beobachter, Leiste 🎙 + „DE ▾“, zehn Sprachen, Wahl je Feld, Einfügen an der Cursorstelle,
+  Browser-/EU-Engine, Wort-Speicher mit datalist und Chips), Einstellungen (Vorgabesprache, an/aus, löschen), i18n DE/EN,
+  CSS, `sw.js` v261, SBKIM-Suche `data-kein-mikro`.
+- **Beweis:** `node tests/run.mjs` **2425/0** (+26) · `tests/smoke_mikro.mjs` **19 grün** · `smoke_design` **90 grün**.
+- **Nicht geprüft:** Tablet; echte Spracherkennung (gestellt); EU-Engine nur Code-Pfad.
+- **Nächstes:** Klaus' Antwort D15/D16 (Calculate/Needs) · A1+A2 Bedeutungssuche.
+
 ## 2026-10-26 (nachts) — Privat-Modus: Netz und SBKIM-Suche bleiben · Plan Calculate/Needs
 
 - **Getan:** `src/domain/nutzungsmodus.js`: `network`/`sbkimsuche` aus der Privat-Ausblendung genommen (Klaus: „im Privatmodus

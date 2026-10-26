@@ -23,7 +23,9 @@
   `sw.js` v260. **Plan Calculate/Needs:** `docs/design/PLAN-CALCULATE-NEEDS-2026-10-26.md` (E1 empfohlen: byte-1:1-Kopie unter
   `apps/` mit SHA-Pins, eigener Rahmen, BLP-Thema per Variablen, Übergabe per postMessage; Fragen D15 BLP-Angebote behalten?,
   D16 gemeinsamer Datenbestand mit der PWA?) — **Antwort von Klaus abwarten**.
-- **Reihenfolge jetzt:** B1 Mikrofon + Sprachmarke + Wort-Speicher → A1/A2 Bedeutungssuche
+- **B1 gebaut (PR „Mikrofon an jeder Texteingabe“):** `src/ui/mikro.js`, Sprachmarke je Feld, Wort-Speicher, Einstellungen;
+  `run.mjs` 2425/0 · `smoke_mikro` 19 grün · `smoke_design` 90 grün · `sw.js` v261. Details: `CLAUDE.md` „🎙 Mikrofon“.
+- **Reihenfolge jetzt:** Calculate/Needs (nach Klaus' Antwort D15/D16) oder A1+A2 Bedeutungssuche + Sprachmarke + Wort-Speicher → A1/A2 Bedeutungssuche
   → Calculate/Needs-Plan (Repos lesen, Einbettung) → A3 → Haushaltsbuch.
 - **Workflow PDF / Pro:** Worker löschte fremde Vorräte (auch `blpr-*`!) — behoben in Workflow-PDF #133 (1.1.2, v107,
   neue Browser-CI); Pro #22 (Direktstart, 1.0.4) übernommen, #23 (Windows-Dateinamen/Tresor-Fix) offen; danach Kern 1.1.2

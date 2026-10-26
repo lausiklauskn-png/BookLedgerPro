@@ -134,7 +134,7 @@ function speechControls(input) {
 }
 
 function repaint(result, status) {
-  const input = el('input', { type: 'text', class: 'beleg-text', placeholder: t('sbkimsuche.placeholder'), value: _query });
+  const input = el('input', { type: 'text', class: 'beleg-text', placeholder: t('sbkimsuche.placeholder'), value: _query, 'data-kein-mikro': '' });   // hat ein eigenes Mikrofon (speechControls)
   input.addEventListener('input', () => { _query = input.value; });
   const statusP = el('p', { class: 'muted small', text: status || '' });
   const out = el('div', { class: 'sbkimsuche-out' });

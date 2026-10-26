@@ -701,3 +701,17 @@ html.app-installiert #install-kopf, html.app-installiert [data-install-knopf] { 
 .namen-verdeckt .chip-verdeckt { background: #fde68a; border-color: #d9a700; color: #4a3800; margin: .15rem .25rem .15rem 0; }
 :root[data-theme="dark"] .namen-verdeckt .chip-verdeckt { background: #5c4a00; border-color: #d9a700; color: #fff3bf; }
 .namen-verdeckt .chip-verdeckt:hover { text-decoration: line-through; }
+
+/* 🎙 Mikrofon an jeder Texteingabe (Klaus 2026-10-26): flache 28-px-Leiste hinter dem Feld, Sprachmarke sichtbar. */
+.mikro { display: inline-flex; align-items: center; gap: .25rem; margin: .2rem 0 0; position: relative; vertical-align: middle; max-width: 100%; flex-wrap: wrap; }
+.mikro .mikro-knopf { min-width: 28px; padding-inline: .4rem; }
+.mikro .mikro-knopf.mikro-an { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
+.mikro .mikro-sprache { font-weight: 600; letter-spacing: .02em; padding-inline: .45rem; }
+.mikro .mikro-liste { position: absolute; top: 100%; left: 0; z-index: 30; display: flex; flex-direction: column; min-width: 11rem; max-height: 14rem; overflow: auto;
+  background: var(--surface); border: 1px solid var(--border-control); border-radius: var(--radius-sm); box-shadow: 0 6px 20px rgba(0,0,0,.18); padding: .2rem; }
+.mikro .mikro-liste[hidden] { display: none; }
+.mikro .mikro-wahl { text-align: left; background: transparent; border: 0; color: inherit; font: inherit; padding: .35rem .5rem; border-radius: var(--radius-sm); cursor: pointer; min-height: 28px; }
+.mikro .mikro-wahl:hover, .mikro .mikro-wahl:focus { background: var(--accent-soft, rgba(0,0,0,.06)); outline: none; }
+.mikro .mikro-status:empty { display: none; }
+.mikro .mikro-woerter:empty { display: none; }
+.mikro .mikro-wort { font-style: italic; }

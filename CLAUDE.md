@@ -171,3 +171,22 @@ Nachname allein ohne Anrede, fremde Anreden außer Mr/Mrs/Ms werden nicht erkann
 Proben: `tests/run.mjs` drei Abschnitte „Namensmuster" (+23) · `tests/smoke_handnamen.mjs` 21 grün (echter Browser:
 „Thomas Berger" geht nicht hinaus, „Berliner Sparkasse" schon; gelber Chip, Rücknahme per Tipp, danach wörtlich).
 `sw.js` v259. ⚠ Am Tablet nicht gemessen; nicht mit echter KI.
+
+## 🎙 Mikrofon an jeder Texteingabe · Sprachmarke je Feld · Wort-Speicher (Klaus 2026-10-26, B1)
+
+Klaus: „überall, wo Texte eingegeben werden können, auch ein Mikrofon … und die entsprechende Sprache" · kein langer Druck
+(„schwierig zu kommunizieren"), sondern die Sprache **sichtbar im Feld** · „Sprachwahl merken" · ein **Wort-Speicher** mit
+Wortergänzungen, den man **löschen** kann. `src/ui/mikro.js`: ein MutationObserver auf `#app` hängt hinter jedes Textfeld
+(`input` ohne Typ/text/search, `textarea`; nicht Passwort/Zahl/Datum, nicht `data-kein-mikro` — die SBKIM-Suche hat ihr
+eigenes) eine flache Leiste `.mikro` (28 px, A5): 🎙 und die Marke **„DE ▾"**. Tipp auf die Marke → Liste mit zehn Sprachen
+(DE EN RU PL UA TR FR ES IT AR), die Wahl wird **je Feld** gemerkt (`settings.mikroSprachen[feldSchluessel]`, Schlüssel =
+Ansicht + name/id/aria-label/placeholder); Vorgabe `mikroStandardSprache` (auto = App-Sprache). Erkannter Text wird **an der
+Cursorstelle eingefügt** (`textEinfuegen`, Leerzeichen wo nötig), dann `input`/`change`. Engines wie die SBKIM-Suche
+(`ai/speech.js`: Browser-Erkennung oder EU-Schlüssel; „bindend" sperrt Browser). **Wort-Speicher** (`settings.wortSpeicher`,
+verschlüsselt im Tresor, nie an eine KI): einzeilige Felder merken ganze Einträge → `<datalist>`; mehrzeilige merken Wörter →
+bis drei Chips beim Tippen (`wortVorCursor`, `wortVorschlaege`), höchstens 300 je Feld. Einstellungen: Vorgabesprache,
+Wort-Speicher an/aus, „Wort-Speicher und Sprachwahlen löschen (N Einträge)".
+Proben: `tests/run.mjs` drei Abschnitte „Mikrofon" (+26) · `tests/smoke_mikro.mjs` **19 grün** (echter Browser, Erkennung
+gestellt — ⚠ Chromium ≥ 128 hat auch das unpräfixierte `SpeechRecognition`; wer nur `webkit…` stellt, bekommt die echte und
+„not-allowed") · `smoke_design` 90 grün. `sw.js` v261. ⚠ Am Tablet nicht gemessen; echte Erkennung nicht gemessen; die
+Leiste steht bei Feldern voller Breite in der Zeile darunter (28 px mehr Höhe je Feld, benannt).
