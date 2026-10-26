@@ -17,8 +17,17 @@ Buchhaltungsprogramme.
 |---|---|---|
 | A1 | **Strichsymbole** statt Emojis bei den Symbolen | Navigation, Knöpfe, Tabellenaktionen und Statusanzeigen bekommen Strichsymbole (heute: nur Text). **Die vorhandenen 3D-Bilder bleiben** (Klaus 2026-10-26: eigens generiert, passen zu App und Farbe): Sperrbildschirm, 3 Onboarding-Bilder, 7 Leerzustände. Sie sind Illustrationen, keine Symbole. |
 | A2 | **Knöpfe flach** halten, soweit am Handy bedienbar | Heute ca. 40–44 px sichtbar hoch (`.btn` padding .55rem), Eingabefelder ebenso. Ziel wie PBP: sichtbar ~28–32 px, unsichtbare Trefferfläche ≥ 44 px bei Touch. Formulare, Segment-Schalter, Tabellenaktionen mitziehen. |
-| A3 | **Vollbild**, Platz optimal nutzen | Heute ist alles auf `--maxw: 880px` begrenzt und mittig: am breiten Schirm bleibt links/rechts viel leer (siehe `wide-*.png`). Ziel: volle Breite, Seitenleiste links fest, Inhalt füllt den Rest; Tabellen nutzen die Breite. |
+| A3 | **Vollbild**, Platz optimal nutzen (präzisiert 2026-10-26) | Heute alles auf `--maxw: 880px` begrenzt und mittig, am breiten Schirm viel leer. Ziel: **volle Breite**, der Inhalt passt sich immer der verfügbaren Breite an. **Seitenleiste einklappbar** (auf Symbole); im **Teilbild** (geteilter Bildschirm, schmales Fenster) klappt sie **selbst** ein. Am Handy ein **☰-Menü**, das die Leiste aufklappt, Einstellungen inklusive. |
 | A4 | **Themen = Farbe × Hell/Dunkel** (Klaus 2026-10-26: Hell/Dunkel bleibt und gilt für jede Farbe) | Zwei getrennte Schalter: **Farbe** (Blau · Graphit · Petrol) und **Helligkeit** (Hell · Dunkel · wie Gerät). Ergibt sechs Kombinationen, siehe Tabelle unten. Ersetzt die heutige Wahl System/Hell/Dunkel nicht, sondern ergänzt sie um die Farbe. |
+
+### A5 Schrift ohne Fehler (Klaus 2026-10-26: „ist immer wieder aufgetaucht“)
+Bei jeder Breite (Handy, Teilbild, Tablet, Vollbild, große Schrift im System) gilt:
+- Keine abgeschnittenen Wörter, keine Buchstaben unter Rändern, nichts überlappt.
+- Knopf- und Menübeschriftungen brechen nicht mitten im Wort und werden nicht zweizeilig gequetscht
+  (heute z. B. „Jetzt sperren“ zweizeilig am Handy, Feldnamen „Einzelpreis (€)“ umgebrochen, USt-Auswahl abgeschnitten).
+- Statt Quetschen: Symbol + kurzer Name, oder Feld rutscht in die nächste Zeile; Tabellen scrollen waagerecht, Spalten bleiben lesbar.
+- Abnahme je Umbau-Abschnitt: Bildschirmfotos bei 320, 390, 768, 1024, 1366 px und 200 % Schrift; jede Beschriftung
+  automatisch auf Überlauf prüfen (Text breiter als sein Kasten = Fehler).
 
 ### A4 im Detail: Farbe × Helligkeit
 
@@ -37,7 +46,7 @@ Buchhaltungsprogramme.
   als heute mit dunkler Schrift 8,9 : 1). Weiß auf dem BLP-Grün `#0f766e` (wie im hellen Petrol) = **5,5 : 1** ✓,
   Knopf gegen dunklen Hintergrund 3,4 : 1 ✓. → Vorschlag: Hauptknopf in Nachtpetrol `#0f766e` mit weißer Schrift,
   Hover `#0b5a54` (8,1 : 1). Das helle `#2dd4bf` bleibt für Akzente (aktiver Menüpunkt, Links, Fokusrahmen). **Von Klaus bestätigt 2026-10-26.**
-- Startwert: Petrol + wie Gerät (= heutiges Aussehen bleibt beim Update erhalten).
+- **Startwert (entschieden 2026-10-26):** genau wie Brain Pro – Gerät dunkel → Blau/Nachtblau, sonst Blau/Klarblau. Danach bleibt immer **das zuletzt gewählte Thema** erhalten (auch nach Neustart/Update). Hinweis für den Bau: Wer heute schon BLP nutzt, hat nur „System/Hell/Dunkel“ gespeichert, keine Farbe → bekommt beim ersten Start nach dem Update ebenfalls die Brain-Pro-Startfarbe.
 
 ### Was es aus Private Brain Pro schon gibt (wiederverwendbar)
 - **Strichsymbol-Satz:** `Privat-Brain-Pro/docs/design/umbau-2026-10-24/design-kit/icons.svg`,
@@ -141,7 +150,7 @@ Er wird bei der Einrichtung gefragt und ist in den Einstellungen änderbar.
 
 | Modus | Für wen | Sichtbar | Ausgeblendet |
 |---|---|---|---|
-| **Privat** | Haushalt, eigene Belege, Steuererklärung-Vorbereitung | Belege, Einnahmen/Ausgaben, einfache Auswertung | USt, Aufträge, Kunden, Mitarbeiter, Kostenstellen, Konten-Rahmen, DATEV |
+| **Privat** (entschieden 2026-10-26) | Arbeitnehmer, Arbeitslose – **private Einkommensteuererklärung**, kein Gewerbe. Andere Gesetze als Kleinunternehmer (EStG: Werbungskosten, Sonderausgaben, außergewöhnliche Belastungen, haushaltsnahe Dienstleistungen – kein UStG, keine EÜR, keine GoBD-Buchführungspflicht) | Belege sammeln und den Steuer-Kategorien zuordnen, Jahresübersicht für die Steuererklärung | alles Unternehmerische: USt, Journal/Soll-Haben, Konten-Rahmen, Aufträge, Kunden, Mitarbeiter, Kostenstellen, EÜR, DATEV. **Eigener fachlicher Bauabschnitt**, nicht nur Ausblenden |
 | **Kleinunternehmer** (§ 19 UStG) | Nebengewerbe, kleine Selbstständige | Belege, Journal, Rechnungen/Aufträge, Kunden, EÜR | USt-Satz in Formularen (fest 0 % + Hinweis § 19), USt-Voranmeldung, Zahllast-Kachel, Mitarbeiter, Kostenstellen |
 | **Selbstständig / Unternehmen** (regelbesteuert) | Freiberufler, GmbH-klein | alles für EÜR + USt-VA, Mitarbeiter, Kostenstellen | Mandanten-Wechsel, Berater-Export |
 | **Berater** | betreut mehrere Mandanten | alles, dazu Mandantenwechsel, DATEV-Export, Prüfansichten | – |
@@ -158,7 +167,7 @@ Regeln dazu:
 ## D. Offene Fragen an Klaus
 
 - ~~D1 Themen~~ **entschieden:** PBP-Farben + heutiges BLP-Dunkel, Hell/Dunkel gilt für jede Farbe (siehe A4).
-- D8 Passt die Zuordnung Farbe × Hell/Dunkel (Tabelle A4)? Graphit-Dunkel („Nachtgraphit") muss neu entstehen. Startwert Petrol + wie Gerät? (Name „Nachtpetrol" ist entschieden.)
+- ~~D8 Farbe × Hell/Dunkel, Graphit-Dunkel, Startwert~~ **entschieden:** Zuordnung passt, „Nachtgraphit“ wird neu gemacht, Start wie Brain Pro + letztes Thema merken (siehe A4).
 - ~~D9 Nachtpetrol-Hauptknopf~~ **entschieden:** `#0f766e` + weiße Schrift (siehe A4).
 - ~~D2 Gemeinsamer Symbolsatz~~ **entschieden (Klaus 2026-10-26):** BLP nutzt dieselben Strichsymbole wie
   Private Brain Pro, wo sie übertragbar sind – eine App-Familie, keine Irritation. Gleiche Aktion = gleiches
@@ -166,12 +175,11 @@ Regeln dazu:
   (Buchung, Konto, Beleg, Euro, Festschreiben …) kommen neu dazu, im selben Stil (24×24, Strich 1,75).
   Übernahme als Kopie aus `Privat-Brain-Pro/docs/design/umbau-2026-10-24/design-kit/icons.svg`, nicht abwandeln;
   neue BLP-Symbole möglichst auch an PBP zurückgeben, damit der Satz einer bleibt.
-- D3 Seitenleiste am breiten Schirm: dauerhaft mit Namen, oder einklappbar auf Symbole?
-- D4 Handy: untere Leiste (Hauptwege) oder ☰-Menü wie bei PBP?
-- D5 Modi: Passen die vier (Privat, Kleinunternehmer, Selbstständig, Berater)? Was genau soll
-  **Privat** können – nur Belege/Ausgaben sammeln, oder auch Steuererklärung vorbereiten?
+- ~~D3 Seitenleiste~~ **entschieden:** einklappbar; Inhalt nutzt immer die volle verfügbare Breite; im Teilbild klappt die Leiste selbst ein (siehe A3).
+- ~~D4 Handy-Menü~~ **entschieden:** ein ☰-Menü, das die Leiste aufklappt, Einstellungen inklusive.
+- ~~D5 Modi~~ **entschieden:** Privat = Arbeitnehmer/Arbeitslose, private Steuererklärung (siehe Tabelle F); Kleinunternehmer, Selbstständig, Berater bleiben.
 - D7 Die Bilder sind in Teal/Smaragd. Zu Petrol passen sie genau; bei Klarblau, Graphit und Nachtblau beim Umbau ansehen, ob sie noch stimmig wirken (nur prüfen, nicht ändern).
-- D6 Ersetzt der neue Modus den alten Schalter Einfach/Profi/Berater ganz? (Vorschlag: ja.)
+- ~~D6 Alter Schalter~~ **entschieden:** Der neue Modus ersetzt Einfach/Profi/Berater ganz.
 
 ## E. Nächste Schritte (wenn Klaus freigibt)
 1. Offene Fragen D1–D4 klären, Sammlung ergänzen.
