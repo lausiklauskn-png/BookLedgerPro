@@ -241,7 +241,18 @@ Bei Unternehmer-Modi: Trennung privat/betrieblich (Privatentnahme/-einlage) stat
 - D11 ELSTER: **beauftragt** – Recherche zu ERiC-Plattformen und Hersteller-ID läuft (Ergebnis folgt in Abschnitt G).
 - ~~D6 Alter Schalter~~ **entschieden:** Der neue Modus ersetzt Einfach/Profi/Berater ganz.
 
-## E. Nächste Schritte (wenn Klaus freigibt)
-1. Offene Fragen D1–D4 klären, Sammlung ergänzen.
-2. Danach Umbauplan in Abschnitten (Rahmen/Themen → Symbole → Knöpfe/Formulare →
-   Seiten einzeln). Jeder Abschnitt mit Bildern vorher/nachher, Cache-Bump in `sw.js`.
+## E. Reihenfolge (Klaus 2026-10-26)
+
+**Privat kommt zuerst.** Kleinunternehmer, Selbstständig und Berater folgen erst, wenn Privat funktioniert.
+
+1. **Design-Grundlage** (A1–A5): Themen Farbe × Hell/Dunkel, Strichsymbole (PBP-Satz), flache Knöpfe,
+   Vollbild mit einklappbarer Leiste/☰-Menü, Schrift ohne Fehler. Modus-Schalter mit Privat als erstem Modus.
+2. **Workflow-PDF-Einbindung** – ausdrücklich wichtigster Funktionspunkt: Dokumente aus Workflow PDF
+   übernehmen und aus BLP heraus Workflow PDF zum Scannen öffnen (H2). Zuerst prüfen, welche Übergabe
+   Workflow PDF Pro heute anbietet; Plan dafür vor dem Bau mit Klaus abstimmen.
+3. **Haushaltsbuch** (H): Beleg-Eingang, automatisches Eintragen, Monatsübersicht.
+4. **Steuer-Zuordnung Privat** inkl. Rentner, Jahresübersicht je Anlage.
+5. **ELSTER** (G): nach Recherche-Ergebnis, eher in der nativen Pro-App.
+6. Danach Kleinunternehmer → Selbstständig → Berater; PWA-Klon gemäß G.
+
+Jeder Abschnitt: eigener PR, Bilder vorher/nachher, Schrift-Prüfung (A5), Cache-Bump in `sw.js`.
