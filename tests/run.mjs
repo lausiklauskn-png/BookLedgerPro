@@ -6716,5 +6716,21 @@ await section('Workflow PDF: Marke, Textebene, Teilen-Parameter, Adressen (reine
   ok('Belegseite: Marke beim Ablegen, Herkunft am Beleg', /herkunftVon\(await pdfKopf\(/.test(dok) && /saveBeleg\(file, \{ typ, herkunft, quelle \}\)/.test(dok));
 });
 
+// ─── „Journal“ → „Buchungen“ (Klaus 2026-10-26: „Das Wort Buchungen ist akzeptiert“) ───
+await section('Buchungen statt Journal (Klaus 2026-10-26)', async () => {
+  const src = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  const deStart = src.indexOf('\n  de: {'), enStart = src.indexOf('\n  en: {'), ende = src.indexOf('\nexport function setLang');
+  const de = src.slice(deStart, enStart), en = src.slice(enStart, ende);
+  ok('i18n: de- und en-Block gefunden', deStart > 0 && enStart > deStart && ende > enStart);
+  ok('DE: Navigation und Titel heißen „Buchungen“', /'nav\.journal': 'Buchungen'/.test(de) && /'journal\.title': 'Buchungen'/.test(de));
+  const deJournal = de.split('\n').filter((l) => /\bJournal\b/.test(l) && !/^\s*\/\//.test(l));
+  ok('DE: kein sichtbarer Text sagt mehr „Journal“ (Schlüssel `journal` bleibt)', deJournal.length === 0);
+  ok('EN: Navigation und Titel heißen „Entries“', /'nav\.journal': 'Entries'/.test(en) && /'journal\.title': 'Entries'/.test(en));
+  ok('EN: kein sichtbarer Text sagt mehr „Journal“', !en.split('\n').some((l) => /\bJournal\b/.test(l) && !/^\s*\/\//.test(l)));
+  const anl = _readSpore(new URL('../src/ui/views/anleitung.js', import.meta.url), 'utf8');
+  ok('Anleitung spricht von „Buchungen“, nicht „Journal“', !/\bJournal\b/.test(anl) && anl.includes('Menü „Buchungen"'));
+  ok('Route/Schlüssel `journal` bleibt (Daten, Navigation, Modus)', /\['journal', 'nav\.journal'/.test(_readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8')));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);

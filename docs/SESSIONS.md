@@ -5,6 +5,18 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (spät) — „Journal“ → „Buchungen“ (Klaus: „Das Wort Buchungen ist akzeptiert“)
+
+- **Getan:** sichtbares Wort überall umgestellt: Navigation und Seitentitel „Buchungen“ (EN „Entries“), Hinweise
+  „… unter „Buchungen“ prüfen und festschreiben“, Export „Buchungen-CSV“, Anleitung. Route, Schlüssel `journal.*`,
+  Daten und Modus-Regeln unverändert (`src/ui/i18n.js`, `src/ui/views/anleitung.js`). `sw.js` v258.
+- **Beweis:** `node tests/run.mjs` **2375/0** (+7: Wächter „kein sichtbarer Text sagt mehr Journal“ für DE und EN,
+  Anleitung, Route bleibt). Gegenprobe: `nav.journal` zurück auf „Journal“ → 2 rote Zeilen mit Namen.
+  `node tests/smoke_design.mjs` 90 grün · 0 ROT (Klapp-Knopf-Titel jetzt „Buchungen“).
+- **Nicht geprüft:** kein Gerät. Berater-Modus zeigt kein Zusatzwort „(Journal)“ — bewusst weggelassen, Klaus fand das
+  Wort unverständlich.
+- **Nächstes:** Plan für Bedeutungssuche / Mikrofon / Anonymisierung an Klaus, dann Schritt 3 Haushaltsbuch.
+
 ## 2026-10-26 (spät) — Bau Schritt 2: Workflow-PDF-Einbindung (V1 + V2)
 
 **Was getan**
