@@ -5,6 +5,15 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (Sitzungsende) — Signatur angelegt, Abschluss und Brief für Schritt B
+
+**Was getan:** Klaus hat in Termux die Freigabe erzeugt (`~/blp-freigabe.age`) und als `BLP_SIGNING_UNLOCK` in `android-production`
+abgelegt, den Hauptzweig auf `main` gestellt und den Signier-Lauf gestartet; #1 `check` (rot, noch kein Schlüssel), #2 `initialize`
+(Schlüssel erzeugt, PR durfte Actions nicht anlegen → PR #369 von der Sitzung, gemergt), #3 `check` grün. Abschluss
+`BRIEF_ABSCHLUSS_2026-10-26_ANDROID-SCHRITT-A.md`, Brief `BRIEF_SITZUNG_TRESORORDNER-SCHRITT-B.md`, Forschung § 7.
+**Stand:** Zertifikat `7a6217eb…8737f0b`; keine signierte APK, kein Release.
+**Offen/Nächstes:** Termux-Löschung der offenen Kopie bestätigen; Frage Pflegeort `de.familyprojekt.tresor`; Schritt B.
+
 ## 2026-10-26 (abends) — Schritt A: Android-Hülle ohne Tresorordner, A2 Signier-Werkzeuge
 
 **Was getan:** Klaus' fünf Antworten in Brief/CLAUDE/PULS; Capacitor 8.5.3 (`capacitor.config.json`, `package.json` ohne

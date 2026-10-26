@@ -121,3 +121,29 @@ wenn ihr Anker fehlt), nicht durch Kopieren des ganzen Repos.
 4. Reihenfolge: zuerst BookLedgerPro als installierbare App ohne Ordner, dann die Ordnerschicht, dann Private Brain Pros
    Eingangsfach — oder wie im Plan zuerst Private Brain Pro?
 5. Weg 2 (Relais) vor oder nach dieser Sitzung (Frage aus dem Plan, weiter offen).
+
+## 7 · Befunde aus Schritt A und A2 (2026-10-26, abends, gemessen)
+
+1. **GitHubs Hauptzweig war ein alter Zweig.** `claude/general-discussion-x9xyk9` (2026-06-14, 39 Commits hinter `main`) stand als
+   Standard. Folge: ein Lauf mit `workflow_dispatch` erscheint nur, wenn seine Datei auf dem **Hauptzweig** liegt — die
+   Signier-Identität stand auf `main` und war in GitHub unsichtbar. Klaus hat auf `main` umgestellt. **Andere Repos prüfen**, bevor
+   dort ein `workflow_dispatch`-Lauf gebaut wird (`git remote show origin | grep "HEAD branch"`).
+2. **Die Sitzung darf keine Läufe starten** (`workflow_dispatch` → 404 über das Werkzeug), PRs anlegen und mergen schon. Läufe tippt
+   Klaus. **GitHub Actions darf keine PRs anlegen** („not permitted to create or approve pull requests") — der Signier-Lauf schob
+   den Zweig `signing/android-identity` trotzdem, die Sitzung hat PR #369 angelegt. So lassen oder in den Repo-Einstellungen
+   erlauben — Klaus' Entscheidung.
+3. **„check" vor „initialize" ist rot, nicht kaputt** (Lauf #1: `ENOENT signing/android-release.enc.json`). Die Vorgabe der Auswahl ist
+   `check`; in der übersetzten Oberfläche leicht zu übersehen.
+4. **Im Behälter kein Android-SDK erreichbar** (`dl.google.com` HTTP 000; `maven.google.com` und Gradle erreichbar). Java bauen nur in
+   GitHub; vor dem Push alles prüfen, was ohne Android geht (`tools/native/test-native.mjs`, JVM-Logik als reine Klassen).
+5. **`concurrency: cancel-in-progress`** im Android-Lauf bricht beim nächsten Push den alten Lauf ab — kein Befund, aber beim Lesen
+   der Liste „abgebrochen" nicht für rot halten.
+6. **WebView-Lücken, die eine PWA nicht hat:** `<a download>` tut nichts (auch `a.click()` aus `downloadBlob`) → ohne Abfangen ginge
+   jede Datensicherung still verloren (Regel #2); `launchQueue` fehlt → ein Ersatz in `blp-native.js` speist den vorhandenen
+   Verbraucher in `src/ui/shell.js`, die Web-App bleibt unverändert; `navigator.share` mit Dateien fehlt → FileProvider-Weg.
+7. **`package.json` ohne `"type": "module"`** — sonst bricht `tests/run.mjs` (lädt `vendor/pdf-lib.min.js` über `createRequire`).
+   Werkzeuge daher als `.mjs`.
+8. **Web-Paket nur aus `git ls-files`**: `sbkim/.node-secret.json` (gitignored) kann so nie in die APK. 408 Dateien, ~46 MB, Beleg
+   `native-bundle.json` mit SHA je Datei.
+9. **Freigabe ohne Zeilenende erzeugen** (`openssl rand -hex 32 | tr -d '\n'`): die Prüfung verlangt genau 64 Hex; Termux hat ohne
+   Termux:API kein `termux-clipboard-set`, Klaus kopiert vom Schirm.
