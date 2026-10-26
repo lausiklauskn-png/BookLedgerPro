@@ -150,7 +150,7 @@ Er wird bei der Einrichtung gefragt und ist in den Einstellungen änderbar.
 
 | Modus | Für wen | Sichtbar | Ausgeblendet |
 |---|---|---|---|
-| **Privat** (entschieden 2026-10-26) | Arbeitnehmer, Arbeitslose – **private Einkommensteuererklärung**, kein Gewerbe. Andere Gesetze als Kleinunternehmer (EStG: Werbungskosten, Sonderausgaben, außergewöhnliche Belastungen, haushaltsnahe Dienstleistungen – kein UStG, keine EÜR, keine GoBD-Buchführungspflicht) | Belege sammeln und den Steuer-Kategorien zuordnen, Jahresübersicht für die Steuererklärung | alles Unternehmerische: USt, Journal/Soll-Haben, Konten-Rahmen, Aufträge, Kunden, Mitarbeiter, Kostenstellen, EÜR, DATEV. **Eigener fachlicher Bauabschnitt**, nicht nur Ausblenden |
+| **Privat** (entschieden 2026-10-26) | Arbeitnehmer, Arbeitslose und **besonders Rentner** (müssen oft Steuererklärung abgeben; Renten, Kranken-/Pflegeversicherung, Anlage R) – **private Einkommensteuererklärung**, kein Gewerbe. Andere Gesetze als Kleinunternehmer (EStG: Werbungskosten, Sonderausgaben, außergewöhnliche Belastungen, haushaltsnahe Dienstleistungen – kein UStG, keine EÜR, keine GoBD-Buchführungspflicht) | Belege sammeln und den Steuer-Kategorien zuordnen, Jahresübersicht für die Steuererklärung | alles Unternehmerische: USt, Journal/Soll-Haben, Konten-Rahmen, Aufträge, Kunden, Mitarbeiter, Kostenstellen, EÜR, DATEV. **Eigener fachlicher Bauabschnitt**, nicht nur Ausblenden |
 | **Kleinunternehmer** (§ 19 UStG) | Nebengewerbe, kleine Selbstständige | Belege, Journal, Rechnungen/Aufträge, Kunden, EÜR | USt-Satz in Formularen (fest 0 % + Hinweis § 19), USt-Voranmeldung, Zahllast-Kachel, Mitarbeiter, Kostenstellen |
 | **Selbstständig / Unternehmen** (regelbesteuert) | Freiberufler, GmbH-klein | alles für EÜR + USt-VA, Mitarbeiter, Kostenstellen | Mandanten-Wechsel, Berater-Export |
 | **Berater** | betreut mehrere Mandanten | alles, dazu Mandantenwechsel, DATEV-Export, Prüfansichten | – |
@@ -163,6 +163,31 @@ Regeln dazu:
 - F5 Einstellungen ohnehin gliedern (siehe B12), dann bleibt je Modus nur eine kurze Seite.
 - F6 Recht: Kleinunternehmer-Modus muss wirklich § 19 abbilden (keine USt ausweisen, Pflichthinweis
   auf Rechnungen, Umsatzgrenze beobachten). Das ist **Funktion, nicht nur Design** – eigener Bauabschnitt.
+
+## G. Produktplan und ELSTER (Klaus 2026-10-26)
+
+**Zwei Apps aus einer Quelle:**
+1. Design und Verbesserungen werden **hier** fertig gebaut (noch PWA).
+2. Dann wird dieser Stand in ein **neues Repo geklont** → bleibt PWA. Name noch offen
+   (Ideen: „Bookledger PWA", „Bookledger Standard", „BLP"). Klaus legt ihn fest.
+3. **Dieses Repo wird danach die native App** und heißt weiter **BookLedgerPro**.
+
+⚠ **Wichtig beim Klonen (CLAUDE.md, Regel 3):** Beide liegen auf demselben GitHub-Pages-Ursprung
+`lausiklauskn-png.github.io`. Hätte der Klon dieselbe Datenbank-Endung `bookledgerpro`, teilen sich beide
+Apps im Browser **dieselben Daten** → Kollision. Der Klon braucht eine **eigene Endung** (z. B. `bookledger`),
+und vorhandene Daten ziehen nur per Backup/Wiederherstellen um. Vor dem Klonen festlegen (D10).
+
+**ELSTER direkt aus BLP (vor allem Modus Privat/Rentner):**
+- Ziel: BLP baut die Einkommensteuererklärung und sendet sie **direkt an ELSTER**, mit Internetverbindung
+  (nur nach Bestätigung, wie bei der EU-KI).
+- Ist-Stand: BLP kann **nicht** an ELSTER senden (PULS.md: „keine ELSTER/ERiC-Einreichung, nur Datenpaket").
+- Technischer Weg (noch zu prüfen, nicht gemessen): Offiziell geht Übermittlung über die Programmbibliothek
+  **ERiC** der Finanzverwaltung. Dafür braucht der Hersteller eine **Hersteller-ID** (Antrag bei ELSTER) und der
+  Nutzer sein **ELSTER-Zertifikat**. ERiC ist eine native Bibliothek → das passt zur **nativen Pro-App**, im
+  Browser (PWA) geht es so nicht. Welche Plattformen ERiC unterstützt (Windows sicher; Android/iOS fraglich)
+  muss vor dem Bau geprüft werden.
+- Für die PWA-Fassung bleibt realistisch: Formularwerte vorbereiten und zum Übertragen in „Mein ELSTER" anzeigen.
+- Eigener großer Bauabschnitt (Recht + Technik), nicht Teil des Design-Umbaus.
 
 ## D. Offene Fragen an Klaus
 
@@ -179,6 +204,8 @@ Regeln dazu:
 - ~~D4 Handy-Menü~~ **entschieden:** ein ☰-Menü, das die Leiste aufklappt, Einstellungen inklusive.
 - ~~D5 Modi~~ **entschieden:** Privat = Arbeitnehmer/Arbeitslose, private Steuererklärung (siehe Tabelle F); Kleinunternehmer, Selbstständig, Berater bleiben.
 - D7 Die Bilder sind in Teal/Smaragd. Zu Petrol passen sie genau; bei Klarblau, Graphit und Nachtblau beim Umbau ansehen, ob sie noch stimmig wirken (nur prüfen, nicht ändern).
+- D10 Name des PWA-Klons und seine Datenbank-Endung (Vorschlag `bookledger`). Wann wird geklont – nach dem Design-Umbau?
+- D11 ELSTER: Soll ich vorab klären lassen, auf welchen Geräten ERiC läuft und wie die Hersteller-ID beantragt wird?
 - ~~D6 Alter Schalter~~ **entschieden:** Der neue Modus ersetzt Einfach/Profi/Berater ganz.
 
 ## E. Nächste Schritte (wenn Klaus freigibt)
