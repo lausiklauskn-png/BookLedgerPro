@@ -5,6 +5,15 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
+## ▶ Übergabe (2026-10-26, Sitzungsende): Android-Tresorordner vorbereitet
+- **Nächste Sitzung:** `BRIEF_SITZUNG_ANDROID-TRESORORDNER.md` (fünf Fragen an Klaus zuerst, dann Schritte A–D),
+  Forschung `docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`, Abschluss `BRIEF_ABSCHLUSS_2026-10-26_BAU-SITZUNG.md`.
+- **Fund:** `VaultCrypto.java` (PBV1) ist in Private Brain Pro und Workflow PDF Pro schon gleich (bis auf `package`); die
+  **Ordnerschicht** darüber gibt es zweimal verschieden. Bessere Vorlage: Workflow PDF Pro (`DocumentVault`, Schlüssel-Plätze,
+  `VaultRecovery` 5/3, Rust-Zwilling). Vorschlag: Hauptschlüssel über den Fächern, Fach-Schlüssel nur neu verpackt.
+- **Berichtigung:** BookLedgerPro ist noch keine Android-App, sondern die PWA, aus der sie entsteht. BookLedger Basic steht in
+  family-projekt.de (#373) und PWA Toolpoint (#182). Nichts veröffentlicht.
+
 ## ▶ Neuester Stand (2026-10-26, nachts): C1 „Namen nach Muster" gebaut · Klaus' Antworten auf den Plan
 - **Kopie nach `BookLedger-Basic` erledigt (2026-10-26, Stand c52523f):** dort `tools/pro-nachziehen.mjs`, `basic-regeln.mjs`,
   `HERKUNFT-PRO.json`, `tests/basic_gleichstand.mjs` 21 grün, kopierte Suite 2567/0, Browser-Proben grün. Pages lieferte beim ersten Merge von selbst aus. Offen bei Klaus: Knoten-Identität (eigene Spore oder die des Pro-PWA), WorkFloh-Rückweg zeigt auf die Pro-Adresse.
