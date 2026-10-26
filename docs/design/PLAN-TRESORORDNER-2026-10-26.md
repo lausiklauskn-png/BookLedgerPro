@@ -86,8 +86,10 @@ Zulassungsdienst aus Kim-sync `server/zulassung`). Nachgelesen in Kim-sync (Stan
   von Klaus sind Mitglieder (oder je Person ein Raum: Klaus, Jens). Alternative wäre Paarung je Gerätepaar über die
   Geräteschlüssel (genauer, aber mehr Tipparbeit) — **Entscheidung von Klaus.**
 - **Krypto byte-1:1 aus Kim-sync** (`modules/krypto.js` aus Datei-Post, `echtheit.js`, `noble-secp256k1.js`), SHA-gepinnt; der
-  Geräteschlüssel der App ist der des SBKIM-Knotens (BookLedgerPro ist schon Knoten, Schublade `bookledgerpro`) — zu prüfen, ob
-  Kim-sync denselben Schlüssel nimmt oder einen eigenen (`kimsync_*`); zwei Schlüssel je Gerät wären zu vermeiden.
+  Geräteschlüssel: Kim-sync nimmt **nicht** den Schlüssel seines SBKIM-Knotens, sondern einen eigenen secp256k1-Schlüssel
+  (`localStorage` `kimsync_schluessel`, nachgelesen in `index.html`). BookLedgerPro täte es gleich (eigener Relais-Schlüssel,
+  **verschlüsselt im Tresor**, nicht im localStorage) — das Siegel bleibt das Siegel, der Relais-Schlüssel ist der Zugang zur
+  Zulassungsliste.
 - **Zulassung:** jede App meldet sich mit dem signierten Zettel `beitreten` + Einladungs-Token an, wie ein neues Kim-Gerät; bis
   dahin trägt Klaus die Schlüssel von Hand ein (Kim-sync: „Schlüssel aus einer anderen App“).
 - **Das geht auch in der PWA.** Der Relais-Weg braucht keinen Ordnerzugriff (Kim-sync ist eine PWA). Damit könnte die
