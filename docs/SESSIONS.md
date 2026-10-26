@@ -5,6 +5,14 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (nachts) — Privat-Modus: Netz und SBKIM-Suche bleiben · Plan Calculate/Needs
+
+- **Getan:** `src/domain/nutzungsmodus.js`: `network`/`sbkimsuche` aus der Privat-Ausblendung genommen (Klaus: „im Privatmodus
+  soll noch die SBKIM-Suche mit drin sein … auch das Mycel, inklusive des Siegels"); Hinweistext DE/EN; `sw.js` v260.
+  Plan `docs/design/PLAN-CALCULATE-NEEDS-2026-10-26.md` (beide Repos gelesen: Bauart, Speicher, Thema, Übergabe).
+- **Beweis:** `node tests/run.mjs` **2399/0** (Gating-Abschnitt angepasst, neuer Wächter „in keinem Modus ausgeblendet").
+- **Nächstes:** Klaus' Antwort auf D15/D16; B1 Mikrofon.
+
 ## 2026-10-26 (nachts) — C1: Namen nach Muster verdecken
 
 - **Getan:** `src/ai/namensmuster.js` (Anrede, Kontext, Vor-+Nachname, Firma mit Rechtsform; Stoppliste; „Nie verdecken"

@@ -215,7 +215,7 @@ ok('Einstellungen: Modus-Schalter mit vier Modi, kein Einfach/Profi mehr', await
 const anzahlSelbst = await page.evaluate(() => document.querySelectorAll('.setting').length);
 await page.evaluate(async () => { await window.__probe.updateSettings({ nutzungsmodus: 'privat' }); });
 await page.waitForTimeout(200);
-ok('Privat: Menü auf 8 Punkte gekürzt, keine Gruppe Verkauf/Team/Auswerten/Netz', await page.evaluate(() => document.querySelectorAll('.nav-item').length === 8 && [...document.querySelectorAll('.nav-gruppe-titel')].map((e) => e.textContent).join('|') === 'Buchen|Weiteres'));
+ok('Privat: Menü auf 10 Punkte gekürzt, keine Gruppe Verkauf/Team/Auswerten — Netz bleibt (Klaus 2026-10-26: SBKIM-Suche, Mycel/Siegel)', await page.evaluate(() => document.querySelectorAll('.nav-item').length === 10 && [...document.querySelectorAll('.nav-gruppe-titel')].map((e) => e.textContent).join('|') === 'Buchen|Netz|Weiteres' && !!document.querySelector('.nav-item[data-nav="sbkimsuche"]') && !!document.querySelector('.nav-item[data-nav="network"]')));
 const anzahlPrivat = await page.evaluate(() => document.querySelectorAll('.setting').length);
 ok('Privat: Einstellungen kürzer (Firma, DATEV, § 19, Rechnungsstelle … weg), ehrlicher Hinweis steht', anzahlPrivat < anzahlSelbst - 5 && await page.evaluate(() => !!document.querySelector('[data-privat-hinweis]') && !document.body.textContent.includes('Firmenprofil')), anzahlPrivat + ' < ' + anzahlSelbst);
 ok('Privat: data-modus am Rahmen', await page.evaluate(() => document.querySelector('.app').getAttribute('data-modus') === 'privat'));
@@ -288,7 +288,7 @@ await p2.click('.lock-card .btn:not(.btn-primary):not(.btn-sm)');   // Backup he
 await p2.waitForTimeout(600);
 await p2.click('.lock-card .btn-primary');                           // Los geht's
 await p2.waitForSelector('.app-nav', { timeout: 15000 });
-ok('nach der Einrichtung: Shell im Modus Privat (8 Punkte, data-modus)', await p2.evaluate(() => document.querySelectorAll('.nav-item').length === 8 && document.querySelector('.app').getAttribute('data-modus') === 'privat'));
+ok('nach der Einrichtung: Shell im Modus Privat (10 Punkte, data-modus)', await p2.evaluate(() => document.querySelectorAll('.nav-item').length === 10 && document.querySelector('.app').getAttribute('data-modus') === 'privat'));
 if (FOTOS) await p2.screenshot({ path: join(FOTO_ORDNER, 'einrichtung-fertig-privat-1024.png') });
 ok('keine Seitenfehler im echten index.html', fehler2.length === 0, fehler2.join(' | '));
 await ctx2.close();

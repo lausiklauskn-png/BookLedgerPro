@@ -19,7 +19,11 @@
   als 1:1-Kopie für Angebote (Kleinunternehmer), eigenes Fenster/Ansicht, Brücke wie `upstream/` (Verbesserungen dort
   werden nachgezogen). (3) **Workflow-Needs** (Bedarfsanalyse, https://lausiklauskn-png.github.io/Workflow-Needs/) ebenso,
   Start aus BLP heraus; Bilder/Emojis beider Apps bleiben (erkennbar), Farbthema darf an BLP angepasst werden.
-- **Reihenfolge jetzt:** Privat-Modus-Sichtbarkeit (klein) → B1 Mikrofon + Sprachmarke + Wort-Speicher → A1/A2 Bedeutungssuche
+- **Privat-Modus (gebaut, PR „Privat: Netz und SBKIM-Suche“):** `network` und `sbkimsuche` sind in keinem Modus mehr ausgeblendet;
+  `sw.js` v260. **Plan Calculate/Needs:** `docs/design/PLAN-CALCULATE-NEEDS-2026-10-26.md` (E1 empfohlen: byte-1:1-Kopie unter
+  `apps/` mit SHA-Pins, eigener Rahmen, BLP-Thema per Variablen, Übergabe per postMessage; Fragen D15 BLP-Angebote behalten?,
+  D16 gemeinsamer Datenbestand mit der PWA?) — **Antwort von Klaus abwarten**.
+- **Reihenfolge jetzt:** B1 Mikrofon + Sprachmarke + Wort-Speicher → A1/A2 Bedeutungssuche
   → Calculate/Needs-Plan (Repos lesen, Einbettung) → A3 → Haushaltsbuch.
 - **Workflow PDF / Pro:** Worker löschte fremde Vorräte (auch `blpr-*`!) — behoben in Workflow-PDF #133 (1.1.2, v107,
   neue Browser-CI); Pro #22 (Direktstart, 1.0.4) übernommen, #23 (Windows-Dateinamen/Tresor-Fix) offen; danach Kern 1.1.2

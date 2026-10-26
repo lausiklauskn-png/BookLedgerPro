@@ -89,11 +89,13 @@ export function moduswechsel(settings, neu) {
 // Allowlist-Komplement: je Modus die NAV-Schlüssel, die AUSGEBLENDET werden. Berater blendet nichts aus.
 // Unbekannte Schlüssel werden NICHT ausgeblendet (sicher additiv).
 const UNTERNEHMERISCH = ['journal', 'kassenbuch', 'accounts', 'anlagen', 'payables', 'orders', 'angebote', 'shopbuchung',
-  'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte', 'network', 'sbkimsuche'];
+  'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte'];
 const ANSICHT_AUSGEBLENDET = Object.freeze({
   // Privat (F, Tabelle): alles Unternehmerische weg — Journal/Soll-Haben, Kontenrahmen, Aufträge, Kunden,
-  // Mitarbeiter, EÜR/USt-Auswertung, DATEV, Mycel-Netz/-Suche. Es bleiben Übersicht, Belege, Geheim-Fach,
-  // Recht & Doku, Anleitung, Selbsttest, Über, Einstellungen (Haushaltsbuch/Steuer folgen in Schritt 3/4).
+  // Mitarbeiter, EÜR/USt-Auswertung, DATEV. Es bleiben Übersicht, Belege, Geheim-Fach, Recht & Doku, Anleitung,
+  // Selbsttest, Über, Einstellungen (Haushaltsbuch/Steuer folgen in Schritt 3/4) — UND das Netz: Klaus (2026-10-26)
+  // „im Privatmodus soll noch die SBKIM-Suche mit drin sein … auch das Mycel, inklusive des Siegels. Wenn man nämlich
+  // privat seine Apps verbinden will …" → 'network' und 'sbkimsuche' sind in keinem Modus ausgeblendet.
   privat: new Set(UNTERNEHMERISCH),
   // Kleinunternehmer: ohne Mitarbeiter/Lohn (Kostenstellen stecken in Mitarbeiter/Auswertung → Feature-Gate).
   kleinunternehmer: new Set(['employees', 'lohn']),
