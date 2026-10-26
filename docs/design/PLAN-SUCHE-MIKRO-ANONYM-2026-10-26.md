@@ -5,6 +5,10 @@ langen Druck (schwer zu entdecken) → sichtbare Sprachmarke „DE ▾" neben de
 gemerkt**; dazu ein **Wort-Speicher** (Wortergänzung beim Tippen), in den Einstellungen löschbar. **C1 gebaut** (PR „Namen nach
 Muster", `CLAUDE.md`). Reihenfolge: B1 → A1+A2 → A3.
 
+**Stand 2026-10-26 nachts: alles gebaut** — C1 (Namen nach Muster), B1 (Mikrofon mit Sprachmarke, Wort-Speicher), A1+A2 (Suche
+über Belege, Text/Vektoren verschlüsselt am Beleg) und A3 (Frage an die Belege, nur pseudonymisiert, Vorschau, Halt). Abschnitte
+in `CLAUDE.md`; Proben `smoke_handnamen` 21 · `smoke_mikro` 19 · `smoke_belegsuche` 18 · `smoke_frage` 16 · `run.mjs` 2458/0.
+
 Klaus (2026-10-26): „wir machen noch eine Embedding-integrierte Suche innerhalb von BLP, ohne KI. Und wenn mit KI, dann
 mit Anonymisierung … Wenn ich innerhalb von Bookledger Pro Dateien suche, dann auch die Embedding-Suche, also die
 Bedeutungssuche, Vektorsuche und ähnliches. Dann überall, wo Texte eingegeben werden können, auch ein Mikrofon zum

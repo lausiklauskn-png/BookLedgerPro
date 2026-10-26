@@ -5,6 +5,19 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (nachts) — A3: Frage an die Belege (Mistral EU, nur pseudonymisiert, Vorschau, Halt)
+
+- **Getan:** `belegsuche.js` + `belegeFuerFrage`/`frageNachrichten`/`antwortTeile` (rein); Belegansicht `frageAnBelege`
+  (Knopf nur mit Schlüssel, Pseudonymisierung je Beleg, ein Halt über alle Texte, Vorschau mit Senden/Abbrechen, Antwort
+  mit `reidentify` auf dem Gerät und Beleg-Knöpfen); i18n DE/EN; `sw.js` v263.
+- **Beweis:** `node tests/run.mjs` **2458/0** (+9) · `tests/smoke_frage.mjs` **16 grün** (Route gestellt) · `smoke_belegsuche`
+  18 · `smoke_design` 90. Gegenprobe (Wegwerf-Kopie): Halt weg, Anker weg, reidentify weg → je eigene rote Zeile
+  (beim fehlenden Halt stolpert die Probe danach zusätzlich am fehlenden Knopf — benannt).
+- **Lehren:** Vorschau-Karten erst NACH dem Halt bauen (sonst zeigen sie die herausgenommene Zeile); nichts in den
+  Trefferbereich hängen, den jede Suche leert; zwei Probe-Seiten brauchen getrennte Browser-Kontexte („Tresor existiert bereits“).
+- **Nicht geprüft:** echte Mistral-Antwort, Tablet.
+- **Nächstes:** Klaus' Antworten D15/D16/Ü1; Calculate/Needs; Schritt 3 Haushaltsbuch.
+
 ## 2026-10-26 (nachts) — A1+A2: Suche über Belege nach Wörtern und Bedeutung · Befund Offline-Übersetzung
 
 - **Getan:** `src/domain/belegsuche.js` (rein), `documents.js` Store: Text/Vektoren verschlüsselt am Beleg, `db.js` blendet

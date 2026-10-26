@@ -27,10 +27,13 @@
   `run.mjs` 2425/0 · `smoke_mikro` 19 grün · `smoke_design` 90 grün · `sw.js` v261. Details: `CLAUDE.md` „🎙 Mikrofon“.
 - **A1+A2 gebaut (PR „Suche über Belege“):** Text verschlüsselt am Beleg, Wort- und Bedeutungssuche, A2 Buchungen/Kunden/
   Aufträge; `run.mjs` 2449/0 · `smoke_belegsuche` 18 grün · `smoke_design` 90 grün · `sw.js` v262. A3 offen.
+- **A3 gebaut (PR „Frage an die Belege“):** Knopf nur mit Mistral-Schlüssel, bis 5 Treffer-Belege pseudonymisiert → Halt →
+  Vorschau „Das sieht die KI“ → Senden → Antwort mit aufgelösten Platzhaltern und [n]-Knöpfen; `run.mjs` 2458/0 ·
+  `smoke_frage` 16 grün · `smoke_belegsuche` 18 · `smoke_design` 90 · `sw.js` v263. Details: `CLAUDE.md` „🤖 Frage an die Belege“.
 - **Befund Offline-Übersetzung** (Klaus' Frage 26.10.): `docs/design/BEFUND-OFFLINE-UEBERSETZUNG-2026-10-26.md` — Translator-API
   nur Chrome/Edge am PC (offline nach dem Laden), nicht Android; Pro-Apps über PBPs Modell-Worker. Empfehlung Ü1, Klaus fragen.
-- **Reihenfolge jetzt:** Klaus' Antworten (D15/D16 Calculate/Needs, Ü1 Übersetzung) → Calculate/Needs → A3 → Haushaltsbuch + Sprachmarke + Wort-Speicher → A1/A2 Bedeutungssuche
-  → Calculate/Needs-Plan (Repos lesen, Einbettung) → A3 → Haushaltsbuch.
+- **Reihenfolge jetzt:** Klaus' Antworten (D15/D16 Calculate/Needs, Ü1 Übersetzung) → Calculate/Needs → Schritt 3 Haushaltsbuch →
+  4 Steuer Privat → 5 ELSTER (D14). Das Paket C1/B1/A1/A2/A3 ist vollständig gebaut.
 - **Workflow PDF / Pro:** Worker löschte fremde Vorräte (auch `blpr-*`!) — behoben in Workflow-PDF #133 (1.1.2, v107,
   neue Browser-CI); Pro #22 (Direktstart, 1.0.4) übernommen, #23 (Windows-Dateinamen/Tresor-Fix) offen; danach Kern 1.1.2
   bytegleich nach Pro. Keine Veröffentlichung ohne Klaus' Wort.
