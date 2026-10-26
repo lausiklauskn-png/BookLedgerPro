@@ -1,0 +1,49 @@
+name: Android-Hülle
+
+# Baut die native Android-App aus dem unveränderten Web-Stand (Schritt A, Klaus 2026-10-26).
+# Nur ein Prüf-Bau (debug): keine Signatur, keine Veröffentlichung — die kommt erst auf Klaus' Wort.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Web-Paket und Hülle prüfen (ohne Android)
+        run: node tools/native/test-native.mjs
+      - name: Signier-Werkzeuge mit Wegwerf-Schlüssel prüfen (kein echter Schlüssel)
+        run: node --test tools/signing/test-identity.mjs tools/signing/test-unlock-file.mjs
+      - name: Web-Paket bauen und in die Hülle legen
+        run: npm run sync:android
+      - name: Bauen, Lint und JVM-Proben
+        working-directory: android
+        run: ./gradlew --no-daemon --max-workers=2 assembleDebug lintDebug testDebugUnitTest
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bookledgerpro-android-debug
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/app/build/reports/
+          if-no-files-found: warn
+          retention-days: 14

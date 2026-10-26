@@ -1,0 +1,17 @@
+{
+  "name": "bookledgerpro-native",
+  "private": true,
+  "description": "Nur Werkzeuge für die native Android-Hülle von BookLedgerPro. Die Web-App selbst bleibt build-frei (native ES-Module, keine Laufzeit-Abhängigkeiten).",
+  "scripts": {
+    "build:web": "node tools/native/prepare-web.mjs",
+    "sync:android": "node tools/native/prepare-web.mjs && cap sync android",
+    "test:native": "node tools/native/test-native.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}

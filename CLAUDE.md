@@ -8,9 +8,14 @@ die native Pro-App** (Android + Windows), **ohne Umbenennung** des Repos. Pages 
 (Private Brain Pro, BookLedgerPro, Workflow PDF Pro) teilen **einen Tresorordner** mit einem Passwort und dem byte-gleich kopierten
 PBV1-Schloss; PWAs bleiben bei Teilen/Links. Je Plattform eine Bausitzung (Android zuerst, dann Windows). Plan mit Fächern,
 Regeln, Passwort/Ersatzschlüssel und offenen Entscheidungen: `docs/design/PLAN-TRESORORDNER-2026-10-26.md`.
-**Nächste Sitzung (Android-Tresorordner):** `BRIEF_SITZUNG_ANDROID-TRESORORDNER.md` (erst fünf Fragen an Klaus), Forschung
+**Nächste Sitzung (Android-Tresorordner):** `BRIEF_SITZUNG_ANDROID-TRESORORDNER.md` (Klaus' Antworten stehen dort: ein Kopf/Passwort, Daten bleiben in der App + Sicherung + Ordner in BLP öffnen/durchsuchen, Paket per `init`, Reihenfolge a–d, Relais zuletzt), Forschung
 `docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`, Abschluss `BRIEF_ABSCHLUSS_2026-10-26_BAU-SITZUNG.md`. BookLedgerPro ist
 **noch PWA**; die native App entsteht erst dort. Nichts veröffentlichen ohne Klaus' Wort.
+
+**📱 Android-Hülle (Schritt A, Klaus 2026-10-26):** `android/` + `native/blp-native.js` + `tools/native/` (Paket
+`de.familyprojekt.bookledgerpro`); die Web-App bleibt unverändert, das Paket nimmt nur Laufzeit-Dateien aus `git ls-files`.
+Probe `node tools/native/test-native.mjs`, Bau nur in GitHub (`android.yml`). Signatur über `tools/signing/` — **nie `init` ohne
+Klaus**, nichts veröffentlichen ohne sein Wort. Bedienung, Klaus' Signatur-Schritte, Grenzen: `docs/ANDROID.md`.
 
 Dieses Repo wird über viele Sitzungen hinweg gebaut. Lies das hier zuerst.
 

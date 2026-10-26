@@ -1,0 +1,13 @@
+{
+  "appId": "de.familyprojekt.bookledgerpro",
+  "appName": "BookLedgerPro",
+  "webDir": "www",
+  "loggingBehavior": "none",
+  "server": { "androidScheme": "https" },
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false,
+    "resolveServiceWorkerRequests": true
+  },
+  "plugins": { "CapacitorHttp": { "enabled": false } }
+}
