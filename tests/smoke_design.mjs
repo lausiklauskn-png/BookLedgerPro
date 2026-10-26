@@ -138,7 +138,7 @@ ok('Vollbild: Inhalt nutzt die ganze Breite (keine 1200-px-Grenze)', await page.
 
 console.log('— Seitenleiste: Gruppen, Ein-/Ausklappen, Teilbild —');
 ok('Gruppen mit Überschriften stehen', await page.evaluate(() => document.querySelectorAll('.nav-gruppe-titel').length === 6));
-ok('Alle 24 Ansichten im Modus Selbstständig sichtbar', await page.evaluate(() => document.querySelectorAll('.nav-item').length === 24));
+ok('Alle 25 Ansichten im Modus Selbstständig sichtbar (Calculate/Needs statt BLP-Angebote, Klaus 2026-10-26)', await page.evaluate(() => document.querySelectorAll('.nav-item').length === 25 && !document.querySelector('.nav-item[data-nav="angebote"]') && !!document.querySelector('.nav-item[data-nav="calculate"] img.ic-img')));
 ok('Breit: Leiste aufgeklappt, Namen sichtbar', await page.evaluate(() => !document.querySelector('.app').classList.contains('nav-zu') && getComputedStyle(document.querySelector('.nav-item .ic-text')).display !== 'none'));
 await page.click('.nav-klapp');
 await page.waitForTimeout(100);
@@ -233,7 +233,7 @@ await page.waitForTimeout(200);
 ok('Kleinunternehmer: ohne Mitarbeiter/Lohn, mit Aufträgen', await page.evaluate(() => !document.querySelector('.nav-item[data-nav="employees"]') && !document.querySelector('.nav-item[data-nav="lohn"]') && !!document.querySelector('.nav-item[data-nav="orders"]')));
 await page.evaluate(async () => { await window.__probe.updateSettings({ nutzungsmodus: 'berater' }); });
 await page.waitForTimeout(200);
-ok('Berater: alle 24 Ansichten, § 19-Schalter sichtbar, Daten/Einstellung erhalten', await page.evaluate(() => document.querySelectorAll('.nav-item').length === 24 && document.body.textContent.replace(/\u00ad/g, '').includes('Kleinunternehmer (§19 UStG)') && window.__probe.getSettings().kleinunternehmer === true));
+ok('Berater: alle 25 Ansichten, § 19-Schalter sichtbar, Daten/Einstellung erhalten', await page.evaluate(() => document.querySelectorAll('.nav-item').length === 25 && document.body.textContent.replace(/\u00ad/g, '').includes('Kleinunternehmer (§19 UStG)') && window.__probe.getSettings().kleinunternehmer === true));
 await page.evaluate(async () => { await window.__probe.updateSettings({ nutzungsmodus: 'selbststaendig', kleinunternehmer: false }); });
 await page.waitForTimeout(200);
 

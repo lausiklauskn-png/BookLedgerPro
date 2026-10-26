@@ -225,3 +225,23 @@ Klarnamen/IBAN und ohne die Anweisungszeile, nichts gesendet vor „Senden", gen
 Klarnamen und Verweisen); Gegenprobe in einer Wegwerf-Kopie: Halt weg · Anker weg · `reidentify` weg → je eigene rote Zeile.
 `sw.js` v263. ⚠ Keine echte Mistral-Antwort gemessen, kein Tablet; „Tankstelle Shell" wird vom Namensmuster als Person
 verdeckt (zu viel verdeckt ist die sichere Seite); die KI kann irren, der Hinweis steht unter der Antwort.
+
+## 🧮 Workflow Calculate und Workflow Needs eingebettet (Klaus 2026-10-26, D15b/D16a)
+
+Klaus: „Calculate … eins zu eins übernehmen … als Brücke" · „komplett ersetzen" · „die Art, wie sie aufgebaut war, auch die
+Buttongröße … war perfekt … Wäre gut, wenn das so halten bleibt." Die Apps liegen **byte-1:1** unter `apps/calculate/` und
+`apps/needs/` (`tools/apps-nachziehen.mjs` aus den Klonen, Pins je Datei + Commit in `apps/HERKUNFT.json`, `tests/run.mjs`
+prüft; **nie von Hand ändern**). Einzige Abweichung ist `index.html` über die reine Funktion `tools/apps-patch.mjs`: Brücke
+nach der SBKIM-Schublade, BLP-Thema als letztes Stylesheet, **eigener Service Worker der App entfernt** (sonst löscht eine
+ältere Kopie den Vorrat der Einzel-PWA — gleicher Ursprung, gleicher Vorratsname). Menü → Verkauf: **Angebotsplaner** und
+**Bedarfsanalyse** mit den Original-Bildern (`img:`-Symbole in `NAV`); BLPs eigene Angebotsansicht ist aus dem Menü
+(`zeigeAnsicht('angebote')` nur mit `settings.angeboteAlt`, Knopf im Calculate-Rahmen), die Übergabe-Route bleibt.
+`src/ui/views/apps.js`: Rahmen (Vollbild · Eigenes Fenster · Offline bereitlegen → Vorrat `blpr-apps` aus HERKUNFT.json);
+die **Fenster leben dauerhaft in `#blp-app-frames` am `<body>`** und liegen `position: fixed` über dem Platzhalter der Ansicht —
+die Shell zeichnet sich bei jeder Einstellung neu, ein `<iframe>` in ihr lud jedes Mal neu (gemessen). `apps/blp-bruecke.js`
+(nur eingebettet aktiv): Thema per postMessage, Calculates Haken `__wcSprungAbfangen`/`__wcSprung` → `blp-uebernahme` statt
+`location.assign` → BLP-Angebotsformular (Datenvertrag v1). `apps/blp-thema.css`: nur Akzente (graphit/petrol), Installieren-
+Knopf der App aus — Aufbau, Knöpfe, Suchfeld der Apps bleiben unangetastet. `sw.js` v264: `apps/` aus dem eigenen Vorrat
+(index netz-zuerst, Rest Vorrat-zuerst), `.nojekyll`. Proben: `tests/run.mjs` (+23) · `tests/smoke_apps.mjs` **19 grün** ·
+Gegenprobe (Byte, Pin, Haken, Fenster in der Shell) je rot. Bedienung/Grenzen: `docs/APPS-CALCULATE-NEEDS.md`.
+⚠ Kein Tablet; Kopie = Stand des Klons; keine Fassungsprüfung gegen die Einzel-PWA; Apps speichern unverschlüsselt (eigene Bauart).

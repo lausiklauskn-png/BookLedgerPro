@@ -1,6 +1,10 @@
 # Plan: Workflow Calculate (Angebote) und Workflow Needs (Bedarfsanalyse) in BookLedgerPro (Klaus 2026-10-26)
 
-**Stand: Plan, noch nicht gebaut. Zwei Fragen an Klaus unten; der Rest ist entschieden (Routine).**
+**Stand 2026-10-26 spät: GEBAUT nach E1.** Klaus' Antworten: D15b (Calculate/Needs ersetzen BLPs Angebote komplett), D16a
+(BLP übernimmt den Datenbestand der Apps; keine Referenzen, keine Umwandlung alter BLP-Angebote). Abweichungen vom Plan: die
+Fenster leben dauerhaft außerhalb der Shell (sonst Neuladen bei jeder Einstellung); der eigene Service Worker der App ist in der
+Kopie entfernt; die Fassungsprüfung gegen die Einzel-PWA ist nicht gebaut (benannte Grenze). Bedienung/Grenzen:
+`docs/APPS-CALCULATE-NEEDS.md`.
 
 Klaus (2026-10-26): „Calculate … das können wir eins zu eins übernehmen. Wenn es irgendwelche Verbesserungen gibt, die ich in
 Calculate mache, dann werden die auch in Bookledger Pro nachgezogen. Als Brücke … als 1 zu 1 Klon oder Kopie. So dass ein

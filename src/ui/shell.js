@@ -88,6 +88,7 @@ import { mountPayables } from './views/payables.js';
 import { mountCustomers } from './views/customers.js';
 import { mountOrders } from './views/orders.js';
 import { mountAngebote } from './views/angebote.js';
+import { mountApp } from './views/apps.js';
 import { mountShopbuchung } from './views/shopbuchung.js';
 import { mountNachkalkulation } from './views/nachkalkulation.js';
 import { mountLohn } from './views/lohn.js';
@@ -116,7 +117,9 @@ const NAV = [
   ['documents', 'nav.documents', 'blp-beleg'],
   ['payables', 'nav.payables', 'blp-verbindlichkeit'],
   ['orders', 'nav.orders', 'blp-auftrag'],
-  ['angebote', 'nav.angebote', 'blp-angebot'],
+  ['calculate', 'nav.calculate', 'img:./apps/calculate/icons/icon-192.png'],   // Workflow Calculate 1:1 (Klaus 2026-10-26), ersetzt BLPs Angebote
+  ['needs', 'nav.needs', 'img:./apps/needs/icons/icon-192.png'],               // Workflow Needs 1:1
+  ['angebote', 'nav.angebote', 'blp-angebot'],   // alte BLP-Angebote: nur sichtbar mit settings.angeboteAlt (nutzungsmodus.zeigeAnsicht)
   ['shopbuchung', 'nav.shopbuchung', 'blp-shop'],
   ['nachkalkulation', 'nav.nachkalkulation', 'blp-waage'],
   ['customers', 'nav.customers', 'blp-kunde'],
@@ -140,11 +143,11 @@ const NAV = [
 export const NAV_GRUPPEN = [
   [null, ['dashboard']],
   ['nav.gruppe.buchen', ['documents', 'journal', 'kassenbuch', 'accounts', 'anlagen', 'payables']],
-  ['nav.gruppe.verkauf', ['angebote', 'orders', 'customers', 'shopbuchung', 'nachkalkulation']],
+  ['nav.gruppe.verkauf', ['calculate', 'needs', 'orders', 'customers', 'shopbuchung', 'nachkalkulation']],
   ['nav.gruppe.team', ['employees', 'lohn']],
   ['nav.gruppe.auswerten', ['reports', 'berichte']],
   ['nav.gruppe.netz', ['network', 'sbkimsuche']],
-  ['nav.gruppe.weiteres', ['safebox', 'legal', 'anleitung', 'selbsttest', 'about']],
+  ['nav.gruppe.weiteres', ['angebote', 'safebox', 'legal', 'anleitung', 'selbsttest', 'about']],
   [null, ['settings']],
 ];
 export const NAV_KEYS = NAV.map(([k]) => k);
@@ -550,6 +553,9 @@ export function hardReloadApp() {
   } catch (_e) { go(); }
 }
 
+// Symbol eines Menüpunkts: Strichsymbol aus dem Sprite, oder das Original-Bild einer eingebetteten App (Klaus: erkennbar).
+const navIcon = (ic) => (String(ic).startsWith('img:') ? el('img', { class: 'ic ic-img', src: ic.slice(4), alt: '', width: '20', height: '20' }) : icon(ic));
+
 function nav(zu) {
   const route = getRoute();
   const s = getSettings();
@@ -558,7 +564,7 @@ function nav(zu) {
     class: 'nav-item' + (route === key ? ' active' : ''), title: t(label),
     'aria-current': route === key ? 'page' : null, 'data-nav': key,
     onClick: () => { navigate(key); schubladeSchliessen(); },
-  }, [icon(ic), el('span', { class: 'ic-text', text: t(label) })]);
+  }, [navIcon(ic), el('span', { class: 'ic-text', text: t(label) })]);
   const gruppen = NAV_GRUPPEN.map(([titel, keys]) => {
     const sichtbar = keys.filter((k) => zeigeAnsicht(s, k)).map((k) => NAV.find(([n]) => n === k)).filter(Boolean);
     if (!sichtbar.length) return null;
@@ -593,6 +599,8 @@ function renderRoute() {
   if (route === 'payables') return void mountPayables(content);
   if (route === 'orders') return void mountOrders(content);
   if (route === 'angebote') return void mountAngebote(content);
+  if (route === 'calculate') return void mountApp(content, 'calculate');
+  if (route === 'needs') return void mountApp(content, 'needs');
   if (route === 'shopbuchung') return void mountShopbuchung(content);
   if (route === 'nachkalkulation') return void mountNachkalkulation(content);
   if (route === 'customers') return void mountCustomers(content);

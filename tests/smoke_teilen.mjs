@@ -87,7 +87,7 @@ const feld = ((st.params || {}).files || [])[0] || {};
 ok('Manifest: share_target als POST multipart mit Datei-Feld für PDF und Bilder', st.method === 'POST' && st.enctype === 'multipart/form-data' && (feld.accept || []).includes('application/pdf') && (feld.accept || []).some((a) => /^image\//.test(a)));
 ok('Worker liest genau dieses Feld und fängt genau diese Adresse ab', !!feld.name && sw.includes(`fd.getAll('${feld.name}')`) && sw.includes(`endsWith('/${String(st.action).replace(/^\.\//, '')}')`));
 ok('der POST-Empfang steht VOR dem Ausstieg für alles, was nicht GET ist', sw.indexOf("request.method === 'POST'") > -1 && sw.indexOf("request.method === 'POST'") < sw.indexOf("if (request.method !== 'GET')"));
-ok('der Vorrat der geteilten Dateien übersteht ein neues CACHE_VERSION', /BLEIBT = \[GETEILT_VORRAT\]/.test(sw) && /!BLEIBT\.includes\(k\)/.test(sw));
+ok('der Vorrat der geteilten Dateien übersteht ein neues CACHE_VERSION', /BLEIBT = \[GETEILT_VORRAT, APPS_VORRAT\]/.test(sw) && /!BLEIBT\.includes\(k\)/.test(sw));
 const html = await readFile(join(WURZEL, 'index.html'), 'utf8');
 ok('der Worker wird im Kopf von index.html angemeldet, vor jedem Modul (405-Lehre)', html.indexOf("serviceWorker.register('./sw.js'") > -1 && html.indexOf("serviceWorker.register('./sw.js'") < html.indexOf('<script type="module"'));
 ok('„Öffnen mit": file_handlers nennt PDF', !!((man.file_handlers || [])[0] || {}).accept?.['application/pdf']);

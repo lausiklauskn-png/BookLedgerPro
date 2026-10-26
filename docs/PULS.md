@@ -27,13 +27,20 @@
   `run.mjs` 2425/0 · `smoke_mikro` 19 grün · `smoke_design` 90 grün · `sw.js` v261. Details: `CLAUDE.md` „🎙 Mikrofon“.
 - **A1+A2 gebaut (PR „Suche über Belege“):** Text verschlüsselt am Beleg, Wort- und Bedeutungssuche, A2 Buchungen/Kunden/
   Aufträge; `run.mjs` 2449/0 · `smoke_belegsuche` 18 grün · `smoke_design` 90 grün · `sw.js` v262. A3 offen.
+- **Klaus' Antworten (2026-10-26, spät):** D15b (Calculate/Needs ersetzen BLPs Angebote komplett) · D16a (BLP übernimmt den
+  Datenbestand der Apps; keine Referenzen) · Ü1 ja, Reihenfolge **E-Mails, Belege, Angebote**, Übersetzung über das **lokale
+  Modell wie Private Brain Pro** · Frage: Workflow-PDF-Kopie als Scanner-Werkzeug in BLP? (Antwort: Scanner-Kern, nicht die
+  ganze App — siehe SESSIONS) · „Aufbau, Buttongröße, Suchfeld der Apps perfekt — so halten."
+- **Calculate + Needs gebaut (PR „Calculate/Needs eingebettet“):** `apps/` byte-1:1 mit Pins, Brücke, Thema, dauerhafte Fenster,
+  Übergabe ohne Sprung, Offline-Vorrat; `run.mjs` 2481/0 · `smoke_apps` 19 · `smoke_design` 90 · `sw.js` v264.
+  Details: `CLAUDE.md` „🧮 Workflow Calculate und Workflow Needs“, `docs/APPS-CALCULATE-NEEDS.md`.
 - **A3 gebaut (PR „Frage an die Belege“):** Knopf nur mit Mistral-Schlüssel, bis 5 Treffer-Belege pseudonymisiert → Halt →
   Vorschau „Das sieht die KI“ → Senden → Antwort mit aufgelösten Platzhaltern und [n]-Knöpfen; `run.mjs` 2458/0 ·
   `smoke_frage` 16 grün · `smoke_belegsuche` 18 · `smoke_design` 90 · `sw.js` v263. Details: `CLAUDE.md` „🤖 Frage an die Belege“.
 - **Befund Offline-Übersetzung** (Klaus' Frage 26.10.): `docs/design/BEFUND-OFFLINE-UEBERSETZUNG-2026-10-26.md` — Translator-API
   nur Chrome/Edge am PC (offline nach dem Laden), nicht Android; Pro-Apps über PBPs Modell-Worker. Empfehlung Ü1, Klaus fragen.
-- **Reihenfolge jetzt:** Klaus' Antworten (D15/D16 Calculate/Needs, Ü1 Übersetzung) → Calculate/Needs → Schritt 3 Haushaltsbuch →
-  4 Steuer Privat → 5 ELSTER (D14). Das Paket C1/B1/A1/A2/A3 ist vollständig gebaut.
+- **Reihenfolge jetzt:** Klaus' Antwort zum Scanner-Kern (Workflow PDF in BLP) → Ü1 Übersetzung (E-Mails, Belege, Angebote; lokales
+  Modell wie PBP) → Schritt 3 Haushaltsbuch → 4 Steuer Privat → 5 ELSTER (D14). C1/B1/A1/A2/A3 und Calculate/Needs sind gebaut.
 - **Workflow PDF / Pro:** Worker löschte fremde Vorräte (auch `blpr-*`!) — behoben in Workflow-PDF #133 (1.1.2, v107,
   neue Browser-CI); Pro #22 (Direktstart, 1.0.4) übernommen, #23 (Windows-Dateinamen/Tresor-Fix) offen; danach Kern 1.1.2
   bytegleich nach Pro. Keine Veröffentlichung ohne Klaus' Wort.
