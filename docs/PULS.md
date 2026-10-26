@@ -46,7 +46,11 @@
   integrieren; `.eml` im `share_target` annehmen, Anhänge + Mailtext → Beleg) — Antwort/Plan ausstehend; Steuer-Zuordnung
   (Positionen ein-/ausschließen, Zweck, Formular-Zeilen, ELSTER-Weg) — Plan `docs/design/PLAN-STEUER-ZUORDNUNG-ELSTER-2026-10-26.md`
   noch zu schreiben, Klaus entscheidet (D17–D19).
-- **Reihenfolge jetzt:** Plan Steuer/ELSTER + Antwort Teilen PBP→BLP → Ü1 Übersetzung (E-Mails, Belege, Angebote; lokales
+- **Plan Rundlauf WorkFloh ⇄ BLP** (Klaus 2026-10-26: „Angebot → WorkFloh als Auftrag … und zurück“):
+  `docs/design/PLAN-WORKFLOH-BRUECKE-RUNDLAUF-2026-10-26.md` — Ist: WorkFloh → BLP (Angebot/Rechnung, v1) und Calculate → BLP
+  gebaut; BLP → WorkFloh und der Status-Rückkanal fehlen. Vorschlag Vertrag v2 „Vorgang“ (R1 Auftrag hin, R2 Verweis, R3 Status
+  zurück), parallel in beiden WorkFlohs. Fragen D21–D24, Klaus entscheidet.
+- **Reihenfolge jetzt:** Klaus' Antworten (D17–D24, Teilen PBP→BLP) → Ü1 Übersetzung (E-Mails, Belege, Angebote; lokales
   Modell wie PBP) → Schritt 3 Haushaltsbuch → 4 Steuer Privat → 5 ELSTER (D14). C1/B1/A1/A2/A3 und Calculate/Needs sind gebaut.
 - **Workflow PDF / Pro:** Worker löschte fremde Vorräte (auch `blpr-*`!) — behoben in Workflow-PDF #133 (1.1.2, v107,
   neue Browser-CI); Pro #22 (Direktstart, 1.0.4) übernommen, #23 (Windows-Dateinamen/Tresor-Fix) offen; danach Kern 1.1.2
