@@ -732,3 +732,16 @@ tr.suche-markiert td { background: var(--accent-soft); }
 .frage-antwort [data-frage-text] { line-height: 1.5; }
 .frage-antwort [data-frage-verweis] { margin: 0 .15rem; vertical-align: baseline; }
 .frage-vorschau .suche-zeile { margin-top: .5rem; }
+
+/* Eingebettete Apps (Workflow Calculate / Needs, Klaus 2026-10-26): Rahmen mit App-Bild, Leiste, Vollbild */
+.ic-img { stroke: none; object-fit: contain; border-radius: 5px; }
+.app-rahmen { display: flex; flex-direction: column; gap: .5rem; height: calc(100dvh - 7.5rem - var(--leisten-platz)); min-height: 420px; }
+.app-rahmen.vollbild { position: fixed; inset: 0; z-index: 60; height: auto; min-height: 0; padding: .5rem; background: var(--bg); }
+.app-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .8rem; }
+.app-bild { width: 28px; height: 28px; border-radius: 6px; flex: none; }
+.app-titel { display: flex; flex-direction: column; min-width: 0; flex: 1 1 14rem; }
+.app-titel .small { overflow-wrap: anywhere; }
+.app-knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.app-frame-platz { flex: 1; min-height: 0; }
+#blp-app-frames .app-frame { display: none; border: 1px solid var(--border); border-radius: var(--radius-sm, 8px); background: #fff; box-sizing: border-box; }
+@media (max-width: 640px) { .app-rahmen { height: calc(100dvh - 9.5rem - var(--leisten-platz)); } .app-titel .small { display: none; } }

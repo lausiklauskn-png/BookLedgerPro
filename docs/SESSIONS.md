@@ -5,6 +5,25 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (spät) — Workflow Calculate und Workflow Needs 1:1 eingebettet (D15b, D16a)
+
+- **Getan:** `tools/apps-nachziehen.mjs` + `tools/apps-patch.mjs` (Kopie byte-1:1, Pins in `apps/HERKUNFT.json`, eine
+  kontrollierte Abweichung in index.html: Brücke, Thema, eigener Service Worker raus), `apps/blp-bruecke.js`, `apps/blp-thema.css`,
+  `src/ui/views/apps.js` (Rahmen, dauerhafte Fenster, Übergabe ohne Sprung, Offline-Vorrat), `src/domain/eingebettet.js`,
+  Shell (NAV mit App-Bildern, Gruppe Verkauf, Routen), `nutzungsmodus` (unternehmerisch; `angebote` nur mit `angeboteAlt`),
+  `state`, i18n DE/EN, `sw.js` v264 (`blpr-apps`), `.nojekyll`, `docs/APPS-CALCULATE-NEEDS.md`.
+- **Beweis:** `node tests/run.mjs` **2481/0** (+23) · `tests/smoke_apps.mjs` **19 grün** · `smoke_design` 90 · `smoke_teilen`,
+  `smoke_belegsuche` grün. Gegenprobe (Wegwerf-Kopie): Byte in app.js · Datei ohne Pin · Brücke ohne Haken · Fenster in der
+  Shell → je eigene rote Zeile.
+- **Lehren:** die Shell zeichnet sich bei JEDER Einstellung neu — ein `<iframe>` in `#content` lädt dann neu („Frame was
+  detached"); Fenster deshalb dauerhaft am `<body>`, `position: fixed` über dem Platzhalter. Das Thema kommt aus den
+  Einstellungen (nicht vom `<html>`-Attribut), sonst sieht die App einen programmatischen Wechsel nicht. Die Bereit-Meldung der
+  Brücke muss VOR `load` gehen — die Skripte der App laufen früher.
+- **Antwort an Klaus (Scanner):** Scanner-KERN von Workflow PDF (scanner.js, scan-bild.js, blatt.js, ~90 KB, byte-1:1 wie in den
+  WorkFlohs) als „📷 Scannen" in Belege empfohlen, nicht die ganze App; Tesseract/Scanic von `/Workflow-PDF/vendor/`.
+- **Nicht geprüft:** Tablet, echtes github.io (gemeinsame IndexedDB mit den Einzel-PWAs folgt aus dem Ursprung).
+- **Nächstes:** Klaus' Wort zum Scanner-Kern; Ü1 (E-Mails → Belege → Angebote, lokales Modell wie PBP); Haushaltsbuch.
+
 ## 2026-10-26 (nachts) — A3: Frage an die Belege (Mistral EU, nur pseudonymisiert, Vorschau, Halt)
 
 - **Getan:** `belegsuche.js` + `belegeFuerFrage`/`frageNachrichten`/`antwortTeile` (rein); Belegansicht `frageAnBelege`

@@ -88,7 +88,7 @@ export function moduswechsel(settings, neu) {
 // ---- NAV-Ansichten-Gating --------------------------------------------------
 // Allowlist-Komplement: je Modus die NAV-Schlüssel, die AUSGEBLENDET werden. Berater blendet nichts aus.
 // Unbekannte Schlüssel werden NICHT ausgeblendet (sicher additiv).
-const UNTERNEHMERISCH = ['journal', 'kassenbuch', 'accounts', 'anlagen', 'payables', 'orders', 'angebote', 'shopbuchung',
+const UNTERNEHMERISCH = ['journal', 'kassenbuch', 'accounts', 'anlagen', 'payables', 'orders', 'angebote', 'calculate', 'needs', 'shopbuchung',
   'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte'];
 const ANSICHT_AUSGEBLENDET = Object.freeze({
   // Privat (F, Tabelle): alles Unternehmerische weg — Journal/Soll-Haben, Kontenrahmen, Aufträge, Kunden,
@@ -103,11 +103,14 @@ const ANSICHT_AUSGEBLENDET = Object.freeze({
   selbststaendig: new Set([]),
   berater: new Set([]),
   // Altwert Verein (unverändert aus P1): ohne Anlagen, Kreditoren-OP, Aufträge/Angebote, Lohn/Mitarbeiter.
-  verein: new Set(['anlagen', 'payables', 'orders', 'angebote', 'shopbuchung', 'nachkalkulation', 'employees', 'lohn']),
+  verein: new Set(['anlagen', 'payables', 'orders', 'angebote', 'calculate', 'needs', 'shopbuchung', 'nachkalkulation', 'employees', 'lohn']),
 });
 
 /** Soll die NAV-Ansicht `key` im Modus der Settings sichtbar sein? */
 export function zeigeAnsicht(settings, key) {
+  // BLPs eigene Angebote sind durch Workflow Calculate ersetzt (Klaus 2026-10-26, D15b): nur noch sichtbar, wenn
+  // alte Angebote angesehen werden sollen (angeboteAlt, Knopf im Calculate-Rahmen); die Übergabe-Route bleibt erreichbar.
+  if (key === 'angebote' && !(settings && settings.angeboteAlt)) return false;
   const aus = ANSICHT_AUSGEBLENDET[nutzungsmodusVon(settings)];
   return aus ? !aus.has(key) : true;
 }

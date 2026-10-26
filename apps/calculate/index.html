@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<!-- SBKIM: die eigene Schublade MUSS stehen, bevor irgendein Modul lädt (Modul 01 liest sie beim Laden). Nie ändern. -->
+<script>window.SBKIM_DB_SUFFIX = "workflowcalculate";</script>
+<script src="../blp-bruecke.js?v=1"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Workflow Calculate</title>
+<meta name="description" content="Angebote kalkulieren — Material, Arbeitszeit, Verpackung und Versand, offline. Die Kalkulation bleibt intern.">
+<meta name="theme-color" content="#0d1218">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="icon" href="icons/favicon-48.png" sizes="48x48">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="assets/app.css?v=7">
+<link rel="stylesheet" href="../blp-thema.css?v=1">
+</head>
+<body>
+<header class="kopf">
+  <div class="marke">
+    <img src="icons/icon-192.png" alt="" width="34" height="34">
+    <div style="min-width:0"><b id="app-name">Workflow Calculate</b><small id="app-unter"></small></div>
+  </div>
+  <div class="netzleiste" id="netzleiste" data-offen="0">
+    <button class="lampen" id="lampen" type="button" aria-expanded="false" aria-controls="netz-mehr" title="SBKIM-Knoten: lebt · verkehr · fremd — tippen zeigt Siegel und Netz">
+      <span class="lamp" id="lamp-alive" title="lebt — eigene Identität geladen"><span class="lamp-t">lebt</span></span>
+      <span class="lamp" id="lamp-traffic" title="verkehr — mit dem Netz verbunden"><span class="lamp-t">verkehr</span></span>
+      <span class="lamp" id="lamp-fremd" title="fremd — eine fremde Seite hat sich gemeldet"><span class="lamp-t">fremd</span></span>
+    </button>
+    <span class="netz-mehr" id="netz-mehr">
+      <span class="lampen-legende" aria-hidden="true"><span class="lamp" data-lampe-kopie="lamp-alive">lebt</span><span class="lamp" data-lampe-kopie="lamp-traffic">verkehr</span><span class="lamp" data-lampe-kopie="lamp-fremd">fremd</span></span>
+      <span class="siegel-platz" id="siegel-platz"></span>
+      <span class="mycel-platz" data-sbkim-mycel-platz></span>
+    </span>
+  </div>
+  <div class="kopf-knoepfe">
+    <button type="button" class="btn rund zurueck-knopf" id="seite-zurueck" title="Zurück" aria-label="Zurück" disabled>←</button>
+    <button type="button" class="btn handel-knopf" id="handel-knopf" title="Handelsware — fertig eingekauft, mit Aufschlag weiterverkauft">🛒<span class="lang"> Handelsware</span></button>
+    <button type="button" class="btn rund" id="thema" title="Hell">☀</button>
+    <button type="button" class="btn rund" id="neuladen" title="Neu laden" aria-label="Neu laden">⟳</button>
+  </div>
+</header>
+<nav class="reiter" id="reiter" aria-label="Reiter"></nav>
+<main id="inhalt">
+  <noscript><div class="hinweis bad">Diese App braucht JavaScript. Ohne Skript wird nichts gerechnet und nichts gespeichert.</div></noscript>
+</main>
+<footer class="app-fuss"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></footer>
+<dialog id="vorschau" aria-label="Vorschau"></dialog>
+<div id="druck" aria-hidden="true"></div>
+
+<script src="assets/kern/geld.js?v=1"></script>
+<script src="assets/kern/mengen.js?v=1"></script>
+<script src="assets/kern/kalkulation.js?v=5"></script>
+<script src="assets/kern/versand.js?v=1"></script>
+<script src="assets/kern/markt.js?v=2"></script>
+<script src="assets/kern/katalog.js?v=3"></script>
+<script src="assets/kern/angebot.js?v=6"></script>
+<script src="assets/kern/aussen.js?v=4"></script>
+<script src="assets/kern/uebergabe.js?v=4"></script>
+<script src="assets/schluesseltresor.js?v=1"></script>
+<script src="assets/kern/sicherung.js?v=1"></script>
+<script src="assets/kern/nachkalk.js?v=3"></script>
+<script src="assets/kern/recherche.js?v=1"></script>
+<script src="assets/kern/mail.js?v=1"></script>
+<script src="assets/kern/unterlagen.js?v=2"></script>
+<script src="assets/kern/anfrage.js?v=4"></script>
+<script src="modules/25_pseudonym.js?v=1"></script>
+<script src="assets/kern/pruefer-mail.js?v=1"></script>
+<script src="assets/kern/ki-anfrage.js?v=1"></script>
+<script src="assets/wfpdf/suche.js?v=1"></script>
+<script src="assets/wfpdf/bedeutung.js?v=1"></script>
+<script src="assets/wfpdf/sprechen.js?v=1"></script>
+<script src="assets/kern/suche.js?v=2"></script>
+<script src="assets/kern/tabelle.js?v=1"></script>
+<script src="assets/daten/werbetechnik.js?v=2"></script>
+<script src="assets/daten/stickerei.js?v=1"></script>
+<script src="assets/daten/dienstleistung.js?v=1"></script>
+<script src="assets/daten/handelsware.js?v=2"></script>
+<script src="assets/daten/laser.js?v=1"></script>
+<script src="assets/daten/beispiel-angebote.js?v=2"></script>
+<script src="assets/daten/bilder.js?v=3"></script>
+<script src="assets/daten/beispiel-fragen.js?v=1"></script>
+<script src="assets/app.js?v=20"></script>
+<script src="assets/sbkim-init.js?v=1"></script>
+<script src="assets/installieren.js?v=4" data-in="#inhalt[data-reiter=einstellungen]" data-klasse="btn" data-name="Workflow Calculate" data-vor="thema"></script>
+<!-- BookLedgerPro: kein eigener Service Worker in der Einbettung — der Vorrat kommt von BLP (apps/HERKUNFT.json) -->
+</body>
+</html>

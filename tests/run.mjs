@@ -5175,14 +5175,14 @@ await section('Modus: Werte, Normalisierung, Migration alter Einstellungen', () 
 
 await section('Modus: NAV-Ansichten-Gating', () => {
   const NAV_KEYS = ['dashboard', 'journal', 'kassenbuch', 'accounts', 'anlagen', 'documents',
-    'payables', 'orders', 'angebote', 'shopbuchung', 'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte',
+    'payables', 'orders', 'angebote', 'calculate', 'needs', 'shopbuchung', 'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte',
     'network', 'sbkimsuche', 'safebox', 'legal', 'anleitung', 'selbsttest', 'about', 'settings'];
-  ok('Berater: alle Ansichten sichtbar', sichtbareAnsichten({ nutzungsmodus: 'berater' }, NAV_KEYS).length === NAV_KEYS.length);
-  ok('Selbstständig: alle Ansichten sichtbar', NAV_KEYS.every((k) => zeigeAnsicht({ nutzungsmodus: 'selbststaendig' }, k)));
-  ok('Default (kein Modus) = voller Umfang', sichtbareAnsichten({}, NAV_KEYS).length === NAV_KEYS.length);
+  ok('Berater: alle Ansichten sichtbar (alte BLP-Angebote nur mit angeboteAlt, Klaus 2026-10-26)', sichtbareAnsichten({ nutzungsmodus: 'berater', angeboteAlt: true }, NAV_KEYS).length === NAV_KEYS.length && sichtbareAnsichten({ nutzungsmodus: 'berater' }, NAV_KEYS).length === NAV_KEYS.length - 1);
+  ok('Selbstständig: alle Ansichten sichtbar', NAV_KEYS.every((k) => zeigeAnsicht({ nutzungsmodus: 'selbststaendig', angeboteAlt: true }, k)));
+  ok('Default (kein Modus) = voller Umfang', sichtbareAnsichten({ angeboteAlt: true }, NAV_KEYS).length === NAV_KEYS.length);
   const klein = sichtbareAnsichten({ nutzungsmodus: 'kleinunternehmer' }, NAV_KEYS);
   ok('Kleinunternehmer: ohne Mitarbeiter/Lohn', !klein.includes('employees') && !klein.includes('lohn'));
-  ok('Kleinunternehmer: Belege, Journal, Aufträge, Kunden, Auswertung bleiben', ['documents', 'journal', 'orders', 'customers', 'reports', 'angebote'].every((k) => klein.includes(k)));
+  ok('Kleinunternehmer: Belege, Journal, Aufträge, Kunden, Auswertung bleiben', ['documents', 'journal', 'orders', 'customers', 'reports', 'calculate', 'needs'].every((k) => klein.includes(k)));
   const privat = sichtbareAnsichten({ nutzungsmodus: 'privat' }, NAV_KEYS);
   ok('Privat: alles Unternehmerische weg (Journal, Konten, Kassenbuch, Anlagen, Kreditoren, Verkauf, Team, Auswertung)',
     ['journal', 'kassenbuch', 'accounts', 'anlagen', 'payables', 'orders', 'angebote', 'shopbuchung', 'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte'].every((k) => !privat.includes(k)));
@@ -6811,7 +6811,7 @@ await section('Design-Grundlage: Seitenleiste mit Gruppen, Teilbild, Modus in de
   const sh = readFileSync(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
   const gruppenText = sh.slice(sh.indexOf('export const NAV_GRUPPEN'), sh.indexOf('export const NAV_KEYS'));
   const inGruppen = [...gruppenText.matchAll(/'([a-z]+)'/g)].map((m) => m[1]).filter((k) => !k.startsWith('nav.'));
-  const navKeys = [...sh.matchAll(/\['([a-z]+)', 'nav\.[a-z]+', '(?:pb|blp)-[a-z-]+'\]/g)].map((m) => m[1]);
+  const navKeys = [...sh.matchAll(/\['([a-z]+)', 'nav\.[a-z]+', '(?:(?:pb|blp)-[a-z-]+|img:[^']+)'\]/g)].map((m) => m[1]);
   ok('jede Ansicht steht in genau einer Gruppe', navKeys.every((k) => inGruppen.filter((g) => g === k).length === 1) && inGruppen.every((g) => navKeys.includes(g)), navKeys.filter((k) => inGruppen.filter((g) => g === k).length !== 1).join(','));
   ok('Übersicht oben allein, Einstellungen unten allein, sechs Gruppen dazwischen', /\[null, \['dashboard'\]\],/.test(gruppenText) && /\[null, \['settings'\]\],\s*\];/.test(gruppenText) && (gruppenText.match(/'nav\.gruppe\./g) || []).length === 6);
   ok('Teilbild: ohne Handwahl eingeklappt bis 1024 px, sonst auf', /TEILBILD = '\(max-width: 1024px\)'/.test(sh) && /leisteEingeklappt\(gewuenscht, teilbild\)/.test(sh));
@@ -6866,7 +6866,7 @@ await section('Workflow PDF: Marke, Textebene, Teilen-Parameter, Adressen (reine
   const man = JSON.parse(readFileSync(new URL('../manifest.webmanifest', import.meta.url), 'utf8'));
   const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
   ok('Manifest share_target passt zu den Konstanten', man.share_target.action === './' + W.TEILEN_EMPFANG_PFAD && man.share_target.params.files[0].name === W.TEILEN_FELD && man.share_target.method === 'POST');
-  ok('sw.js: Vorrat, Feld und Adresse wie die Konstanten; Vorrat überlebt den Cache-Wechsel', sw.includes(`const GETEILT_VORRAT = '${W.GETEILT_VORRAT}'`) && sw.includes(`fd.getAll('${W.TEILEN_FELD}')`) && sw.includes(`endsWith('/${W.TEILEN_EMPFANG_PFAD}')`) && /BLEIBT = \[GETEILT_VORRAT\]/.test(sw) && /!BLEIBT\.includes\(k\)/.test(sw));
+  ok('sw.js: Vorrat, Feld und Adresse wie die Konstanten; Vorrat überlebt den Cache-Wechsel', sw.includes(`const GETEILT_VORRAT = '${W.GETEILT_VORRAT}'`) && sw.includes(`fd.getAll('${W.TEILEN_FELD}')`) && sw.includes(`endsWith('/${W.TEILEN_EMPFANG_PFAD}')`) && /BLEIBT = \[GETEILT_VORRAT, APPS_VORRAT\]/.test(sw) && /!BLEIBT\.includes\(k\)/.test(sw));
   ok('sw.js: neue Dateien im Vorrat, Cache ≥ v257', ['./src/domain/workflowPdf.js', './src/domain/teilenEmpfang.js'].every((f) => sw.includes(`'${f}'`)) && Number(sw.match(/CACHE_VERSION = 'v(\d+)'/)[1]) >= 257);
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   ok('index.html meldet den Worker im Kopf an (405-Lehre aus Workflow PDF)', html.indexOf("serviceWorker.register('./sw.js'") > -1 && html.indexOf("serviceWorker.register('./sw.js'") < html.indexOf('<script type="module"'));
@@ -6893,6 +6893,57 @@ await section('Buchungen statt Journal (Klaus 2026-10-26)', async () => {
   const anl = _readSpore(new URL('../src/ui/views/anleitung.js', import.meta.url), 'utf8');
   ok('Anleitung spricht von „Buchungen“, nicht „Journal“', !/\bJournal\b/.test(anl) && anl.includes('Menü „Buchungen"'));
   ok('Route/Schlüssel `journal` bleibt (Daten, Navigation, Modus)', /\['journal', 'nav\.journal'/.test(_readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8')));
+});
+
+await section('Eingebettete Apps (Klaus 2026-10-26): Patch, Pins, Helfer, Verdrahtung', async () => {
+  const { patchIndex, istGepatcht, BRUECKE_ZEILE, THEMA_ZEILE } = await import('../tools/apps-patch.mjs');
+  const { themaNachricht, uebernahmeAusAdresse, appDateien, APPS_VORRAT } = await import('../src/domain/eingebettet.js');
+  const { zeigeAnsicht } = await import('../src/domain/nutzungsmodus.js');
+  const { createHash } = await import('node:crypto');
+  const { readdirSync, statSync } = await import('node:fs');
+  const muster = '<!doctype html><html><head><meta charset="utf-8">\n<script>window.SBKIM_DB_SUFFIX = "workflowcalculate";</script>\n<link rel="stylesheet" href="assets/app.css?v=7">\n</head><body><script src="assets/app.js"></script><script src="modules/x.js"></script>\n<script>\n  if ("serviceWorker" in navigator && location.protocol !== "file:") {\n    navigator.serviceWorker.register("sw.js").catch(function () {});\n  }\n</script>\n</body></html>';
+  const g = patchIndex(muster);
+  ok('Patch: Brücke direkt nach der Schublade, Thema als letztes Stylesheet, Service-Worker-Anmeldung weg, drei Änderungen benannt', istGepatcht(g.html) && g.aenderungen.length === 3 && g.html.indexOf(BRUECKE_ZEILE) < g.html.indexOf('<script src="assets/') && g.html.indexOf(THEMA_ZEILE) > g.html.indexOf('assets/app.css'));
+  let wirft = false; try { patchIndex(muster.replace('navigator.serviceWorker.register', 'x')); } catch { wirft = true; }
+  ok('Patch wirft, wenn die Service-Worker-Anmeldung anders aussieht (nicht raten)', wirft);
+  wirft = false; try { patchIndex(g.html); } catch { wirft = true; }
+  ok('Patch wirft bei schon gepatchter Datei', wirft);
+  ok('istGepatcht erkennt die ungepatchte Quelle als nicht gepatcht', !istGepatcht(muster));
+  // Pins: jede Datei unter apps/<app>/ steht mit ihrer SHA-256 in HERKUNFT.json — nicht mehr, nicht weniger
+  const herkunft = JSON.parse(_readSpore(new URL('../apps/HERKUNFT.json', import.meta.url), 'utf8'));
+  const alle = (dir, basis) => readdirSync(dir).sort().flatMap((n) => { const p = dir + '/' + n; return statSync(p).isDirectory() ? alle(p, basis) : [p.slice(basis.length + 1)]; });
+  for (const app of ['calculate', 'needs']) {
+    const e = herkunft.apps[app];
+    const wurzel = new URL('../apps/' + app, import.meta.url).pathname;
+    const aufPlatte = alle(wurzel, wurzel);
+    const gelistet = Object.keys(e.dateien).sort();
+    const gleich = aufPlatte.length === gelistet.length && aufPlatte.every((f, i) => f === gelistet[i]);
+    const shaOk = gelistet.every((f) => createHash('sha256').update(_readSpore(wurzel + '/' + f)).digest('hex') === e.dateien[f]);
+    ok(`${e.name}: ${gelistet.length} Dateien byte-1:1 gepinnt (SHA-256 je Datei, Commit ${e.commit.slice(0, 7)}), keine Datei ohne Pin`, gleich && shaOk && /^[0-9a-f]{40}$/.test(e.commit));
+    ok(`${e.name}: kein sw.js, keine tests/tools/docs in der Kopie`, !gelistet.includes('sw.js') && !gelistet.some((f) => /^(tests|tools|docs)\//.test(f)));
+    ok(`${e.name}: index.html trägt genau die kontrollierte Abweichung (Quelle-SHA vermerkt)`, istGepatcht(_readSpore(wurzel + '/index.html', 'utf8')) && e.abweichungen['index.html'] && /^[0-9a-f]{64}$/.test(e.abweichungen['index.html'].quelle) && e.abweichungen['index.html'].aenderungen.length === 3 && Object.keys(e.abweichungen).length === 1);
+    ok(`${e.name}: Schublade der App unverändert (eigener SBKIM-Knoten bleibt)`, _readSpore(wurzel + '/index.html', 'utf8').includes('window.SBKIM_DB_SUFFIX = "workflow' + (app === 'needs' ? 'needs' : 'calculate') + '"'));
+  }
+  ok('appDateien: Adressen relativ zur BLP-Wurzel; unbekannte App → []', appDateien(herkunft, 'calculate').includes('./apps/calculate/index.html') && appDateien(herkunft, 'nix').length === 0 && appDateien(null, 'calculate').length === 0);
+  ok('themaNachricht: hell/dunkel aufgelöst, Farbe nur aus blau/graphit/petrol', JSON.stringify(themaNachricht('dark', 'petrol')) === '{"typ":"blp-thema","theme":"dark","farbe":"petrol"}' && themaNachricht('x', 'y').theme === 'light' && themaNachricht('x', 'y').farbe === 'blau');
+  const nutz = Buffer.from(JSON.stringify({ v: 1, quelle: 'workflow-calculate', modus: 'angebot', titel: 'Banner', kundeName: 'Muster GmbH', auftragNr: '', angebotsNr: 'AN-2026-0001', positionen: [{ beschreibung: 'Banner', menge: 2, einzelpreisCent: 5000, ustSatz: 19 }] })).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const u = uebernahmeAusAdresse('https://lausiklauskn-png.github.io/BookLedgerPro/?uebernahme=' + nutz);
+  ok('uebernahmeAusAdresse: Calculates Adresse → Datenvertrag v1 (Quelle, Titel, Position)', !!u && u.quelle === 'workflow-calculate' && u.titel === 'Banner' && u.positionen.length === 1 && u.positionen[0].menge === 2);
+  ok('… Müll oder fremde Quelle → null', uebernahmeAusAdresse('nix') === null && uebernahmeAusAdresse('https://x/?uebernahme=abc') === null);
+  // Gating: Calculate/Needs unternehmerisch; BLPs eigene Angebote nur mit angeboteAlt
+  ok('zeigeAnsicht: calculate/needs in Privat weg, in Kleinunternehmer/Selbstständig da; angebote nur mit angeboteAlt', !zeigeAnsicht({ nutzungsmodus: 'privat' }, 'calculate') && zeigeAnsicht({ nutzungsmodus: 'kleinunternehmer' }, 'calculate') && zeigeAnsicht({ nutzungsmodus: 'selbststaendig' }, 'needs') && !zeigeAnsicht({ nutzungsmodus: 'selbststaendig' }, 'angebote') && zeigeAnsicht({ nutzungsmodus: 'selbststaendig', angeboteAlt: true }, 'angebote') && !zeigeAnsicht({ nutzungsmodus: 'privat', angeboteAlt: true }, 'angebote'));
+  // Verdrahtung
+  const sh = _readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
+  ok('Shell: calculate/needs mit Original-Bild der App im Menü, Gruppe Verkauf, Routen montiert', /\['calculate', 'nav\.calculate', 'img:\.\/apps\/calculate\/icons\/icon-192\.png'\]/.test(sh) && /\['needs', 'nav\.needs', 'img:/.test(sh) && /'nav\.gruppe\.verkauf', \['calculate', 'needs', 'orders'/.test(sh) && /mountApp\(content, 'calculate'\)/.test(sh) && /mountApp\(content, 'needs'\)/.test(sh) && /const navIcon = /.test(sh));
+  const br = _readSpore(new URL('../apps/blp-bruecke.js', import.meta.url), 'utf8');
+  ok('Brücke: nur eingebettet aktiv, Thema per message, Calculates Sprung-Haken → postMessage statt Navigation, Bereit-Meldung', /if \(window\.parent === window\) return;/.test(br) && /__wcSprungAbfangen = true/.test(br) && /defineProperty\(window, "__wcSprung"/.test(br) && /blp-uebernahme/.test(br) && /blp-bereit/.test(br) && /e\.origin !== ORIGIN\) return/.test(br));
+  const th = _readSpore(new URL('../apps/blp-thema.css', import.meta.url), 'utf8');
+  ok('Thema-CSS: graphit/petrol je hell/dunkel, Installieren-Knopf der App im Rahmen weg', /data-blp-farbe="graphit"\]\[data-theme="light"\]/.test(th) && /data-blp-farbe="petrol"\]/.test(th) && /#installieren \{ display: none/.test(th));
+  const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
+  ok('sw.js: eigener App-Vorrat (bleibt), apps/ aus dem Vorrat, apps.js/eingebettet.js/HERKUNFT in der Schale', new RegExp("APPS_VORRAT = '" + APPS_VORRAT + "'").test(sw) && /BLEIBT = \[GETEILT_VORRAT, APPS_VORRAT\]/.test(sw) && /url\.pathname\.includes\('\/apps\/'\)/.test(sw) && /\.\/src\/ui\/views\/apps\.js/.test(sw) && /\.\/src\/domain\/eingebettet\.js/.test(sw) && /\.\/apps\/HERKUNFT\.json/.test(sw));
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  ok('i18n DE/EN: nav.calculate, nav.needs, apps.*', ['nav.calculate', 'nav.needs', 'apps.calculate.unter', 'apps.needs.unter', 'apps.vollbild', 'apps.fenster', 'apps.offline', 'apps.offlineLaeuft', 'apps.offlineFertig', 'apps.offlineFehler', 'apps.alteAngebote'].every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
+  ok('.nojekyll an der Wurzel (Pages liefert apps/ unverändert aus)', (() => { try { statSync(new URL('../.nojekyll', import.meta.url)); return true; } catch { return false; } })());
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

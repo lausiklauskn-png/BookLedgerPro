@@ -1,0 +1,38 @@
+From: Max Beispiel <kontakt@tomys-hub.example>
+To: Paula Beispiel <werkstatt@werkstatt-beispiel.example>
+Subject: Re: =?utf-8?q?Bedarfsgespr=C3=A4ch_=E2=80=94?= Buchhaltung und
+ Kundenliste
+Date: Thu, 04 Jun 2026 17:02:00 +0200
+Message-ID: <202606041702.beispiel@tomys-hub.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============3641603982383516983=="
+
+--===============3641603982383516983==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hallo Frau Beispiel,
+
+danke f=C3=BCr das Gespr=C3=A4ch. Zu Ihren Fragen:
+
+1. Die Buchhaltung machen wir selbst (E=C3=9CR), die Steuerberaterin will ein=
+e DATEV-Datei.
+2. Die Kundenliste aus unserem alten Programm h=C3=A4ngt als CSV an.
+3. Auf dem Tablet sollen auch die Mitarbeiter arbeiten =E2=80=94 jeder mit ei=
+gener PIN.
+
+Viele Gr=C3=BC=C3=9Fe
+Max Beispiel
+
+--===============3641603982383516983==
+Content-Type: text/csv
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="Kundenliste-alt.csv"
+MIME-Version: 1.0
+
+S3VuZGVubnVtbWVyO0Zpcm1hO09ydDtMZXR6dGVyIEF1ZnRyYWcKS0QtMDAwMTtTcG9ydHZlcmVp
+biBCZWlzcGllbCBlLiBWLjtNdXN0ZXJzdGFkdDsyMDI2LTA1LTI4CktELTAwMDI7QsOkY2tlcmVp
+IEJlaXNwaWVsO011c3RlcmRvcmY7MjAyNi0wNS0zMApLRC0wMDAzO0NhZsOpIEJlaXNwaWVsO011
+c3RlcnN0YWR0OzIwMjYtMDYtMDEK
+
+--===============3641603982383516983==--

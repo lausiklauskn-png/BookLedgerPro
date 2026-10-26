@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v263';
+const CACHE_VERSION = 'v264';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -29,7 +29,10 @@ const CACHE_NAME = `blpr-shell-${CACHE_VERSION}`;
  * und leitet auf ./?geteilt=1 weiter; die App holt sie dort ab (src/domain/teilenEmpfang.js) und leert ihn.
  * Der Vorrat ueberlebt ein neues CACHE_VERSION (BLEIBT). Name = GETEILT_VORRAT in src/domain/workflowPdf.js. */
 const GETEILT_VORRAT = 'blpr-geteilt';
-const BLEIBT = [GETEILT_VORRAT];
+/* Eingebettete Apps (Workflow Calculate/Needs, Klaus 2026-10-26): eigener Vorrat, nicht in der Schale (8 MB), beim Oeffnen
+ * oder ueber „Offline bereitlegen" gefuellt; ueberlebt ein neues CACHE_VERSION. Name = APPS_VORRAT in src/ui/views/apps.js. */
+const APPS_VORRAT = 'blpr-apps';
+const BLEIBT = [GETEILT_VORRAT, APPS_VORRAT];
 
 const CORE_ASSETS = [
   './',
@@ -200,6 +203,9 @@ const CORE_ASSETS = [
   './src/ui/views/customers.js',
   './src/ui/views/orders.js',
   './src/ui/views/angebote.js',
+  './src/ui/views/apps.js',
+  './src/domain/eingebettet.js',
+  './apps/HERKUNFT.json',
   './src/ui/views/shopbuchung.js',
   './src/ui/views/nachkalkulation.js',
   './src/ui/views/employees.js',
@@ -280,6 +286,19 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return; // nur eigene Assets
+
+  if (url.pathname.includes('/apps/') && !url.pathname.endsWith('/HERKUNFT.json')) {
+    // Eingebettete App: Vorrat zuerst (offline), im Hintergrund frisch; ihre index.html (der Rahmen navigiert) netz-zuerst.
+    event.respondWith(
+      caches.open(APPS_VORRAT).then(async (cache) => {
+        const cached = await cache.match(request);
+        const network = fetch(request).then((res) => { if (res && res.ok) cache.put(request, res.clone()); return res; }).catch(() => null);
+        if (request.mode === 'navigate') return (await network) || cached || new Response('', { status: 504 });
+        return cached || (await network) || new Response('', { status: 504 });
+      })
+    );
+    return;
+  }
 
   if (request.mode === 'navigate') {
     // Navigationen netz-zuerst (immer aktuell). Offline: exakt angefragte, vorgecachte Seite

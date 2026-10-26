@@ -1,0 +1,11 @@
+/* apps/blp-thema.css — BLP-Thema in den eingebetteten Apps (Klaus 2026-10-26: „Der Farbstil … kann an BookLedgerPro
+   angepasst werden"; Bilder und Emojis der Apps bleiben). Geladen als letztes Stylesheet über die kontrollierte
+   Abweichung in index.html. Hell/Dunkel setzen die Apps selbst über data-theme; hier nur die Akzentfarbe nach
+   data-blp-farbe (Werte aus assets/tokens.css von BookLedgerPro). „blau" lässt den App-eigenen Akzent stehen
+   (Calculate Blau, Needs Messing) — so bleibt jede App erkennbar. */
+:root[data-blp-farbe="graphit"] { --accent: #a3aebd; --accent2: #94a3b8; --accent3: #c3ccd8; }
+:root[data-blp-farbe="graphit"][data-theme="light"] { --accent: #475569; --accent2: #334155; --accent3: #64748b; }
+:root[data-blp-farbe="petrol"] { --accent: #2dd4bf; --accent2: #14b8a6; --accent3: #5eead4; }
+:root[data-blp-farbe="petrol"][data-theme="light"] { --accent: #0f766e; --accent2: #0b5a54; --accent3: #0d9488; }
+/* Im Rahmen gibt es keine Installation der Unter-App (die App IST BookLedgerPro): den Installieren-Knopf der App weg. */
+:root[data-blp-eingebettet] #installieren { display: none !important; }
