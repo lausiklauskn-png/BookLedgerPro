@@ -208,8 +208,8 @@ und vorhandene Daten ziehen nur per Backup/Wiederherstellen um. Vor dem Klonen f
 schon (laut Klaus; beim Bau in dessen Repo nachsehen). BLP nutzt diese Werkzeuge, statt sie doppelt zu bauen:
 Workflow PDF scannt und erkennt den Text, BLP übernimmt Dokument **und** erkannten Text und trägt ein.
 Für **selbst eingescannte** Dokumente entfällt die Prüfung auf Fehler/versteckte KI-Befehle – sie stammen
-direkt vom Papier. Offen (D12): ob Dateien **von außen** (heruntergeladene PDF, Bon aus einer Händler-App)
-weiter geprüft werden sollen.
+direkt vom Papier. Dateien **von außen** (heruntergeladene PDF, Bon aus einer Händler-App, Zwischenablage) werden **weiter geprüft**
+(entschieden D12).
 
 **Automatisch eintragen:**
 - Texterkennung bevorzugt aus Workflow PDF; sonst Google Vision (EU) wie heute bei Belegen; Händler, Datum, Betrag, ggf. Einzelposten.
@@ -245,7 +245,7 @@ Bei Unternehmer-Modi: Trennung privat/betrieblich (Privatentnahme/-einlage) stat
 - ~~D5 Modi~~ **entschieden:** Privat = Arbeitnehmer/Arbeitslose, private Steuererklärung (siehe Tabelle F); Kleinunternehmer, Selbstständig, Berater bleiben.
 - D7 Die Bilder sind in Teal/Smaragd. Zu Petrol passen sie genau; bei Klarblau, Graphit und Nachtblau beim Umbau ansehen, ob sie noch stimmig wirken (nur prüfen, nicht ändern).
 - D10 Name des PWA-Klons und seine Datenbank-Endung (Vorschlag `bookledger`). Wann wird geklont – nach dem Design-Umbau?
-- D12 Prüfung auf versteckte KI-Befehle: bei eigenen Scans aus Workflow PDF aus. Bei Dateien von außen (Download, Händler-App) beibehalten? (Vorschlag: ja, kostet nichts und läuft lokal.)
+- ~~D12 Prüfung~~ **entschieden:** eigene Scans aus Workflow PDF ohne Prüfung; Dateien von außen werden geprüft.
 - D11 ELSTER: **beauftragt** – Recherche zu ERiC-Plattformen und Hersteller-ID läuft (Ergebnis folgt in Abschnitt G).
 - ~~D6 Alter Schalter~~ **entschieden:** Der neue Modus ersetzt Einfach/Profi/Berater ganz.
 
