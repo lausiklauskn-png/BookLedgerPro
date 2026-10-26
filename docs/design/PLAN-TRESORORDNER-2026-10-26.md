@@ -61,3 +61,43 @@ BookLedger Basic, Workflow PDF (Web) und Private Brain (V3) bleiben bei Teilen u
 
 Offene Entscheidungen für Schritt 3 (vor dem Bau an Klaus): Paketname und Signatur von BookLedgerPro nativ, Veröffentlichungsweg
 (Release-APK wie Private Brain Pro), ob der Ordner-Ersatzschlüssel zuerst in Private Brain Pro gebaut wird (dort liegt das Muster).
+
+
+## Weg 2 — Relais (Klaus 2026-10-26: „BookLedgerPro über mein privates Relais laufen lassen, so wie Kim“)
+
+Klaus' privates Relais läuft: **`relay-privat.family-projekt.de`** (🟢; nostr-rs-relay mit Zulassungsliste, davor der
+Zulassungsdienst aus Kim-sync `server/zulassung`). Nachgelesen in Kim-sync (Stand `1a7f111`), nicht angenommen:
+
+| Kim-sync macht | so |
+|---|---|
+| Transport | offenes Nostr-Protokoll über `wss://`-Relais; signierte Zettel (kind 1, Tags `m`/`x`/`k`/`p`), Signatur mit `modules/echtheit.js` + `noble-secp256k1.js` (byte-1:1 aus Kimboard), jedes Gerät hat einen Geräteschlüssel |
+| Verschlüsselung | **auf dem Gerät**, AES-GCM; Raumschlüssel `rs` (32 Zufallsbytes) je Raum, Briefe an EIN Gerät per ECDH secp256k1 (`umzugSchluessel`, AAD je Zweck); das Relais sieht nur Geheimtext und eine Raum-Marke |
+| Dateien | in Teilen zu 90 000 Zeichen (60 000 auf öffentlichen Relais), bis 200 MB; Quittungen; Löschen vom Relais, wenn alle abgeholt haben |
+| Zugang zum privaten Relais | Zulassungsliste der Geräteschlüssel; Einladungs-Token im Link, das neue Gerät meldet sich mit einem signierten Zettel `beitreten`; Kim-sync hat dafür ein Feld „Schlüssel aus einer anderen App“ |
+| Was es NICHT ist | kein Speicher, kein Hintergrunddienst in der PWA: abgeholt wird, wenn die App offen ist |
+
+**Für BookLedgerPro (und Private Brain Pro, Workflow PDF Pro) heißt das:**
+
+- **Dieselben Verträge, anderer Transport.** Eine Übergabe (Rechnungsmail `.eml`, Angebot v1/v2, Arbeitsstand `*.workfloh.json`,
+  unterschriebenes PDF) wird ein Zettel `typ: 'uebergabe'` mit `an: <App>` und `vertrag: <Name>`; große Nutzlasten in Teilen wie
+  bei Kim. Der Empfänger legt sie in sein Fach, als käme sie aus dem Tresorordner (gleicher Einleseweg: `dateienEinlesen`,
+  `uebernahmeAusAdresse`, Arbeitsstand-Import).
+- **Ein „Verbund-Raum“ für die eigenen Apps**, wie ein Kim-Raum: ein Raum-Code, ein Raumschlüssel, alle Apps auf allen Geräten
+  von Klaus sind Mitglieder (oder je Person ein Raum: Klaus, Jens). Alternative wäre Paarung je Gerätepaar über die
+  Geräteschlüssel (genauer, aber mehr Tipparbeit) — **Entscheidung von Klaus.**
+- **Krypto byte-1:1 aus Kim-sync** (`modules/krypto.js` aus Datei-Post, `echtheit.js`, `noble-secp256k1.js`), SHA-gepinnt; der
+  Geräteschlüssel der App ist der des SBKIM-Knotens (BookLedgerPro ist schon Knoten, Schublade `bookledgerpro`) — zu prüfen, ob
+  Kim-sync denselben Schlüssel nimmt oder einen eigenen (`kimsync_*`); zwei Schlüssel je Gerät wären zu vermeiden.
+- **Zulassung:** jede App meldet sich mit dem signierten Zettel `beitreten` + Einladungs-Token an, wie ein neues Kim-Gerät; bis
+  dahin trägt Klaus die Schlüssel von Hand ein (Kim-sync: „Schlüssel aus einer anderen App“).
+- **Das geht auch in der PWA.** Der Relais-Weg braucht keinen Ordnerzugriff (Kim-sync ist eine PWA). Damit könnte die
+  Übergabe zwischen Geräten **vor** der nativen Fassung laufen — ob Basic ihn bekommt oder nur Pro, ist **Klaus' Entscheidung**
+  (bisher: Basic = Teilen/Links, Pro = Tresorordner).
+
+**Reihenfolge-Vorschlag:** Tresorordner bleibt Weg 1 (gleiches Gerät, Speicher, Sicherung). Weg 2 kommt als eigene Sitzung:
+zuerst in BookLedgerPro Empfang + Senden eines Zettels `uebergabe` an einen Raum (Probe mit gestelltem Relais wie in Kim-sync),
+dann Private Brain Pro (Rechnungsmail hinaus) und Workflow PDF Pro (Arbeitsstand hinein, PDF zurück). Nichts geht ohne Klaus'
+Wort an das echte Relais; die Proben stellen es.
+
+**Offene Fragen an Klaus:** (1) ein Verbund-Raum für alle eigenen Apps oder Paarung je Gerät? (2) Relais-Weg nur in Pro oder
+auch in Basic? (3) Reihenfolge: Weg 2 vor oder nach der Android-Tresorordner-Sitzung?

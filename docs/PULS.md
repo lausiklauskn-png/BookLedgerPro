@@ -6,6 +6,9 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 ## ▶ Neuester Stand (2026-10-26, nachts): C1 „Namen nach Muster" gebaut · Klaus' Antworten auf den Plan
+- **Weg 2 Relais (Klaus 2026-10-26: „über mein privates Relais, so wie Kim“):** `relay-privat.family-projekt.de` läuft; Kim-sync
+  nachgelesen (Nostr-Zettel, AES-GCM auf dem Gerät, Raumschlüssel, ECDH-Briefe, Teile 90 kB, Zulassungsdienst). Plan-Abschnitt
+  im Tresorordner-Plan; drei Fragen an Klaus (Verbund-Raum oder Paarung · nur Pro oder auch Basic · Reihenfolge).
 - **Workflow PDF im Rundlauf gebaut (PR „Workflow PDF: PDF + Daten hin, unterschrieben zurück"):** `workflowPdfRundlauf.js`,
   Knopf am Angebot, Arbeitsstand mit drei Feldern, Rückweg über Marke (Keywords/Textebene), Vermerke, `sw.js` v269;
   `run.mjs` +10 · `smoke_wfpdf` 14 grün. **Nächstes:** R3 (Stand zurück an WorkFloh) oder gleich die Kopie nach
