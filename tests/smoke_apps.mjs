@@ -98,6 +98,20 @@ try {
   ok('Needs läuft im Rahmen (WN.bedarf), Brücke aktiv, Thema petrol/dunkel angekommen', await frameN.evaluate(() => !!(window.WN && window.WN.bedarf) && document.documentElement.getAttribute('data-blp-eingebettet') === '1' && document.documentElement.getAttribute('data-blp-farbe') === 'petrol'), JSON.stringify(await frameN.evaluate(() => ({ wn: !!window.WN, bedarf: !!(window.WN && window.WN.bedarf), ein: document.documentElement.getAttribute('data-blp-eingebettet'), farbe: document.documentElement.getAttribute('data-blp-farbe') }))));
   ok('Needs behält Bilder/Emojis und Namen (erkennbar)', await frameN.evaluate(() => document.body.textContent.includes('Workflow Bedarfsanalyse') && !!document.querySelector('img[src*="icon-192"]')));
   ok('Seitenwechsel: Calculate-Fenster bleibt geladen (nur verborgen), Needs-Fenster sichtbar', await page.evaluate(() => getComputedStyle(document.querySelector('iframe[data-app-frame="calculate"]')).display === 'none' && getComputedStyle(document.querySelector('iframe[data-app-frame="needs"]')).display === 'block') && await frame.evaluate(() => window.__marke === 'bleibt'));
+  // D22: Übergabe aus Needs über denselben Haken; der Calculate-Entwurf („Banner 2 m") ist noch offen → Positionen werden ANGEHÄNGT
+  const nutzN = b64u({ v: 1, quelle: 'workflow-needs', modus: 'angebot', titel: 'Kundenportal', kundeName: 'Muster GmbH', auftragNr: '', angebotsNr: 'AN-2026-0007', positionen: [{ beschreibung: 'Kundenkonto mit Anmeldung', menge: 1, einzelpreisCent: 120000, ustSatz: 19 }, { beschreibung: 'Bestellübersicht', menge: 1, einzelpreisCent: 80000, ustSatz: 19 }] });
+  await page.evaluate(() => { window.__blpAppsUebernahme = null; });
+  await frameN.evaluate((u) => { window.__wnSprung = u; }, 'https://lausiklauskn-png.github.io/BookLedgerPro/?uebernahme=' + nutzN);
+  await warte(() => window.__p.getRoute() === 'angebote' && window.__blpAppsUebernahme && window.__blpAppsUebernahme.app === 'needs' && window.__blpAppsUebernahme.ok === true);
+  await warte(() => document.querySelector('#content') && document.querySelector('#content').textContent.includes('Bestellübersicht'));
+  const anh = await page.evaluate(() => { const c = document.querySelector('#content'); const txt = c.textContent; return { banner: /angehängt/.test(txt) && /2 Position/.test(txt), alt: txt.includes('Banner'), neu: txt.includes('Kundenkonto mit Anmeldung') && txt.includes('Bestellübersicht'), knopf: !!c.querySelector('[data-uebernahme-neu]'), titel: [...c.querySelectorAll('input')].some((i) => i.value === 'Banner 2 m') }; });
+  ok('„An BookLedgerPro" in Needs bleibt im Rahmen und hängt die Positionen an den offenen Calculate-Entwurf an (Banner bleibt, Titel bleibt, Banner sagt es)', anh.banner && anh.alt && anh.neu && anh.knopf && anh.titel, JSON.stringify(anh));
+  await page.click('[data-uebernahme-neu]');
+  await warte(() => document.querySelector('#content') && !document.querySelector('#content').textContent.includes('Banner') && document.querySelector('#content').textContent.includes('Bestellübersicht'));
+  ok('„Stattdessen als neuen Entwurf": nur die Needs-Positionen, Titel „Kundenportal", kein Banner mehr', await page.evaluate(() => { const c = document.querySelector('#content'); return !c.textContent.includes('Banner') && c.textContent.includes('Kundenkonto mit Anmeldung') && [...c.querySelectorAll('input')].some((i) => i.value === 'Kundenportal') && !c.querySelector('[data-uebernahme-neu]'); }));
+  ok('die Seite blieb BookLedgerPro', page.url().includes('127.0.0.1'));
+  await page.evaluate(() => window.__p.navigate('needs'));
+  await warte(() => document.querySelector('iframe[data-app-frame="needs"]') && getComputedStyle(document.querySelector('iframe[data-app-frame="needs"]')).display !== 'none');
   // Offline bereitlegen (Vorrat blpr-apps)
   await page.click('[data-apps-offline]');
   await warte(() => /Offline bereit: \d+ Dateien/.test(document.querySelector('[data-apps-offline-stand]').textContent), null, 60000);

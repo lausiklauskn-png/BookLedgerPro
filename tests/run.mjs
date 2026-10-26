@@ -6272,6 +6272,8 @@ await section('P8: QR-Encoder (build-frei, lokal)', () => {
     !!parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'isd-workfloh' })));
   ok('Übernahme: Workflow Calculate (workflow-calculate) akzeptiert',
     !!parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'workflow-calculate' })));
+  ok('Übernahme: Workflow Needs (workflow-needs, D22) akzeptiert — Positionen 1 × netto',
+    (() => { const u = parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'workflow-needs', positionen: [{ beschreibung: 'Kundenkonto', menge: 1, einzelpreisCent: 120000, ustSatz: 19 }] })); return !!u && u.quelle === 'workflow-needs' && u.positionen[0].einzelpreisCent === 120000; })());
   ok('Übernahme: falsche Version → null (v2 ist seit dem Rundlauf gültig, v3 nicht)', parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, v: 3 })) === null && !!parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, v: 2 })));
   ok('Übernahme: fremde Quelle → null', parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'boese-app' })) === null);
   ok('Übernahme: Müll → null (fail-soft)', parseUebernahmeParam('?uebernahme=%%%nicht-base64%%%') === null);
@@ -6936,7 +6938,8 @@ await section('Eingebettete Apps (Klaus 2026-10-26): Patch, Pins, Helfer, Verdra
   const sh = _readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
   ok('Shell: calculate/needs mit Original-Bild der App im Menü, Gruppe Verkauf, Routen montiert', /\['calculate', 'nav\.calculate', 'img:\.\/apps\/calculate\/icons\/icon-192\.png'\]/.test(sh) && /\['needs', 'nav\.needs', 'img:/.test(sh) && /'nav\.gruppe\.verkauf', \['calculate', 'needs', 'orders'/.test(sh) && /mountApp\(content, 'calculate'\)/.test(sh) && /mountApp\(content, 'needs'\)/.test(sh) && /const navIcon = /.test(sh));
   const br = _readSpore(new URL('../apps/blp-bruecke.js', import.meta.url), 'utf8');
-  ok('Brücke: nur eingebettet aktiv, Thema per message, Calculates Sprung-Haken → postMessage statt Navigation, Bereit-Meldung', /if \(window\.parent === window\) return;/.test(br) && /__wcSprungAbfangen = true/.test(br) && /defineProperty\(window, "__wcSprung"/.test(br) && /blp-uebernahme/.test(br) && /blp-bereit/.test(br) && /e\.origin !== ORIGIN\) return/.test(br));
+  ok('Brücke: nur eingebettet aktiv, Thema per message, Calculates Sprung-Haken → postMessage statt Navigation, Bereit-Meldung', /if \(window\.parent === window\) return;/.test(br) && /haken\("__wcSprungAbfangen", "__wcSprung"\)/.test(br) && /defineProperty\(window, name/.test(br) && /blp-uebernahme/.test(br) && /blp-bereit/.test(br) && /e\.origin !== ORIGIN\) return/.test(br));
+  ok('Brücke: auch Needs\' Sprung-Haken (__wnSprungAbfangen/__wnSprung, D22) über dieselbe Funktion', /haken\("__wcSprungAbfangen", "__wcSprung"\)/.test(br) && /haken\("__wnSprungAbfangen", "__wnSprung"\)/.test(br) && /window\[flagge\] = true/.test(br));
   const th = _readSpore(new URL('../apps/blp-thema.css', import.meta.url), 'utf8');
   ok('Thema-CSS: graphit/petrol je hell/dunkel, Installieren-Knopf der App im Rahmen weg', /data-blp-farbe="graphit"\]\[data-theme="light"\]/.test(th) && /data-blp-farbe="petrol"\]/.test(th) && /#installieren \{ display: none/.test(th));
   const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');

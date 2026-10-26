@@ -6,6 +6,10 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 ## ▶ Neuester Stand (2026-10-26, nachts): C1 „Namen nach Muster" gebaut · Klaus' Antworten auf den Plan
+- **D22 gebaut (PR „Needs → BLP, Positionen anhängen"):** Workflow-Needs #32 (Knopf „An BookLedgerPro", Vertrag v1 `workflow-needs`),
+  BLP nimmt die Quelle, Brücke fängt `__wnSprung`, zweite Übergabe bei offenem Entwurf hängt an (Rückweg „stattdessen neuer
+  Entwurf"); `apps/needs` nachgezogen (`aa2c3cc`), `sw.js` v268. `smoke_apps` 22 grün. Private Brain Pro #91 übernommen
+  (Sende-Knopf). **Nächstes:** Workflow PDF im Rundlauf „beides" (#25), dann R3, dann die Kopie nach BookLedger-Basic.
 - **Klaus' Fahrplan (2026-10-26, abends):** Mail-Teilen ist übernommen (#359); Private Brain Pro bekommt den Sende-Knopf (PR #91).
   Kein zweites Postfach in BLP. Stattdessen **ein Tresorordner für alle Pro-Apps** (Private Brain Pro, BookLedgerPro, Workflow
   PDF Pro; ein Passwort, PBV1 byte-gleich), PWAs bleiben bei Teilen/Links. **Repos:** hier fertig werden → komplett nach
