@@ -18,7 +18,20 @@ Buchhaltungsprogramme.
 | A1 | **Strichsymbole** statt Emojis bei den Symbolen | Navigation, Knöpfe, Tabellenaktionen und Statusanzeigen bekommen Strichsymbole (heute: nur Text). **Die vorhandenen 3D-Bilder bleiben** (Klaus 2026-10-26: eigens generiert, passen zu App und Farbe): Sperrbildschirm, 3 Onboarding-Bilder, 7 Leerzustände. Sie sind Illustrationen, keine Symbole. |
 | A2 | **Knöpfe flach** halten, soweit am Handy bedienbar | Heute ca. 40–44 px sichtbar hoch (`.btn` padding .55rem), Eingabefelder ebenso. Ziel wie PBP: sichtbar ~28–32 px, unsichtbare Trefferfläche ≥ 44 px bei Touch. Formulare, Segment-Schalter, Tabellenaktionen mitziehen. |
 | A3 | **Vollbild**, Platz optimal nutzen | Heute ist alles auf `--maxw: 880px` begrenzt und mittig: am breiten Schirm bleibt links/rechts viel leer (siehe `wide-*.png`). Ziel: volle Breite, Seitenleiste links fest, Inhalt füllt den Rest; Tabellen nutzen die Breite. |
-| A4 | **Themenwahl: die vier Themen wie Private Brain Pro + das heutige BLP-Dunkel** (entschieden 2026-10-26) | **Klarblau** (hell, `#2563eb` auf `#f6f8fc`), **Graphit** (hell, `#475569`), **Petrol** (hell, `#0f766e`, entspricht dem heutigen BLP-Hell), **Nachtblau** (dunkel, `#7ca7ff` auf `#111827`) und als fünftes **das heutige BLP-Dunkel** (dunkles Marineblau `#0b1120`, Flächen `#111a2e`, grün-blauer Akzent `#2dd4bf`; Werte aus `assets/tokens.css`, `[data-theme=dark]`, unverändert übernehmen). Arbeitsname: **Nachtpetrol** (siehe D8). Ersetzt System/Hell/Dunkel. Quelle der vier: `Privat-Brain-Pro/native/design-tokens.css`, Namen DE/EN in `native/native-theme.js`. |
+| A4 | **Themen = Farbe × Hell/Dunkel** (Klaus 2026-10-26: Hell/Dunkel bleibt und gilt für jede Farbe) | Zwei getrennte Schalter: **Farbe** (Blau · Graphit · Petrol) und **Helligkeit** (Hell · Dunkel · wie Gerät). Ergibt sechs Kombinationen, siehe Tabelle unten. Ersetzt die heutige Wahl System/Hell/Dunkel nicht, sondern ergänzt sie um die Farbe. |
+
+### A4 im Detail: Farbe × Helligkeit
+
+| Farbe | Hell | Dunkel |
+|---|---|---|
+| **Blau** | PBP *Klarblau* (`#2563eb` auf `#f6f8fc`) | PBP *Nachtblau* (`#7ca7ff` auf `#111827`) |
+| **Graphit** | PBP *Graphit* (`#475569` auf `#f7f8fa`) | **fehlt – neu ableiten** (dunkle Grauflächen, heller Grauakzent) |
+| **Petrol** | PBP *Petrol* = heutiges BLP-Hell (`#0f766e`) | **heutiges BLP-Dunkel** (`#2dd4bf` auf `#0b1120`, Werte aus `assets/tokens.css` unverändert) |
+
+- „Wie Gerät" folgt der Hell/Dunkel-Einstellung des Geräts, die Farbe bleibt.
+- Abweichung von PBP: Dort ist Nachtblau ein eigenes viertes Thema. Hier wird es die dunkle Seite von Blau.
+  Für Klaus sieht es gleich aus; nur die Bedienung ist zweigeteilt.
+- Startwert: Petrol + wie Gerät (= heutiges Aussehen bleibt beim Update erhalten).
 
 ### Was es aus Private Brain Pro schon gibt (wiederverwendbar)
 - **Strichsymbol-Satz:** `Privat-Brain-Pro/docs/design/umbau-2026-10-24/design-kit/icons.svg`,
@@ -138,8 +151,8 @@ Regeln dazu:
 
 ## D. Offene Fragen an Klaus
 
-- ~~D1 Themen~~ **entschieden:** die vier PBP-Themen + heutiges BLP-Dunkel (siehe A4).
-- D8 Name fürs fünfte Thema (Vorschlag „Nachtpetrol“) und Startwert bei dunklem Gerät: Nachtpetrol oder Nachtblau? (Vorschlag: Nachtpetrol, weil es BLPs eigener Ton ist.)
+- ~~D1 Themen~~ **entschieden:** PBP-Farben + heutiges BLP-Dunkel, Hell/Dunkel gilt für jede Farbe (siehe A4).
+- D8 Passt die Zuordnung Farbe × Hell/Dunkel (Tabelle A4)? Graphit-Dunkel muss neu entstehen. Startwert Petrol + wie Gerät?
 - D2 Soll BLP den PBP-Symbolsatz **gemeinsam** nutzen (eine Quelle, kopiert wie bei
   Sage-Modulen) oder eine eigene Kopie, die BLP-Symbole ergänzt?
 - D3 Seitenleiste am breiten Schirm: dauerhaft mit Namen, oder einklappbar auf Symbole?
