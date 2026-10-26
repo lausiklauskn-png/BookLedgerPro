@@ -68,3 +68,36 @@ Gerät"). Das gilt ausdrücklich auch für eigene Scans (Klaus 2026-10-26).
 - Windows: Workflow PDF Pro (Tauri) hat keinen Link-Empfang; der Knopf öffnet die Web-Fassung. Rückweg am PC über
   Herunterladen + Hochladen.
 - iPhone: Web Share Target gibt es dort nicht.
+
+
+## Weg 3 — Angebot an Workflow PDF und unterschrieben zurück (Klaus 2026-10-26: „Wenn, dann beides")
+
+**Hinweg.** Am gespeicherten Angebot (nicht archiviert) steht „📄 An Workflow PDF". BookLedgerPro baut daraus zwei Dinge in
+EINER Datei: das Angebot als echtes PDF (A4, Text, nur die Whitelist: Positionen, Preise, USt; Firma aus den Einstellungen,
+Kunde aus den Stammdaten) **und** die Daten als Arbeitsstand von Workflow PDF (`Angebot-AN-….workfloh.json`): drei Felder an
+den Linien des PDFs — Haken „Angebot angenommen", „Ort, Datum", „Unterschrift Auftraggeber". Android: Teilen-Liste →
+Workflow PDF (nimmt `.json`). Ohne Teilen: Download, dann in Workflow PDF „📄 PDF oder Bild" wählen. Am Angebot steht
+„→ an Workflow PDF übergeben". Dort öffnet sich das Dokument, Klaus (oder der Kunde) unterschreibt mit dem Finger, setzt
+Datum und Haken, „⬇ PDF ausgeben (fest)" oder gleich 📤 Teilen.
+
+**Rückweg.** Das feste PDF geht per Teilen an BookLedgerPro (wie jeder Scan). Beim Einlesen wird die **Marke** erkannt:
+Keywords `blp-angebot=<Kennung>;nr=<Nummer>` (Workflow PDF setzt beim Export nur Title/Producer/Creator, die Keywords
+bleiben) oder, falls ein Programm sie entfernt, dieselbe Marke als kleine Fußzeile in der Textebene. Der Beleg wird dem
+Angebot zugeordnet: Belegzeile „✍ zu Angebot AN-… (zurück aus Workflow PDF)", Angebotszeile „✍ Unterschrieben zurück aus
+Workflow PDF: … (Beleg)", Statuszeile „1 unterschriebene(s) Angebot(e) … zugeordnet". **Der Status bleibt von Hand** —
+nichts wird automatisch „angenommen" (GoBD, Klaus' Regel: die App schlägt vor, bewegt nichts). Fremde PDFs ohne Marke
+bleiben, was sie sind; die Textebene wird nur bei PDFs von Workflow PDF oder BookLedgerPro gelesen.
+
+**Was wo steht.** `src/domain/workflowPdfRundlauf.js` (rein: Marke, Felder in Prozent, Arbeitsstand-Datei, PDF-Aufbau mit
+hineingereichtem pdf-lib), `src/core/scanPdf.js` `pdfLibLaden`, `src/ai/kiVorbereitung.js` `pdfKopf` (jetzt mit Keywords/
+Title) und `pdfVorschaubild`, `src/ui/views/angebote.js` `anWorkflowPdf` + Verweise, `src/ui/views/documents.js`
+`angebotZuPdf` + Zeile, `verweise.wfpdfUebergabeAm / wfpdfBelegId / wfpdfBelegName / wfpdfZurueckAm` am Angebot,
+`rec.angebot` am Beleg. Workflow PDF selbst ist dafür **unverändert** (Arbeitsstand-Format und Teilen gab es schon).
+
+**Grenzen.** Helvetica/WinAnsi: fremde Zeichen (kyrillisch, Pfeile) werden „?" — das Angebot ist deutsch/englisch gedacht.
+Ohne Web Share (Rechner) ist der Weg: Datei speichern, in Workflow PDF einlesen. Die Marke ist kein Beweis (jedes Programm
+kann sie schreiben); sie ordnet nur zu. ⚠ Am Tablet nicht gemessen; der echte Export aus Workflow PDF ist in der Probe mit
+pdf-lib nachgestellt (Title/Producer/Creator wie `export.js`), nicht im echten Workflow PDF gefahren.
+
+**Proben.** `tests/run.mjs` Abschnitt „Workflow PDF im Rundlauf" (+10) · `tests/smoke_wfpdf.mjs` **14 grün** (Hinweg aus dem
+echten Tresor, Arbeitsstand-Form, PDF-Kopf, Rückweg mit Keywords, Rückweg nur über die Textebene, fremdes PDF ohne Zuordnung).

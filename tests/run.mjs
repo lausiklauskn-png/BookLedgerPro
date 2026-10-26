@@ -6878,7 +6878,7 @@ await section('Workflow PDF: Marke, Textebene, Teilen-Parameter, Adressen (reine
   ok('neue Texte in DE und EN', neu.every((k) => de.includes(`'${k}':`) && en.includes(`'${k}':`)), neu.filter((k) => !(de.includes(`'${k}':`) && en.includes(`'${k}':`))).join(','));
   const dok = readFileSync(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
   ok('Belegseite: Textebene zuerst, dann erst Vision; der Text geht durch kiTextFreigabe', /pdfTextebene\(bytes\)/.test(dok) && /textebeneReicht\(tb\.text\)/.test(dok) && /async function textZuVorschlag/.test(dok) && /const frei = await kiTextFreigabe\(text\);/.test(dok));
-  ok('Belegseite: Marke beim Ablegen, Herkunft am Beleg', /herkunftVon\(await pdfKopf\(/.test(dok) && /saveBeleg\(file, \{ typ, herkunft, quelle, mail \}\)/.test(dok));
+  ok('Belegseite: Marke beim Ablegen, Herkunft am Beleg', /herkunft = herkunftVon\(kopf\)/.test(dok) && /saveBeleg\(file, \{ typ, herkunft, quelle, mail, angebot:/.test(dok));
 });
 
 // ─── „Journal“ → „Buchungen“ (Klaus 2026-10-26: „Das Wort Buchungen ist akzeptiert“) ───
@@ -7042,6 +7042,40 @@ await section('Rundlauf WorkFloh ⇄ BLP, Vertrag v2 „Vorgang" (Klaus 2026-10-
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
   ok('i18n DE/EN: anWorkfloh, wfVerweis, wfUebergeben, rueckverweis(+Bereit/+Status), settings.workflohZiel(+hint)', ['angebote.anWorkfloh', 'angebote.wfVerweis', 'angebote.wfUebergeben', 'angebote.rueckverweis', 'angebote.rueckverweisBereit', 'angebote.rueckverweisStatus', 'settings.workflohZiel', 'settings.workflohZiel.hint'].every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
   ok('sw.js: vorgang.js in der Schale', /'\.\/src\/domain\/vorgang\.js'/.test(_readSpore(new URL('../sw.js', import.meta.url), 'utf8')));
+});
+
+await section('Workflow PDF im Rundlauf (Klaus 2026-10-26, „beides“): Marke, Felder, Arbeitsstand, PDF', async () => {
+  const R = await import('../src/domain/workflowPdfRundlauf.js');
+  const { createRequire } = await import('node:module');
+  const PDFLib = createRequire(import.meta.url)('./vendor/pdf-lib.min.js');
+  const a = { id: 'ang_7f3kq9x2', nummer: 'AN-2026-0042', titel: 'Vereins-Tassen', datum: '2026-10-26', gueltigBis: '2026-11-25',
+    positionen: [{ beschreibung: 'Tasse 11oz bedruckt', menge: 10, einzelpreisCent: 1290, ustSatz: 19, netto: 12900 }, { beschreibung: 'Versand → Paket', menge: 1, einzelpreisCent: 590, ustSatz: 19, netto: 590 }],
+    steuerzeilen: [{ satz: 19, netto: 13490, ust: 2563 }], netto: 13490, ust: 2563, brutto: 16053 };
+  ok('Marke: „BookLedgerPro · Angebot <Nr> · <Kennung>“, Keywords blp-angebot=…;nr=…', R.angebotMarke(a) === 'BookLedgerPro · Angebot AN-2026-0042 · ang_7f3kq9x2' && R.angebotKeywords(a) === 'blp-angebot=ang_7f3kq9x2;nr=AN-2026-0042');
+  ok('Marke lesen: aus Keywords zuerst, sonst aus der Textebene (auch über Zeilenumbrüche), sonst null',
+    JSON.stringify(R.angebotMarkeLesen('', 'blp-angebot=ang_7f3kq9x2;nr=AN-2026-0042')) === '{"id":"ang_7f3kq9x2","nummer":"AN-2026-0042"}'
+    && JSON.stringify(R.angebotMarkeLesen('Summe 160,53 €\nBookLedgerPro · Angebot AN-2026-0042 ·\n ang_7f3kq9x2 Ende', '')) === '{"id":"ang_7f3kq9x2","nummer":"AN-2026-0042"}'
+    && R.angebotMarkeLesen('Rechnung 2026-117 Bäckerei', 'pdf-lib') === null);
+  const F = R.angebotFelder(0);
+  ok('Felder für Workflow PDF: Haken, Ort/Datum, Unterschrift — in Prozent (0–100), geprüft, Seite 0, feste Kennungen', F.length === 3 && F.map((f) => f.type).join() === 'check,datum,unterschrift' && F.every((f) => f.page === 0 && f.geprueft && f.herkunft === 'hand' && f.x >= 0 && f.x + f.w <= 100 && f.y >= 0 && f.y + f.h <= 100 && /^blp-/.test(f.id)) && F[2].label === 'Unterschrift Auftraggeber' && F[0].value === false, JSON.stringify(F));
+  ok('Felder liegen im unteren Viertel der Seite (Unterschriftsblock), Unterschrift breit, Haken quadratisch', F.every((f) => f.y > 75) && F[2].w > 35 && Math.abs(F[0].w * R.A4.w - F[0].h * R.A4.h) < 2, JSON.stringify(F.map((f) => [f.y, f.w, f.h])));
+  const pdf = await R.angebotPdfBauen(PDFLib, a, { kunde: { name: 'SV Blau-Weiß 09', adresse: 'Sportplatz 1, 12345 Musterstadt' }, firma: { name: 'Werkstatt Beispiel', anschrift: 'Musterweg 1\n12345 Musterstadt' } });
+  ok('PDF: echte Datei (%PDF), eine Seite bei zwei Positionen, Feldseite 0', pdf.bytes[0] === 0x25 && pdf.bytes[1] === 0x50 && pdf.seiten === 1 && pdf.feldSeite === 0);
+  const geladen = await PDFLib.PDFDocument.load(pdf.bytes, { updateMetadata: false });   // sonst überschreibt pdf-lib beim Laden den Producer
+  ok('PDF-Kopf: Title „Angebot AN-2026-0042“, Producer BookLedgerPro, Creator „BookLedgerPro · Angebot“, Keywords mit Marke', geladen.getTitle() === 'Angebot AN-2026-0042' && geladen.getProducer() === 'BookLedgerPro' && geladen.getCreator() === 'BookLedgerPro · Angebot' && /blp-angebot=ang_7f3kq9x2;nr=AN-2026-0042/.test(geladen.getKeywords() || ''), [geladen.getTitle(), geladen.getProducer(), geladen.getKeywords()]);
+  const viele = { ...a, positionen: Array.from({ length: 60 }, (_, i) => ({ beschreibung: 'Position ' + (i + 1), menge: 1, einzelpreisCent: 100, ustSatz: 19, netto: 100 })) };
+  const pdf2 = await R.angebotPdfBauen(PDFLib, viele, {});
+  ok('60 Positionen: mehrere Seiten, der Unterschriftsblock (Felder) auf der letzten', pdf2.seiten >= 2 && pdf2.feldSeite === pdf2.seiten - 1 && (await PDFLib.PDFDocument.load(pdf2.bytes)).getPageCount() === pdf2.seiten, [pdf2.seiten, pdf2.feldSeite]);
+  ok('winAnsi: Umlaute, € und Gedankenstrich bleiben, fremde Zeichen (→, ☐, kyrillisch) werden „?“ statt einer Ausnahme', R.winAnsi('Käse 1,20 € – fertig') === 'Käse 1,20 € – fertig' && R.winAnsi('Versand → Paket ☐ Да') === 'Versand ? Paket ? ??');
+  const st = R.arbeitsstandBauen(a, pdf.bytes, { seiten: 1, feldSeite: 0, thumb: 'data:image/png;base64,AAAA', jetzt: '2026-10-26T18:00:00.000Z' });
+  const j = JSON.parse(st.inhalt);
+  ok('Arbeitsstand: Dateiname *.workfloh.json, Format/Version wie Workflow PDF, doc mit fester Kennung blp-<id>, Name „Angebot AN-…“, Seiten mit pdf.js-Transform, 3 Felder, Vorschaubild, PDF als base64', st.name === 'Angebot-AN-2026-0042.workfloh.json' && j.format === 'workfloh-pdf-arbeitsstand' && j.version === 1 && j.doc.id === 'blp-ang_7f3kq9x2' && j.doc.name === 'Angebot AN-2026-0042' && j.doc.pages.length === 1 && JSON.stringify(j.doc.pages[0].t) === JSON.stringify([1, 0, 0, -1, 0, R.A4.h]) && j.doc.fields.length === 3 && j.doc.thumb.startsWith('data:image/png') && Buffer.from(j.pdf, 'base64').subarray(0, 4).toString() === '%PDF' && j.doc.blp.angebotId === 'ang_7f3kq9x2', st.name);
+  const ang = _readSpore(new URL('../src/ui/views/angebote.js', import.meta.url), 'utf8'), doc = _readSpore(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
+  const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8'), i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  ok('Verdrahtung: Knopf „An Workflow PDF“ (nicht archiviert), Teilen mit Haken, Rückweg liest Keywords/Textebene nur bei Workflow-PDF-/BLP-PDFs, Vermerk am Angebot, Zeile am Beleg, Modul in der Schale, Texte DE/EN',
+    /'data-wfpdf-angebot': a\.id/.test(ang) && /a\.status !== ANGEBOT_STATUS\.ARCHIVIERT/.test(ang) && /window\.__blpTeilenAbfangen/.test(ang) && /navigator\.canShare\(\{ files: \[datei\] \}\)/.test(ang) && /wfpdfUebergabeAm/.test(ang)
+    && /async function angebotZuPdf/.test(doc) && /\/\^\(Workfloh PDF\|BookLedgerPro\)\//.test(doc) && /wfpdfBelegId: b\.id/.test(doc) && /function angebotZeile/.test(doc) && /angebote\.length \? ' ' \+ t\('docs\.angebotZugeordnet'\)/.test(doc)
+    && sw.includes("'./src/domain/workflowPdfRundlauf.js'") && ['angebote.anWorkflowPdf', 'angebote.wfpdfUebergeben', 'angebote.wfpdfZurueck', 'angebote.wfpdfGespeichert', 'angebote.pdfUnterschrift', 'docs.angebotZugeordnet', 'docs.angebotZeile'].every((k) => (i18.match(new RegExp("'" + k.replace('.', '\\.') + "'", 'g')) || []).length === 2));
 });
 
 await section('Scan-Qualität (Klaus 2026-10-26): auto nach Vorlage, hoch/normal/klein, Einstellung durchgereicht', async () => {

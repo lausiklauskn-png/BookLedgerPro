@@ -6,6 +6,10 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 ## ▶ Neuester Stand (2026-10-26, nachts): C1 „Namen nach Muster" gebaut · Klaus' Antworten auf den Plan
+- **Workflow PDF im Rundlauf gebaut (PR „Workflow PDF: PDF + Daten hin, unterschrieben zurück"):** `workflowPdfRundlauf.js`,
+  Knopf am Angebot, Arbeitsstand mit drei Feldern, Rückweg über Marke (Keywords/Textebene), Vermerke, `sw.js` v269;
+  `run.mjs` +10 · `smoke_wfpdf` 14 grün. **Nächstes:** R3 (Stand zurück an WorkFloh) oder gleich die Kopie nach
+  BookLedger-Basic, dann Tresorordner-Sitzung Android (Plan `docs/design/PLAN-TRESORORDNER-2026-10-26.md`).
 - **D22 gebaut (PR „Needs → BLP, Positionen anhängen"):** Workflow-Needs #32 (Knopf „An BookLedgerPro", Vertrag v1 `workflow-needs`),
   BLP nimmt die Quelle, Brücke fängt `__wnSprung`, zweite Übergabe bei offenem Entwurf hängt an (Rückweg „stattdessen neuer
   Entwurf"); `apps/needs` nachgezogen (`aa2c3cc`), `sw.js` v268. `smoke_apps` 22 grün. Private Brain Pro #91 übernommen

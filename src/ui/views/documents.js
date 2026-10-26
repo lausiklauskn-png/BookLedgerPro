@@ -31,6 +31,8 @@ import { setBelegText, getBelegText, setBelegVektoren, getBelegVektoren } from '
 import { setBelegPositionen, getBelegPositionen } from '../../domain/documents.js';
 import { parseEml, mailAlsText, mailBelegName, absenderName, istMailDatei, MAIL_TYP } from '../../domain/mailEml.js';
 import { belegPositionen } from '../../domain/belegPositionen.js';
+import { angebotMarkeLesen } from '../../domain/workflowPdfRundlauf.js';
+import { listAngebote, setzeAngebotVerweise } from '../../domain/angebote-store.js';
 import { suchwoerter, wortTreffer, ausschnitt, zerlegen, besteNaehe, bedeutungsRang, kombiniere, brauchtVektoren, eintragText, ZERLEGUNG, belegeFuerFrage, frageNachrichten, antwortTeile, FRAGE_TEXT_MAX } from '../../domain/belegsuche.js';
 import { listBuchungen } from '../../domain/store.js';
 import { loadEmbedder } from '../../sbkim/embed.js';
@@ -715,12 +717,37 @@ async function belegAblegen(file, typ, quelle, mail) {
     }
   }
   // PDF: die Marke im Kopf sagt, ob es ein eigener Scan aus Workflow PDF ist (keine Datei-Prüfung, D12).
-  let herkunft;
+  let herkunft, angebot = null;
   if (art === 'application/pdf' || /\.pdf$/i.test(file.name || '')) {
-    try { herkunft = herkunftVon(await pdfKopf(await readFileBytes(file))); } catch { herkunft = undefined; }
+    try {
+      const bytes = await readFileBytes(file);
+      const kopf = await pdfKopf(bytes);
+      herkunft = herkunftVon(kopf);
+      angebot = await angebotZuPdf(kopf, bytes);
+    } catch { herkunft = undefined; angebot = null; }
   }
-  const b = await saveBeleg(file, { typ, herkunft, quelle, mail });
-  return { scan: false, eigen: herkunft === 'workflow-pdf', id: b && b.id };
+  const b = await saveBeleg(file, { typ, herkunft, quelle, mail, angebot: angebot ? { id: angebot.id, nummer: angebot.nummer } : undefined });
+  if (angebot && b && b.id) {
+    try { await setzeAngebotVerweise(angebot.id, { wfpdfBelegId: b.id, wfpdfBelegName: b.name || file.name || '', wfpdfZurueckAm: new Date().toISOString() }); }
+    catch { /* der Beleg steht; der Vermerk am Angebot ist Beiwerk */ }
+  }
+  return { scan: false, eigen: herkunft === 'workflow-pdf', angebot: angebot ? angebot.nummer : null, id: b && b.id };
+}
+
+// Rückweg aus Workflow PDF (Klaus 2026-10-26, „beides“): trägt ein PDF die Marke eines BLP-Angebots (Keywords
+// `blp-angebot=…` — Workflow PDF setzt beim festen Export nur Title/Producer/Creator — oder die Fußzeile in der
+// Textebene), wird der Beleg diesem Angebot zugeordnet. Nur die Textebene wird gelesen, wenn das PDF von Workflow PDF
+// oder BookLedgerPro stammt; fremde PDFs bleiben unangetastet. Das Angebot muss es hier geben, sonst nichts.
+async function angebotZuPdf(kopf, bytes) {
+  const k = kopf || {};
+  let marke = angebotMarkeLesen('', k.keywords);
+  if (!marke && /^(Workfloh PDF|BookLedgerPro)/.test(String(k.producer || ''))) {
+    try { const tb = await pdfTextebene(bytes); marke = angebotMarkeLesen(tb && tb.text, ''); } catch { marke = null; }
+  }
+  if (!marke) return null;
+  const alle = await listAngebote();
+  const a = alle.find((x) => x.id === marke.id) || (marke.nummer ? alle.find((x) => x.nummer === marke.nummer) : null) || null;
+  return a ? { id: a.id, nummer: a.nummer || marke.nummer || '' } : null;
 }
 
 // Textebene eines PDFs sofort am Beleg merken (eigener Scan oder Mail-Anhang, Klaus 2026-10-26): Wort-/Bedeutungssuche
@@ -873,6 +900,7 @@ async function dateienEinlesen(files, { quelle } = {}) {
     const fehler = [], ohneScan = [];
     let n = 0, scans = 0, ganz = 0;
     let eigen = 0, gelesen = 0, mails = 0, mailAnhaenge = 0;
+    const angebote = [];   // Rundlauf Workflow PDF: zugeordnete Angebotsnummern
     const mailUebergangen = [];
     for (let i = 0; i < nehmen.length; i++) {
       _importStatus = { text: t('docs.importLaeuft').replace('{i}', String(i + 1)).replace('{n}', String(nehmen.length)) };
@@ -887,6 +915,7 @@ async function dateienEinlesen(files, { quelle } = {}) {
         }
         const r = await belegAblegen(nehmen[i].file, nehmen[i].typ, quelle); n++;
         if (r.eigen) eigen++;
+        if (r.angebot) angebote.push(r.angebot);
         // Eigener Scan (Marke „Workfloh PDF · Scannen“, aus dem eingebauten Scanner oder geteilt): der erkannte Text aus der
         // Textebene wird gleich am Beleg gemerkt (verschlüsselt) → Wort- und Bedeutungssuche (Klaus 2026-10-26). Keine KI
         // dabei; vor einer Kontierung prüft kiTextFreigabe den Text wie bisher. Die Textebene IST die Texterkennung — jedes
@@ -898,7 +927,8 @@ async function dateienEinlesen(files, { quelle } = {}) {
     const zusatz = (scans ? ' ' + t('docs.scanAnzahl').replace('{n}', String(scans)).replace('{g}', String(ganz)) : '')
       + (eigen ? ' ' + t('docs.eigeneScans').replace('{n}', String(eigen)) : '')
       + (gelesen ? ' ' + t('docs.scanTextGemerkt').replace('{n}', String(gelesen)) : '')
-      + (mails ? ' ' + t('docs.mailAbgelegt').replace('{m}', String(mails)).replace('{a}', String(mailAnhaenge)) : '');
+      + (mails ? ' ' + t('docs.mailAbgelegt').replace('{m}', String(mails)).replace('{a}', String(mailAnhaenge)) : '')
+      + (angebote.length ? ' ' + t('docs.angebotZugeordnet').replace('{n}', String(angebote.length)) : '');
     const vorsatz = quelle === 'teilen' ? t('docs.teilenEmpfangen').replace('{n}', String(nehmen.length + ueberspringen.length)) + ' · ' : '';
     _importStatus = {
       text: vorsatz + platz.zeile + ' · ' + t('docs.importFertig').replace('{n}', String(n)) + zusatz,
@@ -906,7 +936,7 @@ async function dateienEinlesen(files, { quelle } = {}) {
       fehler: fehler.concat(ohneScan.map((x) => t('docs.scanNicht').replace('{grund}', x))),
       uebergangen: mailUebergangen,
     };
-    if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler, scans, ganz, ohneScan, eigen, gelesen, mails, mailAnhaenge, mailUebergangen, quelle: quelle || null };   // Probe
+    if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler, scans, ganz, ohneScan, eigen, gelesen, mails, mailAnhaenge, mailUebergangen, angebote, quelle: quelle || null };   // Probe
     await repaint();
   }
 }
@@ -996,7 +1026,7 @@ function belegListe(belege, visionBereit) {
   const rows = belege.map((b) => el('tr', {}, [
     el('td', {}, [b.name, ...(b.original ? [el('div', { class: 'muted small', 'data-scan': b.scan && b.scan.sicher ? 'sicher' : 'ganz',
       text: (b.scan && b.scan.sicher ? t('docs.scanMarkeSicher') : t('docs.scanMarkeGanz')) + ' · ' + t('docs.originalLiegtBei') })] : []),
-      mailZeile(b), positionenZeile(b)]),
+      mailZeile(b), angebotZeile(b), positionenZeile(b)]),
     el('td', { class: 'muted small', text: b.mediaType }),
     el('td', { class: 'num muted small', text: formatBytes(b.size) }),
     el('td', { class: 'muted small mono', text: (b.createdAt || '').slice(0, 10) }),
@@ -1019,6 +1049,10 @@ function belegListe(belege, visionBereit) {
 }
 
 // Herkunft aus einer geteilten Mail (Klaus 2026-10-26): am Mail-Beleg „📧 Mail von … · n Anhänge", am Anhang „📎 aus Mail …".
+function angebotZeile(b) {
+  if (!b.angebot || !b.angebot.id) return null;
+  return el('div', { class: 'muted small', 'data-angebot-beleg': b.angebot.id, text: t('docs.angebotZeile').replace('{nr}', b.angebot.nummer || '—') });
+}
 function mailZeile(b) {
   if (b.mediaType === MAIL_TYP) {
     const m = b.mail || {};
