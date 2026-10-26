@@ -160,8 +160,12 @@ Regeln dazu:
 - ~~D1 Themen~~ **entschieden:** PBP-Farben + heutiges BLP-Dunkel, Hell/Dunkel gilt für jede Farbe (siehe A4).
 - D8 Passt die Zuordnung Farbe × Hell/Dunkel (Tabelle A4)? Graphit-Dunkel („Nachtgraphit") muss neu entstehen. Startwert Petrol + wie Gerät? (Name „Nachtpetrol" ist entschieden.)
 - ~~D9 Nachtpetrol-Hauptknopf~~ **entschieden:** `#0f766e` + weiße Schrift (siehe A4).
-- D2 Soll BLP den PBP-Symbolsatz **gemeinsam** nutzen (eine Quelle, kopiert wie bei
-  Sage-Modulen) oder eine eigene Kopie, die BLP-Symbole ergänzt?
+- ~~D2 Gemeinsamer Symbolsatz~~ **entschieden (Klaus 2026-10-26):** BLP nutzt dieselben Strichsymbole wie
+  Private Brain Pro, wo sie übertragbar sind – eine App-Familie, keine Irritation. Gleiche Aktion = gleiches
+  Symbol (Suchen, Einstellungen, Löschen, Speichern, Herunterladen, Sperren …). Nur fachliche BLP-Symbole
+  (Buchung, Konto, Beleg, Euro, Festschreiben …) kommen neu dazu, im selben Stil (24×24, Strich 1,75).
+  Übernahme als Kopie aus `Privat-Brain-Pro/docs/design/umbau-2026-10-24/design-kit/icons.svg`, nicht abwandeln;
+  neue BLP-Symbole möglichst auch an PBP zurückgeben, damit der Satz einer bleibt.
 - D3 Seitenleiste am breiten Schirm: dauerhaft mit Namen, oder einklappbar auf Symbole?
 - D4 Handy: untere Leiste (Hauptwege) oder ☰-Menü wie bei PBP?
 - D5 Modi: Passen die vier (Privat, Kleinunternehmer, Selbstständig, Berater)? Was genau soll
