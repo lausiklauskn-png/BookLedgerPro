@@ -5,7 +5,16 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-**Letzte Aktualisierung:** 2026-06-14 · **Branch:** `claude/general-discussion-x9xyk9`
+## ▶ Neuester Stand (2026-10-26): Plansitzung Design + Privat abgeschlossen
+- **Kein App-Code geändert.** Sammlung aller Entscheidungen: `docs/design/SAMMLUNG-DESIGN-2026-10-26.md`;
+  ELSTER-Recherche: `docs/design/ELSTER-ERIC-RECHERCHE-2026-10-26.md`.
+- **Nächste Sitzung = Bau:** `docs/BRIEF_NACHFOLGE_2026-10-26_BAU-PRIVAT.md` (Reihenfolge: Design-Grundlage →
+  Workflow-PDF-Einbindung → Haushaltsbuch → Steuer Privat → ELSTER). Abschluss: `docs/BRIEF_ABSCHLUSS_2026-10-26_PLANUNG.md`.
+- Neu: Headless-Chromium/Playwright ist in der Cloud-Umgebung verfügbar (Abschnitt 6 unten ist dazu veraltet).
+
+---
+
+**Letzte Aktualisierung (Abschnitte unten):** 2026-06-14 · **Branch:** `claude/general-discussion-x9xyk9`
 · **main-Stand:** `4ba49c8` · **Tests:** `node tests/run.mjs` → **134/134 grün**
 · **SW-Cache:** `v25` · **53 JS-Module** · **12 Bild- + 5 Icon-Assets**
 
