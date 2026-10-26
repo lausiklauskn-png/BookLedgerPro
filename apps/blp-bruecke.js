@@ -26,15 +26,19 @@
     html.setAttribute("data-blp-thema", (d.farbe || "") + "/" + (d.theme || ""));
   }
   window.addEventListener("message", function (e) { if (e.origin !== ORIGIN) return; thema(e.data); });
-  // 2. Übergabe an BLP: Haken von Calculate; Needs hat (noch) keine Übergabe an BLP.
-  window.__wcSprungAbfangen = true;
-  try {
-    Object.defineProperty(window, "__wcSprung", {
-      configurable: true,
-      get: function () { return null; },
-      set: function (url) { melde({ typ: "blp-uebernahme", app: APP, url: String(url || "") }); },
-    });
-  } catch (_e) {}
+  // 2. Übergabe an BLP: dieselben Haken in Calculate (__wcSprung) und Needs (__wnSprung, seit D22 2026-10-26).
+  function haken(flagge, name) {
+    window[flagge] = true;
+    try {
+      Object.defineProperty(window, name, {
+        configurable: true,
+        get: function () { return null; },
+        set: function (url) { melde({ typ: "blp-uebernahme", app: APP, url: String(url || "") }); },
+      });
+    } catch (_e) {}
+  }
+  haken("__wcSprungAbfangen", "__wcSprung");
+  haken("__wnSprungAbfangen", "__wnSprung");
   // Falls eine App einmal einen echten Link mit ?uebernahme= setzt: abfangen, nicht im Rahmen laden.
   document.addEventListener("click", function (e) {
     var a = e.target && e.target.closest ? e.target.closest('a[href*="uebernahme="]') : null;

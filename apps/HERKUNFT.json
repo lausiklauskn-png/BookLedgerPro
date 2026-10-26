@@ -83,12 +83,12 @@
     "needs": {
       "repo": "lausiklauskn-png/Workflow-Needs",
       "name": "Workflow Needs",
-      "commit": "c95696730e53c34ec223154ecfa6ebf60f60f7ad",
+      "commit": "aa2c3cce4cb77a0163c486360aaf99b813bd7f3b",
       "ordner": "apps/needs",
       "dateien": {
         "THIRD_PARTY.md": "c8fa26cec873ef228282608bf61ed573f91e6ff4fdde39947e7ee38c0d23ada4",
         "assets/app.css": "ddba5617e316408a5acdb3ea3e4b5032547821d204f3efc25a4e53c3fbb5aaf9",
-        "assets/app.js": "4881ce31a09ce29f277056722261007e159c9f5aa4a17cdb4e9117b780539f25",
+        "assets/app.js": "d6ee1505c3ee352c6d18086d39027f9766307cdf738e766e6db84779ecdfdbd5",
         "assets/bild-prisma.webp": "434cd69f94618753c3d1418e1edb21fcf7f78830d97b8d73e5976d8b55282d58",
         "assets/daten/bausteine.js": "3af21ab672614f6ce80edd33591eecddd397269d466b879821a4c77ccddceeb7",
         "assets/daten/beispiel-alis.js": "40721e1933f87ea8f8a8870a2a7bb32dd7b2eda527c6f727118d370c568d4489",
@@ -108,12 +108,12 @@
         "assets/kern/mail.js": "84fe7a98567594a6d8a2a3996960be139efee9a346bf3628041c9c8b2cda4253",
         "assets/kern/rechnen.js": "f2a85762bbfb91867d82eb86a627c994aa708f3ba3d237c4a641e4b039daa98c",
         "assets/kern/sicherung.js": "1f07b8c92caf8903e1f9123c0a09ef5f99096bdc19d30728f9fe98e6d17b5320",
-        "assets/kern/uebergabe.js": "55da01d93820d8ff8f6aebb59991d6ef4c7a5a2c3cc869522b38bfc5bbc83535",
+        "assets/kern/uebergabe.js": "9f849c22fa91b3fd6f1cd8ae8b0c4486510c4701f6786710d03df24d61f8abb5",
         "assets/pruefer-mail.js": "cdf3ca7881bfa68763a2c0be7436d35a65bea4dbd03f606e02eaec5c613632d7",
         "assets/sbkim-init.js": "2b40b0c0bee35995d893adfa119cbb2b1c381e7b359a7eb5bacc8ad465ffba86",
         "assets/schluesseltresor.js": "eaed30e8f3921835a3f58b69f89d9b008831f69f164ad1dfec630fa43161f666",
         "assets/siegel-inhalt.js": "f561786960c5d35ee06d4a5b384ec13c47e117e7be66cbf245fa48fc22759bdd",
-        "assets/texte.js": "98b6a2765d6044628713158db8bd322fe3828eaf6e456eab60b4d63bbbbf9b1a",
+        "assets/texte.js": "d0b465fd1c6e8d72a092ba1c59a692f37336ae8bffb85aeda1122fc1e9d40722",
         "beispiele/tomys-gesamt/Ablauf-Motiv-bis-Rechnung.pdf": "3cc376eb2873208d538af8b98ac9e2040f16598e8146b2ddf9a5e2c7b2efff7a",
         "beispiele/tomys-gesamt/Anfrage-Tomys-Hub.eml": "782ab08365e73c5c64151a7e97822805b46680c988400439058eaf87f02597b2",
         "beispiele/tomys-gesamt/Auftragszettel-Papier.jpg": "a56441f6cd571f04f409b0f15e9a2613b9a52320c7083c031f1544864f07beca",
@@ -132,7 +132,7 @@
         "icons/quelle/icon-prisma.jpg": "ae71c45cc767a1057afcd1a21707fab88d9c3015fc55684235896f4a58cbc2b5",
         "icons/werbung-1200.jpg": "1a3b0653194a31ed6b376addfc649c8d24c851a45c961fbcfcaffb285e31e90c",
         "impressum.html": "be626b464a478fa0c2ceb9b6b0c84b827af4ef8f89ea183b0f3f03501288490f",
-        "index.html": "ae1f0b27a68a51e7a3b1701e8917cc9977e477c4797db7b839c16806e5638b54",
+        "index.html": "a5f9001571027f222917a62be45acb4c5879685b80307c629a97d9d3ef3164e2",
         "manifest.json": "a9467276c6ec4bd2f390392e211ad47bda6febfc6db18d439cd44fb8169b8445",
         "modules/01_storage.js": "5a5a4bf64dfcc107da7ed70fb755d7db5cce7d80e963b3e2fbc2004537747820",
         "modules/02_spore.js": "0cbf0664e2a79f1301c03e52f7ac0030d4b2961f03b97b38e8634827a52353c5",
@@ -155,7 +155,7 @@
       },
       "abweichungen": {
         "index.html": {
-          "quelle": "48b64e1cb2c47271d4a214fa081cab5d3bc51eb2695b08ce079ca9690bbc54ef",
+          "quelle": "4150d172582f58e6cebd12ec9192d41d9bd72a69c634c6c02d64c6ff5bf604f0",
           "aenderungen": [
             "Brücke nach der SBKIM-Schublade",
             "BLP-Thema als letztes Stylesheet",

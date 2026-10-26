@@ -1133,7 +1133,19 @@
           laden(new Blob([JSON.stringify(WN.uebergabe.buendel([auf]), null, 1)], { type: "application/json" }), WN.uebergabe.dateiname(v, f));
           melde(t("Auftragsdatei gespeichert. In WorkFloh: „📥 Importieren“ und diese Datei wählen. Zweimal eingelesen wird aktualisiert, nicht verdoppelt."), "");
         }, function () { melde(t("Die Auftragsdatei ließ sich nicht bauen."), "bad"); });
-      }, "", { id: "uebergabe-speichern" }))));
+      }, "", { id: "uebergabe-speichern" }),
+      knopf("🧾 " + t("An BookLedgerPro"), function () { anBlp(v, f); }, "", { id: "an-blp" })),
+      h("p", { class: "gedaempft klein", text: t("„An BookLedgerPro“ öffnet dort das Angebots-Formular vorbefüllt (Kunde, Positionen netto) — gespeichert wird erst in BookLedgerPro.") })));
+  }
+  /* ── An BookLedgerPro: gleicher Origin, ?uebernahme= (Datenvertrag v1, wie Workflow Calculate) ── */
+  function anBlp(v, f) {
+    var ad = WN.uebergabe.blpAdresse(WN.aussen.angebotExtern(v, f, S.einst.firma, S.einst.ust, S.tabellen, S.einst.zeitraum, S.lang));
+    if (!ad.ok) { melde(t("Nicht an BookLedgerPro übergeben:") + " " + ad.grund + ".", "warn"); return; }
+    merken(v);
+    jetztSpeichern().then(function () {
+      if (window.__wnSprungAbfangen) { window.__wnSprung = ad.url; return; }
+      location.assign(ad.url);
+    });
   }
   function summenTabelle(su, blatt) {
     var tb = h("table", { class: blatt ? "" : "klein", "data-summen": su.p19 ? "p19" : "regel", style: "margin-top:8px" });

@@ -48,6 +48,8 @@ let _openSchemaId = null;      // welche Baukasten-Karte ihr Eingabe-Formular ge
 let _dragFrom = null;          // Quell-Index beim Drag-and-drop der Positionsliste
 let _kalibrierung = null;      // { faktorWerte, anzahlVergleiche } aus der Historie (oder null)
 let _uebernahmeHinweis = null; // Banner-Basiszeile nach Übergabe aus WorkFloh (einmalig)
+let _letzteUebernahme = null;  // D22: die zuletzt angekommene Übergabe (für „stattdessen neuer Entwurf")
+let _angehaengt = 0;           // D22: wie viele Positionen an den offenen Entwurf angehängt wurden (0 = neuer Entwurf)
 let _uebernahmeModus = null;   // 'angebot' | 'rechnung' — steuert nur den Hinweis, keinen GoBD-Pfad
 let _uebernahmeKundeName = ''; // übergebener Kundenname (für Zuordnung / „anlegen")
 let _uebernahmeKundeOffen = false;   // Kunde fehlt noch in BLP → „anlegen"-Knopf zeigen
@@ -86,11 +88,24 @@ export async function mountAngebote(host) {
     }
   }
   if (ext) {
-    _entwurf = neuesAngebot({ titel: ext.titel, positionen: ext.positionen });
+    // D22 (Klaus 2026-10-26: „anhängen wäre besser"): kommt eine zweite Übergabe, während ein ungespeicherter Entwurf
+    // mit Positionen offen ist (z. B. Needs-Software nach Calculate-Hardware), werden die Positionen ANGEHÄNGT statt den
+    // Entwurf zu ersetzen. Der Banner sagt es und bietet „stattdessen neuer Entwurf" an. Ein Angebot in Bearbeitung
+    // (_editId) wird nie angefasst — dort entsteht wie bisher ein neuer Entwurf.
+    const offen = !_editId && _entwurf && Array.isArray(_entwurf.positionen) && _entwurf.positionen.length > 0;
+    _letzteUebernahme = ext;
+    if (offen) {
+      _entwurf.positionen = [..._entwurf.positionen, ...(ext.positionen || [])];
+      if (!_entwurf.titel) _entwurf.titel = ext.titel || '';
+      _angehaengt = (ext.positionen || []).length;
+    } else {
+      _entwurf = neuesAngebot({ titel: ext.titel, positionen: ext.positionen });
+      _angehaengt = 0;
+    }
     _editId = null; _openSchemaId = null;
     _uebernahmeModus = ext.modus || 'angebot';
     _uebernahmeKundeName = ext.kundeName || '';
-    _uebernahmeHinweis = t('angebote.uebernahme')
+    _uebernahmeHinweis = (offen ? t('angebote.uebernahmeAngehaengt').replace('%N%', String(_angehaengt)) : t('angebote.uebernahme'))
       .replace('%TITEL%', ext.titel || '—')
       .replace('%NR%', ext.auftragNr || ext.angebotsNr || '—');
     // Kunde per Name einem vorhandenen Stammkunden zuordnen (GoBD-neutral, reine Stammdaten);
@@ -150,7 +165,7 @@ const field = (label, input) => el('label', { class: 'field' }, [el('span', { te
 // Übergabe-Zustand vollständig zurücksetzen — der Hinweis ist bewusst „einmalig"
 // (nach Speichern/Abbrechen/Bearbeiten/Löschen verschwindet er).
 function resetUebernahmeHinweis() {
-  _uebernahmeHinweis = null; _uebernahmeModus = null; _rueckverweis = null;
+  _uebernahmeHinweis = null; _uebernahmeModus = null; _rueckverweis = null; _letzteUebernahme = null; _angehaengt = 0;
   _uebernahmeKundeName = ''; _uebernahmeKundeOffen = false; _uebernahmeKundeGesetzt = false;
 }
 
@@ -172,6 +187,21 @@ function uebernahmeBannerNode() {
       text: _rueckverweis.status === ANGEBOT_STATUS.ANGENOMMEN
         ? t('angebote.rueckverweisBereit')
         : t('angebote.rueckverweisStatus').replace('%STATUS%', t('angebote.status.' + _rueckverweis.status)) }));
+  }
+  if (_angehaengt > 0 && _letzteUebernahme) {
+    // D22: Rückweg — die angehängten Positionen wieder heraus, allein als neuer Entwurf.
+    kinder.push(el('div', { class: 'btn-row' }, [
+      el('button', { class: 'btn btn-sm', type: 'button', text: t('angebote.uebernahmeNeu'), 'data-uebernahme-neu': '',
+        onClick: async () => {
+          const u = _letzteUebernahme;
+          _entwurf = neuesAngebot({ titel: u.titel, positionen: u.positionen });
+          _editId = null; _openSchemaId = null; _angehaengt = 0;
+          _uebernahmeHinweis = t('angebote.uebernahme').replace('%TITEL%', u.titel || '—').replace('%NR%', u.auftragNr || u.angebotsNr || '—');
+          const k = findeKundeNachName(_uebernahmeKundeName);
+          if (k) { _entwurf.kundeId = k.id; _uebernahmeKundeGesetzt = true; _uebernahmeKundeOffen = false; }
+          await repaint();
+        } }),
+    ]));
   }
   if (_uebernahmeModus) {
     kinder.push(el('div', { class: 'small', text: t('angebote.uebernahmeModus.' + _uebernahmeModus) }));

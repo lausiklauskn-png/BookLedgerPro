@@ -5,6 +5,18 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (abends, spät) — D22: Needs → BookLedgerPro, Positionen anhängen · Fahrplan Pro/Basic/Tresorordner
+
+- **Getan:** Workflow-Needs #32 (`blpNutzlast`/`blpAdresse`, Knopf `#an-blp`, Haken `__wnSprung`, kern/browser/Gegenprobe,
+  Cache v38). BLP: `UEBERNAHME_QUELLEN` + `workflow-needs`, `blp-bruecke.js` `haken()` für beide Apps, `angebote.js` hängt
+  Positionen an einen offenen Entwurf an (Banner, `[data-uebernahme-neu]`), i18n DE/EN, `apps/needs` nachgezogen, Vertrag-Tabelle,
+  `sw.js` v268. Dazu `docs/design/PLAN-TRESORORDNER-2026-10-26.md` und der Fahrplan in CLAUDE.md (#360). Private Brain Pro #91
+  (Sende-Knopf) übernommen.
+- **Beweis:** `run.mjs` 2549/0 · `smoke_apps` 22 grün · `smoke_vorgang` 22 · `smoke_design` 90 · Needs kern 292 · browser 194 ·
+  Gegenprobe `UEB-BLP:` 4 gefangen (einer zuerst „aus falschem Grund": echter Sprung verließ die Seite → Route fängt ihn).
+- **Grenzen:** kein Tablet; Anhängen gilt nur für ungespeicherte Entwürfe (ein Angebot in Bearbeitung bleibt unberührt).
+- **Offen/Nächstes:** Workflow PDF „beides" (#25) · R3 · Kopie nach BookLedger-Basic · dann Tresorordner-Sitzung Android.
+
 ## 2026-10-26 (abends, später) — Mail an BookLedgerPro teilen · Positionen aus der Rechnung (S1)
 
 - **Getan:** `src/domain/mailEml.js` (RFC-822/MIME-Leser, rein), `src/domain/belegPositionen.js` (Positionsrechnung, rein),

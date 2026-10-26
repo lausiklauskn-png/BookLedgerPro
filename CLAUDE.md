@@ -297,3 +297,15 @@ Buchungsvorschlag. Leser `src/domain/mailEml.js` (rein, MIME beliebig tief). Üb
 Proben: `run.mjs` (+26) · `tests/smoke_mail.mjs` **15 grün** · Gegenprobe 6 Fälle gefangen (zwei blinde ersetzt).
 ⚠ Kein Tablet, keine echte Mail; Positionen nur aus der Textebene (nach OCR noch nicht); S2 (Ein-/Ausschluss) nicht gebaut.
 Der Sende-Knopf in Private Brain Pro ist ein eigener PR dort. Bedienung/Grenzen: `docs/MAIL-TEILEN.md`.
+
+## 🧾 D22: Needs → BookLedgerPro und „Positionen anhängen" (Klaus 2026-10-26)
+
+Klaus: „Needs … Angebote für Software, Calculate … harte Sachen, beide über BLP … anhängen wäre besser." **Needs** hat jetzt
+denselben Weg wie Calculate: Knopf „🧾 An BookLedgerPro" im Reiter Angebot (Workflow-Needs #32, `WN.uebergabe.blpAdresse`,
+Datenvertrag v1 `quelle: "workflow-needs"`, Hauptpositionen 1 × netto, kein Stundensatz); `UEBERNAHME_QUELLEN` kennt die Quelle,
+`apps/blp-bruecke.js` fängt `__wnSprung` wie `__wcSprung` (eine Funktion `haken`), `apps/needs` byte-1:1 nachgezogen
+(HERKUNFT `aa2c3cc`). **Anhängen:** kommt eine Übergabe, während ein ungespeicherter Entwurf mit Positionen offen ist, werden
+die Positionen angehängt (Titel bleibt), der Banner sagt „N Position(en) … angehängt" und bietet „Stattdessen als neuen Entwurf"
+(`[data-uebernahme-neu]`); ein Angebot in Bearbeitung (`_editId`) bekommt wie bisher einen neuen Entwurf. `sw.js` v268.
+Proben: `run.mjs` (+2) · `smoke_apps` **22 grün** (Needs-Übergabe hängt an den Calculate-Entwurf, Rückweg) · Needs-Repo kern 292 ·
+browser 194 · Gegenprobe UEB-BLP 4 gefangen. Vertrag: `docs/UEBERNAHME_TOMY.md`. ⚠ Kein Tablet.

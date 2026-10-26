@@ -23,7 +23,7 @@
 // v1-Angebots-Nutzlast wie die WorkFlohs, nur aus der Kundenblatt-Whitelist (keine EK, keine Sätze).
 import { parseVerweise } from './vorgang.js';
 
-export const UEBERNAHME_QUELLEN = Object.freeze(['tomy-workfloh', 'isd-workfloh', 'alm-warehouse', 'sbkim-shop', 'workflow-calculate']);
+export const UEBERNAHME_QUELLEN = Object.freeze(['tomy-workfloh', 'isd-workfloh', 'alm-warehouse', 'sbkim-shop', 'workflow-calculate', 'workflow-needs']);
 export const UEBERNAHME_MODI = Object.freeze(['angebot', 'rechnung']);
 // Übergabe-Arten: 'angebot' = WorkFloh-Auftrag → Angebots-Formular; 'buchhaltung-summen'
 // = Shop-Zeitraum-Summen (Umsatz/Wareneinkauf) → Buchungs-Entwürfe. Default 'angebot'

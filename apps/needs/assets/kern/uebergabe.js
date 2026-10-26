@@ -78,7 +78,38 @@
       return { name: MIT[art] + "_" + v.id + ".html", mime: "text/html", size: bytes.length, data: "data:text/html;base64," + g.btoa(s) };
     });
   }
+  /* ── An BookLedgerPro: Datenvertrag v1 (BookLedgerPro docs/UEBERNAHME_TOMY.md), quelle "workflow-needs" ──
+     Klaus 2026-10-26 (D22): „Needs … Angebote für Software … beide über BLP". BLP prüft und kappt (Text 140, Nummern 32,
+     höchstens 20 Positionen, USt 0/7/19) und füllt nur sein Angebots-Formular vor — gespeichert wird dort erst auf Klick.
+     Gebaut NUR aus der Whitelist (WN.aussen.angebotExtern): jede Hauptposition als 1 × Netto, Optionales geht nicht mit
+     (es steht nicht im Preis). Kein Stundensatz, keine Stunden. Dieselbe Bauart wie Workflow Calculate (WC.uebergabe). */
+  var BLP_ZIEL = "https://lausiklauskn-png.github.io/BookLedgerPro/", BLP_MAX_POS = 20, BLP_MAX_LEN = 20000;
+  function kappe(s, n) { s = rein(s); return s.length > n ? s.slice(0, n - 1) + "…" : s; }
+  /* a = WN.aussen.angebotExtern(…) */
+  function blpNutzlast(a) {
+    var k = a.kunde || {};
+    var pos = (a.positionen || []).map(function (p) {
+      return { beschreibung: kappe(p.beschreibung, 140), menge: 1, einzelpreisCent: Math.round(p.nettoCent), ustSatz: [0, 7, 19].indexOf(Number(p.ustSatz)) >= 0 ? Number(p.ustSatz) : 19 };
+    });
+    return { v: 1, quelle: "workflow-needs", modus: "angebot", titel: kappe(a.titel || a.nummer, 140), kundeName: kappe(k.firma, 80),
+      auftragNr: "", angebotsNr: kappe(a.nummer + (a.fassung > 1 ? "-F" + a.fassung : ""), 32), positionen: pos };
+  }
+  function b64u(text) {
+    var bytes = new g.TextEncoder().encode(text), s = "", i;
+    for (i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return g.btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  /* → { ok, url, nutzlast } oder { ok:false, grund } */
+  function blpAdresse(a) {
+    var n = blpNutzlast(a);
+    if (!n.positionen.length) return { ok: false, grund: "keine Position im Angebot" };
+    if (n.positionen.length > BLP_MAX_POS) return { ok: false, grund: "BookLedgerPro nimmt höchstens " + BLP_MAX_POS + " Positionen — dieses Angebot hat " + n.positionen.length };
+    var p = b64u(JSON.stringify(n));
+    if (p.length > BLP_MAX_LEN) return { ok: false, grund: "das Angebot ist für die Übergabe zu lang (BookLedgerPro nimmt bis 20 kB)" };
+    return { ok: true, url: BLP_ZIEL + "?uebernahme=" + p, nutzlast: n };
+  }
+
   function dateiname(v, f) { return "Auftrag_" + v.id + "-F" + f.nr + ".json"; }
 
-  WN.uebergabe = { rechtsDateien: rechtsDateien, auftrag: auftrag, buendel: buendel, dateien: dateien, dateiname: dateiname };
+  WN.uebergabe = { rechtsDateien: rechtsDateien, auftrag: auftrag, buendel: buendel, dateien: dateien, dateiname: dateiname, blpNutzlast: blpNutzlast, blpAdresse: blpAdresse, BLP_ZIEL: BLP_ZIEL };
 })(typeof window !== "undefined" ? window : globalThis);
