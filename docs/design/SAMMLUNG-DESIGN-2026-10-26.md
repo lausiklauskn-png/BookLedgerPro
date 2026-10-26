@@ -200,6 +200,10 @@ und vorhandene Daten ziehen nur per Backup/Wiederherstellen um. Vor dem Klonen f
   Nutzer sein **ELSTER-Zertifikat**. ERiC ist eine native Bibliothek → das passt zur **nativen Pro-App**, im
   Browser (PWA) geht es so nicht. Welche Plattformen ERiC unterstützt (Windows sicher; Android/iOS fraglich)
   muss vor dem Bau geprüft werden.
+- **Recherche-Ergebnis** (Details: [ELSTER-ERIC-RECHERCHE-2026-10-26.md](ELSTER-ERIC-RECHERCHE-2026-10-26.md)):
+  ERiC gibt es für Windows, Linux x64, macOS – **nicht für Android/iOS** (soweit belegbar). Hersteller-ID nötig, auch
+  zum Testen; Registrierung kann Wochen dauern. → Direkt senden geht sicher in der **Windows-App**; auf Android nur
+  über einen eigenen Server (Steuerdaten verlassen das Gerät – Entscheidung D14).
 - Für die PWA-Fassung bleibt realistisch: Formularwerte vorbereiten und zum Übertragen in „Mein ELSTER" anzeigen.
 - Eigener großer Bauabschnitt (Recht + Technik), nicht Teil des Design-Umbaus.
 
@@ -261,7 +265,8 @@ Bei Unternehmer-Modi: Trennung privat/betrieblich (Privatentnahme/-einlage) stat
 - D10 Name des PWA-Klons und seine Datenbank-Endung (Vorschlag `bookledger`). Wann wird geklont – nach dem Design-Umbau?
 - ~~D12 Prüfung~~ **entschieden:** eigene Scans aus Workflow PDF ohne Prüfung; Dateien von außen werden geprüft.
 - D13 Verein: eigener Modus „Verein" später (nach Privat und Unternehmer-Modi)? Ehrenamt als Person ist schon in Privat.
-- D11 ELSTER: **beauftragt** – Recherche zu ERiC-Plattformen und Hersteller-ID läuft (Ergebnis folgt in Abschnitt G).
+- ~~D11 ELSTER-Recherche~~ **erledigt** (siehe G und Recherche-Datei).
+- D14 ELSTER-Weg: (a) überall zuerst Ausfüllhilfe, (b) direktes Senden in Windows, (c) Android-Server ja/nein? Entwickler-Registrierung schon jetzt beantragen?
 - ~~D6 Alter Schalter~~ **entschieden:** Der neue Modus ersetzt Einfach/Profi/Berater ganz.
 
 ## E. Reihenfolge (Klaus 2026-10-26)
