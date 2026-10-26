@@ -32,6 +32,8 @@ const DEFAULTS = Object.freeze({
   mikroStandardSprache: 'auto', // Vorgabe für Felder ohne eigene Wahl: 'auto' = App-Sprache oder ein Code aus ui/mikro.js SPRACHEN
   wortSpeicherAn: true, // Wort-Speicher (Vervollständigung aus früheren Eingaben), löschbar in den Einstellungen
   wortSpeicher: {}, // feldSchluessel → [Einträge] (verschlüsselt im Tresor, nie an eine KI)
+  bedeutungssuche: 'aus', // Suche nach Bedeutung über Belege: 'an' lädt das e5-Modell (einmalig, 118 MB) und ordnet Belege mit Text ein (Klaus 2026-10-26, A1)
+  belegsucheWeit: true, // Wortsuche auch in Buchungen, Kunden, Aufträgen (A2)
   backupStrategie: 'download', // download | ordner — Ziel der Datensicherung (Ordner braucht File System Access; sonst Download-Fallback)
   zahlungszielTage: 14,    // Standard-Zahlungsziel für Fälligkeit/Mahnwesen
   liquiditaetHorizontTage: 7, // Zeitfenster (Tage) der Dashboard-Liquiditätsvorschau (7|14|30|90, domain/liquiditaet.js); umschaltbar in der Liquiditäts-Karte

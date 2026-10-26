@@ -23,12 +23,15 @@ import { tokenize, maskierungsBericht } from '../../ai/pseudonym.js';
 import { ocr } from '../../ai/vision.js';
 import { isOcrAktiv, getAiConfig, isMistralConfigured } from '../../ai/aiConfig.js';
 import { belegKontierung } from '../../ai/belegRichter.js';
-import { loadEmbedder } from '../../sbkim/embed.js';
 import { buildVorschlag } from '../../ai/suggest.js';
 import { begruendeBuchung } from '../../ai/berater.js';
 import { onDeviceBegruendung } from '../../domain/rechtsregeln.js';
 import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, getOriginalBytes, bytesToBase64, linkBeleg, aufbewahrungBis, istAufbewahrungspflichtig } from '../../domain/documents.js';
-import { getSettings } from '../../state.js';
+import { setBelegText, getBelegText, setBelegVektoren, getBelegVektoren } from '../../domain/documents.js';
+import { suchwoerter, wortTreffer, ausschnitt, zerlegen, besteNaehe, bedeutungsRang, kombiniere, brauchtVektoren, eintragText, ZERLEGUNG } from '../../domain/belegsuche.js';
+import { listBuchungen } from '../../domain/store.js';
+import { loadEmbedder } from '../../sbkim/embed.js';
+import { getSettings, navigate, updateSettings } from '../../state.js';
 import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
 import { testMarke } from '../testmarke.js';
@@ -112,8 +115,10 @@ async function repaint(extra) {
     eRechnungKarte(),
     bankImportKarte(),
     uploadKarte(),
+    belegSuche(belege),
     belegListe(belege, visionBereit),
   ]));
+  if (getSettings().bedeutungssuche === 'an') setTimeout(() => bedeutungStarten(belege).catch(() => {}), 0);
 }
 
 // ---- Schnellerfassung aus Text ---------------------------------------------
@@ -1027,6 +1032,7 @@ async function visionExtraktion(b) {
         if (typeof window !== 'undefined') window.__blpTextebene = { seiten: tb.seiten, gesamt: tb.gesamt, zeichen: tb.text.length, eigen: istEigenerScan(b) };   // Probe
         const hinweis = (istEigenerScan(b) ? t('beleg.textebeneEigen') : t('beleg.textebene'))
           + (tb.gesamt > tb.seiten ? ' ' + t('beleg.seitenMax').replace('{m}', String(tb.seiten)).replace('{g}', String(tb.gesamt)) : '');
+        await textMerken(b.id, tb.text);
         await textZuVorschlag(b, tb.text, hinweis);
         return;
       }
@@ -1057,6 +1063,7 @@ async function visionExtraktion(b) {
     await vermerkeKiEntfernt(b.id, r.liste, 'Texterkennung');
     const text = teile.join('\n\n').trim();
     if (!text) { alert(t('docs.ocrNoText')); await repaint(); return; }
+    await textMerken(b.id, text);
     await textZuVorschlag(b, text, null);
   } catch (e) {
     alert(t('docs.ocrError') + ' ' + String(e.message || e));
@@ -1082,4 +1089,164 @@ async function textZuVorschlag(b, text, hinweis) {
     zeigeFeature(getSettings(), FEATURE.VERBINDLICHKEITEN) ? verbindlichkeitAusExtraktionZeile(ex, kat) : null,
     await vorschlagKarte(res.vorschlag, b.id, frei.kiText),
   ]));
+}
+
+// ───────────────────────── 🔎 Suche über Belege: Wörter und Bedeutung (Klaus 2026-10-26, A1/A2) ─────────────────────────
+// Der erkannte Text liegt verschlüsselt am Beleg (setBelegText); die Suche liest ihn hier entschlüsselt in einen
+// Sitzungs-Zwischenspeicher. Bedeutung: dasselbe e5-Modell wie die SBKIM-Suche (einmaliger Opt-in, 118 MB), Vektoren je
+// Abschnitt verschlüsselt am Beleg (setBelegVektoren). Nichts verlässt das Gerät; keine KI.
+let _frage = '';
+let _texte = new Map();      // id → { stand, text }
+let _vektoren = new Map();   // id → { zerlegung, anzahl, stuecke }
+let _embedder = null;
+let _bedeutungZustand = { stand: 'aus', text: '' };   // aus | laedt | ordnet | bereit | fehler
+let _ordnetLauf = 0;
+
+async function textMerken(id, text) {
+  try { const m = await setBelegText(id, text); _texte.set(id, { stand: m.textStand, text: String(text || '') }); _vektoren.delete(id); }
+  catch { /* Tresor zu oder Beleg weg: Suche bleibt ohne diesen Text */ }
+  if (_embedder) belegEinordnen(id).catch(() => {});
+}
+
+async function textVon(b) {
+  const z = _texte.get(b.id);
+  if (z && z.stand === b.textStand) return z.text;
+  const text = (b.textZeichen || 0) > 0 ? await getBelegText(b.id).catch(() => '') : '';
+  _texte.set(b.id, { stand: b.textStand, text });
+  return text;
+}
+
+async function vektorenVon(b) {
+  const z = _vektoren.get(b.id);
+  if (z && z.zerlegung === b.vektorZerlegung && z.anzahl === b.vektorAnzahl) return z.stuecke;
+  const stuecke = (b.vektorAnzahl || 0) > 0 ? await getBelegVektoren(b.id).catch(() => []) : [];
+  _vektoren.set(b.id, { zerlegung: b.vektorZerlegung, anzahl: b.vektorAnzahl, stuecke });
+  return stuecke;
+}
+
+async function embedderHolen(setStatus) {
+  if (_embedder) return _embedder;
+  // Probe-Haken (nur Tests): ein gestellter Embedder statt des 118-MB-Modells aus dem Netz.
+  if (typeof window !== 'undefined' && window.__blpEmbedderStub) { _embedder = window.__blpEmbedderStub; return _embedder; }
+  _embedder = await loadEmbedder({ onStatus: setStatus });
+  return _embedder;
+}
+
+async function belegEinordnen(id) {
+  const b = (await listBelege()).find((x) => x.id === id);
+  if (!b || !_embedder || !brauchtVektoren(b)) return;
+  const text = await textVon(b);
+  const stuecke = [];
+  for (const s of zerlegen(text)) stuecke.push({ text: s, vec: await _embedder.embedPassage(s) });
+  const m = await setBelegVektoren(id, stuecke, ZERLEGUNG);
+  _vektoren.set(id, { zerlegung: m.vektorZerlegung, anzahl: m.vektorAnzahl, stuecke });
+}
+
+function zustandSetzen(stand, text) {
+  _bedeutungZustand = { stand, text: text || '' };
+  for (const e of document.querySelectorAll('[data-bedeutung-zustand]')) { e.dataset.bedeutungZustand = stand; e.textContent = _bedeutungZustand.text; }
+  if (typeof window !== 'undefined') window.__blpBedeutung = { ..._bedeutungZustand };
+}
+
+/** Modell laden (einmalig, opt-in) und alle Belege mit Text im Hintergrund einordnen. */
+async function bedeutungStarten(belege) {
+  const lauf = ++_ordnetLauf;
+  try {
+    if (!_embedder) { zustandSetzen('laedt', t('docs.suche.bedeutungLaedt')); await embedderHolen((s) => zustandSetzen('laedt', t('docs.suche.bedeutungLaedt') + ' ' + s)); }
+    const offen = (belege || await listBelege()).filter(brauchtVektoren);
+    for (let i = 0; i < offen.length; i++) {
+      if (lauf !== _ordnetLauf) return;
+      zustandSetzen('ordnet', t('docs.suche.bedeutungOrdnet').replace('{i}', String(i + 1)).replace('{n}', String(offen.length)));
+      await belegEinordnen(offen[i].id);
+    }
+    const alle = await listBelege();
+    const ohneText = alle.filter((b) => !(b.textZeichen > 0)).length;
+    zustandSetzen('bereit', t('docs.suche.bedeutungBereit').replace('{n}', String(alle.length - ohneText)) + (ohneText ? ' · ' + t('docs.suche.ohneText').replace('{n}', String(ohneText)) : ''));
+  } catch (e) {
+    zustandSetzen('fehler', t('docs.suche.bedeutungFehler').replace('{e}', String((e && e.message) || e)));
+  }
+}
+
+async function sucheAusfuehren(frage, _belegeAlt, ziel) {
+  const woerter = suchwoerter(frage);
+  ziel.replaceChildren();
+  if (!woerter.length && !frage.trim()) return;
+  const s = getSettings();
+  // Frisch lesen: nach dem Einordnen im Hintergrund tragen die Belege neue Zählwerte (vektorAnzahl), ohne Neuzeichnen.
+  const belege = await listBelege();
+  const treffer = [];
+  // 1) Wörter in Belegtexten (und im Namen)
+  for (const b of belege) {
+    const text = await textVon(b);
+    const w = wortTreffer(b.name + ' ' + text, woerter);
+    if (w) treffer.push({ id: b.id, art: 'wort', typ: 'beleg', name: b.name, stelle: ausschnitt(text || b.name, woerter) });
+  }
+  // 2) A2: Buchungen, Kunden, Aufträge (Wortsuche)
+  if (s.belegsucheWeit !== false) {
+    const [buchungen, kunden, auftraege] = await Promise.all([listBuchungen().catch(() => []), listKunden().catch(() => []), listAuftraege().catch(() => [])]);
+    for (const [art, liste] of [['buchung', buchungen], ['kunde', kunden], ['auftrag', auftraege]]) {
+      for (const e of liste) {
+        const text = eintragText(art, e);
+        if (wortTreffer(text, woerter)) treffer.push({ id: e.id, art: 'wort', typ: art, name: (art === 'buchung' ? (e.beschreibung || e.datum) : art === 'kunde' ? e.name : (e.titel || e.nr)) || '', stelle: ausschnitt(text, woerter) });
+      }
+    }
+  }
+  // 3) Bedeutung (nur mit geladenem Modell)
+  let bedeutung = [], schwach = false;
+  if (_embedder && frage.trim()) {
+    try {
+      const q = await _embedder.embedQuery(frage.trim());
+      const kand = [];
+      for (const b of belege) {
+        if (!(b.vektorAnzahl > 0)) continue;
+        const best = besteNaehe(q, await vektorenVon(b));
+        if (best) kand.push({ id: b.id, typ: 'beleg', name: b.name, naehe: best.naehe, stelle: best.stueck.slice(0, 160) });
+      }
+      const r = bedeutungsRang(kand);
+      bedeutung = r.treffer; schwach = r.schwach;
+    } catch { bedeutung = []; }
+  }
+  const alle = kombiniere(treffer, bedeutung);
+  if (typeof window !== 'undefined') window.__blpSuche = { frage, woerter, wort: treffer.length, bedeutung: bedeutung.length, schwach, treffer: alle.map((x) => ({ id: x.id, typ: x.typ, art: x.art, naehe: x.naehe })) };
+  if (!alle.length) { ziel.appendChild(el('p', { class: 'muted small', 'data-suche-leer': '', text: t('docs.suche.keineTreffer') })); return; }
+  ziel.appendChild(el('p', { class: 'muted small', text: t('docs.suche.treffer').replace('{n}', String(alle.length)) + (schwach ? ' · ' + t('docs.suche.bedeutungSchwach') : '') }));
+  ziel.appendChild(el('ul', { class: 'suche-liste' }, alle.map((x) => el('li', { 'data-treffer': x.id, 'data-art': x.art, 'data-typ': x.typ }, [
+    el('span', { class: 'suche-typ', text: t('docs.suche.art.' + x.typ) + (x.art === 'bedeutung' ? ' · 🧠 ' + Math.round(x.naehe * 100) + ' %' : '') }),
+    el('button', { class: 'btn btn-sm', type: 'button', text: x.name || '—', onClick: () => {
+      const zeile = document.querySelector(`[data-beleg-id="${x.id}"]`);
+      if (zeile) { zeile.closest('tr').scrollIntoView({ block: 'center' }); zeile.closest('tr').classList.add('suche-markiert'); }
+      else if (x.typ === 'buchung') navigate('journal'); else if (x.typ === 'kunde') navigate('customers'); else if (x.typ === 'auftrag') navigate('orders');
+    } }),
+    el('span', { class: 'muted small suche-stelle', text: x.stelle || '' }),
+  ]))));
+}
+
+function belegSuche(belege) {
+  const s = getSettings();
+  const input = el('input', { type: 'search', class: 'beleg-text', placeholder: t('docs.suche.platzhalter'), value: _frage, 'data-mikro-key': 'belegsuche', 'data-belegsuche': '', 'aria-label': t('docs.suche.titel') });
+  const ziel = el('div', { class: 'suche-treffer', 'data-suche-treffer': '' });
+  let warte = null;
+  const los = () => { _frage = input.value; clearTimeout(warte); warte = setTimeout(() => sucheAusfuehren(_frage, belege, ziel).catch(() => {}), 250); };
+  input.addEventListener('input', los);
+  input.addEventListener('change', los);
+  const an = s.bedeutungssuche === 'an';
+  const zustand = el('span', { class: 'muted small', 'data-bedeutung-zustand': _bedeutungZustand.stand, text: an ? _bedeutungZustand.text : '' });
+  const schalter = el('button', { class: 'btn btn-sm', type: 'button', 'data-bedeutung-schalter': an ? 'an' : 'aus', text: an ? t('docs.suche.bedeutungAus') : t('docs.suche.bedeutungAn'), onClick: async () => {
+    if (!an) {
+      if (!confirm(t('docs.suche.bedeutungFrage'))) return;
+      await updateSettings({ bedeutungssuche: 'an' }, { still: true });
+      await repaint();
+    } else { _ordnetLauf++; await updateSettings({ bedeutungssuche: 'aus' }, { still: true }); zustandSetzen('aus', ''); await repaint(); }
+  } });
+  const weit = el('label', { class: 'small' }, [el('input', { type: 'checkbox', 'data-suche-weit': '' }), ' ' + t('docs.suche.weit')]);
+  const cb = weit.querySelector('input'); cb.checked = s.belegsucheWeit !== false;
+  cb.addEventListener('change', async () => { await updateSettings({ belegsucheWeit: cb.checked }, { still: true }); los(); });
+  if (_frage) setTimeout(los, 0);
+  return el('div', { class: 'card suche-karte', 'data-belegsuche-karte': '' }, [
+    el('h2', { class: 'small', text: t('docs.suche.titel') }),
+    input,
+    el('div', { class: 'suche-zeile' }, [schalter, zustand, weit]),
+    el('p', { class: 'muted small', text: t('docs.suche.hinweis') }),
+    ziel,
+  ]);
 }

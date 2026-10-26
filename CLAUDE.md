@@ -190,3 +190,20 @@ Proben: `tests/run.mjs` drei Abschnitte „Mikrofon" (+26) · `tests/smoke_mikro
 gestellt — ⚠ Chromium ≥ 128 hat auch das unpräfixierte `SpeechRecognition`; wer nur `webkit…` stellt, bekommt die echte und
 „not-allowed") · `smoke_design` 90 grün. `sw.js` v261. ⚠ Am Tablet nicht gemessen; echte Erkennung nicht gemessen; die
 Leiste steht bei Feldern voller Breite in der Zeile darunter (28 px mehr Höhe je Feld, benannt).
+
+## 🔎 Suche über Belege: Wörter und Bedeutung (Klaus 2026-10-26, A1/A2)
+
+Klaus: „eine Embedding-integrierte Suche innerhalb von BLP, ohne KI … Bedeutungssuche, Vektorsuche." Der erkannte Text
+(Textebene oder OCR, `visionExtraktion`) wird **verschlüsselt am Beleg** gespeichert (`setBelegText` → `textDaten`,
+unverschlüsselt nur `textZeichen`/`textStand`); `fileAllMeta` blendet `textDaten`/`vektorDaten` aus. Reine Rechnung in
+`src/domain/belegsuche.js` (Vorbild Workflow-PDF `suche.js`/`bedeutung.js`): `normalisieren` (Umlaute, Daten JJJJMMTT),
+UND-Wortsuche mit Fundstelle, `zerlegen` (120–260 Zeichen an Satzenden, `ZERLEGUNG` z1), `bedeutungsRang` (Fenster 0,04 ab
+dem besten, nie unter 0,80, höchstens 12; sonst 3 „schwach"). Die Karte „Belege durchsuchen" steht über der Liste
+(`[data-belegsuche]`, mit 🎙), Wortsuche sofort; **A2** auch in Buchungen, Kunden, Aufträgen (`eintragText`, Schalter
+`belegsucheWeit`). **Bedeutung** ist opt-in (`bedeutungssuche: 'an'`, Dialog nennt 118 MB und dass Belege das Gerät nicht
+verlassen): dasselbe e5-Modell wie die SBKIM-Suche (`loadEmbedder`), Vektoren je Abschnitt **verschlüsselt** am Beleg
+(`setBelegVektoren`, offen nur Anzahl/Zerlegung), Einordnen im Hintergrund mit Zustandszeile, danach beim Öffnen von selbst.
+Probe-Haken `window.__blpEmbedderStub`. Proben: `tests/run.mjs` zwei Abschnitte „Belegsuche" (+24) · `tests/smoke_belegsuche.mjs`
+**18 grün** (echter Tresor, Embedder gestellt: verschlüsselter Text, Wort/Datum/A2, Opt-in, Einordnen, 🧠-Treffer ohne das Wort,
+Aus-Schalter) · `smoke_design` 90 grün. `sw.js` v262. ⚠ Das echte Modell lief hier nicht (Netz gesperrt), kein Tablet; die
+Schwellen sind gewählt, nicht an echten Belegen gemessen; A3 (Frage an die Belege mit KI, pseudonymisiert) noch offen.

@@ -5,6 +5,16 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (nachts) — A1+A2: Suche über Belege nach Wörtern und Bedeutung · Befund Offline-Übersetzung
+
+- **Getan:** `src/domain/belegsuche.js` (rein), `documents.js` Store: Text/Vektoren verschlüsselt am Beleg, `db.js` blendet
+  sie aus; Belegansicht: Suchkarte, Text wird bei Textebene/OCR gemerkt, Bedeutung opt-in mit Hintergrund-Einordnen, A2
+  Buchungen/Kunden/Aufträge; i18n DE/EN, CSS, `sw.js` v262. Befund `docs/design/BEFUND-OFFLINE-UEBERSETZUNG-2026-10-26.md`.
+- **Beweis:** `node tests/run.mjs` **2449/0** (+24) · `tests/smoke_belegsuche.mjs` **18 grün** · `smoke_design` **90 grün**.
+- **Nicht geprüft:** echtes e5-Modell (Netz gesperrt; gestellt), Tablet; Schwellen gewählt. Lehre: doppelte Importe
+  (`listKunden`, `loadEmbedder`) brechen die ganze Ansicht — `node --check` sieht das nicht, erst der Browser.
+- **Nächstes:** Klaus' Antworten D15/D16/Ü1; Calculate/Needs; A3.
+
 ## 2026-10-26 (nachts) — B1: Mikrofon an jeder Texteingabe, Sprachmarke je Feld, Wort-Speicher
 
 - **Getan:** `src/ui/mikro.js` (Beobachter, Leiste 🎙 + „DE ▾“, zehn Sprachen, Wahl je Feld, Einfügen an der Cursorstelle,
