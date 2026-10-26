@@ -1,0 +1,72 @@
+{
+  "repo": "lausiklauskn-png/Workflow-PDF",
+  "commit": "56b45ecd80c0ae4d89c99507b673da53bcc3bcec",
+  "stand": "2026-10-26",
+  "dateien": {
+    "assets/wfpdf/scanner.js": {
+      "quelle": "assets/scanner.js",
+      "sha256": "ef9db8c62ed8eab72aed6a3b81788ef8bc3c0cf299467066ad68c3e3a3cbe4cb"
+    },
+    "assets/wfpdf/scan-bild.js": {
+      "quelle": "assets/scan-bild.js",
+      "sha256": "96da5878d68d42e4e66ad48247bba998e543a4249a7074c38bcb58852b0dc739"
+    },
+    "assets/wfpdf/blatt.js": {
+      "quelle": "assets/blatt.js",
+      "sha256": "88e8ae8c03b662ce7f8bbfe0401cd0c5c59ca78a5b788b747518ace1d90a7188"
+    },
+    "assets/wfpdf/zip.js": {
+      "quelle": "assets/zip.js",
+      "sha256": "5c5a721c9a13aa551f453b3d42f9c4fcbe49555276a70ff53959e01caba0dce3"
+    },
+    "assets/wfpdf/pdf-lib.min.js": {
+      "quelle": "vendor/pdf-lib.min.js",
+      "sha256": "0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f"
+    },
+    "assets/wfpdf/fontkit.umd.min.js": {
+      "quelle": "vendor/fontkit.umd.min.js",
+      "sha256": "d8df561b9fba98e24f2e5130e40948809281bbbc55a20c412359f1a0a5eb35a6"
+    },
+    "assets/wfpdf/fontkit-LICENSE.txt": {
+      "quelle": "vendor/fontkit-LICENSE.txt",
+      "sha256": "9855615bf84733e86e0b527971ed2c1e479c6c9aef2e003d9229154ea688191e"
+    },
+    "assets/wfpdf/fonts/NotoSans-Regular.ttf": {
+      "quelle": "vendor/fonts/NotoSans-Regular.ttf",
+      "sha256": "f3961a9cde016d41a4879aecda1474d3a36d6bf54fa0e4643de029cc2248b0e8"
+    },
+    "assets/wfpdf/fonts/OFL.txt": {
+      "quelle": "vendor/fonts/OFL.txt",
+      "sha256": "cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a"
+    },
+    "vendor/scanic/LICENSE-scanic.txt": {
+      "quelle": "vendor/scanic/LICENSE-scanic.txt",
+      "sha256": "6a229290ec93f6d725561f6789c9226f4837f4fc515d17f6418202fa1bd49ae2"
+    },
+    "vendor/scanic/doccornernet_lean.ort": {
+      "quelle": "vendor/scanic/doccornernet_lean.ort",
+      "sha256": "732eb8d02d83cc63efb3f9467f01e0c458205a89b2547de3870bc6db1a80c8b3"
+    },
+    "vendor/scanic/ort-wasm-simd-threaded.mjs": {
+      "quelle": "vendor/scanic/ort-wasm-simd-threaded.mjs",
+      "sha256": "d6841aca121bba413020e1de9009c9e557cc8b424cc4b5d3ebfd8c5e0fec4fce"
+    },
+    "vendor/scanic/ort-wasm-simd-threaded.wasm": {
+      "quelle": "vendor/scanic/ort-wasm-simd-threaded.wasm",
+      "sha256": "8acb4d26fe0537379e83478e52b20e681035ca70a3eca45f2a147c19e1241f87"
+    },
+    "vendor/scanic/scanic-mlDetector.js": {
+      "quelle": "vendor/scanic/scanic-mlDetector.js",
+      "sha256": "d3e37f0e1b2a298f157bb221798cb15718c99fa1a854d71980f3a3652dcd71e3"
+    },
+    "vendor/scanic/scanic-ort.wasm.min.js": {
+      "quelle": "vendor/scanic/scanic-ort.wasm.min.js",
+      "sha256": "6d185727fae93105c8b91a1334c9c6767464776875a5937b48b9b5c41c348e6c"
+    },
+    "vendor/scanic/scanic.js": {
+      "quelle": "vendor/scanic/scanic.js",
+      "sha256": "4f4f494d291d8a18daf2833e6b68ac4e8f712f150331a85c1e4b3d227ef24680"
+    }
+  },
+  "hinweis": "Byte-1:1 aus Workflow-PDF (tools/wfpdf-nachziehen.mjs). Nie von Hand ändern. scanner.css ist BLP-eigen (nach Mein-WorkFloh assets/wfpdf/scanner.css)."
+}

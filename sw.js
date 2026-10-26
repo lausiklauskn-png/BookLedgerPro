@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v264';
+const CACHE_VERSION = 'v265';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -205,6 +205,15 @@ const CORE_ASSETS = [
   './src/ui/views/angebote.js',
   './src/ui/views/apps.js',
   './src/domain/eingebettet.js',
+  // Scanner-Kern von Workflow PDF (Klaus 2026-10-26), byte-1:1: klein genug für die Schale; pdf-lib/fontkit/Noto und
+  // das Scanic-Modell (vendor/scanic) kommen beim ersten Scannen in den Vorrat.
+  './src/ui/scanner.js',
+  './assets/wfpdf/scanner.js',
+  './assets/wfpdf/scan-bild.js',
+  './assets/wfpdf/blatt.js',
+  './assets/wfpdf/zip.js',
+  './assets/wfpdf/scanner.css?v=1',
+  './assets/wfpdf/HERKUNFT.json',
   './apps/HERKUNFT.json',
   './src/ui/views/shopbuchung.js',
   './src/ui/views/nachkalkulation.js',

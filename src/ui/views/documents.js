@@ -43,6 +43,7 @@ import { herkunftVon, istEigenerScan, textebeneReicht, workflowScanAdresse, istA
 import { geteilteDateienHolen } from '../../domain/teilenEmpfang.js';
 import { pruefberichtZeigen, ungeprueftHalt, auffaelligHalt, kiReinigungHalt, textHalt, drehkreis, arbeitsAnzeige } from '../belegDialoge.js';
 import { fotoZuScan } from '../../core/scanPdf.js';
+import { scannen } from '../scanner.js';
 import { platzPlan, mb } from '../../domain/importPlatz.js';
 
 let _host = null;
@@ -701,7 +702,7 @@ async function belegAblegen(file, typ, quelle) {
   const art = file.type || typ || '';
   if (/^image\//.test(art)) {
     try {
-      const sc = await fotoZuScan(file);
+      const sc = await fotoZuScan(file, { qualitaet: (getSettings() || {}).scanQualitaet });
       const pdf = new File([sc.pdf], sc.name, { type: 'application/pdf' });
       await saveBeleg(pdf, { original: file, originalTyp: art, scan: sc });
       return { scan: true, sicher: sc.sicher, grund: sc.grund };
@@ -715,8 +716,8 @@ async function belegAblegen(file, typ, quelle) {
   if (art === 'application/pdf' || /\.pdf$/i.test(file.name || '')) {
     try { herkunft = herkunftVon(await pdfKopf(await readFileBytes(file))); } catch { herkunft = undefined; }
   }
-  await saveBeleg(file, { typ, herkunft, quelle });
-  return { scan: false, eigen: herkunft === 'workflow-pdf' };
+  const b = await saveBeleg(file, { typ, herkunft, quelle });
+  return { scan: false, eigen: herkunft === 'workflow-pdf', id: b && b.id };
 }
 
 // „X Dateien, Y MB, frei Z" — und fragen, wenn es nicht passt oder eine Datei sehr groß ist.
@@ -786,6 +787,9 @@ function uploadKarte() {
     el('h2', { class: 'card-title', text: t('docs.archive') }),
     el('p', { class: 'muted small', text: t('docs.archiveHint') }),
     el('div', { class: 'btn-row' }, [
+      // 📷 Scannen (Klaus 2026-10-26): der Scanner-Kern von Workflow PDF, eingebaut — Ecken, gerade ziehen, Filter,
+      // Texterkennung, PDF mit Textebene → als Beleg, Text sofort suchbar. „Foto aufnehmen“ bleibt der stille Weg.
+      el('button', { class: 'btn btn-primary', 'data-scan-start': '', text: t('docs.scannen'), title: t('docs.scannenHint'), onClick: () => scannerStarten() }),
       el('button', { class: 'btn', text: t('docs.camera'), onClick: () => add('image/*', 'environment') }),
       wfKnopf,
       el('button', { class: 'btn', text: t('docs.uploadMehrere'), 'data-import-viele': '', onClick: () => viele(false) }),
@@ -794,6 +798,19 @@ function uploadKarte() {
     el('p', { class: 'muted small', text: t('docs.workflowScanHint') }),
     ...status,
   ]);
+}
+
+// 📷 Scannen mit dem eingebauten Scanner-Kern (src/ui/scanner.js). Das fertige PDF (Marke „Workfloh PDF · Scannen“)
+// geht durch dateienEinlesen wie jede Datei: Stand „eigen“, Text aus der Textebene gleich am Beleg gemerkt.
+async function scannerStarten(dateien) {
+  _importStatus = { text: t('docs.scannerLaedt') }; const st = document.querySelector('[data-import-status]'); if (st) st.textContent = _importStatus.text;
+  try {
+    await scannen({ titel: t('docs.scannenTitel'), fertigText: t('docs.scanFertig'), dateien, qualitaet: (getSettings() || {}).scanQualitaet, fertig: async (file) => { await dateienEinlesen([file], { quelle: 'scanner' }); } });
+    _importStatus = { text: '' }; const st2 = document.querySelector('[data-import-status]'); if (st2) st2.textContent = '';
+  } catch (e) {
+    _importStatus = { text: t('docs.scannerFehlt').replace('{e}', String((e && e.message) || e)) };
+    const st2 = document.querySelector('[data-import-status]'); if (st2) st2.textContent = _importStatus.text;
+  }
 }
 
 // Viele Dateien auf einmal (Mehrfach-Auswahl, Ordner, Teilen, „Öffnen mit"). Jeder Beleg wird einzeln
@@ -810,7 +827,7 @@ async function dateienEinlesen(files, { quelle } = {}) {
     }
     const fehler = [], ohneScan = [];
     let n = 0, scans = 0, ganz = 0;
-    let eigen = 0;
+    let eigen = 0, gelesen = 0;
     for (let i = 0; i < nehmen.length; i++) {
       _importStatus = { text: t('docs.importLaeuft').replace('{i}', String(i + 1)).replace('{n}', String(nehmen.length)) };
       const st = document.querySelector('[data-import-status]');
@@ -818,18 +835,31 @@ async function dateienEinlesen(files, { quelle } = {}) {
       try {
         const r = await belegAblegen(nehmen[i].file, nehmen[i].typ, quelle); n++;
         if (r.eigen) eigen++;
+        // Eigener Scan (Marke „Workfloh PDF · Scannen“, aus dem eingebauten Scanner oder geteilt): der erkannte Text aus der
+        // Textebene wird gleich am Beleg gemerkt (verschlüsselt) → Wort- und Bedeutungssuche (Klaus 2026-10-26). Keine KI
+        // dabei; vor einer Kontierung prüft kiTextFreigabe den Text wie bisher.
+        if (r.eigen && r.id) {
+          try {
+            const tb = await pdfTextebene(await readFileBytes(nehmen[i].file));
+            // Eigener Scan: die Textebene IST die Texterkennung — jedes Wort zählt (kein Mindestmaß wie vor Vision).
+            const text = tb ? String(tb.text || '').trim() : '';
+            if (typeof window !== 'undefined') window.__blpScanText = { zeichen: text.length, seiten: tb && tb.seiten };   // Probe
+            if (text) { await textMerken(r.id, text); gelesen++; }
+          } catch (e) { if (typeof window !== 'undefined') window.__blpScanText = { fehler: String((e && e.message) || e) }; /* ohne Textebene bleibt der Beleg ohne Suchtext — „Text aus dem PDF übernehmen“ holt ihn später */ }
+        }
         if (r.scan) { scans++; if (!r.sicher) ganz++; } else if (r.grund) ohneScan.push(`${nehmen[i].pfad}: ${r.grund}`);
       } catch (e) { fehler.push(`${nehmen[i].pfad}: ${String((e && e.message) || e)}`); }
     }
     const zusatz = (scans ? ' ' + t('docs.scanAnzahl').replace('{n}', String(scans)).replace('{g}', String(ganz)) : '')
-      + (eigen ? ' ' + t('docs.eigeneScans').replace('{n}', String(eigen)) : '');
+      + (eigen ? ' ' + t('docs.eigeneScans').replace('{n}', String(eigen)) : '')
+      + (gelesen ? ' ' + t('docs.scanTextGemerkt').replace('{n}', String(gelesen)) : '');
     const vorsatz = quelle === 'teilen' ? t('docs.teilenEmpfangen').replace('{n}', String(nehmen.length + ueberspringen.length)) + ' · ' : '';
     _importStatus = {
       text: vorsatz + platz.zeile + ' · ' + t('docs.importFertig').replace('{n}', String(n)) + zusatz,
       uebersprungen: ueberspringen.map((u) => u.pfad),
       fehler: fehler.concat(ohneScan.map((x) => t('docs.scanNicht').replace('{grund}', x))),
     };
-    if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler, scans, ganz, ohneScan, eigen, quelle: quelle || null };   // Probe
+    if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler, scans, ganz, ohneScan, eigen, gelesen, quelle: quelle || null };   // Probe
     await repaint();
   }
 }

@@ -758,6 +758,8 @@ function viewSettings() {
 
     mikroSection(s, seg),
 
+    scanSection(s, seg),
+
     seg(t('settings.datenschutz'), 'datenschutzModus',
       [['aus', t('settings.datenschutz.aus')], ['pseudonym', t('settings.datenschutz.pseudonym')]],
       s.datenschutzModus || 'pseudonym',
@@ -1077,6 +1079,16 @@ function gewinnermittlungSection(s) {
 // (GoBD-Lückenlosigkeit).
 // Zwei Felder, je ein Eintrag pro Zeile. Gespeichert wird beim Verlassen des Felds.
 // 🎙 Mikrofon und Wort-Speicher (Klaus 2026-10-26): Vorgabesprache, Wort-Speicher an/aus und löschen.
+// Scan-Qualität (Klaus 2026-10-26: „je nach Größe oder je nach Qualität der Vorlage“) — gilt für Fotos, die
+// still zum Scan-PDF werden, UND als Vorgabe für das Scanner-Fenster (dort je Scan änderbar).
+function scanSection(s, seg) {
+  return el('div', { 'data-scan-einstellungen': '' }, [
+    seg(t('scan.qualitaet'), 'scanQualitaet',
+      [['hoch', t('scan.qualitaet.hoch')], ['auto', t('scan.qualitaet.auto')], ['normal', t('scan.qualitaet.normal')], ['klein', t('scan.qualitaet.klein')]],
+      s.scanQualitaet || 'hoch', (v) => updateSettings({ scanQualitaet: v }), t('scan.qualitaet.hint')),
+  ]);
+}
+
 function mikroSection(s, seg) {
   const sel = el('select', { 'data-mikro-standard': '' }, [
     el('option', { value: 'auto' }, t('mikro.spracheAuto')),
