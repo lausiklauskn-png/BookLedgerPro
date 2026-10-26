@@ -1,5 +1,12 @@
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**Fahrplan Pro/Basic/Tresorordner (Klaus 2026-10-26):** wenn BookLedgerPro hier fertig ist (D22, Workflow PDF „beides", R3), wird
+der Stand **komplett nach `BookLedger-Basic` kopiert** (PWA, Name „BookLedger Basic", DB-Endung `bookledgerbasic`, Pins +
+Nachzieh-Werkzeug), und **dieses Repo wird die native Pro-App** (Android + Windows), **ohne Umbenennung** des Repos. Alle Pro-Apps
+(Private Brain Pro, BookLedgerPro, Workflow PDF Pro) teilen **einen Tresorordner** mit einem Passwort und dem byte-gleich kopierten
+PBV1-Schloss; PWAs bleiben bei Teilen/Links. Je Plattform eine Bausitzung (Android zuerst, dann Windows). Plan mit Fächern,
+Regeln, Passwort/Ersatzschlüssel und offenen Entscheidungen: `docs/design/PLAN-TRESORORDNER-2026-10-26.md`.
+
 Dieses Repo wird über viele Sitzungen hinweg gebaut. Lies das hier zuerst.
 
 ## Was BookLedgerPro ist
