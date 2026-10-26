@@ -141,6 +141,7 @@ import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, A
 import { baueAnker } from '../src/ai/anker.js';
 import { erkennePII, piiAnker, kombiniereAnker, NER_TYP, EXTERN_SCOPE } from '../src/ai/ner.js';
 import { namenImText, musterAnker, MUSTER_GRUND } from '../src/ai/namensmuster.js';
+import { SPRACHEN as MIKRO_SPRACHEN, standardSprache, sprachCode, sprachMarke, feldSchluessel, textEinfuegen, woerterAus, wortSpeicherAufnehmen, wortVorschlaege, wortSpeicherZahl, wortVorCursor, WORT_MAX } from '../src/ui/mikro.js';
 import { baueBriefkasten, briefkastenAnker, briefkastenBericht, tokenizeBriefkasten, EBENE } from '../src/ai/briefkasten.js';
 import {
   SCHLUESSEL_FORMAT, SCHLUESSEL_VERSION, typAusToken, istToken, tokenVorkommen,
@@ -2304,6 +2305,54 @@ await section('Namensmuster: musterAnker → tokenize, Vorrang, Scope, Rücknahm
   ok('„Nie verdecken" nimmt genau diesen Treffer heraus', !zurueck.some((a) => a.wert === 'Thomas Berger') && zurueck.some((a) => a.wert === 'Petra Klein'));
   ok('ohne Text: leer, ohne Fehler', musterAnker('').length === 0 && namenImText(null).length === 0);
 });
+
+// ─── 🎙 Mikrofon an jeder Texteingabe, Sprachmarke je Feld, Wort-Speicher (Klaus 2026-10-26, Plan B1) ───
+await section('Mikrofon: Sprachen, Marke, Feldschlüssel', () => {
+  ok('zehn Sprachen, jede mit Code, Name und Marke', MIKRO_SPRACHEN.length === 10 && MIKRO_SPRACHEN.every(([c, n, k]) => /^[a-z]{2}-[A-Z]{2}$/.test(c) && n && /^[A-Z]{2}$/.test(k)));
+  ok('Deutsch, Englisch, Russisch, Polnisch dabei (die vier App-Sprachen der Familie)', ['de-DE', 'en-US', 'ru-RU', 'pl-PL'].every((c) => sprachCode(c) === c));
+  ok('Vorgabe folgt der App-Sprache: de → de-DE, en → en-US, sonst de-DE', standardSprache('de') === 'de-DE' && standardSprache('en') === 'en-US' && standardSprache('xx') === 'de-DE');
+  ok('unbekannter Code → null; Marke „DE“/„??“', sprachCode('xx-XX') === null && sprachMarke('de-DE') === 'DE' && sprachMarke('') === '??');
+  const f = (attrs) => ({ dataset: {}, getAttribute: (k) => attrs[k] || null, name: attrs.name, id: attrs.id });
+  ok('Feldschlüssel: Ansicht + name', feldSchluessel(f({ name: 'notiz' }), 'journal') === 'journal:notiz');
+  ok('… sonst id, aria-label, placeholder, zuletzt die Stelle', feldSchluessel(f({ id: 'x1' }), 'a') === 'a:x1' && feldSchluessel(f({ 'aria-label': 'Buchungstext' }), 'a') === 'a:Buchungstext' && feldSchluessel(f({ placeholder: 'Suche' }), 'a') === 'a:Suche' && feldSchluessel(f({}), 'a', 7) === 'a:#7');
+  ok('data-mikro-key gewinnt', feldSchluessel({ dataset: { mikroKey: 'fest' }, name: 'n', getAttribute: () => null }, 'a') === 'a:fest');
+});
+
+await section('Mikrofon: Text an der Cursorstelle einfügen', () => {
+  ok('leeres Feld: Text ohne Leerzeichen davor', textEinfuegen('', 0, 0, 'Hallo Welt').value === 'Hallo Welt');
+  ok('am Ende: Leerzeichen davor, Cursor hinter dem Text', JSON.stringify(textEinfuegen('Rechnung', 8, 8, 'Nr 17')) === JSON.stringify({ value: 'Rechnung Nr 17', cursor: 14 }));
+  ok('mitten im Wort: Leerzeichen beidseits', textEinfuegen('ab', 1, 1, 'x').value === 'a x b');
+  ok('Markierung wird ersetzt', textEinfuegen('alt neu ende', 4, 7, 'besser').value === 'alt besser ende');
+  ok('leerer Text ändert nichts', textEinfuegen('bleibt', 2, 2, '   ').value === 'bleibt');
+  ok('Cursor außerhalb wird begrenzt', textEinfuegen('ab', 99, 99, 'c').value === 'ab c' && textEinfuegen('ab', -5, -5, 'c').value === 'c ab');
+  ok('wortVorCursor findet das angefangene Wort', JSON.stringify(wortVorCursor('Miete Büro Hamb', 15)) === JSON.stringify({ wort: 'Hamb', start: 11, end: 15 }) && wortVorCursor('Miete ', 6) === null);
+});
+
+await section('Mikrofon: Wort-Speicher (aufnehmen, vorschlagen, Grenze, löschen)', () => {
+  ok('Wörter: ≥ 3 Zeichen, keine reinen Zahlen, entdoppelt', JSON.stringify(woerterAus('Miete Büro 2026 Büro, Hamburg-Nord 12 ab')) === JSON.stringify(['Miete', 'Büro', 'Hamburg-Nord']));
+  let sp = wortSpeicherAufnehmen({}, 'journal:notiz', 'Miete Büro Hamburg', { mehrzeilig: true });
+  ok('mehrzeilig: die Wörter werden gemerkt', JSON.stringify(sp['journal:notiz']) === JSON.stringify(['Miete', 'Büro', 'Hamburg']));
+  sp = wortSpeicherAufnehmen(sp, 'customers:name', 'Muster GmbH');
+  sp = wortSpeicherAufnehmen(sp, 'customers:name', 'Berger KG');
+  sp = wortSpeicherAufnehmen(sp, 'customers:name', 'Muster GmbH');
+  ok('einzeilig: ganze Einträge, neueste vorn, entdoppelt', JSON.stringify(sp['customers:name']) === JSON.stringify(['Muster GmbH', 'Berger KG']));
+  ok('zu kurz („a“) wird nicht gemerkt; leer ändert nichts', wortSpeicherAufnehmen(sp, 'customers:name', 'a') === sp && wortSpeicherAufnehmen(sp, 'x', '') === sp);
+  ok('Vorschläge nach Anfang, ohne Groß/Klein, nie der Anfang selbst, höchstens 3', JSON.stringify(wortVorschlaege(sp, 'customers:name', 'mu')) === JSON.stringify(['Muster GmbH']) && wortVorschlaege(sp, 'journal:notiz', 'Büro').length === 0 && wortVorschlaege(sp, 'journal:notiz', 'h').length === 0);
+  let voll = {};
+  for (let i = 0; i < WORT_MAX + 50; i++) voll = wortSpeicherAufnehmen(voll, 'k', 'Eintrag ' + i);
+  ok('Grenze je Feld: höchstens WORT_MAX, neueste bleiben', voll.k.length === WORT_MAX && voll.k[0] === 'Eintrag ' + (WORT_MAX + 49));
+  ok('Zahl aller Einträge', wortSpeicherZahl(sp) === 5 && wortSpeicherZahl({}) === 0 && wortSpeicherZahl(null) === 0);
+  ok('Löschen = leeres Objekt (Einstellung wortSpeicher: {})', wortSpeicherZahl({}) === 0);
+  // Verdrahtung
+  const shell = _readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
+  ok('Shell meldet den Beobachter an und zeigt die Einstellungen', /mikrofonBeobachten\(container\)/.test(shell) && /mikroSection\(s\)/.test(shell) && /data-wortspeicher-loeschen/.test(shell));
+  const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
+  ok('sw.js kennt mikro.js', /\.\/src\/ui\/mikro\.js/.test(sw));
+  const st = _readSpore(new URL('../src/state.js', import.meta.url), 'utf8');
+  ok('Vorgaben: mikroSprachen, mikroStandardSprache, wortSpeicherAn, wortSpeicher', ['mikroSprachen', 'mikroStandardSprache', 'wortSpeicherAn', 'wortSpeicher'].every((k) => new RegExp('^\\s*' + k + ':', 'm').test(st)));
+  ok('SBKIM-Suche behält ihr eigenes Mikrofon (data-kein-mikro)', /data-kein-mikro/.test(_readSpore(new URL('../src/ui/views/sbkimsuche.js', import.meta.url), 'utf8')));
+});
+
 
 
 await section('Briefkasten: Hierarchie Mandant ⊃ Firma ⊃ Person (baueBriefkasten)', () => {

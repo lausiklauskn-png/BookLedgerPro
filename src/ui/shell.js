@@ -95,6 +95,7 @@ import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
 import { mountSbkimSuche } from './views/sbkimsuche.js';
+import { mikrofonBeobachten, SPRACHEN as MIKRO_SPRACHEN, wortSpeicherZahl } from './mikro.js';
 import { mountSafebox } from './views/safebox.js';
 import { mountDashboard } from './views/dashboard.js';
 import { mountAnleitung } from './views/anleitung.js';
@@ -167,6 +168,8 @@ let _onLock = () => {};
 let _mandant = { id: null, name: null, count: 0, sandbox: false };
 
 export function renderShell(container, { onLock } = {}) {
+  // 🎙 an jeder Texteingabe (Klaus 2026-10-26): einmal anmelden, folgt jedem Neuzeichnen.
+  try { mikrofonBeobachten(container); } catch { /* ohne MutationObserver: Felder bleiben tippbar */ }
   _container = container;
   _onLock = onLock || (() => {});
   ladeSymbole();
@@ -745,6 +748,8 @@ function viewSettings() {
 
     zeige(EINSTELLUNG.RECHNUNGSSTELLE, rechnungsstelleSection(s)),
 
+    mikroSection(s, seg),
+
     seg(t('settings.datenschutz'), 'datenschutzModus',
       [['aus', t('settings.datenschutz.aus')], ['pseudonym', t('settings.datenschutz.pseudonym')]],
       s.datenschutzModus || 'pseudonym',
@@ -1063,6 +1068,30 @@ function gewinnermittlungSection(s) {
 // BLP wird mit Bestätigung abgesichert, sobald BLP schon §14-Nummern vergeben hat
 // (GoBD-Lückenlosigkeit).
 // Zwei Felder, je ein Eintrag pro Zeile. Gespeichert wird beim Verlassen des Felds.
+// 🎙 Mikrofon und Wort-Speicher (Klaus 2026-10-26): Vorgabesprache, Wort-Speicher an/aus und löschen.
+function mikroSection(s, seg) {
+  const sel = el('select', { 'data-mikro-standard': '' }, [
+    el('option', { value: 'auto' }, t('mikro.spracheAuto')),
+    ...MIKRO_SPRACHEN.map(([code, name, kurz]) => el('option', { value: code }, `${kurz} · ${name}`)),
+  ]);
+  sel.value = s.mikroStandardSprache || 'auto';
+  sel.addEventListener('change', () => updateSettings({ mikroStandardSprache: sel.value }, { still: true }));
+  const zahl = wortSpeicherZahl(s.wortSpeicher);
+  const loeschen = el('button', { class: 'btn btn-sm', type: 'button', 'data-wortspeicher-loeschen': '', disabled: zahl === 0,
+    text: t('mikro.wortSpeicherLoeschen').replace('{n}', String(zahl)),
+    onClick: async () => { if (!confirm(t('mikro.wortSpeicherLoeschenFrage'))) return; await updateSettings({ wortSpeicher: {}, mikroSprachen: {} }); paint(); } });
+  return el('div', { 'data-mikro-einstellungen': '' }, [
+    el('div', { class: 'setting' }, [
+      el('div', { class: 'setting-label', text: t('mikro.titel') }), sel,
+      el('p', { class: 'muted small', text: t('mikro.hint') }),
+    ]),
+    seg(t('mikro.wortSpeicher'), 'wortSpeicherAn',
+      [['nein', t('common.no')], ['ja', t('common.yes')]], s.wortSpeicherAn === false ? 'nein' : 'ja',
+      (v) => updateSettings({ wortSpeicherAn: v === 'ja' }), t('mikro.wortSpeicherHint')),
+    el('div', { class: 'setting' }, [loeschen]),
+  ]);
+}
+
 function handListenSection(s) {
   const feld = (key, label, hint, ph) => {
     const ta = el('textarea', { class: 'beleg-text', rows: '3', placeholder: ph, 'data-hand-liste': key, 'aria-label': label,

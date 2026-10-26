@@ -28,6 +28,10 @@ const DEFAULTS = Object.freeze({
   kiNieVerdecken: [], // von Hand: bleibt wörtlich stehen, schirmt Namen darin ab (z. B. „Müller-Thurgau")
   nerPii: true, // im Pseudonym-Modus zusätzlich erkannte PII Dritter (E-Mail/IBAN/USt-IdNr/Tel.) maskieren
   namensmuster: true, // im Pseudonym-Modus Namen nach Muster verdecken (Anrede, z. Hd., Vor-+Nachname, Firma); Rücknahme über kiNieVerdecken (Klaus 2026-10-26)
+  mikroSprachen: {}, // Sprache fürs Einsprechen je Feld (feldSchluessel → 'de-DE'), Klaus 2026-10-26: sichtbare Marke, je Feld gemerkt
+  mikroStandardSprache: 'auto', // Vorgabe für Felder ohne eigene Wahl: 'auto' = App-Sprache oder ein Code aus ui/mikro.js SPRACHEN
+  wortSpeicherAn: true, // Wort-Speicher (Vervollständigung aus früheren Eingaben), löschbar in den Einstellungen
+  wortSpeicher: {}, // feldSchluessel → [Einträge] (verschlüsselt im Tresor, nie an eine KI)
   backupStrategie: 'download', // download | ordner — Ziel der Datensicherung (Ordner braucht File System Access; sonst Download-Fallback)
   zahlungszielTage: 14,    // Standard-Zahlungsziel für Fälligkeit/Mahnwesen
   liquiditaetHorizontTage: 7, // Zeitfenster (Tage) der Dashboard-Liquiditätsvorschau (7|14|30|90, domain/liquiditaet.js); umschaltbar in der Liquiditäts-Karte
