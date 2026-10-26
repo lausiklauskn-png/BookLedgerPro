@@ -148,15 +148,34 @@ und „Rechnung aus Angebot" (nur bei angenommen) erzeugt den Rechnungs-Entwurf 
 WorkFloh-Auftrag 2026-0007)". Ohne Treffer (unbekannte Nummer) gilt der Bestand: Formular vorbefüllt wie in v1.
 Der Parser nimmt `v: 1` und `v: 2` an; ohne `verweise` bleibt alles wie vorher.
 
-### R3 — Stand zurück an WorkFloh (noch nicht gebaut)
+### R3 — BLP → WorkFloh: Stand der Rechnung zurück (gebaut 2026-10-26)
 
-`art: "status"` mit `wfAuftragNr`, `rechnungNr`, `bezahltAm` → WorkFloh setzt „Abgerechnet"/„Bezahlt". Nach R1/R2
-(Klaus' Reihenfolge D21).
+Am archivierten Angebot, das einen WorkFloh-Auftrag trägt (R2) und aus dem die Rechnung entstand („Rechnung aus Angebot"
+vermerkt jetzt `verweise.rechnungBuchungId/rechnungNr/rechnungDatum`), stehen zwei Knöpfe: **„📤 Rechnung an WorkFloh
+melden"** — nur eine **festgeschriebene** Buchung geht hinaus (ein Entwurf ist keine Rechnung: Hinweis, kein Sprung) — und
+**„📤 Bezahlt an WorkFloh melden"** mit Datum (Angabe von Hand; BLP führt zum Angebot keinen Zahlungseingang). Ziel = R1-Ziel,
+sonst die Quelle des R2-Rückwegs (`isd-workfloh` → Mein WorkFloh, `tomy-workfloh` → Tomys), sonst die Einstellung. Am
+Angebot bleibt `verweise.wfStand`/`wfStandAm`/`wfBezahltAm`; gemeldete Knöpfe verschwinden, „bezahlt" schließt ab.
+
+```json
+{ "v": 2, "quelle": "bookledgerpro", "art": "status",
+  "verweise": { "blpAngebotNr": "AN-2026-0042", "blpAngebotId": "angebot_…", "wfAuftragNr": "2026-0007" },
+  "stand": "rechnung",            // oder "bezahlt"
+  "rechnungNr": "R-2026-0001", "rechnungDatum": "2026-10-27", "bezahltAm": "", "datum": "2026-10-27" }
+```
+
+Der WorkFloh (`vorgangStandZeigen`, identisch in beiden) sucht den Auftrag über `wfAuftragNr` (sonst `blpAngebotId`/`-Nr`),
+zeigt ein **Blatt** „Stand aus BookLedgerPro" und ändert **erst auf „Übernehmen"**: Notiz in der Akte („BookLedgerPro:
+Rechnung R-2026-0001 festgeschrieben vom 27.10.2026" / „… bezahlt am …"), Felder `blpRechnungNr`/`blpRechnungAm`/
+`blpBezahltAm` (im Editor unter „Verbund"), und **nur wenn die Statuskette** einen passenden Status kennt (`bezahlt`/
+`abgerechnet` bzw. `abgerechnet`/`rechnung_gestellt`/`rechnung`) **und der Haken steht**, den Status. Unbekannter Auftrag
+→ Toast „nicht gefunden", nichts geändert; unbekannter `stand` → „nicht lesbar". Härtung wie R1 (Strings gekappt, `v`/`quelle`
+geprüft).
 
 ### Proben
 
-BLP `tests/run.mjs` „Rundlauf WorkFloh ⇄ BLP" (+22) · `tests/smoke_vorgang.mjs` (echter Tresor: R1 Adresse + Nutzlast
-+ Vermerk + Ziel-Einstellung, R2 Treffer/kein Treffer, Rechnungs-Entwurf) · WorkFlohs `browser_vorgang.mjs`
+BLP `tests/run.mjs` „Rundlauf WorkFloh ⇄ BLP" (+22) und „Rundlauf R3" (+8) · `tests/smoke_vorgang.mjs` (echter Tresor: R1 Adresse + Nutzlast
++ Vermerk + Ziel-Einstellung, R2 Treffer/kein Treffer, Rechnungs-Entwurf, R3 Entwurf-Halt/festgeschrieben/bezahlt mit Ziel aus der Quelle; 32 grün) · WorkFlohs `browser_vorgang.mjs`
 (identisch; `scripts/` bzw. `tests/`: Editor zur Prüfung, nichts gespeichert, Speichern legt Auftrag + Kunde an, Sender
 trägt Verweise, Doppel-Erkennung, Müll/fremde Quelle, Datenschutz). Gegenproben in Wegwerf-Kopien: je Sabotage eine
 eigene rote Zeile (BLP 3 Fälle, WorkFloh 4 Fälle).
@@ -165,6 +184,6 @@ eigene rote Zeile (BLP 3 Fälle, WorkFloh 4 Fälle).
 
 - Kein Auto-Speichern, keine Nummernvergabe, kein Festschreiben — Hoheit
   bleibt beim Menschen (GoBD).
-- Kein Rückkanal zu Tomy in v1 (die Rechnungs-Nr. wandert nicht zurück) — v2/R3 bringt ihn (oben), noch nicht gebaut.
+- Der Rückkanal (Rechnungs-Nr., festgeschrieben, bezahlt) ist R3 (oben); „bezahlt" ist dort eine Angabe von Hand, kein Zahlungsabgleich.
 - Vertrag erweitern ⇒ `v` erhöhen und diese Datei zuerst pflegen
   (Spec vor Code).

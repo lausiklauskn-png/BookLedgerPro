@@ -4,7 +4,8 @@
 //     dessen Adresse). WorkFloh legt den Auftrag ZUR PRÜFUNG an und speichert erst auf Tipp.
 // R2: WorkFloh schickt beim „🧾 Rechnung in BLP" den Verweis `verweise.blpAngebotNr` zurück
 //     (Vertrag v1 + `verweise`); BLP hängt die Rechnung an DASSELBE Angebot (uebernahmeExtern.js).
-// R3 (später): Stand zurück an WorkFloh (Rechnung festgeschrieben / bezahlt).
+// R3: Stand zurück an WorkFloh (`art: 'status'`): Rechnung FESTGESCHRIEBEN (Nummer, Datum) oder BEZAHLT (Datum, Angabe von
+//     Hand). WorkFloh zeigt ein Blatt und übernimmt erst auf Tipp (Notiz in der Akte, Felder, ggf. Status).
 //
 // Reine Rechnung, kein DOM, keine Speicherzugriffe — in Node prüfbar. Kanonischer Vertrag:
 // docs/UEBERNAHME_TOMY.md (Abschnitt „v2 Vorgang"). Beide WorkFlohs parallel (Klaus' Regel 2026-07-06).
@@ -89,4 +90,40 @@ export function vorgangUrl(zielKey, payload) {
 /** Nur die bekannten Ziele; alles andere fällt auf die Vorgabe. */
 export function zielKey(wert) {
   return Object.prototype.hasOwnProperty.call(WORKFLOH_ZIELE, wert) ? wert : WORKFLOH_ZIEL_VORGABE;
+}
+
+/** R3 — die zwei Stände, die BLP an den WorkFloh-Auftrag melden kann. */
+export const VORGANG_STAENDE = Object.freeze(['rechnung', 'bezahlt']);
+
+/**
+ * WorkFloh-Ziel aus den Verweisen am Angebot: das R1-Ziel zuerst, sonst die Quelle des R2-Rückwegs
+ * (`isd-workfloh` → Mein WorkFloh, `tomy-workfloh` → Tomys WorkFloh), sonst die Einstellung.
+ */
+export function zielAusVerweisen(v, einstellung) {
+  if (v && Object.prototype.hasOwnProperty.call(WORKFLOH_ZIELE, v.wfZiel)) return v.wfZiel;
+  const q = v && v.wfQuelle;
+  if (q === 'isd-workfloh') return 'mein-workfloh';
+  if (q === 'tomy-workfloh') return 'tomy-workfloh';
+  return zielKey(einstellung);
+}
+
+/**
+ * R3 — Nutzlast „Stand": `stand` rechnung (festgeschrieben, mit Nummer und Datum) oder bezahlt (mit Datum).
+ * Nur die Verweise und der Stand — keine Positionen, kein Kunde. Ohne WorkFloh-Auftrag am Angebot → null.
+ */
+export function vorgangStand(angebot = {}, { stand, rechnungNr = '', rechnungDatum = '', bezahltAm = '', datum = '' } = {}) {
+  if (!VORGANG_STAENDE.includes(stand)) return null;
+  const v = angebot.verweise || {};
+  if (!v.wfAuftragNr) return null;
+  return {
+    v: VORGANG_VERSION,
+    quelle: VORGANG_QUELLE,
+    art: 'status',
+    verweise: { blpAngebotNr: S(angebot.nummer, 32), blpAngebotId: S(angebot.id, 64), wfAuftragNr: S(v.wfAuftragNr, 32) },
+    stand,
+    rechnungNr: S(rechnungNr, 32),
+    rechnungDatum: S(rechnungDatum, 10),
+    bezahltAm: S(bezahltAm, 10),
+    datum: S(datum, 10) || new Date().toISOString().slice(0, 10),
+  };
 }

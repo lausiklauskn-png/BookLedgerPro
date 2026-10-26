@@ -29,7 +29,7 @@ import { hydrateSettings, getSettings, updateSettings, navigate } from './src/st
 import { renderShell } from './src/ui/shell.js';
 import { saveKunde } from './src/domain/crm-store.js';
 import { saveAngebot, listAngebote, getAngebot } from './src/domain/angebote-store.js';
-import { listBuchungen } from './src/domain/store.js';
+import { listBuchungen, festschreiben, getBuchung, ensureAccountsSeeded } from './src/domain/store.js';
 import { neuesAngebot } from './src/domain/angebote.js';
 await setupVault('probe-passwort-123');
 await hydrateSettings();
@@ -39,7 +39,8 @@ const a = await saveAngebot({ ...neuesAngebot({ titel: 'Vereins-Tassen', kundeId
   positionen: [{ beschreibung: 'Tasse 11oz bedruckt', menge: 10, einzelpreisCent: 1290, ustSatz: 19, kalkulation: { marge: 0.4 } }, { beschreibung: 'Versand', menge: 1, einzelpreisCent: 590, ustSatz: 19 }] }), status: 'angenommen' });
 // ein zweites, NICHT angenommenes Angebot: es darf den Knopf nicht bekommen (Wächter gegen einen Knopf ohne Statusprüfung)
 const o = await saveAngebot({ ...neuesAngebot({ titel: 'Offenes Angebot', kundeId: k.id, nummer: 'AN-2026-0043', positionen: [{ beschreibung: 'Schild', menge: 1, einzelpreisCent: 5000, ustSatz: 19 }] }), status: 'offen' });
-window.__p = { getSettings, updateSettings, navigate, listAngebote, getAngebot, listBuchungen, ids: { k: k.id, a: a.id, o: o.id }, shell: () => renderShell(document.getElementById('app'), {}) };
+await ensureAccountsSeeded();
+window.__p = { getSettings, updateSettings, navigate, listAngebote, getAngebot, listBuchungen, festschreiben, getBuchung, ids: { k: k.id, a: a.id, o: o.id }, shell: () => renderShell(document.getElementById('app'), {}) };
 window.__blpSprungAbfangen = true;
 window.__p.shell();
 window.__bereit = true;
@@ -58,13 +59,14 @@ let browser;
 try { browser = await pw.chromium.launch({ executablePath: CHROMIUM, args: ['--no-sandbox'] }); }
 catch (e) { console.log('nicht lauffähig: Chromium startet nicht — ' + e.message); server.close(); process.exit(2); }
 const fehler = [];
+const dialoge = [];
 let page;
 const warte = (fn, arg, ms = 10000) => page.waitForFunction(fn, arg, { timeout: ms }).catch(() => null);
 async function neueSeite(suche = '') {
   const ctx = await browser.newContext({ viewport: { width: 1024, height: 900 } });
   const p = await ctx.newPage();
   p.on('pageerror', (e) => fehler.push(e.message));
-  p.on('dialog', (d) => d.accept());
+  p.on('dialog', (d) => { dialoge.push({ type: d.type(), message: d.message() }); if (d.type() === 'prompt') d.accept('2026-10-27'); else d.accept(); });
   await p.goto(`http://127.0.0.1:${server.address().port}/__probe.html${suche}`);
   await p.waitForFunction(() => window.__bereit === true, null, { timeout: 30000 });
   return p;
@@ -122,6 +124,37 @@ try {
   ok('Rechnungs-Entwurf erstellt (Banner nennt die Nummer), Angebot archiviert', !!(await warte(() => { const b = document.querySelector('.banner-warn'); return b && /Rechnungs-Entwurf/.test(b.textContent); })));
   const buch = await page.evaluate(() => window.__p.listBuchungen());
   ok('der Entwurf nennt „aus Angebot AN-2026-0042 · WorkFloh-Auftrag 2026-0007" — Rechnungsnummer nur hier, von Hand festzuschreiben', buch.length === 1 && /aus Angebot AN-2026-0042 · WorkFloh-Auftrag 2026-0007/.test(buch[0].beschreibung), JSON.stringify(buch.map((b) => b.beschreibung)));
+
+  // ───────────── R3: Stand zurück an WorkFloh ─────────────
+  console.log('\nR3 · Rechnung festgeschrieben / bezahlt → „Stand an WorkFloh"');
+  await page.evaluate(async () => { await window.__p.updateSettings({ workflohZiel: 'tomy-workfloh' }); });   // Einstellung zeigt auf Tomy — der Auftrag kam aber aus Mein WorkFloh (isd-workfloh)
+  await page.evaluate(() => { window.__blpVorgang = null; window.__p.navigate('angebote'); });
+  ok('am archivierten Angebot 0042 stehen „Rechnung an WorkFloh melden" und „Bezahlt an WorkFloh melden"', !!(await warte(() => document.querySelector('[data-wf-stand="rechnung"]') && document.querySelector('[data-wf-stand="bezahlt"]'))));
+  const a0 = await page.evaluate(async () => window.__p.getAngebot(window.__p.ids.a));
+  ok('… die Rechnung ist am Angebot vermerkt (Buchungs-Kennung, Nummer, Datum)', !!(a0.verweise.rechnungBuchungId && a0.verweise.rechnungNr && a0.verweise.rechnungDatum) && a0.verweise.rechnungBuchungId === buch[0].id, JSON.stringify(a0.verweise));
+  ok('das offene Angebot 0043 hat die Knöpfe NICHT (genau zwei Knöpfe)', await page.evaluate(() => document.querySelectorAll('[data-wf-stand]').length === 2));
+  dialoge.length = 0;
+  await page.click('[data-wf-stand="rechnung"]');
+  await new Promise((r) => setTimeout(r, 500));
+  ok('Rechnung noch Entwurf: Hinweis „noch ein Entwurf", KEIN Sprung, nichts vermerkt', dialoge.some((d) => /Entwurf/.test(d.message)) && (await page.evaluate(() => !window.__blpVorgang)) && !(await page.evaluate(async () => (await window.__p.getAngebot(window.__p.ids.a)).verweise.wfStand)), JSON.stringify(dialoge));
+  await page.evaluate(async (id) => { await window.__p.festschreiben(id); window.__p.navigate('angebote'); }, buch[0].id);
+  await warte(() => document.querySelector('[data-wf-stand="rechnung"]'));
+  await page.click('[data-wf-stand="rechnung"]');
+  const s1 = await warte(() => window.__blpVorgang, null, 8000) ? await page.evaluate(() => window.__blpVorgang) : null;
+  const a1 = await page.evaluate(async () => window.__p.getAngebot(window.__p.ids.a));
+  ok('festgeschrieben: Sprung an MEIN WorkFloh (Quelle des Auftrags, nicht die Einstellung) mit ?vorgang=', !!s1 && s1.ziel === 'mein-workfloh' && s1.url.startsWith('https://lausiklauskn-png.github.io/Mein-WorkFloh/?vorgang='), s1 && s1.url && s1.url.slice(0, 70));
+  const p1 = s1 ? b64uDec(s1.url.split('?vorgang=')[1]) : null;
+  ok('Nutzlast v2 art status, stand rechnung, Rechnungsnummer + Datum der Buchung, wfAuftragNr 2026-0007, Angebot 0042, keine Positionen', !!p1 && p1.v === 2 && p1.art === 'status' && p1.stand === 'rechnung' && p1.rechnungNr === a1.verweise.rechnungNr && p1.rechnungDatum === buch[0].datum && p1.verweise.wfAuftragNr === '2026-0007' && p1.verweise.blpAngebotNr === 'AN-2026-0042' && !('positionen' in p1), JSON.stringify(p1));
+  ok('am Angebot vermerkt: wfStand rechnung + Zeitpunkt; die Zeile sagt „Stand gemeldet: Rechnung …"', a1.verweise.wfStand === 'rechnung' && /^\d{4}-/.test(a1.verweise.wfStandAm || '') && !!(await warte((nr) => { const z = document.querySelector('[data-wf-stand-gemeldet="rechnung"]'); return z && z.textContent.includes(nr); }, a1.verweise.rechnungNr)), JSON.stringify(a1.verweise));
+  ok('„Rechnung melden" ist weg, „Bezahlt melden" bleibt', await page.evaluate(() => !document.querySelector('[data-wf-stand="rechnung"]') && !!document.querySelector('[data-wf-stand="bezahlt"]')));
+  await page.evaluate(() => { window.__blpVorgang = null; });
+  dialoge.length = 0;
+  await page.click('[data-wf-stand="bezahlt"]');
+  const s2 = await warte(() => window.__blpVorgang, null, 8000) ? await page.evaluate(() => window.__blpVorgang) : null;
+  const p2 = s2 ? b64uDec(s2.url.split('?vorgang=')[1]) : null;
+  const a2 = await page.evaluate(async () => window.__p.getAngebot(window.__p.ids.a));
+  ok('bezahlt: Datum gefragt (prompt), Nutzlast stand bezahlt mit bezahltAm 2026-10-27 und Rechnungsnummer, Ziel Mein WorkFloh', dialoge.some((d) => d.type === 'prompt') && !!p2 && p2.stand === 'bezahlt' && p2.bezahltAm === '2026-10-27' && p2.rechnungNr === a1.verweise.rechnungNr && s2.ziel === 'mein-workfloh', JSON.stringify({ dialoge, p2 }));
+  ok('am Angebot: wfStand bezahlt, wfBezahltAm; beide Knöpfe weg; Zeile „bezahlt am 27.10.2026"', a2.verweise.wfStand === 'bezahlt' && a2.verweise.wfBezahltAm === '2026-10-27' && !!(await warte(() => !document.querySelector('[data-wf-stand]') && /27\.10\.2026/.test(document.querySelector('[data-wf-stand-gemeldet="bezahlt"]')?.textContent || ''))), JSON.stringify(a2.verweise));
   await page.context().close();
 
   // ───────────── R2 ohne Treffer: Bestand v1 ─────────────

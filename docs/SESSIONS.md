@@ -5,6 +5,18 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (nachts) — R3: Stand der Rechnung zurück an die WorkFlohs
+
+**Was getan:** `vorgangStand`/`zielAusVerweisen`/`VORGANG_STAENDE` in `src/domain/vorgang.js`; `rechnungAusAngebot` vermerkt die
+Buchung am Angebot; Knöpfe „Rechnung an WorkFloh melden" (nur festgeschrieben, Entwurf hält an) und „Bezahlt an WorkFloh melden"
+(Datum per Abfrage) in `angebote.js`, Zeile „Stand gemeldet"; i18n DE/EN; Empfänger `vorgangStandZeigen`/`vorgangStandUebernehmen`
+identisch in Mein-WorkFloh und Tomys WorkFloh (Blatt, erst „Übernehmen" ändert: Notiz, Felder, Status nur mit Kette + Haken),
+Editor-Hinweis, Datenschutz DE/EN/FR, Caches workfloh-v218 / tomy-workfloh-v61. `sw.js` v270.
+**Stand:** `run.mjs` 2567/0 · `smoke_vorgang` 32 grün · WorkFloh `browser_vorgang` 29 grün (beide) · Mein-WorkFloh `npm test` 16/0 ·
+Tomys Smokes grün. Gegenproben in Wegwerf-Kopien: BLP 4 Fälle, WorkFloh 5 Fälle — jede mit eigener roter Zeile.
+**Offen/Nächstes:** Kopie nach `BookLedger-Basic`; Android-Tresorordner-Sitzung; Weg 2 Relais nach Klaus' Antwort. ⚠ Kein
+Tablet; „bezahlt" ist eine Angabe von Hand, kein Zahlungsabgleich; die Probe im Behälter läuft Englisch (Datum 27/10/2026).
+
 ## 2026-10-26 (nachts) — Workflow PDF im Rundlauf: PDF + Daten hin, unterschrieben zurück
 
 - **Getan:** `src/domain/workflowPdfRundlauf.js` (Marke, Keywords, Felder in Prozent, Arbeitsstand-Datei im Format von Workflow
