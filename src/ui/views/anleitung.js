@@ -74,15 +74,15 @@ function schritteCard() {
       'Optional „KI-Begründung vorschlagen", dann „Als Entwurf übernehmen".',
     ], 'Rechnung Nr. 2026-99\nBürobedarf Schmidt GmbH\nRechnungsdatum: 14.06.2026\nToner und Druckerpapier\nZwischensumme: 100,00\nzzgl. 19 % MwSt: 19,00\nGesamtbetrag: 119,00 EUR'),
 
-    schritt(2, 'Buchung manuell im Journal', [
-      'Menü „Journal" → „Neue Buchung".',
+    schritt(2, 'Buchung manuell unter „Buchungen"', [
+      'Menü „Buchungen" → „Neue Buchung".',
       'Buchungstext eintragen (z. B. den kopierten Text), Soll-Konto „1200 · Bank“, Haben-Konto „8400 · Erlöse 19% USt“.',
       'Betrag (brutto) 119, USt-Satz 19 % → „Als Entwurf speichern".',
       'Tipp: Hinweise (gelb) blockieren nicht — der Entwurf wird trotzdem gespeichert.',
     ], 'Testverkauf Beratung'),
 
     schritt(3, 'Entwurf bearbeiten · löschen · festschreiben', [
-      'In der Journal-Tabelle beim Entwurf: „Bearbeiten" (Felder werden vorbefüllt), „Löschen" oder „Festschreiben".',
+      'In der Buchungen-Tabelle beim Entwurf: „Bearbeiten" (Felder werden vorbefüllt), „Löschen" oder „Festschreiben".',
       'Festschreiben macht die Buchung unveränderlich (GoBD) — danach nur noch „Stornieren".',
     ]),
 
@@ -103,7 +103,7 @@ function schritteCard() {
 
     schritt(7, 'Auswertungen (Menü „Auswertung")', [
       'USt-Voranmeldung-Kennzahlen, EÜR (vereinfacht + Zufluss/Abfluss §4 Abs.3), USt-Verprobung, GoBD-Audit.',
-      'Export: Journal-CSV, „DATEV (EXTF)“, USt-VA, EÜR; „Drucken / PDF".',
+      'Export: Buchungen-CSV, „DATEV (EXTF)“, USt-VA, EÜR; „Drucken / PDF".',
     ]),
 
     schritt(8, 'Mitarbeiter & Zeiterfassung (Menü „Mitarbeiter")', [
@@ -117,7 +117,7 @@ function resetCard() {
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('guide.resetTitle') }),
     el('ul', { class: 'guide-list' }, [
-      el('li', { class: 'small', text: 'Beispiel-Entwürfe: in der Journal-Tabelle mit „Löschen" entfernen.' }),
+      el('li', { class: 'small', text: 'Beispiel-Entwürfe: in der Buchungen-Tabelle mit „Löschen" entfernen.' }),
       el('li', { class: 'small', text: 'Festgeschriebene Buchungen sind unveränderlich (GoBD) — Korrektur nur per „Stornieren".' }),
       el('li', { class: 'small', text: 'Kompletter Neustart (alles löschen): Recht & Doku → „Alle Daten löschen". Vorher Backup ziehen!' }),
     ]),

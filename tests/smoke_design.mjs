@@ -142,7 +142,7 @@ ok('Alle 24 Ansichten im Modus Selbstständig sichtbar', await page.evaluate(() 
 ok('Breit: Leiste aufgeklappt, Namen sichtbar', await page.evaluate(() => !document.querySelector('.app').classList.contains('nav-zu') && getComputedStyle(document.querySelector('.nav-item .ic-text')).display !== 'none'));
 await page.click('.nav-klapp');
 await page.waitForTimeout(100);
-ok('Klapp-Knopf: eingeklappt, nur Symbole, Name im title', await page.evaluate(() => document.querySelector('.app').classList.contains('nav-zu') && getComputedStyle(document.querySelector('.nav-item .ic-text')).display === 'none' && document.querySelector('.nav-item[data-nav="journal"]').title === 'Journal' && document.querySelector('.app-nav').getBoundingClientRect().width <= 64));
+ok('Klapp-Knopf: eingeklappt, nur Symbole, Name im title', await page.evaluate(() => document.querySelector('.app').classList.contains('nav-zu') && getComputedStyle(document.querySelector('.nav-item .ic-text')).display === 'none' && document.querySelector('.nav-item[data-nav="journal"]').title === 'Buchungen' && document.querySelector('.app-nav').getBoundingClientRect().width <= 64));
 await page.click('.nav-klapp');
 await page.waitForTimeout(100);
 ok('Klapp-Knopf: wieder aufgeklappt', await page.evaluate(() => !document.querySelector('.app').classList.contains('nav-zu')));
