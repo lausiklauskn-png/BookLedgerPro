@@ -23,9 +23,9 @@ import {
   klassifiziereKonto, BEREICH, BILANZ_GRUNDKONTO_NUMMERN,
 } from '../src/domain/bilanzierung.js';
 import {
-  NUTZUNGSMODUS, NUTZUNGSMODUS_LISTE, istNutzungsmodus, normalizeNutzungsmodus, nutzungsmodusVon,
-  istFirmenmodus, istPrivatmodus, istVereinsmodus, zeigeAnsicht, sichtbareAnsichten,
-  FEATURE, FEATURE_LISTE, zeigeFeature,
+  NUTZUNGSMODUS, NUTZUNGSMODUS_LISTE, NUTZUNGSMODUS_DEFAULT, istNutzungsmodus, normalizeNutzungsmodus, nutzungsmodusVon, modusNachziehen,
+  istPrivatmodus, istKleinunternehmermodus, istBeratermodus, istVereinsmodus, istUnternehmermodus, moduswechsel, zeigeAnsicht, sichtbareAnsichten,
+  FEATURE, FEATURE_LISTE, zeigeFeature, EINSTELLUNG, EINSTELLUNG_LISTE, zeigeEinstellung, hatAusgeblendeteEinstellungen,
 } from '../src/domain/nutzungsmodus.js';
 import {
   BACKUP_STRATEGIEN, DEFAULT_BACKUP_STRATEGIE, normalizeBackupStrategie,
@@ -4978,78 +4978,82 @@ await section('Bilanzierung (B3): Bilanz (Aktiva = Passiva)', () => {
   ok('Bilanz-CSV schief: Differenz-Zeile', buildBilanzCsv(schief).includes('NICHT ausgeglichen'));
 });
 
-// ===== R6/P1: Privat-/Bürger-Modus (Nutzungskontext) =====
-await section('Nutzungsmodus (P1): Modus-Werte + Normalisierung', () => {
-  ok('drei Modi', NUTZUNGSMODUS_LISTE.length === 3 &&
-    NUTZUNGSMODUS_LISTE.join(',') === 'firma,privat,verein');
-  ok('istNutzungsmodus erkennt gültige', istNutzungsmodus('privat') && istNutzungsmodus('verein') && istNutzungsmodus('firma'));
-  ok('istNutzungsmodus lehnt ungültige ab', !istNutzungsmodus('xxx') && !istNutzungsmodus('') && !istNutzungsmodus(undefined));
-  ok('normalize Default firma', normalizeNutzungsmodus(undefined) === 'firma' && normalizeNutzungsmodus('quatsch') === 'firma');
-  ok('normalize lässt gültige durch', normalizeNutzungsmodus('privat') === 'privat' && normalizeNutzungsmodus('verein') === 'verein');
-  ok('nutzungsmodusVon liest Settings', nutzungsmodusVon({ nutzungsmodus: 'verein' }) === 'verein');
-  ok('nutzungsmodusVon Default firma', nutzungsmodusVon({}) === 'firma' && nutzungsmodusVon(null) === 'firma');
-  // Prädikate
-  ok('istFirmenmodus Default true', istFirmenmodus({}) === true && istFirmenmodus({ nutzungsmodus: 'firma' }) === true);
-  ok('istPrivatmodus', istPrivatmodus({ nutzungsmodus: 'privat' }) === true && istPrivatmodus({}) === false);
-  ok('istVereinsmodus', istVereinsmodus({ nutzungsmodus: 'verein' }) === true && istVereinsmodus({ nutzungsmodus: 'privat' }) === false);
+// ===== Modus nach Nutzerart (Klaus 2026-10-26): Privat · Kleinunternehmer · Selbstständig · Berater =====
+await section('Modus: Werte, Normalisierung, Migration alter Einstellungen', () => {
+  ok('vier Modi in Klaus\' Reihenfolge', NUTZUNGSMODUS_LISTE.join(',') === 'privat,kleinunternehmer,selbststaendig,berater');
+  ok('Altwert verein bleibt gültig, steht aber nicht im Schalter', istNutzungsmodus('verein') && !NUTZUNGSMODUS_LISTE.includes('verein'));
+  ok('istNutzungsmodus lehnt ungültige ab', !istNutzungsmodus('firma') && !istNutzungsmodus('xxx') && !istNutzungsmodus('') && !istNutzungsmodus(undefined));
+  ok('normalize Default selbststaendig (= früherer voller Umfang)', normalizeNutzungsmodus(undefined) === 'selbststaendig' && normalizeNutzungsmodus('quatsch') === 'selbststaendig' && NUTZUNGSMODUS_DEFAULT === 'selbststaendig');
+  ok('normalize lässt gültige durch', normalizeNutzungsmodus('privat') === 'privat' && normalizeNutzungsmodus('berater') === 'berater');
+  // Migration (Daten bleiben, F2): alte Werte firma/privat/verein + mode + kleinunternehmer → neuer Modus.
+  ok('alt privat → privat', modusNachziehen({ nutzungsmodus: 'privat', mode: 'profi' }).nutzungsmodus === 'privat');
+  ok('alt verein → verein (D13 offen)', modusNachziehen({ nutzungsmodus: 'verein' }).nutzungsmodus === 'verein');
+  ok('alt firma + mode berater → berater', modusNachziehen({ nutzungsmodus: 'firma', mode: 'berater' }).nutzungsmodus === 'berater');
+  ok('alt firma + § 19 → kleinunternehmer', modusNachziehen({ nutzungsmodus: 'firma', mode: 'profi', kleinunternehmer: true }).nutzungsmodus === 'kleinunternehmer');
+  ok('alt firma regelbesteuert → selbststaendig', modusNachziehen({ nutzungsmodus: 'firma', mode: 'einfach', kleinunternehmer: false }).nutzungsmodus === 'selbststaendig');
+  ok('leerer Bestand → selbststaendig', modusNachziehen({}).nutzungsmodus === 'selbststaendig');
+  ok('neuer Wert bleibt, auch mit altem mode daneben', modusNachziehen({ nutzungsmodus: 'privat', mode: 'berater', kleinunternehmer: true }).nutzungsmodus === 'privat');
+  ok('mode wird entfernt (D6: ersetzt ganz)', !('mode' in modusNachziehen({ nutzungsmodus: 'firma', mode: 'profi' })));
+  ok('Migration verändert das Original nicht', (() => { const o = { nutzungsmodus: 'firma', mode: 'berater' }; modusNachziehen(o); return o.nutzungsmodus === 'firma' && o.mode === 'berater'; })());
+  ok('nutzungsmodusVon zieht beim Lesen nach', nutzungsmodusVon({ nutzungsmodus: 'firma', kleinunternehmer: true }) === 'kleinunternehmer' && nutzungsmodusVon(null) === 'selbststaendig');
+  ok('Prädikate', istPrivatmodus({ nutzungsmodus: 'privat' }) && !istPrivatmodus({}) && istKleinunternehmermodus({ nutzungsmodus: 'kleinunternehmer' }) &&
+    istBeratermodus({ nutzungsmodus: 'berater' }) && istVereinsmodus({ nutzungsmodus: 'verein' }) && istUnternehmermodus({}) && !istUnternehmermodus({ nutzungsmodus: 'privat' }));
+  // Wirkung auf § 19 (F4/F6)
+  const w1 = moduswechsel({ nutzungsmodus: 'selbststaendig', kleinunternehmer: false }, 'kleinunternehmer');
+  ok('→ Kleinunternehmer setzt § 19 und fragt nach', w1.patch.kleinunternehmer === true && w1.rueckfrage === true);
+  const w2 = moduswechsel({ nutzungsmodus: 'kleinunternehmer', kleinunternehmer: true }, 'selbststaendig');
+  ok('→ Selbstständig nimmt § 19 weg und fragt nach', w2.patch.kleinunternehmer === false && w2.rueckfrage === true);
+  const w3 = moduswechsel({ nutzungsmodus: 'selbststaendig', kleinunternehmer: false }, 'privat');
+  ok('→ Privat lässt § 19 unangetastet, keine Rückfrage', !('kleinunternehmer' in w3.patch) && w3.rueckfrage === false);
+  const w4 = moduswechsel({ nutzungsmodus: 'kleinunternehmer', kleinunternehmer: true }, 'berater');
+  ok('→ Berater lässt § 19 stehen, keine Rückfrage', !('kleinunternehmer' in w4.patch) && w4.rueckfrage === false);
+  ok('gleicher Modus → keine Rückfrage', moduswechsel({ nutzungsmodus: 'kleinunternehmer', kleinunternehmer: true }, 'kleinunternehmer').rueckfrage === false);
+  ok('Einrichtung: Kleinunternehmer aus leerem Bestand setzt § 19 (frühere Frage überführt)', moduswechsel({}, 'kleinunternehmer').patch.kleinunternehmer === true);
 });
 
-await section('Nutzungsmodus (P1): NAV-Ansichten-Gating', () => {
+await section('Modus: NAV-Ansichten-Gating', () => {
   const NAV_KEYS = ['dashboard', 'journal', 'kassenbuch', 'accounts', 'anlagen', 'documents',
-    'payables', 'orders', 'angebote', 'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte', 'network', 'legal',
-    'anleitung', 'selbsttest', 'about', 'settings'];
-  // Firma zeigt ALLES.
-  ok('Firma: alle Ansichten sichtbar', sichtbareAnsichten({ nutzungsmodus: 'firma' }, NAV_KEYS).length === NAV_KEYS.length);
-  ok('Firma: zeigeAnsicht stets true', NAV_KEYS.every((k) => zeigeAnsicht({ nutzungsmodus: 'firma' }, k)));
-  ok('Default (kein Modus) = Firma-Verhalten', sichtbareAnsichten({}, NAV_KEYS).length === NAV_KEYS.length);
-
-  // Privat: geschäftliche Ansichten ausgeblendet.
-  const privatSichtbar = sichtbareAnsichten({ nutzungsmodus: 'privat' }, NAV_KEYS);
-  ok('Privat blendet Anlagen aus', !zeigeAnsicht({ nutzungsmodus: 'privat' }, 'anlagen'));
-  ok('Privat blendet Aufträge/Angebote/Nachkalkulation/Kunden/Mitarbeiter aus',
-    !privatSichtbar.includes('orders') && !privatSichtbar.includes('angebote') && !privatSichtbar.includes('nachkalkulation') && !privatSichtbar.includes('customers') && !privatSichtbar.includes('employees'));
-  ok('Privat + Verein blenden Lohn aus',
-    !privatSichtbar.includes('lohn') && !sichtbareAnsichten({ nutzungsmodus: 'verein' }, NAV_KEYS).includes('lohn'));
-  ok('Privat blendet Kreditoren/Berichte/Netz aus',
-    !privatSichtbar.includes('payables') && !privatSichtbar.includes('berichte') && !privatSichtbar.includes('network'));
-  ok('Privat behält Kern (Journal/Belege/Auswertung/Kassenbuch/Konten)',
-    ['dashboard', 'journal', 'kassenbuch', 'accounts', 'documents', 'reports', 'legal', 'settings'].every((k) => privatSichtbar.includes(k)));
-
-  // Verein: wie Privat, aber MIT Berichten/Kunden(Mitglieder)/Netz; ohne Anlagen/Kreditoren/Aufträge/Lohn.
-  const vereinSichtbar = sichtbareAnsichten({ nutzungsmodus: 'verein' }, NAV_KEYS);
-  ok('Verein zeigt Berichte + Kunden + Netz',
-    vereinSichtbar.includes('berichte') && vereinSichtbar.includes('customers') && vereinSichtbar.includes('network'));
-  ok('Verein blendet Anlagen/Kreditoren/Aufträge/Angebote/Nachkalkulation/Mitarbeiter aus',
-    !vereinSichtbar.includes('anlagen') && !vereinSichtbar.includes('payables') &&
-    !vereinSichtbar.includes('orders') && !vereinSichtbar.includes('angebote') && !vereinSichtbar.includes('nachkalkulation') && !vereinSichtbar.includes('employees'));
-  ok('Verein sichtbar > Privat sichtbar', vereinSichtbar.length > privatSichtbar.length);
-
-  // Unbekannte Schlüssel werden nicht versehentlich ausgeblendet (sicher additiv).
+    'payables', 'orders', 'angebote', 'shopbuchung', 'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte',
+    'network', 'sbkimsuche', 'safebox', 'legal', 'anleitung', 'selbsttest', 'about', 'settings'];
+  ok('Berater: alle Ansichten sichtbar', sichtbareAnsichten({ nutzungsmodus: 'berater' }, NAV_KEYS).length === NAV_KEYS.length);
+  ok('Selbstständig: alle Ansichten sichtbar', NAV_KEYS.every((k) => zeigeAnsicht({ nutzungsmodus: 'selbststaendig' }, k)));
+  ok('Default (kein Modus) = voller Umfang', sichtbareAnsichten({}, NAV_KEYS).length === NAV_KEYS.length);
+  const klein = sichtbareAnsichten({ nutzungsmodus: 'kleinunternehmer' }, NAV_KEYS);
+  ok('Kleinunternehmer: ohne Mitarbeiter/Lohn', !klein.includes('employees') && !klein.includes('lohn'));
+  ok('Kleinunternehmer: Belege, Journal, Aufträge, Kunden, Auswertung bleiben', ['documents', 'journal', 'orders', 'customers', 'reports', 'angebote'].every((k) => klein.includes(k)));
+  const privat = sichtbareAnsichten({ nutzungsmodus: 'privat' }, NAV_KEYS);
+  ok('Privat: alles Unternehmerische weg (Journal, Konten, Kassenbuch, Anlagen, Kreditoren, Verkauf, Team, Auswertung, Netz)',
+    ['journal', 'kassenbuch', 'accounts', 'anlagen', 'payables', 'orders', 'angebote', 'shopbuchung', 'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte', 'network', 'sbkimsuche'].every((k) => !privat.includes(k)));
+  ok('Privat behält Übersicht, Belege, Geheim-Fach, Recht, Anleitung, Selbsttest, Über, Einstellungen',
+    JSON.stringify(privat) === JSON.stringify(['dashboard', 'documents', 'safebox', 'legal', 'anleitung', 'selbsttest', 'about', 'settings']));
+  const verein = sichtbareAnsichten({ nutzungsmodus: 'verein' }, NAV_KEYS);
+  ok('Verein (Altwert) unverändert: mit Berichten/Kunden/Netz, ohne Anlagen/Kreditoren/Aufträge/Lohn',
+    verein.includes('berichte') && verein.includes('customers') && verein.includes('network') &&
+    !verein.includes('anlagen') && !verein.includes('payables') && !verein.includes('orders') && !verein.includes('lohn'));
   ok('unbekannter Key bleibt sichtbar', zeigeAnsicht({ nutzungsmodus: 'privat' }, 'irgendwas-neues'));
   ok('sichtbareAnsichten verträgt leere/fehlende Liste', sichtbareAnsichten({ nutzungsmodus: 'privat' }, undefined).length === 0);
 });
 
-await section('Nutzungsmodus (P1): fachliche Feature-Gates', () => {
-  ok('FEATURE_LISTE vollständig', FEATURE_LISTE.length === 8 && FEATURE_LISTE.includes(FEATURE.UMSATZSTEUER));
-  // Firma: alle Features an.
-  ok('Firma: alle Features sichtbar', FEATURE_LISTE.every((f) => zeigeFeature({ nutzungsmodus: 'firma' }, f)));
-  ok('Default: alle Features sichtbar', FEATURE_LISTE.every((f) => zeigeFeature({}, f)));
-  // Privat: keine geschäftlichen Features.
-  ok('Privat: keine USt', !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.UMSATZSTEUER));
-  ok('Privat: keine Rechnungen/Mahnwesen/Anlagen',
-    !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.RECHNUNGEN) &&
-    !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.MAHNWESEN) &&
-    !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.ANLAGEN));
-  ok('Privat: kein Berater-Export/keine Verbindlichkeiten',
-    !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.BERATER_EXPORT) &&
-    !zeigeFeature({ nutzungsmodus: 'privat' }, FEATURE.VERBINDLICHKEITEN));
-  // Verein: USt/Verbindlichkeiten/Anlagen/Berater-Export bleiben möglich; Rechnungs-/Mahnwesen/Lohn aus.
-  ok('Verein: USt + Berater-Export an', zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.UMSATZSTEUER) &&
-    zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.BERATER_EXPORT));
-  ok('Verein: Rechnungen/Mahnwesen/Mitarbeiter aus',
-    !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.RECHNUNGEN) &&
-    !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.MAHNWESEN) &&
-    !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.MITARBEITER));
+await section('Modus: fachliche Feature-Gates und Einstellungs-Abschnitte', () => {
+  ok('FEATURE_LISTE vollständig', FEATURE_LISTE.length === 10 && FEATURE_LISTE.includes(FEATURE.MANDANTEN) && FEATURE_LISTE.includes(FEATURE.JOURNAL));
+  ok('Berater: alle Features', FEATURE_LISTE.every((f) => zeigeFeature({ nutzungsmodus: 'berater' }, f)));
+  ok('Selbstständig: alles außer Berater-Export/Mandanten', FEATURE_LISTE.every((f) => zeigeFeature({ nutzungsmodus: 'selbststaendig' }, f) === (f !== FEATURE.BERATER_EXPORT && f !== FEATURE.MANDANTEN)));
+  ok('Kleinunternehmer: keine USt, keine Mitarbeiter/Kostenstellen', !zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.UMSATZSTEUER) &&
+    !zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.MITARBEITER) && !zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.KOSTENSTELLEN) &&
+    zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.RECHNUNGEN) && zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.JOURNAL));
+  ok('Privat: kein Feature', FEATURE_LISTE.every((f) => !zeigeFeature({ nutzungsmodus: 'privat' }, f)));
+  ok('Verein (Altwert): USt an, Rechnungen/Mahnwesen/Mitarbeiter aus', zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.UMSATZSTEUER) &&
+    !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.RECHNUNGEN) && !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.MITARBEITER));
+  // Einstellungen (F1/F3)
+  ok('Privat: Firma, DATEV, Rechnungsstelle, § 19, Gewinnermittlung, Wirtschaftsjahr, Sperre, Mandanten weg',
+    [EINSTELLUNG.FIRMA, EINSTELLUNG.DATEV, EINSTELLUNG.RECHNUNGSSTELLE, EINSTELLUNG.KLEINUNTERNEHMER, EINSTELLUNG.GEWINNERMITTLUNG,
+      EINSTELLUNG.GESCHAEFTSJAHR, EINSTELLUNG.BUCHUNGSSPERRE, EINSTELLUNG.MANDANTEN].every((a) => !zeigeEinstellung({ nutzungsmodus: 'privat' }, a)));
+  ok('Privat: KI und Datenschutz bleiben', zeigeEinstellung({ nutzungsmodus: 'privat' }, EINSTELLUNG.KI) && zeigeEinstellung({ nutzungsmodus: 'privat' }, EINSTELLUNG.DATENSCHUTZ));
+  ok('Kleinunternehmer: § 19-Schalter weg (im Modus fest), Firma bleibt', !zeigeEinstellung({ nutzungsmodus: 'kleinunternehmer' }, EINSTELLUNG.KLEINUNTERNEHMER) && zeigeEinstellung({ nutzungsmodus: 'kleinunternehmer' }, EINSTELLUNG.FIRMA));
+  ok('Selbstständig: § 19/DATEV/Mandanten weg, Rechnungsstelle bleibt', !zeigeEinstellung({ nutzungsmodus: 'selbststaendig' }, EINSTELLUNG.DATEV) && zeigeEinstellung({ nutzungsmodus: 'selbststaendig' }, EINSTELLUNG.RECHNUNGSSTELLE));
+  ok('Berater: alles', EINSTELLUNG_LISTE.every((a) => zeigeEinstellung({ nutzungsmodus: 'berater' }, a)));
+  ok('F3 „Alle Einstellungen zeigen" hebt das Ausblenden auf', EINSTELLUNG_LISTE.every((a) => zeigeEinstellung({ nutzungsmodus: 'privat', alleEinstellungen: true }, a)));
+  ok('F3-Schalter nur, wo etwas ausgeblendet ist', hatAusgeblendeteEinstellungen({ nutzungsmodus: 'privat' }) && !hatAusgeblendeteEinstellungen({ nutzungsmodus: 'berater' }));
 });
 
 await section('Datensicherung (Schritt 3): backupStrategie', () => {
@@ -6590,6 +6594,85 @@ await section('Namensvorschläge wie im Sende-Prüfer (Modul 25, Klaus 2026-10-1
   ok('die Schnellerfassung zeigt die Vorschläge VOR dem Senden', /namen\.box,\n\s*el\('div', \{ class: 'btn-row' \}, \[btn\]\)/.test(dok));
   const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
   ok('Modul 25 und die Vorschlags-Dateien stehen im Vorrat', ['./sbkim/25_pseudonym.js', './src/ai/namensvorschlag.js', './src/ui/namensvorschlag.js'].every((f) => sw.includes(`'${f}'`)));
+});
+
+// ===== Design-Grundlage (Klaus 2026-10-26, Sammlung A1–A5): Themen, Symbole, Leiste, Modus in der Shell =====
+await section('Design-Grundlage: Themen Farbe × Helligkeit (src/ui/theme.js, reine Logik)', async () => {
+  const { FARBEN, HELLIGKEITEN, normalizeFarbe, normalizeHelligkeit, resolveHelligkeit, parseThema, themaName, THEMA_KEY } = await import('../src/ui/theme.js');
+  ok('drei Farben, drei Helligkeiten', FARBEN.join(',') === 'blau,graphit,petrol' && HELLIGKEITEN.join(',') === 'system,light,dark');
+  ok('Startwert ohne Wahl: Blau, wie Gerät (= Private Brain Pro)', parseThema('').farbe === 'blau' && parseThema('').helligkeit === 'system' && parseThema(null).farbe === 'blau');
+  ok('„wie Gerät" folgt dem Gerät', resolveHelligkeit('system', true) === 'dark' && resolveHelligkeit('system', false) === 'light');
+  ok('feste Wahl bleibt, auch gegen das Gerät', resolveHelligkeit('light', true) === 'light' && resolveHelligkeit('dark', false) === 'dark');
+  ok('Merkzettel wird gelesen', JSON.stringify(parseThema('petrol/dark')) === '{"farbe":"petrol","helligkeit":"dark"}');
+  ok('Unsinn im Merkzettel → Startwert', normalizeFarbe('lila') === 'blau' && normalizeHelligkeit('grell') === 'system' && parseThema('x/y').farbe === 'blau');
+  ok('sechs Themennamen', ['blau', 'graphit', 'petrol'].flatMap((f) => [themaName(f, 'light'), themaName(f, 'dark')]).join(',') === 'klarblau,nachtblau,graphit,nachtgraphit,petrol,nachtpetrol');
+  ok('Merkzettel-Schlüssel ist eigen (blpr_)', THEMA_KEY === 'blpr_thema');
+  const { readFileSync } = await import('node:fs');
+  const tokens = readFileSync(new URL('../assets/tokens.css', import.meta.url), 'utf8');
+  ok('tokens.css: sechs Themen über data-theme × data-farbe', /:root\[data-farbe="graphit"\]/.test(tokens) && /:root\[data-farbe="petrol"\]/.test(tokens) &&
+    /:root\[data-theme="dark"\]\[data-farbe="graphit"\]/.test(tokens) && /:root\[data-theme="dark"\]\[data-farbe="petrol"\]/.test(tokens));
+  ok('Nachtpetrol: Hauptknopf #0f766e mit weißer Schrift, Hover #0b5a54 (Klaus 2026-10-26)', /\[data-farbe="petrol"\] \{[^}]*--accent-btn: #0f766e;[^}]*--accent-btn-hover: #0b5a54;[^}]*--on-accent: #ffffff;/s.test(tokens.slice(tokens.indexOf('data-theme="dark"][data-farbe="petrol"'))));
+  ok('Nachtpetrol-Flächen = bisheriges BLP-Dunkel', tokens.includes('--bg: #0b1120') && tokens.includes('--surface: #111a2e') && tokens.includes('--accent: #2dd4bf'));
+  ok('Klarblau/Nachtblau-Werte aus Private Brain Pro', tokens.includes('--accent: #2563eb') && tokens.includes('--bg: #f6f8fc') && tokens.includes('--accent: #7ca7ff') && tokens.includes('--bg: #111827'));
+  ok('keine 1200-px-Grenze mehr (A3 Vollbild)', !/--maxw/.test(tokens) && !/var\(--maxw\)/.test(readFileSync(new URL('../assets/app.css', import.meta.url), 'utf8')));
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  ok('index.html setzt das gemerkte Thema vor dem ersten Anstrich', html.includes("localStorage.getItem('blpr_thema')") && html.indexOf('blpr_thema') < html.indexOf('assets/tokens.css'));
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  ok('main.js: gemerktes Thema vor dem Entsperren, Tresor-Wahl danach', /applyGemerktesThema\(\);/.test(main) && /applyTheme\(settings\.theme, settings\.themeFarbe\)/.test(main));
+});
+
+await section('Design-Grundlage: Strichsymbole (PBP-Satz byte-1:1, BLP-Fachsymbole, Vorrat)', async () => {
+  const { createHash } = await import('node:crypto');
+  const { readFileSync } = await import('node:fs');
+  // Private-Brain-Pro/docs/design/umbau-2026-10-24/design-kit/icons.svg — NIE hier abwandeln (Sammlung D2).
+  const pb = readFileSync(new URL('../assets/pb-icons.svg', import.meta.url));
+  ok('assets/pb-icons.svg unverändert (PBP-Design-Kit)', createHash('sha256').update(pb).digest('hex') === 'a75e7c8fbef3f015d6686b1f2b8eb1c2ae9f2935167a7c49a9773efcfc8eea2e');
+  const pbIds = [...pb.toString('utf8').matchAll(/<symbol id="(pb-[^"]+)"/g)].map((m) => m[1]);
+  ok('29 PBP-Symbole', pbIds.length === 29 && pbIds.includes('pb-search') && pbIds.includes('pb-settings') && pbIds.includes('pb-lock'));
+  const blp = readFileSync(new URL('../assets/blp-icons.svg', import.meta.url), 'utf8');
+  const blpIds = [...blp.matchAll(/<symbol id="(blp-[^"]+)" viewBox="0 0 24 24">/g)].map((m) => m[1]);
+  ok('BLP-Symbole im selben Stil (24×24, Strich 1,75)', blpIds.length >= 30 && /stroke-width="1.75"/.test(blp) && /fill="none"/.test(blp));
+  ok('BLP-Symbole: keine Doppel-IDs, keine Überschneidung mit PBP', new Set(blpIds).size === blpIds.length && !blpIds.some((id) => pbIds.includes(id)));
+  ['blp-journal', 'blp-konto', 'blp-beleg', 'blp-auftrag', 'blp-kunde', 'blp-team', 'blp-chart', 'blp-mycel', 'blp-paragraf', 'blp-festschreiben', 'blp-storno', 'blp-kamera', 'blp-euro']
+    .forEach((id) => ok('Fachsymbol ' + id, blpIds.includes(id)));
+  const sh = readFileSync(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
+  const nav = [...sh.matchAll(/\['([a-z]+)', 'nav\.[a-z]+', '((?:pb|blp)-[a-z-]+)'\]/g)].map((m) => [m[1], m[2]]);
+  ok('jede der 24 Ansichten trägt ein vorhandenes Symbol', nav.length === 24 && nav.every(([, ic]) => pbIds.includes(ic) || blpIds.includes(ic)), nav.filter(([, ic]) => !pbIds.includes(ic) && !blpIds.includes(ic)).join(','));
+  const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+  ok('Sprites und icons.js im Vorrat, Cache ≥ v256', ['./assets/pb-icons.svg', './assets/blp-icons.svg', './src/ui/icons.js'].every((f) => sw.includes(`'${f}'`)) && Number(sw.match(/CACHE_VERSION = 'v(\d+)'/)[1]) >= 256);
+});
+
+await section('Design-Grundlage: Seitenleiste mit Gruppen, Teilbild, Modus in der Shell', async () => {
+  // shell.js braucht den Browser; Gruppen und Regeln werden hier am Quelltext geprüft, im Browser in tests/smoke_design.mjs.
+  const { readFileSync } = await import('node:fs');
+  const sh = readFileSync(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
+  const gruppenText = sh.slice(sh.indexOf('export const NAV_GRUPPEN'), sh.indexOf('export const NAV_KEYS'));
+  const inGruppen = [...gruppenText.matchAll(/'([a-z]+)'/g)].map((m) => m[1]).filter((k) => !k.startsWith('nav.'));
+  const navKeys = [...sh.matchAll(/\['([a-z]+)', 'nav\.[a-z]+', '(?:pb|blp)-[a-z-]+'\]/g)].map((m) => m[1]);
+  ok('jede Ansicht steht in genau einer Gruppe', navKeys.every((k) => inGruppen.filter((g) => g === k).length === 1) && inGruppen.every((g) => navKeys.includes(g)), navKeys.filter((k) => inGruppen.filter((g) => g === k).length !== 1).join(','));
+  ok('Übersicht oben allein, Einstellungen unten allein, sechs Gruppen dazwischen', /\[null, \['dashboard'\]\],/.test(gruppenText) && /\[null, \['settings'\]\],\s*\];/.test(gruppenText) && (gruppenText.match(/'nav\.gruppe\./g) || []).length === 6);
+  ok('Teilbild: ohne Handwahl eingeklappt bis 1024 px, sonst auf', /TEILBILD = '\(max-width: 1024px\)'/.test(sh) && /leisteEingeklappt\(gewuenscht, teilbild\)/.test(sh));
+  ok('Handwahl schlägt die Automatik', /if \(gewuenscht === 'auf'\) return false;\s*if \(gewuenscht === 'zu'\) return true;\s*return !!teilbild;/.test(sh));
+  ok('Modus-Schalter mit Rückfrage (F4) und F3-Schalter in den Einstellungen', /moduswechsel\(s, v\)/.test(sh) && /settings\.modus\.rueckfrage/.test(sh) && /alleEinstellungen: v === 'ja'/.test(sh));
+  ok('Einstellungs-Abschnitte je Modus (F1): Firma, DATEV, Mandanten … über zeigeEinstellung', ['FIRMA', 'DATEV', 'MANDANTEN', 'RECHNUNGSSTELLE', 'GEWINNERMITTLUNG', 'KLEINUNTERNEHMER', 'GESCHAEFTSJAHR', 'PARTNER', 'BUCHUNGSSPERRE'].every((k) => sh.includes(`zeige(EINSTELLUNG.${k},`)));
+  ok('kein Einfach/Profi/Berater-Schalter mehr (D6)', !/MODES/.test(sh) && !/settings\.mode\./.test(sh) && !/'data-mode'/.test(sh));
+  const st = readFileSync(new URL('../src/state.js', import.meta.url), 'utf8');
+  ok('state.js: Modus wird beim Laden nachgezogen, Farbe gemerkt', /modusNachziehen\(datenschutzNachziehen\(loaded/.test(st) && /themeFarbe: 'blau'/.test(st) && !/mode: 'profi'/.test(st));
+  const lock = readFileSync(new URL('../src/ui/lock.js', import.meta.url), 'utf8');
+  ok('Einrichtung fragt den Modus, Shamir-Knopf heißt „weiter" (B7)', /onboard\.modusTitle/.test(lock) && /onboard\.shamirWeiter/.test(lock) && !/text: t\('common\.save'\), onClick: \(\) => stepProfil/.test(lock));
+  const intro = readFileSync(new URL('../src/ui/intro.js', import.meta.url), 'utf8');
+  ok('Deckblatt nennt die vier Modi (B8: Privat statt „Laien")', /text: 'Privat'/.test(intro) && !/'Laien'/.test(intro));
+  const css = readFileSync(new URL('../assets/app.css', import.meta.url), 'utf8');
+  ok('Platz für die schwebenden Leisten (B3)', /--leisten-platz/.test(css) && /padding-bottom: var\(--leisten-platz\)/.test(css));
+  ok('Knöpfe flach: sichtbare Höhe aus --control-h, Touch-Halo bei pointer: coarse', /min-height: var\(--control-h\)/.test(css) && /@media \(pointer: coarse\)/.test(css));
+  // i18n: jeder neue Schlüssel in DE und EN.
+  const i18n = readFileSync(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  const de = i18n.slice(i18n.indexOf('  de: {'), i18n.indexOf('  en: {')), en = i18n.slice(i18n.indexOf('  en: {'));
+  const neu = ['settings.modus', 'settings.modus.privat', 'settings.modus.kleinunternehmer', 'settings.modus.selbststaendig', 'settings.modus.berater', 'settings.modus.hint', 'settings.modus.rueckfrage',
+    'settings.alle', 'settings.farbe', 'settings.farbe.blau', 'settings.farbe.graphit', 'settings.farbe.petrol', 'settings.helligkeit', 'settings.theme.system', 'settings.theme.hint', 'app.themeTitle',
+    'nav.gruppe.buchen', 'nav.gruppe.verkauf', 'nav.gruppe.team', 'nav.gruppe.auswerten', 'nav.gruppe.netz', 'nav.gruppe.weiteres', 'nav.einklappen', 'nav.ausklappen', 'onboard.modusTitle', 'onboard.shamirWeiter'];
+  ok('neue Texte in DE und EN', neu.every((k) => de.includes(`'${k}':`) && en.includes(`'${k}':`)), neu.filter((k) => !(de.includes(`'${k}':`) && en.includes(`'${k}':`))).join(','));
+  ok('alte Texte Einfach/Profi/Firma weg', !/'settings\.mode\.einfach'/.test(i18n) && !/'settings\.nutzung\.firma'/.test(i18n));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

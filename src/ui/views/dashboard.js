@@ -280,10 +280,11 @@ export async function mountDashboard(host) {
       ]) : null,
     ]),
 
+    // Knöpfe nur zu Ansichten, die der Modus zeigt (Privat: kein Journal, keine Auswertung).
     el('div', { class: 'btn-row' }, [
-      el('button', { class: 'btn btn-primary', text: t('journal.new'), onClick: () => navigate('journal') }),
-      el('button', { class: 'btn', text: t('docs.quickEntry'), onClick: () => navigate('documents') }),
-      el('button', { class: 'btn', text: t('nav.reports'), onClick: () => navigate('reports') }),
+      zeigeAnsicht(s, 'journal') ? el('button', { class: 'btn btn-primary', text: t('journal.new'), onClick: () => navigate('journal') }) : null,
+      el('button', { class: 'btn' + (zeigeAnsicht(s, 'journal') ? '' : ' btn-primary'), text: t('docs.quickEntry'), onClick: () => navigate('documents') }),
+      zeigeAnsicht(s, 'reports') ? el('button', { class: 'btn', text: t('nav.reports'), onClick: () => navigate('reports') }) : null,
     ]),
 
     // Prominente Datensicherung (Schritt 3): Backup/Restore + Drag-and-drop —

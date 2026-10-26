@@ -1,0 +1,14 @@
+FEHLER:
+keine
+
+BENANNTE GRENZEN (Auswahlfeld schon volle Breite, Schrift größer als die Zeile):
+320px/200%/journal: Auswahlfeld schneidet ab: select „0320 · Pkw0400 · Betriebsausstattung0410" → 171 > 141
+320px/200%/journal: Auswahlfeld schneidet ab: select „0320 · Pkw0400 · Betriebsausstattung0410" → 411 > 141
+320px/200%/journal: Auswahlfeld schneidet ab: select „Inland (USt im Betrag)§13b / Reverse-Cha" → 332 > 141
+320px/200%/journal: Auswahlfeld schneidet ab: select „— keine —1000 · Allgemein2000 · Vertrieb" → 163 > 141
+320px/200%/settings: Auswahlfeld schneidet ab: select „Mistral Small (günstig, EU)Mistral Large" → 398 > 207
+320px/200%/settings: Auswahlfeld schneidet ab: select „Google Vision (EU)Mistral (EU)Aus (keine" → 285 > 207
+390px/200%/journal: Auswahlfeld schneidet ab: select „0320 · Pkw0400 · Betriebsausstattung0410" → 411 > 211
+390px/200%/journal: Auswahlfeld schneidet ab: select „Inland (USt im Betrag)§13b / Reverse-Cha" → 332 > 211
+390px/200%/settings: Auswahlfeld schneidet ab: select „Mistral Small (günstig, EU)Mistral Large" → 398 > 277
+390px/200%/settings: Auswahlfeld schneidet ab: select „Google Vision (EU)Mistral (EU)Aus (keine" → 285 > 277

@@ -5,12 +5,13 @@
 
 import { el, mount, clear } from './dom.js';
 import { t, setLang, LANGS } from './i18n.js';
-import { applyTheme } from './theme.js';
+import { applyTheme, FARBEN, HELLIGKEITEN } from './theme.js';
+import { icon, ladeSymbole } from './icons.js';
 import { MycelMark, SiegelBadge, SiegelWappenGross } from './mycel.js';
 import { identityExists, loadIdentity } from '../sbkim/identity.js';
 import { CANONICAL_NODE_ID, SEAL_STAGE, NODE_PROFILE } from '../sbkim/nodeProfile.js';
 import { checkAllPeers } from '../sbkim/peers.js';
-import { getSettings, updateSettings, navigate, getRoute, subscribe, MODES, AI_LEVELS } from '../state.js';
+import { getSettings, updateSettings, navigate, getRoute, subscribe, AI_LEVELS } from '../state.js';
 import { getMandantId, lockVault, changePassword } from '../core/vault.js';
 import { ladeRegistry, speichereRegistry } from '../core/mandantenStore.js';
 import { aktiverMandant, mandantenAuswahlListe, umbenenneMandant, entferneMandant, validateMandantName, istSandbox, sandboxAuswahlListe, naechsterTestName } from '../domain/mandanten.js';
@@ -52,7 +53,7 @@ import { mountBerichte } from './views/berichte.js';
 import { mountSelbsttest } from './views/selbsttest.js';
 import { getBuchungssperre, setBuchungssperre, ensureSeedKonten } from '../domain/store.js';
 import { GEWINNERMITTLUNG, normalizeGewinnermittlung, BILANZ_GRUNDKONTO_NUMMERN } from '../domain/bilanzierung.js';
-import { NUTZUNGSMODUS_LISTE, normalizeNutzungsmodus, zeigeAnsicht } from '../domain/nutzungsmodus.js';
+import { NUTZUNGSMODUS, NUTZUNGSMODUS_LISTE, nutzungsmodusVon, zeigeAnsicht, zeigeEinstellung, hatAusgeblendeteEinstellungen, moduswechsel, EINSTELLUNG, istPrivatmodus, zeigeFeature, FEATURE } from '../domain/nutzungsmodus.js';
 import { RECHNUNGSSTELLE, normalizeRechnungsstelle, rechnungsstelleWechselHinweis } from '../domain/rechnungsstelle.js';
 import { vergebeneRechnungsnummern } from '../domain/crm-store.js';
 import { mountDocuments } from './views/documents.js';
@@ -77,32 +78,60 @@ import { testVision } from '../ai/vision.js';
 import { testMistral } from '../ai/mistral.js';
 import { KI_MODI, erlaubteAnbieter, normalizeAnbieterWahl } from '../ai/anbieter.js';
 
+// Navigation: Schlüssel · Beschriftung · Strichsymbol (assets/pb-icons.svg + assets/blp-icons.svg).
 const NAV = [
-  ['dashboard', 'nav.dashboard'],
-  ['journal', 'nav.journal'],
-  ['kassenbuch', 'nav.kassenbuch'],
-  ['accounts', 'nav.accounts'],
-  ['anlagen', 'nav.anlagen'],
-  ['documents', 'nav.documents'],
-  ['payables', 'nav.payables'],
-  ['orders', 'nav.orders'],
-  ['angebote', 'nav.angebote'],
-  ['shopbuchung', 'nav.shopbuchung'],
-  ['nachkalkulation', 'nav.nachkalkulation'],
-  ['customers', 'nav.customers'],
-  ['employees', 'nav.employees'],
-  ['lohn', 'nav.lohn'],
-  ['reports', 'nav.reports'],
-  ['berichte', 'nav.berichte'],
-  ['network', 'nav.network'],
-  ['sbkimsuche', 'nav.sbkimsuche'],
-  ['safebox', 'nav.safebox'],
-  ['legal', 'nav.legal'],
-  ['anleitung', 'nav.anleitung'],
-  ['selbsttest', 'nav.selbsttest'],
-  ['about', 'nav.about'],
-  ['settings', 'nav.settings'],
+  ['dashboard', 'nav.dashboard', 'blp-uebersicht'],
+  ['journal', 'nav.journal', 'blp-journal'],
+  ['kassenbuch', 'nav.kassenbuch', 'blp-kasse'],
+  ['accounts', 'nav.accounts', 'blp-konto'],
+  ['anlagen', 'nav.anlagen', 'blp-anlagen'],
+  ['documents', 'nav.documents', 'blp-beleg'],
+  ['payables', 'nav.payables', 'blp-verbindlichkeit'],
+  ['orders', 'nav.orders', 'blp-auftrag'],
+  ['angebote', 'nav.angebote', 'blp-angebot'],
+  ['shopbuchung', 'nav.shopbuchung', 'blp-shop'],
+  ['nachkalkulation', 'nav.nachkalkulation', 'blp-waage'],
+  ['customers', 'nav.customers', 'blp-kunde'],
+  ['employees', 'nav.employees', 'blp-team'],
+  ['lohn', 'nav.lohn', 'blp-lohn'],
+  ['reports', 'nav.reports', 'blp-chart'],
+  ['berichte', 'nav.berichte', 'blp-bericht'],
+  ['network', 'nav.network', 'blp-mycel'],
+  ['sbkimsuche', 'nav.sbkimsuche', 'pb-search'],
+  ['safebox', 'nav.safebox', 'blp-safe'],
+  ['legal', 'nav.legal', 'blp-paragraf'],
+  ['anleitung', 'nav.anleitung', 'blp-hilfe'],
+  ['selbsttest', 'nav.selbsttest', 'blp-pruef'],
+  ['about', 'nav.about', 'pb-info'],
+  ['settings', 'nav.settings', 'pb-settings'],
 ];
+
+// Gruppen der Seitenleiste (Klaus 2026-10-26, Sammlung C1): Übersicht oben allein, Einstellungen unten
+// allein, dazwischen sechs Gruppen. Jede NAV-Ansicht steht in genau einer Gruppe (tests/run.mjs prüft das).
+// Eine Gruppe, deren Ansichten der Modus alle ausblendet, verschwindet mitsamt Überschrift.
+export const NAV_GRUPPEN = [
+  [null, ['dashboard']],
+  ['nav.gruppe.buchen', ['documents', 'journal', 'kassenbuch', 'accounts', 'anlagen', 'payables']],
+  ['nav.gruppe.verkauf', ['angebote', 'orders', 'customers', 'shopbuchung', 'nachkalkulation']],
+  ['nav.gruppe.team', ['employees', 'lohn']],
+  ['nav.gruppe.auswerten', ['reports', 'berichte']],
+  ['nav.gruppe.netz', ['network', 'sbkimsuche']],
+  ['nav.gruppe.weiteres', ['safebox', 'legal', 'anleitung', 'selbsttest', 'about']],
+  [null, ['settings']],
+];
+export const NAV_KEYS = NAV.map(([k]) => k);
+
+// Zustand der Seitenleiste (A3): 'auf' | 'zu' von Hand (localStorage NAV_KEY) oder automatisch — im Teilbild
+// (bis 1024 px) eingeklappt, darüber aufgeklappt. Am Handy (bis 640 px) gilt die ☰-Schublade, nicht dieser Zustand.
+const NAV_KEY = 'blpr_leiste';
+const TEILBILD = '(max-width: 1024px)';
+function leisteGewuenscht() { try { return localStorage.getItem(NAV_KEY) || ''; } catch { return ''; } }
+export function leisteEingeklappt(gewuenscht, teilbild) {
+  if (gewuenscht === 'auf') return false;
+  if (gewuenscht === 'zu') return true;
+  return !!teilbild;
+}
+let _teilbildMql = null;
 
 let _container = null;
 let _onLock = () => {};
@@ -113,6 +142,12 @@ let _mandant = { id: null, name: null, count: 0, sandbox: false };
 export function renderShell(container, { onLock } = {}) {
   _container = container;
   _onLock = onLock || (() => {});
+  ladeSymbole();
+  if (!_teilbildMql && window.matchMedia) {
+    _teilbildMql = window.matchMedia(TEILBILD);
+    // Fensterbreite wechselt (Teilbild ↔ Vollbild): Leiste nach Regel neu stellen, nur wenn nicht von Hand gesetzt.
+    _teilbildMql.onchange = () => { if (!leisteGewuenscht()) paint(); };
+  }
   subscribe(() => paint());
   paint();
   refreshDurability();
@@ -132,13 +167,19 @@ async function refreshMandant() {
 
 function paint() {
   const s = getSettings();
-  const frame = el('div', { class: 'app', 'data-mode': s.mode }, [
+  const zu = leisteEingeklappt(leisteGewuenscht(), _teilbildMql ? _teilbildMql.matches : false);
+  const frame = el('div', { class: 'app' + (zu ? ' nav-zu' : ''), 'data-modus': nutzungsmodusVon(s) }, [
     el('a', { class: 'skip-link', href: '#content' }, t('a11y.skip')),
     header(s),
     // Dauerhafter TEST-MODUS-Banner, solange ein Sandbox-/Test-Tresor aktiv ist (Spec).
     _mandant.sandbox ? testModusBanner() : null,
     el('div', { class: 'durability-slot', id: 'durability-slot' }),
-    el('div', { class: 'app-body' }, [nav(), el('main', { class: 'content', id: 'content', role: 'main', tabindex: '-1' })]),
+    el('div', { class: 'app-body' }, [
+      // Schublade am Handy: Tipp auf den Hintergrund schließt sie.
+      el('div', { class: 'nav-hintergrund', onClick: schubladeSchliessen }),
+      nav(zu),
+      el('main', { class: 'content', id: 'content', role: 'main', tabindex: '-1' }),
+    ]),
   ]);
   mount(_container, frame);
   renderRoute();
@@ -146,20 +187,21 @@ function paint() {
 }
 
 function header(s) {
-  // Bevorzugt den Mandanten-Namen aus der Registry; fällt auf die DB-ID zurück, solange
-  // der asynchrone Nachlade-Schritt (refreshMandant) noch nicht zurück ist.
-  const label = _mandant.name || getMandantId();
+  // Mandanten-Pille (Klaus 2026-10-26: „LCxGYb7e — damit kann ich nichts anfangen"): nur, wenn es mehr als
+  // einen Mandanten gibt und ein lesbarer Name da ist — dann sagt sie, welcher offen ist. Die interne
+  // Tresor-Kennung erscheint hier nicht mehr; die DB-ID steht weiterhin auf der Übersicht (GoBD-Karte).
+  const label = (_mandant.count > 1 && _mandant.name) ? _mandant.name : null;
   return el('header', { class: 'app-header' }, [
     // Hamburger nur im Handyformat sichtbar (CSS) — klappt die Navigation als Schublade auf.
     el('button', {
-      class: 'nav-toggle', 'aria-label': t('a11y.menu'), 'aria-expanded': 'false',
+      class: 'nav-toggle', 'aria-label': t('a11y.menu'), 'aria-expanded': 'false', title: t('a11y.menu'),
       onClick: (e) => {
         const app = document.querySelector('.app');
         if (!app) return;
         const open = app.classList.toggle('nav-open');
         e.currentTarget.setAttribute('aria-expanded', open ? 'true' : 'false');
       },
-    }, '☰'),
+    }, [icon('pb-menu')]),
     el('div', { class: 'brand' }, [MycelMark(28), el('span', { class: 'brand-name', text: t('app.name') })]),
     // Installieren OBEN in der Kopfleiste (Klaus 2026-10-18: „in den Einstellungen vermutet keiner,
     // dass er die App installieren kann"). Immer da, solange die App nicht installiert ist — nicht nur,
@@ -169,29 +211,84 @@ function header(s) {
     installKopfKnopf(),
     el('div', { class: 'header-right' }, [
       flyingWidget(),
-      label ? el('span', { class: 'mandant', title: t('dashboard.mandant') }, [
-        el('span', { class: 'mandant-dot' }),
-        el('span', { class: 'mandant-id', text: label }),
+      label ? el('span', { class: 'mandant', title: t('mandant.label') }, [
+        icon('blp-mandant'),
+        el('span', { class: 'mandant-id', text: t('mandant.label') + ': ' + label }),
       ]) : null,
       // „Mandant wechseln" nur, wenn es mehr als einen Mandanten gibt (sonst wäre der
       // Wechsel ein reines Sperren auf denselben Tresor).
-      _mandant.count > 1 ? el('button', {
+      (_mandant.count > 1 && zeigeFeature(s, FEATURE.MANDANTEN)) ? el('button', {
         class: 'btn btn-ghost btn-sm', text: t('mandant.switch'),
         onClick: mandantWechseln,
       }) : null,
       // Dezenter Aktualisieren-Knopf: leert SW-Registrierungen + Cache-Storage und lädt neu
       // (Hard-Reload-Ersatz für Klaus' Tablet, wo Service-Worker + HTTP-Cache hartnäckig sind).
+      // Thema (Klaus 2026-10-26): Palette-Knopf in der Kopfleiste, dieselbe Wahl wie in den Einstellungen.
       el('button', {
-        class: 'btn btn-ghost btn-sm btn-icon', text: '↻',
+        class: 'btn btn-ghost btn-sm btn-icon thema-knopf', title: t('app.themeTitle'), 'aria-label': t('app.themeTitle'),
+        'data-thema-knopf': '', onClick: (e) => themaPopover(e.currentTarget, s),
+      }, [icon('blp-palette')]),
+      el('button', {
+        class: 'btn btn-ghost btn-sm btn-icon',
         title: t('app.reloadTitle'), 'aria-label': t('app.reload'),
         onClick: hardReloadApp,
-      }),
+      }, [icon('pb-refresh')]),
       el('button', {
-        class: 'btn btn-ghost btn-sm', text: t('settings.lock'),
+        class: 'btn btn-ghost btn-sm sperren-knopf', title: t('settings.lock'), 'aria-label': t('settings.lock'),
         onClick: sperren,
-      }),
+      }, [icon('pb-lock'), el('span', { class: 'ic-text', text: t('settings.lock') })]),
     ]),
   ]);
+}
+
+// ── Thema: Farbe × Helligkeit ───────────────────────────────────────────────
+// Reine Anzeige der Wahl; speichern tut themaWaehlen (Tresor + localStorage über applyTheme).
+async function themaWaehlen(patch) {
+  const s = { ...getSettings(), ...patch };
+  applyTheme(s.theme, s.themeFarbe);
+  await updateSettings(patch);
+}
+function themaWahl(s, { kompakt } = {}) {
+  const seg = (label, key, options, current) => el('div', { class: 'setting' }, [
+    el('div', { class: 'setting-label', text: label }),
+    el('div', { class: 'segmented', role: 'group', 'aria-label': label },
+      options.map(([val, lab, ic]) => el('button', {
+        class: 'seg' + (current === val ? ' active' : ''), 'aria-pressed': current === val ? 'true' : 'false',
+        'data-thema': key + '=' + val, onClick: () => themaWaehlen({ [key]: val }),
+      }, [ic ? icon(ic) : null, el('span', { class: 'ic-text', text: lab })]))),
+  ]);
+  const hellIcon = { system: 'blp-geraet', light: 'blp-sonne', dark: 'blp-mond' };
+  return el('div', { class: 'thema-wahl' + (kompakt ? ' kompakt' : '') }, [
+    seg(t('settings.farbe'), 'themeFarbe', FARBEN.map((f) => [f, t('settings.farbe.' + f), null]), s.themeFarbe || 'blau'),
+    seg(t('settings.helligkeit'), 'theme', HELLIGKEITEN.map((h) => [h, t('settings.theme.' + h), hellIcon[h]]), s.theme || 'system'),
+    kompakt ? null : el('p', { class: 'muted small', text: t('settings.theme.hint') }),
+  ]);
+}
+function themaPopover(anker, s) {
+  const alt = document.querySelector('.thema-popover');
+  if (alt) { alt.remove(); return; }
+  const pop = el('div', { class: 'thema-popover', role: 'dialog', 'aria-label': t('app.themeTitle') }, [themaWahl(s, { kompakt: true })]);
+  // Die Wahl im Popover soll sofort sichtbar sein: nach jedem Tipp neu zeichnen, Popover offen lassen.
+  pop.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-thema]');
+    if (!b) return;
+    setTimeout(() => { const neu = themaWahl(getSettings(), { kompakt: true }); pop.replaceChildren(neu); }, 0);
+  });
+  const schliessen = (e) => {
+    if (e && (pop.contains(e.target) || anker.contains(e.target))) return;
+    pop.remove(); document.removeEventListener('click', schliessen, true); document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') schliessen(); };
+  document.addEventListener('click', schliessen, true);
+  document.addEventListener('keydown', onKey);
+  anker.insertAdjacentElement('afterend', pop);
+}
+
+function schubladeSchliessen() {
+  const app = document.querySelector('.app');
+  if (app) app.classList.remove('nav-open');
+  const k = document.querySelector('.nav-toggle');
+  if (k) k.setAttribute('aria-expanded', 'false');
 }
 
 // ── Installieren-Knopf in der Kopfleiste ─────────────────────────────────────
@@ -423,20 +520,30 @@ export function hardReloadApp() {
   } catch (_e) { go(); }
 }
 
-function nav() {
+function nav(zu) {
   const route = getRoute();
   const s = getSettings();
-  // Privat-/Bürger-Modus (P1): geschäftliche Ansichten je Nutzungsmodus ausblenden.
-  // Firma (Default) zeigt alles → Bestandsverhalten unverändert. Reine Gating-Politik
-  // liegt node-getestet in domain/nutzungsmodus.js; hier nur die NAV-Filterung.
-  return el('nav', { class: 'app-nav', 'aria-label': t('a11y.nav') },
-    NAV.filter(([key]) => zeigeAnsicht(s, key)).map(([key, label]) => el('button', {
-      class: 'nav-item' + (route === key ? ' active' : ''),
-      text: t(label),
-      'aria-current': route === key ? 'page' : null,
-      onClick: () => navigate(key),
-    }))
-  );
+  // Ansichten je Modus ausblenden (domain/nutzungsmodus.js, node-getestet); hier nur Filterung und Aufbau.
+  const eintrag = ([key, label, ic]) => el('button', {
+    class: 'nav-item' + (route === key ? ' active' : ''), title: t(label),
+    'aria-current': route === key ? 'page' : null, 'data-nav': key,
+    onClick: () => { navigate(key); schubladeSchliessen(); },
+  }, [icon(ic), el('span', { class: 'ic-text', text: t(label) })]);
+  const gruppen = NAV_GRUPPEN.map(([titel, keys]) => {
+    const sichtbar = keys.filter((k) => zeigeAnsicht(s, k)).map((k) => NAV.find(([n]) => n === k)).filter(Boolean);
+    if (!sichtbar.length) return null;
+    return el('div', { class: 'nav-gruppe' + (titel ? '' : ' nav-gruppe-solo') }, [
+      titel ? el('div', { class: 'nav-gruppe-titel', text: t(titel) }) : null,
+      ...sichtbar.map(eintrag),
+    ]);
+  });
+  // Ein-/Ausklappen (nur ab 641 px sichtbar, CSS): merkt die Wahl von Hand.
+  const klapp = el('button', {
+    class: 'nav-klapp', title: zu ? t('nav.ausklappen') : t('nav.einklappen'), 'aria-label': zu ? t('nav.ausklappen') : t('nav.einklappen'),
+    'aria-expanded': zu ? 'false' : 'true',
+    onClick: () => { try { localStorage.setItem(NAV_KEY, zu ? 'auf' : 'zu'); } catch { /* ignore */ } paint(); },
+  }, [icon(zu ? 'blp-ausklappen' : 'blp-einklappen'), el('span', { class: 'ic-text', text: t('nav.einklappen') })]);
+  return el('nav', { class: 'app-nav', 'aria-label': t('a11y.nav') }, [...gruppen, klapp]);
 }
 
 function renderRoute() {
@@ -559,41 +666,57 @@ function viewSettings() {
     el('div', { class: 'segmented' },
       options.map(([val, lab]) => el('button', {
         class: 'seg' + (current === val ? ' active' : ''),
-        text: lab,
         onClick: () => onPick(val),
-      }))
+      }, [el('span', { class: 'ic-text', text: lab })]))
     ),
     hint ? el('p', { class: 'muted small', text: hint }) : null,
   ]);
+
+  // Modus (Klaus 2026-10-26): Privat · Kleinunternehmer · Selbstständig · Berater. Der Altwert „Verein" bleibt
+  // wählbar, solange er gesetzt ist (D13 offen). Wechsel mit Rückfrage, wenn er § 19 ändert (F4).
+  const modus = nutzungsmodusVon(s);
+  const modusListe = modus === NUTZUNGSMODUS.VEREIN ? [...NUTZUNGSMODUS_LISTE, NUTZUNGSMODUS.VEREIN] : NUTZUNGSMODUS_LISTE;
+  const zeige = (abschnitt, node) => (zeigeEinstellung(s, abschnitt) ? node : null);
 
   // data-einstellungen: hier hängt assets/installieren.js den Knopf „Installieren“ hinten an (Klaus 2026-10-18).
   return el('section', { class: 'view', 'data-einstellungen': '' }, [
     el('h1', { text: t('settings.title') }),
 
-    seg(t('settings.mode'), 'mode',
-      MODES.map((m) => [m, t('settings.mode.' + m)]), s.mode,
-      (v) => updateSettings({ mode: v }), t('settings.mode.hint')),
+    seg(t('settings.modus'), 'nutzungsmodus',
+      modusListe.map((m) => [m, t('settings.modus.' + m)]), modus,
+      async (v) => {
+        if (v === modus) return;
+        const w = moduswechsel(s, v);
+        if (w.rueckfrage && !confirm(t('settings.modus.rueckfrage'))) return;
+        await updateSettings(w.patch); paint();
+      },
+      t('settings.modus.hint')),
+    istPrivatmodus(s) ? el('p', { class: 'muted small', 'data-privat-hinweis': '', text: t('settings.modus.privatHinweis') }) : null,
 
-    // Privat-/Bürger-Modus (P1): Nutzungskontext (Firma/Privat/Verein). Steuert,
-    // welche Ansichten in der Navigation erscheinen. paint() → NAV neu filtern.
-    seg(t('settings.nutzung'), 'nutzungsmodus',
-      NUTZUNGSMODUS_LISTE.map((m) => [m, t('settings.nutzung.' + m)]),
-      normalizeNutzungsmodus(s.nutzungsmodus),
-      async (v) => { await updateSettings({ nutzungsmodus: v }); paint(); },
-      t('settings.nutzung.hint')),
+    // F3: „Alle Einstellungen zeigen" — nur, wenn der Modus überhaupt etwas ausblendet.
+    hatAusgeblendeteEinstellungen(s)
+      ? seg(t('settings.alle'), 'alleEinstellungen',
+          [['nein', t('common.no')], ['ja', t('common.yes')]], s.alleEinstellungen ? 'ja' : 'nein',
+          async (v) => { await updateSettings({ alleEinstellungen: v === 'ja' }); paint(); }, t('settings.alle.hint'))
+      : null,
+
+    el('div', { class: 'setting' }, [
+      el('div', { class: 'setting-label', text: t('settings.theme') }),
+      themaWahl(s),
+    ]),
 
     seg(t('settings.ai'), 'aiAutonomy',
       AI_LEVELS.map((a) => [a, t('settings.ai.' + a)]), s.aiAutonomy,
       (v) => updateSettings({ aiAutonomy: v }), t('settings.ai.hint')),
 
-    seg(t('settings.kleinunternehmer'), 'kleinunternehmer',
+    zeige(EINSTELLUNG.KLEINUNTERNEHMER, seg(t('settings.kleinunternehmer'), 'kleinunternehmer',
       [['nein', t('common.no')], ['ja', t('common.yes')]], s.kleinunternehmer ? 'ja' : 'nein',
       async (v) => { await updateSettings({ kleinunternehmer: v === 'ja' }); paint(); },
-      t('settings.kleinunternehmer.hint')),
+      t('settings.kleinunternehmer.hint'))),
 
-    gewinnermittlungSection(s),
+    zeige(EINSTELLUNG.GEWINNERMITTLUNG, gewinnermittlungSection(s)),
 
-    rechnungsstelleSection(s),
+    zeige(EINSTELLUNG.RECHNUNGSSTELLE, rechnungsstelleSection(s)),
 
     seg(t('settings.datenschutz'), 'datenschutzModus',
       [['aus', t('settings.datenschutz.aus')], ['pseudonym', t('settings.datenschutz.pseudonym')]],
@@ -622,27 +745,23 @@ function viewSettings() {
     // über Dateien hinweg). Reine Logik node-getestet; dieser Glue ist statisch geprüft.
     schluesselAbgleichSection(),
 
-    seg(t('settings.theme'), 'theme',
-      [['system', t('settings.theme.system')], ['light', t('settings.theme.light')], ['dark', t('settings.theme.dark')]],
-      s.theme, async (v) => { applyTheme(v); await updateSettings({ theme: v }); }),
-
     seg(t('settings.lang'), 'lang',
       LANGS.map((l) => [l, l.toUpperCase()]), s.lang,
       async (v) => { setLang(v); await updateSettings({ lang: v }); paint(); }),
 
     aiConfigSection(),
 
-    firmaSection(s),
+    zeige(EINSTELLUNG.FIRMA, firmaSection(s)),
 
-    datevSection(s),
+    zeige(EINSTELLUNG.DATEV, datevSection(s)),
 
-    geschaeftsjahrSection(s),
+    zeige(EINSTELLUNG.GESCHAEFTSJAHR, geschaeftsjahrSection(s)),
 
-    partnerSection(s),
+    zeige(EINSTELLUNG.PARTNER, partnerSection(s)),
 
-    buchungssperreSection(),
+    zeige(EINSTELLUNG.BUCHUNGSSPERRE, buchungssperreSection()),
 
-    mandantenSection(),
+    zeige(EINSTELLUNG.MANDANTEN, mandantenSection()),
 
     testModusSection(),
 

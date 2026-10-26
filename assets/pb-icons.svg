@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Eigene geometrische Strichsymbole für Private Brain Pro, 24.10.2026.
+       Vorbereitet, noch nicht in die App eingebaut; keine Fremdbibliothek. -->
+  <symbol id="pb-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.2 15.2 5 5"/></symbol>
+  <symbol id="pb-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6"/></symbol>
+  <symbol id="pb-folder" viewBox="0 0 24 24"><path d="M3 7V4h6l2 3h10v13H3z"/></symbol>
+  <symbol id="pb-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></symbol>
+  <symbol id="pb-import" viewBox="0 0 24 24"><path d="M12 3v11m-4-4 4 4 4-4M4 14v6h16v-6"/></symbol>
+  <symbol id="pb-add" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></symbol>
+  <symbol id="pb-settings" viewBox="0 0 24 24"><path d="m9 3-.5 2-2 1-2-.5-2 3L4 10v4l-1.5 1.5 2 3 2-.5 2 1 .5 2h6l.5-2 2-1 2 .5 2-3L20 14v-4l1.5-1.5-2-3-2 .5-2-1-.5-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="pb-back" viewBox="0 0 24 24"><path d="M20 12H4m6-6-6 6 6 6"/></symbol>
+  <symbol id="pb-forward" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+  <symbol id="pb-refresh" viewBox="0 0 24 24"><path d="M20 10a8 8 0 0 0-14-4L3 9m0-5v5h5M4 14a8 8 0 0 0 14 4l3-3m0 5v-5h-5"/></symbol>
+  <symbol id="pb-edit" viewBox="0 0 24 24"><path d="m15 4 5 5M4 20l5-1L21 7l-5-5L4 14z"/></symbol>
+  <symbol id="pb-reply" viewBox="0 0 24 24"><path d="m10 5-7 6 7 6v-4c5 0 8 2 11 6-1-8-5-10-11-10z"/></symbol>
+  <symbol id="pb-forward-mail" viewBox="0 0 24 24"><path d="m14 5 7 6-7 6v-4c-5 0-8 2-11 6 1-8 5-10 11-10z"/></symbol>
+  <symbol id="pb-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></symbol>
+  <symbol id="pb-archive" viewBox="0 0 24 24"><path d="M3 4h18v5H3zM5 9v12h14V9M9 13h6"/></symbol>
+  <symbol id="pb-tag" viewBox="0 0 24 24"><path d="M3 4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1"/></symbol>
+  <symbol id="pb-save" viewBox="0 0 24 24"><path d="M4 3h14l3 3v15H3V3zM7 3v6h10V3M7 21v-8h10v8"/></symbol>
+  <symbol id="pb-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+  <symbol id="pb-warning" viewBox="0 0 24 24"><path d="M12 3 2 21h20zM12 9v5"/><circle cx="12" cy="17.5" r=".5"/></symbol>
+  <symbol id="pb-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".5"/></symbol>
+  <symbol id="pb-link" viewBox="0 0 24 24"><path d="m10 7 2-2a4.25 4.25 0 0 1 6 6l-2 2m-2 4-2 2a4.25 4.25 0 0 1-6-6l2-2m1 4 6-6"/></symbol>
+  <symbol id="pb-unlink" viewBox="0 0 24 24"><path d="m9 7 2-2a4.25 4.25 0 0 1 6 6l-1 1m-1 5-2 2a4.25 4.25 0 0 1-6-6l1-1M4 4l16 16"/></symbol>
+  <symbol id="pb-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 18v3h16v-3"/></symbol>
+  <symbol id="pb-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+  <symbol id="pb-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="pb-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v7l-4-2v-5z"/></symbol>
+  <symbol id="pb-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 15v2"/></symbol>
+  <symbol id="pb-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="pb-send" viewBox="0 0 24 24"><path d="M13 19H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5M3 6l9 7 9-7M14 17h8m-4-4 4 4-4 4"/></symbol>
+</svg>

@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v255';
+const CACHE_VERSION = 'v256';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -32,6 +32,10 @@ const CORE_ASSETS = [
   './assets/tokens.css',
   './assets/app.css',
   './assets/icon.svg',
+  // Strichsymbole (Klaus 2026-10-26): PBP-Satz byte-1:1 + BLP-Fachsymbole, geladen von src/ui/icons.js.
+  './assets/pb-icons.svg',
+  './assets/blp-icons.svg',
+  './src/ui/icons.js',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
   './assets/icons/maskable-512.png',

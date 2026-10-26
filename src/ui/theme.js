@@ -1,27 +1,82 @@
 // src/ui/theme.js
-// Erscheinungsbild: hell/dunkel/system. Setzt data-theme auf <html>.
+// Erscheinungsbild (Klaus 2026-10-26): Farbe (blau · graphit · petrol) × Helligkeit (light · dark · system).
+// Setzt data-theme (aufgelöste Helligkeit) und data-farbe auf <html>.
+//
+// Merken: Die Wahl liegt verschlüsselt in den Tresor-Einstellungen (state.js) UND unverschlüsselt im
+// localStorage (THEMA_KEY) — nur Farbe/Helligkeit, nichts Persönliches. So gilt das zuletzt gewählte Thema
+// schon vor dem Entsperren (Sperrbildschirm, Deckblatt) und beim allerersten Anstrich (index.html liest den
+// Schlüssel synchron, bevor das Stylesheet wirkt). Startwert ohne Wahl: Blau, wie das Gerät (= Private Brain Pro).
+
+export const FARBEN = ['blau', 'graphit', 'petrol'];
+export const HELLIGKEITEN = ['system', 'light', 'dark'];
+export const THEMA_KEY = 'blpr_thema';           // localStorage: "farbe/helligkeit", z. B. "petrol/dark"
+const THEME_COLOR = { // <meta name="theme-color"> je aufgelöstem Thema (Browserrahmen der installierten App)
+  'blau/light': '#2563eb', 'graphit/light': '#475569', 'petrol/light': '#0f766e',
+  'blau/dark': '#111827', 'graphit/dark': '#141619', 'petrol/dark': '#0b1120',
+};
 
 let _mode = 'system';
+let _farbe = 'blau';
 let _mql = null;
 
-function resolve(mode) {
-  if (mode === 'system') {
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark' : 'light';
-  }
-  return mode;
+export function normalizeFarbe(f) { return FARBEN.includes(f) ? f : 'blau'; }
+export function normalizeHelligkeit(h) { return HELLIGKEITEN.includes(h) ? h : 'system'; }
+
+/** Reine Logik (node-getestet): löst „system" nach dem Gerät auf. */
+export function resolveHelligkeit(mode, geraetDunkel) {
+  const m = normalizeHelligkeit(mode);
+  if (m === 'system') return geraetDunkel ? 'dark' : 'light';
+  return m;
 }
 
-export function applyTheme(mode) {
-  _mode = mode || 'system';
-  document.documentElement.setAttribute('data-theme', resolve(_mode));
+/** Reine Logik (node-getestet): liest "farbe/helligkeit" aus dem gemerkten Text; Unbekanntes → Startwert. */
+export function parseThema(text) {
+  const [f, h] = String(text || '').split('/');
+  return { farbe: normalizeFarbe(f), helligkeit: normalizeHelligkeit(h) };
+}
+
+/** Name des aufgelösten Themas (für Anzeige/Tests): klarblau · nachtblau · graphit · nachtgraphit · petrol · nachtpetrol. */
+export function themaName(farbe, aufgeloest) {
+  const f = normalizeFarbe(farbe);
+  if (aufgeloest === 'dark') return 'nacht' + f;
+  return f === 'blau' ? 'klarblau' : f;
+}
+
+function geraetDunkel() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+
+function setzen() {
+  const html = document.documentElement;
+  const aufgeloest = resolveHelligkeit(_mode, geraetDunkel());
+  html.setAttribute('data-theme', aufgeloest);
+  html.setAttribute('data-farbe', _farbe);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', THEME_COLOR[_farbe + '/' + aufgeloest] || THEME_COLOR['blau/light']);
+}
+
+/** Wendet Helligkeit (und optional Farbe) an und merkt beides im localStorage. */
+export function applyTheme(mode, farbe) {
+  _mode = normalizeHelligkeit(mode);
+  if (farbe !== undefined) _farbe = normalizeFarbe(farbe);
+  setzen();
+  try { localStorage.setItem(THEMA_KEY, _farbe + '/' + _mode); } catch { /* localStorage gesperrt: dann eben nur für diese Sitzung */ }
 
   // Bei "system" auf OS-Wechsel reagieren.
   if (_mql) { _mql.onchange = null; _mql = null; }
   if (_mode === 'system' && window.matchMedia) {
     _mql = window.matchMedia('(prefers-color-scheme: dark)');
-    _mql.onchange = () => document.documentElement.setAttribute('data-theme', resolve('system'));
+    _mql.onchange = () => setzen();
   }
 }
 
+/** Wendet das zuletzt gemerkte Thema an (vor dem Entsperren); ohne Merkzettel den Startwert. */
+export function applyGemerktesThema() {
+  let text = '';
+  try { text = localStorage.getItem(THEMA_KEY) || ''; } catch { /* ignore */ }
+  const { farbe, helligkeit } = parseThema(text);
+  applyTheme(helligkeit, farbe);
+}
+
 export function getThemeMode() { return _mode; }
+export function getFarbe() { return _farbe; }

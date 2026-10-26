@@ -11,7 +11,8 @@ import { supportsDirectoryPicker, pickDirectory } from '../core/files.js';
 import { merkeBackupOrdner } from '../core/backupOrdner.js';
 import { BACKUP_STRATEGIEN, DEFAULT_BACKUP_STRATEGIE } from '../domain/backupStrategie.js';
 import { RECHNUNGSSTELLE } from '../domain/rechnungsstelle.js';
-import { updateSettings } from '../state.js';
+import { updateSettings, getSettings } from '../state.js';
+import { NUTZUNGSMODUS, NUTZUNGSMODUS_LISTE, moduswechsel } from '../domain/nutzungsmodus.js';
 import { MycelMark } from './mycel.js';
 import { createMycelBackground } from './mycelCanvas.js';
 import { ladeRegistry, registriereMandant, wechsleAktivenMandant } from '../core/mandantenStore.js';
@@ -401,7 +402,8 @@ function renderOnboarding(container, resolve, opts = {}) {
         el('code', { class: 'share-code', text: s }),
       ]))
     );
-    const next = el('button', { class: 'btn btn-primary', text: t('common.save'), onClick: () => stepProfil() });
+    // Sammlung B7: der Knopf hieß „Speichern", speicherte aber nichts — er geht nur weiter.
+    const next = el('button', { class: 'btn btn-primary', text: t('onboard.shamirWeiter'), onClick: () => stepProfil() });
     mount(container, shell([
       el('h1', { text: t('onboard.shamirTitle') }),
       el('p', { class: 'muted', text: t('onboard.shamirIntro') }),
@@ -410,8 +412,28 @@ function renderOnboarding(container, resolve, opts = {}) {
     ], './assets/img/onboard-shamir.png'));
   }
 
-  // §19-Kleinunternehmer-Abfrage (steuert global, ob USt ausgewiesen wird).
+  // Modus-Frage (Klaus 2026-10-26): Privat · Kleinunternehmer · Selbstständig · Berater. Sie überführt die
+  // frühere § 19-Frage: Kleinunternehmer setzt kleinunternehmer=true, Selbstständig false (domain/nutzungsmodus
+  // moduswechsel). Berater bekommt die § 19-Frage danach noch gestellt; Privat überspringt Rechnungsstelle.
   function stepProfil() {
+    const waehle = async (modus) => {
+      try { await updateSettings(moduswechsel(getSettings(), modus).patch); } catch { /* Backup-Schritt bleibt der Gate */ }
+      if (modus === NUTZUNGSMODUS.BERATER) stepKleinunternehmer();
+      else if (modus === NUTZUNGSMODUS.PRIVAT) stepBackup();
+      else stepRechnungsstelle();
+    };
+    mount(container, shell([
+      el('h1', { text: t('onboard.modusTitle') }),
+      el('p', { class: 'muted', text: t('onboard.modusIntro') }),
+      el('div', { class: 'modus-wahl' }, NUTZUNGSMODUS_LISTE.map((m) => el('button', {
+        class: 'btn' + (m === NUTZUNGSMODUS.PRIVAT ? ' btn-primary' : ''), text: t('settings.modus.' + m), onClick: () => waehle(m),
+      }))),
+      el('p', { class: 'muted small', text: t('onboard.modusHint') }),
+    ], './assets/img/onboard-key.png'));
+  }
+
+  // §19-Kleinunternehmer-Abfrage — nur noch für Berater (bei den anderen Modi folgt § 19 aus dem Modus).
+  function stepKleinunternehmer() {
     const waehle = async (klein) => {
       try { await updateSettings({ kleinunternehmer: klein }); } catch { /* Backup-Schritt bleibt der Gate */ }
       stepRechnungsstelle();

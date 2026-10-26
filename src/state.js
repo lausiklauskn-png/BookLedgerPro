@@ -4,15 +4,18 @@
 
 import { saveSettings, loadSettings } from './core/vault.js';
 import { datenschutzNachziehen } from './domain/datenschutzStandard.js';
+import { modusNachziehen } from './domain/nutzungsmodus.js';
 
-export const MODES = ['einfach', 'profi', 'berater'];
 export const AI_LEVELS = ['suggest', 'draft', 'auto'];
 export const DATENSCHUTZ_MODI = ['aus', 'pseudonym']; // KI-Datensparsamkeit
 
 const DEFAULTS = Object.freeze({
-  mode: 'profi',        // Einfach / Profi / Berater (UI-Komplexität)
-  nutzungsmodus: 'firma', // firma | privat | verein — Nutzungskontext (blendet Ansichten je Kontext)
-  theme: 'system',      // system / light / dark
+  // Modus (Klaus 2026-10-26): privat | kleinunternehmer | selbststaendig | berater — ersetzt Einfach/Profi/Berater
+  // und Firma/Privat/Verein. Alte Werte zieht domain/nutzungsmodus.modusNachziehen beim Laden nach (Daten bleiben).
+  nutzungsmodus: 'selbststaendig',
+  alleEinstellungen: false, // F3: zeigt auch die im Modus ausgeblendeten Einstellungen
+  theme: 'system',      // system / light / dark (Helligkeit)
+  themeFarbe: 'blau',   // blau / graphit / petrol (Farbe) — Start wie Private Brain Pro
   lang: 'de',
   aiAutonomy: 'suggest', // suggest / draft / auto
   taxProfile: 'DE',     // Deutschland zuerst
@@ -50,7 +53,7 @@ function emit() { for (const fn of _subs) fn(_state); }
 /** Lädt Settings aus dem Tresor (nach Unlock). */
 export async function hydrateSettings() {
   const loaded = await loadSettings();
-  _state.settings = { ...DEFAULTS, ...datenschutzNachziehen(loaded || {}) };
+  _state.settings = { ...DEFAULTS, ...modusNachziehen(datenschutzNachziehen(loaded || {})) };
   emit();
   return getSettings();
 }

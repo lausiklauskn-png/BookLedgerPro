@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+  <!-- BookLedgerPro-Fachsymbole, 26.10.2026 — im Stil des Private-Brain-Pro-Satzes (assets/pb-icons.svg, byte-1:1):
+       24×24, Strich 1,75, geometrisch, keine Fremdbibliothek. Allgemeine Aktionen (Suchen, Einstellungen, Löschen,
+       Speichern, Herunterladen, Sperren, Menü, Schließen …) kommen aus dem PBP-Satz; hier steht nur, was BLP
+       zusätzlich braucht. Neue Symbole möglichst an PBP zurückgeben (Sammlung D2). -->
+  <symbol id="blp-uebersicht" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></symbol>
+  <symbol id="blp-journal" viewBox="0 0 24 24"><path d="M4 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2zM4 18a2 2 0 0 1 2-2h12M8 8h6M8 12h6"/></symbol>
+  <symbol id="blp-beleg" viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21zM9 8h6M9 12h6M9 16h4"/></symbol>
+  <symbol id="blp-konto" viewBox="0 0 24 24"><path d="M3 9 12 4l9 5M4 9h16M6 9v8M10 9v8M14 9v8M18 9v8M3 20h18"/></symbol>
+  <symbol id="blp-kasse" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="2"/><circle cx="12" cy="13" r="2.5"/><path d="M3 11h2M19 11h2M3 15h2M19 15h2"/></symbol>
+  <symbol id="blp-anlagen" viewBox="0 0 24 24"><path d="M3 21V10l6-3v14M9 13l6-3v11M15 14l6-3v10M3 21h18M6 13h0M6 17h0M12 15h0M12 19h0M18 16h0"/></symbol>
+  <symbol id="blp-verbindlichkeit" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 14h6M12 11v6m-2.5-2.5L12 17l2.5-2.5"/></symbol>
+  <symbol id="blp-angebot" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9.5 12l5 5M10 12.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zM14 17.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/></symbol>
+  <symbol id="blp-auftrag" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11l2 2 4-4M9 17h6"/></symbol>
+  <symbol id="blp-shop" viewBox="0 0 24 24"><path d="M5 8h14l-1 13H6zM9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+  <symbol id="blp-waage" viewBox="0 0 24 24"><path d="M12 4v16M8 20h8M4 8h16M6 8l-3 7h6zM18 8l-3 7h6z"/></symbol>
+  <symbol id="blp-kunde" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="blp-team" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M15 4.5a3.5 3.5 0 0 1 0 7M17 13.5a6.5 6.5 0 0 1 4.5 6.5"/></symbol>
+  <symbol id="blp-lohn" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M5 9h.5M18.5 15h.5"/></symbol>
+  <symbol id="blp-chart" viewBox="0 0 24 24"><path d="M3 21h18M6 17V11M11 17V6M16 17v-4M21 17V9"/></symbol>
+  <symbol id="blp-bericht" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 17v-3M12 17v-6M15 17v-4"/></symbol>
+  <symbol id="blp-mycel" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><circle cx="5" cy="6" r="1.75"/><circle cx="19" cy="6" r="1.75"/><circle cx="5" cy="18" r="1.75"/><circle cx="19" cy="18" r="1.75"/><path d="m6.3 7.2 3.9 3.2M17.7 7.2l-3.9 3.2M6.3 16.8l3.9-3.2M17.7 16.8l-3.9-3.2"/></symbol>
+  <symbol id="blp-safe" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M12 10v2l1.5 1M6 20v1M18 20v1"/></symbol>
+  <symbol id="blp-paragraf" viewBox="0 0 24 24"><path d="M15 6.5a3.5 3.5 0 0 0-6.5-1.2c-.8 2 .6 3.3 2.5 4.1 2.3.9 4.5 2 3.7 4.6M9 17.5a3.5 3.5 0 0 0 6.5 1.2c.8-2-.6-3.3-2.5-4.1-2.3-.9-4.5-2-3.7-4.6"/></symbol>
+  <symbol id="blp-hilfe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.7"/><circle cx="12" cy="17" r=".5"/></symbol>
+  <symbol id="blp-pruef" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8.5 13l2.5 2.5L16 10"/></symbol>
+  <symbol id="blp-festschreiben" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M9.5 15.5l1.8 1.8 3.5-3.5"/></symbol>
+  <symbol id="blp-storno" viewBox="0 0 24 24"><path d="M4 10a8 8 0 0 1 14-4l3 3m0-5v5h-5M20 14a8 8 0 0 1-14 4l-3-3"/><path d="M8 8l8 8"/></symbol>
+  <symbol id="blp-kamera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13.5" r="3.5"/></symbol>
+  <symbol id="blp-euro" viewBox="0 0 24 24"><path d="M18 6.5A7 7 0 0 0 8 8.5a7 7 0 0 0 0 7 7 7 0 0 0 10 2M4 10.5h10M4 13.5h10"/></symbol>
+  <symbol id="blp-haus" viewBox="0 0 24 24"><path d="m3 11 9-7 9 7M5 10v10h14V10M10 20v-6h4v6"/></symbol>
+  <symbol id="blp-steuer" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 17l6-6"/><circle cx="10" cy="12" r="1"/><circle cx="14" cy="16" r="1"/></symbol>
+  <symbol id="blp-mandant" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"/></symbol>
+  <symbol id="blp-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2s0-2 1.5-2h1.5a4.5 4.5 0 0 0 4.5-4.5C21 7 17 3 12 3z"/><circle cx="7.5" cy="12" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/></symbol>
+  <symbol id="blp-sonne" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="blp-mond" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="blp-geraet" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="blp-einklappen" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/><path d="M5 4v16"/></symbol>
+  <symbol id="blp-ausklappen" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/><path d="M19 4v16"/></symbol>
+  <symbol id="blp-neu" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
+</svg>

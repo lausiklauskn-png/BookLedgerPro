@@ -1,18 +1,35 @@
-/* assets/tokens.css — Design-Tokens (eigenes System, dezente Mycel-Akzente). */
+/* assets/tokens.css — Design-Tokens (Klaus 2026-10-26: Farbe × Hell/Dunkel).
+ *
+ * Zwei Attribute am <html>:
+ *   data-theme = "light" | "dark"                (Helligkeit; „wie Gerät" wird in src/ui/theme.js aufgelöst)
+ *   data-farbe = "blau" | "graphit" | "petrol"   (Farbe)
+ * Daraus entstehen sechs Themen:
+ *   Blau    → Klarblau (hell) · Nachtblau (dunkel)      — Werte aus Private Brain Pro (native/design-tokens.css)
+ *   Graphit → Graphit (hell)  · Nachtgraphit (dunkel)   — Nachtgraphit neu abgeleitet, Kontraste gemessen
+ *   Petrol  → Petrol (hell)   · Nachtpetrol (dunkel)    — Nachtpetrol = das bisherige BLP-Dunkel, unverändert;
+ *                                                          Hauptknopf #0f766e mit weißer Schrift (Klaus 2026-10-26)
+ * Startwert ohne gespeicherte Wahl: Blau, Helligkeit wie Gerät (wie Private Brain Pro).
+ * Gemessen (WCAG, Sitzung 2026-10-26): Text ≥ 14:1, gedämpfter Text ≥ 5,5:1, Akzent auf Grund ≥ 4,8:1,
+ * Schrift auf dem Hauptknopf ≥ 5,1:1 in allen sechs Themen.
+ */
 
-:root {
-  /* Markenfarbe: ruhiges Teal/Smaragd — eigenständig, mit organischem Anklang. */
-  --accent: #0f766e;
-  --accent-strong: #0b5a54;
-  --accent-soft: #ccfbf1;
+:root, :root[data-farbe="blau"] {
+  /* Akzent */
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --accent-soft: #eaf1ff;
+  --accent-btn: var(--accent);          /* Grund des Hauptknopfs */
+  --accent-btn-hover: var(--accent-strong);
+  --on-accent: #ffffff;                 /* Schrift auf dem Hauptknopf */
 
   /* Neutrale Flächen (Hell) */
-  --bg: #f6f7f9;
+  --bg: #f6f8fc;
   --surface: #ffffff;
-  --surface-2: #eef1f4;
-  --border: #d9dee5;
-  --text: #15202b;
-  --text-muted: #5b6775;
+  --surface-2: #eef2f8;
+  --border: #d5deea;
+  --border-control: #64748b;
+  --text: #172033;
+  --text-muted: #526176;
 
   /* Status */
   --warn-bg: #fff7ed;
@@ -22,34 +39,63 @@
   --critical-border: #fca5a5;
   --critical-text: #991b1b;
   --error: #dc2626;
+  --success: #166534;
 
-  /* Form & Bewegung */
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 18px;
-  --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 8px 24px rgba(16, 24, 40, .08);
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, .08);
+  /* Form & Bewegung — flach (Klaus 2026-10-26): kleine Radien, keine Knopfschatten */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 14px;
+  --shadow: 0 8px 24px rgba(23, 32, 51, .10);
+  --shadow-sm: 0 1px 2px rgba(23, 32, 51, .06);
   --space: 16px;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
-  --motion: 160ms cubic-bezier(.2, .7, .3, 1);
-  /* Inhalts-Maximalbreite. Auf großen Monitoren wirkte 880px „nicht in voller
-     Breite" — auf 1200px erweitert (mehr Platz für Tabellen/Formulare, bleibt
-     zentriert und lesbar). Die Kopfzeile spannt weiterhin randlos. */
-  --maxw: 1200px;
+  --motion: 120ms cubic-bezier(.2, .7, .3, 1);
+  /* Sichtbare Knopfhöhe und Trefferfläche (PBP-Design-Kit) */
+  --control-h: 30px;
+  --control-touch: 44px;
+  /* Platz unten für die schwebenden Mycel-/Siegel-Leisten (Sammlung B3): sie verdecken nichts. */
+  --leisten-platz: 76px;
+  /* Breite der Seitenleiste (aufgeklappt / eingeklappt) */
+  --nav-w: 232px;
+  --nav-w-zu: 60px;
+  color-scheme: light;
 }
 
-:root[data-theme="dark"] {
-  --accent: #2dd4bf;
-  --accent-strong: #5eead4;
-  --accent-soft: #134e4a;
+:root[data-farbe="graphit"] {
+  --accent: #475569;
+  --accent-strong: #334155;
+  --accent-soft: #edf0f4;
+  --bg: #f7f8fa;
+  --surface-2: #eef0f4;
+}
 
-  --bg: #0b1120;
-  --surface: #111a2e;
-  --surface-2: #16223b;
-  --border: #25324c;
-  --text: #e7edf5;
-  --text-muted: #93a1b5;
+:root[data-farbe="petrol"] {
+  --accent: #0f766e;
+  --accent-strong: #0b5a54;
+  --accent-soft: #e7f4f2;
+  --bg: #f5f9f9;
+  --surface-2: #edf5f3;
+  --border: #d4e3e1;
+}
+
+/* ---- Dunkel ---------------------------------------------------------------- */
+:root[data-theme="dark"], :root[data-theme="dark"][data-farbe="blau"] {
+  /* Nachtblau (Private Brain Pro) */
+  --accent: #7ca7ff;
+  --accent-strong: #9bbeff;
+  --accent-soft: #223756;
+  --accent-btn: var(--accent);
+  --accent-btn-hover: var(--accent-strong);
+  --on-accent: #111827;
+
+  --bg: #111827;
+  --surface: #182233;
+  --surface-2: #1c2840;
+  --border: #35465e;
+  --border-control: #7185a2;
+  --text: #f3f6fc;
+  --text-muted: #b2bfd2;
 
   --warn-bg: #2a1f12;
   --warn-border: #b45309;
@@ -58,9 +104,45 @@
   --critical-border: #b91c1c;
   --critical-text: #fecaca;
   --error: #f87171;
+  --success: #86efac;
 
-  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 32px rgba(0, 0, 0, .5);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .5);
+  --shadow: 0 8px 24px rgba(0, 0, 0, .5);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"][data-farbe="graphit"] {
+  /* Nachtgraphit (neu, 2026-10-26): dunkle Grauflächen, heller Grauakzent */
+  --accent: #a3aebd;
+  --accent-strong: #c3ccd8;
+  --accent-soft: #2b3039;
+  --on-accent: #141619;
+  --bg: #141619;
+  --surface: #1c1f24;
+  --surface-2: #23272e;
+  --border: #3a3f48;
+  --border-control: #7a8290;
+  --text: #eceef2;
+  --text-muted: #a7afbb;
+}
+
+:root[data-theme="dark"][data-farbe="petrol"] {
+  /* Nachtpetrol = bisheriges BLP-Dunkel (Werte unverändert) */
+  --accent: #2dd4bf;
+  --accent-strong: #5eead4;
+  --accent-soft: #134e4a;
+  /* Hauptknopf: grün wie im hellen Petrol, weiße Schrift (5,5:1); Hover 8,1:1. Das helle #2dd4bf
+     bleibt für Akzente (aktiver Menüpunkt, Links, Fokusrahmen). */
+  --accent-btn: #0f766e;
+  --accent-btn-hover: #0b5a54;
+  --on-accent: #ffffff;
+  --bg: #0b1120;
+  --surface: #111a2e;
+  --surface-2: #16223b;
+  --border: #25324c;
+  --border-control: #6b7a95;
+  --text: #e7edf5;
+  --text-muted: #93a1b5;
 }
 
 @media (prefers-reduced-motion: reduce) {
