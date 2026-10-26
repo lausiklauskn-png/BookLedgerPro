@@ -5,6 +5,26 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
+## ▶ Neuester Stand (2026-10-26, nachts): C1 „Namen nach Muster" gebaut · Klaus' Antworten auf den Plan
+- **Gebaut (PR „Namen nach Muster"):** `src/ai/namensmuster.js` + Anker in `ladeAnker`, Einstellung `namensmuster`, gelbe
+  Chips mit Rücknahme in `namenVorschlagBox`, i18n DE/EN, `sw.js` v259. `node tests/run.mjs` **2398/0** · `smoke_handnamen`
+  **21 grün** · `smoke_design` grün. Details: `CLAUDE.md` „Namen nach Muster".
+- **Klaus' Antworten (2026-10-26):** C1 ja („auch nach Muster") · **B1 ja**, aber **ohne langen Druck**: sichtbare
+  Sprachmarke neben dem Mikrofon („DE ▾" → Liste), **Sprachwahl je Feld merken** · zusätzlich ein **Wort-Speicher**
+  (Wortergänzung beim Tippen, Charge-/Vorschlagsspeicher), **löschbar** in den Einstellungen · **A1 ja** (Belegtext
+  verschlüsselt am Beleg), **A2/A3 ja** · Codex-Entwürfe: selbst entscheiden, Inhalt eingebaut (Workflow-PDF #133,
+  Workflow-PDF-Pro #23) · Codex selbst wird nicht angerührt.
+- **Neue Aufträge (Klaus 2026-10-26):** (1) **Privat-Modus** zeigt SBKIM-Suche (Bedeutungssuche + Suchfeld) und Mycel/Siegel
+  („zumindest erst mal die SBKIM-Suche"). (2) **Workflow-Calculate** (https://lausiklauskn-png.github.io/Workflow-Calculate/)
+  als 1:1-Kopie für Angebote (Kleinunternehmer), eigenes Fenster/Ansicht, Brücke wie `upstream/` (Verbesserungen dort
+  werden nachgezogen). (3) **Workflow-Needs** (Bedarfsanalyse, https://lausiklauskn-png.github.io/Workflow-Needs/) ebenso,
+  Start aus BLP heraus; Bilder/Emojis beider Apps bleiben (erkennbar), Farbthema darf an BLP angepasst werden.
+- **Reihenfolge jetzt:** Privat-Modus-Sichtbarkeit (klein) → B1 Mikrofon + Sprachmarke + Wort-Speicher → A1/A2 Bedeutungssuche
+  → Calculate/Needs-Plan (Repos lesen, Einbettung) → A3 → Haushaltsbuch.
+- **Workflow PDF / Pro:** Worker löschte fremde Vorräte (auch `blpr-*`!) — behoben in Workflow-PDF #133 (1.1.2, v107,
+  neue Browser-CI); Pro #22 (Direktstart, 1.0.4) übernommen, #23 (Windows-Dateinamen/Tresor-Fix) offen; danach Kern 1.1.2
+  bytegleich nach Pro. Keine Veröffentlichung ohne Klaus' Wort.
+
 ## ▶ Neuester Stand (2026-10-26, spät): Schritt 2 „Workflow-PDF-Einbindung" gebaut (V1 + V2)
 - **Gebaut:** BLP in Androids Teilen-Liste (`share_target`, `sw.js` `./teilen-empfang`, Vorrat `blpr-geteilt`, `?geteilt=1`),
   „Öffnen mit" (`file_handlers`), Marke „Workfloh PDF" → Beleg-Stand „eigen" (ohne Datei-Prüfung, von Hand prüfbar),

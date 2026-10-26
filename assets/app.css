@@ -695,3 +695,9 @@ html.app-installiert #install-kopf, html.app-installiert [data-install-knopf] { 
 /* 641–780 px: mit dem Installieren-Knopf passte die Zeile nicht mehr (gemessen 650 px Seite bei 641). Dort wie am
    Handy nur die Lampen-Punkte zeigen — spart ~140 px, die Kopfleiste bleibt einzeilig. */
 @media (min-width: 641px) and (max-width: 900px) { .app-header .btn { white-space: nowrap; } }
+
+/* Nach Muster verdeckte Namen unter dem Belegtext (Klaus 2026-10-26): gelb, ein Tipp nimmt den Treffer zurück. */
+.namen-verdeckt { margin-bottom: .35rem; }
+.namen-verdeckt .chip-verdeckt { background: #fde68a; border-color: #d9a700; color: #4a3800; margin: .15rem .25rem .15rem 0; }
+:root[data-theme="dark"] .namen-verdeckt .chip-verdeckt { background: #5c4a00; border-color: #d9a700; color: #fff3bf; }
+.namen-verdeckt .chip-verdeckt:hover { text-decoration: line-through; }

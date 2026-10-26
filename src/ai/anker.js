@@ -119,15 +119,22 @@ export async function ladeAnker(text) {
     }
     // Die Hand-Listen vorn: „nie verdecken" schlägt einen gleichnamigen Stammdaten-Anker.
     exakt = [...handAnker(settings), ...exakt];
+    const scope = settings.briefkastenScopes === true ? (await import('./ner.js')).EXTERN_SCOPE : undefined;
+    let liste = exakt;
     if (text && settings.nerPii !== false) {
-      const { kombiniereAnker, EXTERN_SCOPE } = await import('./ner.js');
+      const { kombiniereAnker } = await import('./ner.js');
       // Im Briefkasten-Modus tragen die exakten Anker Hierarchie-Scopes → die Fremd-PII
       // wird unter dem externen Scope (EXTERN_*) gruppiert, damit sie sich sichtbar von
       // den bekannten Mandant-/Firmen-Entitäten abhebt. Im flachen Modus bleibt sie flach.
-      const scope = settings.briefkastenScopes === true ? EXTERN_SCOPE : undefined;
-      return kombiniereAnker(exakt, text, { scope });
+      liste = kombiniereAnker(exakt, text, { scope });
     }
-    return exakt;
+    // Namen nach Muster (Klaus 2026-10-26, ai/namensmuster.js): Anrede, z. Hd./Ansprechpartner, Vor- + Nachname,
+    // Firma mit Rechtsform. „Nie verdecken" schirmt ab; was schon exakt bekannt ist, bleibt beim exakten Anker.
+    if (text && settings.namensmuster !== false) {
+      const { musterAnker } = await import('./namensmuster.js');
+      liste = [...liste, ...musterAnker(text, { schutz: handListe(settings.kiNieVerdecken), bekannt: liste.map((a) => a.wert), scope })];
+    }
+    return liste;
   } catch {
     return [];
   }

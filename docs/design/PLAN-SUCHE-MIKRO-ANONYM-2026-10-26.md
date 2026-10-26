@@ -1,6 +1,9 @@
 # Plan: Bedeutungssuche über Belege · Mikrofon überall · Anonymisierung unklarer Namen (Klaus 2026-10-26)
 
-**Stand: Plan, noch nicht gebaut. Klaus' Antwort abwarten, dann ein PR je Teil.**
+**Stand 2026-10-26 abends: Klaus hat geantwortet — A1, A2, A3, B1, C1 genehmigt.** Änderungen gegenüber dem Plan: B1 **ohne**
+langen Druck (schwer zu entdecken) → sichtbare Sprachmarke „DE ▾" neben dem Mikrofon, Tipp öffnet die Liste, **Wahl je Feld
+gemerkt**; dazu ein **Wort-Speicher** (Wortergänzung beim Tippen), in den Einstellungen löschbar. **C1 gebaut** (PR „Namen nach
+Muster", `CLAUDE.md`). Reihenfolge: B1 → A1+A2 → A3.
 
 Klaus (2026-10-26): „wir machen noch eine Embedding-integrierte Suche innerhalb von BLP, ohne KI. Und wenn mit KI, dann
 mit Anonymisierung … Wenn ich innerhalb von Bookledger Pro Dateien suche, dann auch die Embedding-Suche, also die

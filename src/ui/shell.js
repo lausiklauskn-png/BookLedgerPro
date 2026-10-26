@@ -761,6 +761,13 @@ function viewSettings() {
           (v) => updateSettings({ nerPii: v === 'ja' }), t('settings.datenschutz.nerHint'))
       : null,
 
+    // Namen nach Muster (Klaus 2026-10-26): auch unbekannte Namen verdecken; Rücknahme je Treffer in der Belegansicht.
+    s.datenschutzModus === 'pseudonym'
+      ? seg(t('settings.datenschutz.namensmuster'), 'namensmuster',
+          [['nein', t('common.no')], ['ja', t('common.yes')]], s.namensmuster === false ? 'nein' : 'ja',
+          (v) => updateSettings({ namensmuster: v === 'ja' }), t('settings.datenschutz.namensmusterHint'))
+      : null,
+
     // Dreistufiger Briefkasten (Mandant ⊃ Firma ⊃ Person) — nur im Pseudonym-Modus.
     s.datenschutzModus === 'pseudonym'
       ? seg(t('settings.datenschutz.briefkasten'), 'briefkastenScopes',

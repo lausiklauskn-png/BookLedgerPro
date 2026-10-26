@@ -155,3 +155,19 @@ Scans (Klaus' Wort). Knopf „Mit Workflow PDF scannen" → `./?scan=1&von=BookL
 mit „Durchsuchbar"). Reine Logik in `src/domain/workflowPdf.js`; Proben `tests/smoke_teilen.mjs` (echter Worker-POST).
 **PWA-Klon = BookLedger Basic** (`BookLedger-Basic`, DB-Endung `bookledgerbasic`); BookLedgerPro wird nativ.
 Bedienung/Grenzen: `docs/WORKFLOW-PDF-EINBINDUNG.md`.
+
+## 🛡 Namen nach Muster verdecken (Klaus 2026-10-26, C1 des Plans)
+
+Vor der KI wurden nur Namen aus Stammdaten/„Weitere Namen" verdeckt; Modul 25 machte aus Anrede/Begrüßung/Grußformel
+nur Vorschläge. Jetzt erkennt `src/ai/namensmuster.js` (rein, Regex + Stoppliste) Namen nach Muster — Anrede
+(Herr/Frau/Dr. …), Kontext (z. Hd., Ansprechpartner, Inhaber, Geschäftsführer …), Vor- + Nachname (auch mit
+van/von-Partikel), Firma mit Rechtsform — und `ladeAnker` hängt sie als Anker an (Einstellung `namensmuster`, ab Werk an;
+im Briefkasten-Modus `EXTERN_PERSON`/`EXTERN_FIRMA`). Richtung „im Zweifel verdecken": „Hans Riegel Bonn" (Haribo) wird
+als Person verdeckt — **sichtbar**: `namenVorschlagBox` zeigt jeden Treffer **gelb** (`[data-verdeckt]`), ein Tipp nimmt
+ihn zurück und merkt ihn unter „Nie verdecken" (`kiNieVerdecken` schirmt ab, auch als Teil: „Flaschen Müller-Thurgau").
+Stoppliste hält Rechnungs-/Grußwörter, Monate, Banken, Adressen, Rollenwörter fern („Zahlbar Innerhalb", „Berliner
+Sparkasse", „Lieferant Muster GmbH" → nur „Muster GmbH"). Namen stehen auf EINER Zeile. Grenzen: GROSSBUCHSTABEN-Namen,
+Nachname allein ohne Anrede, fremde Anreden außer Mr/Mrs/Ms werden nicht erkannt.
+Proben: `tests/run.mjs` drei Abschnitte „Namensmuster" (+23) · `tests/smoke_handnamen.mjs` 21 grün (echter Browser:
+„Thomas Berger" geht nicht hinaus, „Berliner Sparkasse" schon; gelber Chip, Rücknahme per Tipp, danach wörtlich).
+`sw.js` v259. ⚠ Am Tablet nicht gemessen; nicht mit echter KI.

@@ -27,6 +27,7 @@ const DEFAULTS = Object.freeze({
   kiWeitereNamen: [], // von Hand: wird vor dem KI-Versand immer verdeckt (ai/anker.handAnker)
   kiNieVerdecken: [], // von Hand: bleibt wörtlich stehen, schirmt Namen darin ab (z. B. „Müller-Thurgau")
   nerPii: true, // im Pseudonym-Modus zusätzlich erkannte PII Dritter (E-Mail/IBAN/USt-IdNr/Tel.) maskieren
+  namensmuster: true, // im Pseudonym-Modus Namen nach Muster verdecken (Anrede, z. Hd., Vor-+Nachname, Firma); Rücknahme über kiNieVerdecken (Klaus 2026-10-26)
   backupStrategie: 'download', // download | ordner — Ziel der Datensicherung (Ordner braucht File System Access; sonst Download-Fallback)
   zahlungszielTage: 14,    // Standard-Zahlungsziel für Fälligkeit/Mahnwesen
   liquiditaetHorizontTage: 7, // Zeitfenster (Tage) der Dashboard-Liquiditätsvorschau (7|14|30|90, domain/liquiditaet.js); umschaltbar in der Liquiditäts-Karte
