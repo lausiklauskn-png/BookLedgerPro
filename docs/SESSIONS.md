@@ -32,8 +32,9 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 **Stand:** `node tests/run.mjs` **2346 bestanden, 0 fehlgeschlagen** (+62) · `node tests/smoke_design.mjs` **89 grün,
 0 ROT** · `sw.js` v256. Doku: `docs/design/umbau-2026-10-26/README.md`.
 
-**Offen / Nächstes:** Schritt 2 Workflow-PDF-Einbindung — Übergabewege in `Workflow-PDF-Pro` prüfen, Plan mit Varianten
-an Klaus, Antwort abwarten. Dann 3 Haushaltsbuch, 4 Steuer Privat, 5 ELSTER (D14). Entscheidungen D7, D10, D13, D14.
+**Offen / Nächstes:** Schritt 2 Workflow-PDF-Einbindung — Übergabewege in `Workflow-PDF-Pro` geprüft, Plan mit Varianten
+`docs/design/WORKFLOW-PDF-EINBINDUNG-PLAN-2026-10-26.md` an Klaus, Antwort abwarten. Klaus in der Sitzung: Tresor-Kennung
+aus der Kopfleiste (erledigt), Palette-Knopf größer (erledigt), „Journal“ umbenennen (Vorschlag „Buchungen“, offen). Dann 3 Haushaltsbuch, 4 Steuer Privat, 5 ELSTER (D14). Entscheidungen D7, D10, D13, D14.
 **Nicht geprüft:** Tablet/Handy/DeX; Touch-Halo nur als CSS; benannte Grenze: volle-Breite-Auswahlfelder bei 200 %
 Schrift auf 320/390 px schneiden lange Einträge ab (Probe meldet, zählt nicht als Fehler).
 

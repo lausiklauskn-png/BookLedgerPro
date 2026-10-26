@@ -14,8 +14,10 @@
   Shamir-Knopf „weiter", Deckblatt „Privat". Bedienung, Grenzen, Fotos: `docs/design/umbau-2026-10-26/README.md`.
 - **Beweis:** `node tests/run.mjs` 2346/0 · `node tests/smoke_design.mjs` 89 grün · 0 ROT (echter Chromium) · `sw.js` v256.
 - **Nicht geprüft:** kein Gerät (Tablet/Handy/DeX). Benannte Grenze: Auswahlfelder bei 200 % Schrift auf 320/390 px.
-- **Nächster Schritt = 2 (Workflow-PDF-Einbindung):** Klon `Workflow-PDF-Pro` liegt zur Prüfung bereit; Plan mit
-  Varianten geht an Klaus, **Antwort abwarten**, dann bauen. Danach 3 Haushaltsbuch, 4 Steuer Privat, 5 ELSTER (D14).
+- **Nächster Schritt = 2 (Workflow-PDF-Einbindung):** Übergabewege in `Workflow-PDF-Pro` geprüft, Plan mit vier
+  Varianten und vier Fragen: `docs/design/WORKFLOW-PDF-EINBINDUNG-PLAN-2026-10-26.md` — **Antwort von Klaus abwarten**, dann bauen.
+- Klaus' Rückmeldungen in der Sitzung (eingebaut): Tresor-Kennung aus der Kopfleiste, Palette-Knopf größer/farbig
+  (Nachtmodus steht in der Palette). Offen: neues Wort für „Journal“ (Vorschlag „Buchungen“), Klaus entscheidet. Danach 3 Haushaltsbuch, 4 Steuer Privat, 5 ELSTER (D14).
 - Offene Entscheidungen Klaus: D7 (3D-Bilder bei Blau/Graphit), D10 (PWA-Klon/DB-Endung), D13 (Verein), D14 (ELSTER).
 
 ## Vorher (2026-10-26): Plansitzung Design + Privat abgeschlossen
