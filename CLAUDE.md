@@ -282,7 +282,7 @@ Angebot (Kennung, sonst Nummer), wird **kein** neuer Entwurf angelegt — Banner
 Zeile `[data-wf-verweis]`, „Rechnung aus Angebot" nennt den WorkFloh-Auftrag (`angebotUebernahmeEntwurf`). Ohne Treffer
 Bestand v1. Probe-Haken `window.__blpSprungAbfangen`/`__blpVorgang`. Vertrag: `docs/UEBERNAHME_TOMY.md` (v2). Proben:
 `run.mjs` (+22) · `tests/smoke_vorgang.mjs` **22 grün** · Gegenprobe 3 Fälle gefangen (einer war zuerst blind: die Probe hatte
-kein offenes Angebot — jetzt hat sie eins). `sw.js` v266. ⚠ R3 (Stand zurück) nicht gebaut; kein Tablet; die nativen Apps
+kein offenes Angebot — jetzt hat sie eins). `sw.js` v266. R3 (Stand zurück) steht im Abschnitt unten; kein Tablet; die nativen Apps
 teilen keinen Speicher (dort später Teilen/„Öffnen mit" mit derselben JSON).
 
 
@@ -320,3 +320,17 @@ die Marke (Keywords `blp-angebot=…` oder die Fußzeile in der Textebene) ordne
 (pdf-lib wird hineingereicht, in Node geprüft). Workflow PDF unverändert. `sw.js` v269. Proben: `run.mjs` (+10) ·
 `tests/smoke_wfpdf.mjs` **14 grün**. ⚠ Kein Tablet; Export aus Workflow PDF in der Probe nachgestellt; WinAnsi-Schrift.
 Bedienung/Grenzen: `docs/WORKFLOW-PDF-EINBINDUNG.md` „Weg 3".
+
+## 🔁 R3: Stand der Rechnung zurück an die WorkFlohs (Klaus 2026-10-26, D21 abgeschlossen)
+
+Am archivierten Angebot mit WorkFloh-Auftrag (R2) und Rechnung daraus stehen „📤 Rechnung an WorkFloh melden" (nur eine
+**festgeschriebene** Buchung — ein Entwurf hält mit Hinweis an, `[data-wf-stand="rechnung"]`) und „📤 Bezahlt an WorkFloh
+melden" (Datum per Abfrage, Angabe von Hand; `[data-wf-stand="bezahlt"]`). `rechnungAusAngebot` vermerkt dafür
+`verweise.rechnungBuchungId/rechnungNr/rechnungDatum`. Nutzlast `vorgangStand` (`art: 'status'`, nur Verweise + Stand), Ziel
+`zielAusVerweisen` (R1-Ziel → Quelle des Rückwegs → Einstellung); am Angebot `wfStand`/`wfStandAm`/`wfBezahltAm`, Zeile
+`[data-wf-stand-gemeldet]`. Die WorkFlohs zeigen ein Blatt und übernehmen **erst auf Tipp** (Notiz, Felder, Status nur mit
+passender Kette und Haken) — identisch in beiden. `sw.js` v270. Proben: `run.mjs` (+8) · `smoke_vorgang` **32 grün** ·
+Gegenprobe 4 Fälle (Entwurf-Halt weg · Ziel aus der Einstellung · Store ohne Vermerk · Stand nicht vermerkt) je eigene rote
+Zeile; WorkFloh-Probe 29 grün, Gegenprobe 5 Fälle gefangen. Vertrag: `docs/UEBERNAHME_TOMY.md` R3. ⚠ Kein Tablet; „bezahlt"
+ist kein Zahlungsabgleich. **Damit ist der Fahrplan „hier fertig" (D22, Workflow PDF „beides", R3) erreicht — als Nächstes
+die Kopie nach `BookLedger-Basic`.**

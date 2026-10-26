@@ -7004,6 +7004,23 @@ await section('Positionen aus dem Belegtext (Steuer-Plan S1, Klaus 2026-10-26)',
   ok('USt-Satz hinter dem Betrag („19 %") wird gelesen', belegPositionen('Beratung 100,00 € 19 %').positionen[0].ustSatz === 19);
 });
 
+await section('Rundlauf R3 — Stand zurück an WorkFloh (Klaus 2026-10-26)', async () => {
+  const V = await import('../src/domain/vorgang.js');
+  const a = { id: 'angebot_abc', nummer: 'AN-2026-0042', titel: 'Vereins-Tassen', positionen: [{ beschreibung: 'x', menge: 1, einzelpreisCent: 1, kalkulation: { marge: 0.4 } }],
+    verweise: { wfAuftragNr: '2026-0007', wfQuelle: 'isd-workfloh', rechnungNr: 'R-2026-0001' } };
+  const p = V.vorgangStand(a, { stand: 'rechnung', rechnungNr: 'R-2026-0001', rechnungDatum: '2026-10-27', datum: '2026-10-27' });
+  ok('vorgangStand rechnung: v2, Quelle bookledgerpro, Art status, Verweise mit wfAuftragNr/Angebot, Nummer und Datum', !!p && p.v === 2 && p.quelle === 'bookledgerpro' && p.art === 'status' && p.stand === 'rechnung' && p.verweise.wfAuftragNr === '2026-0007' && p.verweise.blpAngebotNr === 'AN-2026-0042' && p.verweise.blpAngebotId === 'angebot_abc' && p.rechnungNr === 'R-2026-0001' && p.rechnungDatum === '2026-10-27' && p.bezahltAm === '' && p.datum === '2026-10-27');
+  const q = V.vorgangStand(a, { stand: 'bezahlt', bezahltAm: '2026-11-02', rechnungNr: 'R-2026-0001' });
+  ok('vorgangStand bezahlt: bezahltAm, Datum heute (JJJJ-MM-TT), Nummer mit', !!q && q.stand === 'bezahlt' && q.bezahltAm === '2026-11-02' && /^\d{4}-\d{2}-\d{2}$/.test(q.datum) && q.rechnungNr === 'R-2026-0001');
+  ok('unbekannter Stand oder kein WorkFloh-Auftrag am Angebot → null', V.vorgangStand(a, { stand: 'storniert' }) === null && V.vorgangStand({ id: 'x', verweise: {} }, { stand: 'rechnung' }) === null && V.vorgangStand(a, {}) === null);
+  ok('Nutzlast nur die Verweise und der Stand: keine Positionen, kein Kunde, nichts aus der Kalkulation', !('positionen' in p) && !('kunde' in p) && !('titel' in p) && JSON.stringify(p).indexOf('marge') < 0);
+  ok('Felder werden gekappt (Nummer 32, Datum 10)', V.vorgangStand(a, { stand: 'rechnung', rechnungNr: 'R'.repeat(50), rechnungDatum: '2026-10-27T12:00:00Z' }).rechnungNr.length === 32 && V.vorgangStand(a, { stand: 'rechnung', rechnungDatum: '2026-10-27T12:00:00Z' }).rechnungDatum === '2026-10-27');
+  ok('VORGANG_STAENDE = rechnung, bezahlt', JSON.stringify(V.VORGANG_STAENDE) === '["rechnung","bezahlt"]');
+  ok('zielAusVerweisen: R1-Ziel zuerst, sonst Quelle des Rückwegs (isd → Mein WorkFloh, tomy → Tomys), sonst Einstellung, sonst Vorgabe', V.zielAusVerweisen({ wfZiel: 'tomy-workfloh', wfQuelle: 'isd-workfloh' }) === 'tomy-workfloh' && V.zielAusVerweisen({ wfQuelle: 'isd-workfloh' }, 'tomy-workfloh') === 'mein-workfloh' && V.zielAusVerweisen({ wfQuelle: 'tomy-workfloh' }) === 'tomy-workfloh' && V.zielAusVerweisen({}, 'tomy-workfloh') === 'tomy-workfloh' && V.zielAusVerweisen(null, 'unsinn') === 'mein-workfloh' && V.zielAusVerweisen({ wfZiel: 'fremd' }, 'tomy-workfloh') === 'tomy-workfloh');
+  const url = V.vorgangUrl('mein-workfloh', p);
+  ok('Adresse Mein-WorkFloh/?vorgang=… lässt sich zurücklesen (stand rechnung)', url.startsWith('https://lausiklauskn-png.github.io/Mein-WorkFloh/?vorgang=') && JSON.parse(V.b64uDecode(url.split('?vorgang=')[1])).stand === 'rechnung');
+});
+
 await section('Rundlauf WorkFloh ⇄ BLP, Vertrag v2 „Vorgang" (Klaus 2026-10-26, R1/R2)', async () => {
   const V = await import('../src/domain/vorgang.js');
   const { parseUebernahmeParam } = await import('../src/domain/uebernahmeExtern.js');

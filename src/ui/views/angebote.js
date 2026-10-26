@@ -31,7 +31,9 @@ import {
   verschiebePosition, verschiebeNachOben, verschiebeNachUnten,
 } from '../../domain/baukasten.js';
 import { listAngebote, saveAngebot, getAngebot, deleteAngebot, setzeAngebotStatusStore, rechnungAusAngebot, setzeAngebotVerweise } from '../../domain/angebote-store.js';
-import { vorgangAuftrag, vorgangUrl, zielKey, WORKFLOH_ZIELE } from '../../domain/vorgang.js';
+import { vorgangAuftrag, vorgangUrl, zielKey, WORKFLOH_ZIELE, vorgangStand, zielAusVerweisen } from '../../domain/vorgang.js';
+import { getBuchung } from '../../domain/store.js';
+import { BUCHUNG_STATUS } from '../../domain/journal.js';
 import { angebotPdfBauen, arbeitsstandBauen } from '../../domain/workflowPdfRundlauf.js';
 import { pdfLibLaden } from '../../core/scanPdf.js';
 import { pdfVorschaubild } from '../../ai/kiVorbereitung.js';
@@ -533,7 +535,13 @@ function wfVerweisNode(a) {
   return teile.length ? el('div', {}, teile) : null;
 }
 function wfVerweisWorkfloh(v) {
-  if (v.wfAuftragNr) return el('div', { class: 'muted small', 'data-wf-verweis': 'auftrag', text: t('angebote.wfVerweis').replace('%NR%', v.wfAuftragNr) });
+  if (v.wfAuftragNr) {
+    const zeilen = [el('div', { class: 'muted small', 'data-wf-verweis': 'auftrag', text: t('angebote.wfVerweis').replace('%NR%', v.wfAuftragNr) })];
+    // R3: was zuletzt an den WorkFloh gemeldet wurde (Rechnung festgeschrieben / bezahlt).
+    if (v.wfStand === 'bezahlt') zeilen.push(el('div', { class: 'muted small', 'data-wf-stand-gemeldet': 'bezahlt', text: t('angebote.wfStandBezahlt').replace('%DATUM%', datumKurz(v.wfBezahltAm)) }));
+    else if (v.wfStand === 'rechnung') zeilen.push(el('div', { class: 'muted small', 'data-wf-stand-gemeldet': 'rechnung', text: t('angebote.wfStandRechnung').replace('%NR%', v.rechnungNr || '—') }));
+    return zeilen.length === 1 ? zeilen[0] : el('div', {}, zeilen);
+  }
   if (v.wfZiel) {
     const ziel = WORKFLOH_ZIELE[v.wfZiel];
     return el('div', { class: 'muted small', 'data-wf-verweis': 'uebergeben', text: t('angebote.wfUebergeben').replace('%ZIEL%', ziel ? ziel.name : v.wfZiel) });
@@ -591,6 +599,45 @@ async function auftragAnWorkFloh(a) {
   } catch (e) { alert(String((e && e.message) || e)); }
 }
 
+function datumKurz(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : String(iso || '—');
+}
+
+// R3 (Rundlauf, Klaus 2026-10-26): Stand der Rechnung zurück an den WorkFloh-Auftrag. „rechnung" meldet NUR eine
+// festgeschriebene Buchung (ein Entwurf ist keine Rechnung — Hinweis, kein Sprung); „bezahlt" ist Klaus' Angabe mit
+// Datum (BLP führt zum Angebot keinen Zahlungseingang). Ziel = R1-Ziel, sonst die Quelle des R2-Rückwegs, sonst die
+// Einstellung. Am Angebot wird nur der gemeldete Stand vermerkt; der WorkFloh übernimmt erst auf Tipp.
+// Probe-Haken wie R1: window.__blpSprungAbfangen / window.__blpVorgang.
+async function standAnWorkFloh(a, stand) {
+  try {
+    const voll = await getAngebot(a.id);
+    const v = (voll && voll.verweise) || {};
+    if (!v.wfAuftragNr) throw new Error(t('angebote.standOhneAuftrag'));
+    let felder = {};
+    if (stand === 'rechnung') {
+      const b = v.rechnungBuchungId ? await getBuchung(v.rechnungBuchungId) : null;
+      if (!b || b.status !== BUCHUNG_STATUS.FESTGESCHRIEBEN) { alert(t('angebote.standNochEntwurf').replace('%NR%', v.rechnungNr || '—')); return; }
+      felder = { rechnungNr: v.rechnungNr || '', rechnungDatum: b.datum || v.rechnungDatum || '' };
+    } else {
+      const heute = new Date().toISOString().slice(0, 10);
+      const eingabe = prompt(t('angebote.standBezahltFrage'), heute);
+      if (eingabe == null) return;
+      const d = String(eingabe).trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) { alert(t('angebote.standDatumFalsch')); return; }
+      felder = { bezahltAm: d, rechnungNr: v.rechnungNr || '', rechnungDatum: v.rechnungDatum || '' };
+    }
+    const payload = vorgangStand(voll, { stand, ...felder });
+    const key = zielAusVerweisen(v, getSettings().workflohZiel);
+    const url = vorgangUrl(key, payload);
+    if (!url) throw new Error('WorkFloh-Ziel unbekannt');
+    await setzeAngebotVerweise(a.id, { wfStand: stand, wfStandAm: new Date().toISOString(), ...(stand === 'bezahlt' ? { wfBezahltAm: felder.bezahltAm } : {}) });
+    if (typeof window !== 'undefined') window.__blpVorgang = { ziel: key, url, payload };
+    if (typeof window !== 'undefined' && window.__blpSprungAbfangen) { await repaint(); return; }
+    location.href = url;
+  } catch (e) { alert(String((e && e.message) || e)); }
+}
+
 function zeile(a) {
   const summen = angebotSummen(a.positionen);
   const kundeName = (_kunden.find((k) => k.id === a.kundeId) || {}).name || '';
@@ -631,6 +678,13 @@ function aktionen(a) {
       text: t('angebote.anWorkfloh').replace('{ziel}', ziel.name),
       onClick: () => auftragAnWorkFloh(a),
     }));
+  }
+  // R3 (Rundlauf): Stand der Rechnung zurück an den WorkFloh — nur, wenn ein Auftrag zurückkam (R2) und die Rechnung aus
+  // diesem Angebot entstand. Gemeldetes verschwindet als Knopf; „bezahlt" schließt ab.
+  const vw = a.verweise || null;
+  if (vw && vw.wfAuftragNr && vw.rechnungBuchungId && vw.wfStand !== 'bezahlt') {
+    if (vw.wfStand !== 'rechnung') wrap.appendChild(el('button', { class: 'btn btn-sm', type: 'button', 'data-wf-stand': 'rechnung', text: t('angebote.standRechnung'), onClick: () => standAnWorkFloh(a, 'rechnung') }));
+    wrap.appendChild(el('button', { class: 'btn btn-sm', type: 'button', 'data-wf-stand': 'bezahlt', text: t('angebote.standBezahlt'), onClick: () => standAnWorkFloh(a, 'bezahlt') }));
   }
   // Workflow PDF (Klaus 2026-10-26): an jedem nicht archivierten Angebot — PDF + Felder zum Unterschreiben.
   if (a.status !== ANGEBOT_STATUS.ARCHIVIERT) {

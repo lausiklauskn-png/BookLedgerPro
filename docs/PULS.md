@@ -6,6 +6,11 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 ## ▶ Neuester Stand (2026-10-26, nachts): C1 „Namen nach Muster" gebaut · Klaus' Antworten auf den Plan
+- **R3 gebaut (PR „R3: Stand der Rechnung zurück an die WorkFlohs"):** „Rechnung an WorkFloh melden" (nur festgeschrieben) /
+  „Bezahlt an WorkFloh melden" (Datum von Hand) am archivierten Angebot mit WorkFloh-Auftrag; Nutzlast `art: 'status'`; die
+  WorkFlohs (Mein + Tomys, identisch) zeigen ein Blatt und übernehmen erst auf Tipp. Proben: run.mjs +8 · smoke_vorgang 32 ·
+  WorkFloh-Probe 29 · Gegenproben 4 + 5 gefangen. **Fahrplan „hier fertig" erreicht → als Nächstes die Kopie nach
+  `BookLedger-Basic`** (Repo erst ansehen, nichts Ungesehenes ersetzen), dann die Android-Tresorordner-Sitzung.
 - **Weg 2 Relais (Klaus 2026-10-26: „über mein privates Relais, so wie Kim“):** `relay-privat.family-projekt.de` läuft; Kim-sync
   nachgelesen (Nostr-Zettel, AES-GCM auf dem Gerät, Raumschlüssel, ECDH-Briefe, Teile 90 kB, Zulassungsdienst). Plan-Abschnitt
   im Tresorordner-Plan; drei Fragen an Klaus (Verbund-Raum oder Paarung · nur Pro oder auch Basic · Reihenfolge).

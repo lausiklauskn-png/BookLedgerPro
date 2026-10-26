@@ -150,6 +150,11 @@ export async function rechnungAusAngebot(id) {
     kostenstelle: entwurf.kostenstelle,
   });
 
+  // R3 (Rundlauf): die Rechnung am Angebot vermerken (Buchungs-Kennung, Nummer, Datum) — „Rechnung an WorkFloh melden"
+  // liest daran ab, ob sie schon festgeschrieben ist. Reine Verweise, kein Statuswechsel.
+  try { await setzeAngebotVerweise(id, { rechnungBuchungId: buchung.id, rechnungNr: entwurf.nummer, rechnungDatum: entwurf.datum }); }
+  catch { /* Vermerk ist Beiwerk — der Entwurf steht trotzdem */ }
+
   // Angebot → archiviert (angenommen → archiviert ist der vorgesehene Abschluss, ANGEBOT_STATUS_FLOW).
   const archiviert = await setzeAngebotStatusStore(id, ANGEBOT_STATUS.ARCHIVIERT);
   return { buchung, entwurf, angebot: archiviert };
