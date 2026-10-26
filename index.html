@@ -1,6 +1,18 @@
 <!DOCTYPE html>
+<!-- FP-COPYRIGHT
+  ╔═══════════════════════════════════════════════════════════════════╗
+  ║  BookLedgerPro  ©  2026  Klaus Nitzsche                           ║
+  ║  info@family-projekt.de                                           ║
+  ║  Alle Rechte vorbehalten. Unautorisierte Vervielfaeltigung,       ║
+  ║  Verbreitung oder Bearbeitung ist untersagt.                      ║
+  ║  All rights reserved. Unauthorized reproduction prohibited.       ║
+  ║  https://github.com/lausiklauskn-png/BookLedgerPro                ║
+  ╚═══════════════════════════════════════════════════════════════════╝
+-->
+<!-- © 2026 Klaus Nitzsche — Alle Rechte vorbehalten. Original & Urheber: github.com/lausiklauskn-png/BookLedgerPro -->
 <html lang="de" data-theme="light">
 <head>
+<script>/* FP-COPYRIGHT */window._CR=Object.freeze({c:'\u00a9 2026 Klaus Nitzsche',m:'info@family-projekt.de',r:'All rights reserved',repo:'BookLedgerPro'});</script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
@@ -24,17 +36,222 @@
   <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="./assets/tokens.css" />
   <link rel="stylesheet" href="./assets/app.css" />
+  <!-- Deckblatt-Bild vorbestellen (2026-08-03). Das Bild ist das LCP-Element,
+       aber es steht NICHT im HTML — src/ui/intro.js baut es erst, nachdem alle
+       Module geladen und ausgefuehrt sind. Der Browser erfaehrt sonst erst ganz
+       am Ende davon und faengt dann erst an zu laden. Gemessen: LCP 20,1 s.
+       Der Vorabruf kostet 113 KiB auch bei den Nutzern, die das Deckblatt
+       abgeschaltet haben ("nicht mehr automatisch anzeigen") — vertretbar,
+       weil der Service-Worker das Bild ohnehin vorhaelt.
+
+       Zwei Groessen (2026-08-03, zweiter Durchgang): das Bild wird auf dem
+       Handy mit rund 350 CSS-Punkten dargestellt, bei 1,75-facher Bildpunkt-
+       Dichte also mit 606 echten Bildpunkten — die grosse Fassung mit 1040
+       war dafuer mehr als noetig (PageSpeed: "74,6 KiB Einsparung"). Der
+       Browser sucht sich ueber srcset/sizes selbst die passende aus.
+       WICHTIG: imagesrcset/imagesizes hier muessen mit srcset/sizes am <img>
+       uebereinstimmen — sonst holt der Vorabruf die eine und das Bild die
+       andere Fassung, und die Seite laedt beide. -->
+  <link rel="preload" as="image" fetchpriority="high"
+        href="./assets/img/cover.webp"
+        imagesrcset="./assets/img/cover-640.webp 640w, ./assets/img/cover.webp 1040w"
+        imagesizes="(max-width: 584px) calc(100vw - 4rem), 520px" />
+  <!-- Start-Modulbaum vorbestellen (2026-08-03). Ohne diese Zeilen findet der
+       Browser die Module erst eine Ebene nach der anderen: index.html erfaehrt
+       von main.js, main.js von intro.js, intro.js von mycel.js, mycel.js von
+       wappen.js — fuenf Wartezeiten hintereinander, bevor das Deckblatt steht.
+       Mit modulepreload holt er alle neun sofort und gleichzeitig.
+       Es sind genau die neun Dateien des statischen Startbaums (nachgezaehlt,
+       nicht geraten). Alles, was erst nach dem Entsperren gebraucht wird, kommt
+       weiterhin per dynamischem import() und steht bewusst NICHT hier.
+       Build-frei: modulepreload ist ein HTML-Tag, kein Bundler. -->
+  <link rel="modulepreload" href="./src/main.js" />
+  <link rel="modulepreload" href="./src/ui/intro.js" />
+  <link rel="modulepreload" href="./src/ui/i18n.js" />
+  <link rel="modulepreload" href="./src/ui/dom.js" />
+  <link rel="modulepreload" href="./src/ui/mycel.js" />
+  <link rel="modulepreload" href="./src/ui/theme.js" />
+  <link rel="modulepreload" href="./src/sbkim/wappen.js" />
+  <link rel="modulepreload" href="./src/core/durability.js" />
+  <link rel="modulepreload" href="./src/core/db.js" />
 </head>
 <body>
+  <!-- Installieren (Klaus 2026-10-18): installieren.js legt seinen Knopf vor diesen Anker — im verborgenen Behälter.
+       Sichtbar ist der Kopf-Knopf der Shell (src/ui/shell.js), der den Tipp hierher weitergibt. Die Kopfleiste wird
+       bei jedem paint() neu gebaut; ein direkt eingehängter Knopf ginge dabei verloren. -->
+  <div hidden id="install-quelle"><span id="install-anker"></span></div>
   <noscript>BookLedgerPro benötigt JavaScript (läuft vollständig lokal in Ihrem Browser).</noscript>
 
+  <!-- ── Deckblatt-Anfang STATISCH im HTML (Klaus' Messung 2026-08-03) ────────
+       Das Deckblatt-Bild ist das groesste sichtbare Element der Seite (LCP).
+       Es stand bisher nur in src/ui/intro.js — der Browser konnte es also erst
+       malen, wenn main.js, intro.js, dom.js, i18n.js, mycel.js und wappen.js
+       geladen UND ausgefuehrt waren. Der Vorabruf (preload, oben im Kopf) holte
+       das Bild zwar frueh, es lag dann aber fertig herum und wartete auf das
+       Skript. PageSpeed hat genau das aufgeschluesselt:
+
+           Time to First Byte            0 ms
+           Verzoegerung beim Laden     150 ms
+           Dauer des Ladevorgangs      150 ms
+           Rendering des Elements    2.000 ms   <-- der ganze Rest
+
+       Jetzt steht das Bild im HTML. Der Browser malt es, sobald das Stylesheet
+       da ist — ohne auf ein einziges Skript zu warten. Der Rest des Deckblatts
+       (Titel, Siegel, Datenblatt) kommt weiterhin aus intro.js und haengt sich
+       um dieses Bild herum; intro.js UEBERNIMMT genau dieses <img>-Element
+       (heroBild() dort), statt ein zweites zu bauen. Dadurch bleibt es
+       dasselbe Element, der fruehe LCP-Zeitpunkt bleibt stehen, und es
+       entsteht kein Versatz (CLS).
+
+       Die Masse (width/height) ist dieselbe wie in intro.js — sonst springt
+       das Layout beim Uebernehmen. Wer eins aendert, aendert beide. -->
   <div id="app-root">
-    <div class="lock-screen">
-      <div class="lock-card"><p class="muted">Lädt …</p></div>
-    </div>
+    <main class="intro-screen" id="intro-statisch">
+      <div class="intro-scroll">
+        <div class="deckblatt">
+          <div class="deckblatt-hero">
+            <img id="deckblatt-cover-statisch" class="deckblatt-cover"
+                 src="./assets/img/cover.webp"
+                 srcset="./assets/img/cover-640.webp 640w, ./assets/img/cover.webp 1040w"
+                 sizes="(max-width: 584px) calc(100vw - 4rem), 520px"
+                 alt="" loading="eager"
+                 fetchpriority="high" width="1040" height="693" />
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
+  <script>
+  /* Wer "nicht mehr automatisch anzeigen" gewaehlt hat, bekommt gar kein
+     Deckblatt — der statische Anfang darf bei ihm nicht kurz aufblitzen.
+     Dieses Skript laeuft synchron direkt nach dem Rumpf-Element, also VOR dem
+     ersten Anstrich; getauscht wird gegen genau die Platzhalter-Karte, die
+     vorher an dieser Stelle stand. Schluessel = SKIP_KEY aus src/ui/intro.js. */
+  (function () {
+    try {
+      if (localStorage.getItem('blpr_intro_skip') === '1') {
+        document.getElementById('app-root').innerHTML =
+          '<main class="lock-screen"><div class="lock-card">' +
+          '<p class="muted">Lädt …</p></div></main>';
+      }
+    } catch (e) { /* localStorage gesperrt: Deckblatt zeigen ist der sichere Fall */ }
+  })();
+  </script>
 
   <!-- Build-frei: native ES-Module, keine CDNs (offline-first). -->
   <script type="module" src="./src/main.js"></script>
+
+  <!-- SBKIM Andock-Runtime + Auto-Lauschen (Stufe 2, 2026-06-27) — additiv.
+       Acht Module byte-identisch aus Sage src/modules/ kopiert (Modul-09-Regel:
+       kopieren, nicht modifizieren). 05b als type=module (importiert noble relativ).
+       sbkim-init.js startet nach Anastomose.init() fail-soft listenNostr() —
+       Empfangsmodus mit Antwortrecht. Betrifft NUR die SBKIM-Identität, nie
+       Buchhaltungsdaten. -->
+  <!-- Identitäts-Isolierung (2026-07-11): globaler SBKIM-Default-DB-Suffix, GANZ
+       FRÜH gesetzt (klassisches inline <script> läuft synchron VOR den folgenden
+       Modul-Skripten). Modul 01 nimmt daraus den Default-DB-Namen
+       `sbkim_bookledgerpro-sbkim` — so landet JEDER Storage-Zugriff in der eigenen
+       Schublade der SBKIM-Identität (getrennt von Geschwister-Apps auf dem
+       geteilten github.io-Origin), unabhängig von der init-Reihenfolge. Wert =
+       exakt der SBKIM-Storage-Identitäts-Suffix aus sbkim-init.js. -->
+  <script>window.SBKIM_DB_SUFFIX="bookledgerpro-sbkim";</script>
+  <script src="./assets/installieren.js?v=1" data-name="BookLedgerPro" data-in="[data-einstellungen]" data-klasse="btn" data-vor="install-anker" defer></script>
+  <script>/* Sprachmodell vom eigenen Server (Klaus 2026-10-13, Weg A: die App setzt die Adresse, Modul 03 bleibt neutral). Antwortet er nicht, nimmt Modul 03 Hugging Face. */window.SBKIM_MODEL_ROOT=window.SBKIM_MODEL_ROOT||"https://family-projekt.de/models/";</script>
+  <!-- ── SBKIM-Stapel: NACHLADEN statt im kritischen Pfad (Klaus 2026-08-03) ──
+       Die 16 Dateien sind zusammen ~260 KiB und standen als klassische
+       <script src>-Tags im Rumpf. Klassische Skripte blockieren den Parser:
+       sie mussten also komplett geladen UND ausgefuehrt sein, bevor das
+       Modul ./src/main.js an die Reihe kam — und erst main.js baut das
+       Deckblatt mit dem LCP-Bild. Gemessen an Klaus' Server: 11.270 ms
+       Blockierung, LCP 20,1 s.
+
+       Jetzt haengt der Stapel am load-Ereignis: die Seite ist da, DANN kommt
+       das Mycel. Die Reihenfolge bleibt exakt erhalten (script.async=false
+       garantiert bei dynamisch eingehaengten Skripten die Ausfuehrung in
+       Einhaenge-Reihenfolge). Nachgeprueft vor dem Umbau: der App-Code in
+       src/ greift beim Start auf KEINE der window.Sbkim*-Globals zu — die
+       einzige Fundstelle war ein Kommentar. Die Lampen-Leiste und der
+       🌐-Knopf erscheinen dadurch einen Wimpernschlag spaeter; alles ist
+       fail-soft, es geht nichts verloren.
+
+       ⚠ Die Dateien unter sbkim/ selbst sind byte-gleiche Kopien aus dem
+       Sage-Kanon und wurden NICHT angefasst — nur der Zeitpunkt, zu dem sie
+       geholt werden, hat sich geaendert. -->
+  <script>
+  (function () {
+    var stapel = [
+      './sbkim/01_storage.js', 'sbkim/20_schluessel_safe.js', './sbkim/02_spore.js',
+      './sbkim/03_embedding.js', './sbkim/04_match.js',
+      './assets/pruefer-mail.js?v=2',   // Prüfliste für den KI-Richter (Sage 04.J): ohne sie läuft er nicht
+      './sbkim/05_anastomose.js',
+      './sbkim/07_apoptose.js', './sbkim/15_membran.js', './sbkim/16_siegel.js',
+      './sbkim/17_floating_widget.js', ['./sbkim/05b_nostr_relay.js', 'module'],
+      './sbkim/21_spracheingabe.js', './sbkim/23_rendezvous.js',
+      './sbkim/23_rendezvous_ui.js', './sbkim/siegel-inhalt.js', './sbkim/sbkim-init.js'
+    ];
+    function laden() {
+      for (var i = 0; i < stapel.length; i++) {
+        var e = stapel[i], pfad = Array.isArray(e) ? e[0] : e;
+        var s = document.createElement('script');
+        if (Array.isArray(e)) s.type = e[1];
+        s.src = pfad;
+        s.async = false;           // haelt die Reihenfolge ein
+        document.body.appendChild(s);
+      }
+    }
+    if (document.readyState === 'complete') laden();
+    else window.addEventListener('load', laden);
+  })();
+  </script>
+  <!-- Was in der Liste oben steht, in der Reihenfolge der Liste:
+       01 Storage · 20 Schlüssel-Safe · 02 Spore · 03 Embedding · 04 Match ·
+       05 Anastomose · 07 Apoptose · 15 Membran (Außenhülle / Fremdzugriff-Lampe) ·
+       16 SBKIM-Siegel (Selbst-Bezeugung, rendert nur bei wirklich vorhandenen
+       Pflicht-Modulen — Anti-Greenwashing) · 17 Floating-Widget (Lampen
+       LEBT/VERKEHR/FREMD/SIEGEL) · 05b Nostr-Relais (als Modul, importiert noble
+       relativ) · 21 Spracheingabe (🎤, VOR 23, damit das Rendezvous-UI sie
+       nutzen kann) · 23 Rendezvous + dessen UI (🌐-Knopf) · siegel-inhalt.js
+       (das Andock-Werkzeug IM Siegel — Modul 16 rendert nur das Gerüst; NUR das
+       WIZ-Objekt darin ist BLP-eigen) · sbkim-init.js (mountet und startet
+       fail-soft listenNostr — Empfangsmodus mit Antwortrecht).
+       Betrifft NUR die SBKIM-Identität, nie Buchhaltungsdaten. -->
+
+<!-- ── family-projekt.de · dezenter Fuß-Verweis (netzweit identisch) ──────────
+     Zweck: Wer diese App irgendwo findet (GitHub-Download, Fork, geteilter Link),
+     kommt von hier zurück zum Marktplatz. Bewusst KLEIN und ganz unten — nicht
+     dominant auf der ersten Seite (Klaus 2026-07-28). Farbwelt = family-project
+     (--accent #6ee7d3). Selbst-enthalten, kein CDN, keine Abhängigkeit. -->
+<style>
+  .fp-badge-wrap{max-width:960px;margin:30px auto 18px;padding:0 16px;text-align:center;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  .fp-badge{display:inline-flex;align-items:center;gap:.5em;padding:7px 15px;
+    border-radius:999px;border:1px solid rgba(110,231,211,.38);color:#6ee7d3;
+    background:rgba(110,231,211,.06);font-size:.82rem;text-decoration:none;
+    transition:background .18s ease,border-color .18s ease;}
+  .fp-badge:hover,.fp-badge:focus-visible{background:rgba(110,231,211,.15);
+    border-color:rgba(110,231,211,.72);outline:none;}
+  .fp-badge.fp-strong{background:rgba(110,231,211,.13);
+    border-color:rgba(110,231,211,.55);font-size:.86rem;padding:8px 17px;}
+  .fp-badge .fp-dot{width:7px;height:7px;border-radius:50%;background:#6ee7d3;
+    box-shadow:0 0 7px rgba(110,231,211,.85);flex:none;}
+  /* Farbwerte 2026-08-03 auf den Netz-Kanon nachgezogen (Tomys-Hub hatte sie
+     in der Lighthouse-Runde davor schon repariert, BLP hing hinterher):
+     vorher #9aa7b6 bei opacity .78 — zu schwach, von PageSpeed als Kontrast-
+     Fehler gemeldet. Keine eigene Erfindung, sondern Gleichstand herstellen. */
+  .fp-copy{margin-top:9px;font-size:.72rem;line-height:1.5;color:#b3c0ce;opacity:.95;}
+  @media (prefers-color-scheme: light){
+    .fp-badge{color:#0f766e;border-color:rgba(15,118,110,.35);background:rgba(15,118,110,.05);}
+    .fp-badge:hover,.fp-badge:focus-visible{background:rgba(15,118,110,.12);}
+    .fp-badge .fp-dot{background:#0f766e;box-shadow:0 0 7px rgba(15,118,110,.5);}
+    .fp-copy{color:#4a5866;}
+  }
+</style>
+<div class="fp-badge-wrap">
+  <a class="fp-badge" href="https://family-projekt.de" target="_blank" rel="noopener"
+     title="Zum Marktplatz family-projekt.de — weitere Werkzeuge und Apps">
+    <span class="fp-dot"></span> Mehr Werkzeuge auf family-projekt.de
+  </a>
+  <div class="fp-copy">&copy; 2026 Klaus Nitzsche &middot; kostenlos, ohne Konto, offline nutzbar &middot; <a href="impressum.html">Impressum</a> &middot; <a href="datenschutz.html">Datenschutz</a> &middot; <a href="sicherheit.html">Sicherheit</a></div>
+</div>
 </body>
 </html>

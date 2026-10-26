@@ -32,14 +32,15 @@ Branch `claude/blp-design-improvements-24b1xa`, PR #345.
 - **Produktplan:** Dieses Repo wird später native App (BookLedgerPro); vorher Klon in neues Repo als PWA
   (Name offen, **eigene DB-Endung nötig**).
 
-## Gefunden nebenbei (noch nicht behoben)
-- Modus-Schalter Einfach/Profi/Berater wirkt nirgends (nur `data-mode`, kein Verbraucher).
-- Shamir-Schritt: Knopf „Speichern" speichert nichts.
-- Veraltete Texte nennen Claude/Anthropic: `docs.confirmAi`, `reports.taxAssistHint` (DE+EN) in `src/ui/i18n.js`.
-- Headless-Browser ist in der Cloud-Umgebung **jetzt verfügbar** (Chromium + Playwright) – PULS sagte bisher „keiner".
+## ⚠ Wichtig: Abgleich mit aktuellem main
+Der Arbeitszweig lag **328 Commits hinter `main`**; Fotos und Befunde der Sitzung zeigten zuerst einen Stand vom Juni.
+Beim Zusammenführen bemerkt, `main` (b924a7a) eingemischt, Ist-Bilder neu aufgenommen und Abschnitt B der Sammlung
+neu geprüft. Klaus' Entscheidungen bleiben gültig. Inzwischen vorhanden: ☰-Menü am Handy, Kleinunternehmer-Frage
+in der Einrichtung, 1200-px-Breite, Anthropic-Texte behoben. Neu gefunden: 24 Menüpunkte ohne Gruppen, abgeschnittene
+Auswahlfelder/Knöpfe, schwebende Mycel-/Siegel-Leisten über Inhalten. Modus-Schalter wirkt weiter nirgends.
 
 ## Verifikation
-- `node tests/run.mjs` → 134/134 grün (unverändert, kein Code geändert). CI auf PR #345 grün.
+- `node tests/run.mjs` → **2284/0** auf dem zusammengeführten Stand (kein App-Code geändert).
 - Bilder nur im Chromium der Sitzung; **kein** Tablet-/DeX-/Gerätetest.
 - ELSTER-Recherche: elster.de war aus der Umgebung **nicht abrufbar**; Belege über Suchauszüge + Open-Source-Projekte,
   ausdrücklich zu bestätigen.

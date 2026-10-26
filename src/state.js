@@ -3,16 +3,39 @@
 // gespeichert (vault.saveSettings/loadSettings). Einfaches Pub/Sub.
 
 import { saveSettings, loadSettings } from './core/vault.js';
+import { datenschutzNachziehen } from './domain/datenschutzStandard.js';
 
 export const MODES = ['einfach', 'profi', 'berater'];
 export const AI_LEVELS = ['suggest', 'draft', 'auto'];
+export const DATENSCHUTZ_MODI = ['aus', 'pseudonym']; // KI-Datensparsamkeit
 
 const DEFAULTS = Object.freeze({
-  mode: 'profi',        // Einfach / Profi / Berater
+  mode: 'profi',        // Einfach / Profi / Berater (UI-Komplexität)
+  nutzungsmodus: 'firma', // firma | privat | verein — Nutzungskontext (blendet Ansichten je Kontext)
   theme: 'system',      // system / light / dark
   lang: 'de',
   aiAutonomy: 'suggest', // suggest / draft / auto
   taxProfile: 'DE',     // Deutschland zuerst
+  kleinunternehmer: false, // §19 UStG — unterdrückt USt-Hinweise
+  gewinnermittlung: 'euer', // euer (§4 Abs.3) | bilanz (§4 Abs.1/§5 EStG) — Default EÜR (Bestand unverändert)
+  rechnungsstelle: 'blp', // blp | extern — Nummernkreis-Hoheit (§14): BLP vergibt echte Nummern (blp) vs. externes Programm/Steuerberater (extern → BLP nur Vorlage). Default blp (Bestand unverändert), Katalog §7a
+  datenschutzModus: 'pseudonym', // aus | pseudonym — ersetzt bekannte Identifikatoren vor KI-Versand. Ab Werk AN seit 2026-10-14 (Klaus); vorher 'aus'
+  datenschutzGewaehlt: false, // true, sobald der Nutzer den Schalter selbst bedient hat (domain/datenschutzStandard.js)
+  kiWeitereNamen: [], // von Hand: wird vor dem KI-Versand immer verdeckt (ai/anker.handAnker)
+  kiNieVerdecken: [], // von Hand: bleibt wörtlich stehen, schirmt Namen darin ab (z. B. „Müller-Thurgau")
+  nerPii: true, // im Pseudonym-Modus zusätzlich erkannte PII Dritter (E-Mail/IBAN/USt-IdNr/Tel.) maskieren
+  backupStrategie: 'download', // download | ordner — Ziel der Datensicherung (Ordner braucht File System Access; sonst Download-Fallback)
+  zahlungszielTage: 14,    // Standard-Zahlungsziel für Fälligkeit/Mahnwesen
+  liquiditaetHorizontTage: 7, // Zeitfenster (Tage) der Dashboard-Liquiditätsvorschau (7|14|30|90, domain/liquiditaet.js); umschaltbar in der Liquiditäts-Karte
+  liquiditaetReserveCent: 0, // gewünschte Mindestreserve/Liquiditätspuffer (Cent); 0 = keine — die Deckungslücke warnt schon, wenn der laufende Saldo unter diesen Puffer rutscht (domain/liquiditaet.js deckungsluecke)
+  vaZeitraum: 'vierteljaehrlich', // USt-Voranmeldungszeitraum: monatlich/vierteljaehrlich/jaehrlich
+  wirtschaftsjahrBeginn: '01-01', // MM-TT; 01-01 = Kalenderjahr (abweichendes WJ möglich)
+  verzugBasiszinsProzent: 3.37, // Basiszinssatz §247 BGB — REGELMÄSSIG AKTUALISIEREN
+  firma: { name: '', anschrift: '', steuernummer: '', ustId: '', iban: '' }, // Aussteller-Stammdaten (Rechnung §14)
+  datev: { beraterNr: '', mandantNr: '', sachkontenlaenge: 4 }, // für DATEV-EXTF-Header (Berater/Mandant)
+  partnerAppUrl: '', // verbundene App (z.B. Mein-WorkFloh) — reziproke Verlinkung
+  baukastenNutzungsprofil: {}, // { schemaId: {anzahl, zuletzt} } — adaptiver Angebots-Baukasten (Katalog §3): häufig genutzte Leistungsarten rutschen nach oben. Gerätelokal (verschlüsselt im Tresor), reines IDs/Zähler-Profil (keine Marge), domain/baukasten.js
+  kalibrierungAnwenden: false, // beim Anlegen einer Angebotsposition die Korrekturfaktoren aus der eigenen Historie (Vor→Nachkalkulation, domain/kalibrierung.js faktorWerte) auf die interne Kalkulation anwenden (kalkuliereKalibriert). Default aus; nur wirksam, wenn Historie vorliegt. Rein intern (Prime Directive), Katalog §5.1
 });
 
 const _state = { settings: { ...DEFAULTS }, route: 'dashboard' };
@@ -27,16 +50,19 @@ function emit() { for (const fn of _subs) fn(_state); }
 /** Lädt Settings aus dem Tresor (nach Unlock). */
 export async function hydrateSettings() {
   const loaded = await loadSettings();
-  _state.settings = { ...DEFAULTS, ...(loaded || {}) };
+  _state.settings = { ...DEFAULTS, ...datenschutzNachziehen(loaded || {}) };
   emit();
   return getSettings();
 }
 
-/** Aktualisiert Settings (teilweise), persistiert verschlüsselt, benachrichtigt. */
-export async function updateSettings(patch) {
+/** Aktualisiert Settings (teilweise), persistiert verschlüsselt, benachrichtigt.
+ *  `opts.still`: speichern, ohne die Oberfläche neu zu zeichnen — für Eingabefelder, deren
+ *  Wert sonst nichts auf der Seite ändert (Neuzeichnen nähme dem nächsten Feld Fokus und
+ *  Getipptes, gemessen in tests/smoke_handnamen.mjs). */
+export async function updateSettings(patch, opts = {}) {
   _state.settings = { ...DEFAULTS, ..._state.settings, ...patch };
   await saveSettings(_state.settings);
-  emit();
+  if (opts.still !== true) emit();
   return getSettings();
 }
 

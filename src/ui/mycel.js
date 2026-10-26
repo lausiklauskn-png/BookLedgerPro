@@ -5,6 +5,7 @@
 // `cursor: none` — auf DeX/Android wird das ignoriert.
 
 import { el } from './dom.js';
+import { WAPPEN_SVG } from '../sbkim/wappen.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -43,6 +44,26 @@ export function MycelMark(size = 32) {
   svg.appendChild(svgEl('circle', { cx: '16', cy: '16', r: '4', fill: 'var(--accent)' }));
   svg.appendChild(svgEl('circle', { cx: '16', cy: '16', r: '4', fill: 'none', stroke: 'var(--accent-strong)', 'stroke-width': '1' }));
   return svg;
+}
+
+/**
+ * SBKIM-Siegel-Wappen: das ECHTE Sage-Wappen (verbatim, Modul 09), klein und
+ * dezent gerendert — wie Sages Kopf-Siegel, nie dominant. Größe kommt aus dem CSS
+ * (`.siegel-badge`/`.siegel-wappen`); die Stufung (Bronze „ruhend" = verified-spore,
+ * Gold „aktiv" = verified-match) steuert ein CSS-Filter über das `data-stufe`-Attribut
+ * des umgebenden Buttons.
+ */
+export function SiegelBadge() {
+  return el('span', { class: 'siegel-wappen', html: WAPPEN_SVG, 'aria-hidden': 'true' });
+}
+
+/**
+ * Großes Wappen für das Siegel-Modal: vollständig (mit schwarzer Scheibe + lesbarem
+ * Band) — anders als das dezente Kopf-Badge wird hier NICHTS ausgeblendet, damit der
+ * Name auf dem Band lesbar ist. Größe kommt aus dem CSS (`.siegel-wappen-gross`).
+ */
+export function SiegelWappenGross() {
+  return el('span', { class: 'siegel-wappen-gross', html: WAPPEN_SVG, 'aria-hidden': 'true' });
 }
 
 /** Dünner Mycel-Trenner für Sektionen (dezent). */

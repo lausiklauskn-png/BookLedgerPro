@@ -38,6 +38,23 @@ export async function createIdentity() {
   return { id: await nodeId(kp.publicKey), x: await publicX(kp.publicKey), keys: kp };
 }
 
+/**
+ * Importiert eine bestehende Identität aus JWKs (z.B. headless gemintet mit
+ * tools/mint_spore.mjs → sbkim/.node-secret.json) und speichert sie verschlüsselt.
+ * Stellt sicher, dass die committete spore.json und die In-App-Identität DENSELBEN
+ * nodeId tragen (keine zweite Identität). Verweigert, wenn schon eine existiert.
+ */
+export async function importIdentity({ privJwk, pubJwk }) {
+  if (await identityExists()) throw new Error('SBKIM-Identität existiert bereits');
+  if (!privJwk || !pubJwk || privJwk.crv !== 'Ed25519' || pubJwk.crv !== 'Ed25519') {
+    throw new Error('Ungültiges Schlüssel-Format (Ed25519-JWK erwartet)');
+  }
+  const keys = await importFromJwk(privJwk, pubJwk);
+  const enc = await encryptWithKey(key(), JSON.stringify({ privJwk, pubJwk }));
+  await kvSet(ID_KEY, enc);
+  return { id: await nodeId(keys.publicKey), x: await publicX(keys.publicKey), keys };
+}
+
 /** Lädt die gespeicherte Identität (CryptoKeys + Meta) oder null. */
 export async function loadIdentity() {
   const enc = await kvGet(ID_KEY);
@@ -50,4 +67,20 @@ export async function loadIdentity() {
 /** Löscht die SBKIM-Identität (z.B. vor Neu-Andock). */
 export async function deleteIdentity() {
   await kvDel(ID_KEY);
+}
+
+/**
+ * Ersetzt die aktuelle Identität durch eine importierte (löscht + importiert).
+ * Für den Fall, dass versehentlich eine frische In-App-Identität erzeugt wurde, die
+ * von der kanonischen (committeten/registrierten) abweicht: damit holt der Nutzer
+ * den dauerhaften Schlüssel (`sbkim/.node-secret.json`) zurück in den Tresor.
+ */
+export async function replaceIdentity({ privJwk, pubJwk }) {
+  // Schlüssel ZUERST validieren (kein Verlust der alten Identität bei kaputter Eingabe).
+  if (!privJwk || !pubJwk || privJwk.crv !== 'Ed25519' || pubJwk.crv !== 'Ed25519') {
+    throw new Error('Ungültiges Schlüssel-Format (Ed25519-JWK erwartet)');
+  }
+  await importFromJwk(privJwk, pubJwk); // wirft, wenn die JWKs nicht importierbar sind
+  await deleteIdentity();
+  return importIdentity({ privJwk, pubJwk });
 }

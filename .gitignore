@@ -9,3 +9,6 @@ node_modules/
 # Lokale Test-Artefakte
 /tmp/
 *.blpr.json
+
+# SBKIM: privater Knoten-Schlüssel — NIE committen (Krypto-Disziplin #4)
+sbkim/.node-secret.json

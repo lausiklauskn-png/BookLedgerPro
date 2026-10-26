@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>BookLedgerPro — Technische Transparenz- und Zwischenstands-Dokumentation</title>
+<style>
+  body { font-family: 'Liberation Serif', Georgia, serif; font-size: 11.5pt; line-height: 1.45; color: #1a1a1a;
+         -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  h1 { font-size: 22pt; color: #1d3a5f; margin-bottom: 2pt; }
+  h2 { font-size: 15pt; color: #1d3a5f; border-bottom: 1.5pt solid #1d3a5f; padding-bottom: 2pt; margin-top: 22pt; }
+  h3 { font-size: 12.5pt; color: #25506b; margin-top: 14pt; margin-bottom: 2pt; }
+  .sub { font-size: 11pt; color: #555; margin-top: 0; }
+  .lead { font-size: 11.5pt; }
+  code, .mono { font-family: 'Liberation Mono', monospace; font-size: 10pt; background: #f2f4f7; padding: 0 2pt; }
+  table { border-collapse: collapse; width: 100%; margin: 8pt 0; font-size: 10pt; }
+  th, td { border: 0.5pt solid #99a; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  th { background: #e7edf3; color: #1d3a5f; }
+  .ok { color: #1a7a3a; font-weight: bold; }
+  .plan { color: #b06a00; font-weight: bold; }
+  .idea { color: #777; font-weight: bold; }
+  .legend { background: #f7f9fb; border: 0.5pt solid #ccd; padding: 8pt 12pt; }
+  .note { background: #fbf7ef; border-left: 3pt solid #b06a00; padding: 6pt 12pt; margin: 8pt 0; }
+  .good { background: #f0f7f1; border-left: 3pt solid #1a7a3a; padding: 6pt 12pt; margin: 8pt 0; }
+  ul { margin-top: 4pt; }
+  .foot { color: #777; font-size: 9pt; margin-top: 4pt; }
+  .center { text-align: center; }
+
+  /* sauberer Zeilenumbruch / keine zerrissenen Wörter */
+  body { hyphens: auto; -webkit-hyphens: auto; word-wrap: break-word; overflow-wrap: break-word; }
+  h2, h3 { page-break-after: avoid; break-after: avoid; }
+  table, .note, .good, .legend, ul, ol { page-break-inside: avoid; break-inside: avoid; }
+  tr { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Bildschirm: Druck-Leiste + lesbare Breite */
+  .toolbar { position: sticky; top: 0; background: #1d3a5f; color: #fff; padding: 10px 16px;
+             display: flex; align-items: center; justify-content: space-between; margin: -8px -8px 16px;
+             box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+  .toolbar span { font-family: Arial, sans-serif; font-size: 10pt; }
+  .printbtn { font-family: Arial, sans-serif; font-size: 11pt; font-weight: bold; cursor: pointer;
+              background: #fff; color: #1d3a5f; border: none; border-radius: 5px; padding: 8px 16px; }
+  .printbtn:hover { background: #e7edf3; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 0 8px; }
+
+  @page { size: A4; margin: 18mm 16mm; }
+  @media print {
+    .no-print { display: none !important; }
+    body { font-size: 10.5pt; }
+    .wrap { max-width: none; margin: 0; padding: 0; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <span>BookLedgerPro · Transparenz-Zwischenstand · Stand 19.06.2026</span>
+  <button class="printbtn" onclick="window.print()">🖨️ Als PDF speichern / drucken</button>
+</div>
+
+<div class="wrap">
+
+<h1>BookLedgerPro</h1>
+<p class="sub"><strong>Technische Transparenz- und Zwischenstands-Dokumentation</strong><br>
+Wie die App Ihre Daten schützt, verschlüsselt und Recht (DSGVO &amp; GoBD) einhält.</p>
+<p class="foot">Stand: 19. Juni 2026 (aktualisiert) · Arbeitsdokument (wird fortgeschrieben) · Endpoint: https://lausiklauskn-png.github.io/bookledgerpro/ · Automatisierte Tests: <strong>1772/1772 grün</strong> · Service-Worker-Cache <code>v142</code></p>
+
+<div class="good no-break">
+<strong>Aktualisierung 19.06.2026 — Vertrauen/Sicherheit, Kalkulation/Angebote, Liquidität &amp; Lohn-Buchungskern gebaut (vormals „geplant"):</strong>
+<ul style="margin:4pt 0;">
+<li><span class="ok">✓</span> <strong>Test-Modus (Sandbox-Tresor)</strong> — die ganze App gefahrlos ausprobieren (eigener wegwerfbarer Tresor, mehrere Tests, behalten/verwerfen, optional Demo-vorbefüllt); echte Daten unberührt. <em>(K3, vormals geplant.)</em></li>
+<li><span class="ok">✓</span> <strong>Datensicherung — wählbare 3-2-1-Strategie</strong> mit Backup→Restore-Roundtrip-<strong>Selbsttest</strong> (byte-genau), gemerktem Zielordner + Drag-and-drop-Restore. <em>(K2; offen bleibt nur das Server-/Offsite-Ziel.)</em></li>
+<li><span class="ok">✓</span> <strong>Angebote &amp; Kalkulation (Werbetechnik)</strong> — interne Vor-/Nachkalkulation (m²/Stück/Zeit/Material/Zukauf), adaptiver Baukasten, selbstlernende Korrekturfaktoren, neutrale Angebote/Rechnungen nach außen, Angebot→Rechnung-Übernahme. <em>(K1, vormals geplant.)</em></li>
+<li><span class="ok">✓</span> <strong>Rechnungs-Hoheit wählbar</strong> (<code>rechnungsstelle</code>: BLP stellt selbst aus <em>oder</em> bereitet nur vor). <em>(K4.)</em></li>
+<li><span class="ok">✓</span> <strong>Liquiditätsvorschau</strong> auf dem Dashboard — bald fällige Eingänge/Ausgänge, Geldbestand + projizierter Saldo, wählbares Zeitfenster, Tiefpunkt, Deckungslücke, Mindestreserve, Reichweite („bis wann reicht das Geld?") und größte anstehende Bewegungen; rein anzeigend, bucht nichts.</li>
+<li><span class="ok">✓</span> <strong>Lohn-Buchungskern</strong> — Lohn/Gehalt GoBD-sicher buchen (Brutto-Methode), Lohnsteuer-Anmeldung als Datenpaket, offene Lohnabgaben (Finanzamt/SV), Lohnkonto je Mitarbeiter. <strong>Bewusst eng:</strong> BLP <em>bucht</em>, berechnet aber <em>keine</em> Lohnsteuer/SV (kein ELStAM/SV-Meldungen/amtliche Tabellen) — die Beträge kommen aus der Entgeltabrechnung. <em>(vormals „optional/bei Bedarf".)</em></li>
+<li>Testumfang von 1080 auf <strong>1772</strong> erhöht (alle grün), Service-Worker-Cache <code>v142</code>.</li>
+</ul>
+</div>
+
+<div class="good no-break">
+<strong>Aktualisierung 17.06.2026 — Mehrmandanten, Bilanzierung, Forderungs-/Datenschutz-Ausbau (R1–R6) abgeschlossen:</strong>
+<ul style="margin:4pt 0;">
+<li><span class="ok">✓</span> <strong>Mehrmandantenfähigkeit</strong> (1 Tresor = 1 Mandant, getrennt verschlüsselt; Auswahl am Sperrbildschirm) und <strong>Bilanzierung</strong> (zweite Gewinnermittlungsart neben EÜR: GuV + Bilanz, Aktiva = Passiva geprüft).</li>
+<li><span class="ok">✓</span> <strong>Forderungs-/Zahlungs-Ausbau:</strong> Verzugszinsen/Mahngebühren buchen, Skonto mit USt-/Vorsteuer-Korrektur (§17 UStG), Sammelzahlungen, Verbindlichkeiten aus Foto/PDF, Rechnungs-Übernahme aus WorkFloh.</li>
+<li><span class="ok">✓</span> <strong>Datenschutz-Ausbau:</strong> automatische PII-Erkennung (NER) für Dritt-Daten, <strong>dreistufiger Briefkasten</strong> (Mandant ⊃ Firma ⊃ Person) — beides früher „geplant", jetzt real (§ 6).</li>
+<li><span class="ok">✓</span> <strong>Privat-/Bürger-Modus</strong> (Nutzungskontext Firma/Privat/Verein): blendet je Kontext geschäftliche Ansichten <em>und</em> USt-/Mahn-/Kreditoren-Felder aus (Anzeige-Vereinfachung, keine rechtliche Sperre).</li>
+<li><span class="ok">✓</span> Zuvor (16.06.): kompletter <strong>Profi-Readiness-Fahrplan V1–V10</strong> (§13b, AfA, Kassenbuch, USt-VA, Berichte, GDPdU, DATEV-EXTF, Kleinfälle, Selbstdiagnose — Detail-Statustabelle § 0b).</li>
+<li><span class="ok">✓</span> <strong>Auftrags-Bearbeitung:</strong> ein noch nicht berechneter Auftrag ist nachträglich editierbar (GoBD-Sperre, sobald berechnet/bezahlt).</li>
+<li><span class="plan">◐ GEPLANT (Design steht):</span> <strong>Angebote &amp; Kalkulation</strong> für Werbetechnik (interne Vor-/Nachkalkulation, neutrale Angebote/Rechnungen), <strong>wählbare Datensicherungs-Strategie</strong> (3-2-1) und ein <strong>Test-Modus</strong> (Sandbox) — Bau-Grundlagen dokumentiert (siehe Repo: <code>BAUPLAN.md</code>, <code>KALKULATION_KATALOG.md</code>, <code>DATENSICHERUNG.md</code>, <code>TEST_MODUS.md</code>).</li>
+<li>Testumfang von 618 auf <strong>1080</strong> erhöht (alle grün), Service-Worker-Cache <code>v102</code>.</li>
+</ul>
+</div>
+
+<h2>0. Zweck dieses Dokuments — die „gläserne App"</h2>
+<p class="lead">BookLedgerPro ist eine Buchhaltungs-Software, die mit besonders sensiblen Daten
+arbeitet: Belegen, Umsätzen, Kunden- und Mitarbeiterdaten. Solche Software verlangt Vertrauen.
+Statt Vertrauen zu <em>behaupten</em>, legen wir offen, <strong>wie</strong> die App technisch funktioniert —
+Punkt für Punkt, ehrlich, nachprüfbar. Wer dieses Dokument liest, soll danach genau wissen:
+nach welchem Prinzip die App schützt, was sie heute schon kann, und was noch in Arbeit ist.</p>
+
+<p>Wir sagen ausdrücklich auch, was <strong>noch nicht</strong> fertig oder noch nicht geprüft ist.
+Ein Transparenz-Dokument, das Geplantes als Fertiges ausgibt, wäre selbst ein Vertrauensbruch.
+Deshalb ist jeder Punkt mit einem ehrlichen Status markiert:</p>
+
+<div class="legend">
+<p style="margin:2pt 0;"><span class="ok">✓ FERTIG</span> — real implementiert und (wo möglich) automatisiert getestet.</p>
+<p style="margin:2pt 0;"><span class="plan">◐ GEPLANT</span> — Konzept steht und ist hier technisch beschrieben, aber noch nicht gebaut.</p>
+<p style="margin:2pt 0;"><span class="idea">○ IDEE</span> — vorgemerkt, noch in Klärung.</p>
+</div>
+
+<h2>0a. Der Kern: Komfort <em>und</em> Datenschutz — der Wettbewerbsvorteil</h2>
+<div class="good">
+<p style="margin-top:0;">Die meisten KI-Buchhaltungs-Tools stellen vor die Wahl: <strong>entweder KI-Komfort
+oder Datenschutz</strong>. BookLedgerPro löst diesen Zielkonflikt auf — <strong>beides
+gleichzeitig</strong>. Das ist die Geschichte, mit der die App auch <em>ohne</em> bekannten
+Firmennamen oder Reputation Vertrauen gewinnt: nicht „vertrau mir", sondern
+<strong>„hier ist technisch belegt, dass deine Daten das Gerät nicht im Klartext verlassen."</strong></p>
+<p><strong>Die Pseudonymisierung ist der Schlüssel-Enabler (Bau-Schritt 1).</strong>
+Funktioniert sie zuverlässig, wird alles Weitere einfacher: mehr Flexibilität und vor allem das
+Vertrauen insgesamt. Deshalb stand sie ganz vorne — und ist <strong>inzwischen gebaut</strong> (§ 6,
+<span class="ok">✓ FERTIG</span>), inklusive automatischer PII-Erkennung (NER) und dreistufigem
+Briefkasten. Auf diesem Fundament ist der <em>Privat-/Bürger-Modus</em> (Nutzungskontext
+Firma/Privat/Verein) <strong>inzwischen ebenfalls real</strong> (<span class="ok">✓ FERTIG</span>):
+Privatpersonen und Vereine sehen eine bewusst vereinfachte Oberfläche ohne den geschäftlichen Ballast.</p>
+<p style="margin-bottom:0;"><strong>Klarstellung zur Anbieterwahl:</strong> Die <em>aktive</em>
+KI-Nutzung bleibt <strong>strikt EU</strong> (Google Vision EU + Mistral EU). Nicht-EU-Anbieter
+sind <strong>nicht zur Auswahl freigegeben</strong> — sie sind allenfalls eine ruhende,
+strukturelle Option im Gerüst der App. Eine Öffnung wäre eine ausdrückliche, gesonderte
+Entscheidung; bis dahin bleibt sie geschlossen.</p>
+</div>
+
+<h2>0b. Funktions-Fahrplan „Profi-Readiness" V1–V10 — Stand offen/erledigt</h2>
+<p class="lead">Der Fahrplan zur vollwertigen Buchhaltung (für Klein- <em>und</em> Normalbetriebe) ist
+<strong>vollständig abgeschlossen</strong> — alle MUSS- und SOLL-Punkte. Stand 19.06.2026,
+automatisierte Tests <strong>1772/1772 grün</strong>.</p>
+<table>
+<tr><th>Punkt</th><th>Inhalt</th><th>Status</th></tr>
+<tr><td>V1</td><td>Kontenrahmen erweitert (57 SKR03-Konten) + Konten anlegen/bearbeiten/löschen</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V2</td><td>§13b / Reverse-Charge + EU/Ausland (USt-VA Kz 41/43/46/47/61/67/89/93)</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V3</td><td>Anlagevermögen + AfA (GWG, Sammelposten, lineare AfA) + Anlagenverzeichnis</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V4</td><td>Eröffnungs-/Anfangsbestände + GoBD-Kassenbuch (laufender Bestand, „nie negativ")</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V5</td><td>USt-VA komplett: Zeitraum (Monat/Quartal/Jahr) + Sondervorauszahlung (1/11) + ELSTER-Datenpaket</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V6</td><td>Anlage EÜR (Gruppierung) + Kontenblätter + Summen-/Saldenliste (SuSa)</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V7</td><td>GoBD-Betriebsprüfer-Export (GDPdU „Z3"): index.xml + Daten-CSV als ZIP</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V8</td><td>DATEV-EXTF berater-fest (Header, BU-Schlüssel 9/8/3/2, §13b-Split)</td><td><span class="ok">✓ erledigt*</span></td></tr>
+<tr><td>V9</td><td>Korrektheit/Kleinfälle (Bewirtung 70/30, Geschenke-/Kleinbetragsgrenze, Periodensperre) + Simulations-Testdaten</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>V10</td><td>Browser-Abnahme: In-App-Selbstdiagnose + manuelle Klickpfad-Checkliste</td><td><span class="ok">✓ erledigt</span></td></tr>
+</table>
+<p class="foot">* V8: Format &amp; Steuerschlüssel sind gebaut und node-getestet; die endgültige „Berater-Festigkeit"
+bestätigt ein realer DATEV-Testimport (privat oder über den Steuerberater) — vorbereitet über den Demo-Export.</p>
+
+<h3>Frühere Ausbaustufen (ebenfalls erledigt)</h3>
+<table>
+<tr><th>Bereich</th><th>Inhalt</th><th>Status</th></tr>
+<tr><td>A1</td><td>Mahnwesen: Fälligkeit, Verzugszinsen §288 BGB, Mahnstufen, B2B/Verbraucher</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>A2</td><td>Eingangsrechnungen / Verbindlichkeiten + offene-Posten-Liste (Kreditoren)</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>A3</td><td>Zahlungsabgleich (Matching, Teilzahlung/Skonto) + Bankimport MT940 &amp; CAMT.053/.052/.054</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>—</td><td>Datenschutz-Modus „Pseudonymisieren" + AVV-Hinweis; E-Rechnung erzeugen/empfangen</td><td><span class="ok">✓ erledigt</span></td></tr>
+</table>
+
+<h3>Neu erledigt (17.06.2026 — Mehrmandanten, Bilanzierung, R1–R6)</h3>
+<table>
+<tr><th>Bereich</th><th>Inhalt</th><th>Status</th></tr>
+<tr><td>Mehrmandanten</td><td>Mehrere getrennte, je eigenständig verschlüsselte Tresore (1 Mandant = 1 Tresor); Auswahl/Anlegen/Wechsel am Sperrbildschirm, Verwaltung in den Einstellungen</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>Bilanzierung</td><td>Zweite Gewinnermittlungsart (GmbH/OHG): Modus-Schalter, GuV + Bilanz (Aktiva = Passiva geprüft) neben der EÜR</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>R1–R3</td><td>Verzugszinsen/Mahngebühren buchen; Skonto mit USt-/Vorsteuer-Korrektur §17 UStG; Sammelzahlungen; Verbindlichkeiten aus Foto/PDF + Zahlungsziel je Rechnung</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>R4 (A4)</td><td>WorkFloh-Anbindung: offenes Austauschformat (Import/Export) + Rechnungs-Übernahme (fertige Rechnung → Forderung/Buchung)</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>R5</td><td>Bankformate gehärtet (CAMT.052/.054 + Saldo-Prüfung); NER (PII Dritter); dreistufiger Briefkasten + NER-Scoping (§ 6)</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>R6</td><td>Privat-/Bürger-Modus (Nutzungskontext Firma/Privat/Verein) inkl. ansichtsinterner Feature-Ausblendung</td><td><span class="ok">✓ erledigt</span></td></tr>
+</table>
+
+<h3>Noch offen — kein Pflicht-Fahrplan mehr</h3>
+<table>
+<tr><th>Punkt</th><th>Inhalt</th><th>Status</th></tr>
+<tr><td>Praxistest</td><td>Echter Durchlauf Foto-OCR → App → Finanzamt + DATEV-Testimport (durch den Nutzer)</td><td><span class="plan">◐ offen</span></td></tr>
+<tr><td>A4-Rest</td><td>WorkFloh-Echtzeit (API/Push) statt Datei; Übernahme von Zahlungsstatus/Teilzahlungen</td><td><span class="plan">◐ offen</span></td></tr>
+<tr><td>Sage 5b–d</td><td>Mycel-Andock (Spore/Hub/Symbiose) — menschlich vermittelt, fremde Repos</td><td><span class="plan">◐ offen</span></td></tr>
+<tr><td>KoSIT/ZUGFeRD</td><td>ZUGFeRD-Empfang (PDF→CII) + KoSIT-Pflichtfeld-Precheck erledigt; offen: voller KoSIT-Validator, ZUGFeRD <em>erzeugen</em>, zertifiziertes 116-Spalten-EXTF, ELSTER-Direktversand</td><td><span class="plan">◐ teilweise</span></td></tr>
+<tr><td>Lohn</td><td><strong>Lohn-Buchungskern</strong> (Lohn/Gehalt buchen, Lohnsteuer-Anmeldung-Datenpaket, offene Lohnabgaben, Lohnkonto) — <em>bucht</em>, berechnet aber keine Lohnsteuer/SV</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>optional</td><td>Volle Lohnabrechnung (Brutto→Netto, SV-Meldungen/ELStAM); Lighthouse/Performance-Messung; lokale Offline-Texterkennung</td><td><span class="idea">○ bei Bedarf</span></td></tr>
+</table>
+<div class="good"><strong>Ohne DATEV voll nutzbar:</strong> Belege scannen (OCR), Kundendaten, Rechnungen,
+einfaches/manuelles Rechnungswesen, EÜR &amp; USt-VA, Kassenbuch und Auswertungen funktionieren
+<strong>komplett ohne DATEV</strong>. DATEV-EXTF/GDPdU/CSV/Voll-Backup sind nur optionale, portable
+Export-Wege (kein Anbieter-Lock-in).</div>
+
+<h2>1. Grundprinzipien</h2>
+<table>
+<tr><th>Prinzip</th><th>Bedeutung für Sie</th><th>Status</th></tr>
+<tr><td><strong>Offline-first &amp; lokal</strong></td><td>Alle Daten liegen auf Ihrem Gerät, nicht auf unseren Servern. Die App läuft auch im Flugmodus.</td><td><span class="ok">✓</span></td></tr>
+<tr><td><strong>Build-frei / quelloffen lesbar</strong></td><td>Die App besteht aus normalen, lesbaren Dateien — kein undurchsichtiges „kompiliertes" Paket. Jeder Fachkundige kann nachsehen, was sie tut.</td><td><span class="ok">✓</span></td></tr>
+<tr><td><strong>Verschlüsselt</strong></td><td>Sensible Inhalte werden mit starker Verschlüsselung gespeichert (Details § 2).</td><td><span class="ok">✓</span></td></tr>
+<tr><td><strong>Recht ist Architektur</strong></td><td>DSGVO und GoBD sind von Anfang an eingebaut, nicht nachträglich aufgesetzt.</td><td><span class="ok">✓</span></td></tr>
+<tr><td><strong>EU-KI, freiwillig (BYOK)</strong></td><td>KI-Funktionen laufen über EU-Dienste, nur mit Ihrer ausdrücklichen Zustimmung und Ihrem eigenen Schlüssel.</td><td><span class="ok">✓</span></td></tr>
+</table>
+
+<h2>2. Verschlüsselung — wie genau</h2>
+<p>Dies ist real implementiert und im Quellcode (<code>src/core/crypto.js</code>, <code>vault.js</code>) nachprüfbar.</p>
+<table>
+<tr><th>Baustein</th><th>Verfahren</th></tr>
+<tr><td>Verschlüsselungs-Algorithmus</td><td><strong>AES-GCM mit 256 Bit</strong> (authentifiziert — erkennt auch nachträgliche Manipulation)</td></tr>
+<tr><td>Schlüssel aus Passwort</td><td><strong>PBKDF2-SHA-256 mit 600.000 Runden</strong> — macht das Durchprobieren von Passwörtern extrem teuer</td></tr>
+<tr><td>Tresor-Aufbau</td><td><strong>Envelope-Verschlüsselung:</strong> ein zufälliger Datenschlüssel verschlüsselt die Daten, das Passwort „umwickelt" nur diesen — „Passwort ändern" ohne Neuverschlüsselung aller Daten</td></tr>
+<tr><td>Zufallswerte</td><td>Pro Datensatz eigener Salt (16 Byte) und IV (12 Byte) aus dem kryptografischen Zufallsgenerator des Browsers</td></tr>
+<tr><td>Sitzungs-Schlüssel</td><td>Existiert <strong>nur im Arbeitsspeicher</strong>, solange die App entsperrt ist — wird nie auf die Festplatte geschrieben</td></tr>
+</table>
+
+<h3>Was verschlüsselt gespeichert wird</h3>
+<ul>
+<li>Einstellungen und KI-Schlüssel (der KI-Schlüssel liegt also <strong>nicht im Klartext</strong>),</li>
+<li>Buchungen / das Journal,</li>
+<li>Belege (Bilder/PDF) — binär verschlüsselt,</li>
+<li>Kunden-, Mitarbeiter- und Zeitdaten (personenbezogene Daten).</li>
+</ul>
+
+<h3>Schutz gegen Datenverlust</h3>
+<p><span class="ok">✓ FERTIG.</span> Browser-Speicher ist vergänglich. Deshalb:</p>
+<ul>
+<li><strong>Shamir Secret Sharing:</strong> Der Schlüssel kann in mehrere Teile zerlegt werden (z. B. „3 von 5 nötig"), als Schutz gegen Verlust eines einzelnen Teils.</li>
+<li><strong>Verschlüsseltes Backup-Bundle:</strong> Der gesamte Bestand lässt sich passwortverschlüsselt herunterladen und wiederherstellen.</li>
+<li><strong>Durabilitäts-Überwachung:</strong> Die App fordert dauerhaften Speicher an (<code>storage.persist()</code>) und erinnert an Backups.</li>
+</ul>
+
+<h2>3. DSGVO — Datenschutz in der Praxis</h2>
+<table>
+<tr><th>Anforderung</th><th>Umsetzung</th><th>Status</th></tr>
+<tr><td>Datensparsamkeit &amp; lokale Verarbeitung</td><td>Daten bleiben auf dem Gerät, kein Betreiber-Server, kein Konto-Zwang.</td><td><span class="ok">✓</span></td></tr>
+<tr><td>Schutz personenbezogener Daten</td><td>Kunden-/Mitarbeiterdaten werden verschlüsselt gespeichert.</td><td><span class="ok">✓</span></td></tr>
+<tr><td>Betroffenenrechte</td><td>Daten-Export und vollständiges Löschen sind in der App vorgesehen.</td><td><span class="ok">✓</span></td></tr>
+<tr><td>Recht-Doku in der App</td><td>Ansicht „Recht &amp; Doku" mit Datenschutz- und Verfahrensdokumentation.</td><td><span class="ok">✓</span></td></tr>
+<tr><td>KI nur freiwillig, EU-Datenresidenz</td><td>KI-Versand nur nach Bestätigung, ausschließlich EU-Endpoints (§ 5/6).</td><td><span class="ok">✓</span></td></tr>
+<tr><td>AVV/DPA-Hinweis in der App</td><td>Auftragsverarbeitung (Art. 28) der KI-Anbieter + Pseudonymisierung als Maßnahme (Art. 32) in „Recht &amp; Doku" benannt.</td><td><span class="ok">✓</span></td></tr>
+<tr><td>Aufklärung Kleinunternehmer / KI-Autonomie</td><td>Klarstellen, welche Pflichten beim Weiterleiten von Kundendaten gelten.</td><td><span class="plan">◐ P3/P4</span></td></tr>
+</table>
+
+<div class="note"><strong>Nebengedanke — strenger als das gesetzliche Minimum:</strong> Unsere
+Krypto-Hausregel (Goldene Regel&nbsp;#4: Daten ruhen verschlüsselt, der Klartext verlässt das
+Gerät nie ohne ausdrückliche Bestätigung) geht <strong>bewusst über die DSGVO-Pflicht hinaus</strong>.
+Beispiel: Ein Datentransfer <em>innerhalb desselben Systems/derselben Firma</em> — etwa von einer
+eigenen App in eine andere — ist rechtlich unkritisch und bräuchte weder einen
+Auftragsverarbeitungsvertrag (AVV/DPA) noch eine Transportverschlüsselung (kein Dritter dazwischen).
+Wir behandeln solche Daten trotzdem nach Regel&nbsp;#4 verschlüsselt — als Eigen-Anspruch, nicht
+weil das Gesetz es verlangt. AVV bzw. Ende-zu-Ende-Verschlüsselung werden erst dann zum Thema, wenn
+tatsächlich eine <strong>dritte Stelle</strong> mitwirkt (z.&nbsp;B. die EU-KI als Auftragsverarbeiter
+nach Art.&nbsp;28, oder ein fremder Vermittler/Hub im Transportweg).</div>
+
+<h2>4. GoBD — Ordnungsmäßige Buchführung</h2>
+<p><span class="ok">✓ FERTIG</span> (nachprüfbar in <code>src/domain/audit.js</code>, <code>journal.js</code>).</p>
+<ul>
+<li><strong>Unveränderbarkeit:</strong> Festgeschriebene Buchungen können nicht mehr geändert oder gelöscht werden.</li>
+<li><strong>Storno statt Löschen:</strong> Korrekturen erfolgen durch Gegenbuchung; das Original bleibt erhalten.</li>
+<li><strong>Hash-Kette (SHA-256):</strong> Jede Buchung ist mit der vorigen kryptografisch verkettet — nachträgliche Änderungen werden erkannt.</li>
+<li><strong>Lückenloser Nummernkreis:</strong> fortlaufende Nummerierung; Lücken/Sprünge werden aufgedeckt.</li>
+<li><strong>Doppelte Buchführung &amp; cent-genaue Beträge</strong> (Ganzzahl-Arithmetik, keine Rundungsfehler).</li>
+</ul>
+<div class="note"><strong>Ehrliche Grenze:</strong> Der DATEV-Export ist „EXTF-orientiert" (dokumentierte Spalten + Steuerschlüssel-Mapping für Standardsätze),
+<strong>nicht</strong> das vollständig zertifizierte 116-Spalten-EXTF. Eine elektronische ELSTER-Übermittlung erfolgt nicht —
+die App erzeugt ein prüfbares Datenpaket für den Steuerberater.</div>
+
+<h2>5. EU-KI-Architektur</h2>
+<p><span class="ok">✓ FERTIG.</span> Grundsatz: <strong>EU-vorrangig, rechtskonform, freiwillig.</strong></p>
+<ul>
+<li><strong>Texterkennung (OCR):</strong> ausschließlich Google Cloud Vision am <strong>EU-Endpoint</strong> (<code>eu-vision.googleapis.com</code>).</li>
+<li><strong>Kontierung &amp; Steuer-Assistenz:</strong> ausschließlich <strong>Mistral (EU)</strong> (<code>api.mistral.ai</code>); der Steuer-Assistent sendet nur <strong>aggregierte Kennzahlen</strong>.</li>
+<li><strong>On-Device-Fallback:</strong> Ist keine KI eingerichtet, arbeitet eine lokale Heuristik ohne jeden Netz-Versand.</li>
+<li><strong>Freiwillig (BYOK):</strong> eigener Schlüssel, verschlüsselt gespeichert; Versand nur nach Bestätigung.</li>
+<li><strong>Nicht-EU-Anbieter (z. B. Claude) ruhen:</strong> nicht im aktiven Bedien-Pfad, um Datenresidenz und Einfachheit zu sichern.</li>
+</ul>
+
+<h2>6. Pseudonymisierung vor KI-Versand — <span class="ok">jetzt real (✓ FERTIG)</span></h2>
+<p>Dieser Abschnitt beschrieb in der Erstfassung ein <em>geplantes</em> Konzept. Der Kern ist
+inzwischen <strong>gebaut, node-getestet und in die KI-Pipeline verdrahtet</strong>
+(<code>src/ai/pseudonym.js</code>, <code>src/ai/anker.js</code>; Schalter in den Einstellungen:
+<em>Datenschutz bei KI → „Pseudonymisieren"</em>).</p>
+
+<h3>Das Problem</h3>
+<p>Wenn KI beim Sortieren und Kontieren helfen soll, würde normalerweise der Beleg-Text — inklusive
+Namen, Firmen, IBAN — zu einem KI-Dienst gesendet. Genau das wollen wir minimieren.</p>
+
+<h3>Die Lösung: anker-basierte, deterministische Pseudonymisierung mit lokalem Re-Identifikations-Tresor</h3>
+<p><strong>Wichtige, ehrliche Klarstellung zur Funktionsweise:</strong> Die App rät <em>nicht</em> per
+Sprach-/Mustererkennung, was im Text personenbezogen sein könnte. Sie nutzt etwas Verlässlicheres:
+sie <strong>kennt ihre Identifikatoren bereits aus den eigenen Stammdaten</strong> (Kunden,
+Mitarbeiter, Firmenprofil) und ersetzt deren <strong>exakte Vorkommen</strong>. So funktioniert es:</p>
+<ol>
+<li><strong>Anker sammeln (lokal):</strong> Aus Ihren Stammdaten werden die exakten Identifikatoren gezogen — Name, Firma, Anschrift, IBAN, USt-IdNr., Steuernummer, E-Mail.</li>
+<li><strong>Ersetzen durch stabile Platzhalter (Token):</strong> Jeder Wert wird durch eine neutrale Marke ersetzt, z. B. <span class="mono">Max Mustermann → [[PERSON_1]]</span>, <span class="mono">DE89… → [[IBAN_1]]</span>. <em>Derselbe Wert erhält stets denselben Token</em> (auf Wunsch auch über mehrere Belege hinweg) — die KI erkennt „derselbe Beteiligte", ohne den Namen zu kennen.</li>
+<li><strong>Nur Neutrales verlässt das Gerät:</strong> Zur Kontierung (Mistral EU) geht der entpersonalisierte Text. Beträge, Datum und USt-Satz bleiben erhalten (die KI braucht sie).</li>
+<li><strong>Zurück-Einordnen:</strong> Antworten, die Platzhalter zitieren (z. B. die KI-Begründung), werden <strong>lokal</strong> wieder in Klartext übersetzt. Die reine Kontierungs-Antwort enthält ohnehin nur Konto + Richtung, also keine Personendaten.</li>
+<li><strong>Der „Briefkasten" bleibt zuhause:</strong> Die Zuordnungstabelle (Token ↔ echter Wert) entsteht im Arbeitsspeicher und verlässt das Gerät nie.</li>
+</ol>
+
+<h3>Transparenz-Vorschau <span class="ok">(✓ FERTIG)</span></h3>
+<p>Bei aktivem Modus zeigt der Buchungsvorschlag eine aufklappbare Anzeige
+„🛡 N Identifikatoren pseudonymisiert an die EU-KI gesendet (2× Person, 1× Firma …)" samt
+<strong>Vorschau des tatsächlich gesendeten Textes</strong> — Sie sehen vor Augen, was das Gerät verlässt.</p>
+
+<h3>Ehrliche Grenzen der Pseudonymisierung</h3>
+<div class="note">
+<ul>
+<li><strong>Maskiert werden Stammdaten <em>und</em> erkannte Dritt-Daten.</strong> Geschützt sind zuerst die Identifikatoren aus Ihren eigenen Stammdaten. Zusätzlich erkennt eine konservative <strong>Muster-Erkennung (NER, <span class="ok">✓ FERTIG</span>)</strong> auch <em>unbekannte</em> Dritt-Daten in einem fremden Beleg — E-Mail, IBAN, USt-IdNr., Steuernummer, Telefon — und maskiert sie mit. Bewusst eng gefasst (geringe Falsch-Positiv-Rate); reine Namens-Erkennung bleibt absichtlich außen vor. Datenschutz-seitig ist die Richtung „eher zu viel als zu wenig maskieren".</li>
+<li><strong>Pseudonym ist nicht gleich anonym (rechtlich).</strong> Pseudonymisierte Daten bleiben laut DSGVO personenbezogen — aber mit deutlich geringerem Risiko und als anerkannte Schutzmaßnahme (Art. 32).</li>
+<li><strong>Der OCR-Schritt ist die Ausnahme:</strong> Für die Texterkennung muss das Beleg-<em>Bild</em> selbst zur KI; pseudonymisiert wird der erkannte <em>Text</em> vor der Kontierung. Vollständige Schwärzung der ganzen Kette setzt lokale Texterkennung voraus (vorgemerkt).</li>
+</ul>
+</div>
+
+<h3>Dreistufiger Briefkasten (Mandant ⊃ Firma ⊃ Person) — <span class="ok">jetzt real (✓ FERTIG)</span></h3>
+<p><span class="ok">✓ FERTIG (P7).</span> Statt einer flachen Anker-Liste ordnet die App die Identifikatoren
+optional in das saubere Drei-Ebenen-Modell ein — getrennte Buchungskreise je <strong>Mandant</strong>,
+die <strong>Firma</strong> als Buchungs-Partner (Debitor/Kreditor), die handelnde <strong>Person</strong>
+als Vermerk. Die Platzhalter tragen dann die Zugehörigkeit, z. B.
+<span class="mono">[[FIRMA_2_IBAN_1]]</span> oder <span class="mono">[[FIRMA_1_PERSON_1]]</span>: die KI
+erkennt, <em>wer zu wem gehört</em>, ohne je einen Klarnamen zu sehen — bei gleichem Schutz und
+verlustfreier Rück-Übersetzung. Auch die per NER erkannten Dritt-Daten erhalten dabei einen sichtbar
+<strong>externen</strong> Scope (<span class="mono">[[EXTERN_IBAN_1]]</span>), klar getrennt von den
+bekannten eigenen/Mandanten-Entitäten (<code>src/ai/briefkasten.js</code>, <code>ner.js</code>;
+Schalter <em>„Dreistufiger Briefkasten"</em> im Pseudonym-Modus).</p>
+<div class="note"><strong>Ehrliche Grenze:</strong> Es gibt einen gemeinsamen <span class="mono">EXTERN</span>-Scope —
+<em>verschiedene</em> Drittparteien in einem Beleg werden noch nicht in eigene Untergruppen geclustert
+(das wäre aus flachem Belegtext nur mit fehleranfälliger Heuristik möglich → bewusst konservativ).</div>
+
+<h2>7. E-Rechnung &amp; Bankimport — <span class="ok">neu (✓ FERTIG, mit Grenzen)</span></h2>
+<table>
+<tr><th>Baustein</th><th>Was es kann</th><th>Status</th></tr>
+<tr><td><strong>XRechnung erzeugen</strong></td><td>Aus einer Rechnung eine strukturierte CII-XML (EN16931/XRechnung-orientiert) erstellen und herunterladen (<code>src/domain/erechnung.js</code>).</td><td><span class="ok">✓</span></td></tr>
+<tr><td><strong>XRechnung empfangen</strong></td><td>Eingehende E-Rechnung in CII <em>und</em> UBL einlesen → Buchungsvorschlag (<code>erechnungLesen.js</code>).</td><td><span class="ok">✓</span></td></tr>
+<tr><td><strong>Bankimport MT940 &amp; CAMT</strong></td><td>Kontoauszug einlesen (MT940 und CAMT.053/.052/.054) → Umsätze (Richtung aus dem Auszug) → Buchungsvorschlag, mit <strong>Saldo-Integritätsprüfung</strong> und <strong>automatischem Zahlungsabgleich</strong> auf offene Posten (<code>bankimport.js</code>, <code>zahlungsabgleich.js</code>).</td><td><span class="ok">✓</span></td></tr>
+<tr><td><strong>ZUGFeRD-Empfang</strong></td><td>Eingebettete CII/UBL aus einem PDF best-effort auspacken → Buchungsvorschlag; KoSIT-orientierter Pflichtfeld-Precheck (EN16931-Kernfelder).</td><td><span class="ok">✓</span></td></tr>
+</table>
+<div class="note"><strong>Ehrliche Grenzen:</strong> Die E-Rechnung ist „XRechnung-<em>orientiert</em>" und
+<strong>nicht gegen den offiziellen KoSIT-Validator</strong> geprüft (nur ein interner Pflichtfeld-Precheck);
+<strong>ZUGFeRD erzeugen</strong> (XML in PDF/A-3 einbetten) ist noch offen (braucht eine PDF-Bibliothek).
+Beim Bankimport bleibt es eine <strong>Plausibilitäts-/Saldo-Prüfung</strong> — <strong>keine vollständige
+SWIFT-/ISO-20022-Schema-Validierung</strong>; reale Bank-Dialekte sind im Praxistest zu prüfen.
+<em>Neu erledigt:</em> CAMT.053/.052/.054, Saldo-Prüfung und der automatische Zahlungsabgleich auf offene
+Posten (Forderungen <em>und</em> Verbindlichkeiten, inkl. Teil-/Sammelzahlung &amp; Skonto) — das macht die
+Ist-EÜR (§ 4 Abs. 3) erlebbar.</div>
+
+<h2>8. Übersicht der weiteren Ausbau-Punkte</h2>
+<table>
+<tr><th>#</th><th>Inhalt</th><th>Status</th></tr>
+<tr><td>P1</td><td>Rechts-Mindestcheckliste + AVV/DPA-Hinweis in der App</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>P2</td><td>KI-Anbieterwahl je Modus — <strong>innerhalb der EU</strong> (Nicht-EU bleibt geschlossen/dormant)</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P3</td><td>KI-Autonomiestufen in der Aufklärung erklären</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P4</td><td>Kleinunternehmer-Aufklärung (Pflichten bei Drittdaten)</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P5</td><td>Pseudonymisierung vor KI-Versand</td><td><span class="ok">✓ erledigt</span> (anker-basiert <strong>+ NER für Dritt-Daten</strong>)</td></tr>
+<tr><td>P6</td><td>Import vorhandener Kundendaten (CSV/vCard/JSON)</td><td><span class="ok">✓ erledigt</span> (WorkFloh-JSON, Rechnungs-Übernahme <strong>und CSV/vCard-Import</strong> in der Kunden-Ansicht)</td></tr>
+<tr><td>P7</td><td>Dreistufiger Briefkasten / Token-Tresor (Mandant ⊃ Firma ⊃ Person)</td><td><span class="ok">✓ erledigt</span> (scope-präfixierte Token, NER-Scoping)</td></tr>
+<tr><td>P8</td><td>Datei-Kanal (Masse) + QR (Einzel-Teilen, lokal erzeugt)</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P9</td><td>Datei-Import-Ablauf mit exaktem Schlüssel-Abgleich</td><td><span class="plan">◐ geplant</span></td></tr>
+<tr><td>P10</td><td>Auftrag/Rechnung führt handelnde Person als Besteller mit</td><td><span class="idea">○ vorgemerkt</span></td></tr>
+<tr><td>K1</td><td><strong>Angebote &amp; Kalkulation</strong> (Werbetechnik): interne Vor-/Nachkalkulation (m²/Stück/Zeit/Material/Zukauf), <strong>neutrale</strong> Angebote/Rechnungen nach außen, selbstlernende Korrekturfaktoren, adaptiver Baukasten, Angebot→Rechnung-Übernahme</td><td><span class="ok">✓ erledigt</span> (<code>KALKULATION_KATALOG.md</code>)</td></tr>
+<tr><td>K2</td><td><strong>Datensicherung — wählbare 3-2-1-Strategie</strong> (BLP intern · verschlüsselter gewählter Ordner · Server/Offsite), frei wählbar beim Onboarding + in den Einstellungen, mit Backup→Restore-Roundtrip-Selbsttest</td><td><span class="ok">✓ erledigt</span> (Server-/Offsite-Ziel offen)</td></tr>
+<tr><td>K3</td><td><strong>Test-Modus</strong> (Sandbox-Tresor): ganze App gefahrlos ausprobieren, echte Daten unberührt, danach behalten oder spurlos verwerfen</td><td><span class="ok">✓ erledigt</span> (<code>TEST_MODUS.md</code>)</td></tr>
+<tr><td>K4</td><td><strong>Rechnungs-Hoheit wählbar</strong> (<code>rechnungsstelle</code>): BLP stellt selbst aus <em>oder</em> bereitet nur vor (externes Programm/Steuerberater, z. B. DATEV)</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>K5</td><td><strong>Liquiditätsvorschau</strong> (Dashboard): bald fällige Ein-/Ausgänge, Geldbestand + Projektion, Zeitfenster, Tiefpunkt/Deckungslücke/Mindestreserve/Reichweite, größte Bewegungen — rein anzeigend</td><td><span class="ok">✓ erledigt</span></td></tr>
+<tr><td>K6</td><td><strong>Lohn-Buchungskern</strong> (<code>LOHN.md</code>): Lohn/Gehalt buchen (Brutto-Methode), Lohnsteuer-Anmeldung-Datenpaket, offene Lohnabgaben, Lohnkonto — <em>ohne</em> automatische Lohnsteuer-/SV-Berechnung</td><td><span class="ok">✓ erledigt</span></td></tr>
+</table>
+
+<h2>9. Was heute schon steht — und was noch nicht (ehrlich)</h2>
+<div class="good"><strong>Bereits real (Phasen 0–6 + EU-KI):</strong> Verschlüsselung (Envelope, AES-GCM-256),
+Datendurabilität (Shamir/Backup), <strong>Mehrmandantenfähigkeit</strong> (getrennte Tresore),
+doppelte Buchführung mit SKR03, <strong>EÜR <em>und</em> Bilanzierung (GuV + Bilanz)</strong>,
+USt-Voranmeldung (periodengerecht <em>und</em> nach Zufluss/Abfluss §4(3)), GoBD-Festschreibung mit Hash-Kette,
+verschlüsselte Belege, Kunden/Aufträge/Mitarbeiter/Kostenstellen, CSV-/DATEV-EXTF-orientierter Export,
+EU-KI (Vision + Mistral) mit On-Device-Fallback, <strong>Datenschutz-Modus „Pseudonymisieren" inkl. NER
+&amp; dreistufigem Briefkasten</strong>, <strong>Privat-/Bürger-Modus</strong>, <strong>E-Rechnung (erzeugen
++ empfangen, ZUGFeRD-Empfang)</strong>, <strong>Bankimport (MT940 &amp; CAMT.053/.052/.054) + automatischer
+Zahlungsabgleich</strong> (inkl. Mahnwesen-Buchung, Skonto §17 UStG, Sammelzahlungen, WorkFloh-Rechnungs-Übernahme),
+Dashboard mit echten Kennzahlen. <strong>Plus der komplette Profi-Readiness-Fahrplan V1–V10</strong>
+(§13b, AfA/Anlagen, Kassenbuch, USt-VA mit ELSTER-Paket, SuSa/Kontenblätter/Anlage-EÜR, GoBD/GDPdU-Export,
+DATEV-EXTF, Kleinfälle, Selbstdiagnose). <strong>Neu (19.06.):</strong> <strong>Test-Modus (Sandbox-Tresor)</strong>,
+<strong>wählbare 3-2-1-Datensicherung</strong> mit Roundtrip-Selbsttest, <strong>Angebote &amp; Kalkulation</strong>
+(interne Vor-/Nachkalkulation, adaptiver Baukasten, neutrale Außen-Dokumente, Angebot→Rechnung), wählbare
+<strong>Rechnungs-Hoheit</strong>, <strong>Liquiditätsvorschau</strong> (Bestand/Projektion/Reichweite/Treiber) und
+<strong>Lohn-Buchungskern</strong> (Lohn buchen + Lohnsteuer-Anmeldung-Datenpaket + offene Lohnabgaben + Lohnkonto).
+<strong>Automatisierte Tests: 1772 von 1772 grün.</strong></div>
+<div class="note"><strong>Noch offen / noch nicht geprüft:</strong> voller KoSIT-Validator &amp; ZUGFeRD-PDF
+<em>erzeugen</em>; zertifiziertes 116-Spalten-DATEV-EXTF und ELSTER-Direktversand (bewusst nur Datenpaket);
+<strong>volle Lohnabrechnung</strong> (automatische Brutto→Netto-Berechnung, SV-Meldungen/ELStAM — bewusst außen vor,
+eigenes zertifiziertes Produkt); Server-/Offsite-Backup-Ziel (3. Stelle der 3-2-1-Sicherung);
+lokale Offline-Texterkennung; WorkFloh-Echtzeit (API/Push) + Übernahme von Zahlungsstatus/Teilzahlungen;
+Sage-Andock (Phase 5b–d); Performance-/Lighthouse-Messung. <strong>Die Browser-Oberfläche ist nicht automatisiert
+end-to-end getestet</strong> — dafür gibt es die In-App-Selbstdiagnose (Kern-Engine) und die manuelle
+Abnahme-Checkliste. <strong>Der echte Praxistest (Foto→App→Finanzamt, DATEV-Import) steht beim Nutzer aus.</strong></div>
+
+<h2>10. Warum Sie das nachprüfen können (nicht nur glauben müssen)</h2>
+<ul>
+<li><strong>Quelloffen und build-frei:</strong> Der Code ist lesbarer Klartext — kein verstecktes, kompiliertes Paket. Was die App tut, steht offen da.</li>
+<li><strong>Kein Server, kein Konto:</strong> Es gibt keine Betreiber-Datenbank, in der Ihre Daten landen könnten.</li>
+<li><strong>Automatisierte Tests:</strong> Die Rechenkerne (Krypto, Beträge, Buchungslogik, Hash-Kette, Pseudonymisierung/NER/Briefkasten, E-Rechnung, Bankimport, Bilanz) sind durch Tests abgesichert — reproduzierbar mit <code>node tests/run.mjs</code> (1772/1772) und in der App über <strong>„Selbsttest"</strong> sichtbar.</li>
+<li><strong>Dieses Dokument trennt Fertiges von Geplantem</strong> — Sie sehen den echten Stand, nicht ein Wunschbild.</li>
+</ul>
+
+<p class="foot center">BookLedgerPro — Buchhaltung, die offenlegt, wie sie schützt.<br>
+Arbeitsdokument, Stand 19.06.2026. Statusangaben gelten zu diesem Datum und werden fortgeschrieben.</p>
+
+</div>
+</body>
+</html>

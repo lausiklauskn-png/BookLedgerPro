@@ -56,7 +56,8 @@ genau wissen, wo es weitergeht. Diese vier immer aktuell halten — **`docs/PULS
 zentrale Andockpunkt** (oben „Letzter Stand" + „Nächste konkrete Schritte" pflegen).
 
 ## Arbeitsweise
-- Branch: `claude/general-discussion-x9xyk9` (bzw. der für die Sitzung vorgegebene).
+- Branch: der **für die Sitzung vorgegebene** (steht im ersten Prompt). Bis
+  2026-08-22 stand hier zusätzlich ein fester Name aus einer alten Sitzung.
 - Pro Phase ein PR. **Freibrief für dieses Repo: mergen, wenn sinnvoll & nutzerfreundlich**
   (CI grün, in sich abgeschlossen). Beschreibung mit Verifikation.
 - `node tests/run.mjs` vor dem Push laufen lassen.
@@ -79,3 +80,54 @@ Siehe `ARCHITECTURE.md`. Phasenstand in `ROADMAP.md`.
 `bookledgerpro`, Domänen-Stichworte (Buchhaltung, Beleg, Konto, Rechnung, USt, EÜR,
 Kostenstelle …), Peer-Spore eines Geschwister-Knotens für den ersten Handshake.
 SBKIM-Module werden aus dem Sage-Repo **kopiert, nicht modifiziert** (Modul 09).
+
+---
+
+## ⬇ Installieren-Knopf in den Einstellungen (2026-10-18)
+
+Klaus: *„Den Installieren-Button überall fest einbauen … unter Einstellungen, Installier-Button hinten."*
+`assets/installieren.js` ist byte-1:1 aus Sage-Protokol (SHA-256 `e0644084…c3c3`) — dort pflegen, hier neu kopieren.
+Eingebunden mit `data-in="[data-einstellungen]"` (Marke an der Einstellungen-Seite in `src/ui/shell.js`), Klasse `btn`:
+der Knopf hängt hinten an der Seite, auch nach jedem Neuzeichnen. Als installierte App verschwindet er. Er spricht
+nach `<html lang>` (immer Deutsch; die App-Sprache setzt `lang` nicht). Im Vorrat, Cache `v254`.
+Gemessen im Browser (echte `index.html`, Tresor gestellt): letztes Element der Einstellungen · als App versteckt ·
+Meldung lesbar · keine Installierbarkeits-Fehler. `node tests/run.mjs` 2284/0 · `smoke_belege` 92 · `smoke_handnamen` 19.
+⚠ Benannt, vorbestehend auf `main`: `tests/smoke_a5_antwortpfad.mjs` FAIL („BLP_QUERY_SYNONYMS nicht in 15_membran.js") ·
+die Kopfleiste (`.header-right`) läuft bei 360 px um 1 px über. ⚠ Am Tablet/Handy nicht gemessen.
+
+## ⬇ Installieren auch OBEN in der Kopfleiste (Klaus 2026-10-18)
+
+Klaus: *„da, wo der Installationsbutton in den Einstellungen zu finden ist, vermutet keiner, dass er die App installieren
+kann … setze den Installationsbutton oben in die Navi-Leiste zusätzlich. Da soll er aber verschwinden, wenn die App
+installiert ist."*
+
+- Die Kopfleiste baut `paint()` in `src/ui/shell.js` bei jedem Neuzeichnen neu — ein von `installieren.js` direkt
+  eingehängter Knopf ginge verloren. Deshalb: `data-vor="install-anker"` legt den Kanon-Knopf `#installieren` in den
+  **verborgenen** Behälter `#install-quelle` (index.html), und `#install-kopf` (⬇, `installKopfKnopf()`) neben dem Namen
+  gibt den Tipp dorthin weiter. **Eine Klick-Logik** (Angebot → Dialog des Browsers, sonst die Meldung der Kanon-Datei).
+  Fehlt sie, führt der Tipp in die Einstellungen. `installieren.js` bleibt byte-1:1.
+- Weg als App (CSS `display-mode:standalone`, `alsAppLaeuft()`) und nach `appinstalled`: `html.app-installiert` blendet
+  Kopf- **und** Einstellungen-Knopf aus (die Kanon-Datei selbst kennt nur display-mode).
+- Kopfleiste: bis 640 px darf `.header-right` umbrechen (vorher lief sie bei 320 px auf 361 px Seite hinaus, bei 360 px
+  um 1 px); 641–780 px nur die Lampen-Punkte (sonst 650 px Seite bei 641). Gemessen: 320/360 px 127 px hoch (vorher 91,
+  aber aus dem Fenster gelaufen), 412 px 91 · 641–1280 px 57 (641 px vorher 77). Cache `v255`.
+- Gemessen (Playwright, echte `index.html`, Tresor gestellt, `beforeinstallprompt` geschluckt): Kopf-Knopf sichtbar und
+  obenauf bei 320 · 360 · 412 · 1280 px · kein Querlaufen · Tipp zeigt die Meldung (`data-lesbar="seite"`) ·
+  `getInstallabilityErrors` leer · nach `appinstalled` und als App weg, Einstellungen-Knopf ebenso.
+  `node tests/run.mjs` 2284/0 · `smoke_belege` 92 · `smoke_handnamen` 19. ⚠ Vor dem Entsperren gibt es keine Kopfleiste.
+  ⚠ Am Tablet nicht gemessen.
+
+## 🏷️ Gerätename · netzweite Regeln
+
+Der Gerätename gehört **ins Verbinden-Panel**, hineingehängt vom app-eigenen Glue
+— **nie** in eine byte-kopierte Panel-Datei. Jedes Feld trägt
+`data-sbkim-geraetename`; der Name geht **nur** an Anzeige und Anmeldung, **nie** an
+`generateOwnSpore`. Er ist ein Hinweis, kein Vertrauens-Beweis: immer mit der Kennung
+zusammen anzeigen.
+
+Diese und die übrigen netzweiten Regeln — Selbst-Merge-Freibrief, frisch von
+`origin/main`, Ton, kein PII, Ehrlichkeit — stehen seit 2026-08-22 **einmal** in
+**[`Sage-Protokol/docs/NETZWEIT.md`](https://github.com/lausiklauskn-png/Sage-Protokol/blob/main/docs/NETZWEIT.md)** statt wortgleich in bis zu
+20 Repos. Verträge: **[`INTERFACES.md`](https://github.com/lausiklauskn-png/Sage-Protokol/blob/main/docs/INTERFACES.md)** · die Fallen beim
+Abzweigen und Veröffentlichen: **[`LEHREN.md`](https://github.com/lausiklauskn-png/Sage-Protokol/blob/main/docs/LEHREN.md)** · alte Fassung dieser
+Datei: [`docs/archiv/CLAUDE-2026-08-22.md`](docs/archiv/CLAUDE-2026-08-22.md).

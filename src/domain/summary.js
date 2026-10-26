@@ -3,9 +3,11 @@
 // Auswertungsfunktionen auf und filtert auf ein Geschäftsjahr.
 
 import { computeEUR, computeUStVoranmeldung } from './taxes.js';
+import { wjPeriode } from './geschaeftsjahr.js';
 
-export function jahrPeriode(jahr) {
-  return { von: `${jahr}-01-01`, bis: `${jahr}-12-31` };
+/** Periode eines (Wirtschafts-)Jahres. wjBeginn '01-01' (Default) = Kalenderjahr. */
+export function jahrPeriode(jahr, wjBeginn = '01-01') {
+  return wjPeriode(jahr, wjBeginn);
 }
 
 function inPeriode(datum, p) {
@@ -16,8 +18,8 @@ function inPeriode(datum, p) {
  * Dashboard-Kennzahlen für ein Jahr.
  * @returns {{jahr, ertrag, aufwand, ueberschuss, ustZahllast, festgeschrieben, entwuerfe}}
  */
-export function dashboardKennzahlen(buchungen, kontoIndex, jahr) {
-  const p = jahrPeriode(jahr);
+export function dashboardKennzahlen(buchungen, kontoIndex, jahr, wjBeginn = '01-01') {
+  const p = jahrPeriode(jahr, wjBeginn);
   const eur = computeEUR(buchungen, kontoIndex, p);
   const ust = computeUStVoranmeldung(buchungen, kontoIndex, p);
   let festgeschrieben = 0, entwuerfe = 0;

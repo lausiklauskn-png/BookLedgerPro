@@ -33,7 +33,10 @@
   --font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
   --motion: 160ms cubic-bezier(.2, .7, .3, 1);
-  --maxw: 880px;
+  /* Inhalts-Maximalbreite. Auf großen Monitoren wirkte 880px „nicht in voller
+     Breite" — auf 1200px erweitert (mehr Platz für Tabellen/Formulare, bleibt
+     zentriert und lesbar). Die Kopfzeile spannt weiterhin randlos. */
+  --maxw: 1200px;
 }
 
 :root[data-theme="dark"] {

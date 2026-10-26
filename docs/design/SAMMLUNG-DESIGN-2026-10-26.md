@@ -1,9 +1,12 @@
 # BLP Design-Sammlung (Stand 2026-10-26)
 
-**Status: nur gesammelt, nichts umgebaut.** Plansitzung mit Klaus. Grundlage sind
-Klaus' Vorgaben und echte Bildschirmfotos des aktuellen Stands (`main` 4ba49c8 +
-PULS-Doku), aufgenommen lokal mit Chromium bei 390 px (Handy) und 1366 px (breit):
-[`ist-2026-10-26/`](ist-2026-10-26/). Kein Gerätetest (Tablet/DeX) gemacht.
+**Status: nur gesammelt, nichts umgebaut.** Plansitzung mit Klaus.
+
+⚠ **Korrektur am Sitzungsende:** Die ersten Bildschirmfotos und Befunde stammten von einem **alten Stand**
+(Juni, `4ba49c8`), weil der Arbeitszweig 328 Commits hinter `main` lag. Nach dem Abgleich wurden die Ist-Bilder
+durch Aufnahmen vom **aktuellen `main` (`b924a7a`, 2026-10-26)** ersetzt ([`ist-2026-10-26/`](ist-2026-10-26/),
+Chromium 390 px / 1366 px) und Abschnitt B unten neu geprüft. **Die Entscheidungen von Klaus (A, D, E–H) gelten
+unverändert.** Kein Gerätetest (Tablet/DeX).
 
 Leitsatz (Klaus): **BLP ist ein Arbeitswerkzeug, keine Vorführung.** Die Funktionen
 sind modern; das Design soll es auch werden, angelehnt an moderne
@@ -17,14 +20,14 @@ Buchhaltungsprogramme.
 |---|---|---|
 | A1 | **Strichsymbole** statt Emojis bei den Symbolen | Navigation, Knöpfe, Tabellenaktionen und Statusanzeigen bekommen Strichsymbole (heute: nur Text). **Die vorhandenen 3D-Bilder bleiben** (Klaus 2026-10-26: eigens generiert, passen zu App und Farbe): Sperrbildschirm, 3 Onboarding-Bilder, 7 Leerzustände. Sie sind Illustrationen, keine Symbole. |
 | A2 | **Knöpfe flach** halten, soweit am Handy bedienbar | Heute ca. 40–44 px sichtbar hoch (`.btn` padding .55rem), Eingabefelder ebenso. Ziel wie PBP: sichtbar ~28–32 px, unsichtbare Trefferfläche ≥ 44 px bei Touch. Formulare, Segment-Schalter, Tabellenaktionen mitziehen. |
-| A3 | **Vollbild**, Platz optimal nutzen (präzisiert 2026-10-26) | Heute alles auf `--maxw: 880px` begrenzt und mittig, am breiten Schirm viel leer. Ziel: **volle Breite**, der Inhalt passt sich immer der verfügbaren Breite an. **Seitenleiste einklappbar** (auf Symbole); im **Teilbild** (geteilter Bildschirm, schmales Fenster) klappt sie **selbst** ein. Am Handy ein **☰-Menü**, das die Leiste aufklappt, Einstellungen inklusive. |
+| A3 | **Vollbild**, Platz optimal nutzen (präzisiert 2026-10-26) | Heute auf `--maxw: 1200px` begrenzt und mittig. Ziel: **volle Breite**, der Inhalt passt sich immer der verfügbaren Breite an. **Seitenleiste einklappbar** (auf Symbole); im **Teilbild** (geteilter Bildschirm, schmales Fenster) klappt sie **selbst** ein. Am Handy ein **☰-Menü**, das die Leiste aufklappt, Einstellungen inklusive. |
 | A4 | **Themen = Farbe × Hell/Dunkel** (Klaus 2026-10-26: Hell/Dunkel bleibt und gilt für jede Farbe) | Zwei getrennte Schalter: **Farbe** (Blau · Graphit · Petrol) und **Helligkeit** (Hell · Dunkel · wie Gerät). Ergibt sechs Kombinationen, siehe Tabelle unten. Ersetzt die heutige Wahl System/Hell/Dunkel nicht, sondern ergänzt sie um die Farbe. |
 
 ### A5 Schrift ohne Fehler (Klaus 2026-10-26: „ist immer wieder aufgetaucht“)
 Bei jeder Breite (Handy, Teilbild, Tablet, Vollbild, große Schrift im System) gilt:
 - Keine abgeschnittenen Wörter, keine Buchstaben unter Rändern, nichts überlappt.
 - Knopf- und Menübeschriftungen brechen nicht mitten im Wort und werden nicht zweizeilig gequetscht
-  (heute z. B. „Jetzt sperren“ zweizeilig am Handy, Feldnamen „Einzelpreis (€)“ umgebrochen, USt-Auswahl abgeschnitten).
+  (heute z. B. abgeschnittene Auswahlfelder im Journal, abgeschnittener Knopf „Schnellerfassung aus Te…“ am Handy, siehe B2).
 - Statt Quetschen: Symbol + kurzer Name, oder Feld rutscht in die nächste Zeile; Tabellen scrollen waagerecht, Spalten bleiben lesbar.
 - Abnahme je Umbau-Abschnitt: Bildschirmfotos bei 320, 390, 768, 1024, 1366 px und 200 % Schrift; jede Beschriftung
   automatisch auf Überlauf prüfen (Text breiter als sein Kasten = Fehler).
@@ -60,58 +63,32 @@ Bei jeder Breite (Handy, Teilbild, Tablet, Vollbild, große Schrift im System) g
 
 ---
 
-## B. Befunde am Ist-Stand (aus den Bildern)
+## B. Befunde am aktuellen Stand (`main` b924a7a, neu geprüft)
 
-**Rahmen / Navigation**
-- B1 Elf Navigationspunkte ohne Symbole, ohne Gruppen. Am Handy eine waagerechte
-  Laufleiste, rechts abgeschnitten („Auf…") – man sieht nicht, dass es weitergeht.
-- B2 Kopfleiste am Handy: „Jetzt sperren" bricht in zwei Zeilen, Mandanten-Kennung
-  drängt an den Namen. Vorschlag: Sperren als Schloss-Symbol.
-- B3 Mandanten-Anzeige ist eine kryptische Kennung (`NQRQZq…`). Für Arbeit besser:
-  Firmenname + Geschäftsjahr, Kennung nur im Tooltip/Einstellungen.
-- B4 Hinweis „Speicher nicht als dauerhaft zugesichert" steht als breiter Balken
-  dauerhaft oben und nimmt Platz. Wichtig (Durabilität ist Pflicht), aber kompakter:
-  z. B. Statuspunkt in der Kopfleiste + Klick öffnet Hinweis; Balken nur bei „kritisch".
+**Was es inzwischen schon gibt (nicht neu bauen):**
+- Am Handy bereits ein **☰-Menü** (Kopfleiste), Installieren-Knopf ⬇, Lampen LEBT/VERKEHR/FREMD, Mycel- und
+  Siegel-Leiste unten, Fußzeile mit Impressum/Datenschutz.
+- Inhaltsbreite schon auf **1200 px** erweitert (`--maxw`), aber weiter mittig begrenzt → Vollbild (A3) noch offen.
+- Einrichtung fragt schon **Kleinunternehmer ja/nein** (`kleinunternehmer`, § 19) und die Rechnungsstelle.
+- Veraltete Claude/Anthropic-Texte sind **behoben**.
+- Viele neue Bereiche: Kassenbuch, Anlagen, Verbindlichkeiten, Angebote, Shop-Übernahme, Nachkalkulation, Lohn,
+  Berichte, SBKIM-Suche, Geheim-Fach, Anleitung, Selbsttest, Über; Belege mit XRechnung und Bankauszug-Import.
 
-**Übersicht (Dashboard)**
-- B5 Begrüßung „Willkommen bei BookLedgerPro" + Werbesatz „Buchhaltung, die mitdenkt …
-  schön." wirkt wie Vorführung. Weg damit; Seite heißt einfach „Übersicht".
-- B6 Neun gleich große Kacheln, alle 0 – keine Gewichtung. Modern: 3–4 Kennzahlen oben
-  (Überschuss, Einnahmen, Ausgaben, USt-Zahllast) mit Zeitraum, darunter „Zu erledigen"
-  (offene Entwürfe, unverbuchte Belege, offene Rechnungen) und letzte Buchungen.
-- B7 GoBD-Audit-Karte gut, aber als kleiner Statuspunkt reicht es im Alltag.
-
-**Journal / Formulare**
-- B8 Formular „Neue Buchung" steht immer offen über der Liste und schiebt sie nach unten.
-  Modern: Liste/Tabelle zuerst, „+ Buchung" öffnet ein Seitenfenster (rechts) bzw.
-  am Handy ein Vollbild-Blatt.
-- B9 Leere Tabellen: Bild bleibt (A1). Darüber trotzdem Tabellen-Kopfzeile und direkt eine passende Aktion („+ Buchung“), damit man gleich loslegen kann.
-- B10 Auftrag am Handy: Positionszeile (Beschreibung/Menge/Preis/USt) viel zu eng,
-  Feldnamen brechen um, USt-Auswahl abgeschnitten. Positionen am Handy untereinander
-  (Karte je Position).
-
-**Belege**
-- B11 Zwei getrennte Karten (Text einfügen / Foto-Upload). Modern: ein **Beleg-Eingang**
-  (Inbox) mit Ablegefläche, Kamera, Upload; danach Liste mit Status
-  (neu → erkannt → gebucht) und Vorschau neben dem Buchungsvorschlag.
-
-**Einstellungen**
-- B12 Eine lange Seite ohne Gliederung (Modus, KI-Autonomie, Aussehen, Sprache,
-  KI-Schlüssel, Backup …). Gliedern in Abschnitte/Reiter: Allgemein · Aussehen ·
-  KI (EU) · Sicherheit & Backup · Firma.
-- B13 Segment-Schalter „KI-Autonomie" sehr breit, am Handy zu lang.
-
-**Sperrbildschirm / Einrichtung**
-- B14 Sperrbildschirm: 3D-Bild bleibt (A1). Nur prüfen, dass es am Handy das Passwortfeld nicht unter den Rand schiebt.
-- B15 Shamir-Schritt: Knopf heißt „Speichern", speichert aber nichts (geht nur weiter).
-  Ehrlicher: „Weiter – ich habe die Teile notiert" plus „Kopieren"/„Drucken" je Teil.
-
-**Texte (nebenbei gefunden, kein Design – aber falsch)**
-- B16 Alte Texte nennen noch **Claude/Anthropic**, obwohl die KI auf Mistral/Google EU
-  umgestellt ist: `docs.confirmAi` und `reports.taxAssistHint` (DE und EN) in
-  `src/ui/i18n.js`. Muss beim Umbau korrigiert werden.
-
----
+**Weiterhin offen / neu gefunden:**
+- B1 **24 Menüpunkte** ohne Symbole und ohne Gruppen – am breiten Schirm muss man scrollen. Gruppierung (C1)
+  und Ausblenden je Modus (F) sind dringender als gedacht.
+- B2 **Schriftfehler (A5) sichtbar:** Auswahlfelder schneiden Text ab („0400 · Betriebsau…", „Inland (USt im Bet…"
+  im Journal); am Handy ist „Schnellerfassung aus Te…" rechts abgeschnitten; der Speicher-Hinweis rutscht am
+  Handy halb unter die Kopfleiste.
+- B3 **Schwebende Mycel-/Siegel-Leisten** liegen über Inhalten (Handy: über der GoBD-Karte; breit: über Formular/Menü).
+  Platz dafür einplanen oder andocken.
+- B4 Übersicht wie früher: „Willkommen…" + Werbesatz + 9 gleich große Kacheln, alle 0 (siehe B5–B7 alt → bleibt gültig).
+- B5 Journal: Formular „Neue Buchung" steht oben fest und schiebt die Liste nach unten (C4/Seitenfenster).
+- B6 Modus-Schalter Einfach/Profi/Berater **wirkt weiterhin nirgends** (nur `data-mode`).
+- B7 Shamir-Schritt: Knopf heißt weiter „Speichern", geht nur weiter.
+- B8 Startseite vor der Anmeldung: großes Bild + Zielgruppen-Chips („Laien, Kleinunternehmen, Profis, Berater")
+  → an die neuen Modi angleichen (Privat statt „Laien").
+- B9 Themen weiterhin nur System/Hell/Dunkel in Teal; Knöpfe ~40 px hoch.
 
 ## C. Ideen angelehnt an moderne Buchhaltungsprogramme
 (Orientierung an gängigen Mustern wie Lexware Office, sevDesk, BuchhaltungsButler,

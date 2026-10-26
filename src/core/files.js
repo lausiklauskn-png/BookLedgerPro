@@ -56,6 +56,61 @@ export function pickFile(accept = '', capture = null) {
   });
 }
 
+/** Wie pickFile, aber viele Dateien auf einmal — oder einen ganzen Ordner (Klaus 2026-10-14:
+ *  „aus Ordnern komplette PDF importieren"). `ordner` nutzt webkitdirectory: Chromium,
+ *  Firefox und Safari kennen es; der Browser fragt dabei selbst nach. Liefert [] bei Abbruch. */
+export function pickFiles(accept = '', { ordner = false } = {}) {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    if (ordner) { input.webkitdirectory = true; input.setAttribute('webkitdirectory', ''); }
+    else if (accept) input.accept = accept;
+    input.onchange = () => resolve(input.files ? Array.from(input.files) : []);
+    input.click();
+  });
+}
+
+// ---- File System Access (gemerkter Zielordner, Schritt 3) -------------------
+// Nur Chromium-Desktop hat `showDirectoryPicker`. Auf Tablet/iOS/Firefox fehlt sie →
+// der Aufrufer fällt auf den Download zurück (domain/backupStrategie.backupZiel).
+// Diese Helfer berühren DOM/Dateisystem → statisch geprüft (kein Headless-Browser).
+
+/** True, wenn der Browser die File-System-Access-Verzeichniswahl unterstützt. */
+export function supportsDirectoryPicker() {
+  return typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function';
+}
+
+/** Öffnet die Verzeichnis-Auswahl (Lese/Schreib) und liefert das Handle (oder null bei Abbruch). */
+export async function pickDirectory() {
+  if (!supportsDirectoryPicker()) return null;
+  try {
+    return await window.showDirectoryPicker({ id: 'blpr-backup', mode: 'readwrite' });
+  } catch {
+    return null; // Nutzer hat abgebrochen
+  }
+}
+
+/**
+ * Stellt sicher, dass für ein (ggf. aus IndexedDB geladenes) Handle die Schreibrechte
+ * bestehen — fragt sie sonst nach. True, wenn am Ende geschrieben werden darf.
+ */
+export async function ensureRwPermission(handle) {
+  if (!handle || typeof handle.queryPermission !== 'function') return true;
+  const opts = { mode: 'readwrite' };
+  if ((await handle.queryPermission(opts)) === 'granted') return true;
+  try { return (await handle.requestPermission(opts)) === 'granted'; }
+  catch { return false; }
+}
+
+/** Schreibt Text als Datei in einen Verzeichnis-Handle (legt sie an/überschreibt sie). */
+export async function writeTextToDirectory(dirHandle, filename, text) {
+  const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(text);
+  await writable.close();
+}
+
 export function formatBytes(n) {
   if (!n) return '0 B';
   const units = ['B', 'KB', 'MB', 'GB'];
