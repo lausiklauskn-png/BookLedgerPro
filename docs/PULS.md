@@ -6,6 +6,12 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 ## ▶ Neuester Stand (2026-10-26, nachts): C1 „Namen nach Muster" gebaut · Klaus' Antworten auf den Plan
+- **Klaus' Fahrplan (2026-10-26, abends):** Mail-Teilen ist übernommen (#359); Private Brain Pro bekommt den Sende-Knopf (PR #91).
+  Kein zweites Postfach in BLP. Stattdessen **ein Tresorordner für alle Pro-Apps** (Private Brain Pro, BookLedgerPro, Workflow
+  PDF Pro; ein Passwort, PBV1 byte-gleich), PWAs bleiben bei Teilen/Links. **Repos:** hier fertig werden → komplett nach
+  `BookLedger-Basic` kopieren → dieses Repo wird die native Pro-App (Android, dann Windows), Name „BookLedgerPro", kein Umbenennen.
+  Plan: `docs/design/PLAN-TRESORORDNER-2026-10-26.md`. **Nächstes hier:** D22 „Positionen anhängen" + Needs-Übergabe (Needs hat
+  Nettopreise je Leistung), dann Workflow PDF „beides", dann R3; danach die Kopie nach Basic.
 - **Mail-Teilen gebaut (PR „Mail an BookLedgerPro teilen"):** `.eml` → Mail-Beleg (Text verschlüsselt, durchsuchbar) + Anhänge
   als Belege mit Verweis, Textebene sofort, **Positionen (S1)** verschlüsselt am Beleg mit Tabelle; `run.mjs` 2547/0 ·
   `smoke_mail` 15 grün · Gegenprobe 6 gefangen · `sw.js` v267. **Nächstes:** Knopf „An BookLedgerPro teilen" in Private Brain Pro
