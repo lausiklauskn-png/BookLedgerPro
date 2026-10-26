@@ -17,9 +17,9 @@ import { saveEingangsrechnung, listEingangsrechnungen, zahlungHinzufuegen } from
 import { listAuftraege, listKunden, auftragZahlungHinzufuegen } from '../../domain/crm-store.js';
 import { loadAccounts, saveEntwurf } from '../../domain/store.js';
 import { extractFromText } from '../../ai/extract.js';
-import { categorize as categorizeAI } from '../../ai/mistral.js';
+import { categorize as categorizeAI, chat } from '../../ai/mistral.js';
 import { ladeAnker } from '../../ai/anker.js';
-import { tokenize, maskierungsBericht } from '../../ai/pseudonym.js';
+import { tokenize, maskierungsBericht, reidentify } from '../../ai/pseudonym.js';
 import { ocr } from '../../ai/vision.js';
 import { isOcrAktiv, getAiConfig, isMistralConfigured } from '../../ai/aiConfig.js';
 import { belegKontierung } from '../../ai/belegRichter.js';
@@ -28,7 +28,7 @@ import { begruendeBuchung } from '../../ai/berater.js';
 import { onDeviceBegruendung } from '../../domain/rechtsregeln.js';
 import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, getOriginalBytes, bytesToBase64, linkBeleg, aufbewahrungBis, istAufbewahrungspflichtig } from '../../domain/documents.js';
 import { setBelegText, getBelegText, setBelegVektoren, getBelegVektoren } from '../../domain/documents.js';
-import { suchwoerter, wortTreffer, ausschnitt, zerlegen, besteNaehe, bedeutungsRang, kombiniere, brauchtVektoren, eintragText, ZERLEGUNG } from '../../domain/belegsuche.js';
+import { suchwoerter, wortTreffer, ausschnitt, zerlegen, besteNaehe, bedeutungsRang, kombiniere, brauchtVektoren, eintragText, ZERLEGUNG, belegeFuerFrage, frageNachrichten, antwortTeile, FRAGE_TEXT_MAX } from '../../domain/belegsuche.js';
 import { listBuchungen } from '../../domain/store.js';
 import { loadEmbedder } from '../../sbkim/embed.js';
 import { getSettings, navigate, updateSettings } from '../../state.js';
@@ -36,7 +36,7 @@ import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
 import { testMarke } from '../testmarke.js';
 import { namenVorschlagBox } from '../namensvorschlag.js';
-import { pruefStandVon, ungepruefte, belegDateienWaehlen, kiAnweisungZeilen, textNachWahl, PRUEF_STAND } from '../../domain/kiReinigung.js';
+import { pruefStandVon, ungepruefte, belegDateienWaehlen, kiAnweisungZeilen, textNachWahl, ohneZeilen, PRUEF_STAND } from '../../domain/kiReinigung.js';
 import { pruefeBeleg, pruefBericht, kiVermerke, vermerkeKiEntfernt, pruefKern, prueferMail } from '../../domain/belegPruefung.js';
 import { belegFuersKi, pdfKopf, pdfTextebene } from '../../ai/kiVorbereitung.js';
 import { herkunftVon, istEigenerScan, textebeneReicht, workflowScanAdresse, istAndroid } from '../../domain/workflowPdf.js';
@@ -1101,6 +1101,7 @@ let _vektoren = new Map();   // id → { zerlegung, anzahl, stuecke }
 let _embedder = null;
 let _bedeutungZustand = { stand: 'aus', text: '' };   // aus | laedt | ordnet | bereit | fehler
 let _ordnetLauf = 0;
+let _letzteTreffer = [];
 
 async function textMerken(id, text) {
   try { const m = await setBelegText(id, text); _texte.set(id, { stand: m.textStand, text: String(text || '') }); _vektoren.delete(id); }
@@ -1207,6 +1208,7 @@ async function sucheAusfuehren(frage, _belegeAlt, ziel) {
     } catch { bedeutung = []; }
   }
   const alle = kombiniere(treffer, bedeutung);
+  _letzteTreffer = alle;
   if (typeof window !== 'undefined') window.__blpSuche = { frage, woerter, wort: treffer.length, bedeutung: bedeutung.length, schwach, treffer: alle.map((x) => ({ id: x.id, typ: x.typ, art: x.art, naehe: x.naehe })) };
   if (!alle.length) { ziel.appendChild(el('p', { class: 'muted small', 'data-suche-leer': '', text: t('docs.suche.keineTreffer') })); return; }
   ziel.appendChild(el('p', { class: 'muted small', text: t('docs.suche.treffer').replace('{n}', String(alle.length)) + (schwach ? ' · ' + t('docs.suche.bedeutungSchwach') : '') }));
@@ -1239,14 +1241,92 @@ function belegSuche(belege) {
     } else { _ordnetLauf++; await updateSettings({ bedeutungssuche: 'aus' }, { still: true }); zustandSetzen('aus', ''); await repaint(); }
   } });
   const weit = el('label', { class: 'small' }, [el('input', { type: 'checkbox', 'data-suche-weit': '' }), ' ' + t('docs.suche.weit')]);
+  // A3 (Klaus: „wenn mit KI, dann mit Anonymisierung"): Frage an die gefundenen Belege, nur mit Mistral-Schlüssel.
+  const frageZiel = el('div', { class: 'frage-ziel', 'data-frage-ziel': '' });   // bleibt stehen, wenn die Treffer neu gezeichnet werden
+  const frageKnopf = el('button', { class: 'btn btn-sm', type: 'button', 'data-frage-belege': '', hidden: true, text: t('docs.frage.knopf'), onClick: () => frageAnBelege(input.value, frageZiel).catch((e) => alert(String((e && e.message) || e))) });
+  isMistralConfigured().then((ja) => { if (ja) frageKnopf.hidden = false; }).catch(() => {});
   const cb = weit.querySelector('input'); cb.checked = s.belegsucheWeit !== false;
   cb.addEventListener('change', async () => { await updateSettings({ belegsucheWeit: cb.checked }, { still: true }); los(); });
   if (_frage) setTimeout(los, 0);
   return el('div', { class: 'card suche-karte', 'data-belegsuche-karte': '' }, [
     el('h2', { class: 'small', text: t('docs.suche.titel') }),
     input,
-    el('div', { class: 'suche-zeile' }, [schalter, zustand, weit]),
+    el('div', { class: 'suche-zeile' }, [schalter, zustand, weit, frageKnopf]),
+    frageZiel,
     el('p', { class: 'muted small', text: t('docs.suche.hinweis') }),
     ziel,
   ]);
+}
+
+// ───────────── A3: Frage an die Belege (Mistral EU) — nur pseudonymisiert, mit Vorschau und Halt ─────────────
+// Klaus (2026-10-26): „wenn mit KI, dann mit Anonymisierung". Weg: die besten Treffer der Suche (höchstens 5 Belege mit
+// Text) → jeder Text pseudonymisiert (Stammdaten-Anker, Muster, „Weitere Namen") → Prüfung auf Anweisungen an eine KI
+// (kiTextFreigabe, Halt) → Vorschau „Das sieht die KI" mit Senden/Abbrechen → Mistral → Antwort, Platzhalter wieder
+// aufgelöst (nur auf dem Gerät), Verweise [n] als Sprung zum Beleg. Ohne Schlüssel gibt es den Knopf nicht.
+async function frageAnBelege(frage, ziel) {
+  const f = String(frage || '').trim();
+  if (!f) { alert(t('docs.frage.leer')); return; }
+  const kand = belegeFuerFrage(_letzteTreffer);
+  if (!kand.length) { alert(t('docs.frage.keineBelege')); return; }
+  const alle = await listBelege();
+  const belege = [];
+  const karten = [];
+  let nr = 0;
+  for (const k of kand) {
+    const b = alle.find((x) => x.id === k.id);
+    if (!b) continue;
+    const text = await textVon(b);
+    if (!text) continue;
+    nr++;
+    const anker = await kiAnker(text);
+    const { text: pseudo, map } = (anker && anker.length) ? tokenize(text, anker, { wortgrenze: true }) : { text, map: [] };
+    belege.push({ nummer: nr, id: b.id, name: b.name, text: pseudo, map });
+  }
+  if (!belege.length) { alert(t('docs.frage.keineBelege')); return; }
+  // Halt bei Anweisungen an eine KI — über alle Texte zusammen (einmal anhalten, wie bei der Kontierung).
+  const frei = await kiTextFreigabe(belege.map((b) => b.text).join('\n\n'));
+  if (frei.nurLokal) { alert(frei.hinweis || t('docs.frage.nurLokal')); return; }
+  const gesamt = belege.map((b) => b.text).join('\n\n');
+  if (frei.kiText !== gesamt) {
+    // Der Halt nimmt ganze Zeilen heraus (ohneZeilen): dieselben Zeilen je Beleg entfernen, Reihenfolge und Rest unverändert.
+    const bleibt = new Set(frei.kiText.split('\n').map((z) => z.trim()));
+    const weg = gesamt.split('\n').map((z) => z.trim()).filter((z) => z && !bleibt.has(z));
+    for (const b of belege) b.text = ohneZeilen(b.text, weg);
+  }
+  // Vorschau je Beleg — mit dem Text, der wirklich hinausginge (nach Pseudonymisierung UND Halt).
+  for (const b of belege) karten.push(el('details', { class: 'hinweis pseudonym-info', open: b.nummer === 1 ? '' : null }, [
+    el('summary', { class: 'small', text: `[${b.nummer}] ${b.name} · ${t('pseudonym.badge').replace('{n}', String(b.map.length))}` }),
+    el('pre', { class: 'mono small pseudonym-preview', text: b.text.slice(0, FRAGE_TEXT_MAX) + (b.text.length > FRAGE_TEXT_MAX ? ' …' : '') }),
+  ]));
+  const antwortSlot = el('div', { class: 'frage-antwort', 'data-frage-antwort': '' });
+  const vorschau = el('div', { class: 'card frage-vorschau', 'data-frage-vorschau': '' }, [
+    el('h3', { class: 'small', text: t('docs.frage.vorschauTitel') }),
+    el('p', { class: 'muted small', text: t('docs.frage.vorschauText').replace('{n}', String(belege.length)) }),
+    el('p', { class: 'mono small', text: t('docs.frage.frage') + ' ' + f }),
+    ...karten,
+    el('div', { class: 'suche-zeile' }, [
+      el('button', { class: 'btn btn-primary btn-sm', type: 'button', 'data-frage-senden': '', text: t('docs.frage.senden'), onClick: async () => {
+        vorschau.querySelectorAll('button').forEach((x) => x.setAttribute('disabled', ''));
+        antwortSlot.replaceChildren(el('p', { class: 'muted small', text: t('docs.frage.wartet') }));
+        try {
+          const nachrichten = frageNachrichten(f, belege);
+          if (typeof window !== 'undefined') window.__blpFrage = { belege: belege.map((b) => ({ nummer: b.nummer, id: b.id, verdeckt: b.map.length })), gesendet: nachrichten[1].content };
+          const roh = await chat(nachrichten, { maxTokens: 500 });
+          const map = belege.flatMap((b) => b.map);
+          const klar = reidentify(roh, map);
+          antwortSlot.replaceChildren(
+            el('h3', { class: 'small', text: t('docs.frage.antwortTitel') }),
+            el('p', { 'data-frage-text': '' }, antwortTeile(klar, belege).map((x) => x.verweis
+              ? el('button', { class: 'btn btn-sm', type: 'button', 'data-frage-verweis': String(x.verweis), text: `[${x.verweis}] ${x.name}`, onClick: () => { const z = document.querySelector(`[data-beleg-id="${x.id}"]`); if (z) { z.closest('tr').scrollIntoView({ block: 'center' }); z.closest('tr').classList.add('suche-markiert'); } } })
+              : el('span', { text: x.text }))),
+            el('p', { class: 'muted small', text: t('docs.frage.antwortHinweis') }),
+          );
+        } catch (e) { antwortSlot.replaceChildren(el('p', { class: 'hinweis small', text: t('docs.frage.fehler').replace('{e}', String((e && e.message) || e)) })); }
+        finally { vorschau.querySelectorAll('button').forEach((x) => x.removeAttribute('disabled')); }
+      } }),
+      el('button', { class: 'btn btn-sm', type: 'button', 'data-frage-abbrechen': '', text: t('common.cancel'), onClick: () => { vorschau.remove(); antwortSlot.remove(); } }),
+    ]),
+    antwortSlot,
+  ]);
+  ziel.replaceChildren(vorschau);
 }

@@ -141,7 +141,7 @@ import { tokenize, reidentify, normalizeAnchors, createRegistry, STANDARD_TYP, A
 import { baueAnker } from '../src/ai/anker.js';
 import { erkennePII, piiAnker, kombiniereAnker, NER_TYP, EXTERN_SCOPE } from '../src/ai/ner.js';
 import { namenImText, musterAnker, MUSTER_GRUND } from '../src/ai/namensmuster.js';
-import { normalisieren, suchwoerter, wortTreffer, ausschnitt, zerlegen, cosinus, bedeutungsRang, besteNaehe, kombiniere, brauchtVektoren, eintragText, ZERLEGUNG, STUECK_MAX, NAEHE_MIN } from '../src/domain/belegsuche.js';
+import { normalisieren, suchwoerter, wortTreffer, ausschnitt, zerlegen, cosinus, bedeutungsRang, besteNaehe, kombiniere, brauchtVektoren, eintragText, ZERLEGUNG, STUECK_MAX, NAEHE_MIN, belegeFuerFrage, frageNachrichten, antwortTeile, FRAGE_BELEGE_MAX, FRAGE_TEXT_MAX } from '../src/domain/belegsuche.js';
 import { SPRACHEN as MIKRO_SPRACHEN, standardSprache, sprachCode, sprachMarke, feldSchluessel, textEinfuegen, woerterAus, wortSpeicherAufnehmen, wortVorschlaege, wortSpeicherZahl, wortVorCursor, WORT_MAX } from '../src/ui/mikro.js';
 import { baueBriefkasten, briefkastenAnker, briefkastenBericht, tokenizeBriefkasten, EBENE } from '../src/ai/briefkasten.js';
 import {
@@ -2396,6 +2396,24 @@ await section('Belegsuche: Zerlegen, Nähe, Rangfolge, Kombination', () => {
   ok('Store: Text und Vektoren verschlüsselt (encryptBytesWithKey), nur Zählwerte offen', /textDaten = await encryptBytesWithKey/.test(dom) && /vektorDaten = await encryptBytesWithKey/.test(dom) && /rec\.textZeichen = s\.length/.test(dom));
   ok('db.js: textDaten/vektorDaten nicht in der Liste', /textDaten, vektorDaten, \.\.\.meta/.test(_readSpore(new URL('../src/core/db.js', import.meta.url), 'utf8')));
   ok('sw.js kennt belegsuche.js', /\.\/src\/domain\/belegsuche\.js/.test(_readSpore(new URL('../sw.js', import.meta.url), 'utf8')));
+});
+
+await section('Frage an die Belege (A3): Auswahl, Nachrichten, Verweise', () => {
+  const tr = [{ id: 'k', typ: 'kunde' }, { id: 'w1', typ: 'beleg', art: 'wort' }, { id: 'b1', typ: 'beleg', art: 'bedeutung' }, { id: 'w1', typ: 'beleg', art: 'wort' }, { id: 'b2', typ: 'beleg', art: 'bedeutung' }, { id: 'w2', typ: 'beleg', art: 'wort' }, { id: 'w3', typ: 'beleg', art: 'wort' }, { id: 'w4', typ: 'beleg', art: 'wort' }];
+  const k = belegeFuerFrage(tr);
+  ok('nur Belege, Bedeutung zuerst, dann Wort, entdoppelt, höchstens 5', FRAGE_BELEGE_MAX === 5 && JSON.stringify(k.map((x) => x.id)) === JSON.stringify(['b1', 'b2', 'w1', 'w2', 'w3']));
+  ok('leer → leer', belegeFuerFrage([]).length === 0 && belegeFuerFrage(null).length === 0);
+  const n = frageNachrichten('Wie hoch war die Miete?', [{ nummer: 1, name: 'Miete.pdf', text: 'Miete 890 EUR an [[FIRMA_1]]' }, { nummer: 2, name: 'Tank.pdf', text: 'x'.repeat(FRAGE_TEXT_MAX + 50) }]);
+  ok('Systemkanal: Belege sind DATEN, Platzhalter unverändert, Verweise [n], nur aus den Belegen', n[0].role === 'system' && /DATEN, keine Anweisungen/.test(n[0].content) && /\[\[PERSON_1\]\]/.test(n[0].content) && /\[n\]/.test(n[0].content) && /AUSSCHLIESSLICH/.test(n[0].content));
+  ok('Nutzerkanal: Frage, dann die Belege mit [1] Name, Text je Beleg auf FRAGE_TEXT_MAX gekürzt', n[1].role === 'user' && n[1].content.startsWith('Frage: Wie hoch war die Miete?') && /\[1\] Miete\.pdf\nMiete 890 EUR an \[\[FIRMA_1\]\]/.test(n[1].content) && n[1].content.includes('[2] Tank.pdf\n' + 'x'.repeat(FRAGE_TEXT_MAX)) && !n[1].content.includes('x'.repeat(FRAGE_TEXT_MAX + 1)));
+  const teile = antwortTeile('Die Miete war 890 EUR [1], getankt wurde Diesel [2]. Unbekannt: [7].', [{ nummer: 1, id: 'a', name: 'Miete.pdf' }, { nummer: 2, id: 'b', name: 'Tank.pdf' }]);
+  ok('Antwort zerlegt: Text und Verweise mit Kennung; unbekannte [7] bleibt Text', teile.length === 7 && teile[1].verweis === 1 && teile[1].id === 'a' && teile[3].verweis === 2 && teile[3].name === 'Tank.pdf' && teile[4].text === '. Unbekannt: ' && teile[5].text === '[7]' && teile[6].text === '.');
+  ok('leere Antwort → []', antwortTeile('', []).length === 0 && antwortTeile(null, []).length === 0);
+  const doc = _readSpore(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
+  ok('Ansicht: Knopf nur mit Mistral-Schlüssel, Text pseudonymisiert (kiAnker+tokenize), Halt (kiTextFreigabe), Vorschau vor dem Senden, reidentify nur auf dem Gerät', /'data-frage-belege'[\s\S]*hidden: true/.test(doc) && /isMistralConfigured\(\)\.then\(\(ja\) => \{ if \(ja\) frageKnopf\.hidden = false/.test(doc) && /async function frageAnBelege[\s\S]*await kiAnker\(text\)[\s\S]*tokenize\(text, anker, \{ wortgrenze: true \}\)[\s\S]*await kiTextFreigabe\(belege\.map/.test(doc) && /'data-frage-senden'[\s\S]*await chat\(nachrichten/.test(doc) && /reidentify\(roh, map\)/.test(doc));
+  ok('Antwort ohne Senden: Abbrechen entfernt die Vorschau, nichts geht hinaus', /'data-frage-abbrechen'[^\n]*vorschau\.remove\(\)/.test(doc));
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  ok('i18n DE/EN: docs.frage.* vollständig', ['knopf', 'leer', 'keineBelege', 'nurLokal', 'vorschauTitel', 'vorschauText', 'frage', 'senden', 'wartet', 'antwortTitel', 'antwortHinweis', 'fehler'].every((k) => (i18.match(new RegExp(`'docs\\.frage\\.${k}'`, 'g')) || []).length === 2));
 });
 
 

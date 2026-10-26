@@ -723,3 +723,12 @@ html.app-installiert #install-kopf, html.app-installiert [data-install-knopf] { 
 .suche-liste .suche-typ { font-size: .8rem; color: var(--text-muted); min-width: 5rem; }
 .suche-liste .suche-stelle { flex: 1 1 14rem; overflow-wrap: anywhere; }
 tr.suche-markiert td { background: var(--accent-soft); }
+
+/* 🤖 Frage an die Belege (A3, 2026-10-26): Vorschau „Das sieht die KI“ und Antwort unter der Suchkarte */
+.frage-ziel:empty { display: none; }
+.frage-vorschau { margin-top: .6rem; padding: .7rem .8rem; }
+.frage-vorschau .pseudonym-info { margin: .4rem 0; }
+.frage-antwort { margin-top: .6rem; }
+.frage-antwort [data-frage-text] { line-height: 1.5; }
+.frage-antwort [data-frage-verweis] { margin: 0 .15rem; vertical-align: baseline; }
+.frage-vorschau .suche-zeile { margin-top: .5rem; }
