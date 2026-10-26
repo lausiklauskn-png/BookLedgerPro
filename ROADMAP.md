@@ -9,7 +9,7 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 - [x] Sperrbildschirm + Onboarding (Passwort → Shamir-Shares → erzwungenes erstes Backup)
 - [x] Tresor (`vault.js`): Setup/Unlock, verschlüsselte Settings, Mandant-Indikator
 - [x] Backup bauen/wiederherstellen (`backup.js`)
-- [x] Modus-Framework (Einfach/Profi/Berater) + KI-Autonomie-Schalter (Settings)
+- [x] Modus-Framework (Einfach/Profi/Berater → seit 2026-10-26 Privat/Kleinunternehmer/Selbstständig/Berater) + KI-Autonomie-Schalter (Settings)
 - [x] Design-System (Tokens, hell/dunkel, dezente Mycel-Marke)
 - [x] Node-Smoke-Test (Krypto + Shamir), CI-Workflow
 - [x] Docs: README, ARCHITECTURE, ROADMAP, CLAUDE/AGENTS, SESSIONS, SAGE_BROWSER_LEHREN
@@ -143,8 +143,9 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 
 ## ☐ Phase 7 — Design-Umbau & Modus Privat (geplant 2026-10-26)
 Grundlage: `docs/design/SAMMLUNG-DESIGN-2026-10-26.md`, Brief `docs/BRIEF_NACHFOLGE_2026-10-26_BAU-PRIVAT.md`.
-- [ ] 7.1 Design-Grundlage: Themen Farbe × Hell/Dunkel, Strichsymbole (PBP-Satz), flache Knöpfe, Vollbild,
+- [x] 7.1 Design-Grundlage: Themen Farbe × Hell/Dunkel, Strichsymbole (PBP-Satz), flache Knöpfe, Vollbild,
       einklappbare Leiste/☰-Menü, Schrift-Regel A5 mit Überlauf-Prüfung, Modus-Schalter (Privat zuerst)
+      — 2026-10-26, `docs/design/umbau-2026-10-26/README.md`; am Gerät ungeprüft
 - [ ] 7.2 Workflow-PDF-Einbindung (Plan vorher mit Klaus abstimmen)
 - [ ] 7.3 Haushaltsbuch (Beleg-Eingang, automatisch eintragen, Monatsübersicht)
 - [ ] 7.4 Steuer-Zuordnung Privat (N, R, V, KAP, SO, Vorsorge, Sonderausgaben, agB, § 35a)

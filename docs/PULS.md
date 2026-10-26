@@ -5,7 +5,20 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-## ▶ Neuester Stand (2026-10-26): Plansitzung Design + Privat abgeschlossen
+## ▶ Neuester Stand (2026-10-26, abends): Schritt 1 „Design-Grundlage" gebaut — Schritt 2 wartet auf Klaus
+- **Gebaut (PR „Design-Grundlage"):** Themen Farbe × Hell/Dunkel (sechs Themen, Start wie Private Brain Pro, letzte Wahl
+  bleibt, Palette-Knopf), Strichsymbole (PBP-Satz byte-1:1 + 35 BLP-Fachsymbole), flache Knöpfe, Vollbild,
+  Seitenleiste mit Gruppen (einklappbar, Teilbild automatisch, Handy-Schublade), Platz für die schwebenden Leisten,
+  Schrift-Regel A5 mit automatischer Überlauf-Prüfung (0 Fehler), Modus-Schalter Privat · Kleinunternehmer ·
+  Selbstständig · Berater (ersetzt Einfach/Profi/Berater und Firma/Privat/Verein; Migration ohne Datenverlust),
+  Shamir-Knopf „weiter", Deckblatt „Privat". Bedienung, Grenzen, Fotos: `docs/design/umbau-2026-10-26/README.md`.
+- **Beweis:** `node tests/run.mjs` 2346/0 · `node tests/smoke_design.mjs` 89 grün · 0 ROT (echter Chromium) · `sw.js` v256.
+- **Nicht geprüft:** kein Gerät (Tablet/Handy/DeX). Benannte Grenze: Auswahlfelder bei 200 % Schrift auf 320/390 px.
+- **Nächster Schritt = 2 (Workflow-PDF-Einbindung):** Klon `Workflow-PDF-Pro` liegt zur Prüfung bereit; Plan mit
+  Varianten geht an Klaus, **Antwort abwarten**, dann bauen. Danach 3 Haushaltsbuch, 4 Steuer Privat, 5 ELSTER (D14).
+- Offene Entscheidungen Klaus: D7 (3D-Bilder bei Blau/Graphit), D10 (PWA-Klon/DB-Endung), D13 (Verein), D14 (ELSTER).
+
+## Vorher (2026-10-26): Plansitzung Design + Privat abgeschlossen
 - **Kein App-Code geändert.** (Ist-Bilder/Befunde gegen main b924a7a geprüft.) Sammlung aller Entscheidungen: `docs/design/SAMMLUNG-DESIGN-2026-10-26.md`;
   ELSTER-Recherche: `docs/design/ELSTER-ERIC-RECHERCHE-2026-10-26.md`.
 - **Nächste Sitzung = Bau:** `docs/BRIEF_NACHFOLGE_2026-10-26_BAU-PRIVAT.md` (Reihenfolge: Design-Grundlage →

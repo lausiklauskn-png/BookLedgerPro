@@ -10,13 +10,13 @@
   ╚═══════════════════════════════════════════════════════════════════╝
 -->
 <!-- © 2026 Klaus Nitzsche — Alle Rechte vorbehalten. Original & Urheber: github.com/lausiklauskn-png/BookLedgerPro -->
-<html lang="de" data-theme="light">
+<html lang="de" data-theme="light" data-farbe="blau">
 <head>
 <script>/* FP-COPYRIGHT */window._CR=Object.freeze({c:'\u00a9 2026 Klaus Nitzsche',m:'info@family-projekt.de',r:'All rights reserved',repo:'BookLedgerPro'});</script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
-  <meta name="theme-color" content="#0f766e" />
+  <meta name="theme-color" content="#2563eb" />
   <meta name="description" content="BookLedgerPro — offline-first, verschlüsselte Buchhaltung mit KI-Unterstützung." />
   <title>BookLedgerPro</title>
 
@@ -34,6 +34,20 @@
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png" />
   <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png" />
+  <!-- Thema vor dem ersten Anstrich (Klaus 2026-10-26): die zuletzt gewählte Farbe/Helligkeit liegt unter
+       blpr_thema im localStorage (nur Farbe/Helligkeit, nichts Persönliches). Dieses Skript läuft synchron,
+       bevor das Stylesheet wirkt — kein Aufblitzen des Startthemas. Ohne Merkzettel: Blau, wie das Gerät
+       (= Private Brain Pro). Dieselbe Logik steht in src/ui/theme.js (parseThema/resolveHelligkeit). -->
+  <script>
+  (function () {
+    var farbe = 'blau', hell = 'system';
+    try { var t = (localStorage.getItem('blpr_thema') || '').split('/'); if (t[0]) farbe = t[0]; if (t[1]) hell = t[1]; } catch (e) {}
+    if (['blau', 'graphit', 'petrol'].indexOf(farbe) < 0) farbe = 'blau';
+    if (['system', 'light', 'dark'].indexOf(hell) < 0) hell = 'system';
+    if (hell === 'system') { try { hell = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch (e) { hell = 'light'; } }
+    var h = document.documentElement; h.setAttribute('data-theme', hell); h.setAttribute('data-farbe', farbe);
+  })();
+  </script>
   <link rel="stylesheet" href="./assets/tokens.css" />
   <link rel="stylesheet" href="./assets/app.css" />
   <!-- Deckblatt-Bild vorbestellen (2026-08-03). Das Bild ist das LCP-Element,

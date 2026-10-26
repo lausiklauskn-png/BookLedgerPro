@@ -5,6 +5,40 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (abends) — Bau Schritt 1: Design-Grundlage + Modus Privat
+
+**Was getan**
+- Zuerst `git fetch origin main` und vom aktuellen main (`f03faab`) abgezweigt (die Plansitzung lag 328 Commits zurück).
+- **Themen Farbe × Helligkeit** (`assets/tokens.css`, `src/ui/theme.js`): Blau/Graphit/Petrol × Hell/Dunkel/wie Gerät =
+  Klarblau, Nachtblau, Graphit, Nachtgraphit (neu abgeleitet, Kontraste gemessen), Petrol, Nachtpetrol (= bisheriges
+  Dunkel, Hauptknopf `#0f766e` + Weiß). Start wie Private Brain Pro; letzte Wahl im Tresor **und** als `blpr_thema` im
+  localStorage, `index.html` setzt sie vor dem ersten Anstrich. Palette-Knopf in der Kopfleiste + Einstellungen.
+- **Strichsymbole:** `assets/pb-icons.svg` byte-1:1 aus PBP (SHA genagelt), `assets/blp-icons.svg` 35 Fachsymbole,
+  `src/ui/icons.js`. 3D-Bilder unverändert.
+- **Layout:** `--maxw` weg (Vollbild), Seitenleiste mit sieben Gruppen (`NAV_GRUPPEN`), einklappbar (`blpr_leiste`),
+  Teilbild ≤ 1024 px automatisch zu, Handy-Schublade mit Hintergrund; `--leisten-platz` 76 px unten für Mycel/Siegel.
+  Flache Knöpfe ~30 px, Touch-Halo 7 px bei `pointer: coarse`.
+- **Modus** (`src/domain/nutzungsmodus.js` neu geschrieben): privat · kleinunternehmer · selbststaendig · berater
+  (+ Altwert verein), `modusNachziehen` beim Laden (state.js), `moduswechsel` mit § 19-Wirkung und Rückfrage (F4),
+  `zeigeEinstellung` + F3 „Alle Einstellungen zeigen", Nav-/Feature-Gates je Modus. `mode`/`MODES` entfernt (D6).
+  Einrichtung fragt den Modus statt § 19 (Berater bekommt § 19 danach; Privat überspringt Rechnungsstelle).
+  Shamir-Knopf „Anteile gesichert – weiter" (B7), Deckblatt „Privat" (B8), Übersicht ohne Journal-Knöpfe in Privat.
+- **A5-Prüfung** `tests/smoke_design.mjs` (Playwright, echte Shell + echtes index.html): 320/390/768/1024/1366 px ×
+  100/200 % × vier Ansichten; gefunden und behoben: Kopfleiste lief bei 200 % hinaus (jetzt Behälter-Abfrage in rem,
+  Umbruch), Journal-Auswahlfelder zu schmal (B2), Kacheln/Raster in px (jetzt rem), Bannertext als Buchstabensalat
+  (jetzt eigene Zeile), Eingaben mit eigener Mindestbreite, lange Einzelwörter (weiche Trennstellen), Listen mit
+  langen Adressen. 56 Fotos unter `docs/design/umbau-2026-10-26/fotos/`.
+
+**Stand:** `node tests/run.mjs` **2346 bestanden, 0 fehlgeschlagen** (+62) · `node tests/smoke_design.mjs` **89 grün,
+0 ROT** · `sw.js` v256. Doku: `docs/design/umbau-2026-10-26/README.md`.
+
+**Offen / Nächstes:** Schritt 2 Workflow-PDF-Einbindung — Übergabewege in `Workflow-PDF-Pro` prüfen, Plan mit Varianten
+an Klaus, Antwort abwarten. Dann 3 Haushaltsbuch, 4 Steuer Privat, 5 ELSTER (D14). Entscheidungen D7, D10, D13, D14.
+**Nicht geprüft:** Tablet/Handy/DeX; Touch-Halo nur als CSS; benannte Grenze: volle-Breite-Auswahlfelder bei 200 %
+Schrift auf 320/390 px schneiden lange Einträge ab (Probe meldet, zählt nicht als Fehler).
+
+---
+
 ## 2026-10-26 — Plansitzung Design & Privat-Modus (kein Code)
 
 **Was getan**

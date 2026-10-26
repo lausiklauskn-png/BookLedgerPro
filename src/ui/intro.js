@@ -101,9 +101,10 @@ export function aboutContent() {
       el('h1', { class: 'deckblatt-title', text: t('app.name') }),
       el('p', { class: 'deckblatt-tagline', text: 'Buchhaltung & Steuer — offline, verschlüsselt, EU-KI-gestützt.' }),
       el('div', { class: 'deckblatt-zielgruppen' }, [
-        el('span', { class: 'pill', text: 'Laien' }),
-        el('span', { class: 'pill', text: 'Kleinunternehmen' }),
-        el('span', { class: 'pill', text: 'Profis' }),
+        // Die vier Modi (Klaus 2026-10-26, Sammlung B8): Privat statt „Laien".
+        el('span', { class: 'pill', text: 'Privat' }),
+        el('span', { class: 'pill', text: 'Kleinunternehmer' }),
+        el('span', { class: 'pill', text: 'Selbstständige' }),
         el('span', { class: 'pill', text: 'Berater' }),
       ]),
     ]),

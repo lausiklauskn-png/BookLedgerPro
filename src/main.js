@@ -21,7 +21,7 @@ import { showIntro } from './ui/intro.js';
 // ersten Anstrich: gemessen 144 Modul-Anfragen unter src/, bevor das Deckblatt
 // ueberhaupt gebaut wurde. Build-frei bleibt es (goldene Regel 1): dynamischer
 // import() ist natives ES, kein Bundler.
-import { applyTheme } from './ui/theme.js';
+import { applyTheme, applyGemerktesThema } from './ui/theme.js';
 import { setLang } from './ui/i18n.js';   // i18n zieht das Deckblatt ohnehin (t())
 
 const root = document.getElementById('app-root');
@@ -38,7 +38,7 @@ async function registerSW() {
 }
 
 async function boot() {
-  applyTheme('system');     // vorläufig, bis Settings geladen sind
+  applyGemerktesThema();    // zuletzt gewähltes Thema (localStorage), bis die Tresor-Einstellungen geladen sind
   await requestPersistence(); // so früh wie möglich (Browser-Lehre 2)
   registerSW();
 
@@ -66,7 +66,7 @@ async function boot() {
   const { hydrateSettings } = await import('./state.js');
   const settings = await hydrateSettings();
   setLang(settings.lang);
-  applyTheme(settings.theme);
+  applyTheme(settings.theme, settings.themeFarbe);
 
   // Kontenplan + Kostenstellen einmalig anlegen.
   const { ensureAccountsSeeded } = await import('./domain/store.js');

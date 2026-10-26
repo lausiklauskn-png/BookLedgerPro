@@ -131,3 +131,16 @@ Diese und die übrigen netzweiten Regeln — Selbst-Merge-Freibrief, frisch von
 20 Repos. Verträge: **[`INTERFACES.md`](https://github.com/lausiklauskn-png/Sage-Protokol/blob/main/docs/INTERFACES.md)** · die Fallen beim
 Abzweigen und Veröffentlichen: **[`LEHREN.md`](https://github.com/lausiklauskn-png/Sage-Protokol/blob/main/docs/LEHREN.md)** · alte Fassung dieser
 Datei: [`docs/archiv/CLAUDE-2026-08-22.md`](docs/archiv/CLAUDE-2026-08-22.md).
+
+## 🎨 Design-Grundlage und Modus Privat (Klaus 2026-10-26, Schritt 1 des Bau-Briefs)
+
+Themen = **Farbe × Helligkeit** (`data-farbe` blau|graphit|petrol × `data-theme` light|dark am `<html>`, sechs Themen in
+`assets/tokens.css`); Start wie Private Brain Pro, letzte Wahl bleibt (`blpr_thema` im localStorage, Tresor-Einstellungen
+`theme`/`themeFarbe`). `assets/pb-icons.svg` ist **byte-1:1** aus PBP (SHA in `tests/run.mjs`) — nie hier abwandeln; eigene
+Fachsymbole in `assets/blp-icons.svg`. Seitenleiste mit Gruppen (`NAV_GRUPPEN` in `src/ui/shell.js`, jede Ansicht genau
+einmal), `--leisten-platz` hält die schwebenden Mycel-/Siegel-Leisten frei. **Modus** `nutzungsmodus` = privat |
+kleinunternehmer | selbststaendig | berater (`src/domain/nutzungsmodus.js`; alte Werte werden beim Laden nachgezogen,
+`mode` gibt es nicht mehr). **Schrift-Regel A5:** vor jedem Umbau-PR `node tests/smoke_design.mjs` (0 ROT) — Beschriftungen
+dürfen bei 320–1366 px und 200 % Schrift weder abschneiden noch überlaufen; lange Knopfwörter bekommen weiche
+Trennstellen (U+00AD) in `i18n.js`. Bedienung, Grenzen, Fotos: `docs/design/umbau-2026-10-26/README.md`.
+Nächster Schritt 2 (Workflow-PDF) nur nach Klaus' Antwort auf den Variantenplan.
