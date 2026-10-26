@@ -28,6 +28,9 @@ import { begruendeBuchung } from '../../ai/berater.js';
 import { onDeviceBegruendung } from '../../domain/rechtsregeln.js';
 import { saveBeleg, listBelege, deleteBeleg, getBelegBytes, getOriginalBytes, bytesToBase64, linkBeleg, aufbewahrungBis, istAufbewahrungspflichtig } from '../../domain/documents.js';
 import { setBelegText, getBelegText, setBelegVektoren, getBelegVektoren } from '../../domain/documents.js';
+import { setBelegPositionen, getBelegPositionen } from '../../domain/documents.js';
+import { parseEml, mailAlsText, mailBelegName, absenderName, istMailDatei, MAIL_TYP } from '../../domain/mailEml.js';
+import { belegPositionen } from '../../domain/belegPositionen.js';
 import { suchwoerter, wortTreffer, ausschnitt, zerlegen, besteNaehe, bedeutungsRang, kombiniere, brauchtVektoren, eintragText, ZERLEGUNG, belegeFuerFrage, frageNachrichten, antwortTeile, FRAGE_TEXT_MAX } from '../../domain/belegsuche.js';
 import { listBuchungen } from '../../domain/store.js';
 import { loadEmbedder } from '../../sbkim/embed.js';
@@ -36,7 +39,7 @@ import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
 import { testMarke } from '../testmarke.js';
 import { namenVorschlagBox } from '../namensvorschlag.js';
-import { pruefStandVon, ungepruefte, belegDateienWaehlen, kiAnweisungZeilen, textNachWahl, ohneZeilen, PRUEF_STAND } from '../../domain/kiReinigung.js';
+import { pruefStandVon, ungepruefte, belegDateienWaehlen, belegTyp, kiAnweisungZeilen, textNachWahl, ohneZeilen, PRUEF_STAND } from '../../domain/kiReinigung.js';
 import { pruefeBeleg, pruefBericht, kiVermerke, vermerkeKiEntfernt, pruefKern, prueferMail } from '../../domain/belegPruefung.js';
 import { belegFuersKi, pdfKopf, pdfTextebene } from '../../ai/kiVorbereitung.js';
 import { herkunftVon, istEigenerScan, textebeneReicht, workflowScanAdresse, istAndroid } from '../../domain/workflowPdf.js';
@@ -698,17 +701,17 @@ function umsatzRow(u, posten = []) {
 // Ein Foto wird beim Ablegen zum Scan-PDF (Klaus 2026-10-14: „Ja, Scan + Original behalten",
 // „wie bei Workflow PDF"). Das Original liegt unverändert und verschlüsselt am selben Beleg.
 // Lässt sich kein Scan bauen, wird das Foto wie bisher abgelegt — und das wird gesagt.
-async function belegAblegen(file, typ, quelle) {
+async function belegAblegen(file, typ, quelle, mail) {
   const art = file.type || typ || '';
   if (/^image\//.test(art)) {
     try {
       const sc = await fotoZuScan(file, { qualitaet: (getSettings() || {}).scanQualitaet });
       const pdf = new File([sc.pdf], sc.name, { type: 'application/pdf' });
-      await saveBeleg(pdf, { original: file, originalTyp: art, scan: sc });
-      return { scan: true, sicher: sc.sicher, grund: sc.grund };
+      const b = await saveBeleg(pdf, { original: file, originalTyp: art, scan: sc, quelle, mail });
+      return { scan: true, sicher: sc.sicher, grund: sc.grund, id: b && b.id };
     } catch (e) {
-      await saveBeleg(file, { typ });
-      return { scan: false, grund: String((e && e.message) || e) };
+      const b = await saveBeleg(file, { typ, quelle, mail });
+      return { scan: false, grund: String((e && e.message) || e), id: b && b.id };
     }
   }
   // PDF: die Marke im Kopf sagt, ob es ein eigener Scan aus Workflow PDF ist (keine Datei-Prüfung, D12).
@@ -716,8 +719,50 @@ async function belegAblegen(file, typ, quelle) {
   if (art === 'application/pdf' || /\.pdf$/i.test(file.name || '')) {
     try { herkunft = herkunftVon(await pdfKopf(await readFileBytes(file))); } catch { herkunft = undefined; }
   }
-  const b = await saveBeleg(file, { typ, herkunft, quelle });
+  const b = await saveBeleg(file, { typ, herkunft, quelle, mail });
   return { scan: false, eigen: herkunft === 'workflow-pdf', id: b && b.id };
+}
+
+// Textebene eines PDFs sofort am Beleg merken (eigener Scan oder Mail-Anhang, Klaus 2026-10-26): Wort-/Bedeutungssuche
+// und die Positionen (Steuer-Plan S1) — ohne KI, nichts verlässt das Gerät. @returns true, wenn Text gemerkt wurde
+async function textebeneMerken(id, file) {
+  try {
+    const tb = await pdfTextebene(await readFileBytes(file));
+    const text = tb ? String(tb.text || '').trim() : '';
+    if (typeof window !== 'undefined') window.__blpScanText = { zeichen: text.length, seiten: tb && tb.seiten };   // Probe
+    if (!text) return false;
+    await textMerken(id, text);
+    await positionenMerken(id, text);
+    return true;
+  } catch (e) { if (typeof window !== 'undefined') window.__blpScanText = { fehler: String((e && e.message) || e) }; return false; }
+}
+async function positionenMerken(id, text) {
+  try { const pos = belegPositionen(text); await setBelegPositionen(id, pos); if (typeof window !== 'undefined') window.__blpPositionen = { id, anzahl: pos.positionen.length, stimmt: pos.stimmt }; }   // Probe
+  catch { /* Positionen sind Beiwerk */ }
+}
+
+// Eine geteilte Mail (.eml, Klaus 2026-10-26: „nur für die Ablage … Rechnungsanhänge differenziert auslesen"):
+// die Mail selbst wird ein Beleg (Original verschlüsselt, Kopf + Text durchsuchbar), jeder PDF-/Bild-Anhang ein eigener
+// Beleg mit Verweis auf die Mail; PDF-Anhänge mit Textebene bekommen Text und Positionen sofort. Keine KI dabei.
+async function mailEinlesen(file, quelle) {
+  const bytes = await readFileBytes(file);
+  const m = parseEml(bytes);
+  const von = absenderName(m.kopf.von), betreff = m.kopf.betreff || '', datum = (m.kopf.datum || '').slice(0, 10);
+  const eml = new File([bytes], mailBelegName(m), { type: MAIL_TYP });
+  const mailBeleg = await saveBeleg(eml, { typ: MAIL_TYP, quelle: quelle || 'mail', mail: { von, betreff, datum, anhaenge: m.anhaenge.length } });
+  await textMerken(mailBeleg.id, mailAlsText(m));
+  let anhaenge = 0, gelesen = 0;
+  const uebergangen = [];
+  for (const a of m.anhaenge) {
+    const typ = belegTyp(a.name, a.typ);
+    if (!typ || typ === MAIL_TYP || a.inline) { uebergangen.push(a.name); continue; }
+    const f = new File([a.bytes], a.name, { type: typ });
+    const r = await belegAblegen(f, typ, quelle || 'mail', { von, betreff, datum, mailId: mailBeleg.id });
+    anhaenge++;
+    if (r.id && typ === 'application/pdf' && await textebeneMerken(r.id, f)) gelesen++;
+  }
+  if (m.uebergangen) uebergangen.push(`+${m.uebergangen}`);
+  return { id: mailBeleg.id, belege: 1 + anhaenge, anhaenge, gelesen, uebergangen, betreff, von };
 }
 
 // „X Dateien, Y MB, frei Z" — und fragen, wenn es nicht passt oder eine Datei sehr groß ist.
@@ -827,39 +872,41 @@ async function dateienEinlesen(files, { quelle } = {}) {
     }
     const fehler = [], ohneScan = [];
     let n = 0, scans = 0, ganz = 0;
-    let eigen = 0, gelesen = 0;
+    let eigen = 0, gelesen = 0, mails = 0, mailAnhaenge = 0;
+    const mailUebergangen = [];
     for (let i = 0; i < nehmen.length; i++) {
       _importStatus = { text: t('docs.importLaeuft').replace('{i}', String(i + 1)).replace('{n}', String(nehmen.length)) };
       const st = document.querySelector('[data-import-status]');
       if (st) st.textContent = _importStatus.text;
       try {
+        if (nehmen[i].typ === MAIL_TYP || istMailDatei(nehmen[i].file.name, nehmen[i].typ)) {
+          const mr = await mailEinlesen(nehmen[i].file, quelle);
+          n += mr.belege; mails++; mailAnhaenge += mr.anhaenge; gelesen += mr.gelesen;
+          mailUebergangen.push(...mr.uebergangen.map((x) => `${mr.betreff || 'Mail'}: ${x}`));
+          continue;
+        }
         const r = await belegAblegen(nehmen[i].file, nehmen[i].typ, quelle); n++;
         if (r.eigen) eigen++;
         // Eigener Scan (Marke „Workfloh PDF · Scannen“, aus dem eingebauten Scanner oder geteilt): der erkannte Text aus der
         // Textebene wird gleich am Beleg gemerkt (verschlüsselt) → Wort- und Bedeutungssuche (Klaus 2026-10-26). Keine KI
-        // dabei; vor einer Kontierung prüft kiTextFreigabe den Text wie bisher.
-        if (r.eigen && r.id) {
-          try {
-            const tb = await pdfTextebene(await readFileBytes(nehmen[i].file));
-            // Eigener Scan: die Textebene IST die Texterkennung — jedes Wort zählt (kein Mindestmaß wie vor Vision).
-            const text = tb ? String(tb.text || '').trim() : '';
-            if (typeof window !== 'undefined') window.__blpScanText = { zeichen: text.length, seiten: tb && tb.seiten };   // Probe
-            if (text) { await textMerken(r.id, text); gelesen++; }
-          } catch (e) { if (typeof window !== 'undefined') window.__blpScanText = { fehler: String((e && e.message) || e) }; /* ohne Textebene bleibt der Beleg ohne Suchtext — „Text aus dem PDF übernehmen“ holt ihn später */ }
-        }
+        // dabei; vor einer Kontierung prüft kiTextFreigabe den Text wie bisher. Die Textebene IST die Texterkennung — jedes
+        // Wort zählt (kein Mindestmaß wie vor Vision); ohne Textebene holt „Text aus dem PDF übernehmen“ ihn später.
+        if (r.eigen && r.id && await textebeneMerken(r.id, nehmen[i].file)) gelesen++;
         if (r.scan) { scans++; if (!r.sicher) ganz++; } else if (r.grund) ohneScan.push(`${nehmen[i].pfad}: ${r.grund}`);
       } catch (e) { fehler.push(`${nehmen[i].pfad}: ${String((e && e.message) || e)}`); }
     }
     const zusatz = (scans ? ' ' + t('docs.scanAnzahl').replace('{n}', String(scans)).replace('{g}', String(ganz)) : '')
       + (eigen ? ' ' + t('docs.eigeneScans').replace('{n}', String(eigen)) : '')
-      + (gelesen ? ' ' + t('docs.scanTextGemerkt').replace('{n}', String(gelesen)) : '');
+      + (gelesen ? ' ' + t('docs.scanTextGemerkt').replace('{n}', String(gelesen)) : '')
+      + (mails ? ' ' + t('docs.mailAbgelegt').replace('{m}', String(mails)).replace('{a}', String(mailAnhaenge)) : '');
     const vorsatz = quelle === 'teilen' ? t('docs.teilenEmpfangen').replace('{n}', String(nehmen.length + ueberspringen.length)) + ' · ' : '';
     _importStatus = {
       text: vorsatz + platz.zeile + ' · ' + t('docs.importFertig').replace('{n}', String(n)) + zusatz,
       uebersprungen: ueberspringen.map((u) => u.pfad),
       fehler: fehler.concat(ohneScan.map((x) => t('docs.scanNicht').replace('{grund}', x))),
+      uebergangen: mailUebergangen,
     };
-    if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler, scans, ganz, ohneScan, eigen, gelesen, quelle: quelle || null };   // Probe
+    if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler, scans, ganz, ohneScan, eigen, gelesen, mails, mailAnhaenge, mailUebergangen, quelle: quelle || null };   // Probe
     await repaint();
   }
 }
@@ -948,7 +995,8 @@ function belegListe(belege, visionBereit) {
   if (!belege.length) return emptyState('empty-documents.png', t('docs.empty'));
   const rows = belege.map((b) => el('tr', {}, [
     el('td', {}, [b.name, ...(b.original ? [el('div', { class: 'muted small', 'data-scan': b.scan && b.scan.sicher ? 'sicher' : 'ganz',
-      text: (b.scan && b.scan.sicher ? t('docs.scanMarkeSicher') : t('docs.scanMarkeGanz')) + ' · ' + t('docs.originalLiegtBei') })] : [])]),
+      text: (b.scan && b.scan.sicher ? t('docs.scanMarkeSicher') : t('docs.scanMarkeGanz')) + ' · ' + t('docs.originalLiegtBei') })] : []),
+      mailZeile(b), positionenZeile(b)]),
     el('td', { class: 'muted small', text: b.mediaType }),
     el('td', { class: 'num muted small', text: formatBytes(b.size) }),
     el('td', { class: 'muted small mono', text: (b.createdAt || '').slice(0, 10) }),
@@ -968,6 +1016,46 @@ function belegListe(belege, visionBereit) {
       el('tbody', {}, rows),
     ]),
   ]);
+}
+
+// Herkunft aus einer geteilten Mail (Klaus 2026-10-26): am Mail-Beleg „📧 Mail von … · n Anhänge", am Anhang „📎 aus Mail …".
+function mailZeile(b) {
+  if (b.mediaType === MAIL_TYP) {
+    const m = b.mail || {};
+    return el('div', { class: 'muted small', 'data-mail': 'mail', text: t('docs.mailVon').replace('{von}', m.von || '—').replace('{n}', String(m.anhaenge || 0)) });
+  }
+  if (b.mail && b.mail.mailId) {
+    return el('div', { class: 'muted small', 'data-mail': 'anhang', text: t('docs.mailAnhang').replace('{betreff}', b.mail.betreff || '—').replace('{von}', b.mail.von || '—') });
+  }
+  return null;
+}
+
+// Positionen (Steuer-Plan S1, Klaus 2026-10-26): „n Positionen · Summe stimmt" — ein Tipp klappt die Tabelle auf.
+function positionenZeile(b) {
+  if (!b.positionenAnzahl) return null;
+  const wrap = el('div', { class: 'small', 'data-positionen': String(b.positionenAnzahl) });
+  const knopf = el('button', { class: 'btn btn-link btn-sm', type: 'button', 'data-positionen-zeigen': '',
+    text: t('docs.positionen').replace('{n}', String(b.positionenAnzahl)) + (b.positionenStimmt === true ? t('docs.positionenStimmt') : b.positionenStimmt === false ? t('docs.positionenWeicht') : '') });
+  let offen = null;
+  knopf.addEventListener('click', async () => {
+    if (offen) { offen.remove(); offen = null; return; }
+    const pos = await getBelegPositionen(b.id);
+    if (!pos) return;
+    offen = el('div', { class: 'positionen' }, [
+      el('table', { class: 'table small', 'data-positionen-tabelle': '' }, [
+        el('thead', {}, el('tr', {}, [el('th', { text: t('docs.posBezeichnung') }), el('th', { class: 'num', text: t('docs.posMenge') }), el('th', { class: 'num', text: t('docs.posEinzel') }), el('th', { class: 'num', text: t('docs.posBetrag') }), el('th', { text: t('docs.posUst') })])),
+        el('tbody', {}, pos.positionen.map((p) => el('tr', {}, [
+          el('td', { text: p.beschreibung }), el('td', { class: 'num', text: String(p.menge).replace('.', ',') }),
+          el('td', { class: 'num', text: p.einzelpreisCent != null ? formatEuro(p.einzelpreisCent) : '' }),
+          el('td', { class: 'num', text: formatEuro(p.betragCent) }), el('td', { text: p.ustSatz != null ? p.ustSatz + ' %' : (p.kz || '') }),
+        ]))),
+      ]),
+      el('p', { class: 'muted small', text: t('docs.posSumme').replace('{s}', formatEuro(pos.summeCent)).replace('{r}', pos.erkannteSummeCent != null ? formatEuro(pos.erkannteSummeCent) : '—') + ' ' + t('docs.posHinweis') }),
+    ]);
+    wrap.appendChild(offen);
+  });
+  wrap.appendChild(knopf);
+  return wrap;
 }
 
 function belegAktionen(b, visionBereit) {

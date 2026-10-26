@@ -5,6 +5,19 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (abends, später) — Mail an BookLedgerPro teilen · Positionen aus der Rechnung (S1)
+
+- **Getan:** `src/domain/mailEml.js` (RFC-822/MIME-Leser, rein), `src/domain/belegPositionen.js` (Positionsrechnung, rein),
+  `documents.js` (`rec.mail`, `setBelegPositionen`/`getBelegPositionen` verschlüsselt), Belegseite (`mailEinlesen`, Zeilen
+  „📧 Mail von …" / „📎 aus Mail …", „N Positionen · Summe stimmt" mit Tabelle), Manifest (`message/rfc822`), `kiReinigung`
+  kennt `.eml`, i18n DE/EN, `sw.js` v267, `docs/MAIL-TEILEN.md`, CLAUDE.md-Abschnitt.
+- **Beweis:** `run.mjs` **2547/0** (+26) · `smoke_mail` **15 grün** · Bestand `smoke_teilen` 26 · `smoke_belegsuche` 18 ·
+  `smoke_scanner` 13 · `smoke_design` 90. Gegenprobe (Wegwerf-Kopie): 6 Fälle gefangen; zwei erste Fälle blind (Zweig nicht
+  getroffen) → ersetzt → gefangen. Probe-Falle: `tbody tr` zählte die Kopfzeile der äußeren Belegtabelle mit → `:scope >`.
+- **Grenzen:** kein Tablet, keine echte Mail; Positionen nur aus der Textebene; S2 nicht gebaut; Mailprogramme müssen die Mail
+  als Datei teilen (Private Brain Pro: Knopf folgt dort).
+- **Offen/Nächstes:** PBP-Knopf „📒 An BookLedgerPro teilen" · D22 „Positionen anhängen" · Workflow PDF im Rundlauf (PDF + Daten) · R3.
+
 ## 2026-10-26 (abends) — Rundlauf WorkFloh ⇄ BLP, Vertrag v2 „Vorgang": R1 + R2 in drei Repos
 
 - **Getan (BLP):** `src/domain/vorgang.js` (rein), `uebernahmeExtern` liest `verweise` (v1/v2), `angebote-store` Record +

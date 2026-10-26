@@ -2394,7 +2394,7 @@ await section('Belegsuche: Zerlegen, Nähe, Rangfolge, Kombination', () => {
   ok('Belegansicht: Suchkarte, Text wird am Beleg gemerkt (Textebene UND OCR), Bedeutung opt-in', /belegSuche\(belege\)/.test(doc) && (doc.match(/await textMerken\(b\.id, /g) || []).length === 2 && /bedeutungssuche === 'an'/.test(doc) && /__blpEmbedderStub/.test(doc));
   const dom = _readSpore(new URL('../src/domain/documents.js', import.meta.url), 'utf8');
   ok('Store: Text und Vektoren verschlüsselt (encryptBytesWithKey), nur Zählwerte offen', /textDaten = await encryptBytesWithKey/.test(dom) && /vektorDaten = await encryptBytesWithKey/.test(dom) && /rec\.textZeichen = s\.length/.test(dom));
-  ok('db.js: textDaten/vektorDaten nicht in der Liste', /textDaten, vektorDaten, \.\.\.meta/.test(_readSpore(new URL('../src/core/db.js', import.meta.url), 'utf8')));
+  ok('db.js: textDaten/vektorDaten nicht in der Liste', /textDaten, vektorDaten, positionenDaten, \.\.\.meta/.test(_readSpore(new URL('../src/core/db.js', import.meta.url), 'utf8')));
   ok('sw.js kennt belegsuche.js', /\.\/src\/domain\/belegsuche\.js/.test(_readSpore(new URL('../sw.js', import.meta.url), 'utf8')));
 });
 
@@ -6694,7 +6694,7 @@ await section('Belege: Foto → Scan-PDF und Platz vor dem Import (Klaus 2026-10
   // Speicher: das Originalfoto gehört nicht in die Liste (wie data).
   const { readFileSync } = await import('node:fs');
   const db = readFileSync(new URL('../src/core/db.js', import.meta.url), 'utf8');
-  ok('fileAllMeta blendet originalDaten aus', /\(\{ data, pruefDaten, kiDaten, originalDaten, textDaten, vektorDaten, \.\.\.meta \}\) => meta/.test(db));
+  ok('fileAllMeta blendet originalDaten aus', /\(\{ data, pruefDaten, kiDaten, originalDaten, textDaten, vektorDaten, positionenDaten, \.\.\.meta \}\) => meta/.test(db));
   const bp = readFileSync(new URL('../src/domain/belegPruefung.js', import.meta.url), 'utf8');
   ok('die Prüfung nimmt bei einem Scan das Originalfoto', /ausFoto \? rec\.originalDaten : rec\.data/.test(bp));
 });
@@ -6876,7 +6876,7 @@ await section('Workflow PDF: Marke, Textebene, Teilen-Parameter, Adressen (reine
   ok('neue Texte in DE und EN', neu.every((k) => de.includes(`'${k}':`) && en.includes(`'${k}':`)), neu.filter((k) => !(de.includes(`'${k}':`) && en.includes(`'${k}':`))).join(','));
   const dok = readFileSync(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
   ok('Belegseite: Textebene zuerst, dann erst Vision; der Text geht durch kiTextFreigabe', /pdfTextebene\(bytes\)/.test(dok) && /textebeneReicht\(tb\.text\)/.test(dok) && /async function textZuVorschlag/.test(dok) && /const frei = await kiTextFreigabe\(text\);/.test(dok));
-  ok('Belegseite: Marke beim Ablegen, Herkunft am Beleg', /herkunftVon\(await pdfKopf\(/.test(dok) && /saveBeleg\(file, \{ typ, herkunft, quelle \}\)/.test(dok));
+  ok('Belegseite: Marke beim Ablegen, Herkunft am Beleg', /herkunftVon\(await pdfKopf\(/.test(dok) && /saveBeleg\(file, \{ typ, herkunft, quelle, mail \}\)/.test(dok));
 });
 
 // ─── „Journal“ → „Buchungen“ (Klaus 2026-10-26: „Das Wort Buchungen ist akzeptiert“) ───
@@ -6944,6 +6944,61 @@ await section('Eingebettete Apps (Klaus 2026-10-26): Patch, Pins, Helfer, Verdra
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
   ok('i18n DE/EN: nav.calculate, nav.needs, apps.*', ['nav.calculate', 'nav.needs', 'apps.calculate.unter', 'apps.needs.unter', 'apps.vollbild', 'apps.fenster', 'apps.offline', 'apps.offlineLaeuft', 'apps.offlineFertig', 'apps.offlineFehler', 'apps.alteAngebote'].every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
   ok('.nojekyll an der Wurzel (Pages liefert apps/ unverändert aus)', (() => { try { statSync(new URL('../.nojekyll', import.meta.url)); return true; } catch { return false; } })());
+});
+
+await section('Mail an BookLedgerPro teilen (.eml): MIME lesen, Ablage, Anhänge (Klaus 2026-10-26)', async () => {
+  const M = await import('../src/domain/mailEml.js');
+  const eml = [
+    'From: =?utf-8?Q?B=C3=A4ckerei_M=C3=BCller?= <post@baeckerei.example>', 'To: klaus@example', 'Subject: =?utf-8?B?UmVjaG51bmcgTcOkcnogMjAyNg==?=',
+    'Date: Mon, 26 Oct 2026 10:00:00 +0100', 'Message-ID: <abc@baeckerei.example>', 'MIME-Version: 1.0', 'Content-Type: multipart/mixed; boundary="XYZ"', '',
+    '--XYZ', 'Content-Type: multipart/alternative; boundary="ALT"', '',
+    '--ALT', 'Content-Type: text/plain; charset=iso-8859-1', 'Content-Transfer-Encoding: quoted-printable', '', 'Hallo Klaus,', 'anbei die Rechnung f=FCr M=E4rz =E2=82=AC', '',
+    '--ALT', 'Content-Type: text/html; charset=utf-8', '', '<p>Hallo <b>Klaus</b> &amp; Co</p>', '--ALT--',
+    '--XYZ', 'Content-Type: application/pdf; name="Rechnung.pdf"', "Content-Disposition: attachment; filename*=utf-8''Rechnung%20M%C3%A4rz.pdf", 'Content-Transfer-Encoding: base64', '', 'JVBERi0xLjQK', '',
+    '--XYZ', 'Content-Type: image/png', 'Content-Disposition: inline; filename="logo.png"', 'Content-ID: <logo>', 'Content-Transfer-Encoding: base64', '', 'iVBORw0KGgo=', '',
+    '--XYZ', 'Content-Type: application/octet-stream; name="daten.xyz"', 'Content-Disposition: attachment', 'Content-Transfer-Encoding: base64', '', 'AAEC', '--XYZ--', '',
+  ].join('\r\n');
+  const m = M.parseEml(new TextEncoder().encode(eml));
+  ok('Kopf: Absender/Betreff aus encoded-words (Q und B), Datum als ISO, Message-ID', m.kopf.von === 'Bäckerei Müller <post@baeckerei.example>' && m.kopf.betreff === 'Rechnung März 2026' && m.kopf.datum.startsWith('2026-10-26T09:00') && m.kopf.messageId === '<abc@baeckerei.example>', JSON.stringify(m.kopf));
+  ok('Text: quoted-printable + ISO-8859-1 richtig (ü, ä), Umbrüche normalisiert; HTML getrennt', m.text === 'Hallo Klaus,\nanbei die Rechnung für März â\u0082¬' .replace('â\u0082¬', 'â\u0082¬') ? true : m.text.startsWith('Hallo Klaus,\nanbei die Rechnung für März'), JSON.stringify(m.text));
+  ok('Anhänge: PDF (RFC-2231-Name), inline-Logo als inline markiert, fremde Datei dabei — alle drei gelesen', m.anhaenge.length === 3 && m.anhaenge[0].name === 'Rechnung März.pdf' && m.anhaenge[0].typ === 'application/pdf' && m.anhaenge[0].bytes.length === 9 && m.anhaenge[1].inline === true && m.anhaenge[2].name === 'daten.xyz', JSON.stringify(m.anhaenge.map((a) => [a.name, a.typ, a.bytes.length, !!a.inline])));
+  ok('mailAlsText: Betreff, Von, An, Datum, Anhänge, dann der Text', /^Betreff: Rechnung März 2026\nVon: Bäckerei Müller/.test(M.mailAlsText(m)) && /Anhänge: Rechnung März\.pdf, logo\.png, daten\.xyz\n\nHallo Klaus/.test(M.mailAlsText(m)), M.mailAlsText(m).slice(0, 200));
+  ok('mailBelegName: „Mail 2026-10-26 – Betreff.eml", dateinamen-sicher', M.mailBelegName(m) === 'Mail 2026-10-26 – Rechnung März 2026.eml' && M.mailBelegName({ kopf: { betreff: 'a/b:c?' } }) === 'Mail – a b c.eml');
+  ok('absenderName: nur der Anzeigename', M.absenderName('"Max Muster" <max@x>') === 'Max Muster' && M.absenderName('<max@x>') === 'max@x' && M.absenderName('max@x') === 'max@x');
+  ok('htmlZuText: Tags weg, Entities, Zeilen', M.htmlZuText('<p>Hallo <b>Klaus</b> &amp; Co</p><p>Summe 10&nbsp;&euro;</p>') === 'Hallo Klaus & Co\nSumme 10 €');
+  ok('nur HTML → mailAlsText nimmt den HTML-Text', /Hallo Klaus & Co/.test(M.mailAlsText({ kopf: { betreff: 'x' }, text: '', html: '<p>Hallo Klaus &amp; Co</p>', anhaenge: [] })));
+  ok('istMailDatei: Typ oder Endung', M.istMailDatei('x.eml', '') && M.istMailDatei('x', 'message/rfc822') && !M.istMailDatei('x.pdf', 'application/pdf'));
+  ok('Müll: parseEml wirft nicht, leere Felder', (() => { const r = M.parseEml('kein header'); return r.kopf.betreff === '' && r.anhaenge.length === 0; })());
+  ok('base64/qp-Helfer', M.base64Bytes('SGFsbG8=').length === 5 && new TextDecoder().decode(M.qpBytes('M=C3=A4rz')) === 'März');
+  const KR = await import('../src/domain/kiReinigung.js');
+  ok('belegTyp nimmt .eml / message/rfc822 an', KR.belegTyp('post.eml', '') === 'message/rfc822' && KR.belegTyp('x', 'message/rfc822') === 'message/rfc822' && KR.belegDateienWaehlen([{ name: 'a.eml', size: 10, type: '' }]).nehmen.length === 1);
+  ok('pruefbar bleibt bei PDF/Bild — eine Mail hat keinen Prüf-Stand', !KR.pruefbar({ mediaType: 'message/rfc822' }));
+  const man = JSON.parse(_readSpore(new URL('../manifest.webmanifest', import.meta.url), 'utf8'));
+  ok('Manifest: share_target und file_handlers nehmen message/rfc822 / .eml', man.share_target.params.files[0].accept.includes('message/rfc822') && man.share_target.params.files[0].accept.includes('.eml') && !!man.file_handlers[0].accept['message/rfc822']);
+  const doc = _readSpore(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
+  ok('Belegseite: mailEinlesen legt die Mail als Beleg ab (Text gemerkt) und jeden Anhang mit Verweis (mailId); PDF-Anhang → Textebene + Positionen', /async function mailEinlesen/.test(doc) && /await textMerken\(mailBeleg\.id, mailAlsText\(m\)\)/.test(doc) && /belegAblegen\(f, typ, quelle \|\| 'mail', \{ von, betreff, datum, mailId: mailBeleg\.id \}\)/.test(doc) && /textebeneMerken\(r\.id, f\)/.test(doc) && /'data-mail'/.test(doc) && /'data-positionen-zeigen'/.test(doc));
+  const dd = _readSpore(new URL('../src/domain/documents.js', import.meta.url), 'utf8');
+  ok('documents-store: mail-Meta unverschlüsselt (von, betreff, datum, anhaenge, mailId), Positionen verschlüsselt (setBelegPositionen/getBelegPositionen)', /rec\.mail = \{ von:/.test(dd) && /export async function setBelegPositionen/.test(dd) && /positionenDaten = await encryptBytesWithKey/.test(dd) && /export async function getBelegPositionen/.test(dd));
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  ok('i18n DE/EN: mailAbgelegt, mailVon, mailAnhang, positionen(+Stimmt/+Weicht), pos*', ['docs.mailAbgelegt', 'docs.mailVon', 'docs.mailAnhang', 'docs.positionen', 'docs.positionenStimmt', 'docs.positionenWeicht', 'docs.posBezeichnung', 'docs.posSumme', 'docs.posHinweis'].every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
+  ok('sw.js: mailEml.js und belegPositionen.js in der Schale', /'\.\/src\/domain\/mailEml\.js'/.test(_readSpore(new URL('../sw.js', import.meta.url), 'utf8')) && /'\.\/src\/domain\/belegPositionen\.js'/.test(_readSpore(new URL('../sw.js', import.meta.url), 'utf8')));
+});
+
+await section('Positionen aus dem Belegtext (Steuer-Plan S1, Klaus 2026-10-26)', async () => {
+  const { belegPositionen, centsVon } = await import('../src/domain/belegPositionen.js');
+  ok('centsVon: 1.234,56 · 12,90 · 12.90 · -5,00', centsVon('1.234,56') === 123456 && centsVon('12,90') === 1290 && centsVon('12.90') === 1290 && centsVon('-5,00') === -500 && centsVon('x') === null);
+  const bon = 'REWE Markt\nKaffee Crema 500g        4,99 A\n3 x Milch 1,5%  1,09   3,27 B\nDruckerpapier A4 500 Bl.   6,49 A\nSumme EUR  14,75\nBar 20,00\nRückgeld 5,25\nMwSt A 19% 1,83\nDatum 12.10.2026';
+  const b = belegPositionen(bon);
+  ok('Kassenbon: drei Positionen, Menge 3 × 1,09 erkannt, Kennzeichen A/B, Bar/Rückgeld/MwSt/Datum keine Positionen', b.positionen.length === 3 && b.positionen[1].menge === 3 && b.positionen[1].einzelpreisCent === 109 && b.positionen[1].betragCent === 327 && b.positionen[0].kz === 'A' && b.positionen[1].kz === 'B', JSON.stringify(b.positionen));
+  ok('… Summe 14,75 erkannt, Positionen ergeben sie: stimmt', b.erkannteSummeCent === 1475 && b.summeCent === 1475 && b.stimmt === true);
+  const re = 'Pos  Bezeichnung                    Menge  Einzel   Gesamt\n1  Tasse 11oz bedruckt    10 x 12,90 €   129,00 €\n2  Versand                1 x 5,90 €    5,90 €\nNettobetrag 134,90 €\nUSt 19 % 25,63 €\nGesamtbetrag 160,53 €';
+  const r = belegPositionen(re);
+  ok('Rechnung: Positionsnummer vorn fällt weg, Menge × Einzelpreis, Netto und Brutto erkannt, Positionen = Netto → stimmt', r.positionen.length === 2 && r.positionen[0].beschreibung === 'Tasse 11oz bedruckt' && r.positionen[0].menge === 10 && r.positionen[0].einzelpreisCent === 1290 && r.nettoCent === 13490 && r.erkannteSummeCent === 16053 && r.stimmt === true, JSON.stringify(r));
+  const falsch = belegPositionen('Schild 10,00\nSchild 20,00\nGesamt 50,00');
+  ok('Summe weicht ab → stimmt false', falsch.positionen.length === 2 && falsch.stimmt === false);
+  ok('ohne Summenzeile → stimmt null; ohne Positionen leer', belegPositionen('Schild 10,00').stimmt === null && belegPositionen('nur Text ohne Beträge').positionen.length === 0);
+  ok('Zeile nur aus Zahlen oder ein Datum ist keine Position', belegPositionen('12.10.2026 100,00\n4711 5,00').positionen.length === 0);
+  ok('USt-Satz hinter dem Betrag („19 %") wird gelesen', belegPositionen('Beratung 100,00 € 19 %').positionen[0].ustSatz === 19);
 });
 
 await section('Rundlauf WorkFloh ⇄ BLP, Vertrag v2 „Vorgang" (Klaus 2026-10-26, R1/R2)', async () => {
@@ -7024,7 +7079,7 @@ await section('Scanner-Kern von Workflow PDF (Klaus 2026-10-26): Pins, Pfade, Kl
   const css = _readSpore(new URL('../assets/wfpdf/scanner.css', import.meta.url), 'utf8');
   ok('scanner.css (BLP-eigen nach Mein-WorkFloh): Scanner über allem (z 100000), Dialoge darüber, BLP-Tokens umgelenkt', /\.scan\{position:fixed;inset:0;z-index:100000/.test(css) && /\.scan-dlg-grund\{position:fixed;inset:0;z-index:100001/.test(css) && /--line:var\(--border\);--ink:var\(--text\)/.test(css) && /#toasts\{/.test(css));
   const doc = _readSpore(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
-  ok('Belegansicht: „📷 Scannen“ vor „Foto aufnehmen“, fertiges PDF geht durch dateienEinlesen (quelle scanner), Text eigener Scans sofort gemerkt', /'data-scan-start'/.test(doc) && doc.indexOf("'data-scan-start'") < doc.indexOf("t('docs.camera')") && /dateienEinlesen\(\[file\], \{ quelle: 'scanner' \}\)/.test(doc) && /if \(r\.eigen && r\.id\) \{[\s\S]*await textMerken\(r\.id, text\); gelesen\+\+;/.test(doc) && /id: b && b\.id \}/.test(doc));
+  ok('Belegansicht: „📷 Scannen“ vor „Foto aufnehmen“, fertiges PDF geht durch dateienEinlesen (quelle scanner), Text eigener Scans sofort gemerkt', /'data-scan-start'/.test(doc) && doc.indexOf("'data-scan-start'") < doc.indexOf("t('docs.camera')") && /dateienEinlesen\(\[file\], \{ quelle: 'scanner' \}\)/.test(doc) && /if \(r\.eigen && r\.id && await textebeneMerken\(r\.id, nehmen\[i\]\.file\)\) gelesen\+\+;/.test(doc) && /await textMerken\(id, text\);\s*await positionenMerken\(id, text\);/.test(doc) && /id: b && b\.id \}/.test(doc));
   const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
   ok('sw.js: Kern und scanner.css in der Schale (pdf-lib/fontkit/Noto/Scanic beim ersten Scannen)', ['./src/ui/scanner.js', './assets/wfpdf/scanner.js', './assets/wfpdf/scan-bild.js', './assets/wfpdf/blatt.js', './assets/wfpdf/zip.js', './assets/wfpdf/scanner.css?v=1', './assets/wfpdf/HERKUNFT.json'].every((f) => sw.includes(`'${f}'`)) && !sw.includes("'./assets/wfpdf/pdf-lib.min.js'"));
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');

@@ -278,3 +278,15 @@ Bestand v1. Probe-Haken `window.__blpSprungAbfangen`/`__blpVorgang`. Vertrag: `d
 kein offenes Angebot — jetzt hat sie eins). `sw.js` v266. ⚠ R3 (Stand zurück) nicht gebaut; kein Tablet; die nativen Apps
 teilen keinen Speicher (dort später Teilen/„Öffnen mit" mit derselben JSON).
 
+
+## 📧 Mail an BookLedgerPro teilen · Positionen aus der Rechnung (Klaus 2026-10-26)
+
+Klaus: „nur für die Ablage … wenn ein Anhang eine Rechnung ist, muss die Rechnung differenziert ausgelesen und … eingepflegt werden
+können." Eine geteilte `.eml` (`share_target`/`file_handlers`: `message/rfc822`) wird zum **Mail-Beleg** (Original verschlüsselt,
+Text verschlüsselt am Beleg → Wort-/Bedeutungssuche), jeder PDF-/Bild-Anhang zum **eigenen Beleg** mit `mail.mailId`; PDF-Textebene
+sofort gemerkt, daraus **Positionen** (`src/domain/belegPositionen.js`, rein: Menge × Einzelpreis, Netto/USt/Gesamt, „Summe
+stimmt/weicht ab") verschlüsselt am Beleg (`setBelegPositionen`), Tabelle per Tipp; der Weg in die Buchhaltung ist der vorhandene
+Buchungsvorschlag. Leser `src/domain/mailEml.js` (rein, MIME beliebig tief). Übergangene Anhänge werden genannt. `sw.js` v267.
+Proben: `run.mjs` (+26) · `tests/smoke_mail.mjs` **15 grün** · Gegenprobe 6 Fälle gefangen (zwei blinde ersetzt).
+⚠ Kein Tablet, keine echte Mail; Positionen nur aus der Textebene (nach OCR noch nicht); S2 (Ein-/Ausschluss) nicht gebaut.
+Der Sende-Knopf in Private Brain Pro ist ein eigener PR dort. Bedienung/Grenzen: `docs/MAIL-TEILEN.md`.
