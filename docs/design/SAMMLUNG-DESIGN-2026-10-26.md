@@ -107,6 +107,35 @@ Xero – Anregung, keine Kopie.)
 
 ---
 
+## F. Modus nach Nutzerart – Einstellungen und Menü kürzen (Klaus 2026-10-26)
+
+Klaus: Die Einstellungen sollen sich nach dem gewählten Modus richten (privat,
+Kleinunternehmer, Berater o. ä.). Was ich nicht brauche, muss ich nicht sehen und
+nicht wegscrollen.
+
+**Ist-Stand (im Code nachgesehen):** Der Schalter Einfach/Profi/Berater wird gespeichert
+und als `data-mode` an die Seite gehängt, **wirkt aber nirgends** – kein CSS, keine
+Ansicht fragt ihn ab. Eine Kleinunternehmer-Einstellung (§ 19 UStG) gibt es nicht.
+
+**Vorschlag:** Der Modus beschreibt, *wer* BLP nutzt, nicht *wie schwierig* es ist.
+Er wird bei der Einrichtung gefragt und ist in den Einstellungen änderbar.
+
+| Modus | Für wen | Sichtbar | Ausgeblendet |
+|---|---|---|---|
+| **Privat** | Haushalt, eigene Belege, Steuererklärung-Vorbereitung | Belege, Einnahmen/Ausgaben, einfache Auswertung | USt, Aufträge, Kunden, Mitarbeiter, Kostenstellen, Konten-Rahmen, DATEV |
+| **Kleinunternehmer** (§ 19 UStG) | Nebengewerbe, kleine Selbstständige | Belege, Journal, Rechnungen/Aufträge, Kunden, EÜR | USt-Satz in Formularen (fest 0 % + Hinweis § 19), USt-Voranmeldung, Zahllast-Kachel, Mitarbeiter, Kostenstellen |
+| **Selbstständig / Unternehmen** (regelbesteuert) | Freiberufler, GmbH-klein | alles für EÜR + USt-VA, Mitarbeiter, Kostenstellen | Mandanten-Wechsel, Berater-Export |
+| **Berater** | betreut mehrere Mandanten | alles, dazu Mandantenwechsel, DATEV-Export, Prüfansichten | – |
+
+Regeln dazu:
+- F1 Ausblenden gilt für **Einstellungen, Navigation, Formularfelder und Kacheln** gleichermaßen.
+- F2 Ausgeblendet heißt nicht gelöscht: Daten bleiben, beim Moduswechsel ist alles wieder da.
+- F3 Ein kleiner Schalter „Alle Einstellungen zeigen" für Sonderfälle, damit nichts versteckt unerreichbar ist.
+- F4 Moduswechsel mit kurzer Rückfrage, wenn er Steuerliches ändert (z. B. Kleinunternehmer → regelbesteuert).
+- F5 Einstellungen ohnehin gliedern (siehe B12), dann bleibt je Modus nur eine kurze Seite.
+- F6 Recht: Kleinunternehmer-Modus muss wirklich § 19 abbilden (keine USt ausweisen, Pflichthinweis
+  auf Rechnungen, Umsatzgrenze beobachten). Das ist **Funktion, nicht nur Design** – eigener Bauabschnitt.
+
 ## D. Offene Fragen an Klaus
 
 - D1 **Themen:** Sechs Einträge (Hell, Dunkel + Klarblau, Graphit, Petrol, Nachtblau)
@@ -117,6 +146,9 @@ Xero – Anregung, keine Kopie.)
   Sage-Modulen) oder eine eigene Kopie, die BLP-Symbole ergänzt?
 - D3 Seitenleiste am breiten Schirm: dauerhaft mit Namen, oder einklappbar auf Symbole?
 - D4 Handy: untere Leiste (Hauptwege) oder ☰-Menü wie bei PBP?
+- D5 Modi: Passen die vier (Privat, Kleinunternehmer, Selbstständig, Berater)? Was genau soll
+  **Privat** können – nur Belege/Ausgaben sammeln, oder auch Steuererklärung vorbereiten?
+- D6 Ersetzt der neue Modus den alten Schalter Einfach/Profi/Berater ganz? (Vorschlag: ja.)
 
 ## E. Nächste Schritte (wenn Klaus freigibt)
 1. Offene Fragen D1–D4 klären, Sammlung ergänzen.
