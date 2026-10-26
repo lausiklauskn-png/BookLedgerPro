@@ -20,7 +20,8 @@
   `bookledgerbasic`, Manifest-id `/BookLedger-Basic/`, Umzug nur per Sicherung), **BookLedgerPro wird die native App**.
 - **Neue Aufträge (Klaus 2026-10-26), vor dem Haushaltsbuch planen:** Bedeutungssuche über Belege ohne KI (mit KI nur
   verdeckt) · Mikrofon an allen Texteingaben mit Sprachwahl · Anonymisierung auch für unklar definierte Namen (aus dem
-  Textmuster, nicht nur Stammdaten). Kurzer Plan an Klaus, dann bauen.
+  Textmuster, nicht nur Stammdaten). **Plan geschrieben:** `docs/design/PLAN-SUCHE-MIKRO-ANONYM-2026-10-26.md` (A1/B1/C1
+  empfohlen, Reihenfolge C1 → B1 → A1+A2 → A3, drei Fragen) — **Antwort von Klaus abwarten**, dann bauen.
 - Danach: 3 Haushaltsbuch, 4 Steuer Privat, 5 ELSTER (D14). Offen bei Klaus: D7, D13, D14.
 
 ## Vorher (2026-10-26, abends): Schritt 1 „Design-Grundlage" gebaut
