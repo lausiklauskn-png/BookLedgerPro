@@ -189,6 +189,39 @@ und vorhandene Daten ziehen nur per Backup/Wiederherstellen um. Vor dem Klonen f
 - Für die PWA-Fassung bleibt realistisch: Formularwerte vorbereiten und zum Übertragen in „Mein ELSTER" anzeigen.
 - Eigener großer Bauabschnitt (Recht + Technik), nicht Teil des Design-Umbaus.
 
+## H. Haushaltsbuch im Modus Privat (Klaus 2026-10-26)
+
+**Ziel:** Rechnung oder Kassenbon abfotografieren, scannen oder hineinkopieren → BLP trägt ihn
+**automatisch ins Haushaltsbuch** ein → die Einträge fließen in die passenden Punkte für die
+**Steuererklärung** (und bei Unternehmer-Modi in die Buchhaltung).
+
+**Wege hinein (alle landen im selben Beleg-Eingang):**
+- H1 **Kamera / Foto** direkt in BLP (gibt es schon: „Foto aufnehmen", „Beleg hochladen").
+- H2 **Aus Workflow PDF**: vorher dort gescannte Dokumente übernehmen, oder aus BLP heraus Workflow PDF
+  zum Scannen öffnen und das Ergebnis zurückbekommen. Nativ über Androids **Teilen** (BLP erscheint in
+  der Teilen-Liste, wie Private Brain Pro es schon kann); in der PWA über Datei wählen / „Teilen an" (Web Share Target).
+  Welche Übergabe Workflow PDF Pro heute anbietet, ist beim Bau in dessen Repo zu prüfen (nicht in dieser Sitzung).
+- H3 **Digitaler Bon** aus Händler-Apps (z. B. Lidl Plus): als Bild/PDF teilen oder Text einfügen.
+- H4 **Einfügen** aus der Zwischenablage (Text oder Bild).
+
+**Automatisch eintragen:**
+- Texterkennung über Google Vision (EU) wie heute bei Belegen; Händler, Datum, Betrag, ggf. Einzelposten.
+- Kategorie per Mistral (EU) oder On-Device-Heuristik (Lebensmittel, Wohnen, Mobilität, Gesundheit, Versicherung …).
+- Wie eigenständig, regelt der vorhandene Schalter **KI-Autonomie** (nur Vorschlag / Entwurf + Prüfen / automatisch
+  bei hoher Sicherheit). Übertragung an EU-KI nur nach Bestätigung (Regel 8).
+
+**Haushaltsbuch-Ansicht (Design):**
+- Monatsübersicht: Einnahmen, Ausgaben, Rest; Ausgaben nach Kategorie (Balken), optional Monatsbudget je Kategorie.
+- Liste der Einträge mit Bild des Bons daneben (Liste + Detail, siehe C4), Filter nach Monat/Kategorie.
+
+**Übertrag in die Steuer (Privat):** Jeder Eintrag kann einem Steuerpunkt zugeordnet werden, Vorschlag automatisch:
+Werbungskosten (Arbeitsmittel, Fahrten), Sonderausgaben (Versicherungen, Spenden, Kirchensteuer),
+außergewöhnliche Belastungen (Krankheit), haushaltsnahe Dienstleistungen und Handwerkerleistungen (§ 35a EStG),
+Renten/Kranken-/Pflegeversicherung für Rentner. Jahresübersicht je Anlage → Grundlage für ELSTER (Abschnitt G).
+Bei Unternehmer-Modi: Trennung privat/betrieblich (Privatentnahme/-einlage) statt doppelter Erfassung.
+
+⚠ Funktion, nicht nur Design: eigener Bauabschnitt; steuerliche Zuordnung muss fachlich geprüft werden.
+
 ## D. Offene Fragen an Klaus
 
 - ~~D1 Themen~~ **entschieden:** PBP-Farben + heutiges BLP-Dunkel, Hell/Dunkel gilt für jede Farbe (siehe A4).
@@ -205,7 +238,7 @@ und vorhandene Daten ziehen nur per Backup/Wiederherstellen um. Vor dem Klonen f
 - ~~D5 Modi~~ **entschieden:** Privat = Arbeitnehmer/Arbeitslose, private Steuererklärung (siehe Tabelle F); Kleinunternehmer, Selbstständig, Berater bleiben.
 - D7 Die Bilder sind in Teal/Smaragd. Zu Petrol passen sie genau; bei Klarblau, Graphit und Nachtblau beim Umbau ansehen, ob sie noch stimmig wirken (nur prüfen, nicht ändern).
 - D10 Name des PWA-Klons und seine Datenbank-Endung (Vorschlag `bookledger`). Wann wird geklont – nach dem Design-Umbau?
-- D11 ELSTER: Soll ich vorab klären lassen, auf welchen Geräten ERiC läuft und wie die Hersteller-ID beantragt wird?
+- D11 ELSTER: **beauftragt** – Recherche zu ERiC-Plattformen und Hersteller-ID läuft (Ergebnis folgt in Abschnitt G).
 - ~~D6 Alter Schalter~~ **entschieden:** Der neue Modus ersetzt Einfach/Profi/Berater ganz.
 
 ## E. Nächste Schritte (wenn Klaus freigibt)
