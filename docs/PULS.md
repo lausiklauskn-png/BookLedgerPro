@@ -7,8 +7,7 @@
 
 ## ▶ Neuester Stand (2026-10-26, nachts): C1 „Namen nach Muster" gebaut · Klaus' Antworten auf den Plan
 - **Kopie nach `BookLedger-Basic` erledigt (2026-10-26, Stand c52523f):** dort `tools/pro-nachziehen.mjs`, `basic-regeln.mjs`,
-  `HERKUNFT-PRO.json`, `tests/basic_gleichstand.mjs` 21 grün, kopierte Suite 2567/0, Browser-Proben grün. Offen bei Klaus: Pages
-  einschalten, Knoten-Identität (eigene Spore oder die des Pro-PWA), WorkFloh-Rückweg zeigt auf die Pro-Adresse.
+  `HERKUNFT-PRO.json`, `tests/basic_gleichstand.mjs` 21 grün, kopierte Suite 2567/0, Browser-Proben grün. Pages lieferte beim ersten Merge von selbst aus. Offen bei Klaus: Knoten-Identität (eigene Spore oder die des Pro-PWA), WorkFloh-Rückweg zeigt auf die Pro-Adresse.
   **Nächstes hier:** Android-Tresorordner-Sitzung (Plan `docs/design/PLAN-TRESORORDNER-2026-10-26.md`); nach jedem weiteren
   PWA-Merge Basic nachziehen.
 - **R3 gebaut (PR „R3: Stand der Rechnung zurück an die WorkFlohs"):** „Rechnung an WorkFloh melden" (nur festgeschrieben) /

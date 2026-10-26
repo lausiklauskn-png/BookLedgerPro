@@ -4,7 +4,7 @@
 **nach `BookLedger-Basic` kopiert** (PWA, Name „BookLedger Basic", DB-Endung `bookledgerbasic`, Vorrat `blpb-`; dort
 `tools/pro-nachziehen.mjs --pro ../BookLedgerPro` + `HERKUNFT-PRO.json`, Verträge und SBKIM-Knoten bleiben Pro — Regeln in
 `tools/basic-regeln.mjs`). **Solange hier noch PWA-Stände entstehen, nach jedem Merge in Basic nachziehen.** **Dieses Repo wird
-die native Pro-App** (Android + Windows), **ohne Umbenennung** des Repos; Pages für Basic schaltet Klaus ein. Alle Pro-Apps
+die native Pro-App** (Android + Windows), **ohne Umbenennung** des Repos. Pages für Basic lief beim ersten Merge von selbst (Pages-Lauf grün). Alle Pro-Apps
 (Private Brain Pro, BookLedgerPro, Workflow PDF Pro) teilen **einen Tresorordner** mit einem Passwort und dem byte-gleich kopierten
 PBV1-Schloss; PWAs bleiben bei Teilen/Links. Je Plattform eine Bausitzung (Android zuerst, dann Windows). Plan mit Fächern,
 Regeln, Passwort/Ersatzschlüssel und offenen Entscheidungen: `docs/design/PLAN-TRESORORDNER-2026-10-26.md`.
