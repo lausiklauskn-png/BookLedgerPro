@@ -2345,7 +2345,7 @@ await section('Mikrofon: Wort-Speicher (aufnehmen, vorschlagen, Grenze, löschen
   ok('Löschen = leeres Objekt (Einstellung wortSpeicher: {})', wortSpeicherZahl({}) === 0);
   // Verdrahtung
   const shell = _readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
-  ok('Shell meldet den Beobachter an und zeigt die Einstellungen', /mikrofonBeobachten\(container\)/.test(shell) && /mikroSection\(s\)/.test(shell) && /data-wortspeicher-loeschen/.test(shell));
+  ok('Shell meldet den Beobachter an und zeigt die Einstellungen', /mikrofonBeobachten\(container\)/.test(shell) && /mikroSection\(s, seg\)/.test(shell) && /data-wortspeicher-loeschen/.test(shell));
   const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
   ok('sw.js kennt mikro.js', /\.\/src\/ui\/mikro\.js/.test(sw));
   const st = _readSpore(new URL('../src/state.js', import.meta.url), 'utf8');
