@@ -21,6 +21,7 @@ const DEFAULTS = Object.freeze({
   taxProfile: 'DE',     // Deutschland zuerst
   kleinunternehmer: false, // §19 UStG — unterdrückt USt-Hinweise
   gewinnermittlung: 'euer', // euer (§4 Abs.3) | bilanz (§4 Abs.1/§5 EStG) — Default EÜR (Bestand unverändert)
+  workflohZiel: 'mein-workfloh', // Rundlauf (Klaus 2026-10-26): angenommene Angebote gehen als Auftrag an diesen WorkFloh (domain/vorgang.js)
   rechnungsstelle: 'blp', // blp | extern — Nummernkreis-Hoheit (§14): BLP vergibt echte Nummern (blp) vs. externes Programm/Steuerberater (extern → BLP nur Vorlage). Default blp (Bestand unverändert), Katalog §7a
   datenschutzModus: 'pseudonym', // aus | pseudonym — ersetzt bekannte Identifikatoren vor KI-Versand. Ab Werk AN seit 2026-10-14 (Klaus); vorher 'aus'
   datenschutzGewaehlt: false, // true, sobald der Nutzer den Schalter selbst bedient hat (domain/datenschutzStandard.js)

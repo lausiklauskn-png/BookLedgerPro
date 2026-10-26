@@ -5,6 +5,23 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (abends) — Rundlauf WorkFloh ⇄ BLP, Vertrag v2 „Vorgang": R1 + R2 in drei Repos
+
+- **Getan (BLP):** `src/domain/vorgang.js` (rein), `uebernahmeExtern` liest `verweise` (v1/v2), `angebote-store` Record +
+  `setzeAngebotVerweise`, `angebotUebernahme` nennt den WorkFloh-Auftrag, Angebotsansicht (Knopf bei angenommen, Rückverweis-
+  Banner, Zeile), Einstellung „WorkFloh-Verbund" (`workflohZiel`), i18n DE/EN, `sw.js` v266, Vertrag v2 in
+  `docs/UEBERNAHME_TOMY.md`. **Mein-WorkFloh + Tomys WorkFloh (identisch):** `vorgangEmpfangen()` (Editor zur Prüfung,
+  Doppel-Erkennung, Härtung), Sender mit `verweise`, Editor-Preset, Hinweis `[data-blp-herkunft]`, Datenschutz DE/EN/FR,
+  Caches v217 / v60, Probe `browser_vorgang.mjs`.
+- **Beweis:** `run.mjs` **2521/0** (+22) · `smoke_vorgang` **22 grün** · `browser_vorgang` **17 grün** in beiden WorkFlohs ·
+  Bestand: `smoke_design` 90 · `smoke_apps` 19 · `smoke_teilen` 26 · WorkFloh `npm test` 16/16 · Tomys `smoke-workfloh` 31/31.
+  Gegenproben (Wegwerf-Kopien): BLP „Rückverweis nicht verbraucht" 2 ROT · „Verweise nicht gelesen" 7 ROT · „Knopf ohne
+  Statusprüfung" zuerst **blind** (kein offenes Angebot in der Probe) → Probe geschärft → 4 ROT; WorkFloh „speichert sofort",
+  „Sender ohne Verweise", „Doppel-Erkennung weg", „fremde Quelle" je 1–2 ROT mit Namen.
+- **Grenzen:** R3 nicht gebaut; kein Tablet; `browser_teilen`/`browser_breite` der WorkFlohs tragen einen festen
+  Chromium-Pfad (1194) und laufen im Behälter nur mit umgebogenem Pfad (so gemessen); die nativen Apps teilen keinen Speicher.
+- **Offen/Nächstes:** D22-Vorschlag an Klaus · Mail-Teilen nach BLP · Workflow PDF im Rundlauf · BLP in Tomys Hub · R3.
+
 ## 2026-10-26 (nachts) — Scanner-Kern von Workflow PDF bei den Belegen · Scan-Qualität einstellbar
 
 - **Getan:** `tools/wfpdf-nachziehen.mjs` (Kopie byte-1:1 + Pins `assets/wfpdf/HERKUNFT.json`), `assets/wfpdf/` (scanner.js,

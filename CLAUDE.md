@@ -261,3 +261,20 @@ wie gemessen, auto = nach Vorlage 150–300 dpi nie hochgerechnet, normal 200, k
 Vorgabe im Scanner-Fenster. Proben: `run.mjs` (+21) · `tests/smoke_scanner.mjs` **13 grün** (echter Kern, Scanic, Tesseract) ·
 Gegenprobe 4 Fälle gefangen. `sw.js` v265. ⚠ Kein Tablet; dpi-Stufen außer „hoch" gewählt, nicht gemessen; `smoke_belege`
 Abschnitt D ist in diesem Behälter auch auf main rot (14 Zeilen, unberührt). Bedienung/Grenzen: `docs/SCANNER-IN-BLP.md`.
+
+## 🔁 Rundlauf mit den WorkFlohs, Vertrag v2 „Vorgang" (Klaus 2026-10-26, R1 + R2)
+
+Klaus: „Angebote … sollten in WorkFloh weitergegeben werden können und von WorkFloh weiter zur Buchhaltung und von der
+Buchhaltung wieder zurück" · D21 R1 → R2 → R3 · D23 parallel in beiden WorkFlohs. **R1:** am Angebot mit Status
+**angenommen** steht „🛠 Als Auftrag an Mein WorkFloh" (`[data-wf-auftrag]`, Ziel in Einstellungen → „WorkFloh-Verbund",
+`settings.workflohZiel`); `src/domain/vorgang.js` (rein: `vorgangAuftrag`, `vorgangUrl`, `b64uEncode`, `parseVerweise`) baut die
+Nutzlast ohne `kalkulation` und öffnet `…/Mein-WorkFloh/?vorgang=<base64url>` bzw. `…/Tomys-Hub/workfloh/`; am Angebot
+steht `verweise.wfZiel`/`wfUebergabeAm` (Record in `angebote-store`, `setzeAngebotVerweise`). Der WorkFloh legt den Auftrag
+**zur Prüfung** an, speichert erst auf Tipp. **R2:** `uebernahmeExtern` liest `verweise` (v1 + verweise, v2); gibt es das
+Angebot (Kennung, sonst Nummer), wird **kein** neuer Entwurf angelegt — Banner `[data-rueckverweis]`, `wfAuftragNr` am Angebot,
+Zeile `[data-wf-verweis]`, „Rechnung aus Angebot" nennt den WorkFloh-Auftrag (`angebotUebernahmeEntwurf`). Ohne Treffer
+Bestand v1. Probe-Haken `window.__blpSprungAbfangen`/`__blpVorgang`. Vertrag: `docs/UEBERNAHME_TOMY.md` (v2). Proben:
+`run.mjs` (+22) · `tests/smoke_vorgang.mjs` **22 grün** · Gegenprobe 3 Fälle gefangen (einer war zuerst blind: die Probe hatte
+kein offenes Angebot — jetzt hat sie eins). `sw.js` v266. ⚠ R3 (Stand zurück) nicht gebaut; kein Tablet; die nativen Apps
+teilen keinen Speicher (dort später Teilen/„Öffnen mit" mit derselben JSON).
+

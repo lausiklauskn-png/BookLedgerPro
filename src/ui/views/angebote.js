@@ -30,7 +30,8 @@ import {
   baukastenPalette, haeufigsteSchemata, zaehleNutzung, normalizeNutzung,
   verschiebePosition, verschiebeNachOben, verschiebeNachUnten,
 } from '../../domain/baukasten.js';
-import { listAngebote, saveAngebot, getAngebot, deleteAngebot, setzeAngebotStatusStore, rechnungAusAngebot } from '../../domain/angebote-store.js';
+import { listAngebote, saveAngebot, getAngebot, deleteAngebot, setzeAngebotStatusStore, rechnungAusAngebot, setzeAngebotVerweise } from '../../domain/angebote-store.js';
+import { vorgangAuftrag, vorgangUrl, zielKey, WORKFLOH_ZIELE } from '../../domain/vorgang.js';
 import { ladeKalibrierungFaktoren } from '../../domain/nachkalkulation-store.js';
 import { darfAngebotUebernehmen } from '../../domain/angebotUebernahme.js';
 import { listKunden, listKostenstellen, ensureKostenstellenSeeded, saveKunde } from '../../domain/crm-store.js';
@@ -51,6 +52,7 @@ let _uebernahmeModus = null;   // 'angebot' | 'rechnung' — steuert nur den Hin
 let _uebernahmeKundeName = ''; // übergebener Kundenname (für Zuordnung / „anlegen")
 let _uebernahmeKundeOffen = false;   // Kunde fehlt noch in BLP → „anlegen"-Knopf zeigen
 let _uebernahmeKundeGesetzt = false; // Kunde per Name automatisch zugeordnet
+let _rueckverweis = null;      // R2: { angebotId, nummer, wfAuftragNr, status } — Rechnung gehört zu einem vorhandenen Angebot
 // Interne Zuschläge (Gemeinkosten/Gewinn) — gelten beim Hinzufügen einer Position. Reine
 // INTERN-Größen (Prime Directive): sie steuern die Kalkulation, stehen NIE im Angebot.
 let _zuschlaege = { gemeinkostenProzent: 15, gewinnProzent: 20 };
@@ -65,6 +67,24 @@ export async function mountAngebote(host) {
   // Fremde Art (z.B. Shop-Buchhaltungs-Summen) gehört nicht hierher → zurücklegen.
   let ext = consumeUebernahme();
   if (ext && ext.art && ext.art !== 'angebot') { merkeUebernahme(ext); ext = null; }
+  // R2 (Rundlauf, Klaus 2026-10-26): trägt die Übergabe einen Verweis auf ein BLP-Angebot, das es hier gibt,
+  // wird KEIN neuer Entwurf angelegt — die Rechnung entsteht aus genau diesem Angebot („Rechnung aus Angebot").
+  // Der WorkFloh-Auftrag wird am Angebot vermerkt (reine Stammdaten, kein Statuswechsel, keine Nummer).
+  if (ext && ext.verweise && (ext.verweise.blpAngebotNr || ext.verweise.blpAngebotId)) {
+    const alle = await listAngebote();
+    const treffer = alle.find((a) => (ext.verweise.blpAngebotId && a.id === ext.verweise.blpAngebotId)
+      || (ext.verweise.blpAngebotNr && a.nummer === ext.verweise.blpAngebotNr)) || null;
+    if (treffer) {
+      const wfAuftragNr = ext.auftragNr || ext.verweise.wfAuftragNr || '';
+      try { await setzeAngebotVerweise(treffer.id, { wfAuftragNr, wfQuelle: ext.quelle, wfRueckAm: new Date().toISOString() }); }
+      catch { /* Vermerk ist Beiwerk — die Führung unten steht trotzdem */ }
+      _rueckverweis = { angebotId: treffer.id, nummer: treffer.nummer || '', wfAuftragNr, status: treffer.status };
+      _uebernahmeHinweis = t('angebote.rueckverweis').replace('%NR%', wfAuftragNr || '—').replace('%ANGEBOT%', treffer.nummer || '—');
+      _uebernahmeModus = null;
+      _uebernahmeKundeName = ''; _uebernahmeKundeOffen = false; _uebernahmeKundeGesetzt = false;
+      ext = null;
+    }
+  }
   if (ext) {
     _entwurf = neuesAngebot({ titel: ext.titel, positionen: ext.positionen });
     _editId = null; _openSchemaId = null;
@@ -130,7 +150,7 @@ const field = (label, input) => el('label', { class: 'field' }, [el('span', { te
 // Übergabe-Zustand vollständig zurücksetzen — der Hinweis ist bewusst „einmalig"
 // (nach Speichern/Abbrechen/Bearbeiten/Löschen verschwindet er).
 function resetUebernahmeHinweis() {
-  _uebernahmeHinweis = null; _uebernahmeModus = null;
+  _uebernahmeHinweis = null; _uebernahmeModus = null; _rueckverweis = null;
   _uebernahmeKundeName = ''; _uebernahmeKundeOffen = false; _uebernahmeKundeGesetzt = false;
 }
 
@@ -147,6 +167,12 @@ function findeKundeNachName(name) {
 function uebernahmeBannerNode() {
   if (!_uebernahmeHinweis) return null;
   const kinder = [el('div', { class: 'banner-text', text: _uebernahmeHinweis })];
+  if (_rueckverweis) {
+    kinder.push(el('div', { class: 'small', 'data-rueckverweis': _rueckverweis.angebotId,
+      text: _rueckverweis.status === ANGEBOT_STATUS.ANGENOMMEN
+        ? t('angebote.rueckverweisBereit')
+        : t('angebote.rueckverweisStatus').replace('%STATUS%', t('angebote.status.' + _rueckverweis.status)) }));
+  }
   if (_uebernahmeModus) {
     kinder.push(el('div', { class: 'small', text: t('angebote.uebernahmeModus.' + _uebernahmeModus) }));
   }
@@ -461,12 +487,42 @@ function archivCard(angebote) {
   return listeCard(angebote, t('angebote.archivTitle'), '');
 }
 
+// Kleine Zeile unter dem Kunden: wohin das Angebot ging bzw. welcher WorkFloh-Auftrag zurückkam.
+function wfVerweisNode(a) {
+  const v = a.verweise || null;
+  if (!v) return null;
+  if (v.wfAuftragNr) return el('div', { class: 'muted small', 'data-wf-verweis': 'auftrag', text: t('angebote.wfVerweis').replace('%NR%', v.wfAuftragNr) });
+  if (v.wfZiel) {
+    const ziel = WORKFLOH_ZIELE[v.wfZiel];
+    return el('div', { class: 'muted small', 'data-wf-verweis': 'uebergeben', text: t('angebote.wfUebergeben').replace('%ZIEL%', ziel ? ziel.name : v.wfZiel) });
+  }
+  return null;
+}
+
+// R1: Nutzlast bauen (nur die externe Schicht), Ziel am Angebot vermerken, WorkFloh öffnen.
+// Probe-Haken: window.__blpSprungAbfangen = true hält den Sprung an, window.__blpVorgang trägt Ziel und Adresse.
+async function auftragAnWorkFloh(a) {
+  try {
+    const voll = await getAngebot(a.id);
+    if (!voll) throw new Error('Angebot nicht gefunden');
+    const kunde = _kunden.find((k) => k.id === voll.kundeId) || null;
+    const payload = vorgangAuftrag(voll, kunde);
+    const key = zielKey(getSettings().workflohZiel);
+    const url = vorgangUrl(key, payload);
+    if (!url) throw new Error('WorkFloh-Ziel unbekannt');
+    await setzeAngebotVerweise(a.id, { wfZiel: key, wfUebergabeAm: new Date().toISOString() });
+    if (typeof window !== 'undefined') window.__blpVorgang = { ziel: key, url, payload };
+    if (typeof window !== 'undefined' && window.__blpSprungAbfangen) { await repaint(); return; }
+    location.href = url;
+  } catch (e) { alert(String((e && e.message) || e)); }
+}
+
 function zeile(a) {
   const summen = angebotSummen(a.positionen);
   const kundeName = (_kunden.find((k) => k.id === a.kundeId) || {}).name || '';
   return el('tr', {}, [
     el('td', { class: 'mono small', text: a.nummer || '—' }),
-    el('td', {}, [el('div', { text: a.titel || '—' }), el('div', { class: 'muted small', text: kundeName })]),
+    el('td', {}, [el('div', { text: a.titel || '—' }), el('div', { class: 'muted small', text: kundeName }), wfVerweisNode(a)]),
     el('td', { class: 'num', text: formatEuro(summen.brutto) }),
     el('td', {}, [statusBadge(a.status)]),
     el('td', { class: 'actions' }, [aktionen(a)]),
@@ -490,6 +546,16 @@ function aktionen(a) {
           await repaint(el('div', { class: 'banner banner-warn', text }));
         } catch (e) { alert(String(e.message || e)); }
       },
+    }));
+  }
+  // R1 (Rundlauf, Klaus 2026-10-26): ein ANGENOMMENES Angebot wird Auftrag im WorkFloh. Die andere App legt ihn
+  // zur Prüfung an und speichert erst auf Tipp; hier wird nur das Ziel und der Zeitpunkt am Angebot vermerkt.
+  if (a.status === ANGEBOT_STATUS.ANGENOMMEN) {
+    const ziel = WORKFLOH_ZIELE[zielKey(getSettings().workflohZiel)];
+    wrap.appendChild(el('button', {
+      class: 'btn btn-sm', type: 'button', 'data-wf-auftrag': a.id,
+      text: t('angebote.anWorkfloh').replace('{ziel}', ziel.name),
+      onClick: () => auftragAnWorkFloh(a),
     }));
   }
   for (const next of ANGEBOT_STATUS_FLOW[a.status] || []) {

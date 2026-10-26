@@ -6272,7 +6272,7 @@ await section('P8: QR-Encoder (build-frei, lokal)', () => {
     !!parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'isd-workfloh' })));
   ok('Übernahme: Workflow Calculate (workflow-calculate) akzeptiert',
     !!parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'workflow-calculate' })));
-  ok('Übernahme: falsche Version → null', parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, v: 2 })) === null);
+  ok('Übernahme: falsche Version → null (v2 ist seit dem Rundlauf gültig, v3 nicht)', parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, v: 3 })) === null && !!parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, v: 2 })));
   ok('Übernahme: fremde Quelle → null', parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'boese-app' })) === null);
   ok('Übernahme: Müll → null (fail-soft)', parseUebernahmeParam('?uebernahme=%%%nicht-base64%%%') === null);
   ok('Übernahme: ohne Parameter → null', parseUebernahmeParam('?foo=1') === null);
@@ -6329,8 +6329,8 @@ await section('Shop-Summen-Brücke: Parser-Härtung + Summen → Buchungs-Entwü
     parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'sbkim-shop' })) !== null);
   ok('Shop: fremde Quelle → null',
     parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, quelle: 'boese-app' })) === null);
-  ok('Shop: falsche Version → null',
-    parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, v: 2 })) === null);
+  ok('Shop: falsche Version → null (v3; v2 gilt seit dem Rundlauf)',
+    parseUebernahmeParam('?uebernahme=' + b64u({ ...gut, v: 3 })) === null);
   const hart = parseUebernahmeParam('?uebernahme=' + b64u({ ...gut,
     umsatzBruttoCent: 9e14, wareneinkaufCent: -50, ustSatz: 33,
     periode: { von: 'kaputt', bis: '2026-07-31' }, shop: 'X'.repeat(200) }));
@@ -6944,6 +6944,46 @@ await section('Eingebettete Apps (Klaus 2026-10-26): Patch, Pins, Helfer, Verdra
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
   ok('i18n DE/EN: nav.calculate, nav.needs, apps.*', ['nav.calculate', 'nav.needs', 'apps.calculate.unter', 'apps.needs.unter', 'apps.vollbild', 'apps.fenster', 'apps.offline', 'apps.offlineLaeuft', 'apps.offlineFertig', 'apps.offlineFehler', 'apps.alteAngebote'].every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
   ok('.nojekyll an der Wurzel (Pages liefert apps/ unverändert aus)', (() => { try { statSync(new URL('../.nojekyll', import.meta.url)); return true; } catch { return false; } })());
+});
+
+await section('Rundlauf WorkFloh ⇄ BLP, Vertrag v2 „Vorgang" (Klaus 2026-10-26, R1/R2)', async () => {
+  const V = await import('../src/domain/vorgang.js');
+  const { parseUebernahmeParam } = await import('../src/domain/uebernahmeExtern.js');
+  const { angebotUebernahmeEntwurf } = await import('../src/domain/angebotUebernahme.js');
+  const angebot = { id: 'angebot_abc', nummer: 'AN-2026-0042', titel: 'Vereins-Tassen', status: 'angenommen', datum: '2026-10-26',
+    positionen: [{ beschreibung: 'Tasse 11oz bedruckt', menge: 10, einzelpreisCent: 1290, ustSatz: 19, kalkulation: { marge: 0.4 } }, { beschreibung: 'Versand', menge: 1, einzelpreisCent: 590, ustSatz: 19 }] };
+  const kunde = { id: 'k1', name: 'SV Blau-Weiß 09', adresse: 'Sportplatz 1, 12345 Musterstadt', email: 'post@svbw09.example', telefon: '0123 4567', ustId: '' };
+  const pl = V.vorgangAuftrag(angebot, kunde);
+  ok('vorgangAuftrag: v2, Quelle bookledgerpro, Art auftrag, Verweise auf Nummer und Kennung des Angebots', pl.v === 2 && pl.quelle === 'bookledgerpro' && pl.art === 'auftrag' && pl.verweise.blpAngebotNr === 'AN-2026-0042' && pl.verweise.blpAngebotId === 'angebot_abc' && pl.verweise.wfAuftragNr === '');
+  ok('… Titel, Kunde (Name, Adresse, E-Mail, Telefon), Status, Datum', pl.titel === 'Vereins-Tassen' && pl.kundeName === 'SV Blau-Weiß 09' && pl.kunde.adresse.startsWith('Sportplatz') && pl.kunde.email === 'post@svbw09.example' && pl.kunde.telefon === '0123 4567' && pl.status === 'angenommen' && pl.datum === '2026-10-26');
+  ok('… Positionen nur mit Beschreibung/Menge/Netto-Einzelpreis/USt — NIE kalkulation (Prime Directive)', pl.positionen.length === 2 && pl.positionen[0].einzelpreisCent === 1290 && pl.positionen[0].ustSatz === 19 && !('kalkulation' in pl.positionen[0]) && JSON.stringify(pl).indexOf('marge') < 0);
+  ok('ohne Kunde: kundeName leer, kunde null', V.vorgangAuftrag(angebot, null).kundeName === '' && V.vorgangAuftrag(angebot, null).kunde === null);
+  ok('mehr als 20 Positionen werden gekappt', V.vorgangAuftrag({ positionen: Array.from({ length: 30 }, () => ({ beschreibung: 'x', menge: 1, einzelpreisCent: 1 })) }, null).positionen.length === 20);
+  const rt = JSON.parse(V.b64uDecode(V.b64uEncode(JSON.stringify(pl))));
+  ok('base64url hin und zurück (Umlaute, ß, Bindestrich) ohne Padding', rt.kundeName === 'SV Blau-Weiß 09' && !/[+/=]/.test(V.b64uEncode(JSON.stringify(pl))));
+  const u1 = V.vorgangUrl('mein-workfloh', pl), u2 = V.vorgangUrl('tomy-workfloh', pl);
+  ok('vorgangUrl: Mein WorkFloh und Tomys WorkFloh unter github.io, ?vorgang=…; unbekanntes Ziel → null', u1.startsWith('https://lausiklauskn-png.github.io/Mein-WorkFloh/?vorgang=') && u2.startsWith('https://lausiklauskn-png.github.io/Tomys-Hub/workfloh/?vorgang=') && V.vorgangUrl('fremd', pl) === null && V.vorgangUrl('mein-workfloh', null) === null);
+  ok('zielKey: bekannte Schlüssel bleiben, alles andere → Vorgabe mein-workfloh', V.zielKey('tomy-workfloh') === 'tomy-workfloh' && V.zielKey('__proto__') === 'mein-workfloh' && V.zielKey(undefined) === 'mein-workfloh');
+  ok('parseVerweise härtet: nur drei Felder, gekappt; leer → null', JSON.stringify(V.parseVerweise({ blpAngebotNr: 'AN-1', fremd: 1, wfAuftragNr: 'x'.repeat(50) })) === JSON.stringify({ blpAngebotNr: 'AN-1', blpAngebotId: '', wfAuftragNr: 'x'.repeat(32) }) && V.parseVerweise({}) === null && V.parseVerweise('AN-1') === null);
+  // R2: WorkFloh (v1) schickt verweise mit → der Parser reicht sie gehärtet durch; ohne verweise → null (Bestand)
+  const b64u = (o) => V.b64uEncode(JSON.stringify(o));
+  const v1 = { v: 1, quelle: 'isd-workfloh', modus: 'rechnung', titel: 'Vereins-Tassen', kundeName: 'SV Blau-Weiß 09', auftragNr: '2026-0007', positionen: [{ beschreibung: 'Tasse', menge: 10, einzelpreisCent: 1290, ustSatz: 19 }] };
+  const r2 = parseUebernahmeParam('?uebernahme=' + b64u({ ...v1, verweise: { blpAngebotNr: 'AN-2026-0042', blpAngebotId: 'angebot_abc' } }));
+  ok('uebernahmeExtern: v1 + verweise → verweise.blpAngebotNr/blpAngebotId lesbar, Rest wie bisher', r2 && r2.art === 'angebot' && r2.verweise && r2.verweise.blpAngebotNr === 'AN-2026-0042' && r2.verweise.blpAngebotId === 'angebot_abc' && r2.auftragNr === '2026-0007');
+  ok('… ohne verweise bleibt verweise null (Bestand v1 unverändert)', parseUebernahmeParam('?uebernahme=' + b64u(v1)).verweise === null);
+  ok('… v2 wird angenommen, v3 nicht', !!parseUebernahmeParam('?uebernahme=' + b64u({ ...v1, v: 2 })) && parseUebernahmeParam('?uebernahme=' + b64u({ ...v1, v: 3 })) === null);
+  const ent = angebotUebernahmeEntwurf({ ...angebot, verweise: { wfAuftragNr: '2026-0007' } }, { settings: { rechnungsstelle: 'blp' }, seq: 5, jahr: 2026, datum: '2026-10-26' });
+  ok('Rechnungs-Entwurf aus einem Angebot mit Rückverweis nennt den WorkFloh-Auftrag in der Beschreibung', /aus Angebot AN-2026-0042 · WorkFloh-Auftrag 2026-0007/.test(ent.beschreibung));
+  ok('… ohne Verweis unverändert', /\(aus Angebot AN-2026-0042\)/.test(angebotUebernahmeEntwurf(angebot, { settings: { rechnungsstelle: 'blp' }, seq: 5, jahr: 2026, datum: '2026-10-26' }).beschreibung));
+  const store = _readSpore(new URL('../src/domain/angebote-store.js', import.meta.url), 'utf8');
+  ok('angebote-store: Record trägt verweise, setzeAngebotVerweise ergänzt ohne Statuswechsel', /verweise: a\.verweise && typeof a\.verweise === 'object'/.test(store) && /export async function setzeAngebotVerweise/.test(store));
+  const view = _readSpore(new URL('../src/ui/views/angebote.js', import.meta.url), 'utf8');
+  ok('Angebotsansicht: Knopf [data-wf-auftrag] nur bei ANGENOMMEN, Sprung abfangbar (__blpSprungAbfangen), Rückverweis-Banner [data-rueckverweis], Zeile [data-wf-verweis]', /a\.status === ANGEBOT_STATUS\.ANGENOMMEN\) \{[\s\S]{0,400}'data-wf-auftrag'/.test(view) && /window\.__blpSprungAbfangen/.test(view) && /'data-rueckverweis'/.test(view) && /'data-wf-verweis'/.test(view) && /ext = null;/.test(view));
+  const sh = _readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
+  ok('Einstellungen: WorkFloh-Ziel wählbar (verbundSection, workflohZiel), Vorgabe in state.js', /verbundSection\(s, seg\),/.test(sh) && /updateSettings\(\{ workflohZiel: v \}\)/.test(sh) && /workflohZiel: 'mein-workfloh'/.test(_readSpore(new URL('../src/state.js', import.meta.url), 'utf8')));
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  ok('i18n DE/EN: anWorkfloh, wfVerweis, wfUebergeben, rueckverweis(+Bereit/+Status), settings.workflohZiel(+hint)', ['angebote.anWorkfloh', 'angebote.wfVerweis', 'angebote.wfUebergeben', 'angebote.rueckverweis', 'angebote.rueckverweisBereit', 'angebote.rueckverweisStatus', 'settings.workflohZiel', 'settings.workflohZiel.hint'].every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
+  ok('sw.js: vorgang.js in der Schale', /'\.\/src\/domain\/vorgang\.js'/.test(_readSpore(new URL('../sw.js', import.meta.url), 'utf8')));
 });
 
 await section('Scan-Qualität (Klaus 2026-10-26): auto nach Vorlage, hoch/normal/klein, Einstellung durchgereicht', async () => {

@@ -107,10 +107,63 @@ Mein-WorkFloh jahrelang `quelle:'workfloh'` schickte, einen Namen, den es hier n
 - `kundeName` wird per Name einem vorhandenen Kunden **zugeordnet**; sonst per Knopf
   **anlegbar** (kein automatisches Anlegen ohne Klick — der Mensch bestätigt).
 
+## Vertrag v2 „Vorgang" — der Rundlauf (Klaus 2026-10-26, D21/D23)
+
+Klaus: „Wenn in der Buchhaltung ein Angebot gemacht wird, dann sollte es weitergegeben werden können zum WorkFloh,
+als Auftrag verarbeitet werden, wenn es angenommen wurde, genauso der Rückweg wieder." Reihenfolge R1 → R2 → R3,
+parallel in **beiden** WorkFlohs. Reine Rechnung auf BLP-Seite: `src/domain/vorgang.js`; Empfänger in den WorkFlohs:
+`vorgangEmpfangen()` (identisch in `Mein-WorkFloh/index.html` und `Tomys-Hub/workfloh/index.html`).
+
+### R1 — BLP → WorkFloh: angenommenes Angebot wird Auftrag (gebaut 2026-10-26)
+
+Am Angebot mit Status **angenommen** steht in BLP „🛠 Als Auftrag an Mein WorkFloh" (Ziel in Einstellungen →
+„WorkFloh-Verbund", `settings.workflohZiel`: `mein-workfloh` | `tomy-workfloh`). BLP öffnet den WorkFloh mit
+`?vorgang=<base64url(JSON)>` und vermerkt am Angebot `verweise.wfZiel` + `wfUebergabeAm`. Der WorkFloh legt den
+Auftrag **zur Prüfung im Editor** an (Titel, Kunde mit E-Mail/Adresse/Telefon, Positionen als Beschreibung je Zeile,
+Preis = Netto-Summe, Status `angenommen`/`angebot` falls in der Kette) und **speichert erst auf Tipp**; der Kunde wird
+beim Speichern per Name/E-Mail zugeordnet oder angelegt. Der Auftrag trägt `blpAngebotNr`/`blpAngebotId`. Dieselbe
+Angebotsnummer noch einmal → der vorhandene Auftrag wird geöffnet, nicht gedoppelt.
+
+```json
+{ "v": 2, "quelle": "bookledgerpro", "art": "auftrag",
+  "verweise": { "blpAngebotNr": "AN-2026-0042", "blpAngebotId": "angebot_…", "wfAuftragNr": "" },
+  "titel": "Vereins-Tassen", "kundeName": "SV Blau-Weiß 09",
+  "kunde": { "adresse": "…", "email": "…", "telefon": "…", "ustId": "" },
+  "positionen": [ { "beschreibung": "Tasse 11oz bedruckt", "menge": 10, "einzelpreisCent": 1290, "ustSatz": 19 } ],
+  "status": "angenommen", "datum": "2026-10-26" }
+```
+
+Nur die externe Schicht: Netto-Einzelpreis und USt, **nie** `kalkulation` (Prime Directive). Härtung im Empfänger wie
+hier: `v === 2`, `quelle` aus `VORGANG_QUELLEN`, `art === 'auftrag'`, Strings gekappt, max. 20 Positionen, Adresse
+sofort gesäubert; Müll oder fremde Quelle → Toast „nicht lesbar", nichts angelegt.
+
+### R2 — WorkFloh → BLP: die Rechnung hängt am selben Angebot (gebaut 2026-10-26)
+
+`wfBlp` / `ykBlpInvoice` schicken im v1-Vertrag zusätzlich
+`"verweise": { "blpAngebotNr", "blpAngebotId", "wfAuftragNr" }`. Findet BLP das Angebot (per Kennung, sonst Nummer),
+legt es **keinen** neuen Entwurf an: Banner „Rückmeldung aus WorkFloh: Auftrag 2026-0007 gehört zu Angebot
+AN-2026-0042", `verweise.wfAuftragNr`/`wfQuelle`/`wfRueckAm` am Angebot, die Zeile zeigt „→ WorkFloh-Auftrag 2026-0007",
+und „Rechnung aus Angebot" (nur bei angenommen) erzeugt den Rechnungs-Entwurf „… (aus Angebot AN-2026-0042 ·
+WorkFloh-Auftrag 2026-0007)". Ohne Treffer (unbekannte Nummer) gilt der Bestand: Formular vorbefüllt wie in v1.
+Der Parser nimmt `v: 1` und `v: 2` an; ohne `verweise` bleibt alles wie vorher.
+
+### R3 — Stand zurück an WorkFloh (noch nicht gebaut)
+
+`art: "status"` mit `wfAuftragNr`, `rechnungNr`, `bezahltAm` → WorkFloh setzt „Abgerechnet"/„Bezahlt". Nach R1/R2
+(Klaus' Reihenfolge D21).
+
+### Proben
+
+BLP `tests/run.mjs` „Rundlauf WorkFloh ⇄ BLP" (+22) · `tests/smoke_vorgang.mjs` (echter Tresor: R1 Adresse + Nutzlast
++ Vermerk + Ziel-Einstellung, R2 Treffer/kein Treffer, Rechnungs-Entwurf) · WorkFlohs `browser_vorgang.mjs`
+(identisch; `scripts/` bzw. `tests/`: Editor zur Prüfung, nichts gespeichert, Speichern legt Auftrag + Kunde an, Sender
+trägt Verweise, Doppel-Erkennung, Müll/fremde Quelle, Datenschutz). Gegenproben in Wegwerf-Kopien: je Sabotage eine
+eigene rote Zeile (BLP 3 Fälle, WorkFloh 4 Fälle).
+
 ## Grenzen / bewusst NICHT
 
 - Kein Auto-Speichern, keine Nummernvergabe, kein Festschreiben — Hoheit
   bleibt beim Menschen (GoBD).
-- Kein Rückkanal zu Tomy in v1 (die Rechnungs-Nr. wandert nicht zurück).
+- Kein Rückkanal zu Tomy in v1 (die Rechnungs-Nr. wandert nicht zurück) — v2/R3 bringt ihn (oben), noch nicht gebaut.
 - Vertrag erweitern ⇒ `v` erhöhen und diese Datei zuerst pflegen
   (Spec vor Code).

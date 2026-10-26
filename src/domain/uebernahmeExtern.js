@@ -21,6 +21,8 @@
 // künftiger zweiter Shop – z.B. Perfect-Skin-Beauty-Pflege – denselben Vertrag nutzt).
 // `workflow-calculate` = der Angebotsplaner Workflow Calculate (2026-10-12): schickt dieselbe
 // v1-Angebots-Nutzlast wie die WorkFlohs, nur aus der Kundenblatt-Whitelist (keine EK, keine Sätze).
+import { parseVerweise } from './vorgang.js';
+
 export const UEBERNAHME_QUELLEN = Object.freeze(['tomy-workfloh', 'isd-workfloh', 'alm-warehouse', 'sbkim-shop', 'workflow-calculate']);
 export const UEBERNAHME_MODI = Object.freeze(['angebot', 'rechnung']);
 // Übergabe-Arten: 'angebot' = WorkFloh-Auftrag → Angebots-Formular; 'buchhaltung-summen'
@@ -66,7 +68,7 @@ export function parseUebernahmeParam(search) {
     const raw = p.get('uebernahme');
     if (!raw || raw.length > 20000) return null;
     const d = JSON.parse(b64uDecode(raw));
-    if (!d || d.v !== 1 || !UEBERNAHME_QUELLEN.includes(d.quelle)) return null;
+    if (!d || (d.v !== 1 && d.v !== 2) || !UEBERNAHME_QUELLEN.includes(d.quelle)) return null;
     // Neue Art: Shop-Zeitraum-Summen → eigener, klein gehaltener Vertrag.
     if (d.art === 'buchhaltung-summen') return parseBuchhaltungSummen(d);
     const positionen = (Array.isArray(d.positionen) ? d.positionen : [])
@@ -86,6 +88,9 @@ export function parseUebernahmeParam(search) {
       auftragNr: S(d.auftragNr, 32),
       angebotsNr: S(d.angebotsNr, 32),
       positionen,
+      // R2 (Vertrag v2 „Vorgang", docs/UEBERNAHME_TOMY.md): Rückverweis auf das BLP-Angebot, aus dem der
+      // WorkFloh-Auftrag entstand — BLP hängt die Rechnung dann an DASSELBE Angebot statt ein neues anzulegen.
+      verweise: parseVerweise(d.verweise),
     };
   } catch {
     return null;
