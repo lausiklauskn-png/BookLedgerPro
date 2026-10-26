@@ -82,6 +82,47 @@ export async function pdfFuersKi(bytes, opt = {}) {
   return { bilder, liste, seiten: n, gesamt };
 }
 
+/**
+ * PDF-Kopf (Producer/Creator) — für die Marke „Workfloh PDF" beim Ablegen (Klaus 2026-10-26, D12).
+ * Fail-soft: {} wenn pdf.js nicht lädt oder das PDF keinen Kopf hat.
+ */
+export async function pdfKopf(bytes) {
+  try {
+    const L = await pdfjs();
+    const pdf = await L.getDocument({ data: bytes.slice(0), isEvalSupported: false }).promise;
+    const m = await pdf.getMetadata().catch(() => null);
+    const info = (m && m.info) || {};
+    try { pdf.destroy(); } catch { /* egal */ }
+    return { producer: String(info.Producer || ''), creator: String(info.Creator || ''), seiten: pdf.numPages || 0 };
+  } catch { return {}; }
+}
+
+/**
+ * Die Textebene eines PDFs (Klaus 2026-10-26): der erkannte Text eines Workflow-PDF-Scans liegt als
+ * unsichtbare Textebene IM PDF — BookLedgerPro liest ihn mit pdf.js, ohne Vision und ohne Netz.
+ * Gilt für jedes PDF mit Textebene (auch Rechnungen aus einem Programm). Höchstens KI_PDF_SEITEN_MAX Seiten.
+ * ⚠ Versteckter Text (weiß, winzig) steht ebenfalls in der Textebene — deshalb geht der Text danach durch
+ *   dieselbe Prüfung auf Anweisungen an eine KI wie der OCR-Text (kiTextFreigabe).
+ * @returns {Promise<{text:string, seiten:number, gesamt:number, kopf:{producer:string,creator:string}}>}
+ */
+export async function pdfTextebene(bytes) {
+  const { textebeneZuText } = await import('../domain/workflowPdf.js');
+  const L = await pdfjs();
+  const pdf = await L.getDocument({ data: bytes.slice(0), isEvalSupported: false }).promise;
+  const n = Math.min(pdf.numPages, KI_PDF_SEITEN_MAX), seiten = [];
+  for (let i = 1; i <= n; i++) {
+    const p = await pdf.getPage(i);
+    const tc = await p.getTextContent();
+    seiten.push(tc.items);
+    try { p.cleanup(); } catch { /* egal */ }
+  }
+  const m = await pdf.getMetadata().catch(() => null);
+  const info = (m && m.info) || {};
+  const gesamt = pdf.numPages;
+  try { pdf.destroy(); } catch { /* egal */ }
+  return { text: textebeneZuText(seiten), seiten: n, gesamt, kopf: { producer: String(info.Producer || ''), creator: String(info.Creator || '') } };
+}
+
 /** Bild-Metadaten, die im ORIGINAL stecken — benannt, damit der Vermerk sagt, was nicht mitging. */
 function metaImOriginal(RE, bytes, mime) {
   if (!/jpe?g$/i.test(mime || '')) return [];

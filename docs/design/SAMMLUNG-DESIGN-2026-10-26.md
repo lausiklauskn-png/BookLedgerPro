@@ -239,7 +239,7 @@ Bei Unternehmer-Modi: Trennung privat/betrieblich (Privatentnahme/-einlage) stat
 - ~~D4 Handy-Menü~~ **entschieden:** ein ☰-Menü, das die Leiste aufklappt, Einstellungen inklusive.
 - ~~D5 Modi~~ **entschieden:** Privat = Arbeitnehmer/Arbeitslose, private Steuererklärung (siehe Tabelle F); Kleinunternehmer, Selbstständig, Berater bleiben.
 - D7 Die Bilder sind in Teal/Smaragd. Zu Petrol passen sie genau; bei Klarblau, Graphit und Nachtblau beim Umbau ansehen, ob sie noch stimmig wirken (nur prüfen, nicht ändern).
-- D10 Name des PWA-Klons und seine Datenbank-Endung (Vorschlag `bookledger`). Wann wird geklont – nach dem Design-Umbau?
+- ~~D10 Name des PWA-Klons~~ **entschieden (Klaus 2026-10-26):** **BookLedger Basic** (Repo `BookLedger-Basic`, https://lausiklauskn-png.github.io/BookLedger-Basic/), BLB; Datenbank-Endung `bookledgerbasic` (Vorschlag), geklont nach dem Design-Umbau. BookLedgerPro wird die native App.
 - ~~D12 Prüfung~~ **entschieden:** eigene Scans aus Workflow PDF ohne Prüfung; Dateien von außen werden geprüft.
 - D13 Verein: eigener Modus „Verein" später (nach Privat und Unternehmer-Modi)? Ehrenamt als Person ist schon in Privat.
 - ~~D11 ELSTER-Recherche~~ **erledigt** (siehe G und Recherche-Datei).

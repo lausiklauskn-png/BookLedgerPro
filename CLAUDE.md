@@ -144,3 +144,14 @@ kleinunternehmer | selbststaendig | berater (`src/domain/nutzungsmodus.js`; alte
 dürfen bei 320–1366 px und 200 % Schrift weder abschneiden noch überlaufen; lange Knopfwörter bekommen weiche
 Trennstellen (U+00AD) in `i18n.js`. Bedienung, Grenzen, Fotos: `docs/design/umbau-2026-10-26/README.md`.
 Nächster Schritt 2 (Workflow-PDF) nur nach Klaus' Antwort auf den Variantenplan.
+
+## 📲 Workflow-PDF-Einbindung (Klaus 2026-10-26, Schritt 2)
+
+BLP steht in Androids Teilen-Liste (`share_target` → `sw.js` `./teilen-empfang` → Vorrat `blpr-geteilt` → `./?geteilt=1`,
+Worker im Kopf von `index.html` angemeldet). PDFs mit der Marke „Workfloh PDF · Scannen" sind **eigene Scans**: Stand
+„eigen", keine Datei-Prüfung, nicht in „Alle ungeprüften prüfen", von Hand prüfbar. Die Texterkennung liest **zuerst die
+Textebene** (pdf.js, kein Vision); der Text geht IMMER durch `kiTextFreigabe` (Anweisung an eine KI) — auch bei eigenen
+Scans (Klaus' Wort). Knopf „Mit Workflow PDF scannen" → `./?scan=1&von=BookLedgerPro` (Workflow PDF öffnet den Scanner
+mit „Durchsuchbar"). Reine Logik in `src/domain/workflowPdf.js`; Proben `tests/smoke_teilen.mjs` (echter Worker-POST).
+**PWA-Klon = BookLedger Basic** (`BookLedger-Basic`, DB-Endung `bookledgerbasic`); BookLedgerPro wird nativ.
+Bedienung/Grenzen: `docs/WORKFLOW-PDF-EINBINDUNG.md`.

@@ -146,8 +146,10 @@ Grundlage: `docs/design/SAMMLUNG-DESIGN-2026-10-26.md`, Brief `docs/BRIEF_NACHFO
 - [x] 7.1 Design-Grundlage: Themen Farbe × Hell/Dunkel, Strichsymbole (PBP-Satz), flache Knöpfe, Vollbild,
       einklappbare Leiste/☰-Menü, Schrift-Regel A5 mit Überlauf-Prüfung, Modus-Schalter (Privat zuerst)
       — 2026-10-26, `docs/design/umbau-2026-10-26/README.md`; am Gerät ungeprüft
-- [ ] 7.2 Workflow-PDF-Einbindung (Plan vorher mit Klaus abstimmen)
+- [x] 7.2 Workflow-PDF-Einbindung (Plan mit Klaus abgestimmt; V1 Teilen-Empfang + Textebene + Marke, V2 Knopf +
+      Direktstart in Workflow PDF) — 2026-10-26, `docs/WORKFLOW-PDF-EINBINDUNG.md`; am Gerät ungeprüft; V4 (OCR-JSON) später
 - [ ] 7.3 Haushaltsbuch (Beleg-Eingang, automatisch eintragen, Monatsübersicht)
 - [ ] 7.4 Steuer-Zuordnung Privat (N, R, V, KAP, SO, Vorsorge, Sonderausgaben, agB, § 35a)
 - [ ] 7.5 ELSTER (nach Entscheidung D14: Ausfüllhilfe / Windows-ERiC / ggf. Server)
-- [ ] 7.6 Danach Unternehmer-Modi; PWA-Klon mit eigener DB-Endung (D10)
+- [ ] 7.2b Bedeutungssuche über Belege ohne KI · Mikrofon an allen Texteingaben · Anonymisierung auch unklarer Namen (Klaus 2026-10-26, Plan vorher)
+- [ ] 7.6 Danach Unternehmer-Modi; PWA-Klon **BookLedger Basic** (`BookLedger-Basic`, DB-Endung `bookledgerbasic`, D10 entschieden 2026-10-26)

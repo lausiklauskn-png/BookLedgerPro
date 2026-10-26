@@ -36,6 +36,10 @@ export async function saveBeleg(file, opt = {}) {
     buchungId: null,
     data, // verschlüsselt — von fileAllMeta() ausgeblendet
   };
+  // Herkunft (Klaus 2026-10-26): 'workflow-pdf' = eigener Scan aus Workflow PDF (Marke im PDF-Kopf) → keine
+  // Datei-Prüfung nötig; 'teilen' = kam über Androids Teilen-Liste. Unverschlüsselt, denn die Liste braucht es.
+  if (opt.herkunft) rec.herkunft = String(opt.herkunft);
+  if (opt.quelle) rec.quelle = String(opt.quelle);
   if (opt.original) {
     const ob = await readFileBytes(opt.original);
     rec.originalDaten = await encryptBytesWithKey(key(), ob);   // verschlüsselt — von fileAllMeta() ausgeblendet

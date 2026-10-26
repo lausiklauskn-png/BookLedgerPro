@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v256';
+const CACHE_VERSION = 'v257';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -24,6 +24,12 @@ const CACHE_VERSION = 'v256';
  * Es muss BEIDES tun: fremde stehen lassen UND eigene alte weiter wegraeumen. */
 const VORRAT_PRAEFIX = "blpr-";
 const CACHE_NAME = `blpr-shell-${CACHE_VERSION}`;
+/* Teilen aus anderen Apps (Klaus 2026-10-26, Schritt 2 V1 — Muster aus Workflow PDF): Android schickt geteilte
+ * Dateien als POST an ./teilen-empfang (share_target im Manifest). Der Worker legt sie in einen eigenen Vorrat
+ * und leitet auf ./?geteilt=1 weiter; die App holt sie dort ab (src/domain/teilenEmpfang.js) und leert ihn.
+ * Der Vorrat ueberlebt ein neues CACHE_VERSION (BLEIBT). Name = GETEILT_VORRAT in src/domain/workflowPdf.js. */
+const GETEILT_VORRAT = 'blpr-geteilt';
+const BLEIBT = [GETEILT_VORRAT];
 
 const CORE_ASSETS = [
   './',
@@ -102,6 +108,8 @@ const CORE_ASSETS = [
   './src/domain/accounts.js',
   './src/domain/bilanzierung.js',
   './src/domain/nutzungsmodus.js',
+  './src/domain/workflowPdf.js',
+  './src/domain/teilenEmpfang.js',
   './src/domain/rechnungsstelle.js',
   './src/domain/kalkulation.js',
   './src/domain/produktschemata.js',
@@ -255,13 +263,17 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter(k => k.startsWith(VORRAT_PRAEFIX) && k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter(k => k.startsWith(VORRAT_PRAEFIX) && k !== CACHE_NAME && !BLEIBT.includes(k)).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  if (request.method === 'POST' && new URL(request.url).pathname.endsWith('/teilen-empfang')) {   // Teilen aus einer anderen App
+    event.respondWith(teilenEmpfangen(request));
+    return;
+  }
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return; // nur eigene Assets
@@ -285,3 +297,17 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+async function teilenEmpfangen(r) {
+  let n = 0;
+  try {
+    const fd = await r.formData();
+    const c = await caches.open(GETEILT_VORRAT);
+    for (const f of fd.getAll('dateien')) {
+      if (!f || typeof f === 'string' || !f.size) continue;
+      await c.put(new Request('./geteilt/' + Date.now() + '-' + (n++)), new Response(f, { headers: {
+        'Content-Type': f.type || 'application/octet-stream', 'X-Name': encodeURIComponent(f.name || 'Datei') } }));
+    }
+  } catch (_) { return Response.redirect('./?geteilt=fehler', 303); }
+  return Response.redirect('./?geteilt=' + (n ? '1' : '0'), 303);
+}

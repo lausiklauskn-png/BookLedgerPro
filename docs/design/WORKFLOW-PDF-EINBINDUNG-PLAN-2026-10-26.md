@@ -1,6 +1,6 @@
 # Workflow-PDF-Einbindung — Plan mit Varianten (Schritt 2, 2026-10-26)
 
-**Status: Plan, nichts gebaut. Wartet auf Klaus' Antwort.** Brief: `docs/BRIEF_NACHFOLGE_2026-10-26_BAU-PRIVAT.md`,
+**Status: Klaus hat entschieden (2026-10-26): V1 + V2 bauen · eigene Scans ohne Datei-Prüfung, aber mit OCR-Textprüfung · Workflow PDF darf für den Direktstart angefasst werden (PWA/Android/Windows gleich) · V4 später. Gebaut: `docs/WORKFLOW-PDF-EINBINDUNG.md`.** Brief: `docs/BRIEF_NACHFOLGE_2026-10-26_BAU-PRIVAT.md`,
 Schritt 2 („wichtigster Funktionspunkt"). Sammlung H2 und D12.
 
 ## 1. Was Workflow PDF Pro heute übergeben kann (im Repo nachgesehen, Stand `10f7325`, 1.0.3)

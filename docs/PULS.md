@@ -5,7 +5,25 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-## ▶ Neuester Stand (2026-10-26, abends): Schritt 1 „Design-Grundlage" gebaut — Schritt 2 wartet auf Klaus
+## ▶ Neuester Stand (2026-10-26, spät): Schritt 2 „Workflow-PDF-Einbindung" gebaut (V1 + V2)
+- **Gebaut:** BLP in Androids Teilen-Liste (`share_target`, `sw.js` `./teilen-empfang`, Vorrat `blpr-geteilt`, `?geteilt=1`),
+  „Öffnen mit" (`file_handlers`), Marke „Workfloh PDF" → Beleg-Stand „eigen" (ohne Datei-Prüfung, von Hand prüfbar),
+  **Textebene zuerst** (pdf.js, kein Vision, nichts verlässt das Gerät), Textprüfung vor der KI bleibt auch für eigene
+  Scans, Knopf „Mit Workflow PDF scannen" (Android `intent://` auf die Pro-App mit Rückfall Web, sonst Web).
+  Workflow PDF (PWA, 1.1.1, v106): `./?scan=1&von=<App>` öffnet den Scanner sofort mit „Durchsuchbar". Pro-App: Kern
+  über `upstream/` nachziehen (Gleichstand) — siehe PR in `Workflow-PDF-Pro`. Doku: `docs/WORKFLOW-PDF-EINBINDUNG.md`.
+- **Beweis:** `node tests/run.mjs` 2368/0 · `node tests/smoke_teilen.mjs` 26 grün · `smoke_design` 90 grün · Workflow PDF
+  8 Proben 0 ROT, Gegenprobe Direktstart gefangen · `sw.js` v257.
+- **Nicht geprüft:** Tablet/Handy (Teilen-Liste, intent-Link, echtes Teilen); App-Link in der Pro-App nicht gebaut.
+- **Klaus' Entscheidungen heute:** „Journal" → **„Buchungen"** (nächster kleiner PR) · PWA-Klon heißt **BookLedger Basic**
+  (`lausiklauskn-png/BookLedger-Basic`, https://lausiklauskn-png.github.io/BookLedger-Basic/; D10: eigene DB-Endung
+  `bookledgerbasic`, Manifest-id `/BookLedger-Basic/`, Umzug nur per Sicherung), **BookLedgerPro wird die native App**.
+- **Neue Aufträge (Klaus 2026-10-26), vor dem Haushaltsbuch planen:** Bedeutungssuche über Belege ohne KI (mit KI nur
+  verdeckt) · Mikrofon an allen Texteingaben mit Sprachwahl · Anonymisierung auch für unklar definierte Namen (aus dem
+  Textmuster, nicht nur Stammdaten). Kurzer Plan an Klaus, dann bauen.
+- Danach: 3 Haushaltsbuch, 4 Steuer Privat, 5 ELSTER (D14). Offen bei Klaus: D7, D13, D14.
+
+## Vorher (2026-10-26, abends): Schritt 1 „Design-Grundlage" gebaut
 - **Gebaut (PR „Design-Grundlage"):** Themen Farbe × Hell/Dunkel (sechs Themen, Start wie Private Brain Pro, letzte Wahl
   bleibt, Palette-Knopf), Strichsymbole (PBP-Satz byte-1:1 + 35 BLP-Fachsymbole), flache Knöpfe, Vollbild,
   Seitenleiste mit Gruppen (einklappbar, Teilbild automatisch, Handy-Schublade), Platz für die schwebenden Leisten,

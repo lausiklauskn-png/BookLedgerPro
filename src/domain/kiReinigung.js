@@ -10,6 +10,7 @@
 /** Die Lagen eines Belegs. `offen` = nie geprüft (Klaus: prüfen erst auf Knopfdruck). */
 export const PRUEF_STAND = Object.freeze({
   OFFEN: 'offen', WARNUNG: 'warnung', SAUBER: 'sauber', UNGEPRUEFT: 'ungeprueft',
+  EIGEN: 'eigen',   // eigener Scan aus Workflow PDF (Klaus 2026-10-26, D12): ohne Datei-Prüfung, prüfbar von Hand
 });
 
 /** Prüfbar ist, was der Prüfkern lesen kann: PDF und Bilder. */
@@ -22,10 +23,13 @@ export function pruefbar(meta) {
 export function pruefStandVon(meta) {
   if (!pruefbar(meta)) return null;
   const s = meta && meta.pruefung && meta.pruefung.stand;
-  return s === PRUEF_STAND.WARNUNG || s === PRUEF_STAND.SAUBER || s === PRUEF_STAND.UNGEPRUEFT ? s : PRUEF_STAND.OFFEN;
+  if (s === PRUEF_STAND.WARNUNG || s === PRUEF_STAND.SAUBER || s === PRUEF_STAND.UNGEPRUEFT) return s;
+  // Eigener Scan aus Workflow PDF: nicht „noch nicht geprüft", sondern „eigen" — er stammt direkt vom Papier
+  // (Klaus 2026-10-26, D12). Eine Prüfung von Hand bleibt möglich; ihr Ergebnis gilt dann.
+  return meta && meta.herkunft === 'workflow-pdf' ? PRUEF_STAND.EIGEN : PRUEF_STAND.OFFEN;
 }
 
-/** Belege, die noch nie geprüft wurden — für „Alle ungeprüften prüfen". */
+/** Belege, die noch nie geprüft wurden — für „Alle ungeprüften prüfen". Eigene Scans zählen nicht dazu. */
 export function ungepruefte(belege) {
   return (belege || []).filter((b) => pruefStandVon(b) === PRUEF_STAND.OFFEN);
 }

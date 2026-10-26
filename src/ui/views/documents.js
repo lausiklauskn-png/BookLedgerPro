@@ -35,7 +35,9 @@ import { testMarke } from '../testmarke.js';
 import { namenVorschlagBox } from '../namensvorschlag.js';
 import { pruefStandVon, ungepruefte, belegDateienWaehlen, kiAnweisungZeilen, textNachWahl, PRUEF_STAND } from '../../domain/kiReinigung.js';
 import { pruefeBeleg, pruefBericht, kiVermerke, vermerkeKiEntfernt, pruefKern, prueferMail } from '../../domain/belegPruefung.js';
-import { belegFuersKi } from '../../ai/kiVorbereitung.js';
+import { belegFuersKi, pdfKopf, pdfTextebene } from '../../ai/kiVorbereitung.js';
+import { herkunftVon, istEigenerScan, textebeneReicht, workflowScanAdresse, istAndroid } from '../../domain/workflowPdf.js';
+import { geteilteDateienHolen } from '../../domain/teilenEmpfang.js';
 import { pruefberichtZeigen, ungeprueftHalt, auffaelligHalt, kiReinigungHalt, textHalt, drehkreis, arbeitsAnzeige } from '../belegDialoge.js';
 import { fotoZuScan } from '../../core/scanPdf.js';
 import { platzPlan, mb } from '../../domain/importPlatz.js';
@@ -71,12 +73,34 @@ async function pseudonymBadge(quelltext) {
   ]);
 }
 
+// Übergabe aus Androids Teilen-Liste oder „Öffnen mit" (Klaus 2026-10-26): die Shell merkt beim Start den
+// Parameter ./?geteilt=… bzw. die Dateien aus launchQueue; die Belegseite holt sie beim Öffnen ab.
+let _geteilt = null;      // '1' | '0' | 'fehler' | null
+let _geteiltDateien = []; // aus launchQueue („Öffnen mit")
+export function merkeGeteilt(param) { _geteilt = param; }
+export function merkeGeteilteDateien(files) { _geteiltDateien = Array.from(files || []); }
+
 export async function mountDocuments(host) {
   _host = host;
   const konten = await loadAccounts();
   _idx = {};
   for (const k of konten) _idx[k.nummer] = k;
   await repaint();
+  await geteiltesAbholen();
+}
+
+// Geteilte Dateien aus dem Vorrat des Workers holen und einlesen — nie still: kam nichts an, steht es da.
+async function geteiltesAbholen() {
+  const g = _geteilt; _geteilt = null;
+  const direkt = _geteiltDateien; _geteiltDateien = [];
+  if (g === null && !direkt.length) return;
+  let files = direkt;
+  if (g !== null) {
+    if (g === 'fehler') { _importStatus = { text: t('docs.teilenFehler') }; await repaint(); return; }
+    files = files.concat(await geteilteDateienHolen());
+  }
+  if (!files.length) { _importStatus = { text: t('docs.teilenNichts') }; await repaint(); return; }
+  await dateienEinlesen(files, { quelle: 'teilen' });
 }
 
 async function repaint(extra) {
@@ -668,7 +692,7 @@ function umsatzRow(u, posten = []) {
 // Ein Foto wird beim Ablegen zum Scan-PDF (Klaus 2026-10-14: „Ja, Scan + Original behalten",
 // „wie bei Workflow PDF"). Das Original liegt unverändert und verschlüsselt am selben Beleg.
 // Lässt sich kein Scan bauen, wird das Foto wie bisher abgelegt — und das wird gesagt.
-async function belegAblegen(file, typ) {
+async function belegAblegen(file, typ, quelle) {
   const art = file.type || typ || '';
   if (/^image\//.test(art)) {
     try {
@@ -681,8 +705,13 @@ async function belegAblegen(file, typ) {
       return { scan: false, grund: String((e && e.message) || e) };
     }
   }
-  await saveBeleg(file, { typ });
-  return { scan: false };
+  // PDF: die Marke im Kopf sagt, ob es ein eigener Scan aus Workflow PDF ist (keine Datei-Prüfung, D12).
+  let herkunft;
+  if (art === 'application/pdf' || /\.pdf$/i.test(file.name || '')) {
+    try { herkunft = herkunftVon(await pdfKopf(await readFileBytes(file))); } catch { herkunft = undefined; }
+  }
+  await saveBeleg(file, { typ, herkunft, quelle });
+  return { scan: false, eigen: herkunft === 'workflow-pdf' };
 }
 
 // „X Dateien, Y MB, frei Z" — und fragen, wenn es nicht passt oder eine Datei sehr groß ist.
@@ -724,32 +753,7 @@ function uploadKarte() {
   const viele = async (ordner) => {
     const files = await pickFiles('image/*,application/pdf,.pdf', { ordner });
     if (!files.length) return;
-    const { nehmen, ueberspringen } = belegDateienWaehlen(files);
-    const platz = await platzFrage(nehmen);
-    if (!platz.weiter) {
-      _importStatus = { text: platz.zeile + ' — ' + t('docs.platzAbgebrochen') };
-      if (typeof window !== 'undefined') window.__blpImport = { abgelegt: 0, uebersprungen: ueberspringen, fehler: [], abgebrochen: true };   // Probe
-      await repaint(); return;
-    }
-    const fehler = [], ohneScan = [];
-    let n = 0, scans = 0, ganz = 0;
-    for (let i = 0; i < nehmen.length; i++) {
-      _importStatus = { text: t('docs.importLaeuft').replace('{i}', String(i + 1)).replace('{n}', String(nehmen.length)) };
-      const st = document.querySelector('[data-import-status]');
-      if (st) st.textContent = _importStatus.text;
-      try {
-        const r = await belegAblegen(nehmen[i].file, nehmen[i].typ); n++;
-        if (r.scan) { scans++; if (!r.sicher) ganz++; } else if (r.grund) ohneScan.push(`${nehmen[i].pfad}: ${r.grund}`);
-      } catch (e) { fehler.push(`${nehmen[i].pfad}: ${String((e && e.message) || e)}`); }
-    }
-    const zusatz = scans ? ' ' + t('docs.scanAnzahl').replace('{n}', String(scans)).replace('{g}', String(ganz)) : '';
-    _importStatus = {
-      text: platz.zeile + ' · ' + t('docs.importFertig').replace('{n}', String(n)) + zusatz,
-      uebersprungen: ueberspringen.map((u) => u.pfad),
-      fehler: fehler.concat(ohneScan.map((x) => t('docs.scanNicht').replace('{grund}', x))),
-    };
-    if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler, scans, ganz, ohneScan };   // Probe
-    await repaint();
+    await dateienEinlesen(files);
   };
   const status = [];
   if (_importStatus) {
@@ -767,16 +771,62 @@ function uploadKarte() {
       ]));
     }
   } else status.push(el('p', { class: 'small', 'data-import-status': '' }));
+  // V2 (Klaus 2026-10-26): Workflow PDF zum Scannen öffnen — Android: die Pro-App (Rückfall Web-Fassung),
+  // sonst die Web-Fassung in einem neuen Fenster. Zurück kommt der Scan über Teilen (Android) oder Datei wählen.
+  const wfKnopf = el('a', {
+    class: 'btn', 'data-workflow-scan': '', href: workflowScanAdresse({ android: istAndroid(navigator.userAgent) }),
+    target: istAndroid(navigator.userAgent) ? '_self' : '_blank', rel: 'noopener', text: t('docs.workflowScan'), title: t('docs.workflowScanHint'),
+  });
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('docs.archive') }),
     el('p', { class: 'muted small', text: t('docs.archiveHint') }),
     el('div', { class: 'btn-row' }, [
       el('button', { class: 'btn', text: t('docs.camera'), onClick: () => add('image/*', 'environment') }),
+      wfKnopf,
       el('button', { class: 'btn', text: t('docs.uploadMehrere'), 'data-import-viele': '', onClick: () => viele(false) }),
       el('button', { class: 'btn', text: t('docs.ordner'), 'data-import-ordner': '', onClick: () => viele(true) }),
     ]),
+    el('p', { class: 'muted small', text: t('docs.workflowScanHint') }),
     ...status,
   ]);
+}
+
+// Viele Dateien auf einmal (Mehrfach-Auswahl, Ordner, Teilen, „Öffnen mit"). Jeder Beleg wird einzeln
+// verschlüsselt abgelegt — OHNE Prüfung beim Einlesen (geprüft wird auf Knopfdruck, wie in Workflow PDF
+// #111). Was übersprungen wird, steht beim Namen da. `quelle` = 'teilen' für Dateien aus der Teilen-Liste.
+async function dateienEinlesen(files, { quelle } = {}) {
+  {
+    const { nehmen, ueberspringen } = belegDateienWaehlen(files);
+    const platz = await platzFrage(nehmen);
+    if (!platz.weiter) {
+      _importStatus = { text: platz.zeile + ' — ' + t('docs.platzAbgebrochen') };
+      if (typeof window !== 'undefined') window.__blpImport = { abgelegt: 0, uebersprungen: ueberspringen, fehler: [], abgebrochen: true };   // Probe
+      await repaint(); return;
+    }
+    const fehler = [], ohneScan = [];
+    let n = 0, scans = 0, ganz = 0;
+    let eigen = 0;
+    for (let i = 0; i < nehmen.length; i++) {
+      _importStatus = { text: t('docs.importLaeuft').replace('{i}', String(i + 1)).replace('{n}', String(nehmen.length)) };
+      const st = document.querySelector('[data-import-status]');
+      if (st) st.textContent = _importStatus.text;
+      try {
+        const r = await belegAblegen(nehmen[i].file, nehmen[i].typ, quelle); n++;
+        if (r.eigen) eigen++;
+        if (r.scan) { scans++; if (!r.sicher) ganz++; } else if (r.grund) ohneScan.push(`${nehmen[i].pfad}: ${r.grund}`);
+      } catch (e) { fehler.push(`${nehmen[i].pfad}: ${String((e && e.message) || e)}`); }
+    }
+    const zusatz = (scans ? ' ' + t('docs.scanAnzahl').replace('{n}', String(scans)).replace('{g}', String(ganz)) : '')
+      + (eigen ? ' ' + t('docs.eigeneScans').replace('{n}', String(eigen)) : '');
+    const vorsatz = quelle === 'teilen' ? t('docs.teilenEmpfangen').replace('{n}', String(nehmen.length + ueberspringen.length)) + ' · ' : '';
+    _importStatus = {
+      text: vorsatz + platz.zeile + ' · ' + t('docs.importFertig').replace('{n}', String(n)) + zusatz,
+      uebersprungen: ueberspringen.map((u) => u.pfad),
+      fehler: fehler.concat(ohneScan.map((x) => t('docs.scanNicht').replace('{grund}', x))),
+    };
+    if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler, scans, ganz, ohneScan, eigen, quelle: quelle || null };   // Probe
+    await repaint();
+  }
 }
 
 // ---- Prüfung auf Knopfdruck (Klaus 2026-10-14) ------------------------------
@@ -825,12 +875,13 @@ function pruefKnopf(b) {
   const stand = pruefStandVon(b);
   if (!stand) return el('span', { class: 'muted small', text: '—' });
   if (_pruefLaeuft.has(b.id)) return el('span', { class: 'small pruef-laeuft', 'data-pruefung': 'laeuft', role: 'status' }, [drehkreis(), t('beleg.laeuft')]);
-  const text = { offen: t('beleg.offen'), warnung: t('beleg.warnung'), sauber: t('beleg.sauber'), ungeprueft: t('beleg.ungeprueft') }[stand];
+  const text = { offen: t('beleg.offen'), eigen: t('beleg.eigen'), warnung: t('beleg.warnung'), sauber: t('beleg.sauber'), ungeprueft: t('beleg.ungeprueft') }[stand];
+  const nachholen = stand === 'offen' || stand === 'eigen';
   const knopf = el('button', {
     class: 'btn btn-sm' + (stand === 'warnung' ? ' btn-danger' : ''), type: 'button', text,
     'data-pruefung': stand,
-    ...(stand === 'offen' ? { 'data-pruef-nachholen': '' } : { 'data-pruef-bericht': '' }),
-    onClick: () => (stand === 'offen' ? pruefeEinen(b) : berichtOeffnen(b)),
+    ...(nachholen ? { 'data-pruef-nachholen': '' } : { 'data-pruef-bericht': '' }),
+    onClick: () => (nachholen ? pruefeEinen(b) : berichtOeffnen(b)),
   });
   const teile = [knopf];
   if (b.kiEntfernt && b.kiEntfernt.anzahl) {
@@ -886,9 +937,12 @@ function belegListe(belege, visionBereit) {
 
 function belegAktionen(b, visionBereit) {
   const wrap = el('div', { class: 'btn-row' });
-  if (visionBereit && /^(image\/|application\/pdf)/.test(b.mediaType)) {
+  // Texterkennung: mit Vision für Bilder und PDFs; ein PDF mit Textebene (z. B. ein Scan aus Workflow PDF)
+  // braucht keine Vision — der Knopf steht dann auch ohne Schlüssel (Klaus 2026-10-26).
+  const pdf = b.mediaType === 'application/pdf';
+  if ((visionBereit && /^(image\/|application\/pdf)/.test(b.mediaType)) || pdf) {
     wrap.appendChild(el('button', {
-      class: 'btn btn-sm', text: t('docs.ocr'),
+      class: 'btn btn-sm', text: pdf && !visionBereit ? t('docs.textebene') : t('docs.ocr'), 'data-texterkennung': '',
       onClick: () => visionExtraktion(b),
     }));
     // TEMPORÄR: Browser-Test-Marke für den Scan→OCR→Vorschlag-Pfad (co-located am OCR-Knopf).
@@ -951,6 +1005,7 @@ async function visionExtraktion(b) {
   try {
     const stand = pruefStandVon(b);
     let p = null;
+    // Eigener Scan aus Workflow PDF (D12): kein Halt „noch nie geprüft" — er stammt direkt vom Papier.
     if (stand === PRUEF_STAND.OFFEN) {
       const w = await ungeprueftHalt(b.name);
       if (!w) return;
@@ -962,6 +1017,22 @@ async function visionExtraktion(b) {
     }
 
     const bytes = await getBelegBytes(b.id);
+    // Textebene zuerst (Klaus 2026-10-26): trägt das PDF seinen Text schon (Scan aus Workflow PDF mit
+    // „Durchsuchbar", Rechnung aus einem Programm), wird nichts gezeichnet, nichts gesendet, kein Vision —
+    // der Text geht direkt in die Prüfung auf KI-Anweisungen und die Kontierung.
+    if (b.mediaType === 'application/pdf') {
+      let tb = null;
+      try { tb = await pdfTextebene(bytes); } catch { tb = null; }
+      if (tb && textebeneReicht(tb.text)) {
+        if (typeof window !== 'undefined') window.__blpTextebene = { seiten: tb.seiten, gesamt: tb.gesamt, zeichen: tb.text.length, eigen: istEigenerScan(b) };   // Probe
+        const hinweis = (istEigenerScan(b) ? t('beleg.textebeneEigen') : t('beleg.textebene'))
+          + (tb.gesamt > tb.seiten ? ' ' + t('beleg.seitenMax').replace('{m}', String(tb.seiten)).replace('{g}', String(tb.gesamt)) : '');
+        await textZuVorschlag(b, tb.text, hinweis);
+        return;
+      }
+      const vision = await isOcrAktiv().catch(() => false);
+      if (!vision) { alert(t('docs.textebeneFehlt')); return; }
+    }
     let arbeit = arbeitsAnzeige(t('beleg.arbeitVorbereiten'));
     let r;
     try {
@@ -986,23 +1057,29 @@ async function visionExtraktion(b) {
     await vermerkeKiEntfernt(b.id, r.liste, 'Texterkennung');
     const text = teile.join('\n\n').trim();
     if (!text) { alert(t('docs.ocrNoText')); await repaint(); return; }
-
-    const ex = extractFromText(text);
-    const frei = await kiTextFreigabe(text);
-    arbeit = arbeitsAnzeige(t('beleg.arbeitKontierung'));
-    let kat;
-    try { kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal }); }   // Mistral EU, sonst Heuristik
-    finally { arbeit.weg(); }
-    const res = buildVorschlag(ex, kat, _idx);
-    if (!res.ok) { alert(res.fehler); await repaint(); return; }
-    // R3: Aus dem OCR-Beleg lässt sich entweder direkt buchen (Buchungsvorschlag) ODER eine
-    // offene VERBINDLICHKEIT „auf Ziel" erfassen (Kreditor, erscheint im Zahlungsabgleich).
-    await repaint(el('div', {}, [
-      frei.hinweis ? el('p', { class: 'hinweis small', text: frei.hinweis }) : null,
-      zeigeFeature(getSettings(), FEATURE.VERBINDLICHKEITEN) ? verbindlichkeitAusExtraktionZeile(ex, kat) : null,
-      await vorschlagKarte(res.vorschlag, b.id, frei.kiText),
-    ]));
+    await textZuVorschlag(b, text, null);
   } catch (e) {
     alert(t('docs.ocrError') + ' ' + String(e.message || e));
   }
+}
+
+// Schritt 5: der erkannte Text (OCR oder Textebene) → Halt bei einer Anweisung an eine KI → Kontierung →
+// Vorschlag. Gilt für beide Wege gleich (Klaus 2026-10-26: die Textprüfung bleibt auch für eigene Scans).
+async function textZuVorschlag(b, text, hinweis) {
+  const ex = extractFromText(text);
+  const frei = await kiTextFreigabe(text);
+  const arbeit = arbeitsAnzeige(t('beleg.arbeitKontierung'));
+  let kat;
+  try { kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal }); }   // Mistral EU, sonst Heuristik
+  finally { arbeit.weg(); }
+  const res = buildVorschlag(ex, kat, _idx);
+  if (!res.ok) { alert(res.fehler); await repaint(); return; }
+  // R3: Aus dem OCR-Beleg lässt sich entweder direkt buchen (Buchungsvorschlag) ODER eine
+  // offene VERBINDLICHKEIT „auf Ziel" erfassen (Kreditor, erscheint im Zahlungsabgleich).
+  await repaint(el('div', {}, [
+    hinweis ? el('p', { class: 'muted small', 'data-textebene-hinweis': '', text: hinweis }) : null,
+    frei.hinweis ? el('p', { class: 'hinweis small', text: frei.hinweis }) : null,
+    zeigeFeature(getSettings(), FEATURE.VERBINDLICHKEITEN) ? verbindlichkeitAusExtraktionZeile(ex, kat) : null,
+    await vorschlagKarte(res.vorschlag, b.id, frei.kiText),
+  ]));
 }

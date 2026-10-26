@@ -5,6 +5,32 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (spät) — Bau Schritt 2: Workflow-PDF-Einbindung (V1 + V2)
+
+**Was getan**
+- Klaus' Antworten auf den Variantenplan: V1 + V2, eigene Scans ohne Datei-Prüfung aber mit OCR-Textprüfung, Workflow
+  PDF darf angefasst werden (alle Fassungen gleich), V4 später; „Journal" → „Buchungen"; PWA-Klon = BookLedger Basic.
+- **BLP:** `manifest.webmanifest` share_target + file_handlers · `sw.js` `teilenEmpfangen` (Vorrat `blpr-geteilt`,
+  überlebt `CACHE_VERSION`, POST vor dem GET-Ausstieg) · `index.html` Worker im Kopf (405-Lehre) ·
+  `src/domain/workflowPdf.js` (Marke, Textebene→Text, Parameter, Adressen) · `src/domain/teilenEmpfang.js` ·
+  `kiVorbereitung.pdfKopf/pdfTextebene` · `documents.js`: `dateienEinlesen` für Mehrfach/Ordner/Teilen, Herkunft beim
+  Ablegen, Stand „eigen" (`kiReinigung.pruefStandVon`, nicht in `ungepruefte`), Textebene vor Vision, gemeinsamer
+  Schluss `textZuVorschlag` (kiTextFreigabe für beide Wege), Knopf „Mit Workflow PDF scannen" · `shell.js`: `?geteilt`
+  und `launchQueue` → Belege. i18n DE/EN. Cache v257.
+- **Workflow PDF (PWA):** `scanDirektstart()` in der Startkette (`?scan=1&von=`), Toast DE/EN/RU/AR, Version 1.1.1,
+  Cache v106, `tests/direktstart.mjs` (16 grün) in `npm test`; Gegenprobe (Vorbelegung entfernt) → 2 rote Zeilen.
+- Doku: `docs/WORKFLOW-PDF-EINBINDUNG.md`, Plan-Datei mit Klaus' Entscheidung, PULS, ROADMAP 7.2.
+
+**Stand:** `node tests/run.mjs` **2368/0** · `node tests/smoke_teilen.mjs` **26 grün · 0 ROT** · `smoke_design` 90 ·
+Workflow PDF: syntax 75, version 12, teilen-empfang 23, sprache 49, scan 119, bibliothek 90, e2e 78, direktstart 16.
+
+**Offen / Nächstes:** Pro-App `upstream/` nachziehen (Gleichstand, eigener PR in Workflow-PDF-Pro) · „Journal" →
+„Buchungen" · Plan für Bedeutungssuche/Mikrofon/Anonymisierung an Klaus · dann Haushaltsbuch.
+**Nicht geprüft:** Tablet/Handy (Teilen-Liste nach Neuinstallation, intent-Link, Pro-App-App-Link nicht gebaut), iPhone
+ohne Web Share Target, Windows-Pro ohne Link-Empfang (Web-Fassung).
+
+---
+
 ## 2026-10-26 (abends) — Bau Schritt 1: Design-Grundlage + Modus Privat
 
 **Was getan**
