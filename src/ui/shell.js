@@ -43,6 +43,33 @@ import { parseUebernahmeParam, merkeUebernahme, merkeUebernahmeFehler } from '..
     navigate(u.art === 'buchhaltung-summen' ? 'shopbuchung' : 'angebote');
   } catch { /* fail-soft: App startet normal */ }
 })();
+import { geteiltParam, ohneGeteilt } from '../domain/workflowPdf.js';
+import { merkeGeteilt, merkeGeteilteDateien } from './views/documents.js';
+
+// Aus Androids Teilen-Liste (Klaus 2026-10-26, Schritt 2 V1): sw.js hat die Dateien abgelegt und auf
+// ./?geteilt=1 geleitet. Der Parameter wird einmal gemerkt und sofort geputzt (⟳ liest nicht doppelt ein);
+// die Belegseite holt die Dateien ab. „Öffnen mit" (file_handlers) kommt über launchQueue.
+(function captureGeteilt() {
+  try {
+    const g = geteiltParam(location.search);
+    if (g === null) return;
+    merkeGeteilt(g);
+    history.replaceState(null, '', ohneGeteilt(location.pathname, location.search, location.hash));
+    navigate('documents');
+  } catch { /* fail-soft */ }
+  try {
+    if ('launchQueue' in window && window.launchQueue && typeof window.launchQueue.setConsumer === 'function') {
+      window.launchQueue.setConsumer(async (p) => {
+        if (!p || !p.files || !p.files.length) return;
+        const fs = [];
+        for (const h of p.files) { try { fs.push(await h.getFile()); } catch { /* eine Datei nicht lesbar */ } }
+        if (!fs.length) return;
+        merkeGeteilteDateien(fs);
+        navigate('documents');
+      });
+    }
+  } catch { /* kein launchQueue */ }
+})();
 import { backupJetzt, restoreWaehlen, backupEinstellungen, onDatensicherungAktion } from './datensicherung.js';
 import { mountAccounts } from './views/accounts.js';
 import { mountAnlagen } from './views/anlagen.js';

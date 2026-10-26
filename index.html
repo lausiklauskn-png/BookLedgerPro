@@ -48,6 +48,10 @@
     var h = document.documentElement; h.setAttribute('data-theme', hell); h.setAttribute('data-farbe', farbe);
   })();
   </script>
+  <!-- Service-Worker FRÜH anmelden (Klaus 2026-10-26, Lehre aus Workflow PDF „405 Not Allowed"): Teilen aus
+       Androids Liste schickt einen POST an ./teilen-empfang — fehlt der Worker, antwortet GitHub Pages mit 405.
+       main.js meldet ihn ebenfalls an (doppelt ist harmlos); hier steht er, bevor irgendein Modul lädt. -->
+  <script>if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(function () {}); } catch (e) {} }</script>
   <link rel="stylesheet" href="./assets/tokens.css" />
   <link rel="stylesheet" href="./assets/app.css" />
   <!-- Deckblatt-Bild vorbestellen (2026-08-03). Das Bild ist das LCP-Element,

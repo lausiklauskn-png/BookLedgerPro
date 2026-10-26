@@ -6675,5 +6675,46 @@ await section('Design-Grundlage: Seitenleiste mit Gruppen, Teilbild, Modus in de
   ok('alte Texte Einfach/Profi/Firma weg', !/'settings\.mode\.einfach'/.test(i18n) && !/'settings\.nutzung\.firma'/.test(i18n));
 });
 
+// ===== Workflow-PDF-Einbindung (Klaus 2026-10-26, Bau-Brief Schritt 2, V1 + V2) =====
+await section('Workflow PDF: Marke, Textebene, Teilen-Parameter, Adressen (reine Logik)', async () => {
+  const W = await import('../src/domain/workflowPdf.js');
+  ok('Marke: Producer „Workfloh PDF" + Creator „… Scannen" = eigener Scan', W.istWorkflowScan({ producer: 'Workfloh PDF', creator: 'Workfloh PDF · Scannen' }) && W.istWorkflowScan({ Producer: 'Workfloh PDF', Creator: 'Workfloh PDF · Scannen' }));
+  ok('kein eigener Scan: anderer Producer, fehlender Creator, Übersetzung aus Workflow PDF, leer', !W.istWorkflowScan({ producer: 'pdf-lib', creator: 'Workfloh PDF · Scannen' }) && !W.istWorkflowScan({ producer: 'Workfloh PDF' }) && !W.istWorkflowScan({ producer: 'Workfloh PDF', creator: 'Workfloh PDF · Übersetzen' }) && !W.istWorkflowScan(null) && !W.istWorkflowScan({}));
+  ok('herkunftVon: workflow-pdf oder undefined', W.herkunftVon({ producer: 'Workfloh PDF', creator: 'Workfloh PDF · Scannen' }) === 'workflow-pdf' && W.herkunftVon({ producer: 'x' }) === undefined);
+  ok('istEigenerScan liest die Herkunft am Beleg', W.istEigenerScan({ herkunft: 'workflow-pdf' }) && !W.istEigenerScan({ herkunft: 'teilen' }) && !W.istEigenerScan({}) && !W.istEigenerScan(null));
+  ok('textebeneReicht: ab 40 Buchstaben/Ziffern, Leerzeichen zählen nicht', W.textebeneReicht('Baeckerei Muster Rechnung 2026 Summe 7,50 EUR inkl 7 Prozent') && !W.textebeneReicht('   ') && !W.textebeneReicht('Rechnung 4711') && W.textebeneReicht('ab', 2));
+  const text = W.textebeneZuText([[{ str: 'Baeckerei', hasEOL: false }, { str: 'Muster', hasEOL: true }, { str: 'Summe 7,50', hasEOL: true }], [{ str: 'Seite 2', hasEOL: false }]]);
+  ok('textebeneZuText: Stücke mit Leerzeichen, Zeilen an EOL, Seiten mit Leerzeile', text === 'Baeckerei Muster\nSumme 7,50\n\nSeite 2', JSON.stringify(text));
+  ok('textebeneZuText verträgt leere/kaputte Eingaben', W.textebeneZuText(null) === '' && W.textebeneZuText([[], [null, { str: '' }]]) === '');
+  ok('geteiltParam: 1 · 0 · fehler · nichts', W.geteiltParam('?geteilt=1') === '1' && W.geteiltParam('?a=b&geteilt=0') === '0' && W.geteiltParam('?geteilt=fehler') === 'fehler' && W.geteiltParam('?geteilt=quatsch') === '0' && W.geteiltParam('?a=b') === null && W.geteiltParam('') === null);
+  ok('ohneGeteilt putzt nur diesen Parameter', W.ohneGeteilt('/BookLedgerPro/', '?geteilt=1', '') === '/BookLedgerPro/' && W.ohneGeteilt('/x/', '?a=b&geteilt=1', '#h') === '/x/?a=b#h');
+  ok('Adresse Web: Workflow PDF mit ?scan=1&von=BookLedgerPro', W.workflowScanAdresse({ android: false }) === 'https://lausiklauskn-png.github.io/Workflow-PDF/?scan=1&von=BookLedgerPro');
+  const a = W.workflowScanAdresse({ android: true });
+  ok('Adresse Android: intent:// auf die Pro-App mit Rückfall auf die Web-Fassung', a.startsWith('intent://lausiklauskn-png.github.io/Workflow-PDF/?scan=1&von=BookLedgerPro#Intent;scheme=https;package=de.familyprojekt.workflowpdf.pro;S.browser_fallback_url=') && a.endsWith(';end') && decodeURIComponent(a.split('S.browser_fallback_url=')[1].replace(';end', '')).includes('?scan=1&von=BookLedgerPro'), a);
+  ok('istAndroid nach dem User-Agent', W.istAndroid('Mozilla/5.0 (Linux; Android 14; SM-T860) …') && !W.istAndroid('Mozilla/5.0 (Windows NT 10.0) …') && !W.istAndroid(''));
+  // Prüfstand: eigener Scan = „eigen", nicht „offen"; nicht in „Alle ungeprüften prüfen"; Prüfung von Hand gilt
+  const { pruefStandVon, ungepruefte, PRUEF_STAND } = await import('../src/domain/kiReinigung.js');
+  const eigen = { mediaType: 'application/pdf', herkunft: 'workflow-pdf' }, fremd = { mediaType: 'application/pdf' };
+  ok('eigener Scan ohne Prüfung = eigen, fremdes PDF = offen', pruefStandVon(eigen) === PRUEF_STAND.EIGEN && pruefStandVon(fremd) === PRUEF_STAND.OFFEN);
+  ok('eine Prüfung von Hand gilt auch beim eigenen Scan', pruefStandVon({ ...eigen, pruefung: { stand: 'sauber' } }) === 'sauber' && pruefStandVon({ ...eigen, pruefung: { stand: 'warnung' } }) === 'warnung');
+  ok('„Alle ungeprüften prüfen" lässt eigene Scans aus', ungepruefte([eigen, fremd, { mediaType: 'text/plain' }]).length === 1);
+  // Manifest ⟷ Worker ⟷ Konstanten (ohne Browser; der ganze Weg in tests/smoke_teilen.mjs)
+  const { readFileSync } = await import('node:fs');
+  const man = JSON.parse(readFileSync(new URL('../manifest.webmanifest', import.meta.url), 'utf8'));
+  const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+  ok('Manifest share_target passt zu den Konstanten', man.share_target.action === './' + W.TEILEN_EMPFANG_PFAD && man.share_target.params.files[0].name === W.TEILEN_FELD && man.share_target.method === 'POST');
+  ok('sw.js: Vorrat, Feld und Adresse wie die Konstanten; Vorrat überlebt den Cache-Wechsel', sw.includes(`const GETEILT_VORRAT = '${W.GETEILT_VORRAT}'`) && sw.includes(`fd.getAll('${W.TEILEN_FELD}')`) && sw.includes(`endsWith('/${W.TEILEN_EMPFANG_PFAD}')`) && /BLEIBT = \[GETEILT_VORRAT\]/.test(sw) && /!BLEIBT\.includes\(k\)/.test(sw));
+  ok('sw.js: neue Dateien im Vorrat, Cache ≥ v257', ['./src/domain/workflowPdf.js', './src/domain/teilenEmpfang.js'].every((f) => sw.includes(`'${f}'`)) && Number(sw.match(/CACHE_VERSION = 'v(\d+)'/)[1]) >= 257);
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  ok('index.html meldet den Worker im Kopf an (405-Lehre aus Workflow PDF)', html.indexOf("serviceWorker.register('./sw.js'") > -1 && html.indexOf("serviceWorker.register('./sw.js'") < html.indexOf('<script type="module"'));
+  const i18n = readFileSync(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  const de = i18n.slice(i18n.indexOf('  de: {'), i18n.indexOf('  en: {')), en = i18n.slice(i18n.indexOf('  en: {'));
+  const neu = ['docs.workflowScan', 'docs.workflowScanHint', 'docs.teilenEmpfangen', 'docs.teilenNichts', 'docs.teilenFehler', 'docs.eigeneScans', 'docs.textebene', 'docs.textebeneFehlt', 'beleg.eigen', 'beleg.textebene', 'beleg.textebeneEigen'];
+  ok('neue Texte in DE und EN', neu.every((k) => de.includes(`'${k}':`) && en.includes(`'${k}':`)), neu.filter((k) => !(de.includes(`'${k}':`) && en.includes(`'${k}':`))).join(','));
+  const dok = readFileSync(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
+  ok('Belegseite: Textebene zuerst, dann erst Vision; der Text geht durch kiTextFreigabe', /pdfTextebene\(bytes\)/.test(dok) && /textebeneReicht\(tb\.text\)/.test(dok) && /async function textZuVorschlag/.test(dok) && /const frei = await kiTextFreigabe\(text\);/.test(dok));
+  ok('Belegseite: Marke beim Ablegen, Herkunft am Beleg', /herkunftVon\(await pdfKopf\(/.test(dok) && /saveBeleg\(file, \{ typ, herkunft, quelle \}\)/.test(dok));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);
