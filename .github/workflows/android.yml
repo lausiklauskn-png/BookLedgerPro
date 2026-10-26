@@ -31,6 +31,8 @@ jobs:
       - run: npm ci
       - name: Web-Paket und Hülle prüfen (ohne Android)
         run: node tools/native/test-native.mjs
+      - name: Signier-Werkzeuge mit Wegwerf-Schlüssel prüfen (kein echter Schlüssel)
+        run: node --test tools/signing/test-identity.mjs tools/signing/test-unlock-file.mjs
       - name: Web-Paket bauen und in die Hülle legen
         run: npm run sync:android
       - name: Bauen, Lint und JVM-Proben

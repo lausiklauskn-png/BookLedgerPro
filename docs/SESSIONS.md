@@ -5,6 +5,19 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-26 (abends) — Schritt A: Android-Hülle ohne Tresorordner, A2 Signier-Werkzeuge
+
+**Was getan:** Klaus' fünf Antworten in Brief/CLAUDE/PULS; Capacitor 8.5.3 (`capacitor.config.json`, `package.json` ohne
+`"type"`), `android/` (Manifest: SEND/SEND_MULTIPLE/VIEW für PDF, Bilder, `.eml`; allowBackup aus; FileProvider nur `share/`),
+Java `MainActivity`, `IncomingInbox`/`IncomingFiles`/`BlpIncomingPlugin`/`PluginWorker` (aus Workflow PDF Pro angepasst),
+`BlpFilesPlugin` (Speichern/Teilen), `NativeUtil` + JVM-Probe; `native/blp-native.js`; `tools/native/prepare-web.mjs`,
+`tools/native/test-native.mjs`; CI `android.yml`; Signier-Werkzeuge `tools/signing/` + `signing-identity.yml`; `docs/ANDROID.md`.
+Basic: Ausschluss der nativen Teile (#4).
+**Stand:** `test-native` 30 grün (Gegenproben: 5 Sabotagen je eigene rote Zeile) · Signier-Tests 10/10 · `run.mjs` 2567/0 ·
+Gradle-Bau nur in GitHub (dl.google.com aus dem Behälter gesperrt).
+**Offen/Nächstes:** Klaus' Signatur-Schritte (A2); Schritt B. ⚠ Nicht am Gerät gemessen; Mikrofon in der WebView offen;
+App-Links für den WorkFloh-Rundlauf offen.
+
 ## 2026-10-26 (Sitzungsende) — Abschluss, Forschung und Brief für die Android-Tresorordner-Sitzung
 
 **Was getan:** BookLedger Basic in beide Marktplätze eingetragen (family-project #373, PWA-Toolpoint #182, Basic #3);

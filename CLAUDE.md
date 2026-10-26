@@ -12,6 +12,11 @@ Regeln, Passwort/Ersatzschlüssel und offenen Entscheidungen: `docs/design/PLAN-
 `docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`, Abschluss `BRIEF_ABSCHLUSS_2026-10-26_BAU-SITZUNG.md`. BookLedgerPro ist
 **noch PWA**; die native App entsteht erst dort. Nichts veröffentlichen ohne Klaus' Wort.
 
+**📱 Android-Hülle (Schritt A, Klaus 2026-10-26):** `android/` + `native/blp-native.js` + `tools/native/` (Paket
+`de.familyprojekt.bookledgerpro`); die Web-App bleibt unverändert, das Paket nimmt nur Laufzeit-Dateien aus `git ls-files`.
+Probe `node tools/native/test-native.mjs`, Bau nur in GitHub (`android.yml`). Signatur über `tools/signing/` — **nie `init` ohne
+Klaus**, nichts veröffentlichen ohne sein Wort. Bedienung, Klaus' Signatur-Schritte, Grenzen: `docs/ANDROID.md`.
+
 Dieses Repo wird über viele Sitzungen hinweg gebaut. Lies das hier zuerst.
 
 ## Was BookLedgerPro ist

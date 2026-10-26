@@ -5,6 +5,18 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
+## ▶ Neuester Stand (2026-10-26, abends): Schritt A — BookLedgerPro als Android-App (ohne Tresorordner)
+- **Gebaut:** Capacitor-Hülle `android/` (Paket `de.familyprojekt.bookledgerpro`), Web-Paket nur aus Laufzeit-Dateien
+  (`tools/native/prepare-web.mjs`, byte-gleich bis auf eine Skript-Zeile in `index.html`), Klebstoff `native/blp-native.js`
+  (Teilen/„Öffnen mit" → launchQueue, Speichern über Androids Dialog, Teilen hinaus, Link-Schutz). Bau in GitHub
+  (`.github/workflows/android.yml`, debug-APK als Artefakt). Bedienung/Grenzen: `docs/ANDROID.md`.
+- **A2 Signatur:** Werkzeuge `tools/signing/` + Lauf „Dauerhafte BookLedgerPro-Signieridentität" (Muster Workflow PDF Pro).
+  **Wartet auf Klaus:** Freigabe erzeugen, als `BLP_SIGNING_UNLOCK` in Environment `android-production` ablegen, Lauf mit
+  `initialize` starten (Schritte in `docs/ANDROID.md`). Nichts veröffentlicht.
+- **Basic** zieht `android/`, `native/`, `signing/`, `tools/native|signing/` nicht mit (Basic #4).
+- **Nächstes:** Schritt B (gemeinsame Ordnerschicht `de.familyprojekt.tresor`, Hauptschlüssel, Inhaltsverzeichnis je Fach),
+  dann C (Sicherung ins Fach, Eingangsfach), C2 (Tresor öffnen/durchsuchen), D (PBP/WF-PDF-Pro ziehen ein); Windows; Relais zuletzt.
+
 ## ▶ Übergabe (2026-10-26, Sitzungsende): Android-Tresorordner vorbereitet
 - **Klaus hat die fünf Fragen beantwortet (2026-10-26, abends):** ein gemeinsamer Kopf und ein Passwort · Daten bleiben in der App,
   Ordner bekommt die automatische Sicherung, **und BookLedgerPro soll den entsperrten Tresorordner öffnen und durchsuchen können** ·
