@@ -155,6 +155,11 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 /* ☰: nur im Handyformat sichtbar (siehe @media unten). */
 .nav-toggle { display: none; }
 .sperren-knopf .ic-text { white-space: nowrap; }
+/* Palette-Knopf (Klaus 2026-10-26: „etwas größer, damit er auch am Handy als Farbpalette zu erkennen ist"):
+   größeres Symbol in der Themenfarbe auf rundem farbigem Grund. */
+.thema-knopf { color: var(--accent); background: var(--accent-soft); border-radius: 50%; min-width: 36px; min-height: 36px; padding: 0; }
+.thema-knopf .ic { width: 24px; height: 24px; stroke-width: 2; }
+.thema-knopf:hover { background: var(--accent); color: var(--on-accent); }
 /* Thema-Popover unter dem Palette-Knopf */
 .thema-popover { position: absolute; right: .9rem; top: calc(100% + 4px); z-index: 30; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: .7rem .8rem; max-width: min(92vw, 26rem); }
 .thema-wahl { display: flex; flex-direction: column; gap: .6rem; }

@@ -225,7 +225,7 @@ function header(s) {
       // (Hard-Reload-Ersatz für Klaus' Tablet, wo Service-Worker + HTTP-Cache hartnäckig sind).
       // Thema (Klaus 2026-10-26): Palette-Knopf in der Kopfleiste, dieselbe Wahl wie in den Einstellungen.
       el('button', {
-        class: 'btn btn-ghost btn-sm btn-icon', title: t('app.themeTitle'), 'aria-label': t('app.themeTitle'),
+        class: 'btn btn-ghost btn-sm btn-icon thema-knopf', title: t('app.themeTitle'), 'aria-label': t('app.themeTitle'),
         'data-thema-knopf': '', onClick: (e) => themaPopover(e.currentTarget, s),
       }, [icon('blp-palette')]),
       el('button', {
