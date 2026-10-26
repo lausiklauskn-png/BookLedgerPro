@@ -155,6 +155,20 @@ Er wird bei der Einrichtung gefragt und ist in den Einstellungen änderbar.
 | **Selbstständig / Unternehmen** (regelbesteuert) | Freiberufler, GmbH-klein | alles für EÜR + USt-VA, Mitarbeiter, Kostenstellen | Mandanten-Wechsel, Berater-Export |
 | **Berater** | betreut mehrere Mandanten | alles, dazu Mandantenwechsel, DATEV-Export, Prüfansichten | – |
 
+**Privat im Detail (Klaus 2026-10-26):** Privat deckt alle Anlagen der privaten Einkommensteuererklärung ab,
+die man braucht; man schaltet nur ein, was auf einen zutrifft (Rest bleibt verborgen, siehe F1):
+- Grundlage: Hauptvordruck, Sonderausgaben, Vorsorgeaufwand, außergewöhnliche Belastungen, haushaltsnahe
+  Aufwendungen (§ 35a), Kinder, Unterhalt.
+- **Arbeitnehmer** (Anlage N), **Rentner** (Anlage R), **Arbeitslose** (Lohnersatzleistungen/Progressionsvorbehalt),
+  Kapitalerträge (Anlage KAP), sonstige Einkünfte (Anlage SO).
+- **Vermieter** (Anlage V, je Objekt): Mieteinnahmen, Reparaturen, Zinsen, Abschreibung, Nebenkosten, Grundsteuer.
+  Wohnungsvermietung ist umsatzsteuerfrei (§ 4 Nr. 12 UStG) → gehört zu Privat. Sonderfall später: Ferienwohnung
+  (7 % USt, ggf. Kleinunternehmer) bzw. gewerbliche Vermietung → Unternehmer-Modi.
+- **Ehrenamt** als Person (Übungsleiter-/Ehrenamtspauschale, § 3 Nr. 26/26a EStG) gehört ebenfalls hierher.
+- **Verein selbst** ist eine eigene Steuerperson (eigene Erklärungen, Gemeinnützigkeit, Körperschaftsteuer) –
+  passt nicht in Privat. Vorschlag: späterer eigener Modus „Verein" (D13).
+Allgemeine Rechtslage, keine Steuerberatung; fachliche Prüfung beim Bau.
+
 Regeln dazu:
 - F1 Ausblenden gilt für **Einstellungen, Navigation, Formularfelder und Kacheln** gleichermaßen.
 - F2 Ausgeblendet heißt nicht gelöscht: Daten bleiben, beim Moduswechsel ist alles wieder da.
@@ -246,6 +260,7 @@ Bei Unternehmer-Modi: Trennung privat/betrieblich (Privatentnahme/-einlage) stat
 - D7 Die Bilder sind in Teal/Smaragd. Zu Petrol passen sie genau; bei Klarblau, Graphit und Nachtblau beim Umbau ansehen, ob sie noch stimmig wirken (nur prüfen, nicht ändern).
 - D10 Name des PWA-Klons und seine Datenbank-Endung (Vorschlag `bookledger`). Wann wird geklont – nach dem Design-Umbau?
 - ~~D12 Prüfung~~ **entschieden:** eigene Scans aus Workflow PDF ohne Prüfung; Dateien von außen werden geprüft.
+- D13 Verein: eigener Modus „Verein" später (nach Privat und Unternehmer-Modi)? Ehrenamt als Person ist schon in Privat.
 - D11 ELSTER: **beauftragt** – Recherche zu ERiC-Plattformen und Hersteller-ID läuft (Ergebnis folgt in Abschnitt G).
 - ~~D6 Alter Schalter~~ **entschieden:** Der neue Modus ersetzt Einfach/Profi/Berater ganz.
 
