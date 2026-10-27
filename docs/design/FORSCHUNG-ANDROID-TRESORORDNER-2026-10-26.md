@@ -176,3 +176,38 @@ wenn ihr Anker fehlt), nicht durch Kopieren des ganzen Repos.
    (einmal 429, beim zweiten Versuch da). Android-SDK bleibt gesperrt; `SafAblage` und Plugins nur in GitHub gebaut.
 9. **Das Repo heißt jetzt `Workflow-PDF-Pro`** (Groß-/Kleinschreibung; Push meldet „This repository moved“) — Klone mit dem alten
    Namen funktionieren weiter.
+
+## 9 · Befunde aus Schritt D (2026-10-27, gemessen)
+
+1. **Die Probe an einer Kopie braucht keine Umstellung der App.** Statt den Tresorordner aus dem aktiven Speicherort abzuleiten, wählt
+   Klaus den Ordner selbst; die App prüft nur, ob darin **ihr** Tresor liegt (gleiche Kennung im Kopf). Eine byte-gleiche Kopie hat
+   dieselbe Kennung und denselben Datenschlüssel → der Einzug geht an „Tresor-Probe/“, während die App weiter in den echten Ordner
+   schreibt. Klaus hat diesen Weg bestätigt (Abweichung vom Brief, der „Ebene über dem aktiven Ort“ vorsah).
+2. **Die Köpfe der beiden Apps sind verschieden gebaut:** Workflow PDF Pro `{"app":"workflow-pdf-pro-vault","id":…}`, Private Brain
+   `{"format":"private-brain-vault","id":…}` (eingerückt). Die Ordnerprüfung liest je App das eigene Feld; die JVM-Probe nimmt den
+   jeweils anderen Kopf als „fremd“.
+3. **`JSObject.fromJSONObject` wirft eine geprüfte Ausnahme.** In einem `runOnUiThread`-Lambda hätte das den Android-Bau gebrochen —
+   hier ohne SDK nicht zu sehen, beim Lesen des eigenen Diffs gefunden. Regel: das Ergebnis vor dem Lambda bauen.
+4. **Ohne SDK sind Lint und Übersetzung nur in GitHub.** Workflow PDF Pro #30: Bau, Lint, `testReleaseUnitTest` beim ersten Push grün.
+5. **Private Brains `www/` lässt sich im Behälter nicht ganz bauen** (OCR-Beschaffung braucht Netz). Der Rest der Dateien liegt vorher
+   schon in `www/`; fehlende kleine Dateien von Hand nachgelegt. Die Proben laufen gegen dieses `www/`.
+6. **Umlaute in Dateinamen und die JVM:** `Anhänge/` scheitert in der JVM-Probe mit `InvalidPathException`, wenn die Locale nicht UTF-8
+   ist (`sun.jnu.encoding`). Mit `LANG=C.UTF-8` grün; der GitHub-Läufer hat UTF-8.
+7. **Der Teilen-Knopf liegt im Klappmenü** (`.mail-message-tools`): eine Probe muss es öffnen, sonst ist der Knopf „hidden“.
+8. **Gegenproben brauchen eine Kontrolle ohne Fehler.** Sonst kann jeder Fall aus dem falschen Grund rot sein (z. B. scheitert der Bau
+   in der Wegwerf-Kopie). Beide Gegenproben haben jetzt je eine Kontrolle pro Art (JVM, Browser). In Private Brain war ein Fall zuerst
+   blind („Hintergrund schreibt in fremden Ordner“) — die Browser-Probe prüfte den Hintergrund nicht; ergänzt.
+9. **Das Inhaltsverzeichnis darf nicht bei jedem Verlassen wachsen.** Die App vergleicht in Java mit dem eigenen Stand und schreibt nur bei
+   einer Änderung (sonst drei Stände in wenigen Minuten verbraucht). Workflow PDF Pro holt Größe und SHA-256 aus dem Satz-Index, ohne die
+   Datei zu lesen.
+10. **Private Brains Windows-Engine übersetzt eine feste Liste von Java-Dateien** (`windows/engine/build.mjs`) — das Paket kommt dort nicht
+    mit, und die Seite tut ohne Brücke nichts. Windows bleibt eine benannte Lücke.
+11. **Termux-Tresore ≠ SD-Tresor.** Klaus fragte, ob der Ordner in Termux angelegt wurde. Nein: in Termux liegen nur die mit `age -p`
+    verschlüsselten Signier-Freigaben (`pbpro-`/`wfpdf-freigabe-neu.age`, `blp-freigabe.age`); der Dokumententresor liegt auf der SD-Karte
+    und öffnet nur in der App. Für den Brief: das gleich zu Anfang klarstellen.
+12. **Beide App-Ordner müssen unter demselben Ordner liegen.** Der Tresorordner ist die Ebene über „Private Brain“ **und** über „Workflow PDF
+    Pro“. Liegt der Workflow-Tresor woanders (andere Karte, anderer Ordner), passt dort kein gemeinsamer Kopf. Weg: in Workflow PDF Pro
+    „Ordner wählen / vorhandenen Tresor öffnen“ auf einen neuen Ordner neben „Private Brain“ (die App überträgt ihre Daten selbst,
+    `VaultLocations`/Migration), dann einziehen. Für die Probe beide Ordner nach „Tresor-Probe/“ kopieren. Am Gerät zu klären.
+13. **Ersatzschlüssel des Tresorordners** erzeugt bisher nur BookLedgerPro (Ansicht „Tresorordner“). Er gilt für alle Apps; Workflow PDF Pro
+    und Private Brain Pro haben dafür noch keinen eigenen Knopf (ihre eigenen Ersatzschlüssel gelten weiter für den App-Tresor).
