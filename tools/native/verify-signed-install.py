@@ -13,6 +13,7 @@ package = 'de.familyprojekt.bookledgerpro'
 ERSTEINRICHTUNG = ['Tresor erstellen', 'Create vault']
 SHAMIR = ['Schlüssel-Sicherung (Shamir)', 'Key backup (Shamir)']
 ENTSPERREN = ['Entsperren', 'Unlock']
+DECKBLATT = ['Zur Anmeldung', 'Continue to login']
 
 def adb(*args):
     r = subprocess.run(['adb', *map(str, args)], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
@@ -48,6 +49,22 @@ def launch():
     if 'Status: ok' not in r: raise RuntimeError('App startet nicht')
     if not adb('shell', 'pidof', package).strip(): raise RuntimeError('App-Prozess fehlt')
 
+def deckblatt_weg(ziel, seconds=120):
+    # Vor Ersteinrichtung/Entsperren steht das Deckblatt; „Zur Anmeldung“ steht unten, notfalls hinscrollen.
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        try: knoten = [n.attrib for n in hierarchy().iter('node')]
+        except (ET.ParseError, RuntimeError): time.sleep(.5); continue
+        if any(hat(ziel)(a) for a in knoten): return
+        for a in knoten:
+            if hat(DECKBLATT)(a):
+                b = list(map(int, re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', a['bounds']).groups()))
+                if b[3] - b[1] > 4: tap(a)
+                else: adb('shell', 'input', 'swipe', 500, 1500, 500, 400, 300)
+                break
+        time.sleep(1)
+    wait_node(hat(ziel), 5)
+
 def passwortfelder():
     root = hierarchy()
     return [n.attrib for n in root.iter('node') if n.get('class') == 'android.widget.EditText' and n.get('password') == 'true']
@@ -59,7 +76,7 @@ if 'package:' + package in adb('shell', 'pm', 'list', 'packages', package).split
     raise RuntimeError('Erstinstallation braucht einen frischen Emulator; vorhandene Daten bleiben unberührt')
 
 adb('install', apk); launch()
-knopf = wait_node(hat(ERSTEINRICHTUNG), 120)
+deckblatt_weg(ERSTEINRICHTUNG)
 # Wegwerf-Passwort nur für diesen Emulator (nur Buchstaben/Ziffern: „input text" kennt keine Sonderzeichen).
 pw = 'Probe' + secrets.token_hex(8)
 deadline = time.monotonic() + 30
@@ -77,7 +94,7 @@ except RuntimeError:
     tap(wait_node(hat(ERSTEINRICHTUNG), 10)); wait_node(hat(SHAMIR), 120)
 adb('shell', 'am', 'force-stop', package)
 adb('install', '-r', apk); launch()
-wait_node(hat(ENTSPERREN), 120)
+deckblatt_weg(ENTSPERREN)
 if any(hat(ERSTEINRICHTUNG)(n.attrib) for n in hierarchy().iter('node')):
     raise RuntimeError('Nach dem Überinstallieren erscheint wieder die Ersteinrichtung: Tresor verloren')
 proof = {'applicationId': package, 'apkSha256': digest, 'commit': receipt['commit'], 'versionCode': receipt['versionCode'],
