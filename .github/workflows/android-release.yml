@@ -122,10 +122,11 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.tag }}
         with:
-          api-level: 31
+          api-level: 35
           target: google_apis
           arch: x86_64
           profile: pixel_2
+          ram-size: 4096M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           script: python3 tools/native/verify-signed-install.py "release-files/BookLedgerPro-${RELEASE_TAG#v}.apk"
@@ -134,7 +135,9 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release-probe-failure
-          path: release-files/*.json
+          path: |
+            release-files/*.json
+            release-files/probe-*
           if-no-files-found: ignore
       - name: Veröffentlichen und Download prüfen
         env:

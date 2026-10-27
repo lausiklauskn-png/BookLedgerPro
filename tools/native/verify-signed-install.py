@@ -75,28 +75,39 @@ assert receipt['apkSha256'] == digest and receipt['applicationId'] == package
 if 'package:' + package in adb('shell', 'pm', 'list', 'packages', package).splitlines():
     raise RuntimeError('Erstinstallation braucht einen frischen Emulator; vorhandene Daten bleiben unberührt')
 
-adb('install', apk); launch()
-deckblatt_weg(ERSTEINRICHTUNG)
-# Wegwerf-Passwort nur für diesen Emulator (nur Buchstaben/Ziffern: „input text" kennt keine Sonderzeichen).
-pw = 'Probe' + secrets.token_hex(8)
-deadline = time.monotonic() + 30
-while len(passwortfelder()) < 2:
-    if time.monotonic() > deadline: raise RuntimeError('Passwortfelder der Ersteinrichtung fehlen')
-    time.sleep(.5)
-for i in range(2):
-    feld = passwortfelder()[i]; tap(feld); time.sleep(.5)
-    adb('shell', 'input', 'text', pw); time.sleep(.3)
-adb('shell', 'input', 'keyevent', 'KEYCODE_ENTER')
+def diagnose():
+    # Bei Fehlern Bildschirmfoto und WebView-Konsole neben die APK legen (keine Geheimnisse: nur Emulator-Wegwerfdaten).
+    ziel = apk.parent
+    try: (ziel / 'probe-bildschirm.png').write_bytes(subprocess.run(['adb', 'exec-out', 'screencap', '-p'], stdout=subprocess.PIPE, timeout=60).stdout)
+    except Exception: pass
+    try: (ziel / 'probe-logcat.txt').write_text(subprocess.run(['adb', 'logcat', '-d', '-v', 'brief', 'chromium:V', 'Capacitor:V', 'Capacitor/Console:V', 'AndroidRuntime:E', '*:S'], text=True, stdout=subprocess.PIPE, timeout=60).stdout)
+    except Exception: pass
+
 try:
-    wait_node(hat(SHAMIR), 60)
-except RuntimeError:
-    # Tastatur fing Enter: den sichtbaren Knopf tippen.
-    tap(wait_node(hat(ERSTEINRICHTUNG), 10)); wait_node(hat(SHAMIR), 120)
-adb('shell', 'am', 'force-stop', package)
-adb('install', '-r', apk); launch()
-deckblatt_weg(ENTSPERREN)
-if any(hat(ERSTEINRICHTUNG)(n.attrib) for n in hierarchy().iter('node')):
-    raise RuntimeError('Nach dem Überinstallieren erscheint wieder die Ersteinrichtung: Tresor verloren')
+  adb('install', apk); launch()
+  deckblatt_weg(ERSTEINRICHTUNG)
+  # Wegwerf-Passwort nur für diesen Emulator (nur Buchstaben/Ziffern: „input text" kennt keine Sonderzeichen).
+  pw = 'Probe' + secrets.token_hex(8)
+  deadline = time.monotonic() + 30
+  while len(passwortfelder()) < 2:
+      if time.monotonic() > deadline: raise RuntimeError('Passwortfelder der Ersteinrichtung fehlen')
+      time.sleep(.5)
+  for i in range(2):
+      feld = passwortfelder()[i]; tap(feld); time.sleep(.5)
+      adb('shell', 'input', 'text', pw); time.sleep(.3)
+  adb('shell', 'input', 'keyevent', 'KEYCODE_ENTER')
+  try:
+      wait_node(hat(SHAMIR), 60)
+  except RuntimeError:
+      # Tastatur fing Enter: den sichtbaren Knopf tippen.
+      tap(wait_node(hat(ERSTEINRICHTUNG), 10)); wait_node(hat(SHAMIR), 120)
+  adb('shell', 'am', 'force-stop', package)
+  adb('install', '-r', apk); launch()
+  deckblatt_weg(ENTSPERREN)
+  if any(hat(ERSTEINRICHTUNG)(n.attrib) for n in hierarchy().iter('node')):
+      raise RuntimeError('Nach dem Überinstallieren erscheint wieder die Ersteinrichtung: Tresor verloren')
+except Exception:
+    diagnose(); raise
 proof = {'applicationId': package, 'apkSha256': digest, 'commit': receipt['commit'], 'versionCode': receipt['versionCode'],
          'api': int(adb('shell', 'getprop', 'ro.build.version.sdk').strip()), 'firstInstall': True, 'reinstallPreservesData': True,
          'developmentProbe': False,
