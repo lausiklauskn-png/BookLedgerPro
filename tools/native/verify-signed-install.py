@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Echte signierte Erstinstallation von BookLedgerPro im Emulator, nur über die sichtbare Oberfläche:
+Tresor mit einem Wegwerf-Passwort anlegen, dieselbe APK darüber installieren, danach muss die App
+„Entsperren" statt der Ersteinrichtung zeigen (der Tresor blieb erhalten). Kein Debug-Zugang, kein JS.
+Vorbild: Workflow PDF Pro tools/native/verify-signed-install.py.
+"""
+import hashlib, json, re, secrets, subprocess, sys, time
+from pathlib import Path
+import xml.etree.ElementTree as ET
+
+apk = Path(sys.argv[1]).resolve()
+package = 'de.familyprojekt.bookledgerpro'
+ERSTEINRICHTUNG = ['Tresor erstellen', 'Create vault']
+SHAMIR = ['Schlüssel-Sicherung (Shamir)', 'Key backup (Shamir)']
+ENTSPERREN = ['Entsperren', 'Unlock']
+
+def adb(*args):
+    r = subprocess.run(['adb', *map(str, args)], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+    if r.returncode: raise RuntimeError('ADB ' + str(args[:3]) + ': ' + (r.stdout + r.stderr)[-3000:])
+    return r.stdout
+
+def hierarchy():
+    adb('shell', 'uiautomator', 'dump', '--compressed', '/sdcard/blp-release-probe.xml')
+    return ET.fromstring(adb('exec-out', 'cat', '/sdcard/blp-release-probe.xml'))
+
+def texte(node): return {node.get('text', '').strip(), node.get('content-desc', '').strip()}
+
+def wait_node(predicate, seconds=90):
+    deadline = time.monotonic() + seconds; root = ET.Element('hierarchy')
+    while time.monotonic() < deadline:
+        try:
+            root = hierarchy()
+            for node in root.iter('node'):
+                if predicate(node.attrib): return node.attrib
+        except (ET.ParseError, RuntimeError): pass
+        time.sleep(.5)
+    sichtbar = [n.get('text', '') for n in root.iter('node') if n.get('text')]
+    raise RuntimeError('Erwartetes Element fehlt; sichtbar: ' + repr(sichtbar)[-3000:])
+
+def hat(woerter): return lambda a: bool(texte(a) & set(woerter))
+
+def tap(node):
+    b = list(map(int, re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node['bounds']).groups()))
+    adb('shell', 'input', 'tap', (b[0] + b[2]) // 2, (b[1] + b[3]) // 2)
+
+def launch():
+    r = adb('shell', 'am', 'start', '-W', '-n', package + '/.MainActivity')
+    if 'Status: ok' not in r: raise RuntimeError('App startet nicht')
+    if not adb('shell', 'pidof', package).strip(): raise RuntimeError('App-Prozess fehlt')
+
+def passwortfelder():
+    root = hierarchy()
+    return [n.attrib for n in root.iter('node') if n.get('class') == 'android.widget.EditText' and n.get('password') == 'true']
+
+digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+receipt = json.loads(Path(str(apk) + '.json').read_text())
+assert receipt['apkSha256'] == digest and receipt['applicationId'] == package
+if 'package:' + package in adb('shell', 'pm', 'list', 'packages', package).splitlines():
+    raise RuntimeError('Erstinstallation braucht einen frischen Emulator; vorhandene Daten bleiben unberührt')
+
+adb('install', apk); launch()
+knopf = wait_node(hat(ERSTEINRICHTUNG), 120)
+# Wegwerf-Passwort nur für diesen Emulator (nur Buchstaben/Ziffern: „input text" kennt keine Sonderzeichen).
+pw = 'Probe' + secrets.token_hex(8)
+deadline = time.monotonic() + 30
+while len(passwortfelder()) < 2:
+    if time.monotonic() > deadline: raise RuntimeError('Passwortfelder der Ersteinrichtung fehlen')
+    time.sleep(.5)
+for i in range(2):
+    feld = passwortfelder()[i]; tap(feld); time.sleep(.5)
+    adb('shell', 'input', 'text', pw); time.sleep(.3)
+adb('shell', 'input', 'keyevent', 'KEYCODE_ENTER')
+try:
+    wait_node(hat(SHAMIR), 60)
+except RuntimeError:
+    # Tastatur fing Enter: den sichtbaren Knopf tippen.
+    tap(wait_node(hat(ERSTEINRICHTUNG), 10)); wait_node(hat(SHAMIR), 120)
+adb('shell', 'am', 'force-stop', package)
+adb('install', '-r', apk); launch()
+wait_node(hat(ENTSPERREN), 120)
+if any(hat(ERSTEINRICHTUNG)(n.attrib) for n in hierarchy().iter('node')):
+    raise RuntimeError('Nach dem Überinstallieren erscheint wieder die Ersteinrichtung: Tresor verloren')
+proof = {'applicationId': package, 'apkSha256': digest, 'commit': receipt['commit'], 'versionCode': receipt['versionCode'],
+         'api': int(adb('shell', 'getprop', 'ro.build.version.sdk').strip()), 'firstInstall': True, 'reinstallPreservesData': True,
+         'developmentProbe': False,
+         'probe': 'sichtbare WebView-Oberfläche; Tresor mit Wegwerf-Passwort angelegt; nach Überinstallieren derselben signierten APK „Entsperren" statt Ersteinrichtung; kein Debug-Zugang'}
+Path(str(apk) + '.installation.json').write_text(json.dumps(proof, indent=2, ensure_ascii=False) + '\n')
+print(json.dumps(proof, ensure_ascii=False))
