@@ -79,7 +79,7 @@ Tag `v0.1.0` und der volle main-Commit). Ablauf wie bei Workflow PDF Pro:
    `android/app/build.gradle`. `tests/run.mjs`, `test-native`, Signier-Proben, dann `assembleRelease lintRelease testReleaseUnitTest`.
 2. **Signieren** (Umgebung `android-production`, `BLP_SIGNING_UNLOCK`): `tools/signing/cli.mjs sign-apk` → `apk.mjs` prüft mit dem
    echten apksigner das Zertifikat gegen den Pin (`7a6217eb…`), Paketname, Version, kein Debug-Flag; Nachweis `*.apk.json` + `.sha256`.
-3. **Probe im Emulator** (`tools/native/verify-signed-install.py`, API 34): signierte APK frisch installieren, über die sichtbare
+3. **Probe im Emulator** (`tools/native/verify-signed-install.py`, API 31 wie Workflow PDF Pro; das Abbild für API 34 ließ sich am 2026-10-27 nicht laden): signierte APK frisch installieren, über die sichtbare
    Oberfläche einen Tresor mit Wegwerf-Passwort anlegen, dieselbe APK darüber installieren — danach muss „Entsperren“ statt der
    Ersteinrichtung stehen (`*.installation.json`). Kein Debug-Zugang.
 4. **Veröffentlichen** (`publish-release.mjs`): Tag darf es noch nicht geben; ab der zweiten Fassung müssen Signatur gleich und
