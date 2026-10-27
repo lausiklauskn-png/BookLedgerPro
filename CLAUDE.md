@@ -344,3 +344,17 @@ Gegenprobe 4 Fälle (Entwurf-Halt weg · Ziel aus der Einstellung · Store ohne 
 Zeile; WorkFloh-Probe 29 grün, Gegenprobe 5 Fälle gefangen. Vertrag: `docs/UEBERNAHME_TOMY.md` R3. ⚠ Kein Tablet; „bezahlt"
 ist kein Zahlungsabgleich. **Damit ist der Fahrplan „hier fertig" (D22, Workflow PDF „beides", R3) erreicht — als Nächstes
 die Kopie nach `BookLedger-Basic`.**
+
+## 🗄 Tresorordner: Schritt B (Paket) und C/C2 (BookLedgerPro im Ordner) (Klaus 2026-10-27)
+
+Klaus' Wahl: das gemeinsame Paket `de.familyprojekt.tresor` wird in **Workflow PDF Pro** gepflegt (PR #29 dort, gemergt `5009c95`):
+Kopf `tresorordner.json`, Hauptschlüssel in Passwort- und Ersatzplätzen (5/3, `FPT1-`), Fach-Schlüssel nur zusätzlich verpackt
+(Einzug ohne Neuverschlüsseln), verschlüsseltes Inhaltsverzeichnis je Fach und Schreiber, Marken „übernommen“, nie Löschen in einem
+Fach; `VaultCrypto` bis auf `package` byte-gleich (Rumpf `a12fb6d5…`). Hier byte-gleich kopiert: `tools/native/tresor-nachziehen.mjs`
+(Pins `native/tresor-herkunft.json`, **nie von Hand**). BookLedgerPro: `BlpTresorPlugin` (Passwort nur im nativen Dialog, Merken im
+Android-Schlüsselspeicher), `BLPNative.tresor` + automatische Sicherung des Bestands nach `BookLedgerPro/Sicherung/` (nur bei
+Änderung, ≥ 10 min, Hintergrund/15 min), Beleg-Originale einzeln nach `Belege/`, Ansicht **Tresorordner** (nur App): Fächer,
+Wort-/Bedeutungssuche, übernehmen mit Marke, einspielen. Proben: `run.mjs` (+14) · `test-native` 36 · `smoke_tresorordner` **30 grün**
+(Brücke gestellt, A5 bei 320 px/200 %) · Gegenprobe 11/11 · JVM `TresorOrdnerTest` 9 (Gegenprobe 9/9 in Workflow PDF Pro).
+`sw.js` v271. ⚠ Kein Gerät, kein Emulator für den Ordner; Private Brain Pro zieht erst in Schritt D ein. Bedienung: `docs/TRESORORDNER.md`.
+
