@@ -21,7 +21,9 @@ Termux-Befehle als ein Block ohne Erklärung, Passwort-Abfragen immer als einzel
 1. **Neue APKs zum Prüfen am Tablet?** Ohne Veröffentlichung gibt es nichts zu installieren (Debug-Bauten haben eine andere Signatur und
    gehen nicht über die installierten Apps). *Empfehlung:* Workflow PDF Pro 1.0.6 und Private Brain Pro 1.0.41 als signierte Update-APKs
    (Android), BookLedgerPro als erste signierte APK — jeweils nur nach Klaus' Wort, Windows nicht.
-2. **Wo liegt der Workflow-PDF-Tresor?** Der Tresorordner braucht „Private Brain“ und „Workflow PDF Pro“ unter **demselben** Ordner.
+2. **Stand 2026-10-27:** auf der SD-Karte liegen „Private Brain“ und ein Ablageordner, **kein „Workflow PDF Pro“**. Offen nur: liegt
+   „Private Brain“ ganz oben auf der Karte? (Android 11+ gibt die oberste Ebene nicht frei → dann Oberordner `Tresor/`, Forschung § 9.14.)
+   **Früher:** Wo liegt der Workflow-PDF-Tresor? Der Tresorordner braucht „Private Brain“ und „Workflow PDF Pro“ unter **demselben** Ordner.
    *Empfehlung:* nachsehen (Dateien-App); liegt er woanders, in Workflow PDF Pro einen neuen Speicherort neben „Private Brain“ wählen
    (die App überträgt selbst), erst danach einziehen.
 
@@ -29,7 +31,8 @@ Termux-Befehle als ein Block ohne Erklärung, Passwort-Abfragen immer als einzel
 1. Dateien-App: Ordner „Tresor-Probe“ auf der SD-Karte anlegen; „Private Brain“ (und „Workflow PDF Pro“, wenn daneben) hineinkopieren.
 2. Private Brain Pro → Einstellungen → „Speicherort und Verschlüsselung“ → **In den Tresorordner einziehen …** → „Tresor-Probe“ wählen →
    neues Passwort für den Tresorordner (zweimal, Hinweis bestätigen).
-3. Workflow PDF Pro → Einstellungen → „Speicher und Dokumenttresor“ → **In den Tresorordner einziehen …** → „Tresor-Probe“ → dasselbe
+3. Workflow PDF Pro hat noch keinen SD-Tresor: Einstellungen → „Speicher und Dokumenttresor“ → „Ordner wählen“ → „Tresor-Probe“
+   (legt „Workflow PDF Pro“ an und überträgt die Daten, eigenes App-Passwort), dann → **In den Tresorordner einziehen …** → „Tresor-Probe“ → dasselbe
    Passwort (einmal).
 4. BookLedgerPro → Menü → Tresorordner → „Tresor-Probe“ wählen → entsperren: Fächer „Private Brain“ und „Workflow PDF Pro“ zeigen ihre
    Zeilen. Ersatzschlüssel hier erzeugen (gilt für alle).
