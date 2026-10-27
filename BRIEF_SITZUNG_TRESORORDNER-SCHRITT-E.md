@@ -7,7 +7,7 @@ Stand 2026-10-27 spät. Schritt D ist gebaut: Workflow-PDF-Pro#30 (gemergt) und 
 
 ```
 BookLedgerPro (lausiklauskn-png/BookLedgerPro), Tresorordner Schritt E (Probe am Gerät). Lies zuerst CLAUDE.md, dann BRIEF_SITZUNG_TRESORORDNER-SCHRITT-E.md, BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-D.md, docs/TRESORORDNER.md und die Forschung docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md (§ 9). Repos dazunehmen: Workflow-PDF-Pro und Privat-Brain-Pro (beide docs/TRESORORDNER.md).
-1. Frag mich das Ergebnis der Termux-Probe (age -d ~/blp-freigabe.age | wc -c → 64?), falls ich es noch nicht gesagt habe.
+1. Termux ist erledigt (Probe 2026-10-27: 64, alle drei .age-Dateien da) – nicht erneut fragen.
 2. Stell mir die Fragen aus dem Brief: neue APKs zum Prüfen veröffentlichen (welche Apps)? Wo liegt mein Workflow-PDF-Tresor (gleicher Ordner wie „Private Brain“)?
 3. Dann mit mir am Tablet: Probe an der Kopie „Tresor-Probe“ (Dateien-App), Einzug Private Brain Pro und Workflow PDF Pro, Öffnen mit BookLedgerPro, Rechnungsmail ins Eingangsfach und übernehmen, Rückweg. Erst danach der echte Ordner, nur auf mein Wort.
 Termux-Befehle als ein Block ohne Erklärung, Passwort-Abfragen immer als einzelne Zeile. GitHub-Schritte als kurze Liste mit Links („hauptsächlich“ = main). Nichts veröffentlichen ohne mein Wort, keine Schlüssel im Chat, nichts an meinen echten Tresoren ohne Kopie und Rückweg. Selbst mergen wenn CI grün. Am Ende: Abschluss, Forschung, Brief und Kurzfassung als Copy-Paste-Block.

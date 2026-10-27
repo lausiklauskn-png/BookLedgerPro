@@ -9,7 +9,8 @@
 - **D1** Workflow PDF Pro zieht ein (Workflow-PDF-Pro#30, gemergt `6ce1570`), **D2** Private Brain Pro zieht ein und legt Rechnungsmails
   ins `Eingang-BookLedgerPro/Mails/` (Privat-Brain-Pro#102). Knopf je im Tresor-Kasten der Einstellungen; der Ordner wird gewählt und über
   die Tresor-Kennung geprüft (Probe an einer Kopie möglich). Hier kein Code nötig. Abschluss `BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-D.md`.
-- ⚠ Nichts am Gerät; für die Probe am Tablet braucht es neue APKs (Klaus' Wort). Termux-Probe (64) noch ohne Ergebnis.
+- ⚠ Nichts am Gerät; für die Probe am Tablet braucht es neue APKs (Klaus' Wort). **Termux-Probe erledigt:** `age -d ~/blp-freigabe.age | wc -c` → 64;
+  `blp-freigabe.age` (246 B), `pbpro-freigabe-neu.age`, `wfpdf-freigabe-neu.age` (je 402 B) liegen da. Ohne Tastatur: links wischen → KEYBOARD.
 - **Nächstes:** Schritt E, Probe am Gerät — Brief `BRIEF_SITZUNG_TRESORORDNER-SCHRITT-E.md`.
 
 ## ▶ Neuester Stand (2026-10-27): Tresorordner Schritt B + C + C2 gebaut
