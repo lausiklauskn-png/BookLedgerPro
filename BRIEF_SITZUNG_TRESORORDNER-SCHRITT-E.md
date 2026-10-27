@@ -21,8 +21,9 @@ Termux-Befehle als ein Block ohne Erklärung, Passwort-Abfragen immer als einzel
 1. **Neue APKs zum Prüfen am Tablet?** Ohne Veröffentlichung gibt es nichts zu installieren (Debug-Bauten haben eine andere Signatur und
    gehen nicht über die installierten Apps). *Empfehlung:* Workflow PDF Pro 1.0.6 und Private Brain Pro 1.0.41 als signierte Update-APKs
    (Android), BookLedgerPro als erste signierte APK — jeweils nur nach Klaus' Wort, Windows nicht.
-2. **Stand 2026-10-27:** auf der SD-Karte liegen „Private Brain“ und ein Ablageordner, **kein „Workflow PDF Pro“**. Offen nur: liegt
-   „Private Brain“ ganz oben auf der Karte? (Android 11+ gibt die oberste Ebene nicht frei → dann Oberordner `Tresor/`, Forschung § 9.14.)
+2. **Stand 2026-10-27:** auf der SD-Karte liegen „Private Brain“ und ein Ablageordner, **kein „Workflow PDF Pro“**. **Geklärt:** es liegt in
+   `SD-Karte/Privat Brain Pro Hauptablageordner/Private Brain/` → **dieser Oberordner wird der echte Tresorordner**, kein Verschieben, nicht
+   umbenennen. Workflow PDF Pro bekommt später dort seinen Ordner („Ordner wählen“ → Hauptablageordner). Forschung § 9.14.
    **Früher:** Wo liegt der Workflow-PDF-Tresor? Der Tresorordner braucht „Private Brain“ und „Workflow PDF Pro“ unter **demselben** Ordner.
    *Empfehlung:* nachsehen (Dateien-App); liegt er woanders, in Workflow PDF Pro einen neuen Speicherort neben „Private Brain“ wählen
    (die App überträgt selbst), erst danach einziehen.
