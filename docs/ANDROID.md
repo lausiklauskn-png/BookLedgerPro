@@ -16,7 +16,7 @@ IndexedDB der App (eigener Speicher, getrennt von Chrome; Android-Sicherung des 
 | Klebstoff (nur in der App aktiv) | `native/blp-native.js` |
 | Android-Projekt | `android/` (Java in `android/app/src/main/java/de/familyprojekt/bookledgerpro/`) |
 | Probe ohne Android | `tools/native/test-native.mjs` |
-| Bau in GitHub | `.github/workflows/android.yml` (debug-APK als Artefakt, keine Veröffentlichung) |
+| Bau in GitHub | `.github/workflows/android.yml` (debug-APK als Artefakt) · Veröffentlichen: `android-release.yml` (unten) |
 
 ## Was die Hülle der Web-App ergänzt
 
@@ -69,6 +69,24 @@ verschlüsselt im Repo; die Freigabe dazu kennt nur Klaus.
 
 ⚠ Wer die Freigabe verliert, kann nach der ersten Veröffentlichung keine Updates mehr ausliefern. Veröffentlicht wird nichts
 ohne Klaus' Wort.
+
+## Veröffentlichen (Klaus 2026-10-27: „veröffentliche die Test-APKs für Android“)
+
+`.github/workflows/android-release.yml`, nur von `main`, nur von Hand (Actions → „BookLedgerPro Android veröffentlichen“ →
+Tag `v0.1.0` und der volle main-Commit). Ablauf wie bei Workflow PDF Pro:
+
+1. **Bauen:** Commit muss der main-Kopf sein und den Check `android` grün haben; Tag = `versionName` in
+   `android/app/build.gradle`. `tests/run.mjs`, `test-native`, Signier-Proben, dann `assembleRelease lintRelease testReleaseUnitTest`.
+2. **Signieren** (Umgebung `android-production`, `BLP_SIGNING_UNLOCK`): `tools/signing/cli.mjs sign-apk` → `apk.mjs` prüft mit dem
+   echten apksigner das Zertifikat gegen den Pin (`7a6217eb…`), Paketname, Version, kein Debug-Flag; Nachweis `*.apk.json` + `.sha256`.
+3. **Probe im Emulator** (`tools/native/verify-signed-install.py`, API 34): signierte APK frisch installieren, über die sichtbare
+   Oberfläche einen Tresor mit Wegwerf-Passwort anlegen, dieselbe APK darüber installieren — danach muss „Entsperren“ statt der
+   Ersteinrichtung stehen (`*.installation.json`). Kein Debug-Zugang.
+4. **Veröffentlichen** (`publish-release.mjs`): Tag darf es noch nicht geben; ab der zweiten Fassung müssen Signatur gleich und
+   Version/Buildnummer höher sein; Release erst als Entwurf, dann öffentlich, danach Download bytegleich geprüft (sonst zurück auf Entwurf).
+
+Für jede weitere Fassung `versionName` und `versionCode` in `android/app/build.gradle` erhöhen. `tools/signing/test-apk.mjs` läuft in
+`android.yml` mit dem echten apksigner an einer künstlichen APK (Wegwerf-Schlüssel); lokal ohne `BLP_ANDROID_SDK` übersprungen.
 
 ## Grenzen (benannt)
 

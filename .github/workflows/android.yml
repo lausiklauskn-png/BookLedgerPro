@@ -32,7 +32,13 @@ jobs:
       - name: Web-Paket und Hülle prüfen (ohne Android)
         run: node tools/native/test-native.mjs
       - name: Signier-Werkzeuge mit Wegwerf-Schlüssel prüfen (kein echter Schlüssel)
-        run: node --test tools/signing/test-identity.mjs tools/signing/test-unlock-file.mjs
+        run: node --test tools/signing/test-identity.mjs tools/signing/test-unlock-file.mjs tools/signing/test-release-policy.mjs
+      - name: APK-Signatur mit echtem apksigner an künstlicher APK prüfen (Wegwerf-Schlüssel)
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;36.0.0' 'platforms;android-36' > /dev/null
+          BLP_ANDROID_SDK="$ANDROID_HOME" node --test tools/signing/test-apk.mjs
       - name: Web-Paket bauen und in die Hülle legen
         run: npm run sync:android
       - name: Bauen, Lint und JVM-Proben
