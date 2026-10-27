@@ -5,6 +5,20 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-27 — Tresorordner Schritt B (in Workflow PDF Pro) und C/C2 (hier)
+
+**Was getan:** Termux: offene Freigabe-Kopie gelöscht (Ausgabe von Klaus: nur `blp-freigabe.age`; die Entschlüsselungs-Probe kam nicht
+zustande, Passwort-Abfrage leer beantwortet). Klaus' Wahl: Paket `de.familyprojekt.tresor` wird in Workflow PDF Pro gepflegt →
+dort gebaut, Proben + Gegenprobe, PR #29 gemergt. Hier: Paket byte-gleich gepinnt (`tools/native/tresor-nachziehen.mjs`),
+`BlpTresorPlugin`, `BLPNative.tresor` + automatische Sicherung, `src/domain/tresorordner.js`, `src/core/tresorBelege.js`, Ansicht
+`src/ui/views/tresorordner.js` (Menü „Tresorordner“, nur App), Symbol `blp-tresorordner`, i18n DE/EN, `sw.js` v271, `docs/TRESORORDNER.md`.
+Beim Bauen gefunden: der Fingerabdruck der Sicherung enthielt `lastBackupAt` — jede Sicherung hätte die nächste ausgelöst (behoben,
+eigene Probe); zwei gleichzeitige Beleg-Läufe hätten doppelt abgelegt (jetzt seriell).
+**Stand:** `run.mjs` 2581/0 · `test-native` 36/0 · `smoke_tresorordner` 30/0 · Gegenprobe 11/11 · `smoke_design` 90/0 ·
+Workflow PDF Pro: `TresorOrdnerTest` 9/9 lokal, Gegenprobe 9/9, CI dort grün (Bau, Lint, JVM, Emulator 48/48).
+**Offen/Nächstes:** Schritt D (Private Brain Pro: Einzug ihres Tresors + Inhaltsverzeichnis + Rechnungsmails ins Eingangsfach;
+Workflow PDF Pro: Einzug). ⚠ Nichts am Gerät gemessen; Java-Plugin hier nur gebaut/gelintet in GitHub.
+
 ## 2026-10-26 (Sitzungsende) — Signatur angelegt, Abschluss und Brief für Schritt B
 
 **Was getan:** Klaus hat in Termux die Freigabe erzeugt (`~/blp-freigabe.age`) und als `BLP_SIGNING_UNLOCK` in `android-production`

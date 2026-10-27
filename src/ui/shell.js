@@ -97,6 +97,7 @@ import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
 import { mountSbkimSuche } from './views/sbkimsuche.js';
+import { mountTresorordner, tresorordnerVerfuegbar } from './views/tresorordner.js';
 import { mikrofonBeobachten, SPRACHEN as MIKRO_SPRACHEN, wortSpeicherZahl } from './mikro.js';
 import { mountSafebox } from './views/safebox.js';
 import { mountDashboard } from './views/dashboard.js';
@@ -131,6 +132,7 @@ const NAV = [
   ['network', 'nav.network', 'blp-mycel'],
   ['sbkimsuche', 'nav.sbkimsuche', 'pb-search'],
   ['safebox', 'nav.safebox', 'blp-safe'],
+  ['tresorordner', 'nav.tresorordner', 'blp-tresorordner'],   // gemeinsamer Tresorordner — nur in der Android-App (window.BLPNative.tresor)
   ['legal', 'nav.legal', 'blp-paragraf'],
   ['anleitung', 'nav.anleitung', 'blp-hilfe'],
   ['selbsttest', 'nav.selbsttest', 'blp-pruef'],
@@ -148,7 +150,7 @@ export const NAV_GRUPPEN = [
   ['nav.gruppe.team', ['employees', 'lohn']],
   ['nav.gruppe.auswerten', ['reports', 'berichte']],
   ['nav.gruppe.netz', ['network', 'sbkimsuche']],
-  ['nav.gruppe.weiteres', ['angebote', 'safebox', 'legal', 'anleitung', 'selbsttest', 'about']],
+  ['nav.gruppe.weiteres', ['angebote', 'safebox', 'tresorordner', 'legal', 'anleitung', 'selbsttest', 'about']],
   [null, ['settings']],
 ];
 export const NAV_KEYS = NAV.map(([k]) => k);
@@ -567,7 +569,7 @@ function nav(zu) {
     onClick: () => { navigate(key); schubladeSchliessen(); },
   }, [navIcon(ic), el('span', { class: 'ic-text', text: t(label) })]);
   const gruppen = NAV_GRUPPEN.map(([titel, keys]) => {
-    const sichtbar = keys.filter((k) => zeigeAnsicht(s, k)).map((k) => NAV.find(([n]) => n === k)).filter(Boolean);
+    const sichtbar = keys.filter((k) => zeigeAnsicht(s, k) && (k !== 'tresorordner' || tresorordnerVerfuegbar())).map((k) => NAV.find(([n]) => n === k)).filter(Boolean);
     if (!sichtbar.length) return null;
     return el('div', { class: 'nav-gruppe' + (titel ? '' : ' nav-gruppe-solo') }, [
       titel ? el('div', { class: 'nav-gruppe-titel', text: t(titel) }) : null,
@@ -613,6 +615,7 @@ function renderRoute() {
   if (route === 'network') return void mountNetwork(content);
   if (route === 'sbkimsuche') return void mountSbkimSuche(content);
   if (route === 'safebox') return void mountSafebox(content);
+  if (route === 'tresorordner') return void mountTresorordner(content);
   return mount(content, viewPlaceholder(route));
 }
 

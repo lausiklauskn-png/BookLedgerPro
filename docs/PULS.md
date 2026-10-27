@@ -5,6 +5,13 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
+## ▶ Neuester Stand (2026-10-27): Tresorordner Schritt B + C + C2 gebaut
+- **B:** Paket `de.familyprojekt.tresor` in Workflow PDF Pro (Klaus' Wahl), PR #29 gemergt (`5009c95`), hier byte-gleich gepinnt
+  (`native/tresor-herkunft.json`). **C/C2:** Ordnerwahl, Passwort nur nativ, automatische Sicherung ins Fach, Beleg-Originale,
+  Eingangsfach mit Marke, Ansicht „Tresorordner“ mit Wort-/Bedeutungssuche. Bedienung/Grenzen `docs/TRESORORDNER.md`.
+- Termux: offene Freigabe-Kopie gelöscht (nur `blp-freigabe.age` da); Entschlüsselungs-Probe noch offen (Tastatur defekt).
+- **Nächstes:** Schritt D (Private Brain Pro und Workflow PDF Pro ziehen ein, eigene PRs dort) — Brief `BRIEF_SITZUNG_TRESORORDNER-SCHRITT-D.md`.
+
 ## ▶ Übergabe (2026-10-26, Sitzungsende): Schritt A + A2 fertig, Signatur angelegt
 - **Signieridentität** auf `main` (PR #369): Zertifikat SHA-256 `7a6217eb2c3a3c9ad49b9ac73e33a1e6560a4530181ff3afdb2f0d7aa8737f0b`,
   Lauf #3 `check` grün. Freigabe im Environment `android-production` + bei Klaus `~/blp-freigabe.age`. GitHub-Hauptzweig jetzt `main`.

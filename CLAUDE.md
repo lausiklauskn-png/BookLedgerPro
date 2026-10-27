@@ -8,7 +8,7 @@ die native Pro-App** (Android + Windows), **ohne Umbenennung** des Repos. Pages 
 (Private Brain Pro, BookLedgerPro, Workflow PDF Pro) teilen **einen Tresorordner** mit einem Passwort und dem byte-gleich kopierten
 PBV1-Schloss; PWAs bleiben bei Teilen/Links. Je Plattform eine Bausitzung (Android zuerst, dann Windows). Plan mit Fächern,
 Regeln, Passwort/Ersatzschlüssel und offenen Entscheidungen: `docs/design/PLAN-TRESORORDNER-2026-10-26.md`.
-**Nächste Sitzung (Tresorordner Schritt B):** `BRIEF_SITZUNG_TRESORORDNER-SCHRITT-B.md` (zuerst Termux-Gegenprobe und die eine Frage, wo `de.familyprojekt.tresor` gepflegt wird). Abschluss Schritt A/A2: `BRIEF_ABSCHLUSS_2026-10-26_ANDROID-SCHRITT-A.md`; Klaus' Antworten weiter in `BRIEF_SITZUNG_ANDROID-TRESORORDNER.md`, Forschung `docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md` (§ 7 neu). BookLedgerPro ist jetzt **auch Android-App** (Schritt A, signiert über `signing/`, Zertifikat `7a6217eb…`), noch ohne Ordner. Nichts veröffentlichen ohne Klaus' Wort.
+**Nächste Sitzung (Tresorordner Schritt D):** `BRIEF_SITZUNG_TRESORORDNER-SCHRITT-D.md` (Private Brain Pro und Workflow PDF Pro ziehen ein; zuerst zwei Fragen an Klaus, Probe an einer Kopie der SD-Karte). B (Paket in Workflow PDF Pro) und C/C2 (BookLedgerPro im Ordner) sind gebaut: `BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-B-C.md`, Bedienung `docs/TRESORORDNER.md`. BookLedgerPro ist **Android-App** (signiert über `signing/`, Zertifikat `7a6217eb…`). Nichts veröffentlichen ohne Klaus' Wort.
 
 **📋 Regel: Brief an die nächste Sitzung immer auch als Copy-Paste (Klaus 2026-10-26: „jedes Mal muss ich das sagen“):** wer einen Brief für die nächste Sitzung schreibt, gibt am Ende **ungefragt** zusätzlich eine **Kurzfassung als einen Codeblock** im Chat aus — fertig zum Einfügen als erste Nachricht der neuen Sitzung (Repo, Branch-Hinweis, welche Dateien zuerst lesen, erste Schritte, was nicht passieren darf). Dieselbe Kurzfassung steht im Brief unter „Startauftrag zum Einfügen“.
 
@@ -344,3 +344,17 @@ Gegenprobe 4 Fälle (Entwurf-Halt weg · Ziel aus der Einstellung · Store ohne 
 Zeile; WorkFloh-Probe 29 grün, Gegenprobe 5 Fälle gefangen. Vertrag: `docs/UEBERNAHME_TOMY.md` R3. ⚠ Kein Tablet; „bezahlt"
 ist kein Zahlungsabgleich. **Damit ist der Fahrplan „hier fertig" (D22, Workflow PDF „beides", R3) erreicht — als Nächstes
 die Kopie nach `BookLedger-Basic`.**
+
+## 🗄 Tresorordner: Schritt B (Paket) und C/C2 (BookLedgerPro im Ordner) (Klaus 2026-10-27)
+
+Klaus' Wahl: das gemeinsame Paket `de.familyprojekt.tresor` wird in **Workflow PDF Pro** gepflegt (PR #29 dort, gemergt `5009c95`):
+Kopf `tresorordner.json`, Hauptschlüssel in Passwort- und Ersatzplätzen (5/3, `FPT1-`), Fach-Schlüssel nur zusätzlich verpackt
+(Einzug ohne Neuverschlüsseln), verschlüsseltes Inhaltsverzeichnis je Fach und Schreiber, Marken „übernommen“, nie Löschen in einem
+Fach; `VaultCrypto` bis auf `package` byte-gleich (Rumpf `a12fb6d5…`). Hier byte-gleich kopiert: `tools/native/tresor-nachziehen.mjs`
+(Pins `native/tresor-herkunft.json`, **nie von Hand**). BookLedgerPro: `BlpTresorPlugin` (Passwort nur im nativen Dialog, Merken im
+Android-Schlüsselspeicher), `BLPNative.tresor` + automatische Sicherung des Bestands nach `BookLedgerPro/Sicherung/` (nur bei
+Änderung, ≥ 10 min, Hintergrund/15 min), Beleg-Originale einzeln nach `Belege/`, Ansicht **Tresorordner** (nur App): Fächer,
+Wort-/Bedeutungssuche, übernehmen mit Marke, einspielen. Proben: `run.mjs` (+14) · `test-native` 36 · `smoke_tresorordner` **30 grün**
+(Brücke gestellt, A5 bei 320 px/200 %) · Gegenprobe 11/11 · JVM `TresorOrdnerTest` 9 (Gegenprobe 9/9 in Workflow PDF Pro).
+`sw.js` v271. ⚠ Kein Gerät, kein Emulator für den Ordner; Private Brain Pro zieht erst in Schritt D ein. Bedienung: `docs/TRESORORDNER.md`.
+

@@ -24,6 +24,7 @@ public class MainActivity extends BridgeActivity {
         }
         registerPlugin(BlpIncomingPlugin.class);
         registerPlugin(BlpFilesPlugin.class);
+        registerPlugin(BlpTresorPlugin.class);
         super.onCreate(state);
         if (bridge == null) return;
         bridge.setWebViewClient(new BridgeWebViewClient(bridge) {

@@ -6802,7 +6802,7 @@ await section('Design-Grundlage: Strichsymbole (PBP-Satz byte-1:1, BLP-Fachsymbo
     .forEach((id) => ok('Fachsymbol ' + id, blpIds.includes(id)));
   const sh = readFileSync(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
   const nav = [...sh.matchAll(/\['([a-z]+)', 'nav\.[a-z]+', '((?:pb|blp)-[a-z-]+)'\]/g)].map((m) => [m[1], m[2]]);
-  ok('jede der 24 Ansichten trägt ein vorhandenes Symbol', nav.length === 24 && nav.every(([, ic]) => pbIds.includes(ic) || blpIds.includes(ic)), nav.filter(([, ic]) => !pbIds.includes(ic) && !blpIds.includes(ic)).join(','));
+  ok('jede der 25 Ansichten trägt ein vorhandenes Symbol', nav.length === 25 && nav.every(([, ic]) => pbIds.includes(ic) || blpIds.includes(ic)), nav.filter(([, ic]) => !pbIds.includes(ic) && !blpIds.includes(ic)).join(','));
   const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
   ok('Sprites und icons.js im Vorrat, Cache ≥ v256', ['./assets/pb-icons.svg', './assets/blp-icons.svg', './src/ui/icons.js'].every((f) => sw.includes(`'${f}'`)) && Number(sw.match(/CACHE_VERSION = 'v(\d+)'/)[1]) >= 256);
 });
@@ -7138,6 +7138,45 @@ await section('Scanner-Kern von Workflow PDF (Klaus 2026-10-26): Pins, Pfade, Kl
   ok('sw.js: Kern und scanner.css in der Schale (pdf-lib/fontkit/Noto/Scanic beim ersten Scannen)', ['./src/ui/scanner.js', './assets/wfpdf/scanner.js', './assets/wfpdf/scan-bild.js', './assets/wfpdf/blatt.js', './assets/wfpdf/zip.js', './assets/wfpdf/scanner.css?v=1', './assets/wfpdf/HERKUNFT.json'].every((f) => sw.includes(`'${f}'`)) && !sw.includes("'./assets/wfpdf/pdf-lib.min.js'"));
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
   ok('i18n DE/EN: docs.scannen, scannenTitel, scannenHint, scanFertig, scannerLaedt, scannerFehlt, scanTextGemerkt', ['docs.scannen', 'docs.scannenTitel', 'docs.scannenHint', 'docs.scanFertig', 'docs.scannerLaedt', 'docs.scannerFehlt', 'docs.scanTextGemerkt'].every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
+});
+
+await section('Tresorordner (Schritt C/C2, Klaus 2026-10-27): Sicherung, Fälligkeit, Suche, Verdrahtung', async () => {
+  const to = await import('../src/domain/tresorordner.js');
+  const dump = { kv: { vaultMeta: { v: 2 } }, records: [{ id: 'a', type: 'buchung', enc: 'x' }], files: [{ id: 'f', data: 'y' }] };
+  const text = to.sicherungInhalt(dump, { erstellt: new Date('2026-10-27T10:00:00Z') });
+  const zurueck = to.sicherungLesen(text);
+  ok('Sicherung: Rundlauf liefert den Bestand unverändert (passt zu importSnapshot: .data.kv/records/files)', JSON.stringify(zurueck.data) === JSON.stringify(dump) && zurueck.magic === to.SICHERUNG_MAGIC && zurueck.erstellt === '2026-10-27T10:00:00.000Z');
+  let w1 = false, w2 = false, w3 = false;
+  try { to.sicherungLesen('{"magic":"BLPR-BACKUP","format":1,"data":{}}'); } catch { w1 = true; }
+  try { to.sicherungLesen('kein json'); } catch { w2 = true; }
+  try { to.sicherungLesen(JSON.stringify({ magic: to.SICHERUNG_MAGIC, format: 1, data: { kv: {}, records: 'x', files: [] } })); } catch { w3 = true; }
+  ok('Sicherung: fremde, kaputte oder falsch geformte Inhalte werden abgelehnt', w1 && w2 && w3);
+  ok('Sicherungsname sortierbar, Auszug ohne Buchungsinhalt', to.sicherungName(new Date('2026-10-27T10:05:09Z')) === 'bookledgerpro-tresorordner-2026-10-27-10-05-09.json' && to.sicherungAuszug(dump) === 'Datensicherung BookLedgerPro · 1 Datensätze · 1 Belege');
+  const f = (o) => to.sicherungFaellig({ jetzt: 1_000_000_000, fingerabdruck: 'b', ...o });
+  ok('Fällig: erste Sicherung sofort; unverändert nie (auch nicht „sofort“); geändert erst nach 10 Minuten; Knopf sofort',
+    f({}) === true && f({ letzterFingerabdruck: 'b', sofort: true }) === false && f({ letzteZeit: 1_000_000_000 - 60_000, letzterFingerabdruck: 'a' }) === false
+    && f({ letzteZeit: 1_000_000_000 - 600_000, letzterFingerabdruck: 'a' }) === true && f({ letzteZeit: 1_000_000_000 - 1, letzterFingerabdruck: 'a', sofort: true }) === true
+    && to.sicherungFaellig({ jetzt: 1, fingerabdruck: '' }) === false);
+  ok('Fingerabdruck: „letzte Sicherung“ bewegt ihn nicht (sonst löste jede Sicherung die nächste aus), ein Datensatz schon',
+    to.fingerabdruckText({ ...dump, kv: { ...dump.kv, lastBackupAt: 1 } }) === to.fingerabdruckText({ ...dump, kv: { ...dump.kv, lastBackupAt: 2 } })
+    && to.fingerabdruckText(dump) !== to.fingerabdruckText({ ...dump, records: [...dump.records, { id: 'b' }] }));
+  const faecher = [
+    { fach: 'eingang-bookledgerpro', eintraege: [{ id: '1', name: 'Rechnung Bäckerei.pdf', art: 'application/pdf', auszug: 'Brötchen 7,50 EUR vom 26.10.2026', datum: 5, verschluesselung: 'fpt1', verweis: 'x/1.fpt' }] },
+    { fach: 'private-brain', eintraege: [{ id: 'm', name: 'Mietvertrag.eml', art: 'message/rfc822', auszug: 'Miete Oktober', datum: 9, verschluesselung: 'app', verweis: 'Mails/ab' }] },
+  ];
+  const tr = to.eintraegeSuchen(faecher, 'brotchen 2026-10-26');
+  ok('Suche: Umlaute und Datum wie bei den Belegen, über alle Fächer, UND über alle Wörter', tr.length === 1 && tr[0].fach === 'eingang-bookledgerpro' && to.eintraegeSuchen(faecher, 'miete').length === 1 && to.eintraegeSuchen(faecher, 'miete brot').length === 0);
+  ok('Ohne Suchwort: alles, neueste zuerst', to.eintraegeSuchen(faecher, '').map((x) => x.eintrag.id).join() === 'm,1');
+  ok('Öffnen nur im gemeinsamen Format; Sicherung nur aus „Sicherung/“', to.oeffenbar(faecher[0].eintraege[0]) && !to.oeffenbar(faecher[1].eintraege[0]) && to.istSicherung({ verschluesselung: 'fpt1', verweis: 'Sicherung/a.fpt' }) && !to.istSicherung({ verschluesselung: 'fpt1', verweis: 'Belege/a.fpt' }));
+  ok('Fehlertexte: falsches Passwort sagt „nichts verändert“, Unbekanntes nennt den Code', /nichts verändert/.test(to.fehlerText(new Error('TRESOR_PASSWORT_FALSCH'))) && /XYZ/.test(to.fehlerText('XYZ')));
+  ok('Fächer: fünf, eigenes und Eingang zuerst', to.FAECHER.length === 5 && to.FAECHER[0].eigen && to.FAECHER[1].eingang);
+  const sh = _readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
+  ok('Shell: Ansicht nur mit Brücke sichtbar (PWA ohne window.BLPNative.tresor zeigt sie nicht), Route verdrahtet', /k !== 'tresorordner' \|\| tresorordnerVerfuegbar\(\)/.test(sh) && /route === 'tresorordner'\) return void mountTresorordner\(content\)/.test(sh));
+  const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
+  ok('sw.js: Ansicht, Logik und Beleg-Ablage in der Schale', sw.includes("'./src/domain/tresorordner.js'") && sw.includes("'./src/ui/views/tresorordner.js'") && sw.includes("'./src/core/tresorBelege.js'"));
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  const keys = [...new Set([..._readSpore(new URL('../src/ui/views/tresorordner.js', import.meta.url), 'utf8').matchAll(/t\('((?:tresor|nav)\.[A-Za-z]+)'\)/g)].map((m) => m[1]))];
+  ok('i18n DE/EN: jeder Text der Ansicht (' + keys.length + ')', keys.length > 30 && keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2), keys.filter((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length !== 2).join(','));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

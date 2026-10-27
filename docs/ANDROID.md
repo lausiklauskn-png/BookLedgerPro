@@ -33,6 +33,11 @@ IndexedDB der App (eigener Speicher, getrennt von Chrome; Android-Sicherung des 
    Browser bzw. die zuständige App; Klaus' eigene Apps (`lausiklauskn-png.github.io`, z. B. der WorkFloh-Rundlauf) auch
    ohne Tipp.
 
+## Tresorordner (Schritt C, 2026-10-27)
+
+Gemeinsamer Ordner aller Pro-Apps: Ansicht „Tresorordner“, automatische Sicherung ins Fach, Eingangsfach. Bedienung und
+Grenzen: [`docs/TRESORORDNER.md`](TRESORORDNER.md).
+
 ## Bauen
 
 ```bash
