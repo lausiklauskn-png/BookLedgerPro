@@ -147,3 +147,32 @@ wenn ihr Anker fehlt), nicht durch Kopieren des ganzen Repos.
    `native-bundle.json` mit SHA je Datei.
 9. **Freigabe ohne Zeilenende erzeugen** (`openssl rand -hex 32 | tr -d '\n'`): die Prüfung verlangt genau 64 Hex; Termux hat ohne
    Termux:API kein `termux-clipboard-set`, Klaus kopiert vom Schirm.
+
+## 8 · Befunde aus Schritt B und C (2026-10-27, gemessen)
+
+1. **Ordnernamen passen schon zusammen.** `DocumentVault.FOLDER` = „Workflow PDF Pro“ und `Vault.ROOT` = „Private Brain“ sind genau die
+   Fach-Ordner des gemeinsamen Formats. Beide Apps legen ihren Ordner **unter** dem gewählten Ordner an, wenn der nicht leer ist —
+   der Tresorordner-Kopf gehört dann an die Wurzel des gewählten Ordners. Hat jemand den App-Ordner **selbst** freigegeben, sieht die
+   App die Ebene darüber nicht: für den Einzug braucht es eine neue Freigabe des Ordners darüber (BookLedgerPro warnt bei
+   `tresor.json` im gewählten Ordner: `TRESOR_ORDNER_IST_FACH`).
+2. **Beide Fach-Schlüssel sind 32-Byte-Datenschlüssel** (Private Brain `dataKey`, Workflow PDF Pro `Place.key`). Der Einzug ist also
+   ein einziger Aufruf `fachEinziehen(slug, schluessel)` bei entsperrter App — keine Datei im Fach wird angefasst (JVM-Probe:
+   Fingerabdruck aller Dateien vor/nach gleich).
+3. **Private Brains Dateinamen sind HMAC-Namen** (`nameKey` aus dem Datenschlüssel). Mit dem Fach-Schlüssel kann eine andere App die
+   Dateien entschlüsseln, aber nicht zuordnen. Deshalb führt jedes Fach ein Inhaltsverzeichnis; Private Brains Zeilen sind
+   `verschluesselung: "app"` (nur Anzeige), lesbare Kopien für andere Apps gehen über `ablegen` (z. B. Rechnungsmails ins Eingangsfach).
+4. **Ein Fingerabdruck darf nicht vom eigenen Merker abhängen.** Die automatische Sicherung rechnete den Fingerabdruck über den ganzen
+   Bestand — samt `lastBackupAt`, das die Sicherung selbst setzt. Folge wäre gewesen: jede Sicherung löst nach 10 Minuten die nächste aus.
+   Gefunden hat es die Browser-Probe („unverändert: keine zweite Datei“), nicht das Nachdenken. Jetzt `FLUECHTIG`.
+5. **Doppelte Sicherung macht eine Gegenprobe blind.** Das Zurückspielen eines alten Verzeichnis-Stands ist zweifach gesichert (Nummer in
+   der Verschlüsselung gebunden und im Inhalt). Nimmt die Gegenprobe nur eine weg, bleibt die Probe grün — kein Fehler im Code, sondern
+   in der Gegenprobe. Sie nimmt jetzt beide weg.
+6. **Basic hat kein `native/`.** Eine Zeile in `tests/run.mjs`, die `native/blp-native.js` liest, wäre in BookLedger Basic rot. Proben, die
+   die Hülle brauchen, gehören in `tools/native/test-native.mjs` oder prüfen das Vorhandensein (Basic-fest).
+7. **Termux: Einfügen beantwortet die Passwort-Abfrage.** Ein eingefügter Block mit Zeilenende gibt `age -d` eine leere Passphrase
+   („passphrase can't be empty“). Befehle mit Passwort-Abfrage als **eine** Zeile einfügen, das Passwort danach von Hand tippen.
+   Die Löschung im selben Block lief trotzdem (Rückgabe von `wc`), die offene Kopie ist weg.
+8. **JVM-Proben gehen im Behälter auch ohne Gradle:** `javac` + `junit-4.13.2.jar`/`hamcrest-core-1.3.jar` von `repo1.maven.org`
+   (einmal 429, beim zweiten Versuch da). Android-SDK bleibt gesperrt; `SafAblage` und Plugins nur in GitHub gebaut.
+9. **Das Repo heißt jetzt `Workflow-PDF-Pro`** (Groß-/Kleinschreibung; Push meldet „This repository moved“) — Klone mit dem alten
+   Namen funktionieren weiter.
