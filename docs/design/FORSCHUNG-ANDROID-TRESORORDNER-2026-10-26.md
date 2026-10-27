@@ -211,3 +211,11 @@ wenn ihr Anker fehlt), nicht durch Kopieren des ganzen Repos.
     `VaultLocations`/Migration), dann einziehen. Für die Probe beide Ordner nach „Tresor-Probe/“ kopieren. Am Gerät zu klären.
 13. **Ersatzschlüssel des Tresorordners** erzeugt bisher nur BookLedgerPro (Ansicht „Tresorordner“). Er gilt für alle Apps; Workflow PDF Pro
     und Private Brain Pro haben dafür noch keinen eigenen Knopf (ihre eigenen Ersatzschlüssel gelten weiter für den App-Tresor).
+14. **Klaus' SD-Karte (2026-10-27):** dort liegen „Private Brain“ und ein Ablageordner, **kein „Workflow PDF Pro“** (Workflow PDF Pro
+    speichert noch im Tablet). **Android 11+ erlaubt keine Ordnerfreigabe der obersten Ebene einer SD-Karte** (Ordnerwahl sperrt die
+    Wurzel jedes Speichers und „Download“). Liegt „Private Brain“ direkt oben auf der Karte, braucht der Tresorordner einen Oberordner
+    (z. B. `Tresor/`), in den „Private Brain“ zuerst verschoben wird (danach in Private Brain Pro „Vorhandenen Ordner öffnen“). Die Probe-
+    Kopie „Tresor-Probe/“ ist so ein Oberordner und geht in jedem Fall. **Geklärt (Klaus' Bildschirmfotos):**
+    `SD-Karte/Privat Brain Pro Hauptablageordner/Private Brain/` (6 Objekte) — der Oberordner ist da, **kein Verschieben nötig**; er wird
+    der echte Tresorordner. Daneben `SD-Karte/Privat Brain Pro Ablageordner/` = Zusatzablage mit offenen Kopien, gehört nicht dazu.
+    Nicht umbenennen (die Freigabe hängt am Pfad).

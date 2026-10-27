@@ -6,7 +6,7 @@
 - **Probe-Kopie:** mit der Dateien-App („Private Brain“ → neuer Ordner „Tresor-Probe“).
 - **Einzug wählt den Ordner selbst und prüft die Kennung** (Klaus: „Ja, so bauen“) — so geht die Probe an der Kopie, ohne die App
   auf die Kopie umzustellen.
-- Termux-Probe `age -d ~/blp-freigabe.age | wc -c` (erwartet 64): Zeile ausgegeben; **Ergebnis von Klaus steht noch aus.**
+- Termux-Probe `age -d ~/blp-freigabe.age | wc -c` (erwartet 64): **64** (Klaus, nach der Sitzung; alle drei `.age`-Dateien vorhanden). Ohne Hardware-Tastatur: vom linken Rand wischen → „KEYBOARD“.
 - Klarstellung auf Klaus' Frage: Termux enthält nur die Signier-Freigaben (`*.age`), nicht den Dokumententresor; der liegt auf der SD-Karte
   und öffnet nur in der App.
 
