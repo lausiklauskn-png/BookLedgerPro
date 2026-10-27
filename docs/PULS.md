@@ -5,6 +5,13 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
+## ▶ Neuester Stand (2026-10-27, spät): Tresorordner Schritt D gebaut
+- **D1** Workflow PDF Pro zieht ein (Workflow-PDF-Pro#30, gemergt `6ce1570`), **D2** Private Brain Pro zieht ein und legt Rechnungsmails
+  ins `Eingang-BookLedgerPro/Mails/` (Privat-Brain-Pro#102). Knopf je im Tresor-Kasten der Einstellungen; der Ordner wird gewählt und über
+  die Tresor-Kennung geprüft (Probe an einer Kopie möglich). Hier kein Code nötig. Abschluss `BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-D.md`.
+- ⚠ Nichts am Gerät; für die Probe am Tablet braucht es neue APKs (Klaus' Wort). Termux-Probe (64) noch ohne Ergebnis.
+- **Nächstes:** Schritt E, Probe am Gerät — Brief `BRIEF_SITZUNG_TRESORORDNER-SCHRITT-E.md`.
+
 ## ▶ Neuester Stand (2026-10-27): Tresorordner Schritt B + C + C2 gebaut
 - **B:** Paket `de.familyprojekt.tresor` in Workflow PDF Pro (Klaus' Wahl), PR #29 gemergt (`5009c95`), hier byte-gleich gepinnt
   (`native/tresor-herkunft.json`). **C/C2:** Ordnerwahl, Passwort nur nativ, automatische Sicherung ins Fach, Beleg-Originale,

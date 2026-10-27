@@ -40,4 +40,7 @@ cd android && ./gradlew testDebugUnitTest   # TresorOrdnerTest (Paket) — in Gi
   eigenes (gemeinsam mit den anderen Pro-Apps). Wiederherstellen aus der Sicherung braucht beide (oder Shamir der App).
 - Gesichert wird der Bestand des **aktiven Mandanten**.
 - Sicherungen werden nicht ausgedünnt (in einem Fach wird nichts gelöscht); sie wachsen nur, wenn sich etwas ändert.
-- Private Brain Pro schreibt noch **nicht** ins Eingangsfach und führt noch kein Inhaltsverzeichnis — das ist Schritt D (eigene PRs dort).
+- **Schritt D (2026-10-27):** Workflow PDF Pro (#30) und Private Brain Pro (#102) ziehen ein und führen ihr Inhaltsverzeichnis
+  (`verschluesselung: "app"` → hier nur die Zeile). Private Brain legt Rechnungsmails auf Wunsch als `.eml` nach
+  `Eingang-BookLedgerPro/Mails/`; „Als Beleg übernehmen“ nimmt sie über denselben Weg wie geteilte Mails (Mail-Beleg + Anhänge),
+  ohne Code-Änderung hier. ⚠ Mit echtem Eingang am Gerät noch nicht gefahren.

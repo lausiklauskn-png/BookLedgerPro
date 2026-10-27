@@ -5,6 +5,18 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-27 (spät) — Tresorordner Schritt D (in Workflow PDF Pro und Private Brain Pro)
+
+**Was getan:** Termux-Probe als eine Zeile ausgegeben (Ergebnis offen). Zwei Fragen an Klaus: Knopf → keine Vorliebe, Empfehlung
+gebaut (Tresor-Kasten); Probe-Kopie → Dateien-App. Auf Klaus' Rückfrage geprüft und erklärt: Termux hält nur die `*.age`-Freigaben,
+der Dokumententresor liegt auf der SD-Karte. Einzug so gebaut, dass Klaus den Ordner wählt und die App die Kennung prüft (Klaus: „Ja“).
+D1 in Workflow PDF Pro (#30, gemergt), D2 in Private Brain Pro (#102, Paket byte-gleich gepinnt, Rechnungsmail ins Eingangsfach).
+Hier: `docs/TRESORORDNER.md`, Forschung § 9, Abschluss, Brief E.
+**Stand:** Workflow PDF Pro JVM 3 · Browser 8 · Gegenprobe 9/9 · CI grün. Private Brain Pro JVM 4 · Browser 21 · Gegenprobe 12/12 ·
+vorhandene Proben grün. Gemeinsames Paket unverändert.
+**Offen/Nächstes:** Schritt E am Gerät (neue APKs nur auf Klaus' Wort; Workflow-Tresor muss neben „Private Brain“ liegen);
+Basic nachziehen; Nachträge A; V3; Windows. ⚠ Nichts am Gerät gemessen.
+
 ## 2026-10-27 — Tresorordner Schritt B (in Workflow PDF Pro) und C/C2 (hier)
 
 **Was getan:** Termux: offene Freigabe-Kopie gelöscht (Ausgabe von Klaus: nur `blp-freigabe.age`; die Entschlüsselungs-Probe kam nicht
