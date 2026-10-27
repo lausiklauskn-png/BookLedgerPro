@@ -7172,8 +7172,6 @@ await section('Tresorordner (Schritt C/C2, Klaus 2026-10-27): Sicherung, Fällig
   ok('Fächer: fünf, eigenes und Eingang zuerst', to.FAECHER.length === 5 && to.FAECHER[0].eigen && to.FAECHER[1].eingang);
   const sh = _readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
   ok('Shell: Ansicht nur mit Brücke sichtbar (PWA ohne window.BLPNative.tresor zeigt sie nicht), Route verdrahtet', /k !== 'tresorordner' \|\| tresorordnerVerfuegbar\(\)/.test(sh) && /route === 'tresorordner'\) return void mountTresorordner\(content\)/.test(sh));
-  const nat = _readSpore(new URL('../native/blp-native.js', import.meta.url), 'utf8');
-  ok('Klebstoff: kein Passwort geht durch JavaScript (anlegen/entsperren/ändern ohne Passwort-Feld)', !/passwort\s*:/i.test(nat) && /T\.anlegen\(\{ merken: !!merken \}\)/.test(nat) && /T\.entsperren\(\{ merken: !!merken \}\)/.test(nat));
   const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
   ok('sw.js: Ansicht, Logik und Beleg-Ablage in der Schale', sw.includes("'./src/domain/tresorordner.js'") && sw.includes("'./src/ui/views/tresorordner.js'") && sw.includes("'./src/core/tresorBelege.js'"));
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');

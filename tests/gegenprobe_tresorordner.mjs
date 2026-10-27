@@ -20,6 +20,7 @@ const FAELLE = [
   ['Belege ohne Doppel-Schutz', 'src/core/tresorBelege.js', "if (da.has(sha)) { schon++; continue; }", '', 'nur einmal'],
   ['Belege ohne Textauszug', 'src/core/tresorBelege.js', "try { text = (await getBelegText(b.id)) || ''; }", "try { text = ''; }", 'Beleg-Original einzeln'],
 ];
+if (!existsSync(join(WURZEL, 'native/blp-native.js'))) { console.log('nur in der Pro-App mit Android-Hülle — übersprungen'); process.exit(0); }
 let gefangen = 0, durch = 0;
 for (const [titel, datei, alt, neu, zeile] of FAELLE) {
   if (process.env.NUR_FALL && !titel.includes(process.env.NUR_FALL)) continue;

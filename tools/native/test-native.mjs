@@ -164,6 +164,8 @@ ok('MainActivity meldet BlpTresorPlugin an', mainAct.includes('registerPlugin(Bl
 ok('Passwort nur im nativen Dialog: das Plugin liest kein Passwort aus der WebView', !/getString\("pass/i.test(plugin) && !/getString\("kennwort/i.test(plugin) && /InputType\.TYPE_TEXT_VARIATION_PASSWORD/.test(plugin));
 ok('Plugin löscht nichts im Ordner (kein deleteDocument/loeschen), schreibt nur über TresorOrdner', !/deleteDocument|\.loeschen\(/.test(plugin) && /offen\.ablegen\(/.test(plugin));
 ok('App schreibt als bookledgerpro; Merken im Android-Schlüsselspeicher (AES-GCM, an Kennung gebunden)', /APP = Fach\.BOOKLEDGER_APP/.test(plugin) && /AndroidKeyStore/.test(plugin) && /geraetAad\(t\.id\(\)\)/.test(plugin));
+const nat = lies('native/blp-native.js').toString('utf8');
+ok('Klebstoff: kein Passwort geht durch JavaScript (anlegen/entsperren/ändern ohne Passwort-Feld)', !/passwort\s*:/i.test(nat) && /T\.anlegen\(\{ merken: !!merken \}\)/.test(nat) && /T\.entsperren\(\{ merken: !!merken \}\)/.test(nat));
 const w4 = welt();
 ok('ohne Tresor-Plugin: BLPNative.tresor ist null (Web-App zeigt die Ansicht nicht)', w4.ctx.BLPNative && w4.ctx.BLPNative.tresor === null);
 

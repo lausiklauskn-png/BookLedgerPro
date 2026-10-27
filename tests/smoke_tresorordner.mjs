@@ -117,6 +117,11 @@ console.log('— A. PWA ohne Brücke —');
   await ctx.close();
 }
 
+if (!existsSync(join(WURZEL, 'native/blp-native.js'))) {
+  // BookLedger Basic (PWA-Kopie) hat keine Android-Hülle: dort gilt nur Teil A.
+  console.log('  (B–E nur in der Pro-App mit Android-Hülle — hier keine native/blp-native.js, übersprungen)');
+  await schluss(); process.exit(rot ? 1 : 0);
+}
 console.log('— B. App mit gestellter Brücke: wählen, anlegen, Ersatzschlüssel —');
 const ctx = await browser.newContext();
 const page = await ctx.newPage();
