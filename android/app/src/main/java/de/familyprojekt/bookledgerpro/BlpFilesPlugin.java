@@ -90,5 +90,13 @@ public final class BlpFilesPlugin extends Plugin {
         });
     }
 
+    /** Versionsnummer der App für „Über“ (Leitfaden § 6): versionName aus dem Paket (Prüf-Bauten tragen „-debug“). */
+    @PluginMethod public void appInfo(PluginCall call) {
+        try {
+            android.content.pm.PackageInfo info = getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), 0);
+            call.resolve(new JSObject().put("version", info.versionName == null ? "" : info.versionName));
+        } catch (Exception error) { call.reject("APP_INFO_UNAVAILABLE"); }
+    }
+
     @Override protected void handleOnDestroy() { worker.close(() -> { }); }
 }

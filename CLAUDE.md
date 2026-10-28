@@ -12,7 +12,7 @@ Regeln, Passwort/Ersatzschlüssel und offenen Entscheidungen: `docs/design/PLAN-
 Fixes #381/#382 gemergt (nicht veröffentlicht): `BRIEF_ABSCHLUSS_2026-10-28_TRESORORDNER-E.md`. **Umbau 1 (2026-10-28 nachmittags):**
 Sperren in allen drei Apps behoben (WPP #32, PB #106), gemeinsame Bedien-Datei in Private Brain Pro (`native/pro-bedienung.js`, Kopie per
 `tools/native/bedienung-nachziehen.mjs`), PB „Tresor & Ablage“ (#107): `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-1.md`. 0.1.1 nicht veröffentlicht
-(Klaus: nein). **Nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-2.md`. **Bedien-Regeln aller Pro-Apps (gleich, baugleich für künftige):**
+(Klaus: nein). **Umbau 2 (2026-10-28 abends):** WPP #34, BLP #386 (Tresor & Ablage, keine Web-Reste, Version, BLP-Startseite/Geschäftsjahr/Tresorordner 1→2→4→3), Basic nachgezogen: `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-2.md`. **Nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-3.md`. **Bedien-Regeln aller Pro-Apps (gleich, baugleich für künftige):**
 `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md` — Einstellungen als Knöpfe wie heute, **kein Explorer**, ⓘ, flach, ein farbiger nächster Schritt.
 **Test-APKs veröffentlicht (2026-10-28, Klaus' Wort):** Workflow PDF Pro 1.0.6, Private Brain Pro 1.0.41, BookLedgerPro 0.1.0 (erste signierte APK, Repo privat, `android-release.yml`, Links in `docs/PULS.md`). (Schritt E erledigt, siehe oben.) B (Paket in Workflow PDF Pro) und C/C2 (BookLedgerPro im Ordner) sind gebaut: `BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-B-C.md`, Bedienung `docs/TRESORORDNER.md`. BookLedgerPro ist **Android-App** (signiert über `signing/`, Zertifikat `7a6217eb…`). Nichts veröffentlichen ohne Klaus' Wort.
 
@@ -364,3 +364,22 @@ Wort-/Bedeutungssuche, übernehmen mit Marke, einspielen. Proben: `run.mjs` (+14
 (Brücke gestellt, A5 bei 320 px/200 %) · Gegenprobe 11/11 · JVM `TresorOrdnerTest` 9 (Gegenprobe 9/9 in Workflow PDF Pro).
 `sw.js` v271. ⚠ Kein Gerät, kein Emulator für den Ordner; Private Brain Pro zieht erst in Schritt D ein. Bedienung: `docs/TRESORORDNER.md`.
 
+
+## 🧰 Einstellungs-Umbau Schritt 2 in BookLedgerPro (Klaus 2026-10-28)
+
+Nach dem Leitfaden `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md`, wie Private Brain Pro #107 und Workflow PDF Pro #34. **Nur in der App**
+(`window.BLPNative`), PWA/Basic sehen davon nur Startseite und Kopfleiste.
+- Einstellungen → **„Tresor & Ablage“** ganz oben (`tresorAblageSection` in `src/ui/shell.js`): „Ablage von BookLedgerPro“ (= `BookLedgerPro/`
+  im Tresor: Sicherungen, Beleg-Originale) und „Tresor (alle Pro-Apps)“, je ● Zustand, ganzer Pfad (`SD-Karte/…`), „In Dateien öffnen“
+  (`BlpTresor.ordnerOeffnen`, ACTION_VIEW), ein farbiger nächster Schritt, Erklärung hinter ⓘ. Bausteine aus `native/pro-bedienung.*`
+  (jetzt im App-Paket geladen, `tools/native/prepare-web.mjs`).
+- **Keine Web-Reste**: `APP_STRINGS` in `src/ui/i18n.js` (nur mit `BLPNative`), kein „nicht dauerhaft“-Banner, kein Installieren
+  (`html.app-installiert`), Anleitung/Recht ohne Browser-Sätze. **„Über“ nennt die Version** (`BlpFiles.appInfo`). Keine Updateprüfung (Repo privat).
+- **Startseite** ohne „Willkommen“/Werbesatz (Titel „Übersicht“), **„Geschäftsjahr 2026“ in der Kopfleiste** (`geschaeftsjahrKopf`, am Handy nur die Zahl) —
+  gilt auch für die PWA (Leitfaden § 0).
+- **Tresorordner-Ansicht 1 → 2 → 4 → 3**: 1 „Neu im Tresorordner: N“ (Belege, Einstellungen, Ansicht; `neueEintraege`) · 2 Fächer als Baum
+  (Fach › Unterordner, `unterordnerGruppen`) mit „Alle auf / Alle zu“ · 4 Mehrfach-Übernahme (Häkchen, erst alle lesen, dann markieren) ·
+  3 „In ‹App› öffnen“ (`BlpTresor.appOeffnen`, feste Paketliste + `<queries>`; übergeben wird nichts).
+- Proben: `tests/run.mjs` „Pro-Umbau 2“ (+10) · `tests/smoke_ohne_web.mjs` **28 grün** (jede Ansicht im App-Modus ohne Web-Wörter, Gegenprobe
+  als PWA; Kasten; Version; Startseite; 1/2/4/3) · `test-native` 41 · `smoke_tresorordner` 30 · `smoke_design` 90. `sw.js` v273.
+  ⚠ Nicht am Gerät; ob die Dateien-App einen Ordner per ACTION_VIEW zeigt und ob Android die andere Pro-App startet, ist ungemessen.

@@ -93,6 +93,15 @@ function heroBild() {
 }
 
 /** Wiederverwendbarer Deckblatt-Inhalt (für „Über"-Menü und Vor-Login-Overlay). */
+// Version der App (Leitfaden § 6: „Über“ nennt immer die Version). Nur in der Pro-App, dort aus dem Android-Paket.
+function versionZeile() {
+  const nativ = typeof window !== 'undefined' && window.BLPNative && typeof window.BLPNative.version === 'function' ? window.BLPNative : null;
+  if (!nativ) return null;
+  const p = el('p', { class: 'muted small', 'data-app-version': '', text: '' });
+  nativ.version().then((v) => { if (v) p.textContent = t('ta.version').replace('{v}', v); }).catch(() => {});
+  return p;
+}
+
 export function aboutContent() {
   return el('div', { class: 'deckblatt' }, [
     el('div', { class: 'deckblatt-hero' }, [
@@ -108,6 +117,7 @@ export function aboutContent() {
         el('span', { class: 'pill', text: 'Berater' }),
       ]),
     ]),
+    versionZeile(),
     siegel(),
     kiDatenblatt(),
     el('p', { class: 'muted small', text: 'GoBD-Festschreibung mit Hash-Kette · USt-Voranmeldung & EÜR (auch §4 Abs.3) · §14-Rechnung · DATEV-Export. Details unter „Recht & Doku".' }),

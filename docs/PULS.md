@@ -5,7 +5,12 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-## ▶ Neuester Stand (2026-10-28, Nachmittag): Reparaturen + Einstellungs-Umbau Schritt 1
+## ▶ Neuester Stand (2026-10-28, Abend): Einstellungs-Umbau Schritt 2
+- Workflow-PDF-Pro#34 und BookLedgerPro#386: „Tresor & Ablage“ (●, Pfad, „In Dateien öffnen“), keine Web-Reste, Version; BLP Startseite ohne
+  Willkommen, Geschäftsjahr in der Kopfleiste, Tresorordner-Ansicht 1→2→4→3. Basic nachgezogen. **Nichts veröffentlicht.**
+- **Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-3.md`. Abschluss: `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-2.md`.
+
+## ▶ Stand (2026-10-28, Nachmittag): Reparaturen + Einstellungs-Umbau Schritt 1
 - Klaus: 0.1.1 **nicht** veröffentlichen · Bedien-Datei in **Private Brain Pro** · Herausgeber-Schlüssel **fest eingebaut** (PB #108).
 - Gemergt: Workflow-PDF-Pro#32 (Sperren bleibt gesperrt) · Privat-Brain-Pro#106 (#105 ohne Explorer, Sperren Java-seitig, Teilen fragt bei
   gesperrtem Ordner, Absturz nach dem Schließen behoben) · Privat-Brain-Pro#107 („Tresor & Ablage“, `pro-bedienung.js`, keine Web-Reste, Version).

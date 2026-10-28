@@ -2,7 +2,7 @@
 // DSGVO-Datenschutz, Betroffenenrechte (Export/Löschen). In-App lesbar.
 
 import { el, mount } from '../dom.js';
-import { t } from '../i18n.js';
+import { t, istProApp } from '../i18n.js';
 import { exportBackupFile } from '../../core/backup.js';
 import { wipeAll } from '../../core/db.js';
 import { lockVault } from '../../core/vault.js';
@@ -42,7 +42,8 @@ export function mountLegal(host) {
     el('h1', { text: t('legal.title') }),
     siegel(),
     transparenzCard(),
-    textCard(t('legal.gobd'), GOBD),
+    // In der Pro-App gibt es keinen Browser-Speicher (Leitfaden § 4).
+    textCard(t('legal.gobd'), istProApp() ? GOBD.map((z) => z.replace('der Browser-Speicher allein', 'der Speicher der App allein')) : GOBD),
     textCard(t('legal.dsgvo'), DSGVO),
     avvCard(),
     autonomieCard(),

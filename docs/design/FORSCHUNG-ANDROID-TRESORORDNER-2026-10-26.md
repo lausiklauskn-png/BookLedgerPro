@@ -276,3 +276,20 @@ Mail-Beleg + 2 PDF-Anhänge als eigene Belege. Der Einzug lief **gleich am echte
    „vor dem Einbau“ über die echte Datei nach und wurde dadurch rot; jetzt mit leerer Liste gestellt.
    Dieselbe Folge traf die Windows-Abnahme (Studio aus dem CI öffnete die Pinnwand nicht mehr): Lehre — ein fester Vertrauensanker
    macht jede Probe rot, die sich bisher selbst vertraut hat; alle Proben mit eigenem Studio vor dem Einbau suchen (`grep createKey`).
+
+## 12 · Befunde aus der Umbau-Sitzung 2 (2026-10-28, Abend, gemessen)
+
+1. **Sprachschicht und Ersatzschicht (Workflow PDF Pro):** Der Kern übersetzt im DOM (`sprache.js`, Deutsch ist der Schlüssel). Eine Schicht,
+   die deutsche Sätze vorher ersetzt, nähme ihr den Schlüssel. Deshalb ersetzt `native-ohne-web.js` je Sprache und erst im Mikrotask nach dem
+   Beobachter der Sprachschicht. Die Probe misst danach 1,2 s lang null DOM-Änderungen (kein Hin und Her).
+2. **Satz mit Auszeichnung:** Sätze mit `<b>` stehen in mehreren Textknoten; eine Wendung über die Grenze („diesen</b> Browser“) trifft nie.
+   Dort ersetzt die App ohnehin den ganzen Absatz (`native-vault.js`), die Probe bestätigt es.
+3. **Platzhalter an Eingabefeldern:** die Ausnahme „input“ galt zuerst auch für Attribute — „nur in diesem Browser gespeichert“ blieb. Die Probe fand es.
+4. **Ein Python-Ersatz zerbrach Java** (`old[:-2]` schnitt die Klammer ab). Im Behälter gibt es kein Android-SDK; erst CI fand es. Lehre: Java-Stellen
+   mit festem Ersatztext ändern, nicht mit Schnitten; reine Logik (`UpdateRegel`) separat mit javac + org.json prüfen.
+5. **Windows-Abnahme las „den ersten Absatz“** des Fensters; jetzt steht dort die (zugeklappte) Erklärung hinter ⓘ. Proben auf Kennungen
+   (`#nativeAblageZeile`) statt Positionen stellen.
+6. **BookLedgerPro: Unterordner im Fach** versteckten die Sicherungen eine Ebene tiefer — `smoke_tresorordner` fand den nicht sichtbaren Knopf.
+   Unterordner sind jetzt offen, solange nicht „Alle zu“ gewählt ist.
+7. **Brücke ohne Methode:** `appOeffnen` darf nur angeboten werden, wenn die Hülle die Methode hat (ältere APK ohne sie zeigt weiter „nur in der App“).
+8. **BookLedgerPro-Repo ist privat** → keine Updateprüfung in der App ohne Token; „Über“ nennt nur die Version.

@@ -124,3 +124,38 @@ const FEHLER = {
   TRESOR_FACH_FREMD: 'In dieses Fach schreibt nur seine App. BookLedgerPro liest es nur.',
   TRESOR_NUR_IN_DER_APP: 'Diese Datei öffnet nur ihre eigene App.',
 };
+
+// ---- Tresorordner-Ansicht 1 → 2 → 4 → 3 (Klaus 2026-10-28) ----------------------------------------------------------
+
+/** Kann BookLedgerPro diesen Eintrag als Beleg übernehmen? Gemeinsames Format, keine eigene Sicherung, nicht aus dem eigenen Fach. */
+export function uebernehmbar(fach, e) { return !!(fach && fach.fach !== 'bookledgerpro' && oeffenbar(e) && !istSicherung(e)); }
+
+/** 1 · „Neu im Tresorordner“: übernehmbare Einträge ohne Marke „übernommen“, neueste zuerst. */
+export function neueEintraege(faecher) {
+  const aus = [];
+  for (const f of faecher || []) for (const e of f.eintraege || []) if (uebernehmbar(f, e) && !(f.marken && f.marken.has(e.id))) aus.push({ fach: f.fach, eintrag: e });
+  return aus.sort((a, b) => (b.eintrag.datum || 0) - (a.eintrag.datum || 0));
+}
+
+/** 2 · Einträge eines Fachs nach Unterordner (erstes Stück des Verweises, z. B. „Mails“, „Belege“), Ordner alphabetisch,
+ *  Einträge darin neueste zuerst. Einträge ohne Unterordner stehen in der Gruppe '' (vorn). */
+export function unterordnerGruppen(eintraege) {
+  const m = new Map();
+  for (const e of eintraege || []) {
+    const v = String((e && e.verweis) || ''), i = v.indexOf('/');
+    const ordner = i > 0 ? v.slice(0, i) : '';
+    if (!m.has(ordner)) m.set(ordner, []);
+    m.get(ordner).push(e);
+  }
+  return [...m.entries()].sort((a, b) => (a[0] === '' ? -1 : b[0] === '' ? 1 : a[0].localeCompare(b[0], 'de')))
+    .map(([ordner, liste]) => ({ ordner, eintraege: liste.sort((a, b) => (b.datum || 0) - (a.datum || 0)) }));
+}
+
+/** Die anderen Pro-Apps, die BookLedgerPro starten darf (Schlüssel = Kennung im Tresorordner). */
+export const PRO_APPS = Object.freeze({ 'private-brain': 'Private Brain Pro', 'workflow-pdf-pro': 'Workflow PDF Pro' });
+
+/** 3 · In welcher App öffnet sich ein Eintrag, den BookLedgerPro nicht lesen kann? Schreiber zuerst, sonst das Fach. */
+export function appFuer(fach, e) {
+  const k = (e && PRO_APPS[e.schreiber]) ? e.schreiber : (fach && PRO_APPS[fach.fach]) ? fach.fach : null;
+  return k ? { app: k, name: PRO_APPS[k] } : null;
+}

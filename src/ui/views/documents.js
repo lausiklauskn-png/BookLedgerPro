@@ -116,6 +116,7 @@ async function repaint(extra) {
   const [belege, visionBereit] = await Promise.all([listBelege(), isOcrAktiv().catch(() => false)]);
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('docs.title') }),
+    neuImTresorHinweis(),
     schnellerfassung(),
     extra || null,
     eRechnungKarte(),
@@ -125,6 +126,21 @@ async function repaint(extra) {
     belegListe(belege, visionBereit),
   ]));
   if (getSettings().bedeutungssuche === 'an') setTimeout(() => bedeutungStarten(belege).catch(() => {}), 0);
+}
+
+// 1 · „Neu im Tresorordner“ (Klaus 2026-10-28, nur Pro-App): eine Zeile über den Belegen, wenn andere Pro-Apps etwas
+// hineingelegt haben, das noch nicht übernommen ist. Der Platz bleibt leer, bis die Zahl da ist (kein Springen ohne Grund).
+function neuImTresorHinweis() {
+  if (typeof window === 'undefined' || !window.BLPNative || !window.BLPNative.tresor) return null;
+  const platz = el('div', { 'data-belege-tresor-neu': '' });
+  import('./tresorordner.js').then((m) => m.neuImTresorordner()).then((n) => {
+    if (!n || !platz.isConnected) return;
+    platz.replaceChildren(el('div', { class: 'card btn-row', role: 'status' }, [
+      el('span', { text: t('tresor.neuHinweis').replace('{n}', String(n)) }),
+      el('button', { class: 'btn btn-primary', text: t('tresor.neuZeigen'), 'data-belege-tresor-zeigen': '', onClick: () => navigate('tresorordner') }),
+    ]));
+  }).catch(() => {});
+  return platz;
 }
 
 // ---- Schnellerfassung aus Text ---------------------------------------------

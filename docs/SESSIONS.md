@@ -5,6 +5,16 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-28 (Abend) — Einstellungs-Umbau Schritt 2 (Workflow PDF Pro, BookLedgerPro)
+
+**Was getan:** Workflow PDF Pro #34 (Tresor & Ablage, Web-Reste-Schicht über dem unveränderten Kern, Updates mit Version, Windows-Version im
+Update-Satz) · BookLedgerPro #386 (Tresor & Ablage, App-Texte, Version unter „Über“, Startseite, Geschäftsjahr in der Kopfleiste, Tresorordner
+1→2→4→3 mit „In ‹App› öffnen“) · Basic nachgezogen · Abschluss, Forschung § 12, Brief Umbau 3.
+**Stand:** Proben siehe Abschluss; `smoke_belege` 46/14 wie auf main (vorbestehend). Nichts am Gerät, nichts veröffentlicht.
+**Offen/Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-3.md` (WPP Sicherung gestreamt + Hintergrund, BLP Belegliste für Hunderte).
+
+---
+
 ## 2026-10-28 (Nachmittag) — Reparaturen nach der Probe, Einstellungs-Umbau Schritt 1
 
 **Was getan:** Klaus' drei Antworten eingeholt (0.1.1 nein, Bedien-Datei in PB, Schlüssel ja). Workflow PDF Pro #32 (Sperren), Private Brain Pro

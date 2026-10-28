@@ -14,12 +14,12 @@ import { verzugReport, verzugAmpel, VERZUG_AMPEL } from '../../domain/eingangsve
 import { forderungReport, forderungAmpel, FORDERUNG_AMPEL } from '../../domain/mahnwesen.js';
 import { liquiditaetsVorschau, liquiditaetsVerlauf, liquiditaetsAmpel, deckungsluecke, liquiditaetsReichweite, groessteFaellige, geldbestand, normalizeHorizont, normalizeReserveCent, LIQUIDITAET_HORIZONT_OPTIONEN, LIQUIDITAET_AMPEL } from '../../domain/liquiditaet.js';
 import { dashboardKennzahlen } from '../../domain/summary.js';
-import { wirtschaftsjahrVon, wjPeriode } from '../../domain/geschaeftsjahr.js';
+import { wirtschaftsjahrVon } from '../../domain/geschaeftsjahr.js';
 import { MycelDivider } from '../mycel.js';
 import { datensicherungKarte } from '../datensicherung.js';
 
 export async function mountDashboard(host) {
-  mount(host, el('section', { class: 'view' }, [el('h1', { text: t('dashboard.welcome') }), el('p', { class: 'muted', text: '…' })]));
+  mount(host, el('section', { class: 'view' }, [el('h1', { text: t('nav.dashboard') }), el('p', { class: 'muted', text: '…' })]));
 
   const s = getSettings();
   const wjBeginn = s.wirtschaftsjahrBeginn || '01-01';
@@ -34,7 +34,6 @@ export async function mountDashboard(host) {
   const idx = {};
   for (const k of konten) idx[k.nummer] = k;
   const k = dashboardKennzahlen(buchungen, idx, jahr, wjBeginn);
-  const wjLabel = wjBeginn === '01-01' ? String(jahr) : `${wjPeriode(jahr, wjBeginn).von} – ${wjPeriode(jahr, wjBeginn).bis}`;
 
   const kpi = (label, value, cls) => el('div', { class: 'kpi ' + (cls || '') }, [
     el('div', { class: 'kpi-value', text: value }),
@@ -240,11 +239,8 @@ export async function mountDashboard(host) {
   };
 
   mount(host, el('section', { class: 'view' }, [
-    el('div', { class: 'dash-head' }, [
-      el('h1', { text: t('dashboard.welcome') }),
-      el('span', { class: 'muted small', text: `${t('dashboard.year')} ${wjLabel}` }),
-    ]),
-    el('p', { class: 'muted', text: t('app.tagline') }),
+    // Startseite ohne „Willkommen“ und ohne Werbesatz (Leitfaden § 4, Klaus 2026-10-28); das Geschäftsjahr steht in der Kopfleiste.
+    el('div', { class: 'dash-head' }, [el('h1', { text: t('nav.dashboard') })]),
 
     // R6/P2: USt-Zahllast-KPI nur bei USt-Ausweis; Kunden/Aufträge-KPIs nur, wenn die
     // jeweilige Ansicht im Nutzungskontext sichtbar ist (Privat blendet beide aus).
