@@ -4,6 +4,8 @@ mod engine;
 mod host;
 mod win;
 mod speech;
+#[path = "../../scanner/scanner.rs"]
+mod scanner;
 use host::Host;
 use serde_json::{Value,json};
 use std::sync::{Arc,atomic::Ordering};

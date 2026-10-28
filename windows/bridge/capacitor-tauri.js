@@ -11,7 +11,7 @@
     for (const listener of listeners.get(event.detail?.name) || []) { try { listener(event.detail.data); } catch { /* Hörer der Seite */ } }
   });
   const plugins = {};
-  for (const name of ['BlpFiles', 'BlpIncoming', 'BlpTresor', 'BlpSpeech', 'BlpFenster']) {
+  for (const name of ['BlpFiles', 'BlpIncoming', 'BlpTresor', 'BlpSpeech', 'BlpFenster', 'ProScanner']) {
     plugins[name] = new Proxy(Object.freeze({}), { get(_, method) {
       if (method === 'then') return undefined;
       if (method === 'addListener') return async (event, listener) => {

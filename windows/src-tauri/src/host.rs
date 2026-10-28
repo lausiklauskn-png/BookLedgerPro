@@ -49,6 +49,8 @@ impl Host {
         if let Some(lang)=options.get("_language").and_then(Value::as_str){if ["de","en"].contains(&lang){*self.language.lock().unwrap()=lang.into();}}
         if let Some(map)=options.as_object_mut(){map.remove("_language");}
         if plugin=="BlpSpeech"{return self.speech(method,&options);}
+        // Scanner über Windows-WIA: gemeinsamer Baustein (windows/scanner/scanner.rs, Quelle Workflow PDF Pro).
+        if plugin=="ProScanner"{return crate::scanner::call(method,&options,&self.data.join("scanner-arbeit"));}
         if plugin=="BlpFenster"&&method=="schliessen"{
             self.closing.store(true,Ordering::SeqCst);
             let app=self.app.clone();let _=self.app.run_on_main_thread(move||{if let Some(w)=app.get_webview_window("main"){let _=w.close();}});

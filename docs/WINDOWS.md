@@ -36,7 +36,13 @@ echte DPAPI den gemerkten Schlüssel), Deinstallieren, dann Auslieferungsbau ohn
 
 ## Noch nicht drin / Grenzen
 
-- **Scanner-Auswahl (WIA) und Kamera-Scan:** Klaus' Wunsch 2026-10-28 (USB/WLAN-Scanner wählbar, Webcam/Digitalkamera). Kommt als gemeinsamer
-  Baustein mit Quelle in Workflow PDF Pro (Klaus' Wahl), danach hier nachgezogen.
+- **Scanner-Auswahl (WIA) und Kamera-Scan:** nachgezogen, siehe unten.
 - **Updates:** über eigenen Server (Hetzner, SFTP), signiert; GitHub lädt nach Klaus' Wort hoch (Klaus' Wahl 2026-10-28). Noch nicht gebaut.
 - Unsigniertes Setup (SmartScreen warnt). Nicht an einem echten Windows-PC gemessen, nur auf dem GitHub-Rechner.
+
+## Scanner und Kamera (nachgezogen 2026-10-28)
+
+Gemeinsamer Baustein aus Workflow PDF Pro (`tools/native/scanner-nachziehen.mjs --quelle ../Workflow-PDF-Pro`, Pin `native/pro-scanner-herkunft.json`,
+nie von Hand): `native/pro-scanner.*` hängt „Scanner oder Kamera …“ ins Scan-Fenster (Belege → Scannen), `windows/scanner/scanner.rs` + `wia.ps1`
+liefern Windows-WIA (USB, Netz, Glas/Einzug, dpi, Farbe), die Kamera läuft als Livebild. Bedienung und Grenzen: Workflow PDF Pro
+`docs/SCANNER-UND-KAMERA-WINDOWS.md`. Kein echter Scanner gemessen.

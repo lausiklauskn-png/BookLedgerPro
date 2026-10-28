@@ -22,7 +22,8 @@ export const NIE = [/(^|\/)\.node-secret\.json$/, /(^|\/)\.[^/]+$/];
 /** Der Klebstoff der Hülle (Repo-Ordner native/). */
 // Gemeinsame Bedien-Bausteine aller Pro-Apps (Quelle Private Brain Pro, byte-gleich, Pin native/pro-bedienung-herkunft.json).
 // Fassung 2 (Pro-Umbau 4): dazu die Hintergrundaufgabe pro-hintergrund.js (lädt direkt nach pro-bedienung.js).
-export const NATIV = ['blp-native.js', 'pro-bedienung.js', 'pro-bedienung.css', 'pro-hintergrund.js'];
+// Scanner und Kamera unter Windows (Pro-Umbau 5): Quelle Workflow PDF Pro, byte-gleich (Pin native/pro-scanner-herkunft.json).
+export const NATIV = ['blp-native.js', 'pro-bedienung.js', 'pro-bedienung.css', 'pro-hintergrund.js', 'pro-scanner.js', 'pro-scanner.css'];
 export const ANKER = '<script>if (\'serviceWorker\' in navigator) {';
 
 export const sha256 = (b) => createHash('sha256').update(b).digest('hex');
@@ -39,7 +40,8 @@ export function indexAnpassen(html, nativUrl, bedienung = null) {
   if (html.includes('native/blp-native.js')) throw new Error('index.html trägt den Klebstoff schon');
   // Die gemeinsamen Bedien-Bausteine (Leitfaden § 1.6) kommen vor den Klebstoff: die Einstellungen der App nutzen sie.
   const vor = bedienung ? '<link rel="stylesheet" href="' + bedienung.css + '">\n  <script src="' + bedienung.js + '"></script>\n  '
-    + (bedienung.hintergrund ? '<script src="' + bedienung.hintergrund + '"></script>\n  ' : '') : '';
+    + (bedienung.hintergrund ? '<script src="' + bedienung.hintergrund + '"></script>\n  ' : '')
+    + (bedienung.scannerCss ? '<link rel="stylesheet" href="' + bedienung.scannerCss + '">\n  <script src="' + bedienung.scannerJs + '"></script>\n  ' : '') : '';
   return teile[0] + vor + '<script src="' + nativUrl + '"></script>\n  ' + ANKER + teile[1];
 }
 
@@ -61,12 +63,12 @@ export async function prepareWeb({ wurzel = root, aus = join(root, 'www') } = {}
   for (const n of NATIV) nativ.set(n, await readFile(join(wurzel, 'native', n)));
   const url = 'native/blp-native.js?v=' + sha256(nativ.get('blp-native.js')).slice(0, 16);
   const v = (n) => 'native/' + n + '?v=' + sha256(nativ.get(n)).slice(0, 16);
-  const html = indexAnpassen(inhalt.get('index.html').toString('utf8'), url, { js: v('pro-bedienung.js'), css: v('pro-bedienung.css'), hintergrund: v('pro-hintergrund.js') });
+  const html = indexAnpassen(inhalt.get('index.html').toString('utf8'), url, { js: v('pro-bedienung.js'), css: v('pro-bedienung.css'), hintergrund: v('pro-hintergrund.js'), scannerCss: v('pro-scanner.css'), scannerJs: v('pro-scanner.js') });
   inhalt.set('index.html', Buffer.from(html, 'utf8'));
 
   await rm(aus, { recursive: true, force: true });
   await mkdir(aus, { recursive: true });
-  const beleg = { quelle: 'BookLedgerPro', abweichungen: ['index.html: native/pro-bedienung.css/.js, native/pro-hintergrund.js und <script> für native/blp-native.js vor der Service-Worker-Anmeldung'], dateien: [] };
+  const beleg = { quelle: 'BookLedgerPro', abweichungen: ['index.html: native/pro-bedienung.css/.js, native/pro-hintergrund.js, native/pro-scanner.css/.js und <script> für native/blp-native.js vor der Service-Worker-Anmeldung'], dateien: [] };
   for (const [p, b] of inhalt) {
     await mkdir(dirname(join(aus, p)), { recursive: true });
     await writeFile(join(aus, p), b);
