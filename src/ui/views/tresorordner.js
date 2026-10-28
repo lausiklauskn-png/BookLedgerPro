@@ -10,20 +10,22 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { getSettings, navigate } from '../../state.js';
-import { FAECHER, eintraegeSuchen, oeffenbar, istSicherung, sicherungLesen, fehlerText, bedeutungsText } from '../../domain/tresorordner.js';
+import { FAECHER, eintraegeSuchen, oeffenbar, istSicherung, sicherungLesen, fehlerText, bedeutungsText, uebernehmbar, neueEintraege, unterordnerGruppen, appFuer } from '../../domain/tresorordner.js';
 import { cosinus } from '../../domain/belegsuche.js';
 import { importSnapshot } from '../../core/backup.js';
 import { merkeGeteilteDateien } from './documents.js';
 import { belegeInsFach } from '../../core/tresorBelege.js';
 
 let _host = null, _zustand = null, _faecher = [], _frage = '', _meldung = '', _teile = null, _laeuft = false;
+const _wahl = new Map();          // 4 · Mehrfach-Übernahme: 'fach|id' → {fach, eintrag}
+let _alleOffen = null;            // 2 · „Alle auf / Alle zu“: null = Vorgabe (Eingang offen)
 const _vektoren = new Map();   // Eintrags-Kennung → Vektor (nur RAM)
 
 const brueckeVon = () => (typeof window !== 'undefined' && window.BLPNative && window.BLPNative.tresor) || null;
 export function tresorordnerVerfuegbar() { return !!brueckeVon(); }
 
 export async function mountTresorordner(host) {
-  _host = host; _frage = ''; _meldung = ''; _teile = null;
+  _host = host; _frage = ''; _meldung = ''; _teile = null; _wahl.clear();
   await neuLaden();
 }
 
@@ -144,12 +146,26 @@ async function bedeutungsTreffer(frage) {
   return aus.filter((x) => x.naehe >= 0.8).slice(0, 12);
 }
 
-async function uebernehmen(fach, e) {
-  const b = brueckeVon();
-  const datei = await b.lesen(fach, e.id);
-  await b.markieren(fach, e.id);
-  merkeGeteilteDateien([datei]);
+async function uebernehmen(fach, e) { return uebernehmenViele([{ fach, eintrag: e }]); }
+
+// 4 · Mehrere auf einmal: alle lesen, dann markieren, dann gemeinsam an die Belege (derselbe Weg wie „Teilen“).
+// Scheitert eine Datei, wird nichts markiert und nichts übergeben — die Meldung nennt sie.
+async function uebernehmenViele(liste) {
+  const b = brueckeVon(), dateien = [];
+  for (const x of liste) {
+    try { dateien.push(await b.lesen(x.fach, x.eintrag.id)); }
+    catch (e) { throw new Error(t('tresor.uebernehmenFehler').replace('{name}', x.eintrag.name || '') + ' ' + fehlerText(e)); }
+  }
+  for (const x of liste) await b.markieren(x.fach, x.eintrag.id);
+  _wahl.clear();
+  merkeGeteilteDateien(dateien);
   navigate('documents');
+}
+
+// 3 · „In ‹App› öffnen“: startet die andere Pro-App (feste Liste in Java), übergeben wird nichts.
+async function inAppOeffnen(app) {
+  try { await brueckeVon().appOeffnen(app.app); }
+  catch (e) { _meldung = /APP_FEHLT/.test(String((e && (e.code || e.message)) || e)) ? t('tresor.appFehlt').replace('{app}', app.name) : fehlerText(e); zeichnen(); }
 }
 
 async function ansehen(fach, e) {
@@ -175,10 +191,16 @@ function eintragZeile(f, e, ausschnittText) {
     if (f.fach !== 'bookledgerpro') knoepfe.push(knopf(uebernommen ? t('tresor.nochmalUebernehmen') : t('tresor.uebernehmen'), () => tun(() => uebernehmen(f.fach, e)), { attr: { 'data-tresor-uebernehmen': e.id } }));
     if (navigator.share) knoepfe.push(knopf(t('tresor.ansehen'), () => tun(() => ansehen(f.fach, e))));
   } else {
-    knoepfe.push(el('span', { class: 'muted small', text: t('tresor.nurInApp') }));
+    const app = appFuer(f, e);
+    if (app && brueckeVon().appOeffnen) knoepfe.push(knopf(t('tresor.inAppOeffnen').replace('{app}', app.name), () => inAppOeffnen(app), { attr: { 'data-tresor-app': app.app } }));
+    else knoepfe.push(el('span', { class: 'muted small', text: t('tresor.nurInApp') }));
   }
+  // 4 · Auswahl für die Mehrfach-Übernahme (nur, was BookLedgerPro übernehmen kann).
+  const key = f.fach + '|' + e.id;
+  const wahl = uebernehmbar(f, e) ? el('input', { type: 'checkbox', 'data-tresor-wahl': e.id, 'aria-label': t('tresor.waehlenEintrag').replace('{name}', e.name || ''),
+    checked: _wahl.has(key) ? true : null, onChange: (ev) => { if (ev.target.checked) _wahl.set(key, { fach: f.fach, eintrag: e }); else _wahl.delete(key); wahlLeiste(); } }) : null;
   return el('li', { class: 'tresor-eintrag', style: 'overflow-wrap:anywhere;min-width:0', 'data-tresor-eintrag': e.id, 'data-fach': f.fach }, [
-    el('div', {}, [el('strong', { text: e.name, style: 'overflow-wrap:anywhere' }), ' ', el('span', { class: 'muted small', text: `${datum(e.datum)} · ${groesse(e.groesse)}` }),
+    el('div', {}, [wahl, wahl ? ' ' : null, el('strong', { text: e.name, style: 'overflow-wrap:anywhere' }), ' ', el('span', { class: 'muted small', text: `${datum(e.datum)} · ${groesse(e.groesse)}` }),
       uebernommen ? el('span', { class: 'badge', 'data-tresor-uebernommen': '', text: ' ✓ ' + t('tresor.uebernommen') }) : null]),
     ausschnittText ? el('div', { class: 'muted small', text: ausschnittText }) : null,
     knoepfe.length ? el('div', { class: 'btn-row' }, knoepfe) : null,
@@ -219,15 +241,66 @@ function zeichnen(suchen = false) {
         }).catch(() => mount(bed, el('p', { class: 'muted small', text: t('tresor.bedeutungFehlt') })));
       }
     }
-    for (const f of _faecher) {
-      const neueste = [...f.eintraege].sort((a, c) => (c.datum || 0) - (a.datum || 0));
-      teile.push(el('details', { class: 'card', 'data-tresor-fach': f.fach, open: f.eingang ? true : null }, [
-        el('summary', { text: `${f.ordner} · ${f.eintraege.length}` + (f.eigen ? ' · ' + t('tresor.eigenesFach') : f.eingang ? ' · ' + t('tresor.eingangFach') : ' · ' + t('tresor.nurLesen')) }),
-        f.problem ? el('p', { 'data-tresor-problem': '', text: f.problem }) : null,
-        el('ul', { class: 'tresor-liste' }, neueste.slice(0, 50).map((e) => eintragZeile(f, e, e.auszug))),
-        neueste.length > 50 ? el('p', { class: 'muted small', text: t('tresor.mehr').replace('{n}', String(neueste.length - 50)) }) : null,
+    // 1 · Neu im Tresorordner: was BookLedgerPro übernehmen kann und noch nicht übernommen hat.
+    const neu = neueEintraege(_faecher);
+    if (neu.length) {
+      teile.push(el('div', { class: 'card', 'data-tresor-neu': String(neu.length) }, [
+        el('h3', { text: t('tresor.neuTitel').replace('{n}', String(neu.length)) }),
+        el('ul', { class: 'tresor-liste' }, neu.slice(0, 20).map((x) => eintragZeile(_faecher.find((f) => f.fach === x.fach), x.eintrag, x.eintrag.auszug))),
+        el('div', { class: 'btn-row' }, [knopf(t('tresor.alleNeuUebernehmen').replace('{n}', String(neu.length)), () => tun(() => uebernehmenViele(neu)), { primaer: true, attr: { 'data-tresor-alle-neu': '' } })]),
       ]));
     }
+    // 2 · Fächer als Baum (Fach › Unterordner › Einträge), „Alle auf / Alle zu“.
+    teile.push(el('div', { class: 'btn-row', 'data-tresor-baum-knoepfe': '' }, [
+      knopf(t('tresor.alleAuf'), () => { _alleOffen = true; zeichnen(); }, { attr: { 'data-tresor-alle-auf': '' } }),
+      knopf(t('tresor.alleZu'), () => { _alleOffen = false; zeichnen(); }, { attr: { 'data-tresor-alle-zu': '' } }),
+    ]));
+    const offenVorgabe = (f) => (_alleOffen === null ? (f.eingang ? true : null) : (_alleOffen ? true : null));
+    for (const f of _faecher) {
+      const gruppen = unterordnerGruppen(f.eintraege);
+      const liste = (eintraege) => [el('ul', { class: 'tresor-liste' }, eintraege.slice(0, 50).map((e) => eintragZeile(f, e, e.auszug))),
+        eintraege.length > 50 ? el('p', { class: 'muted small', text: t('tresor.mehr').replace('{n}', String(eintraege.length - 50)) }) : null];
+      teile.push(el('details', { class: 'card', 'data-tresor-fach': f.fach, open: offenVorgabe(f) }, [
+        el('summary', { text: `${f.ordner} · ${f.eintraege.length}` + (f.eigen ? ' · ' + t('tresor.eigenesFach') : f.eingang ? ' · ' + t('tresor.eingangFach') : ' · ' + t('tresor.nurLesen')) }),
+        f.problem ? el('p', { 'data-tresor-problem': '', text: f.problem }) : null,
+        ...gruppen.flatMap((g) => g.ordner === '' ? liste(g.eintraege)
+          : [el('details', { class: 'tresor-unter', 'data-tresor-unter': g.ordner, open: _alleOffen === false ? null : true }, [
+              el('summary', { text: `${g.ordner} · ${g.eintraege.length}` }), ...liste(g.eintraege)])]),
+      ]));
+    }
+    // 4 · Leiste für die Auswahl: erscheint, sobald etwas gewählt ist.
+    teile.push(el('div', { class: 'card tresor-wahl-leiste', 'data-tresor-wahl-leiste': '', hidden: true }));
   }
   mount(_host, el('div', { class: 'tresorordner', 'data-tresorordner': '' }, teile));
+  wahlLeiste();
+}
+
+function wahlLeiste() {
+  const leiste = _host && _host.querySelector('[data-tresor-wahl-leiste]');
+  if (!leiste) return;
+  leiste.hidden = _wahl.size === 0;
+  leiste.replaceChildren(...(_wahl.size ? [el('div', { class: 'btn-row' }, [
+    el('span', { class: 'small', text: t('tresor.ausgewaehlt').replace('{n}', String(_wahl.size)) }),
+    knopf(t('tresor.auswahlUebernehmen').replace('{n}', String(_wahl.size)), () => tun(() => uebernehmenViele([..._wahl.values()])), { primaer: true, attr: { 'data-tresor-auswahl-uebernehmen': '' } }),
+    knopf(t('tresor.auswahlAufheben'), () => { _wahl.clear(); zeichnen(); }),
+  ])] : []));
+  // Checkboxen in Such- und Fach-Liste gleich halten (derselbe Eintrag kann zweimal stehen).
+  for (const box of _host.querySelectorAll('[data-tresor-wahl]')) {
+    const li = box.closest('[data-tresor-eintrag]'); const key = li && (li.dataset.fach + '|' + li.dataset.tresorEintrag);
+    if (key) box.checked = _wahl.has(key);
+  }
+}
+
+/** 1 · Zahl der neuen Einträge im Tresorordner (für Belege und Einstellungen). 0 ohne Brücke, gesperrt oder bei Fehler. */
+export async function neuImTresorordner() {
+  const b = brueckeVon(); if (!b) return 0;
+  try {
+    const z = await b.zustand(); if (!z || !z.offen) return 0;
+    const faecher = [];
+    for (const f of FAECHER) {
+      if (f.eigen) continue;
+      try { const r = await b.verzeichnis(f.fach); faecher.push({ ...f, eintraege: r.eintraege || [], marken: new Set(r.marken || []) }); } catch { /* Fach fehlt */ }
+    }
+    return neueEintraege(faecher).length;
+  } catch { return 0; }
 }

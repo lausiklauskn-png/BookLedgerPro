@@ -3,7 +3,7 @@
 // einfügen — Schritt für Schritt durch das ganze Programm, so wie wir es testen.
 
 import { el, mount } from '../dom.js';
-import { t } from '../i18n.js';
+import { t, istProApp } from '../i18n.js';
 
 let _host = null;
 
@@ -53,8 +53,10 @@ function installCard() {
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('guide.installTitle') }),
     el('ul', { class: 'guide-list' }, [
+      // In der Pro-App ist sie schon da (Leitfaden § 4): keine Adresse, kein Browser-Menü.
+      ...(istProApp() ? [el('li', { class: 'small', text: '1–2) BookLedgerPro ist als App auf diesem Gerät und läuft offline.' })] : [
       el('li', { class: 'small', text: '1) Adresse im Browser öffnen: https://lausiklauskn-png.github.io/bookledgerpro/ (alles klein).' }),
-      el('li', { class: 'small', text: '2) Optional als App installieren: Browser-Menü → „Zum Startbildschirm hinzufügen" / „App installieren" (läuft dann offline).' }),
+      el('li', { class: 'small', text: '2) Optional als App installieren: Browser-Menü → „Zum Startbildschirm hinzufügen" / „App installieren" (läuft dann offline).' })]),
       el('li', { class: 'small', text: '3) Erststart: Passwort festlegen → Shamir-Teile sichern → erstes verschlüsseltes Backup herunterladen. Daten bleiben lokal & verschlüsselt auf deinem Gerät.' }),
       el('li', { class: 'small', text: '4) Wichtig: Backup-Datei und Shamir-Teile getrennt & sicher aufbewahren — sie sind die einzige Wiederherstellung (Zero-Knowledge).' }),
       el('li', { class: 'small', text: '5) Optional KI (EU): Einstellungen → eigene Schlüssel für Google Vision (EU) und Mistral (EU) hinterlegen, „Verbindung testen". Ohne Schlüssel läuft alles on-device.' }),

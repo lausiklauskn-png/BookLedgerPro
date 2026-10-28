@@ -4,7 +4,7 @@
 // Buchhaltungs-Ansichten folgen in den nächsten Phasen.
 
 import { el, mount, clear } from './dom.js';
-import { t, setLang, LANGS } from './i18n.js';
+import { t, setLang, LANGS, istProApp } from './i18n.js';
 import { applyTheme, FARBEN, HELLIGKEITEN } from './theme.js';
 import { icon, ladeSymbole } from './icons.js';
 import { MycelMark, SiegelBadge, SiegelWappenGross } from './mycel.js';
@@ -97,10 +97,11 @@ import { mountEmployees } from './views/employees.js';
 import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
 import { mountSbkimSuche } from './views/sbkimsuche.js';
-import { mountTresorordner, tresorordnerVerfuegbar } from './views/tresorordner.js';
+import { mountTresorordner, tresorordnerVerfuegbar, neuImTresorordner } from './views/tresorordner.js';
 import { mikrofonBeobachten, SPRACHEN as MIKRO_SPRACHEN, wortSpeicherZahl } from './mikro.js';
 import { mountSafebox } from './views/safebox.js';
 import { mountDashboard } from './views/dashboard.js';
+import { wirtschaftsjahrVon } from '../domain/geschaeftsjahr.js';
 import { mountAnleitung } from './views/anleitung.js';
 import { schluesselAbgleichSection } from './schluesselabgleich.js';
 import { aboutContent } from './intro.js';
@@ -259,6 +260,7 @@ function header(s) {
       }) : null,
       // Dezenter Aktualisieren-Knopf: leert SW-Registrierungen + Cache-Storage und lädt neu
       // (Hard-Reload-Ersatz für Klaus' Tablet, wo Service-Worker + HTTP-Cache hartnäckig sind).
+      geschaeftsjahrKopf(s),
       // Thema (Klaus 2026-10-26): Palette-Knopf in der Kopfleiste, dieselbe Wahl wie in den Einstellungen.
       el('button', {
         class: 'btn btn-ghost btn-sm btn-icon thema-knopf', title: t('app.themeTitle'), 'aria-label': t('app.themeTitle'),
@@ -274,6 +276,18 @@ function header(s) {
         onClick: sperren,
       }, [icon('pb-lock'), el('span', { class: 'ic-text', text: t('settings.lock') })]),
     ]),
+  ]);
+}
+
+// „Geschäftsjahr“ in der Kopfleiste (Leitfaden § 4, Klaus 2026-10-28: Kopfzeile trägt Kontext, die Startseite keinen Gruß).
+// Abweichendes Wirtschaftsjahr: „2026/27“. Am Handy nur die Zahl (CSS blendet das Wort aus, der Titel nennt es).
+function geschaeftsjahrKopf(s) {
+  const wj = s.wirtschaftsjahrBeginn || '01-01';
+  const jahr = wirtschaftsjahrVon(new Date().toISOString().slice(0, 10), wj);
+  const text = wj === '01-01' ? String(jahr) : `${jahr}/${String(jahr + 1).slice(2)}`;
+  const voll = t('app.geschaeftsjahr').replace('{jahr}', text);
+  return el('span', { class: 'gj-kopf', 'data-geschaeftsjahr': '', title: t('app.geschaeftsjahrTitel').replace('{jahr}', text), 'aria-label': voll }, [
+    el('span', { class: 'gj-wort', text: voll.replace(text, '').trim() + ' ' }), el('span', { class: 'gj-zahl', text }),
   ]);
 }
 
@@ -629,7 +643,8 @@ async function refreshDurability() {
   if (st.level === 'ok') return;
 
   const msgs = [];
-  if (st.issues.includes('persist-denied')) msgs.push(t('durability.persistDenied'));
+  // In der Pro-App räumt kein Browser den Speicher (Android hält die App-Daten): dort kein „nicht dauerhaft“-Banner.
+  if (st.issues.includes('persist-denied') && !istProApp()) msgs.push(t('durability.persistDenied'));
   if (st.issues.includes('quota-pressure')) msgs.push(t('durability.quotaPressure'));
   if (st.issues.includes('no-backup')) msgs.push(t('durability.noBackup'));
   else if (st.issues.includes('backup-stale')) msgs.push(t('durability.backupStale'));
@@ -723,6 +738,9 @@ function viewSettings() {
   // data-einstellungen: hier hängt assets/installieren.js den Knopf „Installieren“ hinten an (Klaus 2026-10-18).
   return el('section', { class: 'view', 'data-einstellungen': '' }, [
     el('h1', { text: t('settings.title') }),
+
+    // Pro-App (Leitfaden § 2, Klaus 2026-10-28): „Tresor & Ablage“ ganz oben — nur in der Android-App (BLPNative.tresor).
+    tresorordnerVerfuegbar() ? tresorAblageSection() : null,
 
     seg(t('settings.modus'), 'nutzungsmodus',
       modusListe.map((m) => [m, t('settings.modus.' + m)]), modus,
@@ -962,6 +980,77 @@ function testModusSection() {
 }
 
 // Passwort ändern (Envelope: wickelt nur den Daten-Schlüssel neu ein).
+// ── Tresor & Ablage (Pro-App, Leitfaden § 2/§ 5, Klaus 2026-10-28) ──────────────────────────────────────────────
+// Ablage von BookLedgerPro = Ordner „BookLedgerPro“ im Tresor (Sicherungen, Beleg-Originale); Tresor = der gemeinsame
+// Tresorordner aller Pro-Apps. Je ● Zustand, ganzer Pfad, „In Dateien öffnen“; ein farbiger Knopf = nächster Schritt.
+// Die Bausteine (Zustand, Pfadzeile, ⓘ) kommen aus der gemeinsamen Datei native/pro-bedienung.js (nur in der App geladen);
+// fehlt sie, steht derselbe Inhalt als Text da. Passwörter nur im nativen Fenster. Mehr (anlegen, Ersatzschlüssel, Fächer)
+// in der Ansicht „Tresorordner“. Geprüft mit gestellter Brücke in tests/smoke_tresorordner.mjs; am Gerät nicht gemessen.
+let _taMeldung = '';
+function tresorAblageSection() {
+  const host = el('div', { class: 'setting tresor-ablage', 'data-tresor-ablage': '' });
+  const b = window.BLPNative.tresor, P = window.ProBedienung || null;
+  const pfadText = (z, unter) => {
+    const sp = z.speicher === 'karte' ? t('ta.karte') + '/' : z.speicher === 'geraet' ? t('ta.geraet') + '/' : '';
+    return sp + (z.pfad || z.ordner || '') + (unter ? '/' + unter : '');
+  };
+  const oeffnen = (welcher, pfad) => async () => {
+    try { await b.ordnerOeffnen(welcher); }
+    catch (e) {
+      _taMeldung = /KEIN_DATEIEN_PROGRAMM/.test(String((e && (e.code || e.message)) || e)) ? t('ta.keinDateienProgramm').replace('{pfad}', pfad) : String((e && (e.code || e.message)) || e);
+      render();
+    }
+  };
+  const ortZeile = (offen, pfad, welcher, attr) => {
+    if (P) { const z = P.ordnerZeile(pfad, oeffnen(welcher, pfad)); z.prepend(P.zustand(offen)); z.setAttribute(attr, ''); return z; }
+    return el('p', { class: 'small', [attr]: '', text: `${offen ? '●' : '○'} ${pfad}` });
+  };
+  const tun = (fn) => async () => { _taMeldung = ''; try { await fn(); } catch (e) { _taMeldung = String((e && (e.code || e.message)) || e); } paint(); };
+  const knopf = (text, onClick, haupt, attr) => el('button', { class: 'btn' + (haupt ? ' btn-primary' : ''), text, onClick, ...(attr ? { [attr]: '' } : {}) });
+  async function render() {
+    let z = {};
+    try { z = await b.zustand(); } catch (e) { z = { problem: String((e && e.message) || e) }; }
+    const offen = !!z.offen, kopf = el('div', { class: 'setting-label ta-kopf' }, [el('span', { text: t('ta.titel') })]);
+    let infoInhalt = null;
+    if (P) { const i = P.info('blp-tresor-ablage', t('ta.info')); kopf.append(i.knopf); infoInhalt = i.inhalt; }
+    const ablage = [el('h4', { class: 'ta-unter', text: t('ta.ablage') })];
+    if (z.gewaehlt && z.vorhanden) {
+      ablage.push(ortZeile(offen, pfadText(z, 'BookLedgerPro'), 'ablage', 'data-ta-ablage-ort'));
+      const letzte = (b.letzteSicherung && b.letzteSicherung()) || {};
+      ablage.push(el('p', { class: 'muted small', 'data-ta-letzte': '', text: letzte.zeit ? t('tresor.letzteSicherung').replace('{zeit}', new Date(letzte.zeit).toLocaleString()) : t('tresor.nochKeineSicherung') }));
+    } else ablage.push(el('p', { class: 'muted small', 'data-ta-nur-app': '', text: t('ta.nurApp') }));
+    const tresor = [el('h4', { class: 'ta-unter', text: t('ta.tresor') })];
+    const knoepfe = [];
+    if (!z.gewaehlt) {
+      tresor.push(el('p', { class: 'muted small', text: t('ta.keinOrdner') }));
+      knoepfe.push(knopf(t('ta.waehlen'), tun(() => b.ordnerWaehlen()), true, 'data-ta-waehlen'));
+    } else {
+      tresor.push(ortZeile(offen, pfadText(z, ''), 'tresor', 'data-ta-tresor-ort'));
+      if (z.erreichbar === false || !z.vorhanden) {
+        if (z.erreichbar !== false) tresor.push(el('p', { class: 'muted small', text: t('ta.anlegenWeiter') }));
+        knoepfe.push(knopf(t('ta.weiter'), () => navigate('tresorordner'), true, 'data-ta-weiter'));
+      } else if (!offen) {
+        knoepfe.push(knopf(t('ta.entsperren'), tun(() => b.entsperren(!!z.gemerkt)), true, 'data-ta-entsperren'));
+      } else {
+        // 1 · Neu im Tresorordner (von den anderen Pro-Apps) — die Zeile füllt sich, sobald gezählt ist.
+        const neu = el('p', { class: 'small', 'data-ta-neu': '' });
+        tresor.push(neu);
+        neuImTresorordner().then((n) => { if (n) neu.textContent = t('tresor.neuHinweis').replace('{n}', String(n)); }).catch(() => {});
+        knoepfe.push(knopf(t('tresor.jetztSichern'), tun(async () => { await b.sichern(); }), false, 'data-ta-sichern'));
+        knoepfe.push(knopf(t('ta.sperren'), tun(() => b.sperren(false)), false, 'data-ta-sperren'));
+      }
+      knoepfe.push(knopf(t('ta.ansicht'), () => navigate('tresorordner'), false, 'data-ta-ansicht'));
+    }
+    host.replaceChildren(kopf, ...(infoInhalt ? [infoInhalt] : [el('p', { class: 'muted small', text: t('ta.info') })]),
+      el('div', { class: 'ta-teil', 'data-ta-ablage': '' }, ablage),
+      el('div', { class: 'ta-teil', 'data-ta-tresor': '' }, tresor),
+      el('div', { class: 'btn-row' }, knoepfe),
+      _taMeldung ? el('p', { class: 'small', role: 'status', 'data-ta-meldung': '', text: _taMeldung }) : null);
+  }
+  render();
+  return host;
+}
+
 function passwortSection() {
   const alt = el('input', { type: 'password', placeholder: t('pw.current'), autocomplete: 'current-password' });
   const neu = el('input', { type: 'password', placeholder: t('pw.new'), autocomplete: 'new-password' });

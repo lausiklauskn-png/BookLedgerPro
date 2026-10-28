@@ -1397,6 +1397,36 @@ const STRINGS = {
     'speech.policyBindend': 'bindend (nur EU)',
     'nav.safebox': 'Geheim-Fach',
     'nav.tresorordner': "Tresorordner",
+    'ta.titel': "Tresor & Ablage",
+    'ta.info': "Die Ablage von BookLedgerPro ist der Ordner „BookLedgerPro“ im Tresor: dort liegen die automatischen Sicherungen und die Beleg-Originale, verschlüsselt. Der Tresor umschließt die Ablagen aller Pro-Apps. Ein Passwort für alle.",
+    'ta.ablage': "Ablage von BookLedgerPro",
+    'ta.tresor': "Tresor (alle Pro-Apps)",
+    'ta.nurApp': "Noch ohne Tresor: Buchhaltung und Belege liegen nur verschlüsselt in der App auf diesem Gerät. Mit dem Tresor kommt eine Sicherung in den Ordner dazu.",
+    'ta.keinOrdner': "Noch kein Tresorordner gewählt.",
+    'ta.anlegenWeiter': "Im Ordner liegt noch kein Tresor – weiter in „Tresorordner“.",
+    'ta.waehlen': "Tresorordner wählen …",
+    'ta.entsperren': "Tresor entsperren …",
+    'ta.sperren': "Tresor sperren",
+    'ta.ansicht': "Zum Tresorordner",
+    'ta.weiter': "Weiter einrichten",
+    'ta.geraet': "Gerät", 'ta.karte': "SD-Karte",
+    'ta.keinDateienProgramm': "Keine Dateien-App gefunden, die Ordner zeigen kann. Pfad: {pfad}",
+    'ta.version': "Version {v}",
+    'app.geschaeftsjahr': "Geschäftsjahr {jahr}",
+    'app.geschaeftsjahrTitel': "Geschäftsjahr {jahr} – ändern unter Einstellungen",
+    'tresor.neuTitel': "Neu im Tresorordner: {n}",
+    'tresor.alleNeuUebernehmen': "Alle {n} als Belege übernehmen",
+    'tresor.alleAuf': "Alle auf",
+    'tresor.alleZu': "Alle zu",
+    'tresor.waehlenEintrag': "„{name}“ auswählen",
+    'tresor.ausgewaehlt': "{n} ausgewählt",
+    'tresor.auswahlUebernehmen': "{n} als Belege übernehmen",
+    'tresor.auswahlAufheben': "Auswahl aufheben",
+    'tresor.uebernehmenFehler': "„{name}“ ließ sich nicht lesen; nichts wurde übernommen.",
+    'tresor.inAppOeffnen': "In {app} öffnen",
+    'tresor.appFehlt': "{app} ist auf diesem Gerät nicht installiert.",
+    'tresor.neuHinweis': "Neu im Tresorordner: {n} – übernehmen?",
+    'tresor.neuZeigen': "Zum Tresorordner",
     'tresor.titel': "Tresorordner",
     'tresor.intro': "Ein Ordner für alle Pro-Apps (Private Brain Pro, Workflow PDF Pro, BookLedgerPro) mit einem Passwort. BookLedgerPro legt hier seine Sicherung ab und liest das Eingangsfach; die Fächer der anderen Apps sind nur lesbar. Das Passwort tippst du im Fenster von Android, es verlässt das Gerät nie.",
     'tresor.nurApp': "Den Tresorordner gibt es nur in der Android-App.",
@@ -2917,6 +2947,36 @@ const STRINGS = {
     'speech.policyBindend': 'binding (EU only)',
     'nav.safebox': 'Secret box',
     'nav.tresorordner': "Vault folder",
+    'ta.titel': "Vault & storage",
+    'ta.info': "The BookLedgerPro storage is the “BookLedgerPro” folder inside the vault: automatic backups and receipt originals are kept there, encrypted. The vault encloses the storage of all Pro apps. One password for all.",
+    'ta.ablage': "BookLedgerPro storage",
+    'ta.tresor': "Vault (all Pro apps)",
+    'ta.nurApp': "No vault yet: bookkeeping and receipts are only stored encrypted in the app on this device. With the vault, a backup goes into the folder as well.",
+    'ta.keinOrdner': "No vault folder chosen yet.",
+    'ta.anlegenWeiter': "There is no vault in this folder yet – continue in “Vault folder”.",
+    'ta.waehlen': "Choose vault folder …",
+    'ta.entsperren': "Unlock vault …",
+    'ta.sperren': "Lock vault",
+    'ta.ansicht': "Open vault folder view",
+    'ta.weiter': "Continue setup",
+    'ta.geraet': "Device", 'ta.karte': "SD card",
+    'ta.keinDateienProgramm': "No Files app found that can show folders. Path: {pfad}",
+    'ta.version': "Version {v}",
+    'app.geschaeftsjahr': "Fiscal year {jahr}",
+    'app.geschaeftsjahrTitel': "Fiscal year {jahr} – change in Settings",
+    'tresor.neuTitel': "New in the vault folder: {n}",
+    'tresor.alleNeuUebernehmen': "Take over all {n} as receipts",
+    'tresor.alleAuf': "Expand all",
+    'tresor.alleZu': "Collapse all",
+    'tresor.waehlenEintrag': "Select “{name}”",
+    'tresor.ausgewaehlt': "{n} selected",
+    'tresor.auswahlUebernehmen': "Take over {n} as receipts",
+    'tresor.auswahlAufheben': "Clear selection",
+    'tresor.uebernehmenFehler': "“{name}” could not be read; nothing was taken over.",
+    'tresor.inAppOeffnen': "Open in {app}",
+    'tresor.appFehlt': "{app} is not installed on this device.",
+    'tresor.neuHinweis': "New in the vault folder: {n} – take over?",
+    'tresor.neuZeigen': "Open vault folder",
     'tresor.titel': "Vault folder",
     'tresor.intro': "One folder for all Pro apps (Private Brain Pro, Workflow PDF Pro, BookLedgerPro) with one password. BookLedgerPro stores its backup here and reads its inbox; the other apps' sections are read-only. You type the password in Android's own window; it never leaves the device.",
     'tresor.nurApp': "The vault folder exists only in the Android app.",
@@ -3065,6 +3125,48 @@ const STRINGS = {
   },
 };
 
+// Pro-App (Leitfaden § 4, Klaus 2026-10-28): in der Android-App gibt es keinen Browser — dieselben Schlüssel sagen dort
+// „App“/„Gerät“. Erkannt am Klebstoff der Hülle (window.BLPNative, native/blp-native.js läuft vor den Modulen). Die PWA
+// (und BookLedger Basic) sieht diese Fassung nie. Geprüft: tests/smoke_ohne_web.mjs (jede Ansicht im App-Modus).
+const APP_STRINGS = {
+  de: {
+    'durability.persistDenied': 'Bitte regelmäßig sichern.',
+    'durability.quotaPressure': 'Wenig freier Speicher auf dem Gerät — jetzt sichern!',
+    'backup.cardHint': 'Sichere regelmäßig verschlüsselt — mit dem Tresor geht es von selbst in den Ordner.',
+    'backup.noApiHint': 'Die Sicherung wird über Androids Speichern-Fenster abgelegt.',
+    'onboard.shamirIntro': 'Bewahre diese Teile getrennt auf. Zwei von drei genügen, um deinen Schlüssel wiederherzustellen — falls die App-Daten verloren gehen.',
+    'onboard.backupIntro': 'Daten in der App können mit dem Gerät verloren gehen. Lege jetzt ein verschlüsseltes Backup ab — ohne diesen Schritt geht es nicht weiter.',
+    'docs.platzUnbekannt': 'unbekannt (das Gerät sagt es nicht)',
+    'docs.platzPasstNicht': '⚠ Das passt voraussichtlich nicht in den Speicher der App. Erst eine Sicherung machen oder weniger auf einmal einlesen.',
+    'docs.platzGross': 'Sehr große Datei(en), über 50 MB — sie können die App bremsen:',
+    'mikro.hinweisBrowser': 'Erkennung von Android: die Aufnahme geht an die Spracherkennung des Geräts (meist Google), nicht EU',
+    'mikro.hint': 'An jedem Textfeld steht ein 🎙 mit einer Sprachmarke (z. B. „DE ▾“). Ein Tipp auf die Marke wählt die Sprache für genau dieses Feld; sie bleibt gemerkt. Hier steht die Vorgabe für Felder ohne eigene Wahl. Erkennung des Geräts oder EU-Schlüssel wie bei der SBKIM-Suche (Einstellungen → KI).',
+    'speech.engineBrowser': 'Gerät',
+    'speech.unsupported': 'Spracherkennung des Geräts hier nicht verfügbar — nutze „EU (Schlüssel)".',
+    'speech.noticeBrowser': 'Spracherkennung des Geräts: sofort, kein Schlüssel. Hinweis: unter Android geht die Audio meist an Google — nicht garantiert EU. Opt-in.',
+    'fw.fremdIntro': 'Lokale Membran: meldet fremde postMessage-Quellen (z. B. KI-Agent / fremdes iframe) und SW-Endpoint-Proben. Rein lokal, RAM-only.',
+  },
+  en: {
+    'durability.persistDenied': 'Please back up regularly.',
+    'durability.quotaPressure': 'Low free storage on the device — back up now!',
+    'backup.cardHint': 'Back up (encrypted) regularly — with the vault it goes into the folder by itself.',
+    'backup.noApiHint': "The backup is saved through Android's save window.",
+    'onboard.shamirIntro': 'Store these parts separately. Any two of three restore your key if the app data is lost.',
+    'onboard.backupIntro': 'Data in the app can be lost with the device. Save an encrypted backup now — you cannot continue without it.',
+    'docs.platzUnbekannt': 'unknown (the device does not say)',
+    'docs.platzPasstNicht': "⚠ This will probably not fit into the app's storage. Make a backup first or import fewer at once.",
+    'docs.platzGross': 'Very large file(s), over 50 MB — they may slow the app down:',
+    'mikro.hinweisBrowser': "Android recognition: the audio goes to the device's speech service (usually Google), not EU",
+    'mikro.hint': 'Every text field has a 🎙 with a language chip (e.g. "EN ▾"). A tap on the chip picks the language for exactly this field and remembers it. This is the default for fields without their own choice. Device recognition or EU key as in the SBKIM search (Settings → AI).',
+    'speech.engineBrowser': 'Device',
+    'speech.unsupported': 'Device speech recognition unavailable here — use “EU (key)”.',
+    'speech.noticeBrowser': 'Device speech recognition: instant, no key. Note: on Android the audio usually goes to Google — not guaranteed EU. Opt-in.',
+    'fw.fremdIntro': 'Local membrane: reports foreign postMessage sources (e.g. AI agent / foreign iframe) and SW endpoint probes. Purely local, RAM-only.',
+  },
+};
+/** Läuft das hier als Pro-App (Android-Hülle)? Nur der Klebstoff setzt window.BLPNative. */
+export function istProApp() { return typeof window !== 'undefined' && !!window.BLPNative; }
+
 let _lang = 'de';
 
 export function setLang(lang) { _lang = STRINGS[lang] ? lang : 'de'; }
@@ -3072,6 +3174,7 @@ export function getLang() { return _lang; }
 
 /** Übersetzt einen Schlüssel; fällt auf Deutsch, dann auf den Schlüssel zurück. */
 export function t(key) {
+  if (istProApp()) { const app = (APP_STRINGS[_lang] && APP_STRINGS[_lang][key]) || APP_STRINGS.de[key]; if (app) return app; }
   return (STRINGS[_lang] && STRINGS[_lang][key]) || STRINGS.de[key] || key;
 }
 

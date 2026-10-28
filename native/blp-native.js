@@ -215,6 +215,8 @@
       anlegen: function (merken) { return T.anlegen({ merken: !!merken }); },
       entsperren: function (merken) { return T.entsperren({ merken: !!merken }); },
       sperren: function (vergessen) { return T.sperren({ vergessen: !!vergessen }); },
+      appOeffnen: typeof T.appOeffnen === 'function' ? function (app) { return T.appOeffnen({ app: String(app || '') }); } : null,
+      ordnerOeffnen: function (welcher) { return T.ordnerOeffnen({ welcher: welcher === 'ablage' ? 'ablage' : 'tresor' }); },
       passwortAendern: function () { return T.passwortAendern(); },
       ersatzErstellen: function () { return T.ersatzErstellen(); },
       wiederherstellen: function (teile) { return T.wiederherstellen({ teile: teile }); },
@@ -227,5 +229,12 @@
     });
   }
 
-  window.BLPNative = Object.freeze({ plattform: 'android', speichern: speichern, tresor: tresor });
+  // Versionsnummer der App (Leitfaden § 6, „Über“): nur die Zahl, ohne „-debug“.
+  var version = function () {
+    if (!Dateien || typeof Dateien.appInfo !== 'function') return Promise.resolve('');
+    return Dateien.appInfo().then(function (r) { return ((String((r && r.version) || '')).match(/^\d+\.\d+\.\d+/) || [''])[0]; }).catch(function () { return ''; });
+  };
+  // Als App gibt es nichts zu installieren (Leitfaden § 4): dieselbe Marke wie nach „appinstalled“ blendet beide Knöpfe aus.
+  try { document.documentElement.classList.add('app-installiert'); } catch (e) { /* nur Anzeige */ }
+  window.BLPNative = Object.freeze({ plattform: 'android', speichern: speichern, tresor: tresor, version: version });
 })();

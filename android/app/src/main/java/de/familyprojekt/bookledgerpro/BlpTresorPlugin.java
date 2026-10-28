@@ -89,6 +89,8 @@ public final class BlpTresorPlugin extends Plugin {
         JSObject z = new JSObject();
         SharedPreferences p = prefs();
         z.put("gewaehlt", p.contains("baum")).put("ordner", p.getString("name", "")).put("gemerkt", p.contains("merken"));
+        // Ganzer Pfad und Speicher (Leitfaden § 5): „Gerät“ oder „SD-Karte“ + Pfad hinter dem Doppelpunkt der Dokument-Kennung.
+        String id = baumId(); z.put("pfad", id.contains(":") ? id.substring(id.indexOf(':') + 1) : id).put("speicher", id.startsWith("primary:") ? "geraet" : id.contains(":") ? "karte" : "");
         z.put("offen", offen != null);
         if (!p.contains("baum")) return z;
         try {
@@ -106,6 +108,50 @@ public final class BlpTresorPlugin extends Plugin {
             }
         } catch (IOException e) { z.put("erreichbar", false).put("problem", code(e)); }
         return z;
+    }
+
+    private String baumId() {
+        String b = prefs().getString("baum", null); if (b == null) return "";
+        try { return android.provider.DocumentsContract.getTreeDocumentId(Uri.parse(b)); } catch (Exception e) { return ""; }
+    }
+    /** „In Dateien öffnen“ (Leitfaden § 5): Tresorordner oder die Ablage „BookLedgerPro/“ darin in der Dateien-App zeigen.
+     *  Nichts wird gelesen oder verändert. Die Kennung des Unterordners folgt dem Muster des Android-Speichers („…:Pfad/Name“);
+     *  fehlt der Ordner, zeigt die App den Tresorordner selbst. */
+    @PluginMethod public void ordnerOeffnen(PluginCall call) {
+        worker.submit(call, () -> {
+            String b = prefs().getString("baum", null);
+            if (b == null) { call.reject("TRESOR_KEIN_ORDNER"); return; }
+            Uri baum = Uri.parse(b); String id = baumId();
+            if ("ablage".equals(call.getString("welcher"))) {
+                try { if (ablage().istOrdner(APP_ORDNER) && id.contains(":")) id = id + (id.endsWith(":") ? "" : "/") + APP_ORDNER; }
+                catch (IOException e) { /* dann der Tresorordner selbst */ }
+            }
+            Intent intent = new Intent(Intent.ACTION_VIEW)
+                .setDataAndType(android.provider.DocumentsContract.buildDocumentUriUsingTree(baum, id), android.provider.DocumentsContract.Document.MIME_TYPE_DIR)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+            try { getActivity().startActivity(intent); call.resolve(); }
+            catch (android.content.ActivityNotFoundException keine) { call.reject("KEIN_DATEIEN_PROGRAMM"); }
+            catch (SecurityException verweigert) { call.reject("TRESOR_NICHT_VERFUEGBAR"); }
+        });
+    }
+    private static final String APP_ORDNER = "BookLedgerPro";
+    /** „In ‹App› öffnen“ (Tresorordner-Ansicht, Schritt 3): startet die andere Pro-App. Feste Liste, kein Paket aus der Seite;
+     *  übergeben wird nichts (die andere App öffnet ihren eigenen Bestand). Ohne installierte App: APP_FEHLT. */
+    private static final Map<String, String[]> PRO_APPS = new HashMap<>();
+    static {
+        PRO_APPS.put(Fach.PRIVATE_BRAIN_APP, new String[] { "de.familyprojekt.privatebrain.pro", "de.familyprojekt.privatebrain.pro.preview" });
+        PRO_APPS.put(Fach.WORKFLOW_PDF_APP, new String[] { "de.familyprojekt.workflowpdf.pro" });
+    }
+    @PluginMethod public void appOeffnen(PluginCall call) {
+        String[] pakete = PRO_APPS.get(call.getString("app", ""));
+        if (pakete == null) { call.reject("APP_UNBEKANNT"); return; }
+        for (String paket : pakete) {
+            Intent start = getContext().getPackageManager().getLaunchIntentForPackage(paket);
+            if (start == null) continue;
+            try { getActivity().startActivity(start.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); call.resolve(); return; }
+            catch (android.content.ActivityNotFoundException weg) { /* nächstes Paket */ }
+        }
+        call.reject("APP_FEHLT");
     }
 
     // ---------- Ordner wählen ----------

@@ -7183,5 +7183,36 @@ await section('Tresorordner (Schritt C/C2, Klaus 2026-10-27): Sicherung, Fällig
   ok('i18n DE/EN: jeder Text der Ansicht (' + keys.length + ')', keys.length > 30 && keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2), keys.filter((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length !== 2).join(','));
 });
 
+await section('Pro-Umbau 2 (Klaus 2026-10-28): Tresorordner-Ansicht 1 → 2 → 4 → 3, Tresor & Ablage, keine Web-Reste', async () => {
+  const to = await import('../src/domain/tresorordner.js');
+  const E = (id, verweis, extra = {}) => ({ id, name: id + '.pdf', verweis, verschluesselung: 'fpt1', datum: Number(id.replace(/\D/g, '')) || 0, ...extra });
+  const faecher = [
+    { fach: 'bookledgerpro', eigen: true, eintraege: [E('s1', 'Sicherung/s1.fpt'), E('b2', 'Belege/b2.fpt')], marken: new Set() },
+    { fach: 'eingang-bookledgerpro', eingang: true, eintraege: [E('m3', 'Mails/m3.fpt'), E('m5', 'Mails/m5.fpt'), E('a4', 'a4.fpt')], marken: new Set(['m3']) },
+    { fach: 'private-brain', eintraege: [E('p6', 'Katalog/p6', { verschluesselung: 'pbv1', schreiber: 'private-brain' }), E('p7', 'Belege/p7.fpt', { schreiber: 'private-brain' })], marken: new Set() },
+  ];
+  const neu = to.neueEintraege(faecher).map((x) => x.eintrag.id);
+  ok('1 · neu: nur übernehmbare, nicht markierte, fremde Fächer, neueste zuerst', JSON.stringify(neu) === '["p7","m5","a4"]', JSON.stringify(neu));
+  ok('1 · eigenes Fach und eigene Sicherung zählen nie', !to.uebernehmbar(faecher[0], faecher[0].eintraege[1]) && !to.uebernehmbar(faecher[1], E('x', 'Sicherung/x.fpt')));
+  const g = to.unterordnerGruppen(faecher[1].eintraege);
+  ok('2 · Unterordner: ohne Ordner vorn, dann alphabetisch, darin neueste zuerst', JSON.stringify(g.map((x) => [x.ordner, x.eintraege.map((e) => e.id)])) === '[["",["a4"]],["Mails",["m5","m3"]]]', JSON.stringify(g));
+  ok('3 · In-App-Öffnen: fremdes Format → Private Brain Pro; eigenes Fach/unbekannt → nichts', to.appFuer(faecher[2], faecher[2].eintraege[0])?.name === 'Private Brain Pro' && to.appFuer(faecher[1], E('z', 'z')) === null);
+  const ansicht = _readSpore(new URL('../src/ui/views/tresorordner.js', import.meta.url), 'utf8');
+  ok('4 · Mehrfach-Übernahme: erst alle lesen, dann markieren, dann übergeben (eine Fehlschlag-Datei übernimmt nichts)', /for \(const x of liste\) \{\s*try \{ dateien\.push\(await b\.lesen/.test(ansicht) && ansicht.indexOf('dateien.push(await b.lesen') < ansicht.indexOf('await b.markieren(x.fach'));
+  const java = _readSpore(new URL('../android/app/src/main/java/de/familyprojekt/bookledgerpro/BlpTresorPlugin.java', import.meta.url), 'utf8');
+  const manifest = _readSpore(new URL('../android/app/src/main/AndroidManifest.xml', import.meta.url), 'utf8');
+  ok('3 · Java startet nur die feste Liste der Pro-Apps; Manifest kennt genau diese Pakete', /PRO_APPS\.put\(Fach\.PRIVATE_BRAIN_APP/.test(java) && /getLaunchIntentForPackage\(paket\)/.test(java)
+    && ['de.familyprojekt.privatebrain.pro"', 'de.familyprojekt.privatebrain.pro.preview"', 'de.familyprojekt.workflowpdf.pro"'].every((p) => manifest.includes('<package android:name="' + p)));
+  ok('„In Dateien öffnen“: ACTION_VIEW auf den Ordner, ohne Lesen/Schreiben', /public void ordnerOeffnen/.test(java) && /MIME_TYPE_DIR/.test(java));
+  const i18n = await import('../src/ui/i18n.js');
+  ok('App-Texte nur in der App: ohne window.BLPNative bleibt der Browser-Satz (PWA/Basic unverändert)', /Browser/.test(i18n.t('backup.cardHint')) && !i18n.istProApp());
+  globalThis.window = { BLPNative: {} };
+  try { ok('… mit BLPNative sagt derselbe Schlüssel nichts von „Browser“', !/Browser/i.test(i18n.t('backup.cardHint')) && i18n.t('speech.engineBrowser') === 'Gerät'); }
+  finally { delete globalThis.window; }
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  const keys = [...new Set([...['../src/ui/views/tresorordner.js', '../src/ui/shell.js', '../src/ui/views/documents.js'].flatMap((f) => [..._readSpore(new URL(f, import.meta.url), 'utf8').matchAll(/t\('((?:ta|tresor|app)\.[A-Za-z]+)'\)/g)].map((m) => m[1]))])];
+  ok('i18n DE/EN: alle neuen Schlüssel zweimal (' + keys.length + ')', keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2), keys.filter((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length < 2).join(','));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);

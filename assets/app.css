@@ -745,3 +745,12 @@ tr.suche-markiert td { background: var(--accent-soft); }
 .app-frame-platz { flex: 1; min-height: 0; }
 #blp-app-frames .app-frame { display: none; border: 1px solid var(--border); border-radius: var(--radius-sm, 8px); background: #fff; box-sizing: border-box; }
 @media (max-width: 640px) { .app-rahmen { height: calc(100dvh - 9.5rem - var(--leisten-platz)); } .app-titel .small { display: none; } }
+
+/* Geschäftsjahr in der Kopfleiste (Klaus 2026-10-28): ruhige Kontextzeile; am Handy nur die Zahl. */
+.gj-kopf { font-size: .85rem; color: var(--text-muted, inherit); white-space: nowrap; padding: 0 4px; }
+@media (max-width: 640px) { .gj-kopf .gj-wort { display: none; } }
+
+/* Tresor & Ablage (Pro-App, Einstellungen): zwei flache Teile untereinander. */
+.tresor-ablage .ta-kopf { display: flex; align-items: center; gap: 6px; }
+.tresor-ablage .ta-teil { margin-top: 8px; min-width: 0; }
+.tresor-ablage .ta-unter { margin: 0 0 4px; font-size: .95rem; }

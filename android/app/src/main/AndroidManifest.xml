@@ -64,5 +64,9 @@
     <queries>
         <intent><action android:name="android.media.action.IMAGE_CAPTURE" /></intent>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>
+        <!-- „In ‹App› öffnen“ aus dem Tresorordner (Klaus 2026-10-28): nur die anderen Pro-Apps, sonst niemand. -->
+        <package android:name="de.familyprojekt.privatebrain.pro" />
+        <package android:name="de.familyprojekt.privatebrain.pro.preview" />
+        <package android:name="de.familyprojekt.workflowpdf.pro" />
     </queries>
 </manifest>

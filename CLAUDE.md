@@ -364,3 +364,22 @@ Wort-/Bedeutungssuche, übernehmen mit Marke, einspielen. Proben: `run.mjs` (+14
 (Brücke gestellt, A5 bei 320 px/200 %) · Gegenprobe 11/11 · JVM `TresorOrdnerTest` 9 (Gegenprobe 9/9 in Workflow PDF Pro).
 `sw.js` v271. ⚠ Kein Gerät, kein Emulator für den Ordner; Private Brain Pro zieht erst in Schritt D ein. Bedienung: `docs/TRESORORDNER.md`.
 
+
+## 🧰 Einstellungs-Umbau Schritt 2 in BookLedgerPro (Klaus 2026-10-28)
+
+Nach dem Leitfaden `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md`, wie Private Brain Pro #107 und Workflow PDF Pro #34. **Nur in der App**
+(`window.BLPNative`), PWA/Basic sehen davon nur Startseite und Kopfleiste.
+- Einstellungen → **„Tresor & Ablage“** ganz oben (`tresorAblageSection` in `src/ui/shell.js`): „Ablage von BookLedgerPro“ (= `BookLedgerPro/`
+  im Tresor: Sicherungen, Beleg-Originale) und „Tresor (alle Pro-Apps)“, je ● Zustand, ganzer Pfad (`SD-Karte/…`), „In Dateien öffnen“
+  (`BlpTresor.ordnerOeffnen`, ACTION_VIEW), ein farbiger nächster Schritt, Erklärung hinter ⓘ. Bausteine aus `native/pro-bedienung.*`
+  (jetzt im App-Paket geladen, `tools/native/prepare-web.mjs`).
+- **Keine Web-Reste**: `APP_STRINGS` in `src/ui/i18n.js` (nur mit `BLPNative`), kein „nicht dauerhaft“-Banner, kein Installieren
+  (`html.app-installiert`), Anleitung/Recht ohne Browser-Sätze. **„Über“ nennt die Version** (`BlpFiles.appInfo`). Keine Updateprüfung (Repo privat).
+- **Startseite** ohne „Willkommen“/Werbesatz (Titel „Übersicht“), **„Geschäftsjahr 2026“ in der Kopfleiste** (`geschaeftsjahrKopf`, am Handy nur die Zahl) —
+  gilt auch für die PWA (Leitfaden § 0).
+- **Tresorordner-Ansicht 1 → 2 → 4 → 3**: 1 „Neu im Tresorordner: N“ (Belege, Einstellungen, Ansicht; `neueEintraege`) · 2 Fächer als Baum
+  (Fach › Unterordner, `unterordnerGruppen`) mit „Alle auf / Alle zu“ · 4 Mehrfach-Übernahme (Häkchen, erst alle lesen, dann markieren) ·
+  3 „In ‹App› öffnen“ (`BlpTresor.appOeffnen`, feste Paketliste + `<queries>`; übergeben wird nichts).
+- Proben: `tests/run.mjs` „Pro-Umbau 2“ (+10) · `tests/smoke_ohne_web.mjs` **28 grün** (jede Ansicht im App-Modus ohne Web-Wörter, Gegenprobe
+  als PWA; Kasten; Version; Startseite; 1/2/4/3) · `test-native` 41 · `smoke_tresorordner` 30 · `smoke_design` 90. `sw.js` v273.
+  ⚠ Nicht am Gerät; ob die Dateien-App einen Ordner per ACTION_VIEW zeigt und ob Android die andere Pro-App startet, ist ungemessen.
