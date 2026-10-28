@@ -69,7 +69,7 @@ ok('Namen der Brücken stimmen (BlpIncoming, BlpFiles)', java('BlpIncomingPlugin
 ok('Eingang nimmt nur content:-Adressen aus dem Intent (nie aus JS)', java('IncomingFiles').includes('"content".equals(uri.getScheme())') && !java('BlpIncomingPlugin').includes('getString("uri")'));
 
 console.log('— Klebstoff native/blp-native.js in einer gestellten WebView');
-function welt({ nativ = true, batch = null, chunk = 4 } = {}) {
+function welt({ nativ = true, batch = null, chunk = 4, webviewQueue = false } = {}) {
   const log = [];
   const listener = [];
   const daten = new Map();
@@ -105,6 +105,8 @@ function welt({ nativ = true, batch = null, chunk = 4 } = {}) {
     Capacitor: nativ ? { isNativePlatform: () => true, Plugins: { BlpIncoming: Eingang, BlpFiles: Dateien } } : undefined,
   };
   ctx.window = ctx;
+  // Wie neuere Android-WebViews: ein eigenes launchQueue, das nie etwas liefert (nur lesbar, wie in Chromium).
+  if (webviewQueue) Object.defineProperty(ctx, 'launchQueue', { get: () => ({ setConsumer() { /* liefert nie */ } }), configurable: true, enumerable: true });
   vm.createContext(ctx);
   vm.runInContext(nativJs, ctx);
   return { ctx, log, listener, doc, angehaengt, gelesen };
@@ -125,6 +127,14 @@ ok('Teilen: beide Dateien kommen als File an (Name, Art, Inhalt Byte für Byte, 
   && Buffer.from(await erhalten[0].arrayBuffer()).toString() === inhaltA && Buffer.from(await erhalten[1].arrayBuffer()).toString() === inhaltB);
 const ackIdx = w.log.findIndex((x) => x === 'ack:B1:false');
 ok('erst übergeben, dann quittiert — archiviert, nicht gelöscht (Rückweg)', ackIdx > 0 && !w.log.includes('ack:B1:true'));
+
+// Befund am Tablet (2026-10-28): die WebView hatte ein eigenes, totes launchQueue — der Klebstoff schaltete sich ab.
+const wv = welt({ webviewQueue: true, batch: { id: 'B3', files: [{ id: 'f3', name: 'Mail.eml', mime: 'message/rfc822', inhalt: inhaltB }] } });
+let wvErhalten = null;
+wv.ctx.launchQueue.setConsumer(async (q) => { wvErhalten = await Promise.all(q.files.map((h) => h.getFile())); });
+await warte(); await warte();
+ok('WebView mit eigenem launchQueue: der App-Eingang gilt trotzdem, die geteilte Mail kommt an und wird quittiert',
+  wvErhalten && wvErhalten.length === 1 && wvErhalten[0].name === 'Mail.eml' && wv.log.includes('ack:B3:false'));
 
 const p = welt({ batch: { id: 'B2', problem: true } });
 let gerufen = false;
