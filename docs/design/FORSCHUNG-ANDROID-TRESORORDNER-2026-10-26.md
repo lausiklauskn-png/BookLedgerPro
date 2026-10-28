@@ -447,3 +447,33 @@ Klaus' eigene Angabe geht vor.
    Liste der Bedien-Dateien (`bedienFiles`), sonst lud ihn die App nicht.
 11. **Basic** zweimal nachgezogen (#13 auf `26a25fc`, #14 auf `1127038`); für die PWA wirkt jeweils nur der Cache-Bump, alles Neue hängt an
    `window.BLPNative`.
+
+## 19 · Befunde aus Schritt 4: Workflow-PDF-Kern 1.1.4 und Workflow PDF Pro 1.0.8 (2026-10-29, Nacht, gemessen)
+
+Kern-PR Workflow-PDF #136 (main `2ac96d4`), Pro-App Workflow-PDF-Pro #41 (`upstream/` = Kern `1937478`, 203 Dateien, 0 Abweichung).
+
+1. **Die Arbeitsleiste zeichnete sich endlos neu:** `pruefLeiste` verglich mit `innerHTML`, das der Browser normalisiert (und `strich.js` ersetzt
+   Emojis darin) — nie gleich. Jetzt Vergleich mit dem erzeugten HTML (`l._html`). Lehre: nie gegen die Serialisierung des DOM vergleichen.
+2. **`einordnenLauf` las seinen eigenen Lauf vor der Zuweisung (TDZ):** das Versprechen wurde in `BED.einLauf` gemerkt, während der asynchrone Rumpf
+   schon synchron lief. Jetzt `await Promise.resolve()` als erste Zeile. Lehre: ein asynchroner Selbstbezug braucht erst einen Mikrotakt.
+3. **Nach dem Zurückschalten auf Deutsch stand das Emoji kurz als Text da:** `sprache.js` schrieb das Original zurück, nachdem `strich.js` schon lief.
+   Jetzt ruft der Satz-Aufbau selbst `Strich.ersetzen`; ein `svg[data-strich]` zählt im Schlüssel als sein Emoji, die Wörterbücher bleiben unverändert.
+4. **Kopfzeile bei 320 px nur in CI abgeschnitten:** die CI-Schrift ist breiter; sechs Knöpfe zu 32 statt 31 px machten die Gruppe 5 px breiter. Die
+   flachen Kopf-Maße gelten erst ab 521 px. Lehre: Kopfzeile mit der CI-Schrift messen (`kopfzeile-schrift.mjs`, DejaVu).
+5. **Echter Fehler, in CI gefunden: die erste Suche nach dem Neuladen fand nichts.** Seitentext wird jetzt erst beim Suchen geladen; kam er aus IndexedDB
+   statt neu gerechnet, galt er nicht als „neu“ und die Liste wurde nicht neu gezeichnet. Jetzt zählt auch Text aus dem Speicher als neu. Derselbe Fehler
+   machte WPP `web-core` rot.
+6. **Probe B12b war zweimal blind:** die Bedeutungssuche zeichnet die Liste von selbst neu und deckte den Fehler zu; erst ein eigener Kontext ohne
+   Bedeutungssuche fängt ihn (Fall 16). Lehre: eine Probe braucht einen Kontext, in dem kein anderer Weg dieselbe Arbeit tut.
+7. **`window.ProHintergrund` gibt es in der Pro-App immer** — eine Probe auf sein Dasein misst nichts; geprüft wird `verfuegbar()`.
+8. **Bibliothek lädt nur Vorschaubilder (gemessen):** beim Öffnen 0 Lesezugriffe auf Dateien, 0 auf Seitentext, 0 × `getDocument`. Ausnahme: Sortieren
+   nach Dateigröße liest die Dateien weiter.
+9. **Scanner direkt aus BookLedgerPro (Android):** Workflow PDF Pro versteht jetzt den Intent `de.familyprojekt.workflowpdf.pro.SCANNEN` (Paket fest,
+   Zusatz `von`, höchstens 40 Zeichen), beim Kaltstart und in der laufenden App; „Durchsuchbar“ gilt nur für diesen Scan. Rückweg „Teilen“ →
+   BookLedgerPro (Android erlaubt keine Vorauswahl). JVM-Probe `ScanDirektTest` 2. ⚠ BookLedgerPro ruft den Intent **noch nicht** auf (heute
+   `BlpTresor.appOeffnen`); Windows hat keinen solchen Weg.
+10. **Fach `Eingang-WorkflowPDF`** wird in „Tresor & Ablage“ und als Hinweis über den Karten gezeigt, in 192-KB-Stücken gelesen, über `importDateien`
+    eingelesen und danach „übernommen“ markiert; das Tresor-Paket ist unverändert. ⚠ Nur mit gestellter Brücke gemessen.
+11. Proben: Kern `npm test` 0 · neu `tests/arbeit.mjs` 40 · Gegenprobe `gegenprobe_arbeit.mjs` 16/16 gefangen · drei tote Gegenprobe-Anker, schon auf
+    main kaputt, nebenbei repariert. WPP `verify-upstream` 203/0 · `test:native-web` 57/0. ⚠ Kein Tablet; echtes Sprach- und Bildmodell, echte
+    Android-Mitteilung und echter Ordner nicht gemessen; die SBKIM-Mycel-Pille (byte-1:1) trägt weiter ihr Zeichen.
