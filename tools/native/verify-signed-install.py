@@ -87,14 +87,24 @@ try:
   adb('install', apk); launch()
   deckblatt_weg(ERSTEINRICHTUNG)
   # Wegwerf-Passwort nur für diesen Emulator (nur Buchstaben/Ziffern: „input text" kennt keine Sonderzeichen).
-  pw = 'Probe' + secrets.token_hex(8)
+  pw = 'Probe' + secrets.token_hex(3)
   deadline = time.monotonic() + 30
   while len(passwortfelder()) < 2:
       if time.monotonic() > deadline: raise RuntimeError('Passwortfelder der Ersteinrichtung fehlen')
       time.sleep(.5)
+  # Der Emulator verliert bei langem „input text“ Zeichen: in kleinen Stücken tippen und jedes Feld nachlesen.
   for i in range(2):
-      feld = passwortfelder()[i]; tap(feld); time.sleep(.5)
-      adb('shell', 'input', 'text', pw); time.sleep(.3)
+      for versuch in range(4):
+          feld = passwortfelder()[i]; tap(feld); time.sleep(1.5)
+          adb('shell', 'input', 'keyevent', 'KEYCODE_MOVE_END')
+          adb('shell', 'input', 'keyevent', *(['67'] * 30))
+          for k in range(0, len(pw), 3):
+              adb('shell', 'input', 'text', pw[k:k + 3]); time.sleep(.4)
+          time.sleep(.8)
+          t = passwortfelder()[i].get('text', '')
+          if t == pw or (len(t) == len(pw) and set(t) <= set('•●*')): break
+      else:
+          raise RuntimeError('Passwortfeld %d ließ sich nicht sicher füllen' % (i + 1))
   adb('shell', 'input', 'keyevent', 'KEYCODE_ENTER')
   try:
       wait_node(hat(SHAMIR), 60)
