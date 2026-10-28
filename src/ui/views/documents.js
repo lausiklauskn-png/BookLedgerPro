@@ -40,7 +40,7 @@ import { getSettings, navigate, updateSettings } from '../../state.js';
 import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
 import { icon } from '../icons.js';
-import { strichBeobachten } from '../strich.js';
+import { gebenKnopf } from '../proAppGeben.js';
 import { belegGruppen, PRUEF_SYMBOL, gruppeZu, gruppeUmschalten, alleZu, alleAuf } from '../../domain/belegListe.js';
 import { testMarke } from '../testmarke.js';
 import { namenVorschlagBox } from '../namensvorschlag.js';
@@ -130,14 +130,11 @@ async function repaint(extra) {
   ]);
   mount(_host, ansicht);
   // Strichgrafiken statt Emojis (Leitfaden § 5) — auch in später gezeichneten Teilen (Suchtreffer, Meldungen).
-  if (_strichAus) _strichAus();
-  _strichAus = strichBeobachten(ansicht);
   // Einordnen startet nie von selbst beim Öffnen (Leitfaden § 3): erst nach „Einordnen“ (oder dem Einschalten) in dieser
   // Sitzung. Danach kommen neue Belege wie bisher von selbst dazu.
   if (getSettings().bedeutungssuche === 'an' && _einordnenFrei) setTimeout(() => bedeutungStarten(belege).catch(() => {}), 0);
   else if (getSettings().bedeutungssuche === 'an') einordnenAnbieten(belege);
 }
-let _strichAus = null;
 let _einordnenFrei = false;
 
 // Bedeutung an, aber in dieser Sitzung noch nicht freigegeben: die Zeile nennt, was fehlt, und bietet „Einordnen“ an.
@@ -1093,7 +1090,7 @@ function belegZeile(b, visionBereit, { anhangVon = null, gruppe = null, zu = fal
     el('td', { class: 'muted small mono datum-zelle', text: (b.createdAt || '').slice(0, 10) }),
     el('td', { class: 'num muted small groesse-zelle', text: formatBytes(b.size) }),
     el('td', { class: 'link-zelle' }, b.buchungId ? [el('span', { class: 'link-marke', title: t('docs.verknuepft'), 'aria-label': t('docs.verknuepft'), 'data-verknuepft': '' }, [icon('pb-link')])] : []),
-    el('td', { class: 'actions' }, [zeilenMenue(b, visionBereit)]),
+    el('td', { class: 'actions' }, [el('div', { class: 'zeilen-knoepfe' }, [gebenKnopf(b), zeilenMenue(b, visionBereit)])]),
   ]);
 }
 
@@ -1414,11 +1411,25 @@ async function bedeutungStarten(belege) {
   try {
     if (!_embedder) { zustandSetzen('laedt', t('docs.suche.bedeutungLaedt')); await embedderHolen((s) => zustandSetzen('laedt', t('docs.suche.bedeutungLaedt') + ' ' + s)); }
     const offen = (belege || await listBelege()).filter(brauchtVektoren);
-    for (let i = 0; i < offen.length; i++) {
-      if (lauf !== _ordnetLauf) return;
-      zustandSetzen('ordnet', t('docs.suche.bedeutungOrdnet').replace('{i}', String(i + 1)).replace('{n}', String(offen.length)));
-      await belegEinordnen(offen[i].id);
-    }
+    // Pro-Umbau 4 (Leitfaden § 3): in der Android-App als Hintergrundaufgabe — läuft weiter, wenn die App nicht zu sehen
+    // ist; „Abbrechen“ in der Mitteilung hält nach dem laufenden Beleg an. PWA/Basic: kein ProHintergrund, Lauf wie bisher.
+    const aufgabe = offen.length && typeof window !== 'undefined' && window.ProHintergrund
+      ? await window.ProHintergrund.beginnen({ art: 'einordnen', titel: t('docs.suche.bedeutungTitel') }).catch(() => null) : null;
+    try {
+      for (let i = 0; i < offen.length; i++) {
+        if (lauf !== _ordnetLauf) return;
+        if (aufgabe?.signal?.aborted) {
+          _einordnenFrei = false;
+          einordnenAnbieten(await listBelege());   // „Einordnen“ wieder anbieten
+          zustandSetzen('wartet', t('docs.suche.bedeutungAbgebrochen').replace('{i}', String(i)).replace('{n}', String(offen.length)));
+          return;
+        }
+        const satz = t('docs.suche.bedeutungOrdnet').replace('{i}', String(i + 1)).replace('{n}', String(offen.length));
+        zustandSetzen('ordnet', satz);
+        aufgabe?.stand(satz, i, offen.length);
+        await belegEinordnen(offen[i].id);
+      }
+    } finally { aufgabe?.ende(); }
     const alle = await listBelege();
     const ohneText = alle.filter((b) => !(b.textZeichen > 0)).length;
     zustandSetzen('bereit', t('docs.suche.bedeutungBereit').replace('{n}', String(alle.length - ohneText)) + (ohneText ? ' · ' + t('docs.suche.ohneText').replace('{n}', String(ohneText)) : ''));

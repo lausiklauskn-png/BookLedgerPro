@@ -5,6 +5,16 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-28 (Nacht) — Pro-Umbau Schritt 4, BookLedgerPro-Teil
+
+**Was getan:** Pro-Bausteine Fassung 2 übernommen (Hintergrundaufgabe: `pro-hintergrund.js` + Android-Dienst), Manifest/Plugin/Paket verdrahtet ·
+automatische Sicherung und Einordnen als Hintergrundaufgabe · `strich.js` für alle Ansichten (Attribute, Auswahllisten, unbekannte Emojis) ·
+„An Pro-App geben …“ in der Belegzeile · `smoke_umbau4` (23) · Forschung § 14.
+**Stand:** `run.mjs` grün, `smoke_umbau4` 23, `test-native` 44. Nicht am Gerät.
+**Offen/Nächstes:** Klaus' Tablet-Befunde (zweiter PR: Kamera, „Mit Workflow PDF scannen“ in der App, Mikrofon, Ladebalken, Mikrofon nur wo sinnvoll,
+schlanker, Auswahl-Prüfen, Calculate/Needs schlanker). Private Brain braucht ein Übergabefach im Tresor-Paket (Workflow PDF Pro), Workflow PDF Pro
+eine Anzeige seines Eingangsfachs.
+
 ## 2026-10-28 (spät) — Pro-Umbau Schritt 3 (Workflow PDF Pro, BookLedgerPro, Basic)
 
 **Was getan:** Workflow PDF Pro #35 (Sicherung gestreamt, Einordnen/Prüfen nur auf Knopf, Tipp-Schutz; gemergt) · BookLedgerPro #389 (Belegliste für

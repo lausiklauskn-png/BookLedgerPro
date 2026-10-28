@@ -34,10 +34,12 @@ ok('index.html: Klebstoff genau einmal, vor der Service-Worker-Anmeldung, mit Fi
 // Benannte Abweichungen: gemeinsame Bedien-Bausteine (Leitfaden § 1.6) und der Klebstoff, sonst nichts.
 ok('index.html: Bedien-Bausteine (pro-bedienung.css/.js) vor dem Klebstoff, mit Fingerabdruck', html.includes('native/pro-bedienung.js?v=' + sha(lies('native/pro-bedienung.js')).slice(0, 16))
   && html.includes('native/pro-bedienung.css?v=' + sha(lies('native/pro-bedienung.css')).slice(0, 16)) && html.indexOf('native/pro-bedienung.js') < html.indexOf('native/blp-native.js'));
-ok('index.html: sonst byte-gleich mit der Quelle', html.replace(/<link rel="stylesheet" href="native\/pro-bedienung\.css\?v=[0-9a-f]{16}">\n {2}<script src="native\/pro-bedienung\.js\?v=[0-9a-f]{16}"><\/script>\n {2}/, '').replace(/<script src="native\/blp-native\.js\?v=[0-9a-f]{16}"><\/script>\n {2}/, '') === lies('index.html').toString('utf8'));
+ok('index.html: Hintergrundaufgabe (pro-hintergrund.js) direkt nach pro-bedienung.js, vor dem Klebstoff', html.includes('native/pro-hintergrund.js?v=' + sha(lies('native/pro-hintergrund.js')).slice(0, 16))
+  && html.indexOf('native/pro-bedienung.js') < html.indexOf('native/pro-hintergrund.js') && html.indexOf('native/pro-hintergrund.js') < html.indexOf('native/blp-native.js'));
+ok('index.html: sonst byte-gleich mit der Quelle', html.replace(/<link rel="stylesheet" href="native\/pro-bedienung\.css\?v=[0-9a-f]{16}">\n {2}<script src="native\/pro-bedienung\.js\?v=[0-9a-f]{16}"><\/script>\n {2}<script src="native\/pro-hintergrund\.js\?v=[0-9a-f]{16}"><\/script>\n {2}/, '').replace(/<script src="native\/blp-native\.js\?v=[0-9a-f]{16}"><\/script>\n {2}/, '') === lies('index.html').toString('utf8'));
 const alle = (dir) => readdirSync(dir).flatMap((n) => { const p = join(dir, n); return statSync(p).isDirectory() ? alle(p) : [p.slice(www.length + 1)]; });
 const imPaket = alle(www).filter((p) => p !== 'native-bundle.json').sort();
-const fremd = imPaket.filter((p) => !(LAUFZEIT_DATEIEN.includes(p) || LAUFZEIT_ORDNER.some((o) => p.startsWith(o)) || ['native/blp-native.js', 'native/pro-bedienung.js', 'native/pro-bedienung.css'].includes(p)));
+const fremd = imPaket.filter((p) => !(LAUFZEIT_DATEIEN.includes(p) || LAUFZEIT_ORDNER.some((o) => p.startsWith(o)) || ['native/blp-native.js', 'native/pro-bedienung.js', 'native/pro-bedienung.css', 'native/pro-hintergrund.js'].includes(p)));
 ok('im Paket liegt nur Laufzeit (keine Tests, Doku, Briefe, Werkzeuge)', fremd.length === 0, fremd.slice(0, 5).join(', '));
 ok('kein privater Knoten-Schlüssel, keine versteckte Datei im Paket', !imPaket.some((p) => /(^|\/)\./.test(p)));
 const abweichend = imPaket.filter((p) => p !== 'index.html' && !p.startsWith('native/') && sha(readFileSync(join(www, p))) !== sha(lies(p)));
@@ -182,6 +184,10 @@ ok('Plugin: von Hand gesperrt bleibt gesperrt (gemerkter Schlüssel öffnet erst
   /&& !vonHandGesperrt\) entsperrenGemerkt\(\)/.test(plugin) && /schliessen\(\);\s*vonHandGesperrt = true;/.test(plugin)
   && /uebernehmen\(TresorOrdner t, boolean merken\)[^{]*\{\s*schliessen\(\);\s*vonHandGesperrt = false;/.test(plugin));
 ok('MainActivity meldet BlpTresorPlugin an', mainAct.includes('registerPlugin(BlpTresorPlugin.class);'));
+// Pro-Umbau 4: gemeinsame Hintergrundaufgabe (Leitfaden § 3)
+ok('Hintergrundaufgabe: Plugin angemeldet, Dienst „dataSync“ nicht exportiert, Rechte da', mainAct.includes('registerPlugin(de.familyprojekt.hintergrund.ProHintergrundPlugin.class);')
+  && /<service android:name="de\.familyprojekt\.hintergrund\.ProHintergrundDienst" android:exported="false" android:foregroundServiceType="dataSync" \/>/.test(am)
+  && ['FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_DATA_SYNC', 'POST_NOTIFICATIONS'].every((r) => am.includes('android.permission.' + r + '"')));
 ok('Passwort nur im nativen Dialog: das Plugin liest kein Passwort aus der WebView', !/getString\("pass/i.test(plugin) && !/getString\("kennwort/i.test(plugin) && /InputType\.TYPE_TEXT_VARIATION_PASSWORD/.test(plugin));
 ok('Plugin löscht nichts im Ordner (kein deleteDocument/loeschen), schreibt nur über TresorOrdner', !/deleteDocument|\.loeschen\(/.test(plugin) && /offen\.ablegen\(/.test(plugin));
 ok('App schreibt als bookledgerpro; Merken im Android-Schlüsselspeicher (AES-GCM, an Kennung gebunden)', /APP = Fach\.BOOKLEDGER_APP/.test(plugin) && /AndroidKeyStore/.test(plugin) && /geraetAad\(t\.id\(\)\)/.test(plugin));

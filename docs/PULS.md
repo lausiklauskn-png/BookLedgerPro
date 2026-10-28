@@ -5,7 +5,12 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-## ▶ Neuester Stand (2026-10-28, spät): Pro-Umbau Schritt 3
+## ▶ Neuester Stand (2026-10-28, Nacht): Pro-Umbau Schritt 4 (BookLedgerPro)
+- Hintergrundaufgabe (gemeinsamer Baustein aus Private Brain Pro, Fassung 2) für automatische Sicherung und Einordnen; keine Emojis in allen Ansichten
+  (`strich.js` am `<body>`); „An Pro-App geben …“ in jeder Belegzeile (Workflow PDF Pro über `Eingang-WorkflowPDF`, sonst normal teilen). Basic nachgezogen.
+  **Nichts veröffentlicht**, nichts am Tablet. Klaus' Befunde vom Tablet (Kamera, Workflow-PDF-Scan, Mikrofon, Ladebalken, schlanker) → zweiter PR.
+
+## ▶ Stand (2026-10-28, spät): Pro-Umbau Schritt 3
 - Workflow-PDF-Pro#35: Sicherung gestreamt (`.wfps`, 60 MB ohne Speicherzuwachs; Kern-Weg +≈ 900 MB), Einordnen/Prüfen nur auf Knopf, Tipp-Schutz.
 - BookLedgerPro#389: Belegliste für Hunderte (flache Zeilen, Mail → Anhänge, ⋯), Bedeutungs-Schalter am Suchfeld, Strichgrafiken, Griff mittig. Basic nachgezogen.
   **Nichts veröffentlicht**, nichts am Tablet.

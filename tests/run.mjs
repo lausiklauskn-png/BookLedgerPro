@@ -7234,7 +7234,7 @@ await section('Pro-Umbau 3 (Klaus 2026-10-28): Belegliste für Hunderte, Strichg
   const svg = _readSpore(new URL('../assets/blp-icons.svg', import.meta.url), 'utf8');
   const { STRICH } = await import('../src/ui/strich.js');
   const pb = _readSpore(new URL('../assets/pb-icons.svg', import.meta.url), 'utf8');
-  const fehlt = [...new Set([...Object.values(STRICH), ...Object.values(L.PRUEF_SYMBOL).filter(Boolean), 'blp-mehr', 'blp-pfeil', 'blp-anhang'])].filter((id) => !svg.includes(`id="${id}"`) && !pb.includes(`id="${id}"`));
+  const fehlt = [...new Set([...Object.values(STRICH).map((v) => v.split(' ')[0]), ...Object.values(L.PRUEF_SYMBOL).filter(Boolean), 'blp-mehr', 'blp-pfeil', 'blp-anhang'])].filter((id) => !svg.includes(`id="${id}"`) && !pb.includes(`id="${id}"`));
   ok('jedes Strichsymbol der Tabelle steht in einem Sprite', fehlt.length === 0, fehlt.join(','));
   const doc = _readSpore(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
   ok('Einordnen startet beim Öffnen nur nach Freigabe in dieser Sitzung (_einordnenFrei), sonst Angebot „Einordnen“', /bedeutungssuche === 'an' && _einordnenFrei\) setTimeout\(\(\) => bedeutungStarten/.test(doc) && /else if \(getSettings\(\)\.bedeutungssuche === 'an'\) einordnenAnbieten\(belege\)/.test(doc));
