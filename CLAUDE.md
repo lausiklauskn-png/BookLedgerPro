@@ -12,7 +12,7 @@ Regeln, Passwort/Ersatzschlüssel und offenen Entscheidungen: `docs/design/PLAN-
 Fixes #381/#382 gemergt (nicht veröffentlicht): `BRIEF_ABSCHLUSS_2026-10-28_TRESORORDNER-E.md`. **Umbau 1 (2026-10-28 nachmittags):**
 Sperren in allen drei Apps behoben (WPP #32, PB #106), gemeinsame Bedien-Datei in Private Brain Pro (`native/pro-bedienung.js`, Kopie per
 `tools/native/bedienung-nachziehen.mjs`), PB „Tresor & Ablage“ (#107): `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-1.md`. 0.1.1 nicht veröffentlicht
-(Klaus: nein). **Nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-2.md`. **Bedien-Regeln aller Pro-Apps (gleich, baugleich für künftige):**
+(Klaus: nein). **Umbau 2 (2026-10-28 abends):** WPP #34, BLP #386 (Tresor & Ablage, keine Web-Reste, Version, BLP-Startseite/Geschäftsjahr/Tresorordner 1→2→4→3), Basic nachgezogen: `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-2.md`. **Nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-3.md`. **Bedien-Regeln aller Pro-Apps (gleich, baugleich für künftige):**
 `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md` — Einstellungen als Knöpfe wie heute, **kein Explorer**, ⓘ, flach, ein farbiger nächster Schritt.
 **Test-APKs veröffentlicht (2026-10-28, Klaus' Wort):** Workflow PDF Pro 1.0.6, Private Brain Pro 1.0.41, BookLedgerPro 0.1.0 (erste signierte APK, Repo privat, `android-release.yml`, Links in `docs/PULS.md`). (Schritt E erledigt, siehe oben.) B (Paket in Workflow PDF Pro) und C/C2 (BookLedgerPro im Ordner) sind gebaut: `BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-B-C.md`, Bedienung `docs/TRESORORDNER.md`. BookLedgerPro ist **Android-App** (signiert über `signing/`, Zertifikat `7a6217eb…`). Nichts veröffentlichen ohne Klaus' Wort.
 
