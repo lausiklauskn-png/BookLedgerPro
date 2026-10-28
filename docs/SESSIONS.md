@@ -5,6 +5,13 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-28 (Nacht, später) — Klaus' Tablet-Befunde (zweiter PR)
+
+**Was getan:** A Kamera (file_paths), Workflow PDF Pro starten, BlpSpeechPlugin (Sprachfenster), Modell-Fortschritt · B Mikrofon-Positivliste,
+PB-Strichmikrofon · C schlank.js (Stift/Papierkorb, ⓘ), Felder 30 px, Belegzeile einzeilig · D Auswahl-Prüfen · E apps/blp-thema.css + Brücke
+(Strichsymbole) · `smoke_befunde` (50), Maß ≤ 32 px in `smoke_design`.
+**Stand:** siehe PR. **Offen:** Scanner-Direktstart per Intent (Workflow PDF Pro), Gerätemessung.
+
 ## 2026-10-28 (Nacht) — Pro-Umbau Schritt 4, BookLedgerPro-Teil
 
 **Was getan:** Pro-Bausteine Fassung 2 übernommen (Hintergrundaufgabe: `pro-hintergrund.js` + Android-Dienst), Manifest/Plugin/Paket verdrahtet ·

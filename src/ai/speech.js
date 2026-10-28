@@ -85,8 +85,35 @@ export function pickEngine(policy, desired, browserSupported = true) {
 // ---- Browser (Web Speech API) ----------------------------------------------
 
 /** Ist die Browser-Spracherkennung verfügbar? (kein window in node → false) */
+/** In der Android-App: Androids Sprachfenster (BLPNative.sprechen), sonst null. */
+function nativSprechen() {
+  return typeof window !== 'undefined' && window.BLPNative && typeof window.BLPNative.sprechen === 'function' ? window.BLPNative.sprechen : null;
+}
+/** In der App OHNE natives Sprachfenster (ältere Hülle): die WebView meldet die Web Speech API, verweigert sie aber
+ *  („not-allowed“, Befund Tablet 2026-10-28) — dann gilt sie als nicht vorhanden, statt ein hängendes Feld zu zeigen. */
+function appOhneSprache() {
+  return typeof window !== 'undefined' && !!window.BLPNative && !nativSprechen();
+}
+
 export function browserSpeechSupported() {
+  if (nativSprechen()) return true;
+  if (appOhneSprache()) return false;
   return typeof window !== 'undefined' && (('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window));
+}
+
+/** Erkenner mit derselben Form wie die Web Speech API (start/stop/onresult/onerror/onend), gespeist aus Androids Sprachfenster. */
+function nativerErkenner(lang, sprechen) {
+  const rec = { lang, onresult: null, onerror: null, onend: null, _aus: false };
+  rec.stop = () => { rec._aus = true; };   // das Fenster schließt der Nutzer selbst (Zurück); danach kommt onend
+  rec.start = () => {
+    Promise.resolve().then(() => sprechen(lang)).then((r) => {
+      const text = String((r && r.text) || '').trim();
+      if (text && typeof rec.onresult === 'function') rec.onresult({ results: [[{ transcript: text }]] });
+      else if (!text && !(r && r.abgebrochen) && typeof rec.onerror === 'function') rec.onerror({ error: 'no-speech' });
+    }).catch((e) => { if (typeof rec.onerror === 'function') rec.onerror({ error: String((e && (e.code || e.message)) || e) }); })
+      .finally(() => { if (typeof rec.onend === 'function') rec.onend(); });
+  };
+  return rec;
 }
 
 /**
@@ -94,6 +121,8 @@ export function browserSpeechSupported() {
  * (Aufrufer setzt onresult/onerror/onend und ruft .start()); null, wenn nicht unterstützt.
  */
 export function makeBrowserRecognizer({ lang = 'de-DE' } = {}) {
+  const nativ = nativSprechen();
+  if (nativ) return nativerErkenner(lang, nativ);
   if (!browserSpeechSupported()) return null;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const rec = new SR();

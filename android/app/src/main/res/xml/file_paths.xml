@@ -2,4 +2,8 @@
 <!-- Nur der Teilen-Zwischenspeicher der App wird über den FileProvider freigegeben (BlpFilesPlugin.share). -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="share" path="share/" />
+    <!-- Kamera (Klaus 2026-10-28: „Foto aufnehmen“/„Scannen“ öffneten nur die Dateiauswahl). Capacitor legt das Foto unter
+         getExternalFilesDir(Pictures) an und holt die Adresse über diesen FileProvider; fehlt der Pfad, wirft getUriForFile
+         und Capacitor fällt STILL auf die Dateiauswahl zurück. Gleicher Eintrag wie in Workflow PDF Pro. -->
+    <external-files-path name="camera_capture" path="Pictures/" />
 </paths>

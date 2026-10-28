@@ -263,7 +263,9 @@ try {
 
   // ---- B · Alle ungeprüften prüfen -----------------------------------------------------------
   console.log('\nB · „Alle ungeprüften prüfen"');
-  await tippe('[data-pruef-alle]', 'Knopf „Alle ungeprüften prüfen"');
+  // Befund Tablet 2026-10-28: statt „Alle ungeprüften prüfen“ erst „Ungeprüfte wählen (N)“, dann „Prüfen (N)“ (wie Workflow PDF Pro).
+  await tippe('[data-pruef-alle]', 'Knopf „Ungeprüfte wählen"');
+  await tippe('[data-pruef-gewaehlt]', 'Knopf „Prüfen (N)"');
   // Klaus 2026-10-14: „man muss zumindest sehen, dass da was passiert".
   ok('während der Prüfung: Drehkreis am Stapel', !!(await page.waitForSelector('[data-pruef-stapel="laeuft"] .pruef-dreh', { timeout: 10000 }).catch(() => null)));
   ok('während der Prüfung: Balken mit Fortschritt', !!(await page.$('[data-pruef-stapel="laeuft"] progress[data-pruef-balken]')));

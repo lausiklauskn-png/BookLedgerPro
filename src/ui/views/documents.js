@@ -888,10 +888,22 @@ function uploadKarte() {
   } else status.push(el('p', { class: 'small', 'data-import-status': '' }));
   // V2 (Klaus 2026-10-26): Workflow PDF zum Scannen öffnen — Android: die Pro-App (Rückfall Web-Fassung),
   // sonst die Web-Fassung in einem neuen Fenster. Zurück kommt der Scan über Teilen (Android) oder Datei wählen.
-  const wfKnopf = el('a', {
-    class: 'btn', 'data-workflow-scan': '', href: workflowScanAdresse({ android: istAndroid(navigator.userAgent) }),
-    target: istAndroid(navigator.userAgent) ? '_self' : '_blank', rel: 'noopener', text: t('docs.workflowScan'), title: t('docs.workflowScanHint'),
-  });
+  // In der App (Befund Tablet 2026-10-28: der Link tat nichts): Workflow PDF Pro über Android starten (BlpTresor.appOeffnen,
+  // feste Paketliste), sonst ehrlich sagen, dass es fehlt. Den Scanner direkt öffnen kann Workflow PDF Pro per Intent (noch) nicht;
+  // zurück kommt der Scan wie bisher über Teilen → BookLedgerPro.
+  const appStart = typeof window !== 'undefined' && window.BLPNative && window.BLPNative.tresor && window.BLPNative.tresor.appOeffnen;
+  const wfKnopf = appStart
+    ? el('button', { class: 'btn', type: 'button', 'data-workflow-scan': 'app', text: t('docs.workflowScan'), title: t('docs.workflowScanApp'),
+      onClick: async () => {
+        try { await appStart('workflow-pdf-pro'); _importStatus = { text: t('docs.workflowScanGestartet') }; }
+        catch (e) { _importStatus = { text: /APP_FEHLT/.test(String((e && (e.code || e.message)) || e)) ? t('docs.workflowScanFehlt') : t('docs.workflowScanFehler') }; }
+        if (typeof window !== 'undefined') window.__blpWfScan = _importStatus.text;   // Probe
+        await repaint();
+      } })
+    : el('a', {
+      class: 'btn', 'data-workflow-scan': '', href: workflowScanAdresse({ android: istAndroid(navigator.userAgent) }),
+      target: istAndroid(navigator.userAgent) ? '_self' : '_blank', rel: 'noopener', text: t('docs.workflowScan'), title: t('docs.workflowScanHint'),
+    });
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('docs.archive') }),
     el('p', { class: 'muted small', text: t('docs.archiveHint') }),
@@ -1005,17 +1017,28 @@ async function berichtOeffnen(b, vorhanden) {
   });
 }
 
-async function alleUngepruefenPruefen(belege) {
-  const liste = ungepruefte(belege);
+// Prüfen über eine Auswahl (Befund Tablet 2026-10-28, wie Workflow PDF Pro): Haken an den Zeilen, „Ungeprüfte wählen“ hakt die
+// ungeprüften an, „Prüfen (N)“ prüft genau die gewählten — Beleg für Beleg, in der App als Hintergrundaufgabe.
+const _wahl = new Set();
+async function gewaehltePruefen(belege) {
+  const liste = (belege || []).filter((b) => _wahl.has(b.id) && ['offen', 'eigen'].includes(pruefStandVon(b)));
   if (!liste.length || _pruefStapel) return;
-  let w = 0, u = 0;
-  for (let i = 0; i < liste.length; i++) {
-    _pruefStapel = { i: i + 1, n: liste.length, name: liste[i].name };
-    const p = await pruefeEinen(liste[i], { zeigen: false });
-    if (p && p.stand === PRUEF_STAND.WARNUNG) w++;
-    if (!p || p.stand === PRUEF_STAND.UNGEPRUEFT) u++;
-  }
+  let w = 0, u = 0, gemacht = 0;
+  const aufgabe = typeof window !== 'undefined' && window.ProHintergrund
+    ? await window.ProHintergrund.beginnen({ art: 'pruefen', titel: t('docs.pruefenTitel') }).catch(() => null) : null;
+  try {
+    for (let i = 0; i < liste.length; i++) {
+      if (aufgabe?.signal?.aborted) break;
+      _pruefStapel = { i: i + 1, n: liste.length, name: liste[i].name };
+      aufgabe?.stand(t('docs.pruefenLaeuft').replace('{i}', String(i + 1)).replace('{n}', String(liste.length)), i, liste.length);
+      const p = await pruefeEinen(liste[i], { zeigen: false });
+      _wahl.delete(liste[i].id); gemacht++;
+      if (p && p.stand === PRUEF_STAND.WARNUNG) w++;
+      if (!p || p.stand === PRUEF_STAND.UNGEPRUEFT) u++;
+    }
+  } finally { aufgabe?.ende(); }
   _pruefStapel = null;
+  if (gemacht < liste.length) { _pruefStapelErgebnis = t('docs.pruefenAngehalten').replace('{i}', String(gemacht)).replace('{n}', String(liste.length)); await repaint(); return; }
   _pruefStapelErgebnis = t('docs.pruefenFertig').replace('{n}', String(liste.length)).replace('{w}', String(w)).replace('{u}', String(u));
   await repaint();
 }
@@ -1051,9 +1074,14 @@ function pruefLeiste(belege) {
       el('progress', { max: String(_pruefStapel.n), value: String(_pruefStapel.i - 1), 'data-pruef-balken': '' }),
       el('div', { class: 'muted small', text: _pruefStapel.name || '' }),
     ]));
-  } else if (offen.length) {
-    teile.push(el('button', { class: 'btn btn-sm', type: 'button', 'data-pruef-alle': '',
-      text: t('docs.alleUngeprueften').replace('{n}', String(offen.length)), onClick: () => alleUngepruefenPruefen(belege) }));
+  } else {
+    const gew = belege.filter((b) => _wahl.has(b.id) && ['offen', 'eigen'].includes(pruefStandVon(b))).length;
+    if (offen.length) teile.push(el('button', { class: 'btn btn-sm', type: 'button', 'data-pruef-alle': '', 'data-pruef-wahl-ungeprueft': '',
+      text: t('docs.ungeprueftWaehlen').replace('{n}', String(offen.length)), onClick: () => { for (const b of offen) _wahl.add(b.id); repaint(); } }));
+    if (_wahl.size) teile.push(el('button', { class: 'btn btn-sm', type: 'button', 'data-wahl-aufheben': '', text: t('docs.wahlAufheben'),
+      onClick: () => { _wahl.clear(); repaint(); } }));
+    if (gew) teile.push(el('button', { class: 'btn btn-sm btn-primary', type: 'button', 'data-pruef-gewaehlt': String(gew),
+      text: t('docs.gewaehltePruefen').replace('{n}', String(gew)), onClick: () => gewaehltePruefen(belege) }));
   }
   if (!_pruefStapel && _pruefStapelErgebnis) teile.push(el('span', { class: 'muted small', 'data-pruef-stapel': 'fertig', text: _pruefStapelErgebnis }));
   return teile.length ? el('div', { class: 'btn-row pruef-leiste' }, teile) : null;
@@ -1071,6 +1099,8 @@ function belegZeile(b, visionBereit, { anhangVon = null, gruppe = null, zu = fal
       text: (b.scan && b.scan.sicher ? t('docs.scanMarkeSicher') : t('docs.scanMarkeGanz')) + ' · ' + t('docs.originalLiegtBei') })] : []),
     mailZeile(b), angebotZeile(b), positionenZeile(b),
   ].filter(Boolean);
+  // Einzeilig und gekürzt (Befund Tablet 2026-10-28: Zeilen brachen 3–4-zeilig); voller Text per Maus (title) oder Tipp (.voll).
+  for (const u of unter) if (!u.title) u.title = u.textContent || '';
   const klapp = gruppe && gruppe.anhaenge.length ? el('button', {
     class: 'gruppe-klapp', type: 'button', 'data-gruppe-klapp': b.id, 'aria-expanded': zu ? 'false' : 'true',
     title: t(zu ? 'docs.liste.aufklappen' : 'docs.liste.zuklappen'), 'aria-label': t(zu ? 'docs.liste.aufklappen' : 'docs.liste.zuklappen'),
@@ -1085,8 +1115,11 @@ function belegZeile(b, visionBereit, { anhangVon = null, gruppe = null, zu = fal
     class: 'beleg-zeile' + (anhangVon ? ' beleg-anhang' : '') + (gruppe && gruppe.anhaenge.length ? ' beleg-gruppe' : ''),
     'data-beleg-zeile': b.id, ...(anhangVon ? { 'data-anhang-von': anhangVon } : {}), ...(anhangVon && zu ? { hidden: true } : {}),
   }, [
-    el('td', { class: 'pruef-zelle', 'data-beleg-id': b.id }, [pruefKnopf(b)]),
-    el('td', { class: 'name-zelle' }, [name, ...unter]),
+    el('td', { class: 'pruef-zelle', 'data-beleg-id': b.id }, [
+      el('input', { type: 'checkbox', class: 'beleg-wahl', 'data-beleg-wahl': b.id, 'aria-label': t('docs.wahlEiner').replace('{n}', b.name || ''),
+        ...(_wahl.has(b.id) ? { checked: true } : {}), onChange: (e) => { if (e.target.checked) _wahl.add(b.id); else _wahl.delete(b.id); repaint(); } }),
+      pruefKnopf(b)]),
+    el('td', { class: 'name-zelle', onClick: (e) => { if (!e.target.closest('button,a,input,summary,details')) e.currentTarget.classList.toggle('voll'); } }, [name, ...unter]),
     el('td', { class: 'muted small mono datum-zelle', text: (b.createdAt || '').slice(0, 10) }),
     el('td', { class: 'num muted small groesse-zelle', text: formatBytes(b.size) }),
     el('td', { class: 'link-zelle' }, b.buchungId ? [el('span', { class: 'link-marke', title: t('docs.verknuepft'), 'aria-label': t('docs.verknuepft'), 'data-verknuepft': '' }, [icon('pb-link')])] : []),
@@ -1381,11 +1414,13 @@ async function vektorenVon(b) {
   return stuecke;
 }
 
-async function embedderHolen(setStatus) {
+async function embedderHolen(setStatus, onProgress) {
   if (_embedder) return _embedder;
-  // Probe-Haken (nur Tests): ein gestellter Embedder statt des 118-MB-Modells aus dem Netz.
+  // Probe-Haken (nur Tests): ein gestellter Embedder statt des 118-MB-Modells aus dem Netz. Ein gestellter Lader
+  // (window.__blpLadeStub) spielt den Fortschritt vor, wie transformers.js ihn meldet.
+  if (typeof window !== 'undefined' && window.__blpLadeStub) { _embedder = await window.__blpLadeStub({ onStatus: setStatus, onProgress }); return _embedder; }
   if (typeof window !== 'undefined' && window.__blpEmbedderStub) { _embedder = window.__blpEmbedderStub; return _embedder; }
-  _embedder = await loadEmbedder({ onStatus: setStatus });
+  _embedder = await loadEmbedder({ onStatus: setStatus, onProgress });
   return _embedder;
 }
 
@@ -1399,17 +1434,35 @@ async function belegEinordnen(id) {
   _vektoren.set(id, { zerlegung: m.vektorZerlegung, anzahl: m.vektorAnzahl, stuecke });
 }
 
-function zustandSetzen(stand, text) {
-  _bedeutungZustand = { stand, text: text || '' };
-  for (const e of document.querySelectorAll('[data-bedeutung-zustand]')) { e.dataset.bedeutungZustand = stand; e.textContent = _bedeutungZustand.text; }
+// Ladefortschritt des Modells (Befund Tablet 2026-10-28): Balken + Prozent + MB, solange die Größe bekannt ist, sonst Drehkreis.
+const MB = (b) => (b / 1048576).toLocaleString('de-DE', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+function zustandInhalt() {
+  const z = _bedeutungZustand, teile = [];
+  if (z.stand === 'laedt' || z.stand === 'ordnet') {
+    const p = z.fortschritt;
+    if (p && p.gesamt > 0) {
+      const q = Math.max(0, Math.min(1, p.geladen / p.gesamt));
+      teile.push(el('progress', { max: '100', value: String(Math.round(q * 100)), 'data-bedeutung-balken': '', class: 'bedeutung-balken' }));
+      teile.push(el('span', { 'data-bedeutung-prozent': String(Math.round(q * 100)), text: ` ${Math.round(q * 100)} % · ${MB(p.geladen)} von ${MB(p.gesamt)} MB · ` }));
+    } else teile.push(drehkreis());
+  }
+  teile.push(el('span', { text: z.text }));
+  return teile;
+}
+function zustandSetzen(stand, text, fortschritt = null) {
+  _bedeutungZustand = { stand, text: text || '', fortschritt };
+  for (const e of document.querySelectorAll('[data-bedeutung-zustand]')) { e.dataset.bedeutungZustand = stand; e.replaceChildren(...zustandInhalt()); }
   if (typeof window !== 'undefined') window.__blpBedeutung = { ..._bedeutungZustand };
 }
+const laedtMit = () => { let text = t('docs.suche.bedeutungLaedt'), p = null;
+  return { status: (x) => { text = t('docs.suche.bedeutungLaedt') + ' ' + x; zustandSetzen('laedt', text, p); },
+    fortschritt: (f) => { p = f; zustandSetzen('laedt', text, p); } }; };
 
 /** Modell laden (einmalig, opt-in) und alle Belege mit Text im Hintergrund einordnen. */
 async function bedeutungStarten(belege) {
   const lauf = ++_ordnetLauf;
   try {
-    if (!_embedder) { zustandSetzen('laedt', t('docs.suche.bedeutungLaedt')); await embedderHolen((s) => zustandSetzen('laedt', t('docs.suche.bedeutungLaedt') + ' ' + s)); }
+    if (!_embedder) { zustandSetzen('laedt', t('docs.suche.bedeutungLaedt')); const l = laedtMit(); await embedderHolen(l.status, l.fortschritt); }
     const offen = (belege || await listBelege()).filter(brauchtVektoren);
     // Pro-Umbau 4 (Leitfaden § 3): in der Android-App als Hintergrundaufgabe — läuft weiter, wenn die App nicht zu sehen
     // ist; „Abbrechen“ in der Mitteilung hält nach dem laufenden Beleg an. PWA/Basic: kein ProHintergrund, Lauf wie bisher.
@@ -1465,7 +1518,7 @@ async function sucheAusfuehren(frage, _belegeAlt, ziel) {
   // 3) Bedeutung (nur mit geladenem Modell)
   let bedeutung = [], schwach = false;
   if (!_embedder && s.bedeutungssuche === 'an' && frage.trim()) {
-    try { zustandSetzen('laedt', t('docs.suche.bedeutungLaedt')); await embedderHolen((x) => zustandSetzen('laedt', t('docs.suche.bedeutungLaedt') + ' ' + x)); einordnenAnbieten(belege); } catch (e) { zustandSetzen('fehler', t('docs.suche.bedeutungFehler').replace('{e}', String((e && e.message) || e))); }
+    try { zustandSetzen('laedt', t('docs.suche.bedeutungLaedt')); const l = laedtMit(); await embedderHolen(l.status, l.fortschritt); einordnenAnbieten(belege); } catch (e) { zustandSetzen('fehler', t('docs.suche.bedeutungFehler').replace('{e}', String((e && e.message) || e))); }
   }
   if (_embedder && frage.trim()) {
     try {
@@ -1505,7 +1558,7 @@ function belegSuche(belege) {
   input.addEventListener('input', los);
   input.addEventListener('change', los);
   const an = s.bedeutungssuche === 'an';
-  const zustand = el('span', { class: 'muted small', 'data-bedeutung-zustand': _bedeutungZustand.stand, text: an ? _bedeutungZustand.text : '' });
+  const zustand = el('span', { class: 'muted small bedeutung-zustand', 'data-bedeutung-zustand': _bedeutungZustand.stand }, an ? zustandInhalt() : []);
   // Schalter direkt am Suchfeld (Leitfaden § 1.5: Suche + Bedeutung nebeneinander), flach, role=switch.
   const schalter = el('button', { class: 'schalter-knopf', type: 'button', role: 'switch', 'aria-checked': an ? 'true' : 'false', 'data-bedeutung-schalter': an ? 'an' : 'aus',
     title: (an ? t('docs.suche.bedeutungAus') : t('docs.suche.bedeutungAn')).replace(/^\S+\s/u, ''), 'data-kein-strich': '', onClick: async () => {

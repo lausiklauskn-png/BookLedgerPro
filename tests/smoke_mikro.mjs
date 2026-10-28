@@ -57,17 +57,26 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}/__probe.html`);
   await page.waitForFunction(() => window.__bereit === true, null, { timeout: 30000 });
 
-  // Buchungen: Textfelder bekommen die Leiste
+  // Buchungen (Befund Tablet 2026-10-28, Klaus: „Diese großen Mikrofone können weg, auch das DE“): Mikrofon NUR an der Begründung/Notiz,
+  // nicht an Betrag, Datum, Buchungstext. Die anderen Textfelder behalten den Wort-Speicher ohne sichtbare Leiste.
   await page.evaluate(() => window.__p.navigate('journal'));
-  await warte(() => document.querySelectorAll('#content .mikro').length > 0);
-  const z1 = await page.evaluate(() => ({ felder: [...document.querySelectorAll('#content input, #content textarea')].filter((f) => f.type !== 'date' && f.type !== 'number' && f.type !== 'checkbox' && f.type !== 'hidden' && f.tagName !== 'SELECT').length, leisten: document.querySelectorAll('#content .mikro').length, marke: document.querySelector('#content .mikro-sprache') && document.querySelector('#content .mikro-sprache').textContent, hoehe: Math.max(...[...document.querySelectorAll('#content .mikro .btn')].map((b) => b.getBoundingClientRect().height)), seite: document.documentElement.scrollWidth }));
-  ok('Buchungen: jedes Textfeld hat eine 🎙-Leiste', z1.leisten > 0 && z1.leisten >= z1.felder, JSON.stringify(z1));
+  await warte(() => document.querySelectorAll('#content .mikro[data-mikro]').length > 0);
+  const z1 = await page.evaluate(() => {
+    const mit = [...document.querySelectorAll('#content .mikro[data-mikro]')].map((l) => l.previousElementSibling);
+    const ohne = [...document.querySelectorAll('#content [data-mikro-ohne]')].map((l) => l.previousElementSibling);
+    const name = (f) => (f.getAttribute('placeholder') || f.name || f.id || f.tagName) + '';
+    return { mit: mit.map(name), mitTag: mit.map((f) => f.tagName), ohne: ohne.length, ohneSichtbar: [...document.querySelectorAll('#content [data-mikro-ohne]')].some((l) => l.getBoundingClientRect().height > 0 && getComputedStyle(l).display !== 'contents'),
+      marke: document.querySelector('#content .mikro[data-mikro] .mikro-sprache') && document.querySelector('#content .mikro[data-mikro] .mikro-sprache').textContent,
+      hoehe: Math.max(...[...document.querySelectorAll('#content .mikro[data-mikro] .btn')].map((b) => b.getBoundingClientRect().height)), seite: document.documentElement.scrollWidth };
+  });
+  ok('Buchungen: Mikrofon nur an Freitext (Begründung/Notiz), nicht an Betrag/Buchungstext', z1.mit.length >= 1 && z1.mitTag.every((t) => t === 'TEXTAREA') && z1.ohne >= 2, JSON.stringify(z1));
+  ok('Felder ohne Mikrofon: keine sichtbare Leiste (kein Mikrofon, kein „DE“)', !z1.ohneSichtbar);
   ok('die Sprachmarke ist sichtbar und sagt „DE ▾“ (App-Sprache Deutsch)', z1.marke === 'DE ▾', z1.marke);
-  ok('flach: Knöpfe höchstens 30 px, Seite nicht breiter als 390 px', z1.hoehe <= 30 && z1.seite <= 390, JSON.stringify(z1));
+  ok('klein: Mikrofon und Marke höchstens 26 px, Seite nicht breiter als 390 px', z1.hoehe <= 26 && z1.seite <= 390, JSON.stringify(z1));
 
   // Sprache je Feld wählen: Liste öffnet sich, Wahl bleibt nach Neuzeichnen, anderes Feld bleibt DE
-  const erste = '#content .mikro:first-of-type';
-  const alleLeisten = await page.$$('#content .mikro');
+  const erste = '#content .mikro[data-mikro]:first-of-type';
+  const alleLeisten = await page.$$('#content .mikro[data-mikro]');
   const l0 = alleLeisten[0], l1 = alleLeisten[1];
   await (await l0.$('.mikro-sprache')).click();
   ok('ein Tipp auf die Marke öffnet die Sprachliste', await l0.$eval('.mikro-liste', (e) => !e.hidden && e.querySelectorAll('.mikro-wahl').length === 10));
@@ -77,7 +86,7 @@ try {
   ok('Wahl „RU“ wird für genau dieses Feld gemerkt', (await page.evaluate((k) => (window.__p.getSettings().mikroSprachen || {})[k], k0)) === 'ru-RU' && await l0.$eval('.mikro-sprache', (e) => e.textContent === 'RU ▾'));
   ok('das Nachbarfeld bleibt bei „DE“', l1 ? await l1.$eval('.mikro-sprache', (e) => e.textContent === 'DE ▾') : true);
   await page.evaluate(() => { window.__p.navigate('dashboard'); window.__p.navigate('journal'); });
-  await warte(() => document.querySelectorAll('#content .mikro').length > 0);
+  await warte(() => document.querySelectorAll('#content .mikro[data-mikro]').length > 0);
   ok('nach dem Neuzeichnen zeigt dasselbe Feld wieder „RU ▾“', await page.$eval(`#content .mikro[data-mikro="${k0}"] .mikro-sprache`, (e) => e.textContent === 'RU ▾').catch(() => false));
 
   // Einsprechen: gestellte Erkennung → Text an der Cursorstelle, Sprache des Feldes
@@ -128,7 +137,7 @@ try {
   const nach = await page.evaluate(() => ({ w: window.__p.getSettings().wortSpeicher, s: window.__p.getSettings().mikroSprachen }));
   ok('Löschen leert Wort-Speicher und Sprachwahlen', Object.keys(nach.w || {}).length === 0 && Object.keys(nach.s || {}).length === 0, JSON.stringify(nach));
   await page.evaluate(() => window.__p.navigate('journal'));
-  await warte(() => document.querySelectorAll('#content .mikro').length > 0);
+  await warte(() => document.querySelectorAll('#content .mikro[data-mikro]').length > 0);
   ok('danach steht das Feld wieder auf „DE ▾“', await page.$eval(`#content .mikro[data-mikro="${k0}"] .mikro-sprache`, (e) => e.textContent === 'DE ▾').catch(() => false));
   ok('keine Skriptfehler auf der Seite', fehler.length === 0, fehler.join(' | ').slice(0, 300));
 } catch (e) {

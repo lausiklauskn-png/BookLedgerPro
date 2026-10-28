@@ -104,7 +104,8 @@ try {
   await page.fill('[data-belegsuche]', '4711');
   await warte(() => window.__blpSuche && window.__blpSuche.frage === '4711');
   ok('Wortsuche „4711“ findet den gescannten Beleg mit Fundstelle', await page.evaluate(async () => { const l = await window.__p.listBelege(); return window.__blpSuche.treffer.some((x) => x.id === l[0].id && x.typ === 'beleg'); }), JSON.stringify(await page.evaluate(() => window.__blpSuche)));
-  ok('Belegliste zeigt die Marke „eigener Scan“', await page.evaluate(() => /Eigener Scan/i.test(document.querySelector('#content').textContent)));
+  // Seit Umbau 3 (#389) steht der Zustand als Symbol, der Satz im title/aria-label (vorher sichtbarer Text — die Zeile war seitdem rot).
+  ok('Belegliste zeigt die Marke „eigener Scan“', await page.evaluate(() => [...document.querySelectorAll('#content [data-pruefung="eigen"]')].some((e) => /Eigener Scan/i.test((e.getAttribute('aria-label') || '') + ' ' + (e.title || '')))));
   ok('keine Skriptfehler auf der Seite', fehler.length === 0, fehler.join(' | ').slice(0, 300));
 } catch (e) {
   rot++; console.log('  ✗ ROT: Probe gestolpert — ' + (e && e.message || e) + '\n  Seitenfehler: ' + fehler.join(' | ').slice(0, 600));

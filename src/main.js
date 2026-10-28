@@ -22,9 +22,10 @@ import { showIntro } from './ui/intro.js';
 // ueberhaupt gebaut wurde. Build-frei bleibt es (goldene Regel 1): dynamischer
 // import() ist natives ES, kein Bundler.
 import { applyTheme, applyGemerktesThema } from './ui/theme.js';
-import { setLang } from './ui/i18n.js';
+import { setLang } from './ui/i18n.js';   // i18n zieht das Deckblatt ohnehin (t())
 import { ladeSymbole } from './ui/icons.js';
-import { strichBeobachten } from './ui/strich.js';   // i18n zieht das Deckblatt ohnehin (t())
+import { strichBeobachten } from './ui/strich.js';
+import { schlankBeobachten } from './ui/schlank.js';
 
 const root = document.getElementById('app-root');
 
@@ -41,7 +42,7 @@ async function registerSW() {
 
 async function boot() {
   // Strichgrafiken statt Emojis ab dem ersten Bild, auch Deckblatt und Anmeldung (Pro-Umbau 4, Leitfaden § 5).
-  try { ladeSymbole(); strichBeobachten(document.body); } catch { /* ohne Beobachter bleibt der Text */ }
+  try { ladeSymbole(); strichBeobachten(document.body); schlankBeobachten(document.body); } catch { /* ohne Beobachter bleibt der Text */ }
   applyGemerktesThema();    // zuletzt gewähltes Thema (localStorage), bis die Tresor-Einstellungen geladen sind
   await requestPersistence(); // so früh wie möglich (Browser-Lehre 2)
   registerSW();

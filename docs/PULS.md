@@ -5,7 +5,13 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-## ▶ Neuester Stand (2026-10-28, Nacht): Pro-Umbau Schritt 4 (BookLedgerPro)
+## ▶ Neuester Stand (2026-10-28, Nacht, später): Klaus' Befunde vom Tablet (zweiter PR nach Umbau 4)
+- Kamera öffnet wieder (FileProvider-Pfad Pictures/), „Mit Workflow PDF scannen“ startet in der App Workflow PDF Pro, Mikrofon über Androids
+  Sprachfenster (kein „not-allowed“ mehr), Modell-Laden mit Balken/Prozent/MB, Mikrofon nur an Suche und Notiz (Strichgrafik wie PB),
+  schlanker (≤ 32 px wie PB, Stift/Papierkorb, Erklärsätze hinter ⓘ), Prüfen über Auswahl, Angebotsplaner/Bedarfsanalyse schlank in BLP-Farben.
+  **Nichts veröffentlicht**, nicht am Tablet. Offen: Scanner-Direktstart per Intent braucht eine Änderung in Workflow PDF Pro.
+
+## ▶ Stand (2026-10-28, Nacht): Pro-Umbau Schritt 4 (BookLedgerPro, #392, Basic #11)
 - Hintergrundaufgabe (gemeinsamer Baustein aus Private Brain Pro, Fassung 2) für automatische Sicherung und Einordnen; keine Emojis in allen Ansichten
   (`strich.js` am `<body>`); „An Pro-App geben …“ in jeder Belegzeile (Workflow PDF Pro über `Eingang-WorkflowPDF`, sonst normal teilen). Basic nachgezogen.
   **Nichts veröffentlicht**, nichts am Tablet. Klaus' Befunde vom Tablet (Kamera, Workflow-PDF-Scan, Mikrofon, Ladebalken, schlanker) → zweiter PR.

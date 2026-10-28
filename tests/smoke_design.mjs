@@ -259,6 +259,20 @@ for (const [proz, css] of SCHRIFTEN) {
   }
 }
 await schrift('');
+// Maß Private Brain Pro (Klaus 2026-10-28, Vergleichsbild Anlagen ↔ PB 1.0.42): bei Standardschrift ist kein Knopf und kein Feld
+// höher als 32 px — „die größten Knöpfe und Felder höchstens so hoch wie in Private Brain Pro“.
+for (const w of [700, 1024]) {
+  await breite(w);
+  const hoch = {};
+  for (const a of [...ANSICHTEN, 'anlagen', 'orders', 'payables', 'customers', 'accounts', 'kassenbuch']) {
+    await gehe(a); await page.waitForTimeout(250);
+    const h = await page.evaluate(() => [...document.querySelectorAll('#content input:not([type=checkbox]):not([type=radio]):not([type=file]), #content select, #content .btn')]
+      .filter((e) => e.getClientRects().length && !e.closest('.modal,[data-kein-schlank]')).map((e) => [Math.round(e.getBoundingClientRect().height), (e.textContent || e.placeholder || e.tagName).trim().slice(0, 24)])
+      .filter(([x]) => x > 32));
+    if (h.length) hoch[a] = h.slice(0, 3);
+  }
+  ok(`${w} px · 100 %: Knöpfe und Felder ≤ 32 px (Maß Private Brain Pro)`, Object.keys(hoch).length === 0, JSON.stringify(hoch).slice(0, 400));
+}
 await breite(1366);
 if (FOTOS) await writeFile(join(FOTO_ORDNER, 'ueberlauf-befunde.txt'), 'FEHLER:\n' + (gesamtFehler.length ? gesamtFehler.join('\n') : 'keine') + '\n\nBENANNTE GRENZEN (Auswahlfeld schon volle Breite, Schrift größer als die Zeile):\n' + (gesamtGrenzen.length ? gesamtGrenzen.join('\n') : 'keine') + '\n', 'utf8');
 

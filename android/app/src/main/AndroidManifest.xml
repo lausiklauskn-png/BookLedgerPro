@@ -71,6 +71,8 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <queries>
         <intent><action android:name="android.media.action.IMAGE_CAPTURE" /></intent>
+        <!-- Spracheingabe über Androids Sprachfenster (BlpSpeechPlugin, Klaus 2026-10-28). -->
+        <intent><action android:name="android.speech.action.RECOGNIZE_SPEECH" /></intent>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>
         <!-- „In ‹App› öffnen“ aus dem Tresorordner (Klaus 2026-10-28): nur die anderen Pro-Apps, sonst niemand. -->
         <package android:name="de.familyprojekt.privatebrain.pro" />
