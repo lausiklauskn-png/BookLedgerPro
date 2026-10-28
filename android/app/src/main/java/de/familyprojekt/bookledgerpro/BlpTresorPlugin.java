@@ -58,6 +58,9 @@ public final class BlpTresorPlugin extends Plugin {
     private final PluginWorker worker = new PluginWorker("tresor");
     private SafAblage ablage;
     private TresorOrdner offen;
+    // Von Hand gesperrt (Tablet-Probe 2026-10-28: „Sperren“ tat nichts, weil zustand() mit dem gemerkten Schlüssel
+    // sofort wieder öffnete). Bis zum nächsten Entsperren oder App-Neustart öffnet der gemerkte Schlüssel nicht von selbst.
+    private boolean vonHandGesperrt;
     private final Map<String, Ablegen> ablegen = new HashMap<>();
     private final Map<String, InputStream> lesen = new HashMap<>();
 
@@ -94,7 +97,7 @@ public final class BlpTresorPlugin extends Plugin {
             z.put("erreichbar", true).put("vorhanden", da);
             z.put("istFachOrdner", !da && a.gibtEs("tresor.json") && !a.gibtEs(TresorOrdner.KOPF));
             if (da) z.put("kennung", TresorOrdner.kennung(a));
-            if (offen == null && da && p.contains("merken")) entsperrenGemerkt();
+            if (offen == null && da && p.contains("merken") && !vonHandGesperrt) entsperrenGemerkt();
             z.put("offen", offen != null);
             if (offen != null) {
                 JSArray faecher = new JSArray();
@@ -229,6 +232,7 @@ public final class BlpTresorPlugin extends Plugin {
         boolean vergessen = Boolean.TRUE.equals(call.getBoolean("vergessen", false));
         worker.submit(call, () -> {
             schliessen();
+            vonHandGesperrt = true;
             if (vergessen) prefs().edit().remove("merken").remove("kennung").commit();
             try { call.resolve(zustandJetzt()); } catch (Exception e) { call.reject(code(e)); }
         });
@@ -236,6 +240,7 @@ public final class BlpTresorPlugin extends Plugin {
 
     private void uebernehmen(TresorOrdner t, boolean merken) throws Exception {
         schliessen();
+        vonHandGesperrt = false;
         offen = t;
         if (merken) merken(t);
     }
