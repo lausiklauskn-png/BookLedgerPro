@@ -1,0 +1,16 @@
+{
+  "$schema":"https://schema.tauri.app/config/2",
+  "productName":"BookLedgerPro",
+  "mainBinaryName":"bookledgerpro",
+  "version":"0.1.1",
+  "identifier":"de.familyprojekt.bookledgerpro",
+  "build":{"frontendDist":"../dist","beforeBuildCommand":"node tools/build-web.mjs"},
+  "app":{"withGlobalTauri":false,"windows":[],"security":{"csp":null}},
+  "bundle":{
+    "active":true,"targets":["nsis"],"publisher":"BookLedgerPro",
+    "category":"Business","shortDescription":"Buchhaltung offline und verschlüsselt",
+    "resources":{"../runtime/":"runtime/"},
+    "icon":["icons/icon.ico"],
+    "windows":{"webviewInstallMode":{"type":"downloadBootstrapper","silent":true},"nsis":{"installMode":"currentUser","languages":["German","English"],"installerHooks":"../installer/hooks.nsh"}}
+  }
+}
