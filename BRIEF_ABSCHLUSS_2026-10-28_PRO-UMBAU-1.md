@@ -10,7 +10,7 @@ Private Brain Pro hat als erste App den Kasten **„Tresor & Ablage“**, keine 
 |---|---|
 | (a) BookLedgerPro 0.1.1 jetzt veröffentlichen? | **Nein** |
 | (b) Wo wird die gemeinsame Bedien-Datei gepflegt? | **Private Brain Pro** (`native/pro-bedienung.js`/`.css`) |
-| (c) Öffentlicher Herausgeber-Schlüssel `fb6cd374…709ee2f` fest in die Apps? | **Ja** — Klaus gab den vollen Wert im Chat (nicht geheim). Eingebaut in Private Brain Pro `native/license-keys.json` (#107); nur Private Brain Pro prüft Freischalt-Codes (Workflow PDF Pro und BookLedgerPro haben keine). |
+| (c) Öffentlicher Herausgeber-Schlüssel `fb6cd374…709ee2f` fest in die Apps? | **Ja** — Klaus gab den vollen Wert im Chat (nicht geheim). Eingebaut in Private Brain Pro `native/license-keys.json` (eigener PR #108, nach #107); nur Private Brain Pro prüft Freischalt-Codes (Workflow PDF Pro und BookLedgerPro haben keine). |
 
 ## Gebaut und gemergt
 | Repo | PR | Was |
@@ -18,6 +18,7 @@ Private Brain Pro hat als erste App den Kasten **„Tresor & Ablage“**, keine 
 | Workflow PDF Pro | **#32** | „Tresorordner sperren“ bleibt gesperrt (`vonHandGesperrt` in `ProTresorordner`, wie BookLedgerPro #382); „Entsperren“ von Hand darf den gemerkten Schlüssel wieder nehmen. web-core einmal rot an einer Kern-Probe („Unable to capture screenshot“), Neustart grün. |
 | Private Brain Pro | **#106** (ersetzt #105, geschlossen) | #105 übernommen **ohne Explorer-Teil**; Sperren auf der Java-Seite gelöst statt „Passwort merken“ zu vergessen; **Teilen „An BookLedgerPro“ fragt bei gesperrtem Ordner** „Entsperren und hineinlegen“ / „Normal teilen …“; dazu ein Absturz behoben, den CI fand: `tresorZustand` nach dem Schließen der Activity (`RejectedExecutionException`) — jetzt Ablehnung `NATIVE_ACTIVITY_CLOSED`. |
 | Private Brain Pro | **#107** | Einstellungen Schritt 1 (siehe unten). |
+| Private Brain Pro | **#108** | Herausgeber-Schlüssel fest, Windows-Abnahme angepasst. |
 
 ## Einstellungen Schritt 1 (Private Brain Pro #107)
 - **Gemeinsame Bedien-Bausteine** `native/pro-bedienung.js`/`.css` (Fassung 1, Pin `native/pro-bedienung-herkunft.json`, Werkzeug
@@ -31,8 +32,10 @@ Private Brain Pro hat als erste App den Kasten **„Tresor & Ablage“**, keine 
 - **Keine Web-Reste** (`native/native-ohne-web.js`, nur mit App-Brücke): „Browser“-Wendungen → Gerät/App/Android, „Speicher dauerhaft“
   und Installieren weg; Probe in `test-tresorordner` (Gegenprobe ohne die Schicht rot).
 - **Version** bei „Auf Updates prüfen“.
-- **Herausgeber-Schlüssel** fest (`native/license-keys.json`); das Freischalt-Feld erkennt den öffentlichen Schlüssel („kein Freischalt-Code“).
-  `test-tools` 77 (der Fall „vor dem Einbau“ wird jetzt mit leerer Liste gestellt).
+- **Herausgeber-Schlüssel** (eigener PR #108, aus #107 herausgenommen): fest in `native/license-keys.json`; das Freischalt-Feld erkennt den
+  öffentlichen Schlüssel („kein Freischalt-Code“). `test-tools` 77 (der Fall „vor dem Einbau“ wird mit leerer Liste gestellt). Herausgenommen,
+  weil die Windows-Abnahme mit einem selbst erzeugten Studio die Werkzeug-Trennung prüft — das öffnet mit festem Schlüssel nichts mehr
+  (so gewollt). Die Abnahme stellt die Liste jetzt nur für diese Prüfung leer (`PBLicense.reloadKeys()`) und prüft danach den festen Schlüssel.
 
 ## Nicht gemacht / offen (ehrlich)
 - **Workflow PDF Pro und BookLedgerPro**: nur die gemeinsame Datei kopiert (Pins), der Kasten „Tresor & Ablage“, Web-Reste und Version dort
