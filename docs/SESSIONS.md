@@ -12,7 +12,7 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 (gemeinsame Bedien-Datei `native/pro-bedienung.js`/`.css`, „Tresor & Ablage“, keine Web-Reste, Version bei Updates). Hier: Kopier-Werkzeug und
 Kopie der Bedien-Datei, Abschluss, Forschung § 11, Brief Umbau 2.
 **Stand:** alle PRs CI grün und gemergt (Zahlen im Abschluss). BookLedgerPro-Code unverändert außer Kopie + Werkzeug + Pin-Probe.
-**Offen/Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-2.md` — Herausgeber-Schlüssel (voller Wert von Klaus), Umbau WPP, dann BLP. ⚠ Nichts am Tablet.
+**Offen/Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-2.md` — Umbau WPP, dann BLP (Herausgeber-Schlüssel ist in PB eingebaut). ⚠ Nichts am Tablet.
 
 ---
 

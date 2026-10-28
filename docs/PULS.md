@@ -6,7 +6,7 @@
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
 ## ▶ Neuester Stand (2026-10-28, Nachmittag): Reparaturen + Einstellungs-Umbau Schritt 1
-- Klaus: 0.1.1 **nicht** veröffentlichen · Bedien-Datei in **Private Brain Pro** · Herausgeber-Schlüssel **fest einbauen** (voller Wert fehlt noch).
+- Klaus: 0.1.1 **nicht** veröffentlichen · Bedien-Datei in **Private Brain Pro** · Herausgeber-Schlüssel **fest eingebaut** (PB #107).
 - Gemergt: Workflow-PDF-Pro#32 (Sperren bleibt gesperrt) · Privat-Brain-Pro#106 (#105 ohne Explorer, Sperren Java-seitig, Teilen fragt bei
   gesperrtem Ordner, Absturz nach dem Schließen behoben) · Privat-Brain-Pro#107 („Tresor & Ablage“, `pro-bedienung.js`, keine Web-Reste, Version).
 - Hier: Kopier-Werkzeug `tools/native/bedienung-nachziehen.mjs` + Kopie der Bedien-Datei (Pins in `native/pro-bedienung-herkunft.json`).

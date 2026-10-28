@@ -270,4 +270,7 @@ Mail-Beleg + 2 PDF-Anhänge als eigene Belege. Der Einzug lief **gleich am echte
    erzeugte DOM-Änderungen ohne Ende (`test-help` „keine Änderungen nach Auffrischen“ fing es). Solche Absätze nie umschreiben.
 6. **Zeilen idempotent bauen:** Zustand-/Pfad-Zeilen nur neu bauen, wenn sich etwas ändert (Signatur am Element) — sonst ist jedes
    Neuzeichnen eine DOM-Änderung.
-7. **Öffentlicher Herausgeber-Schlüssel:** im Repo steht er nur gekürzt (`fb6cd374…709ee2f`); fest einbauen geht erst mit dem vollen Wert.
+7. **Öffentlicher Herausgeber-Schlüssel:** im Repo stand er nur gekürzt; Klaus gab den vollen Wert, jetzt fest in Private Brain Pro. Nur PB prüft
+   Codes. Mit festem Schlüssel vertraut jede Kopie nur noch ihm (vorher: jedes Gerät seinem eigenen Studio-Schlüssel) — Klaus' Gerät bleibt
+   Herausgeber, solange sein Studio-Schlüssel dieser ist; ein anderes Studio auf einem anderen Gerät öffnet nichts mehr. Die Probe stellte
+   „vor dem Einbau“ über die echte Datei nach und wurde dadurch rot; jetzt mit leerer Liste gestellt.

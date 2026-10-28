@@ -10,7 +10,7 @@ Private Brain Pro hat als erste App den Kasten **„Tresor & Ablage“**, keine 
 |---|---|
 | (a) BookLedgerPro 0.1.1 jetzt veröffentlichen? | **Nein** |
 | (b) Wo wird die gemeinsame Bedien-Datei gepflegt? | **Private Brain Pro** (`native/pro-bedienung.js`/`.css`) |
-| (c) Öffentlicher Herausgeber-Schlüssel `fb6cd374…709ee2f` fest in die Apps? | **Ja** — aber der volle Schlüssel steht nirgends im Repo (nur gekürzt in den Unterlagen). Klaus kopiert ihn im Herausgeber-Studio (langer Druck auf „© 2026“ → „Öffentlicher Schlüssel“ → Kopieren) und gibt ihn der nächsten Sitzung. Er ist nicht geheim. |
+| (c) Öffentlicher Herausgeber-Schlüssel `fb6cd374…709ee2f` fest in die Apps? | **Ja** — Klaus gab den vollen Wert im Chat (nicht geheim). Eingebaut in Private Brain Pro `native/license-keys.json` (#107); nur Private Brain Pro prüft Freischalt-Codes (Workflow PDF Pro und BookLedgerPro haben keine). |
 
 ## Gebaut und gemergt
 | Repo | PR | Was |
@@ -31,6 +31,8 @@ Private Brain Pro hat als erste App den Kasten **„Tresor & Ablage“**, keine 
 - **Keine Web-Reste** (`native/native-ohne-web.js`, nur mit App-Brücke): „Browser“-Wendungen → Gerät/App/Android, „Speicher dauerhaft“
   und Installieren weg; Probe in `test-tresorordner` (Gegenprobe ohne die Schicht rot).
 - **Version** bei „Auf Updates prüfen“.
+- **Herausgeber-Schlüssel** fest (`native/license-keys.json`); das Freischalt-Feld erkennt den öffentlichen Schlüssel („kein Freischalt-Code“).
+  `test-tools` 77 (der Fall „vor dem Einbau“ wird jetzt mit leerer Liste gestellt).
 
 ## Nicht gemacht / offen (ehrlich)
 - **Workflow PDF Pro und BookLedgerPro**: nur die gemeinsame Datei kopiert (Pins), der Kasten „Tresor & Ablage“, Web-Reste und Version dort
@@ -40,7 +42,6 @@ Private Brain Pro hat als erste App den Kasten **„Tresor & Ablage“**, keine 
   „anfangs offen“): nicht umgestellt — Klaus fragen oder gemeinsam mit V3 ändern.
 - „In Dateien öffnen“: ob Androids Dateien-App einen Ordner per ACTION_VIEW zeigt, ist **nicht am Gerät gemessen**; ohne passende App sagt
   die App den Pfad.
-- Herausgeber-Schlüssel: wartet auf den vollen Schlüssel.
 - Aus dem Brief noch offen: Durchgereichter Tipp (Workflow PDF), Sicherung gestreamt (~50 MB), Workflow-PDF-Kern (Einordnen nicht automatisch),
   BookLedgerPro-Belegliste/Startseite/Tresorordner-Ansicht 1→2→4→3, Belege→Buchhaltung (Plan mit Klaus).
 - Nichts am Tablet. `npm run build:web` in Private Brain Pro scheitert im Behälter an der OCR-Beschaffung (Proben gegen das Teilbündel).
