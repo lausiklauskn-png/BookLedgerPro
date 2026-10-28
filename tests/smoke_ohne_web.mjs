@@ -129,6 +129,11 @@ console.log('— A. Gegenprobe: PWA (ohne Brücke) —');
   await ctx.close();
 }
 
+if (!existsSync(join(WURZEL, 'native/blp-native.js'))) {
+  // BookLedger Basic (PWA-Kopie) hat keine Android-Hülle: dort gilt nur Teil A (wie smoke_tresorordner).
+  console.log('  (B–D nur in der Pro-App mit Android-Hülle — hier keine native/blp-native.js, übersprungen)');
+  await schluss(); process.exit(rot ? 1 : 0);
+}
 console.log('— B. App: jede Ansicht ohne Web-Reste —');
 {
   const { ctx, page, fehler } = await oeffnen('app');
