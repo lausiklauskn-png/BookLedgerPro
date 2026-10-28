@@ -4,6 +4,12 @@ Gilt **gleich** für Private Brain Pro, Workflow PDF Pro, BookLedgerPro und **je
 Entstanden aus der Probe am Tablet (Tresorordner Schritt E). Netzweit verankert in `Sage-Protokol/docs/NETZWEIT.md` („Pro-Apps“).
 Klaus: „Weil nicht jeder hat nebenbei eine KI laufen, der ihnen erklärt, was er als nächstes klicken muss … das muss selbsterklärend sein.“
 
+## 0 · Geltung: Pro-Apps UND ihre PWAs (Klaus 2026-10-28)
+„Genau das gleiche in grün“: dieselben Regeln gelten in den **PWA-Fassungen** (BookLedger Basic, Workflow PDF, Private Brain/V3 …) und in jeder
+Pro-App, die später eine **Windows-Fassung** bekommt. Je Fassung erscheinen **nur die Knöpfe, die dort funktionieren**; leere Kästen verschwinden
+(z. B. kein Tresorordner in der PWA, kein Installieren in der App). Wer einen PWA-Stand ändert, zieht ihn in die Geschwister nach
+(Basic: `tools/pro-nachziehen.mjs`; Workflow PDF Pro: `upstream/`). Ablauf der Pflege: Änderung in der Quelle → nachziehen → je Fassung prüfen.
+
 ## 1 · Einstellungen
 1. **Knöpfe wie heute**, jeder öffnet sein eigenes Fenster (so wie „Speicher und Dokumenttresor“ in Workflow PDF Pro). **Kein Explorer**,
    keine Seitenleiste mit Gruppen (Vorschlag vom Vormittag, von Klaus verworfen).
