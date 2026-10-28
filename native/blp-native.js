@@ -79,7 +79,9 @@
   }
 
   // ---- 1 · Eingang über launchQueue -----------------------------------------------------------------------------
-  if (Eingang && !('launchQueue' in window)) {
+  // Neuere Android-WebViews bringen ein eigenes window.launchQueue mit, das dort nie etwas liefert (gemessen am Tablet
+  // 2026-10-28: geteilte Mail kam nicht an). Deshalb gilt in der App immer dieser Eingang, ob die WebView eins hat oder nicht.
+  if (Eingang) {
     var abnehmer = null, laeuft = false, nochmal = false;
     var lesen = function (batch, f) {
       var teile = [], offset = 0;
@@ -126,7 +128,9 @@
         if (nochmal) { nochmal = false; liefern(); }
       });
     };
-    window.launchQueue = { setConsumer: function (fn) { abnehmer = typeof fn === 'function' ? fn : null; liefern(); } };
+    var schlange = { setConsumer: function (fn) { abnehmer = typeof fn === 'function' ? fn : null; liefern(); } };
+    try { Object.defineProperty(window, 'launchQueue', { value: schlange, configurable: true, enumerable: true, writable: false }); }
+    catch (e) { hinweis('Teilen an BookLedgerPro ist in dieser Android-Version nicht verfügbar.'); }
     try { Eingang.addListener('available', liefern); } catch (e) { /* ohne Ereignis: beim Start */ }
     setTimeout(aufraeumen, 5000);
   }
