@@ -248,5 +248,10 @@
   };
   // Als App gibt es nichts zu installieren (Leitfaden § 4): dieselbe Marke wie nach „appinstalled“ blendet beide Knöpfe aus.
   try { document.documentElement.classList.add('app-installiert'); } catch (e) { /* nur Anzeige */ }
-  window.BLPNative = Object.freeze({ plattform: 'android', speichern: speichern, tresor: tresor, version: version });
+  // Spracheingabe (Klaus 2026-10-28): die WebView verweigert webkitSpeechRecognition („not-allowed“). Androids Sprachfenster
+  // hört zu; zurück kommt nur der Text ({text, abgebrochen}). Ohne Plugin (ältere Hülle) null — dann kein Mikrofon in der App.
+  var Sprache = P.BlpSpeech;
+  var sprechen = Sprache && typeof Sprache.zuhoeren === 'function'
+    ? function (sprache) { return Sprache.zuhoeren({ sprache: String(sprache || 'de-DE') }); } : null;
+  window.BLPNative = Object.freeze({ plattform: 'android', speichern: speichern, tresor: tresor, version: version, sprechen: sprechen });
 })();

@@ -142,6 +142,23 @@ export function istTextfeld(node) {
   return OHNE_TYP.has(String(node.getAttribute('type') || '').toLowerCase());
 }
 
+// Mikrofon nur, wo es Sinn hat (Klaus 2026-10-28, am Tablet: „Diese großen Mikrofone können weg, auch das DE“; in allen Pro-Apps
+// gleich): an Suchfeldern und an echten Freitext-Notizen. Nicht an Beträgen, Daten, Namen, Positionen, Buchungstext. Der
+// Wort-Speicher bleibt an jedem Textfeld (ohne sichtbare Leiste). Ausdrücklich: data-mikro (an) / data-kein-mikro (aus).
+export const MIKRO_FREITEXT = /notiz|begr(?:ü|ue)nd|beschreib|description|bemerk|kommentar|vermerk|erl(?:ä|ae)uter|frage|note|reason|comment|remark|question/i;
+export const MIKRO_SUCHE = /such|search|frage/i;
+/** Bekommt dieses Textfeld Mikrofon und Sprachmarke? (Positivliste) */
+export function mitMikrofon(node) {
+  if (!istTextfeld(node)) return false;
+  if (node.hasAttribute('data-mikro')) return true;
+  const g = (k) => String(node.getAttribute(k) || '');
+  const merkmal = [g('data-mikro-key'), g('name'), g('id'), g('aria-label'), g('placeholder'), g('class')].join(' ');
+  const label = (node.closest && node.closest('label') ? node.closest('label').textContent : '') || '';
+  if (node.tagName === 'INPUT') return g('type').toLowerCase() === 'search' || g('role') === 'searchbox' || MIKRO_SUCHE.test(merkmal)
+    || !!(node.closest && node.closest('.suche-feld,.suche-kopf,[data-suche]'));
+  return MIKRO_FREITEXT.test(merkmal + ' ' + label);
+}
+
 let _feldIndex = 0;
 let _offeneListe = null;
 
@@ -193,7 +210,11 @@ function anbringen(feld) {
   const marke = el('button', { class: 'btn btn-sm mikro-sprache', type: 'button', 'data-mikro-sprache': '', title: t('mikro.spracheTitel') });
   const liste = el('div', { class: 'mikro-liste', role: 'listbox', hidden: true });
   const knopf = el('button', { class: 'btn btn-sm mikro-knopf', type: 'button', 'data-mikro-knopf': '', 'aria-label': t('mikro.sprechen'), title: t('mikro.sprechen'), text: '🎙' });
-  const leiste = el('span', { class: 'mikro', 'data-mikro': key }, [knopf, marke, status, liste]);
+  // In der App ohne Androids Sprachfenster (ältere Hülle) geht weder Web Speech noch Aufnahme → kein Mikrofon statt hängendem Feld.
+  const appOhneSprache = typeof window !== 'undefined' && !!window.BLPNative && typeof window.BLPNative.sprechen !== 'function';
+  const mitMik = mitMikrofon(feld) && !appOhneSprache;
+  const leiste = mitMik ? el('span', { class: 'mikro', 'data-mikro': key }, [knopf, marke, status, liste])
+    : el('span', { class: 'mikro mikro-ohne', 'data-mikro-ohne': key });
 
   const zeigeMarke = async () => { const code = await sprachePro(key); marke.textContent = sprachMarke(code) + ' ▾'; marke.dataset.code = code; marke.setAttribute('aria-label', t('mikro.spracheTitel') + ': ' + (SPRACHEN.find(([c]) => c === code) || [code, code])[1]); };
   liste.replaceChildren(...SPRACHEN.map(([code, name, kurz]) => el('button', {
@@ -206,7 +227,7 @@ function anbringen(feld) {
     schliesseListe(); liste.hidden = false; _offeneListe = liste;
     const akt = liste.querySelector(`[data-code="${marke.dataset.code}"]`); if (akt) akt.focus();
   });
-  zeigeMarke();
+  if (mitMik) zeigeMarke();
 
   // Sprechen (Browser- oder EU-Engine)
   let aktiv = null;   // Web-Speech-Recognizer
@@ -224,7 +245,8 @@ function anbringen(feld) {
       if (!rec) { status.textContent = t('speech.unsupported'); return; }
       aktiv = rec; knopf.textContent = '⏹'; knopf.classList.add('mikro-an'); knopf.title = t('speech.listening') + ' · ' + t('mikro.hinweisBrowser');
       rec.onresult = (e) => { const tx = (((e.results || [])[0] || [])[0] || {}).transcript || ''; if (tx) { einsetzen(feld, tx); merkeWert(); } };
-      rec.onerror = (e) => { status.textContent = t('speech.error').replace('%E%', String((e && e.error) || '')); };
+      // Jeder Fehler setzt den Knopf zurück (Befund Tablet 2026-10-28: blaues Feld blieb stehen, onend kam nie).
+      rec.onerror = (e) => { status.textContent = speechFehlerHinweis(e && e.error) || t('speech.error').replace('%E%', String((e && e.error) || '')); aktiv = null; ruhe(); };
       rec.onend = () => { aktiv = null; ruhe(); };
       try { rec.start(); } catch { aktiv = null; ruhe(); }
       return;

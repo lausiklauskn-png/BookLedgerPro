@@ -127,7 +127,20 @@ export async function loadEmbedder(opts = {}) {
     const pipeline = tf.pipeline || (tf.default && tf.default.pipeline);
     if (typeof pipeline !== 'function') throw new Error('transformers.js: pipeline() nicht gefunden');
     say('lädt Modell (einmalig) …');
-    const extractor = await pipeline('feature-extraction', EMBED_MODEL, { quantized: true });
+    // Fortschritt (Befund Tablet 2026-10-28: „steht nur ‚Modell lädt‘, nichts bewegt sich“): transformers.js meldet je Datei
+    // {status:'progress', file, loaded, total}. Summiert über alle Dateien → onProgress({geladen, gesamt}) in Bytes;
+    // gesamt 0 = Größe unbekannt (dann Drehkreis statt Balken).
+    const dateien = new Map();
+    const fortschritt = typeof opts.onProgress === 'function' ? (ev) => {
+      if (!ev || !ev.file) return;
+      const alt = dateien.get(ev.file) || { geladen: 0, gesamt: 0 };
+      if (ev.status === 'progress') dateien.set(ev.file, { geladen: Number(ev.loaded) || 0, gesamt: Number(ev.total) || alt.gesamt });
+      else if (ev.status === 'done') dateien.set(ev.file, { geladen: alt.gesamt || alt.geladen, gesamt: alt.gesamt || alt.geladen });
+      else return;
+      let geladen = 0, gesamt = 0; for (const x of dateien.values()) { geladen += x.geladen; gesamt += x.gesamt; }
+      try { opts.onProgress({ geladen, gesamt }); } catch { /* nur Anzeige */ }
+    } : undefined;
+    const extractor = await pipeline('feature-extraction', EMBED_MODEL, { quantized: true, ...(fortschritt ? { progress_callback: fortschritt } : {}) });
     const embed = async (text) => {
       const out = await extractor(String(text || ''), { pooling: 'mean', normalize: true });
       const v = Array.from(out.data || out);

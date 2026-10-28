@@ -802,7 +802,7 @@ tr.suche-markiert td { background: var(--accent-soft); }
 .suche-kopf { display: flex; align-items: flex-start; gap: .5rem; flex-wrap: wrap; }
 .suche-kopf > .suche-feld { flex: 1 1 14rem; min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
 .suche-feld > input { width: 100%; }
-.suche-feld > input.beleg-text { min-height: 0; height: 34px; padding: .3rem .6rem; resize: none; }
+.suche-feld > input.beleg-text { min-height: 0; height: 30px; padding: 0 .6rem; resize: none; }
 .schalter-knopf { display: inline-flex; align-items: center; gap: .35rem; min-height: 32px; padding: .15rem .55rem; border: 1px solid var(--border-control); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; font-size: .88rem; cursor: pointer; }
 .schalter-knopf .ic { width: 17px; height: 17px; }
 .schalter-bahn { position: relative; width: 30px; height: 16px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border-control); flex: none; }
@@ -826,3 +826,40 @@ tr.suche-markiert td { background: var(--accent-soft); }
 .geben-knopf { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding-block: 0; white-space: nowrap; }
 .geben-knopf .ic { width: 16px; height: 16px; }
 @media (max-width: 1024px) { .geben-knopf .geben-text { display: none; } .geben-knopf { padding-inline: 6px; } }
+/* Befund Tablet 2026-10-28: Mikrofon nur an Suche und Notizen, dort klein (≈ 24 px); sonst nur der unsichtbare Wort-Speicher. */
+.mikro.mikro-ohne { display: contents; }
+/* Wie Private Brain Pro (Klaus 2026-10-28, Vergleichsbild): Strich-Mikrofon 18 px (Strich 1,8), Sprachmarke flach ohne großen Rahmen. */
+.mikro .mikro-knopf, .mikro .mikro-sprache { min-height: 24px; height: 24px; padding-block: 0; font-size: .75rem; line-height: 1; }
+.mikro .mikro-knopf { min-width: 24px; padding-inline: 2px; border-color: transparent; background: transparent; }
+.mikro .mikro-knopf .ic { width: 18px; height: 18px; stroke-width: 1.8; margin: 0; }
+.mikro .mikro-sprache { border-color: transparent; background: transparent; color: var(--text-muted); font-weight: 600; padding-inline: 3px; }
+.mikro .mikro-knopf:hover, .mikro .mikro-sprache:hover { background: var(--surface-2); }
+.bedeutung-zustand { display: inline-flex; align-items: center; gap: .3rem; flex-wrap: wrap; }
+.bedeutung-balken { width: 8rem; height: .5rem; vertical-align: middle; }
+/* Befund Tablet 2026-10-28 (geteilte Ansicht ≈ 600–1000 px): schlanker. Maß: „KI-Begründung vorschlagen“ (flacher Knopf ≈ 28–30 px). */
+input[type="password"], input[type="text"], input[type="number"], input[type="date"], input[type="email"], input[type="tel"], input[type="search"], input:not([type]), select {
+  min-height: 30px; height: 30px; padding-block: 0; padding-inline: .5rem; font-size: .92rem; line-height: 1.2;
+}
+.btn { min-height: 30px; padding-block: .1rem; }
+.btn-sm { min-height: 28px; }
+.form-grid { gap: .45rem .6rem; }
+.field { gap: .15rem; }
+.field > span { font-size: .8rem; }
+.btn-symbol { min-width: 28px; padding-inline: 4px; }
+.btn-symbol .ic { width: 16px; height: 16px; }
+.erklaer-knopf { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; margin-inline: .2rem; border: 0; border-radius: 50%;
+  background: transparent; color: var(--text-muted); cursor: pointer; vertical-align: middle; }
+.erklaer-knopf:hover, .erklaer-knopf[aria-expanded="true"] { color: var(--accent); background: var(--accent-soft); }
+.erklaer-knopf .ic { width: 16px; height: 16px; }
+/* Kurzspalten brechen nicht (Konten: „Aktiv“ wurde „Ak/tiv“), Aktionen bleiben in einer Zeile. */
+.table td.actions, .table th.actions { white-space: nowrap; width: 1%; }
+.table td.actions .btn-row { flex-wrap: nowrap; }
+.beleg-wahl { width: 16px; height: 16px; margin: 0 4px 0 0; vertical-align: middle; }
+.pruef-zelle { white-space: nowrap; }
+.table td.kurz-spalte { white-space: nowrap; }
+/* Belegzeile einzeilig (Leitfaden § 5): Name und Herkunft gekürzt, voller Text per title oder Tipp (.voll); Datum nie abgeschnitten. */
+.beleg-liste .name-zelle { max-width: 0; width: 100%; overflow: hidden; }
+.beleg-liste .name-zelle .beleg-name, .beleg-liste .name-zelle .zeile-unter, .beleg-liste .name-zelle > div:not(.zeile-name) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.beleg-liste .name-zelle .zeile-name { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.beleg-liste .name-zelle .beleg-name { min-width: 0; flex: 1 1 auto; }
+.beleg-liste .name-zelle.voll .beleg-name, .beleg-liste .name-zelle.voll .zeile-unter, .beleg-liste .name-zelle.voll > div { white-space: normal; overflow: visible; }

@@ -1,11 +1,54 @@
-/* apps/blp-thema.css — BLP-Thema in den eingebetteten Apps (Klaus 2026-10-26: „Der Farbstil … kann an BookLedgerPro
-   angepasst werden"; Bilder und Emojis der Apps bleiben). Geladen als letztes Stylesheet über die kontrollierte
-   Abweichung in index.html. Hell/Dunkel setzen die Apps selbst über data-theme; hier nur die Akzentfarbe nach
-   data-blp-farbe (Werte aus assets/tokens.css von BookLedgerPro). „blau" lässt den App-eigenen Akzent stehen
-   (Calculate Blau, Needs Messing) — so bleibt jede App erkennbar. */
-:root[data-blp-farbe="graphit"] { --accent: #a3aebd; --accent2: #94a3b8; --accent3: #c3ccd8; }
-:root[data-blp-farbe="graphit"][data-theme="light"] { --accent: #475569; --accent2: #334155; --accent3: #64748b; }
-:root[data-blp-farbe="petrol"] { --accent: #2dd4bf; --accent2: #14b8a6; --accent3: #5eead4; }
-:root[data-blp-farbe="petrol"][data-theme="light"] { --accent: #0f766e; --accent2: #0b5a54; --accent3: #0d9488; }
+/* apps/blp-thema.css — BLP-Thema in den eingebetteten Apps. Geladen als letztes Stylesheet über die kontrollierte Abweichung
+   in index.html (tools/apps-patch.mjs). Die Apps selbst bleiben byte-1:1 (apps/HERKUNFT.json) — alles hier ist BLP-eigen.
+
+   Klaus 2026-10-26: „Der Farbstil … kann an BookLedgerPro angepasst werden.“
+   Klaus 2026-10-28 (Tablet, geteilte Ansicht): „Die Farbthemen sollen vom BookLedgerPro übernommen werden. 3D-Button-Form kann
+   bleiben … aber das Design etwas schlanker. Wirklich schlank.“ · „Das Design sieht aus, als wenn es nicht hierher gehört.“
+   Darum: Flächen, Schrift, Linien und Akzent aus assets/tokens.css von BookLedgerPro (blau | graphit | petrol × hell | dunkel,
+   per postMessage von apps/blp-bruecke.js gesetzt); Knöpfe, Reiter und Felder so flach wie in BLP (≈ 28–30 px), normale
+   Schriftstärke; die 3D-Form (Glanz/Schatten der .btn) bleibt, nur leiser. Emojis ersetzt die Brücke durch Strichsymbole. */
+
+/* ---------- Farben aus BookLedgerPro ---------- */
+:root[data-blp-eingebettet][data-blp-farbe="blau"] { --accent: #7ca7ff; --accent2: #9bbeff; --accent3: #9bbeff;
+  --bg: #111827; --bg2: #0f1726; --surface: #182233; --surface-2: #1c2840; --line: #35465e; --line-2: #4a5d7a; --ink: #f3f6fc; --ink-2: #b2bfd2; --ink-3: #93a1b5; }
+:root[data-blp-eingebettet][data-blp-farbe="blau"][data-theme="light"] { --accent: #2563eb; --accent2: #1d4ed8; --accent3: #3b82f6;
+  --bg: #f6f8fc; --bg2: #eef2f8; --surface: #ffffff; --surface-2: #eef2f8; --line: #d5deea; --line-2: #b8c4d6; --ink: #172033; --ink-2: #526176; --ink-3: #6b7a90; }
+:root[data-blp-eingebettet][data-blp-farbe="graphit"] { --accent: #a3aebd; --accent2: #c3ccd8; --accent3: #c3ccd8;
+  --bg: #141619; --bg2: #121418; --surface: #1c1f24; --surface-2: #23272e; --line: #3a3f48; --line-2: #4b515c; --ink: #eceef2; --ink-2: #a7afbb; --ink-3: #8b93a0; }
+:root[data-blp-eingebettet][data-blp-farbe="graphit"][data-theme="light"] { --accent: #475569; --accent2: #334155; --accent3: #64748b;
+  --bg: #f7f8fa; --bg2: #eef0f4; --surface: #ffffff; --surface-2: #eef0f4; --line: #d5d9e0; --line-2: #b9bfca; --ink: #172033; --ink-2: #526176; --ink-3: #6b7a90; }
+:root[data-blp-eingebettet][data-blp-farbe="petrol"] { --accent: #2dd4bf; --accent2: #5eead4; --accent3: #5eead4;
+  --bg: #0b1120; --bg2: #0a1020; --surface: #111a2e; --surface-2: #16223b; --line: #25324c; --line-2: #34456a; --ink: #e7edf5; --ink-2: #93a1b5; --ink-3: #7d8ba0; }
+:root[data-blp-eingebettet][data-blp-farbe="petrol"][data-theme="light"] { --accent: #0f766e; --accent2: #0b5a54; --accent3: #0d9488;
+  --bg: #f5f9f9; --bg2: #edf5f3; --surface: #ffffff; --surface-2: #edf5f3; --line: #d4e3e1; --line-2: #b5cbc8; --ink: #172033; --ink-2: #526176; --ink-3: #6b7a90; }
+:root[data-blp-eingebettet] body { background: var(--bg); color: var(--ink); }
+
+/* ---------- Schlank: Knöpfe, Reiter, Felder wie in BLP ---------- */
+:root[data-blp-eingebettet] .btn { font-weight: 500; font-size: .88rem; padding: 3px 10px; min-height: 28px; border-radius: 8px; gap: 5px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 -2px 4px rgba(0,0,0,.18), 0 1px 3px rgba(0,0,0,.16); }
+:root[data-blp-eingebettet] .btn.pri, :root[data-blp-eingebettet] .btn.on { font-weight: 600; }
+:root[data-blp-eingebettet] .btn.rund { width: 30px; height: 30px; min-height: 30px; font-size: .95rem; }
+:root[data-blp-eingebettet] .btn.klein, :root[data-blp-eingebettet] .btn.chip { padding: 2px 8px; font-size: .82rem; min-height: 26px; font-weight: 500; }
+:root[data-blp-eingebettet] .reiter { padding: 4px 12px; gap: 4px; }
+:root[data-blp-eingebettet] .reiter button, :root[data-blp-eingebettet] .seg button { font-weight: 500; padding: 3px 10px; min-height: 28px; font-size: .88rem; }
+:root[data-blp-eingebettet] input:not([type=checkbox]):not([type=radio]):not([type=range]), :root[data-blp-eingebettet] select {
+  padding: 3px 8px; min-height: 30px; height: 30px; border-radius: 6px; font-size: .92rem; }
+:root[data-blp-eingebettet] textarea { padding: 4px 8px; border-radius: 6px; font-size: .92rem; min-height: 48px; }
+:root[data-blp-eingebettet] h1 { font-size: 1.2rem; font-weight: 600; }
+:root[data-blp-eingebettet] h2 { font-size: 1.05rem; font-weight: 600; }
+:root[data-blp-eingebettet] h3 { font-size: .95rem; font-weight: 600; }
+:root[data-blp-eingebettet] .kopf .marke b, :root[data-blp-eingebettet] .kopf strong { font-weight: 600; }
+/* Suchfeld im Angebotsplaner: nicht „klobig“ — flach, kleines Mikrofon (Suchfelder behalten es, Klaus 2026-10-28). */
+:root[data-blp-eingebettet] .su-form { border-radius: 8px; padding: 0 4px 0 8px; box-shadow: none; min-height: 32px; }
+:root[data-blp-eingebettet] .su-form input[type=search] { font-size: .95rem; padding: 4px 2px; height: 30px; min-height: 30px; }
+:root[data-blp-eingebettet] .su-mic { width: 26px; height: 26px; font-size: .85rem; }
+:root[data-blp-eingebettet] .su-titel { font-size: 1.1rem; font-weight: 600; }
+:root[data-blp-eingebettet] .karte, :root[data-blp-eingebettet] .card { padding: 10px; margin-bottom: 10px; }
+/* Erklärsätze der Apps (.hinweis, .klein) kleiner, damit nichts verrutscht. */
+:root[data-blp-eingebettet] .hinweis { font-size: .85rem; }
+/* Strichsymbole statt Emojis (gesetzt von apps/blp-bruecke.js). */
+:root[data-blp-eingebettet] svg.ic { width: 1.05em; height: 1.05em; vertical-align: -.15em; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; margin-inline-end: .2em; }
+:root[data-blp-eingebettet] svg.ic.ic-gruen { color: #2e8b57; } :root[data-blp-eingebettet] svg.ic.ic-gelb { color: #c9a227; }
+:root[data-blp-eingebettet] svg.ic.ic-rot { color: #c0392b; } :root[data-blp-eingebettet] svg.ic.ic-grau { color: #8a8f98; } :root[data-blp-eingebettet] svg.ic.ic-blau { color: var(--accent); }
 /* Im Rahmen gibt es keine Installation der Unter-App (die App IST BookLedgerPro): den Installieren-Knopf der App weg. */
 :root[data-blp-eingebettet] #installieren { display: none !important; }

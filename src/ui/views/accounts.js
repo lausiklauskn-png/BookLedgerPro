@@ -34,7 +34,7 @@ async function repaint() {
   const rows = konten.map((k) => el('tr', {}, [
     el('td', { class: 'mono', text: k.nummer }),
     el('td', { text: k.name }),
-    el('td', { class: 'muted small', text: ART_LABEL[k.art] || k.art }),
+    el('td', { class: 'muted small kurz-spalte', text: ART_LABEL[k.art] || k.art }),
     el('td', { class: 'muted small', text: k.ust != null ? `${k.ust}%` : '' }),
     el('td', { class: 'num', text: salden[k.nummer] != null ? formatEuro(salden[k.nummer]) : '–' }),
     el('td', { class: 'actions no-print' }, [

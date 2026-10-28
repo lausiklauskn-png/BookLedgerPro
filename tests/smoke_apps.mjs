@@ -67,10 +67,10 @@ try {
   ok('Calculate läuft im Rahmen (WC.angebot), Brücke aktiv (data-blp-eingebettet)', await frame.evaluate(() => !!(window.WC && window.WC.angebot) && document.documentElement.getAttribute('data-blp-eingebettet') === '1' && window.__wcSprungAbfangen === true));
   ok('Rahmen-Leiste: Bild, Name „Workflow Calculate", Vollbild, Eigenes Fenster, Offline bereitlegen; „alte Angebote" ohne alte Daten versteckt', await page.evaluate(() => { const l = document.querySelector('.app-leiste'); return !!l && l.textContent.includes('Workflow Calculate') && !!l.querySelector('img.app-bild') && !!l.querySelector('[data-apps-vollbild]') && !!l.querySelector('[data-apps-fenster][target="_blank"]') && !!l.querySelector('[data-apps-offline]') && l.querySelector('[data-apps-alte-angebote]').hidden; }));
   ok('kein eigener Service Worker der App, keine Anmeldung im HTML', await frame.evaluate(() => !navigator.serviceWorker.controller && !document.documentElement.outerHTML.includes('serviceWorker.register')));
-  // Thema: hell/blau → Akzent der App bleibt; dann petrol/dunkel
+  // Thema: hell/blau → BLP-Blau (Klaus 2026-10-28: „Die Farbthemen sollen vom BookLedgerPro übernommen werden“); dann petrol/dunkel
   await frame.waitForFunction(() => document.documentElement.getAttribute('data-blp-farbe') === 'blau', null, { timeout: 10000 }).catch(() => null);
   const hell = await frame.evaluate(() => ({ theme: document.documentElement.getAttribute('data-theme'), farbe: document.documentElement.getAttribute('data-blp-farbe'), accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() }));
-  ok('Thema kommt an: hell + blau → App hell, eigener Blau-Akzent bleibt', hell.theme === 'light' && hell.farbe === 'blau' && hell.accent.toLowerCase() === '#1f6fb2', JSON.stringify(hell));
+  ok('Thema kommt an: hell + blau → App hell, Akzent = BLP-Blau (#2563eb)', hell.theme === 'light' && hell.farbe === 'blau' && hell.accent.toLowerCase() === '#2563eb', JSON.stringify(hell));
   await frame.evaluate(() => { window.__marke = 'bleibt'; });
   await page.evaluate(() => window.__p.updateSettings({ theme: 'dark', themeFarbe: 'petrol' }));
   await frame.waitForFunction(() => document.documentElement.getAttribute('data-blp-farbe') === 'petrol' && !document.documentElement.hasAttribute('data-theme'), null, { timeout: 10000 }).catch(() => null);

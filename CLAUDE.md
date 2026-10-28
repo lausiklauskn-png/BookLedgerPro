@@ -428,3 +428,38 @@ Leitfaden § 3 und § 5. Gilt für App **und** PWA (Basic nachziehen), außer de
   Aufgabe 4 ROT, ohne Knopf 13 ROT. `test-native` 44 · `test-pro-bedienung` (aus PB). `sw.js` v275. ⚠ Nicht am Gerät: ob Android die App mit dem
   Dienst im Hintergrund wirklich weiterrechnen lässt, ist ungemessen.
 
+## 📱 Klaus' Befunde vom Tablet (2026-10-28, geteilte Ansicht) — zweiter PR nach Umbau 4
+
+Klaus hat 0.1.1 am Tablet in geteilter Ansicht (≈ 1000 px) geprüft. Gilt für App und PWA, außer wo „App“ steht.
+- **Kamera (App):** „Foto aufnehmen“/„Scannen“ öffneten nur die Dateiauswahl. Ursache: Capacitor legt das Kamerafoto unter
+  `getExternalFilesDir(Pictures)` an und holt die Adresse über den FileProvider — `res/xml/file_paths.xml` erlaubte nur `cache/share/`,
+  `getUriForFile` warf, Capacitor fiel **still** auf die Dateiwahl zurück. Jetzt `<external-files-path name="camera_capture" path="Pictures/"/>`
+  (wie Workflow PDF Pro). Das CAMERA-Recht fragt Capacitor beim ersten Mal.
+- **„Mit Workflow PDF scannen“ (App):** ein Knopf startet Workflow PDF Pro über `BlpTresor.appOeffnen('workflow-pdf-pro')` und nennt den
+  Rückweg (dort scannen, „Teilen“ → BookLedgerPro); fehlt die App: „nicht installiert“. ⚠ Einen Direktstart des Scanners per Intent kennt
+  Workflow PDF Pro nicht (nur `?scan=1` in der PWA).
+- **Mikrofon (App):** die WebView verweigert `webkitSpeechRecognition` („not-allowed“, blaues Feld blieb stehen). Neu `BlpSpeechPlugin`
+  (Androids Sprachfenster, `RecognizerIntent`, nur Text zurück, **kein** RECORD_AUDIO) → `BLPNative.sprechen`; `ai/speech.js` baut daraus einen
+  Erkenner mit Web-Speech-Form, Mikrofon-Leiste und SBKIM-Suche laufen unverändert. Jeder Fehler setzt das Mikrofon zurück; ältere Hülle ohne
+  Sprachfenster: kein Mikrofon.
+- **Mikrofon nur, wo es Sinn hat** (Klaus: „Diese großen Mikrofone können weg, auch das DE“; in allen Pro-Apps gleich): Positivliste in
+  `src/ui/mikro.js` (`mitMikrofon`): Suchfelder und Freitext-Textfelder (Begründung, Notiz, Beschreibung, Bemerkung …). Alle anderen Textfelder
+  behalten den Wort-Speicher ohne sichtbare Leiste (`.mikro-ohne`, `display: contents` — die Positionszeile in Aufträgen verrutschte nur wegen der
+  Leisten). Wo es bleibt: Strich-Mikrofon wie Private Brain Pro (18 px, Strich 1,8), flache Marke „DE“.
+- **Modell laden:** Balken + Prozent + MB aus den Datei-Meldungen von transformers.js (`embed.js` `onProgress`), Drehkreis solange keine Größe da ist.
+- **Schlanker** (Maß: Private Brain Pro, Knöpfe/Felder ≤ 32 px): Eingaben/Auswahl 30 px, `src/ui/schlank.js` (am `<body>`): „Bearbeiten“/„Löschen“
+  → Stift/Papierkorb (Name in title/aria-label), lange Erklärsätze (`p.muted` ≥ 70 Zeichen) hinter ⓘ, zu und gemerkt (`blpr_erklaer_v1`); Konten
+  „Art“ ohne Umbruch; Belegzeile einzeilig, Name/Herkunft gekürzt, voller Text per title oder Tipp. Maß in `smoke_design` aufgenommen.
+- **Prüfen über eine Auswahl** (statt „Alle ungeprüften prüfen“): Haken je Zeile, „Ungeprüfte wählen (N)“, „Prüfen (N)“, in der App als
+  Hintergrundaufgabe (Abbrechen aus der Mitteilung → „Prüfen angehalten“).
+- **Angebotsplaner/Bedarfsanalyse:** nur BLP-eigene Dateien geändert (`apps/blp-thema.css`, `apps/blp-bruecke.js`), die Kopien bleiben byte-1:1:
+  BLP-Farben (alle drei × hell/dunkel), Knöpfe/Reiter/Felder flach, normale Schriftstärke, kleines Suchfeld; Emojis → Strichsymbole über die Brücke
+  (lädt `src/ui/strich.js` und hängt BLPs Sprites ein). ⚠ Der App-Vorrat ist „Vorrat zuerst, im Hintergrund frisch“: das neue Aussehen kommt beim
+  zweiten Öffnen.
+
+- Proben: `tests/smoke_befunde.mjs` **50 grün** (A2 Workflow PDF Pro starten/fehlt · A3 Sprachfenster, Fehler, ältere Hülle · A4 Drehkreis → Balken 25 % ·
+  B/C Positionszeile bei 1000/640 px eine Zeile ohne Mikrofon · ≤ 32 px in 8 Ansichten bei 360/640/700/1000/1280 px · Konten · ⓘ gemerkt · 200 % Schrift ·
+  D Auswahl-Prüfen · E Calculate/Needs flach, ohne Emoji); Gegenprobe in einem Lauf (Positivliste weg, ⓘ weg, Symbole weg, App-Start weg, Fortschritt
+  weg) → je eigene rote Zeilen. `smoke_design` 92 (neu: Maß ≤ 32 px bei 700/1024 px) · `smoke_mikro` 19 (auf die Positivliste umgestellt) · `smoke_apps` 22
+  (Blau = BLP-Blau) · `test-native` 46 · `run.mjs` 2602/0 · `smoke_scanner` 13 (Zeile „eigener Scan“ las seit #389 den falschen Ort, jetzt aria-label) ·
+  `smoke_belege` 46/14 wie auf main. `sw.js` v276. ⚠ Nicht am Tablet; Kamera und Sprachfenster nur über Manifest/Java-Proben und gestellte Brücken geprüft.

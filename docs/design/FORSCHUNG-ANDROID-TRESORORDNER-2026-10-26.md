@@ -338,3 +338,20 @@ Mail-Beleg + 2 PDF-Anhänge als eigene Belege. Der Einzug lief **gleich am echte
 5. **Hintergrund beim Wechsel in den Hintergrund:** die automatische Sicherung startet bei `visibilitychange: hidden`. Android 12+ verbietet dann oft den
    Start eines Vordergrund-Dienstes; das Plugin fängt das ab (`geschuetzt: false`) und die Sicherung läuft wie bisher. Am Gerät nicht gemessen.
 
+## 15 · Befunde vom Tablet (Klaus, 2026-10-28, geteilte Ansicht) und ihre Ursachen
+
+1. **Kamera öffnete nur die Dateiwahl:** Capacitors `BridgeWebChromeClient.onShowFileChooser` nimmt bei `accept=image/*` + `capture` die Kamera, legt das
+   Foto aber unter `getExternalFilesDir(Pictures)` an und holt die Adresse über den FileProvider. BLPs `file_paths.xml` kannte nur `cache/share/`
+   → `getUriForFile` warf, `showImageCapturePicker` gab false, und Capacitor fiel **ohne Meldung** auf die Dateiwahl zurück. Workflow PDF Pro hatte den
+   Eintrag schon. Lehre: ein stiller Rückfall im Rahmenwerk sieht aus wie „Kamera kaputt“.
+2. **„Sprachfehler: not-allowed“ und hängendes blaues Feld:** gleicher Befund wie Private Brain Pro .24 — die WebView meldet `webkitSpeechRecognition`,
+   verweigert sie aber; `onend` kam nicht, der Knopf blieb an. Androids Sprachfenster (`RecognizerIntent`) braucht kein Mikrofon-Recht.
+3. **Positionszeile verrutschte:** nicht das Raster, sondern die Mikrofon-Leisten waren zusätzliche Rasterzellen. `display: contents` für die
+   Leiste ohne Mikrofon behält den Wort-Speicher und nimmt keinen Platz.
+4. **„Modell lädt“ ohne Bewegung:** transformers.js meldet Datei-Fortschritt nur, wenn man `progress_callback` mitgibt; BLP gab es nicht mit.
+5. **Eingebettete Apps:** byte-1:1 heißt, nur über BLP-eigene Dateien gestalten (Thema-CSS, Brücke). Die Brücke lädt `strich.js` aus BLP und
+   hängt die Sprites selbst ein (`<use href>` sucht im eigenen Dokument). Der App-Vorrat ist „Vorrat zuerst, im Hintergrund frisch“ — eine neue
+   Thema-Datei wirkt erst beim zweiten Öffnen.
+6. **Probe maß Oberkanten:** bei unterschiedlich hohen Feldern (Knopf 28, Feld 30 px) ergeben gleiche Zeilen verschiedene Oberkanten; gemessen
+   wird jetzt die Mittellinie (± 4 px). Lange Kontonamen brechen richtigerweise um — gemessen wird die Zeilenzahl des Texts in der Spalte „Art“.
+

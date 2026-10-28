@@ -8,6 +8,7 @@ import { t, setLang, LANGS, istProApp } from './i18n.js';
 import { applyTheme, FARBEN, HELLIGKEITEN } from './theme.js';
 import { icon, ladeSymbole } from './icons.js';
 import { strichBeobachten } from './strich.js';
+import { schlankBeobachten } from './schlank.js';
 import { MycelMark, SiegelBadge, SiegelWappenGross } from './mycel.js';
 import { identityExists, loadIdentity } from '../sbkim/identity.js';
 import { CANONICAL_NODE_ID, SEAL_STAGE, NODE_PROFILE } from '../sbkim/nodeProfile.js';
@@ -179,7 +180,7 @@ export function renderShell(container, { onLock } = {}) {
   // 🎙 an jeder Texteingabe (Klaus 2026-10-26): einmal anmelden, folgt jedem Neuzeichnen.
   try { mikrofonBeobachten(container); } catch { /* ohne MutationObserver: Felder bleiben tippbar */ }
   // Strichgrafiken statt Emojis in ALLEN Ansichten, Dialogen und Hinweisen (Pro-Umbau 4, Leitfaden § 5): einmal am <body>.
-  try { strichBeobachten(document.body); } catch { /* ohne Beobachter bleibt der Text */ }
+  try { strichBeobachten(document.body); schlankBeobachten(document.body); } catch { /* ohne Beobachter bleibt der Text */ }
   _container = container;
   _onLock = onLock || (() => {});
   ladeSymbole();
