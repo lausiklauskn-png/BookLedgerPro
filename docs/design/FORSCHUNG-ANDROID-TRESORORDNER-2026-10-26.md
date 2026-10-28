@@ -400,3 +400,50 @@ Klaus' eigene Angabe geht vor.
 
 **Lehre und Regel:** Was eine Sitzung über Repos hinweg tun soll, gehört in jede `CLAUDE.md`, die eine Sitzung liest — nicht nur in einen Brief. Seit
 2026-10-28 steht in BookLedgerPros `CLAUDE.md`: jeder Abschluss bekommt den Abschnitt „Stundennachweis“ und eine Zeile in `docs/STUNDENNACHWEIS.md`.
+
+## 18 · Befunde aus der Umbau-Sitzung 5: Windows, Scanner, Updates vom eigenen Server (2026-10-28, Nacht, gemessen)
+
+1. **BookLedgerPro unter Windows nach dem Vorbild Private Brain Pro** (#399): Tauri 2 + WebView2 als Hülle, die Arbeit in einem Java-21-Kindprozess
+   über stdio (je Zeile ein JSON). So bleibt das Tresor-Paket `de.familyprojekt.tresor` byte-gleich mit Android; nur die Ablage (`SafAblage` →
+   `DateiAblage`) ist ausgetauscht. Das Passwort fragt nur die Hülle in einem eigenen Fenster, „Merken“ über DPAPI mit Entropie je Bindung.
+   Gemessen auf dem GitHub-Windows-Rechner: Installieren, Starten, Entfernen. ⚠ Nicht an einem echten Windows-PC.
+2. **Lehre aus der Abnahme:** nach dem Entfernen durch NSIS steht der Registry-Eintrag noch kurz da; die Probe wartet jetzt auf beides (Programmdatei
+   weg **und** Eintrag weg). Dieselbe Falle hatte Private Brain Pro.
+3. **Scanner und Kamera unter Windows** (WPP #39, gemeinsamer Baustein, Pin `native/pro-scanner-herkunft.json`): WIA über ein eingebettetes
+   PowerShell-Skript (`-EncodedCommand`, Auftrag als Base64-JSON in einer Umgebungsvariable — keine Anführungszeichen-Falle in der Befehlszeile);
+   mehrere Scanner (USB, WLAN/Netz) wählbar, Glas oder Einzug, dpi, Farbe; Kamera (Webcam, angeschlossene Digitalkamera als Webcam) als Livebild.
+   Gemessen auf dem GitHub-Rechner: Geräteliste (0 Geräte), „unbekanntes Gerät → SCANNER_FEHLT“, „kaputter Auftrag → SCANNER_AUFTRAG“.
+   ⚠ **Kein echter Scanner, keine echte Kamera gemessen.** Die Probe für „Kamera aus“ war zuerst blind (sah nur das Fenster); jetzt zählt sie die
+   Spuren aus `getUserMedia` und verlangt, dass alle beendet sind.
+4. **Prüfung aller Pro-Varianten auf Updates** (echte GitHub-Daten, nicht nur Code gelesen): Private Brain Pro Android 1.0.40/1.0.41 → 1.0.42 und
+   Windows 1.0.40 → 1.0.41 funktionieren (Windows 1.0.42 ist nicht veröffentlicht). Workflow PDF Pro Android funktioniert (→ 1.0.7).
+   **Workflow PDF Pro Windows war nie eingerichtet:** `windows/signing/updater.pub` leer, keine `latest.json` — der Knopf meldete „nicht eingerichtet“.
+   Behoben wie Android (#40): die Brücke liest die öffentlichen Veröffentlichungen `windows-vX.Y.Z` mit Setup, „Herunterladen“ öffnet die feste
+   Release-Seite. BookLedgerPro hatte keine Updateprüfung (Repo privat → GitHub-Releases von außen nicht lesbar).
+5. **Updates vom eigenen Server** (#400, Klaus' Wahl): `https://family-projekt.de/updates/bookledgerpro/`, je Plattform eine Feed-Datei
+   (`aktuell-windows.json`, `aktuell-android.json`) mit Ed25519-Unterschrift (`.sig`, Base64). Die App glaubt nur der Unterschrift, nimmt nur eine
+   **neuere** Version, baut die Download-Adresse selbst (feste Basis + Dateiname nach festem Muster) und prüft Größe und SHA-256. Hochladen: GitHub-Lauf
+   nur von Hand, rsync mit einem Schlüssel, der auf dem Server über `rrsync` nur in `/srv/family-project/updates` schreiben darf; die Server-Kennung steht
+   fest im Lauf. Eingerichtet in Klaus' Termux und dort gemessen: Probe von außen lesbar, Hochladen mit dem GitHub-Schlüssel geht, `ls /` wird abgelehnt
+   („SSH_ORIGINAL_COMMAND does not run rsync“), Server-Kennung und öffentlicher Schlüssel stimmen mit Lauf und App überein, Geheimnisse
+   `BLP_UPDATE_UPLOAD_KEY` und `BLP_UPDATE_SIGNING_KEY` in GitHub, Sicherung `~/blp-update-schluessel.age`. ⚠ Der ganze Weg (Lauf → Server → App lädt
+   und installiert) ist erst mit der ersten Veröffentlichung gemessen; die gibt es nur auf Klaus' Wort.
+6. **Eine Feed-Datei je Plattform, nicht eine gemeinsame:** mit einer gemeinsamen Datei hätte eine Android-Veröffentlichung die Windows-Angaben
+   überschrieben (oder umgekehrt), solange beide Läufe getrennt sind. Der Windows-Lauf gleicht nur Windows-Dateien ab (rsync mit Filter).
+7. **Android prüft Ed25519 erst ab Version 13 selbst** (API 33); das Tab S6 hat Android 12, die App läuft ab 7 (minSdk 24). Deshalb die kleine
+   Prüfbibliothek `net.i2p.crypto:eddsa:0.3.0` und ein eigener Base64-Leser (`java.util.Base64` gibt es erst ab Android 8). Vor dem Installieren:
+   gleiches Paket, gleiches Signier-Zertifikat, höherer versionCode — sonst wird nichts installiert. JVM-Probe `UpdateFeedTest` 11 grün mit echten
+   openssl-Unterschriften. ⚠ Androids Installieren-Fenster und die Erlaubnis „Apps installieren“ sind am Gerät nicht gemessen.
+8. **Die eingebaute Java-Laufzeit war zu klein** (rot in CI, Lauf 40779862754): jlink nahm nur `java.base,java.logging`; `DesktopUpdates` braucht
+   `java.net.http`, und Ed25519 liegt in Java 21 noch in `jdk.crypto.ec` (erst ab 22 in `java.base`). Folge: der Kindprozess startete gar nicht
+   (`NoClassDefFoundError` → `APP_RUNTIME_UNAVAILABLE`). Lokal mit jlink nachgestellt: ohne die Module rot, mit grün; `KeyFactory.getInstance("Ed25519")`
+   meldet mit `jdk.crypto.ec` „SunEC version 21“, ohne wirft es. Die Engine-Proben liefen mit dem vollen JDK und sahen es nicht. Lehre: jede neue
+   Java-Klasse aus einem anderen Modul braucht einen Blick auf die jlink-Liste; die Protokoll-Probe gegen die **gebündelte** Laufzeit ist der Wächter
+   und nennt jetzt den Startfehler.
+9. **Zweites Bedeutungs-Modell verdrahtet** (Private Brain Pro #114): Stufe Mittel/Groß nur für die App-Suche, eigene Werte (IndexedDB `pb_meaning_v1`),
+   Mycel/Siegel/Modul 03 bleiben e5-small. Die Suche nutzt das große Modell nur, wenn alles eingeordnet ist, sonst Modul 03. Proben `test-meaning` 34,
+   Gegenprobe 12/12. ⚠ Echtes Modell in der App und am Gerät nicht gemessen (siehe § 16.4 für die Lernlauf-Zahlen).
+10. **`pro-geraet.js` (Fassung 3) nachgezogen** nach Workflow PDF Pro und BookLedgerPro, byte-gleich über die Pins. In Workflow PDF Pro musste er in die
+   Liste der Bedien-Dateien (`bedienFiles`), sonst lud ihn die App nicht.
+11. **Basic** zweimal nachgezogen (#13 auf `26a25fc`, #14 auf `1127038`); für die PWA wirkt jeweils nur der Cache-Bump, alles Neue hängt an
+   `window.BLPNative`.
