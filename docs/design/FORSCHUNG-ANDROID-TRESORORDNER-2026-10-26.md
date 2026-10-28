@@ -276,6 +276,13 @@ Mail-Beleg + 2 PDF-Anhänge als eigene Belege. Der Einzug lief **gleich am echte
    „vor dem Einbau“ über die echte Datei nach und wurde dadurch rot; jetzt mit leerer Liste gestellt.
    Dieselbe Folge traf die Windows-Abnahme (Studio aus dem CI öffnete die Pinnwand nicht mehr): Lehre — ein fester Vertrauensanker
    macht jede Probe rot, die sich bisher selbst vertraut hat; alle Proben mit eigenem Studio vor dem Einbau suchen (`grep createKey`).
+8. **`page.route` greift auch in der installierten Windows-App:** die Abnahme fängt per CDP die Anfrage an `https://tauri.localhost/license-keys.json`
+   ab (gemessen in Private Brain Pro #108, Windows-Lauf grün mit den Zeilen „test-only empty publisher list is read“ und „fixed publisher key is read
+   again“). Damit lassen sich mitgelieferte Dateien nur für eine Prüfung stellen, ohne das Installationspaket zu ändern.
+9. **native-smoke starb vor dem ersten Test** (Emulator-SDK „Error on ZipFile unknown archive“) — Infrastruktur, kein Code; ein Neustart war erst nach
+   dem Ende des Laufs möglich (vorher 403 „already running“). Derselbe Stand war im zweiten Lauf grün.
+10. **Lokale Proben gegen ein altes Bündel:** `test-tools` liest `www/`, nicht `native/`; nach einer Änderung in `native/` war die Probe rot, bis die
+    Datei nach `www/` kopiert war (`build:web` scheitert im Behälter an der OCR-Beschaffung). Vor jeder lokalen Probe geänderte `native/`-Dateien nach `www/`.
 
 ## 12 · Befunde aus der Umbau-Sitzung 2 (2026-10-28, Abend, gemessen)
 
