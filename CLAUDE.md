@@ -461,5 +461,5 @@ Klaus hat 0.1.1 am Tablet in geteilter Ansicht (≈ 1000 px) geprüft. Gilt für
   B/C Positionszeile bei 1000/640 px eine Zeile ohne Mikrofon · ≤ 32 px in 8 Ansichten bei 360/640/700/1000/1280 px · Konten · ⓘ gemerkt · 200 % Schrift ·
   D Auswahl-Prüfen · E Calculate/Needs flach, ohne Emoji); Gegenprobe in einem Lauf (Positivliste weg, ⓘ weg, Symbole weg, App-Start weg, Fortschritt
   weg) → je eigene rote Zeilen. `smoke_design` 92 (neu: Maß ≤ 32 px bei 700/1024 px) · `smoke_mikro` 19 (auf die Positivliste umgestellt) · `smoke_apps` 22
-  (Blau = BLP-Blau) · `test-native` 46 · `run.mjs` 2602/0 · `smoke_scanner` 13 (Zeile „eigener Scan“ las seit #389 den falschen Ort, jetzt aria-label) ·
+  (Blau = BLP-Blau) · `test-native` 44 · `run.mjs` 2602/0 · `smoke_scanner` 13 (Zeile „eigener Scan“ las seit #389 den falschen Ort, jetzt aria-label) ·
   `smoke_belege` 46/14 wie auf main. `sw.js` v276. ⚠ Nicht am Tablet; Kamera und Sprachfenster nur über Manifest/Java-Proben und gestellte Brücken geprüft.
