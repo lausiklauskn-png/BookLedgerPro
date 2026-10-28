@@ -83,7 +83,7 @@ Tag `v0.1.0` und der volle main-Commit). Ablauf wie bei Workflow PDF Pro:
    Oberfläche einen Tresor mit Wegwerf-Passwort anlegen, dieselbe APK darüber installieren — danach muss „Entsperren“ statt der
    Ersteinrichtung stehen (`*.installation.json`). Kein Debug-Zugang.
 4. **Veröffentlichen** (`publish-release.mjs`): Tag darf es noch nicht geben; ab der zweiten Fassung müssen Signatur gleich und
-   Version/Buildnummer höher sein; Release erst als Entwurf, dann öffentlich, danach Download bytegleich geprüft (sonst zurück auf Entwurf).
+   Version/Buildnummer höher sein; Release erst als Entwurf, dann öffentlich, danach Download bytegleich geprüft (sonst zurück auf Entwurf). Das Repo ist **privat**: geprüft wird mit Anmeldung, herunterladen kann nur, wer bei GitHub angemeldet ist und Zugriff hat. Bleibt ein geprüfter Entwurf liegen, gibt ihn derselbe Ablauf mit „entwurf_freigeben“ frei (prüft APK, Nachweis und Installationsprobe des Entwurfs, kein neuer Bau).
 
 Für jede weitere Fassung `versionName` und `versionCode` in `android/app/build.gradle` erhöhen. `tools/signing/test-apk.mjs` läuft in
 `android.yml` mit dem echten apksigner an einer künstlichen APK (Wegwerf-Schlüssel); lokal ohne `BLP_ANDROID_SDK` übersprungen.
