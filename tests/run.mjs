@@ -7199,11 +7199,16 @@ await section('Pro-Umbau 2 (Klaus 2026-10-28): Tresorordner-Ansicht 1 → 2 → 
   ok('3 · In-App-Öffnen: fremdes Format → Private Brain Pro; eigenes Fach/unbekannt → nichts', to.appFuer(faecher[2], faecher[2].eintraege[0])?.name === 'Private Brain Pro' && to.appFuer(faecher[1], E('z', 'z')) === null);
   const ansicht = _readSpore(new URL('../src/ui/views/tresorordner.js', import.meta.url), 'utf8');
   ok('4 · Mehrfach-Übernahme: erst alle lesen, dann markieren, dann übergeben (eine Fehlschlag-Datei übernimmt nichts)', /for \(const x of liste\) \{\s*try \{ dateien\.push\(await b\.lesen/.test(ansicht) && ansicht.indexOf('dateien.push(await b.lesen') < ansicht.indexOf('await b.markieren(x.fach'));
-  const java = _readSpore(new URL('../android/app/src/main/java/de/familyprojekt/bookledgerpro/BlpTresorPlugin.java', import.meta.url), 'utf8');
-  const manifest = _readSpore(new URL('../android/app/src/main/AndroidManifest.xml', import.meta.url), 'utf8');
-  ok('3 · Java startet nur die feste Liste der Pro-Apps; Manifest kennt genau diese Pakete', /PRO_APPS\.put\(Fach\.PRIVATE_BRAIN_APP/.test(java) && /getLaunchIntentForPackage\(paket\)/.test(java)
-    && ['de.familyprojekt.privatebrain.pro"', 'de.familyprojekt.privatebrain.pro.preview"', 'de.familyprojekt.workflowpdf.pro"'].every((p) => manifest.includes('<package android:name="' + p)));
-  ok('„In Dateien öffnen“: ACTION_VIEW auf den Ordner, ohne Lesen/Schreiben', /public void ordnerOeffnen/.test(java) && /MIME_TYPE_DIR/.test(java));
+  // Android-Hülle: nur in der Pro (BookLedger Basic hat kein android/ — dort ehrlich übersprungen, nicht grün gezählt).
+  const { existsSync: _da } = await import('node:fs');
+  const javaUrl = new URL('../android/app/src/main/java/de/familyprojekt/bookledgerpro/BlpTresorPlugin.java', import.meta.url);
+  if (_da(javaUrl)) {
+    const java = _readSpore(javaUrl, 'utf8');
+    const manifest = _readSpore(new URL('../android/app/src/main/AndroidManifest.xml', import.meta.url), 'utf8');
+    ok('3 · Java startet nur die feste Liste der Pro-Apps; Manifest kennt genau diese Pakete', /PRO_APPS\.put\(Fach\.PRIVATE_BRAIN_APP/.test(java) && /getLaunchIntentForPackage\(paket\)/.test(java)
+      && ['de.familyprojekt.privatebrain.pro"', 'de.familyprojekt.privatebrain.pro.preview"', 'de.familyprojekt.workflowpdf.pro"'].every((p) => manifest.includes('<package android:name="' + p)));
+    ok('„In Dateien öffnen“: ACTION_VIEW auf den Ordner, ohne Lesen/Schreiben', /public void ordnerOeffnen/.test(java) && /MIME_TYPE_DIR/.test(java));
+  } else console.log('  (Java-Teil nur in der Pro-App mit android/ — hier übersprungen)');
   const i18n = await import('../src/ui/i18n.js');
   ok('App-Texte nur in der App: ohne window.BLPNative bleibt der Browser-Satz (PWA/Basic unverändert)', /Browser/.test(i18n.t('backup.cardHint')) && !i18n.istProApp());
   globalThis.window = { BLPNative: {} };
