@@ -20,6 +20,8 @@ Pro-App, die später eine **Windows-Fassung** bekommt. Je Fassung erscheinen **n
 5. **Themenverwandtes nebeneinander** (Tresor + Ablage; Suche + Bedeutung + Bildbeschreibung).
 6. **In allen Pro-Apps gleich:** gleiche Knöpfe, Namen, Reihenfolge. Knopf, ⓘ-Klapper und Fortschritt kommen aus **einer gemeinsamen Datei**,
    byte-gleich in alle Pro-Apps kopiert und per SHA gepinnt (Muster wie das Tresor-Paket `de.familyprojekt.tresor`). Nur die Inhalte sind app-eigen.
+   **Gepflegt in Private Brain Pro** (Klaus 2026-10-28): `native/pro-bedienung.js`/`.css`, Pin `native/pro-bedienung-herkunft.json`
+   (`tools/native/pro-bedienung-pins.mjs --schreiben`), Kopie in die anderen Apps mit `tools/native/bedienung-nachziehen.mjs --quelle ../privat-brain-pro`.
 
 ## 2 · Namen für Tresore (nur EIN Ding heißt „Tresor“)
 | Name | Was | Zeile |

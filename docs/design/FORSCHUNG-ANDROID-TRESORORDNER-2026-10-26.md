@@ -251,3 +251,23 @@ Mail-Beleg + 2 PDF-Anhänge als eigene Belege. Der Einzug lief **gleich am echte
     Werkzeuge frei. Öffentlicher Schlüssel (nicht geheim) `fb6cd374…709ee2f` — fest in die Apps: offen, Klaus' Wort.
 13. Bedienbefunde gesammelt im **Leitfaden** `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md` (Fortschritt, Ladeanzeigen, flache Knöpfe,
     Strichgrafiken, Listen für Hunderte, Pfad + Link, Version bei „Updates prüfen“, lesbare Dateinamen, Leistengriff mittig).
+
+## 11 · Befunde aus der Umbau-Sitzung 1 (2026-10-28, Nachmittag, gemessen)
+
+1. **Sperren in Private Brain Pro:** Entwurf #105 löste es mit `tresorSperren({vergessen:true})` — das hätte „Passwort merken“ bei jedem
+   Sperren gelöscht. Gelöst ist es jetzt wie in BookLedgerPro und Workflow PDF Pro auf der Java-Seite (`vonHandGesperrt`); alle drei Apps
+   verhalten sich gleich. Die Probe stellt jetzt Javas Verhalten nach (gemerkter Schlüssel öffnet beim Zustand von selbst, außer nach Sperren).
+2. **Absturz beim Schließen (CI-Fund, Private Brain Pro):** `tresorZustand` kam nach `handleOnDestroy` an; der geschlossene Arbeits-Thread warf
+   `RejectedExecutionException` auf dem Capacitor-Thread → Prozess beendet, sichtbar als rote Übersetzungs-Tests. Zweimal gleich, also kein
+   Zufall. Jetzt lehnen `tresorWork`/`work` mit `NATIVE_ACTIVITY_CLOSED` ab. Andere direkte `execute`-Stellen (Dialoge nach Nutzertipp) sind
+   unverändert — dort kommt kein später Aufruf.
+3. **Workflow PDF Pro web-core:** einmal rot an einer Kern-Probe („page.screenshot: Unable to capture screenshot“), Neustart grün; der Diff
+   berührte den Kern nicht.
+4. **Web-Reste messen:** die Design-Probe läuft ohne App-Brücke — also wie die PWA, in der „Browser“ richtig ist. Die Probe auf Web-Reste
+   gehört deshalb in eine Probe mit gestellter App-Brücke (`test-tresorordner`). Gefunden: 11 Stellen in Einstellungen und Einlesen.
+   Zwei davon sind Probe-Artefakte (in der App setzen `native-folders.js` bzw. `pb-bildbeschreibung.js` eigene App-Texte).
+5. **Ping-Pong:** `pb-bildbeschreibung.js` setzt seinen Absatz bei jeder Auffrischung, sobald der Text abweicht; eine Ersetzung darin
+   erzeugte DOM-Änderungen ohne Ende (`test-help` „keine Änderungen nach Auffrischen“ fing es). Solche Absätze nie umschreiben.
+6. **Zeilen idempotent bauen:** Zustand-/Pfad-Zeilen nur neu bauen, wenn sich etwas ändert (Signatur am Element) — sonst ist jedes
+   Neuzeichnen eine DOM-Änderung.
+7. **Öffentlicher Herausgeber-Schlüssel:** im Repo steht er nur gekürzt (`fb6cd374…709ee2f`); fest einbauen geht erst mit dem vollen Wert.

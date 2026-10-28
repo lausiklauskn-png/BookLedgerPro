@@ -5,7 +5,14 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-## ▶ Neuester Stand (2026-10-28, Vormittag): Tresorordner Schritt E am Tablet bestanden
+## ▶ Neuester Stand (2026-10-28, Nachmittag): Reparaturen + Einstellungs-Umbau Schritt 1
+- Klaus: 0.1.1 **nicht** veröffentlichen · Bedien-Datei in **Private Brain Pro** · Herausgeber-Schlüssel **fest einbauen** (voller Wert fehlt noch).
+- Gemergt: Workflow-PDF-Pro#32 (Sperren bleibt gesperrt) · Privat-Brain-Pro#106 (#105 ohne Explorer, Sperren Java-seitig, Teilen fragt bei
+  gesperrtem Ordner, Absturz nach dem Schließen behoben) · Privat-Brain-Pro#107 („Tresor & Ablage“, `pro-bedienung.js`, keine Web-Reste, Version).
+- Hier: Kopier-Werkzeug `tools/native/bedienung-nachziehen.mjs` + Kopie der Bedien-Datei (Pins in `native/pro-bedienung-herkunft.json`).
+- **Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-2.md` (WPP, dann BLP). Abschluss: `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-1.md`. Nichts veröffentlicht.
+
+## ▶ Stand (2026-10-28, Vormittag): Tresorordner Schritt E am Tablet bestanden
 - Echter Ordner `SD-Karte/Privat Brain Pro Hauptablageordner/`: Private Brain Pro (31), Workflow PDF Pro (Ablage dort, 6) eingezogen,
   BookLedgerPro öffnet ihn, sichert automatisch, übernimmt Rechnungsmails aus dem Eingangsfach (Mail + Anhänge als Belege).
 - Gemergt: #381 Teilen-Eingang (WebView-launchQueue), #382 englische Rechnungen + Sperren. **Nicht veröffentlicht** (0.1.1 auf Klaus' Wort).
