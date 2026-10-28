@@ -7219,5 +7219,32 @@ await section('Pro-Umbau 2 (Klaus 2026-10-28): Tresorordner-Ansicht 1 → 2 → 
   ok('i18n DE/EN: alle neuen Schlüssel zweimal (' + keys.length + ')', keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2), keys.filter((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length < 2).join(','));
 });
 
+await section('Pro-Umbau 3 (Klaus 2026-10-28): Belegliste für Hunderte, Strichgrafiken, Einordnen nur auf Knopf', async () => {
+  const L = await import('../src/domain/belegListe.js');
+  const B = (id, extra = {}) => ({ id, name: id, mediaType: 'application/pdf', ...extra });
+  const liste = [B('a'), B('m', { mediaType: 'message/rfc822' }), B('x1', { mail: { mailId: 'm' } }), B('b'), B('x2', { mail: { mailId: 'm' } }), B('w', { mail: { mailId: 'fehlt' } })];
+  const g = L.belegGruppen(liste);
+  ok('Gruppen: Mail mit ihren zwei Anhängen, Reihenfolge der Liste bleibt', JSON.stringify(g.map((x) => [x.beleg.id, x.anhaenge.map((a) => a.id)])) === '[["a",[]],["m",["x1","x2"]],["b",[]],["w",[]]]', JSON.stringify(g.map((x) => [x.beleg.id, x.anhaenge.map((a) => a.id)])));
+  ok('Anhang ohne Mail in der Liste bleibt eigene Zeile; leere Liste → leer', g.some((x) => x.beleg.id === 'w') && L.belegGruppen(null).length === 0);
+  let m = L.alleAuf();
+  ok('auf/zu: Vorgabe offen; Umschalten merkt je Mail', !L.gruppeZu(m, 'm') && L.gruppeZu(m = L.gruppeUmschalten(m, 'm'), 'm') && !L.gruppeZu(L.gruppeUmschalten(m, 'm'), 'm'));
+  m = L.alleZu();
+  ok('„Alle zu“: jede Gruppe zu, eine einzeln wieder auf', L.gruppeZu(m, 'm') && L.gruppeZu(m, 'n') && !L.gruppeZu(L.gruppeUmschalten(m, 'm'), 'm') && L.gruppeZu(L.gruppeUmschalten(m, 'm'), 'n'));
+  ok('Zustandssymbole für jeden Prüfstand', ['offen', 'eigen', 'sauber', 'warnung', 'ungeprueft'].every((k) => /^(pb|blp)-/.test(L.PRUEF_SYMBOL[k])));
+  const svg = _readSpore(new URL('../assets/blp-icons.svg', import.meta.url), 'utf8');
+  const { STRICH } = await import('../src/ui/strich.js');
+  const pb = _readSpore(new URL('../assets/pb-icons.svg', import.meta.url), 'utf8');
+  const fehlt = [...new Set([...Object.values(STRICH), ...Object.values(L.PRUEF_SYMBOL).filter(Boolean), 'blp-mehr', 'blp-pfeil', 'blp-anhang'])].filter((id) => !svg.includes(`id="${id}"`) && !pb.includes(`id="${id}"`));
+  ok('jedes Strichsymbol der Tabelle steht in einem Sprite', fehlt.length === 0, fehlt.join(','));
+  const doc = _readSpore(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
+  ok('Einordnen startet beim Öffnen nur nach Freigabe in dieser Sitzung (_einordnenFrei), sonst Angebot „Einordnen“', /bedeutungssuche === 'an' && _einordnenFrei\) setTimeout\(\(\) => bedeutungStarten/.test(doc) && /else if \(getSettings\(\)\.bedeutungssuche === 'an'\) einordnenAnbieten\(belege\)/.test(doc));
+  ok('Schalter ist role=switch neben dem Suchfeld', /role: 'switch'/.test(doc) && /class: 'suche-kopf' \}, \[el\('div', \{ class: 'suche-feld' \}, \[input\]\), schalter\]/.test(doc));
+  const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
+  ok('Vorrat: strich.js und belegListe.js, Cache ≥ v274', ["'./src/ui/strich.js'", "'./src/domain/belegListe.js'"].every((f) => sw.includes(f)) && Number(sw.match(/CACHE_VERSION = 'v(\d+)'/)[1]) >= 274);
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  const keys = [...new Set([...doc.matchAll(/t\('((?:docs\.liste|docs\.suche\.(?:bedeutung|nochNicht|einordnen|bedeutungBereitKurz)|docs\.verknuepft)[A-Za-z.]*)'\)/g)].map((x) => x[1]))];
+  ok('i18n DE/EN: neue Listen-Schlüssel zweimal (' + keys.length + ')', keys.length >= 8 && keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2), keys.join(','));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);

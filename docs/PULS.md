@@ -5,7 +5,13 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-## ▶ Neuester Stand (2026-10-28, Abend): Einstellungs-Umbau Schritt 2
+## ▶ Neuester Stand (2026-10-28, spät): Pro-Umbau Schritt 3
+- Workflow-PDF-Pro#35: Sicherung gestreamt (`.wfps`, 60 MB ohne Speicherzuwachs; Kern-Weg +≈ 900 MB), Einordnen/Prüfen nur auf Knopf, Tipp-Schutz.
+- BookLedgerPro#389: Belegliste für Hunderte (flache Zeilen, Mail → Anhänge, ⋯), Bedeutungs-Schalter am Suchfeld, Strichgrafiken, Griff mittig. Basic nachgezogen.
+  **Nichts veröffentlicht**, nichts am Tablet.
+- **Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-4.md`. Abschluss: `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-3.md`.
+
+## ▶ Stand (2026-10-28, Abend): Einstellungs-Umbau Schritt 2
 - Workflow-PDF-Pro#34 und BookLedgerPro#386: „Tresor & Ablage“ (●, Pfad, „In Dateien öffnen“), keine Web-Reste, Version; BLP Startseite ohne
   Willkommen, Geschäftsjahr in der Kopfleiste, Tresorordner-Ansicht 1→2→4→3. Basic nachgezogen. **Nichts veröffentlicht.**
 - **Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-3.md`. Abschluss: `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-2.md`.

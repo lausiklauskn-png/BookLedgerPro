@@ -154,5 +154,5 @@ Grundlage: `docs/design/SAMMLUNG-DESIGN-2026-10-26.md`, Brief `docs/BRIEF_NACHFO
 - [ ] 7.2b Bedeutungssuche über Belege ohne KI · Mikrofon an allen Texteingaben · Anonymisierung auch unklarer Namen (Klaus 2026-10-26, Plan vorher)
 - [x] 7.7 Pro-App-Bedienung nach Leitfaden, Schritt 2: „Tresor & Ablage“, keine Web-Reste, Version, Startseite ohne Gruß, Geschäftsjahr in der
       Kopfleiste, Tresorordner 1→2→4→3 — 2026-10-28, PR #386, `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-2.md`; am Gerät ungeprüft
-- [ ] 7.8 Pro-Umbau 3: Belegliste für Hunderte, Bedeutungs-Schalter an der Suche, Strichgrafiken, Leistengriff (`BRIEF_SITZUNG_PRO-UMBAU-3.md`)
+- [x] 7.8 Pro-Umbau 3: Belegliste für Hunderte, Bedeutungs-Schalter an der Suche, Strichgrafiken, Leistengriff (2026-10-28; ⚠ nicht am Tablet)
 - [ ] 7.6 Danach Unternehmer-Modi; PWA-Klon **BookLedger Basic** (`BookLedger-Basic`, DB-Endung `bookledgerbasic`, D10 entschieden 2026-10-26)

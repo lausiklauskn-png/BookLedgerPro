@@ -39,6 +39,9 @@ import { loadEmbedder } from '../../sbkim/embed.js';
 import { getSettings, navigate, updateSettings } from '../../state.js';
 import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
+import { icon } from '../icons.js';
+import { strichBeobachten } from '../strich.js';
+import { belegGruppen, PRUEF_SYMBOL, gruppeZu, gruppeUmschalten, alleZu, alleAuf } from '../../domain/belegListe.js';
 import { testMarke } from '../testmarke.js';
 import { namenVorschlagBox } from '../namensvorschlag.js';
 import { pruefStandVon, ungepruefte, belegDateienWaehlen, belegTyp, kiAnweisungZeilen, textNachWahl, ohneZeilen, PRUEF_STAND } from '../../domain/kiReinigung.js';
@@ -114,7 +117,7 @@ async function geteiltesAbholen() {
 
 async function repaint(extra) {
   const [belege, visionBereit] = await Promise.all([listBelege(), isOcrAktiv().catch(() => false)]);
-  mount(_host, el('section', { class: 'view' }, [
+  const ansicht = el('section', { class: 'view belege-ansicht' }, [
     el('h1', { text: t('docs.title') }),
     neuImTresorHinweis(),
     schnellerfassung(),
@@ -124,8 +127,29 @@ async function repaint(extra) {
     uploadKarte(),
     belegSuche(belege),
     belegListe(belege, visionBereit),
-  ]));
-  if (getSettings().bedeutungssuche === 'an') setTimeout(() => bedeutungStarten(belege).catch(() => {}), 0);
+  ]);
+  mount(_host, ansicht);
+  // Strichgrafiken statt Emojis (Leitfaden § 5) — auch in später gezeichneten Teilen (Suchtreffer, Meldungen).
+  if (_strichAus) _strichAus();
+  _strichAus = strichBeobachten(ansicht);
+  // Einordnen startet nie von selbst beim Öffnen (Leitfaden § 3): erst nach „Einordnen“ (oder dem Einschalten) in dieser
+  // Sitzung. Danach kommen neue Belege wie bisher von selbst dazu.
+  if (getSettings().bedeutungssuche === 'an' && _einordnenFrei) setTimeout(() => bedeutungStarten(belege).catch(() => {}), 0);
+  else if (getSettings().bedeutungssuche === 'an') einordnenAnbieten(belege);
+}
+let _strichAus = null;
+let _einordnenFrei = false;
+
+// Bedeutung an, aber in dieser Sitzung noch nicht freigegeben: die Zeile nennt, was fehlt, und bietet „Einordnen“ an.
+function einordnenAnbieten(belege) {
+  const offen = belege.filter(brauchtVektoren).length;
+  const ziel = document.querySelector('[data-einordnen-platz]');
+  if (!ziel) return;
+  if (!offen) { zustandSetzen('wartet', t('docs.suche.bedeutungBereitKurz')); return; }
+  zustandSetzen('wartet', t('docs.suche.nochNicht').replace('{n}', String(offen)));
+  ziel.replaceChildren(el('button', { class: 'btn btn-sm btn-primary', type: 'button', 'data-einordnen': '', text: t('docs.suche.einordnen'), onClick: () => {
+    _einordnenFrei = true; ziel.replaceChildren(); bedeutungStarten().catch(() => {});
+  } }));
 }
 
 // 1 · „Neu im Tresorordner“ (Klaus 2026-10-28, nur Pro-App): eine Zeile über den Belegen, wenn andere Pro-Apps etwas
@@ -1002,20 +1026,21 @@ async function alleUngepruefenPruefen(belege) {
 function pruefKnopf(b) {
   const stand = pruefStandVon(b);
   if (!stand) return el('span', { class: 'muted small', text: '—' });
-  if (_pruefLaeuft.has(b.id)) return el('span', { class: 'small pruef-laeuft', 'data-pruefung': 'laeuft', role: 'status' }, [drehkreis(), t('beleg.laeuft')]);
+  if (_pruefLaeuft.has(b.id)) return el('span', { class: 'small pruef-laeuft', 'data-pruefung': 'laeuft', role: 'status', title: t('beleg.laeuft'), 'aria-label': t('beleg.laeuft') }, [drehkreis()]);
   const text = { offen: t('beleg.offen'), eigen: t('beleg.eigen'), warnung: t('beleg.warnung'), sauber: t('beleg.sauber'), ungeprueft: t('beleg.ungeprueft') }[stand];
   const nachholen = stand === 'offen' || stand === 'eigen';
+  // Flache Zeile (Leitfaden § 5): nur das kleine Zustandssymbol, der Satz steht im title/aria-label.
   const knopf = el('button', {
-    class: 'btn btn-sm' + (stand === 'warnung' ? ' btn-danger' : ''), type: 'button', text,
+    class: 'zustand-knopf zustand-' + stand, type: 'button', title: text, 'aria-label': text,
     'data-pruefung': stand,
     ...(nachholen ? { 'data-pruef-nachholen': '' } : { 'data-pruef-bericht': '' }),
     onClick: () => (nachholen ? pruefeEinen(b) : berichtOeffnen(b)),
-  });
+  }, [icon(PRUEF_SYMBOL[stand] || 'blp-offen')]);
   const teile = [knopf];
   if (b.kiEntfernt && b.kiEntfernt.anzahl) {
-    teile.push(el('button', { class: 'btn btn-link btn-sm', type: 'button', 'data-ki-gereinigt': '', text: t('beleg.gereinigt'), onClick: () => berichtOeffnen(b) }));
+    teile.push(el('button', { class: 'zustand-knopf zustand-gereinigt', type: 'button', 'data-ki-gereinigt': '', title: t('beleg.gereinigt'), 'aria-label': t('beleg.gereinigt'), onClick: () => berichtOeffnen(b) }, [icon('blp-ki')]));
   }
-  return el('div', { class: 'btn-row' }, teile);
+  return el('span', { class: 'zustand-zelle' }, teile);
 }
 
 function pruefLeiste(belege) {
@@ -1037,27 +1062,93 @@ function pruefLeiste(belege) {
   return teile.length ? el('div', { class: 'btn-row pruef-leiste' }, teile) : null;
 }
 
+// Belegliste für Hunderte (Leitfaden § 5, Klaus 2026-10-28): eine flache Zeile je Beleg — Zustandssymbol, gekürzter Name,
+// Datum, Größe, Verknüpfung, ⋯ für alle Knöpfe. Eine Mail ist eine Gruppe, ihre Anhänge darunter aufklappbar; „Alle zu/auf“.
+const GRUPPEN_KEY = 'blpr_belege_gruppen';
+function gruppenMerk() { try { return JSON.parse(localStorage.getItem(GRUPPEN_KEY) || 'null') || alleAuf(); } catch { return alleAuf(); } }
+function gruppenSetzen(m) { try { localStorage.setItem(GRUPPEN_KEY, JSON.stringify(m)); } catch { /* nur Komfort */ } }
+
+function belegZeile(b, visionBereit, { anhangVon = null, gruppe = null, zu = false } = {}) {
+  const unter = [
+    ...(b.original ? [el('div', { class: 'muted small zeile-unter', 'data-scan': b.scan && b.scan.sicher ? 'sicher' : 'ganz',
+      text: (b.scan && b.scan.sicher ? t('docs.scanMarkeSicher') : t('docs.scanMarkeGanz')) + ' · ' + t('docs.originalLiegtBei') })] : []),
+    mailZeile(b), angebotZeile(b), positionenZeile(b),
+  ].filter(Boolean);
+  const klapp = gruppe && gruppe.anhaenge.length ? el('button', {
+    class: 'gruppe-klapp', type: 'button', 'data-gruppe-klapp': b.id, 'aria-expanded': zu ? 'false' : 'true',
+    title: t(zu ? 'docs.liste.aufklappen' : 'docs.liste.zuklappen'), 'aria-label': t(zu ? 'docs.liste.aufklappen' : 'docs.liste.zuklappen'),
+    onClick: () => { gruppenSetzen(gruppeUmschalten(gruppenMerk(), b.id)); repaint(); },
+  }, [icon('blp-pfeil'), el('span', { class: 'gruppe-zahl', text: String(gruppe.anhaenge.length) })]) : null;
+  const name = el('div', { class: 'zeile-name' }, [
+    klapp,
+    anhangVon ? icon('blp-anhang', 'zeile-anhang-ic') : null,
+    el('span', { class: 'beleg-name', title: b.name + ' · ' + (b.mediaType || ''), text: b.name }),
+  ].filter(Boolean));
+  return el('tr', {
+    class: 'beleg-zeile' + (anhangVon ? ' beleg-anhang' : '') + (gruppe && gruppe.anhaenge.length ? ' beleg-gruppe' : ''),
+    'data-beleg-zeile': b.id, ...(anhangVon ? { 'data-anhang-von': anhangVon } : {}), ...(anhangVon && zu ? { hidden: true } : {}),
+  }, [
+    el('td', { class: 'pruef-zelle', 'data-beleg-id': b.id }, [pruefKnopf(b)]),
+    el('td', { class: 'name-zelle' }, [name, ...unter]),
+    el('td', { class: 'muted small mono datum-zelle', text: (b.createdAt || '').slice(0, 10) }),
+    el('td', { class: 'num muted small groesse-zelle', text: formatBytes(b.size) }),
+    el('td', { class: 'link-zelle' }, b.buchungId ? [el('span', { class: 'link-marke', title: t('docs.verknuepft'), 'aria-label': t('docs.verknuepft'), 'data-verknuepft': '' }, [icon('pb-link')])] : []),
+    el('td', { class: 'actions' }, [zeilenMenue(b, visionBereit)]),
+  ]);
+}
+
+// ⋯-Menü einer Zeile: alle Knöpfe (Texterkennung, Original, Löschen) und die Angaben, die nicht in die Zeile passen.
+function zeilenMenue(b, visionBereit) {
+  const liste = el('div', { class: 'zeilen-menue-liste', role: 'menu' }, [
+    el('div', { class: 'muted small zeilen-menue-info', 'data-menue-info': '' }, [
+      el('div', { text: b.name }),
+      el('div', { text: (b.mediaType || '') + ' · ' + formatBytes(b.size) }),
+      el('div', { title: t('docs.keepUntil'), text: t('docs.keepUntil') + ': ' + aufbewahrungBis(b.createdAt) }),
+    ]),
+    belegAktionen(b, visionBereit),
+  ]);
+  const d = el('details', { class: 'zeilen-menue', 'data-zeilen-menue': b.id }, [
+    el('summary', { class: 'zeilen-menue-knopf', title: t('docs.liste.mehr'), 'aria-label': t('docs.liste.mehr') }, [icon('blp-mehr')]),
+    liste,
+  ]);
+  d.addEventListener('toggle', () => {
+    if (!d.open) return;
+    for (const x of document.querySelectorAll('details.zeilen-menue[open]')) if (x !== d) x.open = false;
+  });
+  return d;
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', (e) => {
+    for (const x of document.querySelectorAll('details.zeilen-menue[open]')) if (!x.contains(e.target)) x.open = false;
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') for (const x of document.querySelectorAll('details.zeilen-menue[open]')) x.open = false; });
+}
+
 function belegListe(belege, visionBereit) {
   if (!belege.length) return emptyState('empty-documents.png', t('docs.empty'));
-  const rows = belege.map((b) => el('tr', {}, [
-    el('td', {}, [b.name, ...(b.original ? [el('div', { class: 'muted small', 'data-scan': b.scan && b.scan.sicher ? 'sicher' : 'ganz',
-      text: (b.scan && b.scan.sicher ? t('docs.scanMarkeSicher') : t('docs.scanMarkeGanz')) + ' · ' + t('docs.originalLiegtBei') })] : []),
-      mailZeile(b), angebotZeile(b), positionenZeile(b)]),
-    el('td', { class: 'muted small', text: b.mediaType }),
-    el('td', { class: 'num muted small', text: formatBytes(b.size) }),
-    el('td', { class: 'muted small mono', text: (b.createdAt || '').slice(0, 10) }),
-    el('td', { class: 'muted small mono', text: aufbewahrungBis(b.createdAt).slice(0, 4), title: t('docs.keepUntil') }),
-    el('td', { text: b.buchungId ? '🔗' : '' }),
-    el('td', { class: 'pruef-zelle', 'data-beleg-id': b.id }, [pruefKnopf(b)]),
-    el('td', { class: 'actions' }, [belegAktionen(b, visionBereit)]),
-  ]));
-  return el('div', { class: 'card no-pad' }, [
+  const merk = gruppenMerk();
+  const gruppen = belegGruppen(belege, MAIL_TYP);
+  const rows = [];
+  for (const g of gruppen) {
+    const zu = g.anhaenge.length ? gruppeZu(merk, g.beleg.id) : false;
+    rows.push(belegZeile(g.beleg, visionBereit, { gruppe: g, zu }));
+    for (const a of g.anhaenge) rows.push(belegZeile(a, visionBereit, { anhangVon: g.beleg.id, zu }));
+  }
+  const mitGruppen = gruppen.some((g) => g.anhaenge.length);
+  const alleSindZu = mitGruppen && gruppen.filter((g) => g.anhaenge.length).every((g) => gruppeZu(merk, g.beleg.id));
+  const kopf = el('div', { class: 'liste-kopf' }, [
+    el('span', { class: 'muted small', 'data-belege-zahl': String(belege.length), text: t('docs.liste.zahl').replace('{n}', String(belege.length)) }),
+    mitGruppen ? el('button', { class: 'btn btn-sm', type: 'button', 'data-gruppen-alle': alleSindZu ? 'auf' : 'zu',
+      text: t(alleSindZu ? 'docs.liste.alleAuf' : 'docs.liste.alleZu'), onClick: () => { gruppenSetzen(alleSindZu ? alleAuf() : alleZu()); repaint(); } }) : null,
+  ]);
+  return el('div', { class: 'card no-pad beleg-liste-karte' }, [
     pruefLeiste(belege),
-    el('table', { class: 'table' }, [
+    kopf,
+    el('table', { class: 'table beleg-liste' }, [
       el('thead', {}, el('tr', {}, [
-        el('th', { text: t('docs.name') }), el('th', { text: t('docs.kind') }),
-        el('th', { class: 'num', text: t('docs.size') }), el('th', { text: t('docs.date') }),
-        el('th', { text: t('docs.keepUntil') }), el('th', {}), el('th', { text: t('docs.pruefung') }), el('th', {}),
+        el('th', { class: 'pruef-zelle', title: t('docs.pruefung'), 'aria-label': t('docs.pruefung') }), el('th', { text: t('docs.name') }),
+        el('th', { class: 'datum-zelle', text: t('docs.date') }), el('th', { class: 'num groesse-zelle', text: t('docs.size') }),
+        el('th', { class: 'link-zelle' }), el('th', { class: 'actions' }),
       ])),
       el('tbody', {}, rows),
     ]),
@@ -1362,6 +1453,9 @@ async function sucheAusfuehren(frage, _belegeAlt, ziel) {
   }
   // 3) Bedeutung (nur mit geladenem Modell)
   let bedeutung = [], schwach = false;
+  if (!_embedder && s.bedeutungssuche === 'an' && frage.trim()) {
+    try { zustandSetzen('laedt', t('docs.suche.bedeutungLaedt')); await embedderHolen((x) => zustandSetzen('laedt', t('docs.suche.bedeutungLaedt') + ' ' + x)); einordnenAnbieten(belege); } catch (e) { zustandSetzen('fehler', t('docs.suche.bedeutungFehler').replace('{e}', String((e && e.message) || e))); }
+  }
   if (_embedder && frage.trim()) {
     try {
       const q = await _embedder.embedQuery(frage.trim());
@@ -1384,7 +1478,7 @@ async function sucheAusfuehren(frage, _belegeAlt, ziel) {
     el('span', { class: 'suche-typ', text: t('docs.suche.art.' + x.typ) + (x.art === 'bedeutung' ? ' · 🧠 ' + Math.round(x.naehe * 100) + ' %' : '') }),
     el('button', { class: 'btn btn-sm', type: 'button', text: x.name || '—', onClick: () => {
       const zeile = document.querySelector(`[data-beleg-id="${x.id}"]`);
-      if (zeile) { zeile.closest('tr').scrollIntoView({ block: 'center' }); zeile.closest('tr').classList.add('suche-markiert'); }
+      if (zeile) { const tr = zeile.closest('tr'); if (tr.hidden) for (const z of document.querySelectorAll(`[data-anhang-von="${tr.dataset.anhangVon}"]`)) z.hidden = false; tr.scrollIntoView({ block: 'center' }); tr.classList.add('suche-markiert'); }
       else if (x.typ === 'buchung') navigate('journal'); else if (x.typ === 'kunde') navigate('customers'); else if (x.typ === 'auftrag') navigate('orders');
     } }),
     el('span', { class: 'muted small suche-stelle', text: x.stelle || '' }),
@@ -1401,13 +1495,16 @@ function belegSuche(belege) {
   input.addEventListener('change', los);
   const an = s.bedeutungssuche === 'an';
   const zustand = el('span', { class: 'muted small', 'data-bedeutung-zustand': _bedeutungZustand.stand, text: an ? _bedeutungZustand.text : '' });
-  const schalter = el('button', { class: 'btn btn-sm', type: 'button', 'data-bedeutung-schalter': an ? 'an' : 'aus', text: an ? t('docs.suche.bedeutungAus') : t('docs.suche.bedeutungAn'), onClick: async () => {
+  // Schalter direkt am Suchfeld (Leitfaden § 1.5: Suche + Bedeutung nebeneinander), flach, role=switch.
+  const schalter = el('button', { class: 'schalter-knopf', type: 'button', role: 'switch', 'aria-checked': an ? 'true' : 'false', 'data-bedeutung-schalter': an ? 'an' : 'aus',
+    title: (an ? t('docs.suche.bedeutungAus') : t('docs.suche.bedeutungAn')).replace(/^\S+\s/u, ''), 'data-kein-strich': '', onClick: async () => {
     if (!an) {
       if (!confirm(t('docs.suche.bedeutungFrage'))) return;
+      _einordnenFrei = true;   // Einschalten ist der Tipp: einordnen darf gleich beginnen
       await updateSettings({ bedeutungssuche: 'an' }, { still: true });
       await repaint();
     } else { _ordnetLauf++; await updateSettings({ bedeutungssuche: 'aus' }, { still: true }); zustandSetzen('aus', ''); await repaint(); }
-  } });
+  } }, [icon('blp-bedeutung'), el('span', { class: 'schalter-name', text: t('docs.suche.bedeutung') }), el('span', { class: 'schalter-bahn', 'aria-hidden': 'true' }, [el('span', { class: 'schalter-punkt' })])]);
   const weit = el('label', { class: 'small' }, [el('input', { type: 'checkbox', 'data-suche-weit': '' }), ' ' + t('docs.suche.weit')]);
   // A3 (Klaus: „wenn mit KI, dann mit Anonymisierung"): Frage an die gefundenen Belege, nur mit Mistral-Schlüssel.
   const frageZiel = el('div', { class: 'frage-ziel', 'data-frage-ziel': '' });   // bleibt stehen, wenn die Treffer neu gezeichnet werden
@@ -1418,8 +1515,8 @@ function belegSuche(belege) {
   if (_frage) setTimeout(los, 0);
   return el('div', { class: 'card suche-karte', 'data-belegsuche-karte': '' }, [
     el('h2', { class: 'small', text: t('docs.suche.titel') }),
-    input,
-    el('div', { class: 'suche-zeile' }, [schalter, zustand, weit, frageKnopf]),
+    el('div', { class: 'suche-kopf' }, [el('div', { class: 'suche-feld' }, [input]), schalter]),   // Mikrofon-Leiste hängt in .suche-feld
+    el('div', { class: 'suche-zeile' }, [zustand, el('span', { 'data-einordnen-platz': '' }), weit, frageKnopf]),
     frageZiel,
     el('p', { class: 'muted small', text: t('docs.suche.hinweis') }),
     ziel,

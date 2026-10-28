@@ -173,6 +173,8 @@ async function ocrTippen(name) {
   if (!b) { ok('OCR: Beleg „' + name + '" ist da', false); return false; }
   const h = await page.$(`[data-beleg-id="${b.id}"]`);
   const zeile = h && await h.evaluateHandle((td) => td.closest('tr'));
+  const menue = zeile && await zeile.asElement().$('[data-zeilen-menue] > summary');   // Pro-Umbau 3: Knöpfe im ⋯-Menü
+  if (menue && !(await zeile.evaluate((tr) => tr.querySelector('[data-zeilen-menue]').open))) await menue.click();
   const knopf = zeile && await zeile.asElement().$('button:text("Texterkennung")');
   if (!knopf) { ok('OCR-Knopf an „' + name + '"', false); return false; }
   await knopf.click();
@@ -250,6 +252,9 @@ try {
     const b = await belegNamens('foto (Scan).pdf');
     const h = b && await page.$(`[data-beleg-id="${b.id}"]`);
     const z = h && await h.evaluateHandle((td) => td.closest('tr'));
+    // Pro-Umbau 3: die Knöpfe einer Zeile stehen im ⋯-Menü — erst öffnen, dann tippen.
+    const m = z && await z.asElement().$('[data-zeilen-menue] > summary');
+    if (m) await m.click();
     const k = z && await z.asElement().$('[data-original-laden]');
     if (k) await k.click();
     const d = await dlo;

@@ -5,6 +5,16 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-28 (spät) — Pro-Umbau Schritt 3 (Workflow PDF Pro, BookLedgerPro, Basic)
+
+**Was getan:** Workflow PDF Pro #35 (Sicherung gestreamt, Einordnen/Prüfen nur auf Knopf, Tipp-Schutz; gemergt) · BookLedgerPro #389 (Belegliste für
+Hunderte, Bedeutungs-Schalter am Suchfeld, Strichgrafiken auf der Belegseite, Griff mittig, Einordnen nicht beim Öffnen) · Basic nachgezogen ·
+Abschluss, Forschung § 13, Brief Umbau 4.
+**Stand:** WPP `test:native-web` 53 grün, CI grün · BLP `run.mjs` 2602/0, `smoke_belegliste` 23, `smoke_belege` 46/14 wie main. Nichts am Gerät, nichts veröffentlicht.
+**Offen/Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-4.md` (Test-APKs nur auf Klaus' Wort, native Hintergrundaufgabe, Teilen an Pro-Apps, Rest-Emojis).
+
+---
+
 ## 2026-10-28 (Abend) — Einstellungs-Umbau Schritt 2 (Workflow PDF Pro, BookLedgerPro)
 
 **Was getan:** Workflow PDF Pro #34 (Tresor & Ablage, Web-Reste-Schicht über dem unveränderten Kern, Updates mit Version, Windows-Version im
