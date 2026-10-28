@@ -16,6 +16,8 @@ Sperren in allen drei Apps behoben (WPP #32, PB #106), gemeinsame Bedien-Datei i
 `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md` — Einstellungen als Knöpfe wie heute, **kein Explorer**, ⓘ, flach, ein farbiger nächster Schritt.
 **Test-APKs veröffentlicht (2026-10-28, Klaus' Wort):** Workflow PDF Pro 1.0.6, Private Brain Pro 1.0.41, BookLedgerPro 0.1.0 (erste signierte APK, Repo privat, `android-release.yml`, Links in `docs/PULS.md`). (Schritt E erledigt, siehe oben.) B (Paket in Workflow PDF Pro) und C/C2 (BookLedgerPro im Ordner) sind gebaut: `BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-B-C.md`, Bedienung `docs/TRESORORDNER.md`. BookLedgerPro ist **Android-App** (signiert über `signing/`, Zertifikat `7a6217eb…`). Nichts veröffentlichen ohne Klaus' Wort.
 
+**⏱ Regel: Stundennachweis (Klaus 2026-10-28: „ihr schreibt meine Arbeitsstunden nicht auf“):** jeder Abschluss bekommt den Abschnitt „Stundennachweis“ (erste/letzte Spur, Blöcke, Obergrenze) und eine Zeile in `docs/STUNDENNACHWEIS.md`; Klaus' eigene Angabe geht vor.
+
 **📋 Regel: Brief an die nächste Sitzung immer auch als Copy-Paste (Klaus 2026-10-26: „jedes Mal muss ich das sagen“):** wer einen Brief für die nächste Sitzung schreibt, gibt am Ende **ungefragt** zusätzlich eine **Kurzfassung als einen Codeblock** im Chat aus — fertig zum Einfügen als erste Nachricht der neuen Sitzung (Repo, Branch-Hinweis, welche Dateien zuerst lesen, erste Schritte, was nicht passieren darf). Dieselbe Kurzfassung steht im Brief unter „Startauftrag zum Einfügen“.
 
 **📱 Android-Hülle (Schritt A, Klaus 2026-10-26):** `android/` + `native/blp-native.js` + `tools/native/` (Paket
