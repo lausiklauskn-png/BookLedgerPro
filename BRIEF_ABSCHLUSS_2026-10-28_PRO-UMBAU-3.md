@@ -34,5 +34,15 @@ nachgezogen. Veröffentlicht wurde **nichts**.
 - Mit Klaus zu klären (unverändert): Test-APKs (WPP 1.0.7, BLP 0.1.1, PB 1.0.42)? · ⓘ-Vorgabe der Klapper in PB · Übernahme des alten Browser-Tresors ·
   Belege → Buchhaltung.
 
-## Veröffentlicht
-Nichts.
+## Veröffentlicht (Klaus' Wort am Abend: „kannst du mir dann die Updates zur Verfügung stellen?“)
+Nur Android, je Versions-PR (BLP #390, WPP #36, PB #109) und signierter Release-Lauf vom main-Commit:
+| App | Version | Link | Größe | SHA-256 |
+|---|---|---|---|---|
+| BookLedgerPro | 0.1.1 (Code 2) | https://github.com/lausiklauskn-png/BookLedgerPro/releases/download/v0.1.1/BookLedgerPro-0.1.1.apk | 28.211.801 B | `0641bb7526a111ca9aa55563e635cb564a3a99a2ca09476a899a5f3af2d7654d` |
+| Workflow PDF Pro | 1.0.7 (Code 8) | https://github.com/lausiklauskn-png/Workflow-PDF-Pro/releases/download/v1.0.7/Workflow-PDF-Pro-1.0.7.apk | 83.213.283 B | `160bf7b0603216b49116e667d8c9e99f6bc4852f15ab50f34c48f71891ce9d79` |
+| Private Brain Pro | 1.0.42 (Code 42) | https://github.com/lausiklauskn-png/Privat-Brain-Pro/releases/download/v1.0.42/Private-Brain-Pro-1.0.42.apk | 60.985.093 B | `847e8b87a40dbe33fa3f6f96d3ddfe995789424d180f1375c9c0b17693b99ba9` |
+
+Läufe: BLP 40748351965 (Emulator-Installationsprobe) · WPP 40751284149 (nach `native-acceptance` 40748352137) · PB 40751288404 (signiertes Update 1.0.41 → 1.0.42).
+WPP und PB hier unabhängig geladen: Größe und SHA-256 gleich Asset-Digest bzw. `SHA256SUMS`. BLP (Repo privat) nur über Asset-Digest und den Lauf geprüft.
+Windows nicht veröffentlicht (WPP-Windows trägt 1.0.7 nur im Quelltext; PB-Windows bleibt 1.0.41). Basic #10 gemergt (PWA über Pages). Nicht erneut auslösen.
+⚠ Am Tablet noch nicht geprüft.
