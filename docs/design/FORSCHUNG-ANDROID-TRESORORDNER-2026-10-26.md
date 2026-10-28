@@ -293,3 +293,27 @@ Mail-Beleg + 2 PDF-Anhänge als eigene Belege. Der Einzug lief **gleich am echte
    Unterordner sind jetzt offen, solange nicht „Alle zu“ gewählt ist.
 7. **Brücke ohne Methode:** `appOeffnen` darf nur angeboten werden, wenn die Hülle die Methode hat (ältere APK ohne sie zeigt weiter „nur in der App“).
 8. **BookLedgerPro-Repo ist privat** → keine Updateprüfung in der App ohne Token; „Über“ nennt nur die Version.
+
+## 13 · Befunde aus der Umbau-Sitzung 3 (2026-10-28, spät, gemessen)
+
+1. **Warum die Sicherung bei ~50 MB starb:** der Kern legt jede PDF als base64 in ein JSON, verschlüsselt den ganzen Text in einem Stück, kodiert das
+   Ergebnis erneut und baut daraus noch einmal Bytes. Gemessen an 60 MB: **+≈ 900 MB JS-Speicher** in der Spitze. Gestreamt (192-KB-Stücke, je AES-GCM, sofort
+   über `WorkflowFiles.append` in die Datei): kein messbarer Zuwachs. AES-GCM in WebCrypto kann nicht strömen — deshalb viele kleine Pakete mit Nummer und Kopf
+   als Zusatzdaten (AAD) und einem Schluss-Stück; Umstellen, Abschneiden, Anhängen fallen auf.
+2. **Format-Wechsel ohne Kerneingriff:** der Dialog des Kerns bleibt; seine zwei Knöpfe werden im Fang-Abschnitt (`click`, capture) übernommen. Für alte
+   `.json`-Sicherungen gibt die Schicht den Klick an den Kern zurück (Kennzeichen am Dateianfang). `accept` der Dateiwahl kennt jetzt `.wfps`.
+3. **Einordnen anhalten, ohne den Kern zu ändern:** angehalten wird an der einen Stelle, an der gerechnet wird (`SbkimEmbedding.embedPassageBatch`, über einen
+   Setter auf `window`, weil Modul 03 erst später lädt); die Frage (`embedQuery`) läuft frei, Suchen geht also sofort.
+4. **Durchgereichter Tipp, nachgestellt:** auf Touch landet der Klick nach dem Loslassen dort, wo der Finger jetzt ist. Schließt sich beim Antippen ein Fenster
+   (oder rutscht die Liste), trifft er den Knopf darunter — als PWA startete so „Alle prüfen“ ohne Zutun. Schutz: Start-Knöpfe nur, wenn der `pointerdown`
+   auf ihnen war; Tastatur (detail 0) bleibt erlaubt. Ob genau das am Tablet passierte, ist nicht bewiesen.
+5. **Chromium: Inhalt eines geschlossenen `<details>`** hat (neuer Rendering-Weg mit content-visibility) trotzdem `getClientRects()` — die Probe meldete den Knopf
+   als sichtbar. Sichtbarkeit mit `checkVisibility()` messen.
+6. **BookLedgerPro: das Suchfeld war 90 px hoch** — `.beleg-text` (für Textfelder gedacht, `min-height: 90px`) galt auch für das `<input>` der Suche. Gefunden
+   erst durch die neue Probe „Schalter in derselben Zeile“.
+7. **Wettlauf in `smoke_belegsuche`:** „Suchkarte … + .mikro“ prüfte, bevor der Beobachter das Mikrofon angehängt hatte (einmal rot, danach 2× grün). Die Probe
+   wartet jetzt darauf.
+8. **Playwright** reicht `setInputFiles` mit Puffer nur bis 50 MB — größere Dateien als Pfad übergeben. `crypto.getRandomValues` nimmt höchstens 65 536 Bytes.
+9. **BookLedgerPro hatte dasselbe Auto-Einordnen** wie Workflow PDF Pro (bei jedem Öffnen der Belege); jetzt erst nach „Einordnen“ je Sitzung, das Modell lädt
+   sonst bei der ersten Frage.
+

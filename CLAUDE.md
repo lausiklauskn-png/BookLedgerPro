@@ -12,7 +12,7 @@ Regeln, Passwort/Ersatzschlüssel und offenen Entscheidungen: `docs/design/PLAN-
 Fixes #381/#382 gemergt (nicht veröffentlicht): `BRIEF_ABSCHLUSS_2026-10-28_TRESORORDNER-E.md`. **Umbau 1 (2026-10-28 nachmittags):**
 Sperren in allen drei Apps behoben (WPP #32, PB #106), gemeinsame Bedien-Datei in Private Brain Pro (`native/pro-bedienung.js`, Kopie per
 `tools/native/bedienung-nachziehen.mjs`), PB „Tresor & Ablage“ (#107): `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-1.md`. 0.1.1 nicht veröffentlicht
-(Klaus: nein). **Umbau 2 (2026-10-28 abends):** WPP #34, BLP #386 (Tresor & Ablage, keine Web-Reste, Version, BLP-Startseite/Geschäftsjahr/Tresorordner 1→2→4→3), Basic nachgezogen: `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-2.md`. **Nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-3.md`. **Bedien-Regeln aller Pro-Apps (gleich, baugleich für künftige):**
+(Klaus: nein). **Umbau 2 (2026-10-28 abends):** WPP #34, BLP #386 (Tresor & Ablage, keine Web-Reste, Version, BLP-Startseite/Geschäftsjahr/Tresorordner 1→2→4→3), Basic nachgezogen: `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-2.md`. **Nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-3.md`. **Umbau 3 (2026-10-28 spät):** WPP #35 (Sicherung gestreamt, Einordnen/Prüfen nur auf Knopf, Tipp-Schutz), BLP #389 (Belegliste für Hunderte, Schalter an der Suche, Strichgrafiken, Griff mittig), Basic nachgezogen: `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-3.md`; als Nächstes `BRIEF_SITZUNG_PRO-UMBAU-4.md`. **Bedien-Regeln aller Pro-Apps (gleich, baugleich für künftige):**
 `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md` — Einstellungen als Knöpfe wie heute, **kein Explorer**, ⓘ, flach, ein farbiger nächster Schritt.
 **Test-APKs veröffentlicht (2026-10-28, Klaus' Wort):** Workflow PDF Pro 1.0.6, Private Brain Pro 1.0.41, BookLedgerPro 0.1.0 (erste signierte APK, Repo privat, `android-release.yml`, Links in `docs/PULS.md`). (Schritt E erledigt, siehe oben.) B (Paket in Workflow PDF Pro) und C/C2 (BookLedgerPro im Ordner) sind gebaut: `BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-B-C.md`, Bedienung `docs/TRESORORDNER.md`. BookLedgerPro ist **Android-App** (signiert über `signing/`, Zertifikat `7a6217eb…`). Nichts veröffentlichen ohne Klaus' Wort.
 
@@ -396,7 +396,7 @@ Leitfaden § 1, § 3, § 5 — gilt für App **und** PWA (Basic nachziehen).
   (vorher 90 px über `.beleg-text`). **Einordnen startet nie von selbst** beim Öffnen: erst „Einordnen“ (`[data-einordnen]`) oder das Einschalten
   gibt es für die Sitzung frei (`_einordnenFrei`); das Modell lädt sonst erst bei der ersten Frage.
 - **Strichgrafiken statt Emojis** (`src/ui/strich.js`, `STRICH`-Tafel → Sprites): ersetzt auf der Belegseite jedes bekannte Emoji im DOM,
-  auch in später gezeichneten Teilen; die i18n-Sätze bleiben (ein Wortlaut, vier Sprachen). Neue Symbole in `assets/blp-icons.svg`
+  auch in später gezeichneten Teilen; die i18n-Sätze bleiben (DE/EN unverändert). Neue Symbole in `assets/blp-icons.svg`
   (`blp-mehr`, `-anhang`, `-bedeutung`, `-ki`, `-offen`, `-eigen`, `-pfeil`). Andere Ansichten noch mit Emojis (benannt).
 - **Leistengriff** `.nav-klapp` ab 641 px fest in halber Höhe am Rand der Leiste (auch eingeklappt, auch nach dem Rollen).
 - Proben: `run.mjs` „Pro-Umbau 3“ (+10) · `tests/smoke_belegliste.mjs` **23 grün** (303 Belege, Gruppe, ⋯, keine Emojis, Schalter, kein Auto-Einordnen,
