@@ -78,6 +78,7 @@ try {
 
   await page.evaluate(() => window.__p.navigate('documents'));
   await warte(() => document.querySelector('[data-belegsuche]'));
+  await warte(() => document.querySelector('[data-belegsuche] + .mikro'));   // das Mikrofon hängt der Beobachter nach dem Zeichnen an
   ok('Suchkarte steht über der Belegliste', !!(await page.$('[data-belegsuche-karte]')) && !!(await page.$('[data-belegsuche] + .mikro')));
   // Wortsuche
   await page.fill('[data-belegsuche]', 'miete hamburg');
@@ -114,8 +115,9 @@ try {
   s = await page.evaluate(() => window.__blpSuche);
   ok('„Mietkosten“ findet jetzt den Mietbeleg NACH BEDEUTUNG (🧠), nicht die Tankquittung', await page.evaluate(() => { const s = window.__blpSuche; return s.treffer.some((x) => x.id === window.__p.ids.b1 && x.art === 'bedeutung') && !s.treffer.some((x) => x.id === window.__p.ids.b2); }), JSON.stringify(s));
   await warte(() => document.querySelector('[data-suche-treffer] li[data-art="bedeutung"]'));
-  const typ = await page.$eval('[data-suche-treffer] li[data-art="bedeutung"] .suche-typ', (e) => e.textContent).catch(() => '');
-  ok('die Liste zeigt die Nähe in Prozent beim 🧠-Treffer', /🧠 \d+ %/.test(typ), typ + ' | ' + (await page.$eval('[data-suche-treffer]', (e) => e.innerHTML.slice(0, 300)).catch(() => '')));
+  const typ = await page.$eval('[data-suche-treffer] li[data-art="bedeutung"] .suche-typ', (e) => e.textContent + (e.querySelector('use[href="#blp-bedeutung"]') ? ' [Strich:Bedeutung]' : '')).catch(() => '');
+  // Pro-Umbau 3 (Leitfaden § 5): Strichgrafik statt 🧠 — das Symbol steht als <svg><use #blp-bedeutung>, die Zahl bleibt.
+  ok('die Liste zeigt die Nähe in Prozent beim Bedeutungs-Treffer (Strichsymbol statt 🧠)', /\d+ %/.test(typ) && /\[Strich:Bedeutung\]/.test(typ) && !/🧠/.test(typ), typ + ' | ' + (await page.$eval('[data-suche-treffer]', (e) => e.innerHTML.slice(0, 300)).catch(() => '')));
   // Aus-Schalter
   await page.click('[data-bedeutung-schalter]');
   await warte(() => document.querySelector('[data-bedeutung-schalter]') && document.querySelector('[data-bedeutung-schalter]').dataset.bedeutungSchalter === 'aus');
