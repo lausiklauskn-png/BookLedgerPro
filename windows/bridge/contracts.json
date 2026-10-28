@@ -6,5 +6,6 @@
     "verzeichnis", "lesenOeffnen", "lesenTeil", "markieren"],
   "BlpSpeech": ["verfuegbar", "zuhoeren"],
   "BlpFenster": ["schliessen"],
-  "ProScanner": ["geraete", "scannen"]
+  "ProScanner": ["geraete", "scannen"],
+  "BlpUpdates": ["pruefen", "installieren"]
 }

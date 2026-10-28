@@ -133,6 +133,20 @@ impl Host {
                 if !path.is_file()||win::no_links(&path).is_err(){return Err("APP_FEHLT".into());}
                 win::open(path.to_str().ok_or("APP_FEHLT")?).map_err(|_|"APP_FEHLT".to_string())?;Ok(json!({}))
             }
+            "installer"=>{
+                // Nur das geprüfte Setup aus dem eigenen Update-Ordner (SHA-256 und Unterschrift prüft die Engine).
+                let path=PathBuf::from(text("path"));let ordner=self.data.join("cache").join("update");
+                let name=path.file_name().and_then(|n|n.to_str()).unwrap_or("");
+                if !path.starts_with(&ordner)||!name.starts_with("BookLedgerPro-Windows-")||!name.ends_with("-x64-setup.exe")||!path.is_file(){return Err("NOT_ALLOWED".into());}
+                win::no_links(&path)?;
+                #[cfg(feature="messprobe")]
+                if std::env::var("BLP_WINDOWS_TEST_FOLDER").is_ok(){let _=std::fs::write(self.data.join("probe-installer.txt"),name.as_bytes());return Ok(json!({}));}
+                win::open(path.to_str().ok_or("NOT_ALLOWED")?).map_err(|_|"UPDATE_START_FEHLER".to_string())?;
+                // Die App geht zu, damit das Setup sie ersetzen kann.
+                self.closing.store(true,Ordering::SeqCst);let app=self.app.clone();
+                std::thread::spawn(move||{std::thread::sleep(Duration::from_millis(1500));app.exit(0);});
+                Ok(json!({}))
+            }
             _=>Err("NOT_ALLOWED".into()),
         }
     }

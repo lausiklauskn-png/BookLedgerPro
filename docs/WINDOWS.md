@@ -37,7 +37,7 @@ echte DPAPI den gemerkten Schlüssel), Deinstallieren, dann Auslieferungsbau ohn
 ## Noch nicht drin / Grenzen
 
 - **Scanner-Auswahl (WIA) und Kamera-Scan:** nachgezogen, siehe unten.
-- **Updates:** über eigenen Server (Hetzner, SFTP), signiert; GitHub lädt nach Klaus' Wort hoch (Klaus' Wahl 2026-10-28). Noch nicht gebaut.
+- **Updates:** „Über“ → „Auf Updates prüfen“ vom eigenen Server, unterschrieben; Veröffentlichen nur von Hand (`windows-release.yml`, Feld „ja“). Bauweise und Vorlage für andere Apps: `docs/UPDATES-EIGENER-SERVER.md`. Android noch nicht.
 - Unsigniertes Setup (SmartScreen warnt). Nicht an einem echten Windows-PC gemessen, nur auf dem GitHub-Rechner.
 
 ## Scanner und Kamera (nachgezogen 2026-10-28)

@@ -18,6 +18,7 @@ final class DesktopService {
     final DesktopPrefs prefs;
     final DesktopTresor tresor;
     final DesktopInbox inbox;
+    final DesktopUpdates updates;
 
     DesktopService(Path directory,Host host)throws Exception {
         this.directory=directory.toAbsolutePath().normalize();this.host=host;
@@ -25,6 +26,7 @@ final class DesktopService {
         prefs=new DesktopPrefs(this.directory.resolve("einstellungen.dat"),host);
         tresor=new DesktopTresor(this,host);
         inbox=new DesktopInbox(this.directory.resolve("eingang-v1"));
+        updates=new DesktopUpdates(this.directory.resolve("cache/update"));
     }
 
     static String code(Throwable e){
@@ -39,6 +41,11 @@ final class DesktopService {
             case "BlpFiles" -> files(method,o);
             case "BlpTresor" -> tresor.call(method,o);
             case "BlpIncoming" -> inbox.call(method,o);
+            case "BlpUpdates" -> {
+                if(method.equals("pruefen"))yield updates.pruefen();
+                if(method.equals("installieren")){Path setup=updates.laden();host.call("installer",new JSONObject().put("path",setup.toString()));yield new JSONObject().put("gestartet",true);}
+                throw new IOException("INVALID_INPUT");
+            }
             case "DesktopInternal" -> {
                 if(method.equals("receive")){int n=inbox.receive(o.getJSONArray("paths"));EngineMain.event("BlpIncoming:available",new JSONObject().put("neu",n));yield new JSONObject().put("neu",n);}
                 if(method.equals("info"))yield new JSONObject().put("plattform","windows").put("version",DesktopBuild.VERSION);

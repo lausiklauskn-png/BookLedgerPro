@@ -5,6 +5,7 @@ import de.familyprojekt.tresor.TresorOrdner;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.SecureRandom;
+import java.security.PrivateKey;
 import java.util.*;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -143,6 +144,63 @@ public final class EngineTests {
         call(s3,"BlpIncoming","acknowledge",new JSONObject().put("id",p.getString("id")).put("discard",true));
         check("verworfen → Kopie gelöscht",call(s3,"BlpIncoming","pending").optBoolean("empty")&&!Files.exists(data.resolve("eingang-v1").resolve(p.getString("id"))));
         check("unbekannte Methode verweigert",fehler(()->call(s,"BlpTresor","loeschen")).equals("INVALID_INPUT"));
+        updates(tmp);
+    }
+
+    // ---------- Updates von Klaus' Server (Wegwerf-Schlüssel, gestelltes Netz) ----------
+    static final Map<String,byte[]> SERVER=new HashMap<>();
+    static String sig(PrivateKey k,byte[] d)throws Exception{java.security.Signature s=java.security.Signature.getInstance("Ed25519");s.initSign(k);s.update(d);return Base64.getEncoder().encodeToString(s.sign());}
+    static byte[] feed(String v,byte[] setup,String datei)throws Exception{
+        return new JSONObject().put("format",1).put("app","bookledgerpro").put("version",v).put("windows",new JSONObject().put("datei",datei).put("groesse",setup.length)
+            .put("sha256",DesktopFiles.hex(java.security.MessageDigest.getInstance("SHA-256").digest(setup)))).toString().getBytes(StandardCharsets.UTF_8);
+    }
+    static String fehlerU(java.util.concurrent.Callable<?> c){try{c.call();return "";}catch(Exception e){return DesktopService.code(e);}}
+    static void updates(Path tmp)throws Exception{
+        java.security.KeyPairGenerator g=java.security.KeyPairGenerator.getInstance("Ed25519");
+        java.security.KeyPair echt=g.generateKeyPair(),fremd=g.generateKeyPair();
+        String pub=Base64.getEncoder().encodeToString(echt.getPublic().getEncoded());
+        List<String> geholt=new ArrayList<>();
+        DesktopUpdates.Netz netz=new DesktopUpdates.Netz(){
+            public byte[] holen(String url,long grenze)throws Exception{geholt.add(url);byte[] b=SERVER.get(url);if(b==null)throw new java.io.IOException("UPDATE_NICHT_ERREICHBAR");if(b.length>grenze)throw new java.io.IOException("UPDATE_UNGUELTIG");return b;}
+            public java.io.InputStream strom(String url)throws Exception{geholt.add(url);byte[] b=SERVER.get(url);if(b==null)throw new java.io.IOException("UPDATE_NICHT_ERREICHBAR");return new java.io.ByteArrayInputStream(b);}
+        };
+        String B=DesktopUpdates.BASIS;Path ordner=tmp.resolve("update");
+        DesktopUpdates u=new DesktopUpdates(ordner,netz,"0.1.1",pub);
+        check("Update: Server nicht erreichbar → klare Meldung",fehlerU(u::pruefen).equals("UPDATE_NICHT_ERREICHBAR"));
+        byte[] setup=new byte[3_000_000];new SecureRandom().nextBytes(setup);String datei="BookLedgerPro-Windows-0.1.2-x64-setup.exe";
+        byte[] f=feed("0.1.2",setup,datei);
+        SERVER.put(B+"aktuell.json",f);SERVER.put(B+"aktuell.json.sig",sig(fremd.getPrivate(),f).getBytes());SERVER.put(B+datei,setup);
+        check("Update: fremde Unterschrift wird abgelehnt",fehlerU(u::pruefen).equals("UPDATE_UNTERSCHRIFT_FALSCH"));
+        SERVER.put(B+"aktuell.json.sig",sig(echt.getPrivate(),f).getBytes());
+        byte[] f2=f.clone();f2[f2.length-3]^=1;SERVER.put(B+"aktuell.json",f2);
+        check("Update: veränderte Angaben mit alter Unterschrift → abgelehnt",fehlerU(u::pruefen).equals("UPDATE_UNTERSCHRIFT_FALSCH"));
+        SERVER.put(B+"aktuell.json",f);
+        JSONObject r=u.pruefen();
+        check("Update: Neu 0.1.2 (installiert 0.1.1) mit Größe",r.optString("neu").equals("0.1.2")&&r.optString("installiert").equals("0.1.1")&&r.optLong("groesse")==setup.length);
+        Path p=u.laden();
+        check("Update: Setup geladen, Größe und SHA-256 stimmen, nur im Update-Ordner",Files.size(p)==setup.length&&p.startsWith(ordner)&&p.getFileName().toString().equals(datei));
+        check("Update: Setup-Adresse = feste Basis + Name (nichts aus fremder Quelle)",geholt.stream().allMatch(x->x.startsWith(B)));
+        SERVER.put(B+datei,Arrays.copyOf(setup,setup.length-1));u.pruefen();
+        check("Update: abgeschnittenes Setup → beschädigt, nichts bleibt liegen",fehlerU(u::laden).equals("UPDATE_BESCHAEDIGT")&&!Files.exists(ordner.resolve(datei+".teil"))&&!Files.exists(ordner.resolve(datei)));
+        byte[] alt=feed("0.1.0",setup,"BookLedgerPro-Windows-0.1.0-x64-setup.exe");SERVER.put(B+"aktuell.json",alt);SERVER.put(B+"aktuell.json.sig",sig(echt.getPrivate(),alt).getBytes());
+        check("Update: alter echter Stand gilt nicht als neu",u.pruefen().optBoolean("aktuell"));
+        byte[] gleich=feed("0.1.1",setup,"BookLedgerPro-Windows-0.1.1-x64-setup.exe");SERVER.put(B+"aktuell.json",gleich);SERVER.put(B+"aktuell.json.sig",sig(echt.getPrivate(),gleich).getBytes());
+        check("Update: gleiche Version → „aktuell“",u.pruefen().optBoolean("aktuell")&&u.pruefen().optString("version").equals("0.1.1"));
+        byte[] boese=feed("0.1.3",setup,"..\\..\\evil.exe");SERVER.put(B+"aktuell.json",boese);SERVER.put(B+"aktuell.json.sig",sig(echt.getPrivate(),boese).getBytes());
+        check("Update: fremder Dateiname (auch unterschrieben) → abgelehnt",fehlerU(u::pruefen).equals("UPDATE_UNGUELTIG"));
+        check("Update: ohne Prüfung kein Laden",fehlerU(u::laden).equals("UPDATE_NICHT_GEPRUEFT"));
+        check("Update: Versionsvergleich",DesktopUpdates.neuer("0.10.0","0.9.9")&&!DesktopUpdates.neuer("0.1.1","0.1.1")&&!DesktopUpdates.neuer("1.0.0-x","0.1.0"));
+        // Gleiche Unterschrift wie im Veröffentlichungs-Lauf (openssl pkeyutl -sign -rawin, Base64 mit Zeilenende).
+        Path k=tmp.resolve("k.pem"),d=tmp.resolve("d.json"),sb=tmp.resolve("s.bin");
+        if(new ProcessBuilder("openssl","genpkey","-algorithm","ed25519","-out",k.toString()).inheritIO().start().waitFor()==0){
+            Files.write(d,f);
+            new ProcessBuilder("openssl","pkeyutl","-sign","-rawin","-inkey",k.toString(),"-in",d.toString(),"-out",sb.toString()).inheritIO().start().waitFor();
+            Process pp=new ProcessBuilder("openssl","pkey","-in",k.toString(),"-pubout","-outform","DER").start();byte[] der=pp.getInputStream().readAllBytes();pp.waitFor();
+            String opub=Base64.getEncoder().encodeToString(der);
+            SERVER.put(B+"aktuell.json",f);SERVER.put(B+"aktuell.json.sig",(Base64.getEncoder().encodeToString(Files.readAllBytes(sb))+"\n").getBytes());
+            check("Update: Unterschrift von openssl (wie in GitHub) wird erkannt",new DesktopUpdates(ordner,netz,"0.1.1",opub).pruefen().optString("neu").equals("0.1.2"));
+        } else System.out.println("(openssl fehlt: Gegenprobe mit openssl übersprungen)");
+        check("Update: der eingebaute Schlüssel ist ein gültiger Ed25519-Schlüssel",java.security.KeyFactory.getInstance("Ed25519").generatePublic(new java.security.spec.X509EncodedKeySpec(Base64.getDecoder().decode(DesktopUpdates.SCHLUESSEL)))!=null);
     }
     static boolean fehlerKonstruktor(Path data,Fake host){try{new DesktopService(data,host);return false;}catch(Exception e){return true;}}
     static boolean enthaelt(Path dir,byte[] stueck)throws Exception {

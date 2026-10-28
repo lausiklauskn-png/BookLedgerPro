@@ -289,5 +289,12 @@
       vorher.then(function () { return P.BlpFenster.schliessen(); }).catch(function () { schliesst = false; });
     };
   }
-  window.BLPNative = Object.freeze({ plattform: PLATTFORM, speichern: speichern, tresor: tresor, version: version, sprechen: sprechen });
+  // Updates (Leitfaden § 6, Klaus 2026-10-28): von Klaus' Server, nur mit gültiger Unterschrift (prüft die Hülle). Bisher nur Windows.
+  var U = P.BlpUpdates;
+  var updates = U ? Object.freeze({
+    pruefen: function () { return U.pruefen(); },
+    installieren: function () { return U.installieren(); },
+    beiStand: function (fn) { try { return U.addListener('stand', fn); } catch (e) { return null; } },
+  }) : null;
+  window.BLPNative = Object.freeze({ plattform: PLATTFORM, speichern: speichern, tresor: tresor, version: version, sprechen: sprechen, updates: updates });
 })();
