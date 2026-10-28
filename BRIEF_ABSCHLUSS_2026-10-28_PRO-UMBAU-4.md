@@ -29,3 +29,8 @@ Nichts veröffentlicht, nichts am Tablet gemessen. Alle PRs mit grüner CI selbs
 - Ursachen und Lehren: `docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md` § 14–15.
 
 Nächste Sitzung: [`BRIEF_SITZUNG_PRO-UMBAU-5.md`](BRIEF_SITZUNG_PRO-UMBAU-5.md).
+
+## Stundennachweis
+
+Heute (2026-10-28, aus Commits aller vier Repos): Blöcke 11:34–12:55 und 14:30–21:56, Summe 8,8 h; Spanne 09:34 → 21:56 (12,4 h), Abschluss danach
+bis etwa 22:00. Nachgetragen für alle Tage seit 2026-10-12: [`docs/STUNDENNACHWEIS.md`](docs/STUNDENNACHWEIS.md).
