@@ -15,6 +15,11 @@ on:
         description: Vollständiger zuvor geprüfter main-Commit
         required: true
         type: string
+      entwurf_freigeben:
+        description: Nur einen vorhandenen, schon geprüften Entwurf dieses Tags freigeben (kein neuer Bau)
+        required: false
+        type: boolean
+        default: false
 permissions:
   contents: read
   checks: read
@@ -22,8 +27,31 @@ concurrency:
   group: bookledgerpro-android-release
   cancel-in-progress: false
 jobs:
+  entwurf:
+    if: github.ref == 'refs/heads/main' && inputs.entwurf_freigeben
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: android-production
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Entwurf prüfen und freigeben
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_COMMIT: ${{ inputs.commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REPOSITORY" == 'lausiklauskn-png/BookLedgerPro' ]]
+          [[ "$EXPECTED_COMMIT" =~ ^[a-f0-9]{40}$ ]]
+          node tools/signing/publish-release.mjs "$RELEASE_TAG" "$EXPECTED_COMMIT" --entwurf
   build:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && !inputs.entwurf_freigeben
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
