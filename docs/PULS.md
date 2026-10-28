@@ -5,7 +5,14 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-## ▶ Neuester Stand (2026-10-28, nachts): Test-APKs für Android veröffentlicht
+## ▶ Neuester Stand (2026-10-28, Vormittag): Tresorordner Schritt E am Tablet bestanden
+- Echter Ordner `SD-Karte/Privat Brain Pro Hauptablageordner/`: Private Brain Pro (31), Workflow PDF Pro (Ablage dort, 6) eingezogen,
+  BookLedgerPro öffnet ihn, sichert automatisch, übernimmt Rechnungsmails aus dem Eingangsfach (Mail + Anhänge als Belege).
+- Gemergt: #381 Teilen-Eingang (WebView-launchQueue), #382 englische Rechnungen + Sperren. **Nicht veröffentlicht** (0.1.1 auf Klaus' Wort).
+- Bedien-Regeln aller Pro-Apps: `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md` (Einstellungen = Knöpfe wie heute, kein Explorer).
+- **Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-NACH-PROBE-E.md`. Abschluss: `BRIEF_ABSCHLUSS_2026-10-28_TRESORORDNER-E.md`.
+
+## ▶ Stand (2026-10-28, nachts): Test-APKs für Android veröffentlicht
 - Workflow PDF Pro **1.0.6**: https://github.com/lausiklauskn-png/Workflow-PDF-Pro/releases/download/v1.0.6/Workflow-PDF-Pro-1.0.6.apk · 83.184.101 B · SHA-256 `356b9614dafb9451d00bd6aa0bd752ece33a6f7b933a36864ff4ce53e0023a06`
 - Private Brain Pro **1.0.41** (Release von einer Parallel-Sitzung ausgelöst, hier nur geprüft): https://github.com/lausiklauskn-png/Privat-Brain-Pro/releases/download/v1.0.41/Private-Brain-Pro-1.0.41.apk · 60.972.919 B · SHA-256 `92a2dd1b418dedf5c33c4d6db8472d59f414cf0a10da6c07ffb6df01341ac2d2`
 - BookLedgerPro **0.1.0** (erste signierte APK, Repo privat → Download nur angemeldet): https://github.com/lausiklauskn-png/BookLedgerPro/releases/tag/v0.1.0 · 28.190.994 B · SHA-256 `81674930fa29a85864a732d30ac8b5b135ca6f387e3604bfa642f373620de0f4` · Zertifikat `7a6217eb…` · Emulator-Probe API 35 (Tresor überlebt Überinstallieren)

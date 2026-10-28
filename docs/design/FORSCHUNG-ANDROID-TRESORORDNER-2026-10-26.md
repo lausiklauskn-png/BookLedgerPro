@@ -219,3 +219,35 @@ wenn ihr Anker fehlt), nicht durch Kopieren des ganzen Repos.
     `SD-Karte/Privat Brain Pro Hauptablageordner/Private Brain/` (6 Objekte) — der Oberordner ist da, **kein Verschieben nötig**; er wird
     der echte Tresorordner. Daneben `SD-Karte/Privat Brain Pro Ablageordner/` = Zusatzablage mit offenen Kopien, gehört nicht dazu.
     Nicht umbenennen (die Freigabe hängt am Pfad).
+
+## 10 · Befunde aus Schritt E (Probe am Tablet, 2026-10-28, gemessen)
+
+**Bestanden am Gerät (Galaxy Tab, DeX, SD-Karte):** Private Brain Pro 1.0.41 zog in `SD-Karte/Privat Brain Pro Hauptablageordner/` ein
+(31 Einträge) · Workflow PDF Pro 1.0.6 legte dort seinen Dokumenttresor an (51 Datensätze übertragen) und zog mit demselben Passwort ein (6) ·
+BookLedgerPro 0.1.0 entsperrte den Ordner und zeigte beide Fächer (nur lesen) · automatische Sicherung `BookLedgerPro/Sicherung/*.fpt`
+(10:52, 11:29) · Private Brain Pro legte eine Rechnungsmail ins `Eingang-BookLedgerPro/Mails/` · „Als Beleg übernehmen“ machte daraus
+Mail-Beleg + 2 PDF-Anhänge als eigene Belege. Der Einzug lief **gleich am echten Ordner** (nicht an „Tresor-Probe“); Klaus: „echt behalten“.
+
+1. **„Ordner wählen“ in Workflow PDF Pro ist ein Umzug, kein Kopieren** (`vault-migration.js`: danach ist die interne DB nur Index).
+   Eine Probe-Kopie als Ordner der App wäre nicht mehr gefahrlos löschbar. Der Brief E hatte das falsch; richtig ist: Ablage der App am echten
+   Ort, Kopie nur für den Einzug.
+2. **BookLedgerPro: Teilen kam nicht an.** `blp-native.js` stellte seinen Eingang nur bereit, wenn `window.launchQueue` fehlte; die WebView
+   hat ein eigenes (totes). Behoben in #381 (immer `defineProperty`), Probe mit gestelltem WebView-launchQueue. ⚠ Ursache aus dem Code
+   geschlossen, am Gerät mit 0.1.1 noch zu bestätigen.
+3. **„Tresorordner sperren“ öffnete sofort wieder** (`zustand()` nahm den gemerkten Schlüssel) — in allen drei Apps. BookLedgerPro behoben (#382,
+   `vonHandGesperrt`), Private Brain Pro in Entwurf #105 (Parallel-Sitzung, `sperren({vergessen:true})`), **Workflow PDF Pro offen**.
+4. **Englische Rechnung** (Anthropic/Stripe): „Subtotal“, „VAT“, „Amount paid/due“ als Positionen gelesen → 34,31 statt 12,08 €. Behoben (#382).
+5. **Teilen aus Private Brain Pro nahm still den Android-Weg**, als der Tresorordner (vermutlich) gesperrt war — keine Frage, keine Meldung.
+6. **Drei Dinge heißen „Tresor“** (Speicherort, Tresorordner, alter Browser-Datei-Tresor) — Klaus konnte sie nicht auseinanderhalten.
+   Entscheidung: alter Kasten weg in der Pro-App, Namen „Ablage von …“ / „Tresor (alle Pro-Apps)“ (Leitfaden).
+7. **Durchgereichter Tipp (Vermutung):** „Alle prüfen“ in Workflow PDF Pro startete, ohne dass Klaus es tippte; im Code nur per Klick
+   erreichbar → vermutlich ein Tipp, der beim Schließen eines Fensters an den Knopf darunter ging. Nicht nachgestellt.
+8. **Sicherung in Workflow PDF Pro stürzt bei ~50 MB PDFs ab** (alles als Text im Speicher; die Grenze stand als „ungemessen“ in den Unterlagen).
+9. **Einordnen (Bedeutung) startet bei jedem Öffnen** und kostet Minuten (5,5 s je Seite am Tablet, 6 Dokumente ≈ 10 min).
+10. **Web-Reste in den Apps:** Installieren-Knöpfe, „Browser-Speicher“, „Browserdaten“, „nur in diesem Browser“, „Speicher dauerhaft: nein“.
+11. **Web-App und App verwechselt:** das Startbildschirm-Symbol „BookLedger“ war die PWA (Kurzname), die App heißt „BookLedgerPro“; „Über“
+    nennt keine Version. Die PWA zeigt keinen Tresorordner (richtig so) — erst nach Installieren der APK ging es weiter.
+12. **Freischalt-Code:** Klaus kopierte den öffentlichen Schlüssel ins Code-Feld („passt nicht“); auf seinem Gerät sind ohnehin alle
+    Werkzeuge frei. Öffentlicher Schlüssel (nicht geheim) `fb6cd374…709ee2f` — fest in die Apps: offen, Klaus' Wort.
+13. Bedienbefunde gesammelt im **Leitfaden** `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md` (Fortschritt, Ladeanzeigen, flache Knöpfe,
+    Strichgrafiken, Listen für Hunderte, Pfad + Link, Version bei „Updates prüfen“, lesbare Dateinamen, Leistengriff mittig).
