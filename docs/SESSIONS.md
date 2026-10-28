@@ -5,6 +5,21 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-28 (Vormittag) — Tresorordner Schritt E: Probe am Tablet mit Klaus
+
+**Was getan:** Mit Klaus am Tablet: Workflow PDF Pro bekam seine Ablage im echten Hauptablageordner (Umzug, 51 Datensätze) und zog ein;
+BookLedgerPro (erst die PWA verwechselt, dann APK 0.1.0 installiert) öffnete den Tresorordner, zeigte beide Fächer, sicherte automatisch;
+Rechnungsmail über „In den Tresorordner legen“ → Eingang → „Als Beleg übernehmen“ → Mail + 2 Anhänge als Belege. Gebaut: #381 (Teilen-Eingang
+trotz WebView-launchQueue), #382 (englische Rechnungen, Sperren bleibt gesperrt). Leitfaden `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md`,
+Forschung § 10, Abschluss E, Brief für die nächste Sitzung. Basic nachgezogen.
+**Stand:** run.mjs 2582/0 · test-native 39/0 · CI grün auf #381/#382. Am Gerät bestanden: Einzug beider Apps, Fächer in BookLedgerPro,
+automatische Sicherung, Mail ins Eingangsfach und übernehmen.
+**Offen/Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-NACH-PROBE-E.md` — BookLedgerPro 0.1.1 nur auf Klaus' Wort; Sperren-Fehler Workflow PDF Pro;
+PB #105 ohne Explorer; Umbau Einstellungen nach Leitfaden in allen Pro-Apps; Belegliste; Ersatzschlüssel Tresor noch nicht erzeugt.
+⚠ #381/#382 nicht am Gerät; Windows ohne Tresorordner.
+
+---
+
 ## 2026-10-28 (nachts) — Test-APKs für Android veröffentlicht (Klaus' Wort)
 
 **Was getan:** Workflow PDF Pro 1.0.6 (Versionssprung #31, `request-release.mjs`), Private Brain Pro 1.0.41 (Lauf einer Parallel-Sitzung,
