@@ -32,8 +32,10 @@ if (!$registration.'(default)'.Contains('bookledgerpro.exe')) { throw '„Öffne
 Phase 'erste'
 Phase 'neustart'
 Run-Setup (Join-Path $appDir 'uninstall.exe')
+# NSIS startet den Deinstaller als Kopie im Temp-Ordner: das Ende des Starters heißt noch nicht, dass er fertig ist
+# (gleiche Lehre wie Private Brain Pro, pruefung/uninstall.ps1). Gewartet wird auf Programm UND Eintrag.
 $deadline = [DateTime]::UtcNow.AddSeconds(60)
-while ((Test-Path $exe) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 250 }
+while (((Test-Path $exe) -or (Test-Path 'HKCU:\Software\Classes\Applications\bookledgerpro.exe')) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 250 }
 if (Test-Path $exe) { throw 'Die Deinstallation hat das Programm nicht entfernt.' }
 if (Test-Path 'HKCU:\Software\Classes\Applications\bookledgerpro.exe') { throw '„Öffnen mit“ blieb nach der Deinstallation eingetragen.' }
 if (!(Test-Path (Join-Path $env:BLP_WINDOWS_TEST_FOLDER 'tresorordner.json'))) { throw 'Die Deinstallation hat den Tresorordner angefasst.' }
