@@ -7001,6 +7001,10 @@ await section('Positionen aus dem Belegtext (Steuer-Plan S1, Klaus 2026-10-26)',
   ok('Summe weicht ab → stimmt false', falsch.positionen.length === 2 && falsch.stimmt === false);
   ok('ohne Summenzeile → stimmt null; ohne Positionen leer', belegPositionen('Schild 10,00').stimmt === null && belegPositionen('nur Text ohne Beträge').positionen.length === 0);
   ok('Zeile nur aus Zahlen oder ein Datum ist keine Position', belegPositionen('12.10.2026 100,00\n4711 5,00').positionen.length === 0);
+  // Klaus' Gerät 2026-10-28: Anthropic-Beleg (englisch) zeigte „4 Positionen · Summe weicht ab" (34,31 statt 12,08 €).
+  const en = belegPositionen('Receipt from Anthropic, PBC\n€12.08\nPaid July 8, 2026\nReceipt number 2817-0130-8946\nDate paid July 8, 2026\nClaude Pro Jul 8 – Aug 8, 2026 Qty 1 €10.15\nSubtotal €10.15\nTotal excluding tax €10.15\nVAT - Germany (19% on €10.15) €1.93\nTotal €12.08\nAmount paid €12.08');
+  ok('englische Rechnung: eine Position, Subtotal = netto, Total = Summe, VAT/Amount paid keine Positionen → stimmt', en.positionen.length === 1 && en.positionen[0].betragCent === 1015 && /^Claude Pro/.test(en.positionen[0].beschreibung) && !/€$/.test(en.positionen[0].beschreibung) && en.nettoCent === 1015 && en.erkannteSummeCent === 1208 && en.stimmt === true, JSON.stringify(en));
+  ok('… „Taxi" bleibt eine Position (Tax nur als ganzes Wort)', belegPositionen('Taxi Flughafen 23,50\nGesamt 23,50').positionen.length === 1);
   ok('USt-Satz hinter dem Betrag („19 %") wird gelesen', belegPositionen('Beratung 100,00 € 19 %').positionen[0].ustSatz === 19);
 });
 

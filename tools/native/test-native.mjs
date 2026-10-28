@@ -170,6 +170,10 @@ const tresorFehler = tresorPruefen();
 ok('Paket de.familyprojekt.tresor byte-gleich mit Workflow PDF Pro (Herkunft gepinnt, VaultCrypto-Rumpf)', tresorFehler.length === 0, tresorFehler.join('; '));
 const plugin = lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/BlpTresorPlugin.java').toString('utf8');
 const mainAct = lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/MainActivity.java').toString('utf8');
+// Tablet-Probe 2026-10-28: „Sperren“ öffnete sofort wieder mit dem gemerkten Schlüssel.
+ok('Plugin: von Hand gesperrt bleibt gesperrt (gemerkter Schlüssel öffnet erst nach Entsperren oder Neustart)',
+  /&& !vonHandGesperrt\) entsperrenGemerkt\(\)/.test(plugin) && /schliessen\(\);\s*vonHandGesperrt = true;/.test(plugin)
+  && /uebernehmen\(TresorOrdner t, boolean merken\)[^{]*\{\s*schliessen\(\);\s*vonHandGesperrt = false;/.test(plugin));
 ok('MainActivity meldet BlpTresorPlugin an', mainAct.includes('registerPlugin(BlpTresorPlugin.class);'));
 ok('Passwort nur im nativen Dialog: das Plugin liest kein Passwort aus der WebView', !/getString\("pass/i.test(plugin) && !/getString\("kennwort/i.test(plugin) && /InputType\.TYPE_TEXT_VARIATION_PASSWORD/.test(plugin));
 ok('Plugin löscht nichts im Ordner (kein deleteDocument/loeschen), schreibt nur über TresorOrdner', !/deleteDocument|\.loeschen\(/.test(plugin) && /offen\.ablegen\(/.test(plugin));
