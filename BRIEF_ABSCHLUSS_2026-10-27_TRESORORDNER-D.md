@@ -35,3 +35,8 @@ Termux-Tresore ≠ SD-Tresor.
 
 ## Veröffentlicht
 Nichts. Kein APK, kein Release.
+
+> **Nachtrag 2026-10-28:** Der Satz oben galt am Ende des Abends. In der Nacht zum 28.10. hat Klaus Test-APKs freigegeben:
+> Workflow PDF Pro 1.0.6, Private Brain Pro 1.0.41 und BookLedgerPro 0.1.0 (die erste signierte APK, über `android-release.yml`).
+> Die Links stehen in `docs/PULS.md`. Die Probe am Gerät (Schritt E) steht in `BRIEF_ABSCHLUSS_2026-10-28_TRESORORDNER-E.md`.
+> Forschungseinträge für die Sitzungen vom 20. bis 28.10. sind in Kimhub nachgetragen (`forschung/sitzungen.json`).
