@@ -175,3 +175,40 @@ jobs:
         run: |
           set -euo pipefail
           node tools/signing/publish-release.mjs "$RELEASE_TAG" "$GITHUB_SHA" release-files
+      # Updates vom eigenen Server (Klaus 2026-10-28): dieselbe APK zusätzlich nach family-projekt.de/updates/bookledgerpro/,
+      # unterschrieben (Ed25519) und gegen den in der App eingebauten Schlüssel geprüft. Nur Android-Dateien werden abgeglichen.
+      - name: Update-Datei bauen, unterschreiben, gegen den Schlüssel der App prüfen
+        env:
+          SIGNIERSCHLUESSEL: ${{ secrets.BLP_UPDATE_SIGNING_KEY }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SIGNIERSCHLUESSEL" || { echo "::error::Geheimnis BLP_UPDATE_SIGNING_KEY fehlt"; exit 1; }
+          mkdir -p hoch && cp "release-files/BookLedgerPro-${RELEASE_TAG#v}.apk" hoch/
+          node tools/native/update-feed-android.mjs "hoch/BookLedgerPro-${RELEASE_TAG#v}.apk" hoch/aktuell-android.json
+          umask 077; printf '%s\n' "$SIGNIERSCHLUESSEL" > "$RUNNER_TEMP/sig.pem"
+          openssl pkeyutl -sign -rawin -inkey "$RUNNER_TEMP/sig.pem" -in hoch/aktuell-android.json -out "$RUNNER_TEMP/sig.bin"
+          base64 -w0 "$RUNNER_TEMP/sig.bin" > hoch/aktuell-android.json.sig; echo >> hoch/aktuell-android.json.sig
+          rm -f "$RUNNER_TEMP/sig.pem"
+          PUB=$(grep -o 'SCHLUESSEL = "[^"]*"' android/app/src/main/java/de/familyprojekt/bookledgerpro/UpdateFeed.java | cut -d'"' -f2)
+          { echo '-----BEGIN PUBLIC KEY-----'; echo "$PUB"; echo '-----END PUBLIC KEY-----'; } > "$RUNNER_TEMP/pub.pem"
+          openssl pkeyutl -verify -rawin -pubin -inkey "$RUNNER_TEMP/pub.pem" -in hoch/aktuell-android.json -sigfile "$RUNNER_TEMP/sig.bin"
+      - name: Auf family-projekt.de hochladen und von außen prüfen
+        env:
+          HOCHLADESCHLUESSEL: ${{ secrets.BLP_UPDATE_UPLOAD_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$HOCHLADESCHLUESSEL" || { echo "::error::Geheimnis BLP_UPDATE_UPLOAD_KEY fehlt"; exit 1; }
+          umask 077; mkdir -p ~/.ssh; printf '%s\n' "$HOCHLADESCHLUESSEL" > ~/.ssh/upload
+          echo '167.233.204.72 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIhzSmN0kY2Vk2oem2u6dH8rq04A8UXVZyay2WWRjOmR' > ~/.ssh/known_hosts
+          rsync -rt --delete-after --delay-updates --include='aktuell-android.json' --include='aktuell-android.json.sig' --include='BookLedgerPro-*.apk' --exclude='*' \
+            -e "ssh -i ~/.ssh/upload -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" hoch/ root@167.233.204.72:bookledgerpro/
+          rm -f ~/.ssh/upload
+          B=https://family-projekt.de/updates/bookledgerpro
+          curl -fsS "$B/aktuell-android.json" | cmp - hoch/aktuell-android.json
+          curl -fsS "$B/aktuell-android.json.sig" | cmp - hoch/aktuell-android.json.sig
+          D=$(ls hoch/*.apk | xargs -n1 basename)
+          curl -fsS "$B/$D" | sha256sum | grep -q "$(sha256sum "hoch/$D" | cut -d' ' -f1)"
+          echo "Auch auf dem Update-Server: $B/$D"

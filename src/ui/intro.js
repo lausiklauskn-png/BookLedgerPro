@@ -122,7 +122,11 @@ function updateZeile(u) {
           const gesamt = Math.max(1, Math.round((r.groesse || 0) / 1048576));
           status.textContent = t('upd.laedt').replace('{mb}', '0').replace('{gesamt}', gesamt);
           const h = u.beiStand((s) => { status.textContent = t('upd.laedt').replace('{mb}', Math.round((s.geladen || 0) / 1048576)).replace('{gesamt}', gesamt); });
-          try { await u.installieren(); status.textContent = t('upd.startet'); }
+          try {
+            const e = await u.installieren();
+            status.textContent = e && e.erlaubnis ? t('upd.erlaubnis') : t(window.BLPNative && window.BLPNative.plattform === 'android' ? 'upd.startetAndroid' : 'upd.startet');
+            if (e && e.erlaubnis) { los.disabled = false; knopf.disabled = false; }
+          }
           catch (e) { status.textContent = grund(e); los.disabled = false; knopf.disabled = false; }
           finally { Promise.resolve(h).then((x) => x && x.remove && x.remove()).catch(() => {}); }
         });

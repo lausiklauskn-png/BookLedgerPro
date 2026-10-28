@@ -66,9 +66,15 @@ ok('„Öffnen mit" (VIEW, nur content:) für dieselben Arten', /action\.VIEW"[\
 ok('keine Sicherung des App-Speichers durch Android (Buchhaltungsdaten), kein Klartext', am.includes('android:allowBackup="false"') && am.includes('android:usesCleartextTraffic="false"'));
 const fp = lies('android/app/src/main/res/xml/file_paths.xml').toString('utf8');
 // Kamera (Befund Tablet 2026-10-28): Capacitor legt das Foto unter getExternalFilesDir(Pictures) an — genau dieser eine Pfad dazu.
-ok('FileProvider gibt nur den Teilen-Zwischenspeicher und den Kamera-Ordner Pictures/ frei', /<cache-path name="share" path="share\/"/.test(fp)
+ok('FileProvider gibt nur den Teilen-Zwischenspeicher, den Update-Ordner und den Kamera-Ordner Pictures/ frei', /<cache-path name="share" path="share\/"/.test(fp) && /<cache-path name="update" path="update\/" \/>/.test(fp)
   && /<external-files-path name="camera_capture" path="Pictures\/" \/>/.test(fp) && !/<external-path|<files-path|<root-path|<external-cache-path/.test(fp)
-  && (fp.match(/<(cache|external-files)-path /g) || []).length === 2);
+  && (fp.match(/<(cache|external-files)-path /g) || []).length === 3);
+// Updates vom eigenen Server (2026-10-28): Plugin angemeldet, Recht zum Installieren-Fenster, Prüfbibliothek, gleicher Schlüssel wie Windows.
+ok('Updates: BlpUpdatesPlugin angemeldet, REQUEST_INSTALL_PACKAGES, eddsa, gleicher öffentlicher Schlüssel wie Windows',
+  lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/MainActivity.java').toString('utf8').includes('registerPlugin(BlpUpdatesPlugin.class);')
+  && am.includes('android.permission.REQUEST_INSTALL_PACKAGES"') && lies('android/app/build.gradle').toString('utf8').includes('"net.i2p.crypto:eddsa:0.3.0"')
+  && (lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/UpdateFeed.java').toString('utf8').match(/SCHLUESSEL = "([^"]+)"/) || [])[1]
+     === (lies('windows/engine/src/DesktopUpdates.java').toString('utf8').match(/SCHLUESSEL = "([^"]+)"/) || [])[1]);
 ok('Spracheingabe: BlpSpeechPlugin angemeldet, Androids Sprachfenster sichtbar (queries), kein Mikrofon-Recht', lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/MainActivity.java').toString('utf8').includes('registerPlugin(BlpSpeechPlugin.class);')
   && am.includes('android.speech.action.RECOGNIZE_SPEECH') && !am.includes('RECORD_AUDIO'));
 const java = (n) => lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/' + n + '.java').toString('utf8');

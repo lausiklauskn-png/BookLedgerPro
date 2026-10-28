@@ -37,7 +37,7 @@ echte DPAPI den gemerkten Schlüssel), Deinstallieren, dann Auslieferungsbau ohn
 ## Noch nicht drin / Grenzen
 
 - **Scanner-Auswahl (WIA) und Kamera-Scan:** nachgezogen, siehe unten.
-- **Updates:** „Über“ → „Auf Updates prüfen“ vom eigenen Server, unterschrieben; Veröffentlichen nur von Hand (`windows-release.yml`, Feld „ja“). Bauweise und Vorlage für andere Apps: `docs/UPDATES-EIGENER-SERVER.md`. Android noch nicht.
+- **Updates:** „Über“ → „Auf Updates prüfen“ vom eigenen Server, unterschrieben; Veröffentlichen nur von Hand (`windows-release.yml`, Feld „ja“). Bauweise und Vorlage für andere Apps: `docs/UPDATES-EIGENER-SERVER.md`. Android ebenso (Lauf `android-release.yml` legt die APK zusätzlich auf den Server).
 - Unsigniertes Setup (SmartScreen warnt). Nicht an einem echten Windows-PC gemessen, nur auf dem GitHub-Rechner.
 
 ## Scanner und Kamera (nachgezogen 2026-10-28)

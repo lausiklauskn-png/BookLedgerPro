@@ -58,9 +58,11 @@ ausgeben (Version muss steigen) und auf keine fremde Adresse umleiten (die App s
    App, öffentlicher Schlüssel aus Schritt 2), Knopf unter „Über“, Proben wie in `windows/engine/tests/EngineTests.java` (fremde Unterschrift,
    veränderte Angaben, alter Stand, abgeschnittenes Setup, fremder Dateiname, openssl-Gegenprobe). Lauf wie
    `.github/workflows/windows-release.yml` (Server-Kennung und rsync-Ziel `<app>/`).
-4. **Android** (noch nicht gebaut): gleicher Feed mit Abschnitt `"android": {datei, groesse, sha256}`; die App lädt die APK, prüft sie und
-   öffnet Androids Installieren-Fenster (`REQUEST_INSTALL_PACKAGES`); die APK muss mit demselben Zertifikat signiert sein, sonst lehnt Android
-   ab.
+4. **Android**: in BookLedgerPro gebaut (`UpdateFeed.java` + `BlpUpdatesPlugin.java`, JVM-Probe `UpdateFeedTest`). Feed
+   `aktuell-android.json` mit `android: {datei, groesse, sha256, versionCode}`, gleicher Signatur-Schlüssel. Weil Android Ed25519 erst ab 13 selbst
+   prüft (Tab S6: Android 12), prüft die kleine Bibliothek `net.i2p.crypto:eddsa:0.3.0`. Vor dem Installieren: gleiches Paket, gleiches
+   Signier-Zertifikat, höherer versionCode — dann Androids Installieren-Fenster (`REQUEST_INSTALL_PACKAGES`, beim ersten Mal führt die App in
+   „Apps installieren erlauben“). Hochgeladen vom Lauf `android-release.yml` nach der GitHub-Veröffentlichung (nur Android-Dateien).
 
 ## Grenzen
 

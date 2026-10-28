@@ -289,7 +289,7 @@
       vorher.then(function () { return P.BlpFenster.schliessen(); }).catch(function () { schliesst = false; });
     };
   }
-  // Updates (Leitfaden § 6, Klaus 2026-10-28): von Klaus' Server, nur mit gültiger Unterschrift (prüft die Hülle). Bisher nur Windows.
+  // Updates (Leitfaden § 6, Klaus 2026-10-28): von Klaus' Server, nur mit gültiger Unterschrift (prüft die Hülle), Windows und Android.
   var U = P.BlpUpdates;
   var updates = U ? Object.freeze({
     pruefen: function () { return U.pruefen(); },
