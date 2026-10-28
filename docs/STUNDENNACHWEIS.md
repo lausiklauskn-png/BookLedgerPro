@@ -39,7 +39,7 @@ stand seit dem 2026-10-12 **keiner**. Hier ist er nachgetragen.
 
 BLP = BookLedgerPro · PB = Private Brain Pro · WPP = Workflow PDF Pro · Basic = BookLedger Basic.
 
-**Stand gemessen 2026-10-28 abends.** Zwischen 86 h (sicher gearbeitet, nur Commit-Blöcke) und 174 h (Spannen) in 15 Tagen.
+**Stand gemessen 2026-10-28 abends** (Sitzung Umbau 4 endete gegen 22:10 mit Abschluss, Forschung § 16–17 und diesem Nachweis). Zwischen 86 h (sicher gearbeitet, nur Commit-Blöcke) und 174 h (Spannen) in 15 Tagen.
 
 ## Regel ab jetzt
 
