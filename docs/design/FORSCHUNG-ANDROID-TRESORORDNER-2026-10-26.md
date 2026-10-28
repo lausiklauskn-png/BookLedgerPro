@@ -378,3 +378,25 @@ Mail-Beleg + 2 PDF-Anhänge als eigene Belege. Der Einzug lief **gleich am echte
 6. **main war rot nach #109** (nur Android-Version gesetzt): die Windows-Prüfung verlangt gleiche Versionsangaben in `build.gradle`, `package.json`,
    `Cargo.toml` und `tauri.conf.json`, und die Updateprobe zeigt auf den zuletzt veröffentlichten Installer (jetzt 1.0.41 → 1.0.42). Lehre: Versions-
    anhebung immer für beide Plattformen in einem PR.
+
+## 17 · Stundennachweis: Klaus' Arbeitszeit wurde nicht aufgeschrieben (2026-10-28, gemessen aus Commits)
+
+**Befund:** Einen Stundennachweis führte nur der Workflow-PDF-Kern in seinen Abschlussberichten, zuletzt am 2026-10-11. In BookLedgerPro, Private Brain
+Pro, Workflow PDF Pro und BookLedger Basic stand seit dem 2026-10-12 **keiner** — Klaus hat das bemerkt („ihr schreibt meine Arbeitsstunden nicht auf").
+**Ursache:** Die Regel stand nur in den Sitzungsbriefen des Kerns, nicht in den `CLAUDE.md` der Pro-Repos; neue Sitzungen lasen sie nie.
+
+**Nachgetragen** (`docs/STUNDENNACHWEIS.md`, aus 600 Commits auf `main` der vier Repos, Ortszeit Berlin):
+
+| Zeitraum | Arbeitstage | sicher (Commit-Blöcke, ≤ 60 min Abstand) | höchstens (erste → letzte Spur je Tag) |
+|---|---|---|---|
+| 2026-10-12 bis 2026-10-28 | 15 | 86,3 h | 174,3 h |
+| davon 2026-10-28 (diese Sitzung eingeschlossen) | 1 | 8,8 h | 12,4 h (09:34 → 21:56), Abschluss bis etwa 22:10 |
+
+Längste Tage: 26.10. (13,4 h sicher), 21.10. (12,3 h), 24.10. (9,6 h), 25.10. (9,2 h).
+
+**Grenzen:** GitHub kennt Klaus' Zeit nicht. Am Tablet prüfen, Bilder machen, lesen und mit Claude sprechen hinterlassen keinen Commit; die sichere Zahl ist
+deshalb zu klein. Andere Repos (Private Brain V3, Workflow-PDF-Kern, WorkFlohs, Sage, Meine Familienakte) und die Zeit vor dem 12.10. sind nicht geprüft.
+Klaus' eigene Angabe geht vor.
+
+**Lehre und Regel:** Was eine Sitzung über Repos hinweg tun soll, gehört in jede `CLAUDE.md`, die eine Sitzung liest — nicht nur in einen Brief. Seit
+2026-10-28 steht in BookLedgerPros `CLAUDE.md`: jeder Abschluss bekommt den Abschnitt „Stundennachweis“ und eine Zeile in `docs/STUNDENNACHWEIS.md`.
