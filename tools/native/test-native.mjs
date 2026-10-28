@@ -36,10 +36,11 @@ ok('index.html: Bedien-Bausteine (pro-bedienung.css/.js) vor dem Klebstoff, mit 
   && html.includes('native/pro-bedienung.css?v=' + sha(lies('native/pro-bedienung.css')).slice(0, 16)) && html.indexOf('native/pro-bedienung.js') < html.indexOf('native/blp-native.js'));
 ok('index.html: Hintergrundaufgabe (pro-hintergrund.js) direkt nach pro-bedienung.js, vor dem Klebstoff', html.includes('native/pro-hintergrund.js?v=' + sha(lies('native/pro-hintergrund.js')).slice(0, 16))
   && html.indexOf('native/pro-bedienung.js') < html.indexOf('native/pro-hintergrund.js') && html.indexOf('native/pro-hintergrund.js') < html.indexOf('native/blp-native.js'));
-ok('index.html: sonst byte-gleich mit der Quelle', html.replace(/<link rel="stylesheet" href="native\/pro-bedienung\.css\?v=[0-9a-f]{16}">\n {2}<script src="native\/pro-bedienung\.js\?v=[0-9a-f]{16}"><\/script>\n {2}<script src="native\/pro-hintergrund\.js\?v=[0-9a-f]{16}"><\/script>\n {2}/, '').replace(/<script src="native\/blp-native\.js\?v=[0-9a-f]{16}"><\/script>\n {2}/, '') === lies('index.html').toString('utf8'));
+ok('index.html: Scanner-Baustein (pro-scanner.css/.js) geladen', html.includes('native/pro-scanner.js?v=') && html.includes('native/pro-scanner.css?v='));
+ok('index.html: sonst byte-gleich mit der Quelle', html.replace(/<link rel="stylesheet" href="native\/pro-bedienung\.css\?v=[0-9a-f]{16}">\n {2}<script src="native\/pro-bedienung\.js\?v=[0-9a-f]{16}"><\/script>\n {2}<script src="native\/pro-hintergrund\.js\?v=[0-9a-f]{16}"><\/script>\n {2}<script src="native\/pro-geraet\.js\?v=[0-9a-f]{16}"><\/script>\n {2}<link rel="stylesheet" href="native\/pro-scanner\.css\?v=[0-9a-f]{16}">\n {2}<script src="native\/pro-scanner\.js\?v=[0-9a-f]{16}"><\/script>\n {2}/, '').replace(/<script src="native\/blp-native\.js\?v=[0-9a-f]{16}"><\/script>\n {2}/, '') === lies('index.html').toString('utf8'));
 const alle = (dir) => readdirSync(dir).flatMap((n) => { const p = join(dir, n); return statSync(p).isDirectory() ? alle(p) : [p.slice(www.length + 1)]; });
 const imPaket = alle(www).filter((p) => p !== 'native-bundle.json').sort();
-const fremd = imPaket.filter((p) => !(LAUFZEIT_DATEIEN.includes(p) || LAUFZEIT_ORDNER.some((o) => p.startsWith(o)) || ['native/blp-native.js', 'native/pro-bedienung.js', 'native/pro-bedienung.css', 'native/pro-hintergrund.js'].includes(p)));
+const fremd = imPaket.filter((p) => !(LAUFZEIT_DATEIEN.includes(p) || LAUFZEIT_ORDNER.some((o) => p.startsWith(o)) || ['native/blp-native.js', 'native/pro-bedienung.js', 'native/pro-bedienung.css', 'native/pro-hintergrund.js', 'native/pro-geraet.js', 'native/pro-scanner.js', 'native/pro-scanner.css'].includes(p)));
 ok('im Paket liegt nur Laufzeit (keine Tests, Doku, Briefe, Werkzeuge)', fremd.length === 0, fremd.slice(0, 5).join(', '));
 ok('kein privater Knoten-Schlüssel, keine versteckte Datei im Paket', !imPaket.some((p) => /(^|\/)\./.test(p)));
 const abweichend = imPaket.filter((p) => p !== 'index.html' && !p.startsWith('native/') && sha(readFileSync(join(www, p))) !== sha(lies(p)));
@@ -65,9 +66,15 @@ ok('„Öffnen mit" (VIEW, nur content:) für dieselben Arten', /action\.VIEW"[\
 ok('keine Sicherung des App-Speichers durch Android (Buchhaltungsdaten), kein Klartext', am.includes('android:allowBackup="false"') && am.includes('android:usesCleartextTraffic="false"'));
 const fp = lies('android/app/src/main/res/xml/file_paths.xml').toString('utf8');
 // Kamera (Befund Tablet 2026-10-28): Capacitor legt das Foto unter getExternalFilesDir(Pictures) an — genau dieser eine Pfad dazu.
-ok('FileProvider gibt nur den Teilen-Zwischenspeicher und den Kamera-Ordner Pictures/ frei', /<cache-path name="share" path="share\/"/.test(fp)
+ok('FileProvider gibt nur den Teilen-Zwischenspeicher, den Update-Ordner und den Kamera-Ordner Pictures/ frei', /<cache-path name="share" path="share\/"/.test(fp) && /<cache-path name="update" path="update\/" \/>/.test(fp)
   && /<external-files-path name="camera_capture" path="Pictures\/" \/>/.test(fp) && !/<external-path|<files-path|<root-path|<external-cache-path/.test(fp)
-  && (fp.match(/<(cache|external-files)-path /g) || []).length === 2);
+  && (fp.match(/<(cache|external-files)-path /g) || []).length === 3);
+// Updates vom eigenen Server (2026-10-28): Plugin angemeldet, Recht zum Installieren-Fenster, Prüfbibliothek, gleicher Schlüssel wie Windows.
+ok('Updates: BlpUpdatesPlugin angemeldet, REQUEST_INSTALL_PACKAGES, eddsa, gleicher öffentlicher Schlüssel wie Windows',
+  lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/MainActivity.java').toString('utf8').includes('registerPlugin(BlpUpdatesPlugin.class);')
+  && am.includes('android.permission.REQUEST_INSTALL_PACKAGES"') && lies('android/app/build.gradle').toString('utf8').includes('"net.i2p.crypto:eddsa:0.3.0"')
+  && (lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/UpdateFeed.java').toString('utf8').match(/SCHLUESSEL = "([^"]+)"/) || [])[1]
+     === (lies('windows/engine/src/DesktopUpdates.java').toString('utf8').match(/SCHLUESSEL = "([^"]+)"/) || [])[1]);
 ok('Spracheingabe: BlpSpeechPlugin angemeldet, Androids Sprachfenster sichtbar (queries), kein Mikrofon-Recht', lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/MainActivity.java').toString('utf8').includes('registerPlugin(BlpSpeechPlugin.class);')
   && am.includes('android.speech.action.RECOGNIZE_SPEECH') && !am.includes('RECORD_AUDIO'));
 const java = (n) => lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/' + n + '.java').toString('utf8');

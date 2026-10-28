@@ -34,6 +34,12 @@ jobs:
         run: node windows/engine/test.mjs
       - name: Echter Kindprozess über stdio
         run: node windows/engine/protocol-test.mjs
+      - name: Scanner-Baustein byte-gleich (Quelle Workflow PDF Pro) und im Browser geprüft
+        run: |
+          npm ci --ignore-scripts --prefix windows
+          npx --prefix windows playwright-core install chromium
+          node tools/native/scanner-nachziehen.mjs
+          NODE_PATH=windows/node_modules node tools/native/test-pro-scanner.mjs
 
   windows:
     runs-on: windows-latest
@@ -59,6 +65,8 @@ jobs:
         run: node windows/engine/test.mjs
       - name: Eigene Java-Laufzeit (jlink) und Symbol
         run: node windows/tools/prepare-runtime.mjs
+      - name: Scanner-Skript (WIA) auf echtem Windows
+        run: node windows/scanner/test-wia.mjs
       - name: Kindprozess mit der gebündelten Laufzeit
         run: node windows/engine/protocol-test.mjs windows/runtime/jre/bin/java.exe windows/runtime
       - name: Prüfbau (mit Prüf-Schnittstelle)

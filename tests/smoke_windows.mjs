@@ -52,7 +52,13 @@ window.__log = [];
   window.__liefern = (name) => { window.__eingang = { name }; if (hoerer) hoerer({}); };
   const S = { verfuegbar: async () => ({ verfuegbar: true }), zuhoeren: async (a) => (log('zuhoeren', a), { text: 'Hallo Welt' }) };
   const W = { schliessen: async () => { log('schliessen'); return {}; } };
-  window.Capacitor = { isNativePlatform: () => true, getPlatform: () => '${plattform}', Plugins: { BlpTresor: T, BlpFiles: F, BlpIncoming: I, BlpSpeech: S, BlpFenster: W } };
+  let standHoerer = null; window.__update = { neu: '0.1.2' };
+  const U = {
+    pruefen: async () => { log('pruefen'); const u = window.__update; if (u.fehler) throw Object.assign(new Error(u.fehler), { code: u.fehler }); return u.neu ? { neu: u.neu, installiert: '0.1.1', groesse: 40 * 1048576 } : { aktuell: true, version: '0.1.1' }; },
+    installieren: async () => { log('installieren'); if (standHoerer) standHoerer({ geladen: 20 * 1048576, groesse: 40 * 1048576 }); await new Promise((r) => setTimeout(r, 50)); return { gestartet: true }; },
+    addListener: async (n, fn) => { if (n === 'stand') standHoerer = fn; return { remove: async () => { standHoerer = null; } }; },
+  };
+  window.Capacitor = { isNativePlatform: () => true, getPlatform: () => '${plattform}', Plugins: { BlpTresor: T, BlpFiles: F, BlpIncoming: I, BlpSpeech: S, BlpFenster: W, BlpUpdates: U } };
 })();`;
 
 const PROBE = (plattform) => `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -151,6 +157,29 @@ console.log('— B. Windows: jede Ansicht ohne Android-Sätze —');
   ok('Windows-Sätze für Sicherung, Mikrofon, Scannen', await page.evaluate(() => /Windows/.test(window.__probe.t('backup.noApiHint')) && /ohne Internet/.test(window.__probe.t('mikro.hinweisBrowser')) && /Öffnen mit/.test(window.__probe.t('docs.workflowScanHint'))));
   ok('Spracheingabe über die Hülle (Windows-Spracherkennung)', await page.evaluate(async () => (await window.BLPNative.sprechen('de-DE')).text === 'Hallo Welt'));
   ok('Version aus der Hülle', (await page.evaluate(() => window.BLPNative.version())) === '0.1.1');
+  ok('keine Seitenfehler', fehler.length === 0, fehler.join(' | '));
+  await ctx.close();
+}
+console.log('— B2. Auf Updates prüfen („Über“) —');
+{
+  const { ctx, page, fehler } = await oeffnen('windows');
+  await page.evaluate(() => window.__probe.navigate('about'));
+  await page.waitForSelector('[data-update-pruefen]');
+  ok('„Über“: Knopf „Auf Updates prüfen“, nichts startet von selbst', await page.evaluate(() => !window.__log.some((x) => x[0] === 'pruefen') && !document.querySelector('[data-update-installieren]')));
+  await page.click('[data-update-pruefen]');
+  await page.waitForSelector('[data-update-installieren]');
+  ok('neu: „Neu: 0.1.2 (du hast 0.1.1).“ und genau ein farbiger Knopf', await page.evaluate(() => document.querySelector('[data-update-status]').textContent === 'Neu: 0.1.2 (du hast 0.1.1).' && document.querySelectorAll('[data-update] .btn-primary').length === 1));
+  await page.click('[data-update-installieren]');
+  await page.waitForFunction(() => /Setup startet/.test(document.querySelector('[data-update-status]').textContent), null, { timeout: 5000 }).catch(() => {});
+  ok('Installieren: Stand in MB, dann „Das Setup startet …“', await page.evaluate(() => window.__log.some((x) => x[0] === 'installieren') && /Setup startet/.test(document.querySelector('[data-update-status]').textContent)));
+  // Nach dem Start des Setups bleibt die Zeile gesperrt (die App schließt sich); für die nächsten Fälle „Über“ neu öffnen.
+  await page.evaluate(() => { window.__update = { neu: null }; window.__probe.navigate('dashboard'); window.__probe.navigate('about'); });
+  await page.waitForSelector('[data-update-pruefen]:not([disabled])');
+  await page.click('[data-update-pruefen]'); await page.waitForTimeout(150);
+  ok('aktuell: „Du verwendest die aktuelle Version 0.1.1.“, kein farbiger Knopf', await page.evaluate(() => document.querySelector('[data-update-status]').textContent === 'Du verwendest die aktuelle Version 0.1.1.' && !document.querySelector('[data-update-installieren]')));
+  await page.evaluate(() => { window.__update = { fehler: 'UPDATE_UNTERSCHRIFT_FALSCH' }; });
+  await page.click('[data-update-pruefen]'); await page.waitForTimeout(150);
+  ok('falsche Unterschrift: verständlicher Satz', await page.evaluate(() => document.querySelector('[data-update-status]').textContent === 'Update nicht möglich: die Unterschrift stimmt nicht – es wird nichts installiert.'));
   ok('keine Seitenfehler', fehler.length === 0, fehler.join(' | '));
   await ctx.close();
 }

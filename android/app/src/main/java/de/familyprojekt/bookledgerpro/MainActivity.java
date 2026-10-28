@@ -26,6 +26,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BlpFilesPlugin.class);
         registerPlugin(BlpTresorPlugin.class);
         registerPlugin(BlpSpeechPlugin.class);
+        registerPlugin(BlpUpdatesPlugin.class);
         registerPlugin(de.familyprojekt.hintergrund.ProHintergrundPlugin.class);
         super.onCreate(state);
         if (bridge == null) return;

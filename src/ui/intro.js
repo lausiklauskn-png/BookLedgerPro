@@ -99,7 +99,43 @@ function versionZeile() {
   if (!nativ) return null;
   const p = el('p', { class: 'muted small', 'data-app-version': '', text: '' });
   nativ.version().then((v) => { if (v) p.textContent = t('ta.version').replace('{v}', v); }).catch(() => {});
-  return p;
+  return nativ.updates ? el('div', { 'data-app-version-zeile': '' }, [p, updateZeile(nativ.updates)]) : p;
+}
+
+// „Auf Updates prüfen“ (Leitfaden § 6, Klaus 2026-10-28): vom eigenen Server, nur mit gültiger Unterschrift (prüft die Hülle).
+// Erst auf Tipp, nie von selbst. Ein farbiger Knopf erst, wenn es etwas Neues gibt.
+function updateZeile(u) {
+  const status = el('p', { class: 'muted small', role: 'status', 'data-update-status': '' });
+  const knopf = el('button', { class: 'btn btn-sm', type: 'button', 'data-update-pruefen': '', text: t('upd.pruefen') });
+  const box = el('div', { 'data-update': '' }, [knopf, status]);
+  const grund = (e) => { const c = String((e && (e.code || e.message)) || e || ''), k = 'upd.' + c, x = t(k); return t('upd.fehler').replace('{grund}', x === k ? c : x); };
+  knopf.addEventListener('click', async () => {
+    knopf.disabled = true; status.textContent = t('upd.laeuft');
+    box.querySelector('[data-update-installieren]')?.remove();
+    try {
+      const r = await u.pruefen();
+      if (r && r.neu) {
+        status.textContent = t('upd.neu').replace('{neu}', r.neu).replace('{alt}', r.installiert);
+        const los = el('button', { class: 'btn btn-sm btn-primary', type: 'button', 'data-update-installieren': '', text: t('upd.installieren') });
+        los.addEventListener('click', async () => {
+          los.disabled = true; knopf.disabled = true;
+          const gesamt = Math.max(1, Math.round((r.groesse || 0) / 1048576));
+          status.textContent = t('upd.laedt').replace('{mb}', '0').replace('{gesamt}', gesamt);
+          const h = u.beiStand((s) => { status.textContent = t('upd.laedt').replace('{mb}', Math.round((s.geladen || 0) / 1048576)).replace('{gesamt}', gesamt); });
+          try {
+            const e = await u.installieren();
+            status.textContent = e && e.erlaubnis ? t('upd.erlaubnis') : t(window.BLPNative && window.BLPNative.plattform === 'android' ? 'upd.startetAndroid' : 'upd.startet');
+            if (e && e.erlaubnis) { los.disabled = false; knopf.disabled = false; }
+          }
+          catch (e) { status.textContent = grund(e); los.disabled = false; knopf.disabled = false; }
+          finally { Promise.resolve(h).then((x) => x && x.remove && x.remove()).catch(() => {}); }
+        });
+        box.append(los);
+      } else status.textContent = t('upd.aktuell').replace('{v}', (r && r.version) || '');
+    } catch (e) { status.textContent = grund(e); }
+    knopf.disabled = false;
+  });
+  return box;
 }
 
 export function aboutContent() {

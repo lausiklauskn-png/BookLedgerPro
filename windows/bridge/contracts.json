@@ -5,5 +5,7 @@
     "wiederherstellen", "ersatzErstellen", "sperren", "ablegenBeginnen", "ablegenTeil", "ablegenFertig", "ablegenAbbrechen",
     "verzeichnis", "lesenOeffnen", "lesenTeil", "markieren"],
   "BlpSpeech": ["verfuegbar", "zuhoeren"],
-  "BlpFenster": ["schliessen"]
+  "BlpFenster": ["schliessen"],
+  "ProScanner": ["geraete", "scannen"],
+  "BlpUpdates": ["pruefen", "installieren"]
 }

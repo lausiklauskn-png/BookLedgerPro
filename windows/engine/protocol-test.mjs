@@ -28,7 +28,7 @@ createInterface({input:child.stdout}).on('line',line=>{
     else{const d=createDecipheriv('aes-256-gcm',key,bytes.subarray(0,12));d.setAAD(aad);d.setAuthTag(bytes.subarray(-16));r=Buffer.concat([d.update(bytes.subarray(12,-16)),d.final()]);}
     send({replyTo:v.host,result:{data:r.toString('base64')}});
   }else if(v.id){const p=pending.get(v.id);pending.delete(v.id);v.error?p.reject(Object.assign(Error(v.error),{code:v.error})):p.resolve(v.result);}
-  else if(v.event)events.push(v.event);
+  else if(v.event){events.push(v.event);if(v.event==='Desktop:startupFailure')console.error('Startfehler: '+JSON.stringify(v.data));}
 });
 const call=(plugin,method,options={})=>new Promise((res,rej)=>{const id=String(++next);pending.set(id,{resolve:res,reject:rej});send({id,plugin,method,options});});
 const frist=setTimeout(()=>{console.error('Zeitüberschreitung. '+diag);child.kill();process.exitCode=1;for(const p of pending.values())p.reject(Error('timeout'));},60000);

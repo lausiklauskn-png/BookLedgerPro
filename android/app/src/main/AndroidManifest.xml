@@ -62,6 +62,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Updates vom eigenen Server: nur nach Tipp, Android fragt vor dem Installieren selbst nach (BlpUpdatesPlugin). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Hintergrundaufgabe (Vordergrund-Dienst „dataSync“) und ihre Mitteilung. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
