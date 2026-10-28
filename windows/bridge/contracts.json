@@ -1,0 +1,9 @@
+{
+  "BlpFiles": ["save", "share", "appInfo"],
+  "BlpIncoming": ["pending", "read", "acknowledge", "history", "restore", "discardArchived"],
+  "BlpTresor": ["zustand", "ordnerWaehlen", "ordnerOeffnen", "appOeffnen", "anlegen", "entsperren", "passwortAendern",
+    "wiederherstellen", "ersatzErstellen", "sperren", "ablegenBeginnen", "ablegenTeil", "ablegenFertig", "ablegenAbbrechen",
+    "verzeichnis", "lesenOeffnen", "lesenTeil", "markieren"],
+  "BlpSpeech": ["verfuegbar", "zuhoeren"],
+  "BlpFenster": ["schliessen"]
+}

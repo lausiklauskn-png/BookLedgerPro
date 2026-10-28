@@ -1467,7 +1467,7 @@ const STRINGS = {
     'tresor.neuHinweis': "Neu im Tresorordner: {n} – übernehmen?",
     'tresor.neuZeigen': "Zum Tresorordner",
     'tresor.titel': "Tresorordner",
-    'tresor.intro': "Ein Ordner für alle Pro-Apps (Private Brain Pro, Workflow PDF Pro, BookLedgerPro) mit einem Passwort. BookLedgerPro legt hier seine Sicherung ab und liest das Eingangsfach; die Fächer der anderen Apps sind nur lesbar. Das Passwort tippst du im Fenster von Android, es verlässt das Gerät nie.",
+    'tresor.intro': "Ein Ordner für alle Pro-Apps (Private Brain Pro, Workflow PDF Pro, BookLedgerPro) mit einem Passwort. BookLedgerPro legt hier seine Sicherung ab und liest das Eingangsfach; die Fächer der anderen Apps sind nur lesbar. Das Passwort tippst du in einem eigenen Fenster der App, es verlässt das Gerät nie.",
     'tresor.nurApp': "Den Tresorordner gibt es nur in der Android-App.",
     'tresor.waehlen': "Ordner wählen (z. B. SD-Karte)",
     'tresor.andererOrdner': "Anderen Ordner wählen",
@@ -3056,7 +3056,7 @@ const STRINGS = {
     'tresor.neuHinweis': "New in the vault folder: {n} – take over?",
     'tresor.neuZeigen': "Open vault folder",
     'tresor.titel': "Vault folder",
-    'tresor.intro': "One folder for all Pro apps (Private Brain Pro, Workflow PDF Pro, BookLedgerPro) with one password. BookLedgerPro stores its backup here and reads its inbox; the other apps' sections are read-only. You type the password in Android's own window; it never leaves the device.",
+    'tresor.intro': "One folder for all Pro apps (Private Brain Pro, Workflow PDF Pro, BookLedgerPro) with one password. BookLedgerPro stores its backup here and reads its inbox; the other apps' sections are read-only. You type the password in a separate window of the app; it never leaves the device.",
     'tresor.nurApp': "The vault folder exists only in the Android app.",
     'tresor.waehlen': "Choose folder (e.g. SD card)",
     'tresor.andererOrdner': "Choose another folder",
@@ -3242,6 +3242,26 @@ const APP_STRINGS = {
     'fw.fremdIntro': 'Local membrane: reports foreign postMessage sources (e.g. AI agent / foreign iframe) and SW endpoint probes. Purely local, RAM-only.',
   },
 };
+// Windows-Fassung der Pro-App (Pro-Umbau 5, Klaus 2026-10-28): wo die App-Sätze Android nennen, sagt Windows seinen
+// eigenen Weg (Speichern-Fenster von Windows, Windows-Spracherkennung ohne Internet, Ordner im Explorer).
+// Erkannt an window.BLPNative.plattform === 'windows' (native/blp-native.js). Gilt vor APP_STRINGS.
+const WINDOWS_STRINGS = {
+  de: {
+    'backup.noApiHint': 'Die Sicherung wird über das Speichern-Fenster von Windows abgelegt.',
+    'mikro.hinweisBrowser': 'Windows-Spracherkennung: läuft auf diesem Rechner, ohne Internet',
+    'speech.noticeBrowser': 'Windows-Spracherkennung: sofort, kein Schlüssel, die Sprache bleibt auf diesem Rechner (ohne Internet).',
+    'docs.workflowScanHint': 'Öffnet Workflow PDF Pro zum Scannen (mit Texterkennung). Zurück kommt der Scan über „Mehrere Belege hochladen“, durch Hineinziehen oder „Öffnen mit → BookLedgerPro“. Eigene Scans werden ohne Datei-Prüfung abgelegt; der erkannte Text wird vor der KI trotzdem geprüft.',
+    'ta.keinDateienProgramm': 'Der Explorer konnte den Ordner nicht zeigen. Pfad: {pfad}',
+  },
+  en: {
+    'backup.noApiHint': "The backup is saved through Windows' save window.",
+    'mikro.hinweisBrowser': 'Windows speech recognition: runs on this computer, without internet',
+    'speech.noticeBrowser': 'Windows speech recognition: instant, no key, the audio stays on this computer (no internet).',
+    'docs.workflowScanHint': 'Opens Workflow PDF Pro for scanning (with text recognition). The scan comes back via "Upload several receipts", by dragging it in or "Open with → BookLedgerPro". Own scans are stored without file check; the recognised text is still checked before any AI.',
+    'ta.keinDateienProgramm': 'Explorer could not show the folder. Path: {pfad}',
+  },
+};
+function istWindowsApp() { return typeof window !== 'undefined' && !!window.BLPNative && window.BLPNative.plattform === 'windows'; }
 /** Läuft das hier als Pro-App (Android-Hülle)? Nur der Klebstoff setzt window.BLPNative. */
 export function istProApp() { return typeof window !== 'undefined' && !!window.BLPNative; }
 
@@ -3252,6 +3272,7 @@ export function getLang() { return _lang; }
 
 /** Übersetzt einen Schlüssel; fällt auf Deutsch, dann auf den Schlüssel zurück. */
 export function t(key) {
+  if (istWindowsApp()) { const win = (WINDOWS_STRINGS[_lang] && WINDOWS_STRINGS[_lang][key]) || WINDOWS_STRINGS.de[key]; if (win) return win; }
   if (istProApp()) { const app = (APP_STRINGS[_lang] && APP_STRINGS[_lang][key]) || APP_STRINGS.de[key]; if (app) return app; }
   return (STRINGS[_lang] && STRINGS[_lang][key]) || STRINGS.de[key] || key;
 }

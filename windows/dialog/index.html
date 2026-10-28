@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src ipc: http://ipc.localhost https://ipc.localhost; form-action 'none'; base-uri 'none'; frame-src 'none'">
+<title>BookLedgerPro</title><link rel="stylesheet" href="dialog.css"><script src="dialog.js" defer></script></head>
+<body><main><h1 id="title">BookLedgerPro</h1><form id="form">
+<p id="help"></p>
+<label id="password-label"><span id="password-caption">Passwort</span><input id="password" type="password" autocomplete="off" maxlength="4096"></label>
+<label id="repeat-label"><span id="repeat-caption">Passwort wiederholen</span><input id="repeat" type="password" autocomplete="off" maxlength="4096"></label>
+<label id="notice-label" class="check"><input id="notice" type="checkbox"><span id="notice-caption"></span></label>
+<p id="status" role="status"></p><div class="actions"><button id="cancel" type="button">Abbrechen</button><button id="submit" type="submit">Weiter</button></div>
+</form></main></body></html>

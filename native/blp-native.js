@@ -16,7 +16,10 @@
   var P = C.Plugins || {};
   var Eingang = P.BlpIncoming, Dateien = P.BlpFiles;
   var MAX = 100 * 1024 * 1024;
-  document.documentElement.setAttribute('data-nativ', 'android');
+  // Dieselbe Datei läuft in der Android-Hülle und in der Windows-Hülle (windows/bridge/capacitor-tauri.js, Pro-Umbau 5).
+  var PLATTFORM = typeof C.getPlatform === 'function' && C.getPlatform() === 'windows' ? 'windows' : 'android';
+  var WINDOWS = PLATTFORM === 'windows';
+  document.documentElement.setAttribute('data-nativ', PLATTFORM);
 
   function hinweis(text) {
     try {
@@ -74,7 +77,11 @@
       var f = d.files[0];
       return base64(f).then(function (data) {
         return Dateien.share({ name: f.name || 'Datei', mime: f.type || 'application/octet-stream', data: data, title: d.title || '' });
-      }).then(function () { return undefined; });
+      }).then(function (r) {
+        // Windows hat keine Teilen-Liste wie Android: „Teilen“ heißt dort Speichern unter … (Satz statt Stille).
+        if (WINDOWS) hinweis(r && r.saved ? 'Gespeichert: ' + (f.name || 'Datei') : 'Nicht gespeichert.');
+        return undefined;
+      });
     };
   }
 
@@ -133,6 +140,21 @@
     catch (e) { hinweis('Teilen an BookLedgerPro ist in dieser Android-Version nicht verfügbar.'); }
     try { Eingang.addListener('available', liefern); } catch (e) { /* ohne Ereignis: beim Start */ }
     setTimeout(aufraeumen, 5000);
+    // Windows: Dateien ins Fenster ziehen = derselbe Eingang wie „Öffnen mit“ (Klaus 2026-10-28: „Das Hineinziehen ist auch klar“).
+    // Eigene Ablageflächen der Seite (Tresor-Fach, Datensicherung, Angebotszeilen) haben Vorrang: sie verhindern den Standard selbst.
+    if (WINDOWS) {
+      var mitDateien = function (e) { var t = e.dataTransfer && e.dataTransfer.types; return !!t && Array.prototype.indexOf.call(t, 'Files') >= 0; };
+      document.addEventListener('dragover', function (e) { if (mitDateien(e) && !e.defaultPrevented) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } });
+      document.addEventListener('drop', function (e) {
+        if (!mitDateien(e) || e.defaultPrevented) return;
+        e.preventDefault();
+        var liste = Array.prototype.slice.call(e.dataTransfer.files || []).filter(function (f) { return f.size > 0; });
+        if (!liste.length) { hinweis('Ordner lassen sich nicht hineinziehen — bitte einzelne Dateien.'); return; }
+        if (!abnehmer) { hinweis('Bitte zuerst entsperren, dann die Dateien noch einmal hineinziehen.'); return; }
+        Promise.resolve(abnehmer({ files: liste.map(function (f) { return { getFile: function () { return Promise.resolve(f); } }; }) }))
+          .catch(function () { hinweis('Die Dateien konnten nicht eingelesen werden.'); });
+      });
+    }
   }
 
   // ---- 4 · Gemeinsamer Tresorordner (Schritt C, Klaus 2026-10-27) ------------------------------------------------
@@ -253,5 +275,19 @@
   var Sprache = P.BlpSpeech;
   var sprechen = Sprache && typeof Sprache.zuhoeren === 'function'
     ? function (sprache) { return Sprache.zuhoeren({ sprache: String(sprache || 'de-DE') }); } : null;
-  window.BLPNative = Object.freeze({ plattform: 'android', speichern: speichern, tresor: tresor, version: version, sprechen: sprechen });
+  // Windows: Schließen des Fensters (Kreuz). Läuft noch eine Aufgabe, wird gefragt; ist der Tresorordner offen, wird vorher
+  // gesichert (höchstens 20 s, Regel #2). Ein zweites Schließen innerhalb von 15 s schließt immer (die Hülle wartet nicht ewig).
+  if (WINDOWS && P.BlpFenster) {
+    var schliesst = false;
+    window.__blpSchliessen = function () {
+      if (schliesst) return;
+      var H = window.ProHintergrund, laufend = H && typeof H.aktiv === 'function' ? H.aktiv() : 0;
+      if (laufend && !window.confirm('Es läuft noch eine Aufgabe (z. B. Sicherung oder Einordnen). Trotzdem schließen?')) return;
+      schliesst = true;
+      var vorher = tresor ? Promise.race([tresor.zustand().then(function (z) { if (z && z.offen) { hinweis('Sicherung vor dem Schließen …'); return sichern(false); } }),
+        new Promise(function (ok) { setTimeout(ok, 20000); })]).catch(function () {}) : Promise.resolve();
+      vorher.then(function () { return P.BlpFenster.schliessen(); }).catch(function () { schliesst = false; });
+    };
+  }
+  window.BLPNative = Object.freeze({ plattform: PLATTFORM, speichern: speichern, tresor: tresor, version: version, sprechen: sprechen });
 })();
