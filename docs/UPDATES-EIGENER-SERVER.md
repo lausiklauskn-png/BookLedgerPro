@@ -8,20 +8,20 @@ deren GitHub-Releases von außen nicht lesbar sind (Private Brain Pro liest GitH
 
 | Teil | Ort | Was |
 |---|---|---|
-| Server | `167.233.204.72` (Hetzner, Caddy), Ordner `/srv/family-project/updates/<app>/`, von außen `https://family-projekt.de/updates/<app>/` | `aktuell.json`, `aktuell.json.sig`, das Setup. Nichts sonst. |
+| Server | `167.233.204.72` (Hetzner, Caddy), Ordner `/srv/family-project/updates/<app>/`, von außen `https://family-projekt.de/updates/<app>/` | je Plattform `aktuell-windows.json` / `aktuell-android.json` mit `.sig`, dazu Setup bzw. APK. Nichts sonst. |
 | Hochladen | GitHub-Lauf „Windows-Update veröffentlichen“ (nur von Hand, Feld „ja“) | rsync mit Schlüssel `…_UPLOAD_KEY`; der darf auf dem Server **nur** in `/srv/family-project/updates` schreiben (`rrsync`, `restrict`). Server-Kennung im Lauf fest. |
-| Unterschrift | GitHub-Geheimnis `…_SIGNING_KEY` (Ed25519) | `aktuell.json` wird unterschrieben; der Lauf prüft die Unterschrift gegen den **in der App eingebauten** öffentlichen Schlüssel, bevor er hochlädt. |
-| App | z. B. `windows/engine/src/DesktopUpdates.java` | holt `aktuell.json` + `.sig`, glaubt nur der Unterschrift, nimmt nur eine **neuere** Version, baut die Setup-Adresse selbst (feste Basis + geprüfter Name), prüft Größe und SHA-256, startet das Setup und schließt sich. |
+| Unterschrift | GitHub-Geheimnis `…_SIGNING_KEY` (Ed25519) | die Feed-Datei wird unterschrieben; der Lauf prüft die Unterschrift gegen den **in der App eingebauten** öffentlichen Schlüssel, bevor er hochlädt. |
+| App | z. B. `windows/engine/src/DesktopUpdates.java` | holt `aktuell-<plattform>.json` + `.sig`, glaubt nur der Unterschrift, nimmt nur eine **neuere** Version, baut die Setup-Adresse selbst (feste Basis + geprüfter Name), prüft Größe und SHA-256, startet das Setup und schließt sich. |
 | Bedienung | „Über“ (Leitfaden § 6) | „Auf Updates prüfen“ → „Du verwendest die aktuelle Version …“ oder „Neu: … (du hast …)“ + ein farbiger Knopf „Laden und installieren“ mit MB-Stand. Nichts startet von selbst. |
 
-`aktuell.json` (Format 1):
+`aktuell-windows.json` (Format 1; Android gleich mit Abschnitt `android` und `versionCode`):
 
 ```json
 { "format": 1, "app": "bookledgerpro", "version": "0.1.2", "datum": "2026-10-29", "quelle": "<commit>",
   "windows": { "datei": "BookLedgerPro-Windows-0.1.2-x64-setup.exe", "groesse": 40123456, "sha256": "<64 hex>" } }
 ```
 
-`aktuell.json.sig` = Base64 der Ed25519-Unterschrift über genau die Bytes von `aktuell.json` (`openssl pkeyutl -sign -rawin`).
+`aktuell-windows.json.sig` = Base64 der Ed25519-Unterschrift über genau die Bytes der Feed-Datei (`openssl pkeyutl -sign -rawin`).
 
 Warum so: Ein geknackter Server kann kein fremdes Programm unterschieben (Unterschrift fehlt), einen alten echten Stand nicht als neu
 ausgeben (Version muss steigen) und auf keine fremde Adresse umleiten (die App setzt die Adresse selbst zusammen).

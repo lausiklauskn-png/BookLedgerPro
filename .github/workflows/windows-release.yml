@@ -1,7 +1,7 @@
 name: Windows-Update veröffentlichen
 
 # Nur von Hand und nur auf Klaus' Wort (Actions → „Windows-Update veröffentlichen“ → Run workflow, Feld „ja“).
-# Baut den Auslieferungs-Installer, unterschreibt aktuell.json (Ed25519, Geheimnis BLP_UPDATE_SIGNING_KEY), prüft die
+# Baut den Auslieferungs-Installer, unterschreibt aktuell-windows.json (Ed25519, Geheimnis BLP_UPDATE_SIGNING_KEY), prüft die
 # Unterschrift gegen den in der App eingebauten öffentlichen Schlüssel und lädt alles nach
 # https://family-projekt.de/updates/bookledgerpro/ (SFTP/rsync mit Schlüssel BLP_UPDATE_UPLOAD_KEY, der nur dorthin schreiben darf).
 # Alte Dateien im Ordner werden ersetzt (Klaus: „alte Update weg, neue Update drauf“).
@@ -63,7 +63,7 @@ jobs:
         with:
           name: windows-update
           path: dist
-      - name: aktuell.json bauen, unterschreiben, gegen den Schlüssel der App prüfen
+      - name: aktuell-windows.json bauen, unterschreiben, gegen den Schlüssel der App prüfen
         env:
           SIGNIERSCHLUESSEL: ${{ secrets.BLP_UPDATE_SIGNING_KEY }}
         run: |
@@ -71,14 +71,14 @@ jobs:
           test -n "$SIGNIERSCHLUESSEL" || { echo "::error::Geheimnis BLP_UPDATE_SIGNING_KEY fehlt"; exit 1; }
           mkdir -p hoch && cp dist/BookLedgerPro-Windows-*-x64-setup.exe hoch/
           (cd dist && sha256sum -c SHA256SUMS)
-          node windows/tools/update-feed.mjs dist hoch/aktuell.json
+          node windows/tools/update-feed.mjs dist hoch/aktuell-windows.json
           umask 077; printf '%s\n' "$SIGNIERSCHLUESSEL" > "$RUNNER_TEMP/sig.pem"
-          openssl pkeyutl -sign -rawin -inkey "$RUNNER_TEMP/sig.pem" -in hoch/aktuell.json -out "$RUNNER_TEMP/sig.bin"
-          base64 -w0 "$RUNNER_TEMP/sig.bin" > hoch/aktuell.json.sig; echo >> hoch/aktuell.json.sig
+          openssl pkeyutl -sign -rawin -inkey "$RUNNER_TEMP/sig.pem" -in hoch/aktuell-windows.json -out "$RUNNER_TEMP/sig.bin"
+          base64 -w0 "$RUNNER_TEMP/sig.bin" > hoch/aktuell-windows.json.sig; echo >> hoch/aktuell-windows.json.sig
           rm -f "$RUNNER_TEMP/sig.pem"
           PUB=$(grep -o 'SCHLUESSEL = "[^"]*"' windows/engine/src/DesktopUpdates.java | cut -d'"' -f2)
           { echo '-----BEGIN PUBLIC KEY-----'; echo "$PUB"; echo '-----END PUBLIC KEY-----'; } > "$RUNNER_TEMP/pub.pem"
-          openssl pkeyutl -verify -rawin -pubin -inkey "$RUNNER_TEMP/pub.pem" -in hoch/aktuell.json -sigfile "$RUNNER_TEMP/sig.bin"
+          openssl pkeyutl -verify -rawin -pubin -inkey "$RUNNER_TEMP/pub.pem" -in hoch/aktuell-windows.json -sigfile "$RUNNER_TEMP/sig.bin"
           ls -la hoch
       - name: Auf family-projekt.de hochladen (alte Stände werden ersetzt)
         env:
@@ -90,14 +90,15 @@ jobs:
           printf '%s\n' "$HOCHLADESCHLUESSEL" > ~/.ssh/upload
           # Server-Kennung fest (Klaus' Termux, 2026-10-28): eine fremde Gegenstelle bekommt nichts.
           echo '167.233.204.72 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIhzSmN0kY2Vk2oem2u6dH8rq04A8UXVZyay2WWRjOmR' > ~/.ssh/known_hosts
-          rsync -rt --delete-after --delay-updates -e "ssh -i ~/.ssh/upload -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" hoch/ root@167.233.204.72:bookledgerpro/
+          # Nur Windows-Dateien abgleichen (alte Setups weg); Android-Dateien im selben Ordner bleiben unberührt.
+          rsync -rt --delete-after --delay-updates --include='aktuell-windows.json' --include='aktuell-windows.json.sig' --include='BookLedgerPro-Windows-*-x64-setup.exe' --exclude='*' -e "ssh -i ~/.ssh/upload -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" hoch/ root@167.233.204.72:bookledgerpro/
           rm -f ~/.ssh/upload
       - name: Von außen prüfen, was die App sieht
         run: |
           set -euo pipefail
           B=https://family-projekt.de/updates/bookledgerpro
-          curl -fsS "$B/aktuell.json" | cmp - hoch/aktuell.json
-          curl -fsS "$B/aktuell.json.sig" | cmp - hoch/aktuell.json.sig
+          curl -fsS "$B/aktuell-windows.json" | cmp - hoch/aktuell-windows.json
+          curl -fsS "$B/aktuell-windows.json.sig" | cmp - hoch/aktuell-windows.json.sig
           D=$(ls hoch/*.exe | xargs -n1 basename)
           curl -fsS "$B/$D" | sha256sum | grep -q "$(sha256sum "hoch/$D" | cut -d' ' -f1)"
           echo "Veröffentlicht: $B/$D"

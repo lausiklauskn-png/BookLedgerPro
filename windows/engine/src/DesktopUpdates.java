@@ -13,13 +13,15 @@ import org.json.JSONObject;
 
 /**
  * Updates von Klaus' eigenem Server (Klaus 2026-10-28: „Update auf den Server legen … alte weg, neue drauf“). Das Repo ist privat,
- * GitHub-Releases sind von außen nicht lesbar. Auf dem Server liegen nur: aktuell.json, aktuell.json.sig (Ed25519 über genau diese
+ * GitHub-Releases sind von außen nicht lesbar. Auf dem Server liegen je Plattform: aktuell-<plattform>.json, .sig (Ed25519 über genau diese
  * Bytes, Schlüssel nur in GitHub) und das Setup. Die App glaubt nur der Unterschrift: ein geknackter Server kann kein fremdes
  * Programm unterschieben, ein alter (echter) Stand gilt nie als neu. Die Adresse des Setups setzt die App selbst zusammen
  * (feste Basis + geprüfter Dateiname), nie aus einer Angabe des Servers.
  */
 final class DesktopUpdates {
     static final String BASIS = "https://family-projekt.de/updates/bookledgerpro/";
+    /** Je Plattform eine eigene Datei: eine Veröffentlichung überschreibt nie die der anderen Plattform. */
+    static final String FEED = "aktuell-windows.json";
     /** Öffentlicher Signatur-Schlüssel (Ed25519, SubjectPublicKeyInfo). Der geheime liegt nur als GitHub-Geheimnis. */
     static final String SCHLUESSEL = "MCowBQYDK2VwAyEAojPTWOhCLk0Cc+O6jKKf7yzdJglEaZ+ZBKF8PM7YLgs=";
     static final long MAX_SETUP = 1024L * 1024 * 1024;
@@ -69,7 +71,7 @@ final class DesktopUpdates {
     synchronized JSONObject pruefen() throws Exception {
         geprueft = null;
         byte[] feed, sig;
-        try { feed = netz.holen(BASIS + "aktuell.json", 65536); sig = netz.holen(BASIS + "aktuell.json.sig", 1024); }
+        try { feed = netz.holen(BASIS + FEED, 65536); sig = netz.holen(BASIS + FEED + ".sig", 1024); }
         catch (IOException e) { throw DesktopService.code(e).startsWith("UPDATE_") ? e : new IOException("UPDATE_NICHT_ERREICHBAR"); }
         byte[] roh;
         try { roh = Base64.getDecoder().decode(new String(sig, StandardCharsets.US_ASCII).trim()); } catch (IllegalArgumentException x) { throw new IOException("UPDATE_UNTERSCHRIFT_FALSCH"); }
