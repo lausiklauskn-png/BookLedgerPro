@@ -5,6 +5,17 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-28 (Nachmittag) — Reparaturen nach der Probe, Einstellungs-Umbau Schritt 1
+
+**Was getan:** Klaus' drei Antworten eingeholt (0.1.1 nein, Bedien-Datei in PB, Schlüssel ja). Workflow PDF Pro #32 (Sperren), Private Brain Pro
+#106 (#105 ohne Explorer, Sperren Java-seitig, Teilen fragt bei gesperrtem Ordner, Absturz `RejectedExecutionException` behoben) und #107
+(gemeinsame Bedien-Datei `native/pro-bedienung.js`/`.css`, „Tresor & Ablage“, keine Web-Reste, Version bei Updates). Hier: Kopier-Werkzeug und
+Kopie der Bedien-Datei, Abschluss, Forschung § 11, Brief Umbau 2.
+**Stand:** alle PRs CI grün und gemergt (Zahlen im Abschluss). BookLedgerPro-Code unverändert außer Kopie + Werkzeug + Pin-Probe.
+**Offen/Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-2.md` — Umbau WPP, dann BLP (Herausgeber-Schlüssel ist in PB eingebaut). ⚠ Nichts am Tablet.
+
+---
+
 ## 2026-10-28 (Vormittag) — Tresorordner Schritt E: Probe am Tablet mit Klaus
 
 **Was getan:** Mit Klaus am Tablet: Workflow PDF Pro bekam seine Ablage im echten Hauptablageordner (Umzug, 51 Datensätze) und zog ein;

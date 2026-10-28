@@ -8,6 +8,7 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import vm from 'node:vm';
 import { prepareWeb, indexAnpassen, istLaufzeit, root, ANKER, LAUFZEIT_DATEIEN, LAUFZEIT_ORDNER } from './prepare-web.mjs';
+import { pruefen as bedienungPruefen } from './bedienung-nachziehen.mjs';
 
 let gruen = 0, rot = 0;
 const ok = (name, bed, info = '') => { if (bed) { gruen++; console.log('  ✓ ' + name); } else { rot++; console.log('  ✗ ' + name + (info ? '  → ' + info : '')); } };
@@ -167,6 +168,9 @@ ok('… gewöhnliche Tipps bleiben unberührt', ruhig);
 console.log('— Tresorordner (Schritt C): gemeinsames Paket und Brücke');
 const { pruefen: tresorPruefen } = await import('./tresor-nachziehen.mjs');
 const tresorFehler = tresorPruefen();
+// Gemeinsame Bedien-Bausteine aller Pro-Apps (Leitfaden, Klaus 2026-10-28): Quelle Private Brain Pro, hier nur Kopie.
+const bedienFehler = bedienungPruefen();
+ok('Bedien-Bausteine (native/pro-bedienung.js/.css) byte-gleich mit Private Brain Pro (Herkunft gepinnt)', bedienFehler.length === 0, bedienFehler.join('; '));
 ok('Paket de.familyprojekt.tresor byte-gleich mit Workflow PDF Pro (Herkunft gepinnt, VaultCrypto-Rumpf)', tresorFehler.length === 0, tresorFehler.join('; '));
 const plugin = lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/BlpTresorPlugin.java').toString('utf8');
 const mainAct = lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/MainActivity.java').toString('utf8');
