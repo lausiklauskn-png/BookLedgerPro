@@ -5,7 +5,17 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-## ▶ Neuester Stand (2026-10-27, spät): Tresorordner Schritt D gebaut
+## ▶ Neuester Stand (2026-10-28, nachts): Test-APKs für Android veröffentlicht
+- Workflow PDF Pro **1.0.6**: https://github.com/lausiklauskn-png/Workflow-PDF-Pro/releases/download/v1.0.6/Workflow-PDF-Pro-1.0.6.apk · 83.184.101 B · SHA-256 `356b9614dafb9451d00bd6aa0bd752ece33a6f7b933a36864ff4ce53e0023a06`
+- Private Brain Pro **1.0.41** (Release von einer Parallel-Sitzung ausgelöst, hier nur geprüft): https://github.com/lausiklauskn-png/Privat-Brain-Pro/releases/download/v1.0.41/Private-Brain-Pro-1.0.41.apk · 60.972.919 B · SHA-256 `92a2dd1b418dedf5c33c4d6db8472d59f414cf0a10da6c07ffb6df01341ac2d2`
+- BookLedgerPro **0.1.0** (erste signierte APK, Repo privat → Download nur angemeldet): https://github.com/lausiklauskn-png/BookLedgerPro/releases/tag/v0.1.0 · 28.190.994 B · SHA-256 `81674930fa29a85864a732d30ac8b5b135ca6f387e3604bfa642f373620de0f4` · Zertifikat `7a6217eb…` · Emulator-Probe API 35 (Tresor überlebt Überinstallieren)
+- BookLedgerPro hat jetzt einen Veröffentlichungsweg (`.github/workflows/android-release.yml`, `docs/ANDROID.md` „Veröffentlichen“): fünf Anläufe
+  bis grün (Abbild API 34 kaputt · API 31 zu altes WebView · Deckblatt · verlorene Zeichen beim Tippen · anonymer Download im privaten Repo),
+  je eigener PR #374–#379. Das Repo ist **privat**; geprüfter Entwurf wird mit `entwurf_freigeben` freigegeben.
+- ⚠ Nicht am Gerät. **Basic nicht nachgezogen** (nur native Werkzeuge geändert, keine PWA-Dateien) – beim nächsten PWA-Stand mitziehen.
+- **Nächstes:** Schritt E am Tablet — Brief `BRIEF_SITZUNG_TRESORORDNER-SCHRITT-E.md`.
+
+## ▶ Stand (2026-10-27, spät): Tresorordner Schritt D gebaut
 - **D1** Workflow PDF Pro zieht ein (Workflow-PDF-Pro#30, gemergt `6ce1570`), **D2** Private Brain Pro zieht ein und legt Rechnungsmails
   ins `Eingang-BookLedgerPro/Mails/` (Privat-Brain-Pro#102). Knopf je im Tresor-Kasten der Einstellungen; der Ordner wird gewählt und über
   die Tresor-Kennung geprüft (Probe an einer Kopie möglich). Hier kein Code nötig. Abschluss `BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-D.md`.

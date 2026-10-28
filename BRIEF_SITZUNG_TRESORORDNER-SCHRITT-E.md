@@ -8,7 +8,7 @@ Stand 2026-10-27 spät. Schritt D ist gebaut: Workflow-PDF-Pro#30 (gemergt) und 
 ```
 BookLedgerPro (lausiklauskn-png/BookLedgerPro), Tresorordner Schritt E (Probe am Gerät). Lies zuerst CLAUDE.md, dann BRIEF_SITZUNG_TRESORORDNER-SCHRITT-E.md, BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-D.md, docs/TRESORORDNER.md und die Forschung docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md (§ 9). Repos dazunehmen: Workflow-PDF-Pro und Privat-Brain-Pro (beide docs/TRESORORDNER.md).
 1. Termux ist erledigt (Probe 2026-10-27: 64, alle drei .age-Dateien da) – nicht erneut fragen.
-2. Stell mir die Fragen aus dem Brief: neue APKs zum Prüfen veröffentlichen (welche Apps)? Wo liegt mein Workflow-PDF-Tresor (gleicher Ordner wie „Private Brain“)?
+2. Die Test-APKs sind veröffentlicht (2026-10-28: Workflow PDF Pro 1.0.6, Private Brain Pro 1.0.41, BookLedgerPro 0.1.0 – Links im Brief) und der SD-Ordner ist geklärt (Hauptablageordner wird der Tresorordner) – nicht erneut fragen. Erst prüfen, ob ich alle drei installiert habe.
 3. Dann mit mir am Tablet: Probe an der Kopie „Tresor-Probe“ (Dateien-App), Einzug Private Brain Pro und Workflow PDF Pro, Öffnen mit BookLedgerPro, Rechnungsmail ins Eingangsfach und übernehmen, Rückweg. Erst danach der echte Ordner, nur auf mein Wort.
 Termux-Befehle als ein Block ohne Erklärung, Passwort-Abfragen immer als einzelne Zeile. GitHub-Schritte als kurze Liste mit Links („hauptsächlich“ = main). Nichts veröffentlichen ohne mein Wort, keine Schlüssel im Chat, nichts an meinen echten Tresoren ohne Kopie und Rückweg. Selbst mergen wenn CI grün. Am Ende: Abschluss, Forschung, Brief und Kurzfassung als Copy-Paste-Block.
 ```
@@ -17,7 +17,13 @@ Termux-Befehle als ein Block ohne Erklärung, Passwort-Abfragen immer als einzel
 1. `CLAUDE.md` (oben Fahrplan), `docs/TRESORORDNER.md` hier, in den beiden anderen Repos `docs/TRESORORDNER.md` (Abschnitt D1/D2).
 2. Forschung § 9, besonders 1 (Probe über die Kennung), 11 (Termux ≠ SD-Tresor), 12 (gleicher Ordner), 13 (Ersatzschlüssel).
 
-## Die Fragen an Klaus (mit Empfehlung, kurz)
+## Veröffentlicht (2026-10-28, Klaus: „veröffentliche die Test-APKs für Android“)
+- Workflow PDF Pro **1.0.6**: https://github.com/lausiklauskn-png/Workflow-PDF-Pro/releases/download/v1.0.6/Workflow-PDF-Pro-1.0.6.apk · 83.184.101 B · SHA-256 `356b9614dafb9451d00bd6aa0bd752ece33a6f7b933a36864ff4ce53e0023a06`
+- Private Brain Pro **1.0.41** (Release von einer Parallel-Sitzung ausgelöst, hier nur geprüft): https://github.com/lausiklauskn-png/Privat-Brain-Pro/releases/download/v1.0.41/Private-Brain-Pro-1.0.41.apk · 60.972.919 B · SHA-256 `92a2dd1b418dedf5c33c4d6db8472d59f414cf0a10da6c07ffb6df01341ac2d2`
+- BookLedgerPro **0.1.0** (erste signierte APK, Repo privat → Download nur angemeldet): https://github.com/lausiklauskn-png/BookLedgerPro/releases/tag/v0.1.0 · 28.190.994 B · SHA-256 `81674930fa29a85864a732d30ac8b5b135ca6f387e3604bfa642f373620de0f4` · Zertifikat `7a6217eb…` · Emulator-Probe API 35 (Tresor überlebt Überinstallieren)
+BookLedgerPro: zuerst am Tablet im Browser bei GitHub anmelden, sonst 404 (Repo privat; ob öffentlich, entscheidet Klaus).
+
+## Die Fragen an Klaus (mit Empfehlung, kurz) — beide erledigt
 1. **Neue APKs zum Prüfen am Tablet?** Ohne Veröffentlichung gibt es nichts zu installieren (Debug-Bauten haben eine andere Signatur und
    gehen nicht über die installierten Apps). *Empfehlung:* Workflow PDF Pro 1.0.6 und Private Brain Pro 1.0.41 als signierte Update-APKs
    (Android), BookLedgerPro als erste signierte APK — jeweils nur nach Klaus' Wort, Windows nicht.

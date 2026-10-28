@@ -5,6 +5,18 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-28 (nachts) — Test-APKs für Android veröffentlicht (Klaus' Wort)
+
+**Was getan:** Workflow PDF Pro 1.0.6 (Versionssprung #31, `request-release.mjs`), Private Brain Pro 1.0.41 (Lauf einer Parallel-Sitzung,
+hier nur nachgeprüft), BookLedgerPro 0.1.0: Veröffentlichungsweg neu gebaut (#374) und in fünf Anläufen grün gemacht (#375 API 31 statt 34,
+#376 Deckblatt, #377 API 35 + Diagnose, #378 Passwort in Stücken tippen, #379 privates Repo: Download mit Anmeldung, Entwurf freigeben).
+**Stand:** alle drei Downloads hier selbst geladen, SHA-256 gleich den Nachweisen; BookLedgerPro-Zertifikat `7a6217eb…` mit keytool nachgeprüft.
+Emulator-Probe BookLedgerPro: Erstinstallation, Tresor mit Wegwerf-Passwort, Überinstallieren → „Entsperren“ (API 35).
+**Offen/Nächstes:** Schritt E am Tablet. Basic nicht nachgezogen (keine PWA-Änderung). Ob das BookLedgerPro-Repo öffentlich wird: Klaus.
+Lehren: Emulator-API-31-WebView zu alt für die App; `adb input text` verliert bei langen Texten Zeichen; private Repos → kein anonymer Download.
+
+---
+
 ## 2026-10-27 (spät) — Tresorordner Schritt D (in Workflow PDF Pro und Private Brain Pro)
 
 **Was getan:** Termux-Probe als eine Zeile ausgegeben (Ergebnis offen). Zwei Fragen an Klaus: Knopf → keine Vorliebe, Empfehlung
