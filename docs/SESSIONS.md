@@ -20,8 +20,8 @@ eine Anzeige seines Eingangsfachs.
 **Was getan:** Workflow PDF Pro #35 (Sicherung gestreamt, Einordnen/Prüfen nur auf Knopf, Tipp-Schutz; gemergt) · BookLedgerPro #389 (Belegliste für
 Hunderte, Bedeutungs-Schalter am Suchfeld, Strichgrafiken auf der Belegseite, Griff mittig, Einordnen nicht beim Öffnen) · Basic nachgezogen ·
 Abschluss, Forschung § 13, Brief Umbau 4.
-**Stand:** WPP `test:native-web` 53 grün, CI grün · BLP `run.mjs` 2602/0, `smoke_belegliste` 23, `smoke_belege` 46/14 wie main. Nichts am Gerät, nichts veröffentlicht.
-**Offen/Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-4.md` (Test-APKs nur auf Klaus' Wort, native Hintergrundaufgabe, Teilen an Pro-Apps, Rest-Emojis).
+**Stand:** WPP `test:native-web` 53 grün, CI grün · BLP `run.mjs` 2602/0, `smoke_belegliste` 23, `smoke_belege` 46/14 wie main. Auf Klaus' Wort veröffentlicht: Test-APKs BLP 0.1.1, WPP 1.0.7, PB 1.0.42 (nur Android, Links in PULS). Nichts am Gerät.
+**Offen/Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-4.md` (Befunde vom Tablet, native Hintergrundaufgabe, Teilen an Pro-Apps, Rest-Emojis).
 
 ---
 

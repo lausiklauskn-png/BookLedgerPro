@@ -337,4 +337,9 @@ Mail-Beleg + 2 PDF-Anhänge als eigene Belege. Der Einzug lief **gleich am echte
    ein Eingriff ins gemeinsame Paket (nur in Workflow PDF Pro). `darfSchreiben` erlaubt jeder Pro-App das Ablegen in Übergabefächern, ohne Java-Änderung hier.
 5. **Hintergrund beim Wechsel in den Hintergrund:** die automatische Sicherung startet bei `visibilitychange: hidden`. Android 12+ verbietet dann oft den
    Start eines Vordergrund-Dienstes; das Plugin fängt das ab (`geschuetzt: false`) und die Sicherung läuft wie bisher. Am Gerät nicht gemessen.
+10. **Veröffentlichung am Abend (drei Test-APKs):** ein schon gemergter Sitzungs-Branch lässt sich ohne Force-Push weiterverwenden — auf `origin/main`
+    zurücksetzen und darauf committen ist ein schneller Vorlauf (der alte Kopf ist Vorfahre von main); der Force-Push wurde von der Sitzung abgelehnt.
+    Private Brain Pro: nur `android/app/build.gradle` erhöhen, wenn nur Android erscheint — die Windows-Updateprobe hängt an der Windows-Version.
+    Workflow PDF Pro legt kein `SHA256SUMS` bei, sondern `*.apk.sha256` + den Asset-Digest. BookLedgerPro ist privat: aus dem Behälter kein
+    unabhängiger Download, nur der Asset-Digest. Die Codex-Prüfung brach an allen PRs am Nutzungslimit ab (kein Befund, keine Sperre).
 
