@@ -5,13 +5,18 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
+## ▶ Neuester Stand (2026-10-28, Nacht): Pro-Umbau Schritt 4 (BookLedgerPro)
+- Hintergrundaufgabe (gemeinsamer Baustein aus Private Brain Pro, Fassung 2) für automatische Sicherung und Einordnen; keine Emojis in allen Ansichten
+  (`strich.js` am `<body>`); „An Pro-App geben …“ in jeder Belegzeile (Workflow PDF Pro über `Eingang-WorkflowPDF`, sonst normal teilen). Basic nachgezogen.
+  **Nichts veröffentlicht**, nichts am Tablet. Klaus' Befunde vom Tablet (Kamera, Workflow-PDF-Scan, Mikrofon, Ladebalken, schlanker) → zweiter PR.
+
 ## ▶ Test-APKs veröffentlicht (2026-10-28, 19:20 UTC, Klaus: „kannst du mir dann die Updates zur Verfügung stellen?“)
 - BookLedgerPro **0.1.1**: https://github.com/lausiklauskn-png/BookLedgerPro/releases/download/v0.1.1/BookLedgerPro-0.1.1.apk · 28.211.801 B · SHA-256 `0641bb7526a111ca9aa55563e635cb564a3a99a2ca09476a899a5f3af2d7654d` (Asset-Digest; Repo privat, Download nur angemeldet; Release-Lauf 40748351965 mit Emulator-Installationsprobe)
 - Workflow PDF Pro **1.0.7**: https://github.com/lausiklauskn-png/Workflow-PDF-Pro/releases/download/v1.0.7/Workflow-PDF-Pro-1.0.7.apk · 83.213.283 B · SHA-256 `160bf7b0603216b49116e667d8c9e99f6bc4852f15ab50f34c48f71891ce9d79` (unabhängig geladen = Asset-Digest; Lauf 40751284149)
 - Private Brain Pro **1.0.42**: https://github.com/lausiklauskn-png/Privat-Brain-Pro/releases/download/v1.0.42/Private-Brain-Pro-1.0.42.apk · 60.985.093 B · SHA-256 `847e8b87a40dbe33fa3f6f96d3ddfe995789424d180f1375c9c0b17693b99ba9` (unabhängig geladen = `SHA256SUMS`; Lauf 40751288404, signiertes Update 1.0.41 → 1.0.42)
 - Nur Android. Nicht erneut auslösen. ⚠ Am Tablet noch nicht geprüft.
 
-## ▶ Neuester Stand (2026-10-28, spät): Pro-Umbau Schritt 3
+## ▶ Stand (2026-10-28, spät): Pro-Umbau Schritt 3
 - Workflow-PDF-Pro#35: Sicherung gestreamt (`.wfps`, 60 MB ohne Speicherzuwachs; Kern-Weg +≈ 900 MB), Einordnen/Prüfen nur auf Knopf, Tipp-Schutz.
 - BookLedgerPro#389: Belegliste für Hunderte (flache Zeilen, Mail → Anhänge, ⋯), Bedeutungs-Schalter am Suchfeld, Strichgrafiken, Griff mittig. Basic nachgezogen.
   **Nichts veröffentlicht**, nichts am Tablet.

@@ -818,3 +818,11 @@ tr.suche-markiert td { background: var(--accent-soft); }
   .nav-klapp .ic { width: 16px; height: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .gruppe-klapp .ic, .schalter-punkt { transition: none; } }
+/* Pro-Umbau 4: farbige Zustandspunkte statt 🟢🟡⚪🔴🟦 (strich.js) */
+.ic-strich.ic-gruen { color: var(--ok, #2e8b57); } .ic-strich.ic-gelb { color: var(--warn, #c9a227); }
+.ic-strich.ic-grau { color: var(--muted, #8a8f98); } .ic-strich.ic-rot { color: var(--danger, #c0392b); } .ic-strich.ic-blau { color: var(--accent, #2f6fd6); }
+/* Pro-Umbau 4: „An Pro-App geben …“ sichtbar in der Zeile (Leitfaden § 5), flach; bis 1024 px nur das Symbol (Name im title). */
+.zeilen-knoepfe { display: inline-flex; align-items: center; gap: 4px; }
+.geben-knopf { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding-block: 0; white-space: nowrap; }
+.geben-knopf .ic { width: 16px; height: 16px; }
+@media (max-width: 1024px) { .geben-knopf .geben-text { display: none; } .geben-knopf { padding-inline: 6px; } }

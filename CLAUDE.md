@@ -402,3 +402,29 @@ Leitfaden § 1, § 3, § 5 — gilt für App **und** PWA (Basic nachziehen).
 - Proben: `run.mjs` „Pro-Umbau 3“ (+10) · `tests/smoke_belegliste.mjs` **23 grün** (303 Belege, Gruppe, ⋯, keine Emojis, Schalter, kein Auto-Einordnen,
   Griff, 360 px) · Gegenprobe 3 Fälle je rot · `smoke_belegsuche` 18 (Probe wartet jetzt aufs Mikrofon; Bedeutungs-Treffer zeigt das Strichsymbol) ·
   `smoke_belege` 46/14 wie auf main. `sw.js` v274. ⚠ Nicht am Tablet; 300 Zeilen ohne Seitenweise-Laden gezeichnet (Zeit am Gerät ungemessen).
+
+## 🧭 Pro-Umbau 4: Hintergrundaufgabe, keine Emojis in allen Ansichten, „An Pro-App geben …“ (Klaus 2026-10-28)
+
+Leitfaden § 3 und § 5. Gilt für App **und** PWA (Basic nachziehen), außer der Hintergrundaufgabe (nur Android-App).
+- **Pro-Bausteine Fassung 2** (Quelle Private Brain Pro, `tools/native/bedienung-nachziehen.mjs --quelle ../Privat-Brain-Pro`, Pin
+  `native/pro-bedienung-herkunft.json` mit `pfade`): neu `native/pro-hintergrund.js` (`window.ProHintergrund`) und der Android-Dienst
+  `de.familyprojekt.hintergrund.ProHintergrund{Plugin,Dienst}` (Vordergrund „dataSync“, Mitteilung mit Stand und „Abbrechen“, WebView behält ihre
+  Priorität). Manifest: Dienst + `FOREGROUND_SERVICE(_DATA_SYNC)`, `POST_NOTIFICATIONS`; `MainActivity` meldet das Plugin an; `prepare-web` lädt
+  `pro-hintergrund.js` nach `pro-bedienung.js`. **Nie von Hand ändern.**
+- **Als Hintergrundaufgabe:** die automatische Sicherung ins Fach (`native/blp-native.js`, Abbrechen verwirft die angefangene Datei) und das
+  Einordnen der Belege (`documents.js` `bedeutungStarten`, Abbrechen hält nach dem laufenden Beleg an: „Einordnen angehalten …“, Knopf wieder da).
+  Ohne `window.ProHintergrund` (PWA/Basic, ältere Hülle) läuft alles wie vorher.
+- **Keine Emojis, nirgends:** `src/ui/strich.js` hängt jetzt einmal am `<body>` (Start in `main.js` und Shell; je Wurzel ein Beobachter, der nur
+  geänderte Knoten ansieht) — Text → Strichsymbol, in `title`/`aria-label`/`placeholder`/`<option>` fällt das Emoji weg, unbekannte Bildzeichen
+  ebenso. Ausgenommen: SBKIM-Fenster (`sbkim…`, byte-1:1), `[data-kein-strich]`, Eingaben. Neue Symbole `blp-mikro/-stopp/-welt/-schluessel/
+  -reinigen/-punkt/-rettung` in `assets/blp-icons.svg`; Farbpunkte über `ic-gruen/-gelb/-grau/-rot/-blau`. Regel wie der Wächter in Private Brain Pro:
+  `\p{Extended_Pictographic}` ohne ↗©™®↔↕↺↻.
+- **„An Pro-App geben …“** (`src/ui/proAppGeben.js`) sichtbar in jeder Belegzeile neben ⋯ (bis 1024 px nur das Symbol, Name im title): Auswahl
+  Workflow PDF Pro (Übergabefach `Eingang-WorkflowPDF`, `BlpTresor.ablegen`) oder „Normal teilen“ (eigener Knopf); Tresor gesperrt → „Entsperren oder
+  normal teilen?“. PWA: „Teilen …“ (Web Share, sonst Speichern mit Satz). ⚠ Private Brain hat im Tresor-Paket kein Übergabefach (nur über Teilen);
+  Workflow PDF Pro zeigt `Eingang-WorkflowPDF` noch nicht an.
+- Proben: `tests/smoke_umbau4.mjs` **23 grün** (A jede Ansicht ohne Emoji als PWA und App + Gegenprobe im Lauf · B Einordnen meldet Aufgabe/Stand/Ende,
+  Abbrechen aus der Mitteilung · C Knopf, Auswahl, gesperrt, Ablegen, normal teilen); Gegenproben von Hand: ohne Anmeldung am `<body>` 4 ROT, ohne
+  Aufgabe 4 ROT, ohne Knopf 13 ROT. `test-native` 44 · `test-pro-bedienung` (aus PB). `sw.js` v275. ⚠ Nicht am Gerät: ob Android die App mit dem
+  Dienst im Hintergrund wirklich weiterrechnen lässt, ist ungemessen.
+

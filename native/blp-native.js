@@ -140,12 +140,15 @@
   // hin und her (Base64, 256 KiB) und die automatische Sicherung des Bestands ins eigene Fach.
   var T = P.BlpTresor, tresor = null;
   if (T) {
-    var ablegen = function (fach, unterordner, blob, name, auszug, datum) {
+    var ablegen = function (fach, unterordner, blob, name, auszug, datum, aufgabe) {
       return T.ablegenBeginnen({ fach: fach, unterordner: unterordner || '', name: name || 'Datei', art: blob.type || 'application/octet-stream',
         auszug: auszug || '', datum: typeof datum === 'number' ? datum : Date.now() }).then(function (r) {
         var ticket = r.ticket, pos = 0, STUECK = 192 * 1024;
         var weiter = function () {
           if (pos >= blob.size) return T.ablegenFertig({ ticket: ticket });
+          // Abbrechen aus der Mitteilung der Hintergrundaufgabe: angefangene Datei verwerfen, nichts halb ablegen.
+          if (aufgabe && aufgabe.signal && aufgabe.signal.aborted) return Promise.reject(new Error('Abgebrochen'));
+          if (aufgabe && blob.size > STUECK) aufgabe.stand(Math.round(pos / 1048576) + ' von ' + Math.max(1, Math.round(blob.size / 1048576)) + ' MB', pos, blob.size);
           var teil = blob.slice(pos, pos + STUECK); pos += STUECK;
           return base64(teil).then(function (d) { return T.ablegenTeil({ ticket: ticket, data: d }); }).then(weiter);
         };
@@ -188,7 +191,15 @@
               return { gesichert: false, grund: 'unveraendert' };
             var jetzt = new Date();
             var blob = new Blob([to.sicherungInhalt(dump, { erstellt: jetzt })], { type: 'application/json' });
-            return ablegen('bookledgerpro', to.SICHERUNG_ORDNER, blob, to.sicherungName(jetzt), to.sicherungAuszug(dump), jetzt.getTime()).then(function (e) {
+            // Pro-Umbau 4 (Leitfaden § 3): als Hintergrundaufgabe — läuft weiter, wenn die App nicht zu sehen ist
+            // (Sicherung beim Wechsel in den Hintergrund). Ohne Dienst (ältere Hülle) läuft sie wie bisher.
+            var H = window.ProHintergrund;
+            var beginn = H ? H.beginnen({ art: 'sichern', titel: 'BookLedgerPro: Sicherung läuft', text: 'in den Tresorordner' }).catch(function () { return null; }) : Promise.resolve(null);
+            return beginn.then(function (aufgabe) {
+              var ende = function (r) { if (aufgabe) aufgabe.ende(); return r; };
+              var fehler = function (x) { if (aufgabe) aufgabe.ende(); throw x; };
+              return ablegen('bookledgerpro', to.SICHERUNG_ORDNER, blob, to.sicherungName(jetzt), to.sicherungAuszug(dump), jetzt.getTime(), aufgabe).then(function (e) {
+              if (aufgabe) aufgabe.stand('Beleg-Originale', 0, 0);
               try { localStorage.setItem(MERK, JSON.stringify({ fp: fp, zeit: Date.now(), id: e.id })); } catch (x) { /* nur Merkzettel */ }
               return modul('./src/core/durability.js').then(function (d) { return d.markBackupDone(); }).catch(function () {}).then(function () {
                 // Danach die Beleg-Originale einzeln ins Fach (nur neue, nur bei entsperrtem App-Tresor).
@@ -196,6 +207,7 @@
                   .catch(function () { return null; })
                   .then(function (belege) { return { gesichert: true, eintrag: e, belege: belege }; });
               });
+              }).then(ende, fehler);
             });
           });
         });

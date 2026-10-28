@@ -324,3 +324,17 @@ Mail-Beleg + 2 PDF-Anhänge als eigene Belege. Der Einzug lief **gleich am echte
 9. **BookLedgerPro hatte dasselbe Auto-Einordnen** wie Workflow PDF Pro (bei jedem Öffnen der Belege); jetzt erst nach „Einordnen“ je Sitzung, das Modell lädt
    sonst bei der ersten Frage.
 
+## 14 · Befunde aus der Umbau-Sitzung 4, BookLedgerPro (2026-10-28, Nacht, gemessen)
+
+1. **Emoji-Ersatz je Ansicht reichte nicht:** Umbau 3 hängte `strich.js` nur an die Belegseite; Dialoge und Hinweise hängen am `<body>`, Lampen-/Knopf-Titel
+   tragen Emojis in Attributen, `<option>` kann kein SVG. Jetzt ein Beobachter am `<body>` (je Wurzel einer), der nur die geänderten Knoten ansieht — bei
+   Hunderten Belegzeilen würde ein Gang über die ganze Seite je Änderung teuer. Wo kein Symbol stehen kann, fällt das Emoji weg.
+2. **Wächter-Regel übernommen** aus Private Brain Pro (`test-design-26`): `\p{Extended_Pictographic}` ohne ↗©™®↔↕↺↻ — sonst wäre ⚠ ℹ ✉ ⬇ ☰ unerkannt
+   (✓ → ✗ sind keine Bildzeichen und zählen nicht).
+3. **Probe stürzte am Zeitablauf ab, statt rot zu melden** (Gegenprobe „ohne Aufgabe“/„ohne Knopf“): `waitForFunction`/`click` werfen. Jetzt fangen alle
+   Wartestellen ab und jede fehlende Stelle wird eine eigene rote Zeile (Lehre aus Workflow PDF, „Probe stolperte, statt zu melden“).
+4. **Übergabefächer im Tresor-Paket:** nur `Eingang-BookLedgerPro` und `Eingang-WorkflowPDF` (Fach.java). Private Brain hat keins — ein Fach dafür wäre
+   ein Eingriff ins gemeinsame Paket (nur in Workflow PDF Pro). `darfSchreiben` erlaubt jeder Pro-App das Ablegen in Übergabefächern, ohne Java-Änderung hier.
+5. **Hintergrund beim Wechsel in den Hintergrund:** die automatische Sicherung startet bei `visibilitychange: hidden`. Android 12+ verbietet dann oft den
+   Start eines Vordergrund-Dienstes; das Plugin fängt das ab (`geschuetzt: false`) und die Sicherung läuft wie bisher. Am Gerät nicht gemessen.
+

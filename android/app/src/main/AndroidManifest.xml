@@ -53,11 +53,19 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Pro-Umbau 4 (Leitfaden § 3): gemeinsame Hintergrundaufgabe (Quelle Private Brain Pro). Hält die App am Leben,
+             solange Sichern oder Einordnen läuft; Mitteilung mit Stand und „Abbrechen“. -->
+        <service android:name="de.familyprojekt.hintergrund.ProHintergrundDienst" android:exported="false" android:foregroundServiceType="dataSync" />
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Hintergrundaufgabe (Vordergrund-Dienst „dataSync“) und ihre Mitteilung. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Kamera nur für den Scanner (Dateiwahl mit Aufnahme); nicht nötig zum Installieren. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />

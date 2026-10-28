@@ -47,4 +47,12 @@
   <symbol id="blp-offen" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/></symbol>
   <symbol id="blp-eigen" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2"/></symbol>
   <symbol id="blp-pfeil" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <!-- Pro-Umbau 4 (2026-10-28): Rest-Emojis der übrigen Ansichten (strich.js). -->
+  <symbol id="blp-mikro" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></symbol>
+  <symbol id="blp-stopp" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></symbol>
+  <symbol id="blp-welt" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+  <symbol id="blp-schluessel" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3M14 9l2 2"/></symbol>
+  <symbol id="blp-reinigen" viewBox="0 0 24 24"><path d="M4 20h16M6 20l2-9h8l2 9M10 11V5a2 2 0 0 1 4 0v6"/></symbol>
+  <symbol id="blp-punkt" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor"/></symbol>
+  <symbol id="blp-rettung" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/></symbol>
 </svg>
