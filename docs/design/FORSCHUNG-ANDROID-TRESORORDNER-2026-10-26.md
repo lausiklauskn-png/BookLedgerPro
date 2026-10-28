@@ -355,3 +355,26 @@ Mail-Beleg + 2 PDF-Anhänge als eigene Belege. Der Einzug lief **gleich am echte
 6. **Probe maß Oberkanten:** bei unterschiedlich hohen Feldern (Knopf 28, Feld 30 px) ergeben gleiche Zeilen verschiedene Oberkanten; gemessen
    wird jetzt die Mittellinie (± 4 px). Lange Kontonamen brechen richtigerweise um — gemessen wird die Zeilenzahl des Texts in der Spalte „Art“.
 
+
+## 16 · Befunde aus der Umbau-Sitzung 4, Private Brain Pro und Workflow PDF Pro (2026-10-28, Nacht, gemessen)
+
+1. **Hintergrundaufgabe:** Vordergrund-Dienst `dataSync` mit Mitteilung ist der einzige erlaubte Weg, eine WebView-Arbeit am Leben zu halten
+   (Capacitor `KeepRunning=true` pausiert die WebView nicht; Android würgt aber den Prozess ohne Dienst ab). Regeln aus dem Bau: nie `stopService`
+   vor `startForeground` (Absturz), sondern der Dienst hält sich selbst an (`stopForeground(REMOVE)` + `stopSelf`); Android 15 begrenzt `dataSync` auf
+   6 Stunden → `onTimeout` bricht alle Aufgaben mit Grund „zeit“ ab; `WebView.setRendererPriorityPolicy(IMPORTANT, false)` hält den Renderer vorn.
+   Die Erlaubnis für Mitteilungen wird nur nach einem Tipp gefragt (`navigator.userActivation.isActive`), unter Instrumentierung nie.
+2. **Workflow PDF Pro: Einordnen war nicht zu erkennen**, weil der Kern im Zustand „bereit“ neu einordnet. Erkannt wird es jetzt an laufenden
+   Rechnungen des Modells (in den letzten 2,5 s), nicht am Zustand. Lehre: Zustandswörter des Kerns sagen nicht, ob gerechnet wird.
+3. **Gerätecheck:** Windows-Laufzeit ist mit jlink ohne `java.management` gebaut → Arbeitsspeicher, Prozessor und Grafik kommen aus CIM über
+   PowerShell (8 s Höchstdauer, Ausgabe über eine Temp-Datei, ISO-8859-1 gelesen, damit die Konsolen-Codepage nie scheitert); `AdapterRAM` ist bei
+   4 GB gedeckelt, der genaue Wert steht beim Treiber (`qwMemorySize`). Android: `ActivityManager.MemoryInfo`, `StatFs`, `SOC_MODEL`.
+   Stufe nie „groß“ ohne RAM-Wert. Am echten Rechner nicht gemessen.
+4. **Zweites Bedeutungs-Modell nur für die App-Suche:** Modul 03 (Sage-Kanon) ist fest auf e5-small (384 Dimensionen) — das Mycel braucht dieselben
+   Vektoren auf allen Knoten. Ein größeres Modell darf deshalb nur die eigene Suche bedienen. Lernlauf 40758382311 (headless Chromium, erfundene Texte):
+   klein 129 MB · 54 ms je Abschnitt · 762 MB Renderer-Spitze; mittel (e5-base) 282 MB · 144 ms · 1332 MB; groß (e5-large) 552 MB · 470 ms · 2252 MB;
+   alle 10/10 Treffer. ⚠ Die kleine Probe trennt die Stufen in der Güte nicht — ob „groß“ besser findet, zeigt erst ein größerer Prüfsatz.
+5. **Mikrofon-Regel in allen Pro-Apps gleich:** nur Suchfelder, Freitext (textarea) und Felder mit `data-dictate`; Eingabesprache und Rechtschreibung
+   bleiben an allen Textfeldern. Proben, die Mikrofone an jedem Feld erwarteten, wurden auf die Regel umgestellt.
+6. **main war rot nach #109** (nur Android-Version gesetzt): die Windows-Prüfung verlangt gleiche Versionsangaben in `build.gradle`, `package.json`,
+   `Cargo.toml` und `tauri.conf.json`, und die Updateprobe zeigt auf den zuletzt veröffentlichten Installer (jetzt 1.0.41 → 1.0.42). Lehre: Versions-
+   anhebung immer für beide Plattformen in einem PR.
