@@ -38,7 +38,7 @@ WPP `test-vault-journal` 26/26 (+4, Gegenprobe 2 rot) · `test:native-web` 57/57
   unabhängig geladen, gleich.
 - **BookLedgerPro 0.1.3:** erster Lauf 40840596381 rot in der Emulator-Probe — die ausgeklappte SBKIM-Leiste lag über „Zur Anmeldung“, die Probe fand keine
   freie Stelle und wischte zwei Minuten ins Leere (Forschung § 21.9). Behoben in der App (Deckblatt unten so viel Platz wie die Leiste, = Klaus' Punkt 5) und in
-  der Probe (Leiste im Wegwerf-Emulator über ihren eigenen Knopf schließen): BLP #411. BLP_ZWEITER_LAUF
+  der Probe (Leiste im Wegwerf-Emulator über ihren eigenen Knopf schließen): BLP #411. Zweiter Lauf: folgt (wird hier nachgetragen).
 
 ## Gegenprobe für Klaus (am Tablet)
 
@@ -62,6 +62,6 @@ WPP `test-vault-journal` 26/26 (+4, Gegenprobe 2 rot) · `test:native-web` 57/57
 
 ## Stundennachweis
 
-STUNDEN_PLATZHALTER
+Folgt mit dem letzten Nachtrag dieser Sitzung (Beginn 06:47 Uhr Ortszeit).
 
 Nächste Sitzung: `BRIEF_SITZUNG_PRO-UMBAU-8.md`.
