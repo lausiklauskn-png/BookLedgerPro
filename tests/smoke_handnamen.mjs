@@ -102,11 +102,13 @@ try {
   // Unter dem Text (Klaus 2026-10-26): nach Muster verdeckte Namen stehen GELB da und sind je Treffer rücknehmbar;
   // Modul-25-Vorschläge gibt es nur noch für Namen, die kein Muster trifft.
   await page.evaluate(() => window.__p.navigate('documents'));
-  await page.waitForSelector('.beleg-text', { timeout: 15000 });
+  await page.waitForSelector('[data-werkzeug="text"]', { timeout: 15000 });
+  if (!(await page.$('textarea.beleg-text'))) await page.click('[data-werkzeug="text"]');   // Pro-Umbau 8: erst auf Knopfdruck
+  await page.waitForSelector('textarea.beleg-text', { timeout: 15000 });
   const box = '[data-namen-vorschlag]';
   ok('vor dem Tippen steht nichts da', await page.$eval(box, (b) => b.hidden).catch(() => false));
   const BRIEF = 'Sehr geehrter Herr Müller,\nbitte 12 Flaschen Müller-Thurgau, 89,40 EUR.\nMit freundlichen Grüßen\nAnna Schneider';
-  await page.fill('.beleg-text', BRIEF);
+  await page.fill('textarea.beleg-text', BRIEF);
   let chipDa = true;
   try { await page.waitForSelector('[data-verdeckt="Anna Schneider"]', { timeout: 10000 }); } catch { chipDa = false; }
   ok('„Anna Schneider" steht als verdeckter Treffer (gelb) da — ohne Tipp', chipDa);

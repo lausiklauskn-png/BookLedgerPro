@@ -52,9 +52,10 @@ function erklaerSchlank(p) {
   const setzen = (offen) => { p.hidden = !offen; knopf.setAttribute('aria-expanded', String(offen)); const tt = t(offen ? 'common.erklaerungZu' : 'common.erklaerungAuf'); knopf.title = tt; knopf.setAttribute('aria-label', tt); };
   setzen(merk()[k] === true);
   knopf.addEventListener('click', () => { const offen = p.hidden; setzen(offen); merken(k, offen); });
-  // Das ⓘ steht hinten an der Überschrift davor (wenn es eine gibt), sonst an der Stelle des Satzes.
+  // Das ⓘ steht hinten an der Zwischenüberschrift davor (wenn es eine gibt), sonst an der Stelle des Satzes.
+  // Nicht an die Seitenüberschrift (h1): die steht klein im Kopf (kopfTitel.js), im Inhalt ist sie nur noch für Vorleser da.
   const vor = p.previousElementSibling;
-  if (vor && /^(H1|H2|H3|H4)$/.test(vor.tagName)) vor.append(' ', knopf); else p.before(knopf);
+  if (vor && /^(H2|H3|H4)$/.test(vor.tagName)) vor.append(' ', knopf); else p.before(knopf);
   return 1;
 }
 

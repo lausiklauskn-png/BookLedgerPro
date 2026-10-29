@@ -191,6 +191,7 @@ for (const art of arten) {
 console.log('— C. Bilder in die Schnellerfassung einfügen oder hineinziehen —');
 { const { ctx, page, fehler } = await oeffnen('pwa', 1000);
   const zahl = () => page.evaluate(() => document.querySelectorAll('[data-beleg-zeile]').length);
+  await page.click('[data-werkzeug="text"]');   // Pro-Umbau 8: das Feld geht erst auf Knopfdruck auf
   const vorher = await zahl();
   const erg = await page.evaluate(async () => {
     const c = document.createElement('canvas'); c.width = 60; c.height = 40; const x = c.getContext('2d'); x.fillStyle = '#c33'; x.fillRect(0, 0, 60, 40);

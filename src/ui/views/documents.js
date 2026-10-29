@@ -93,8 +93,18 @@ let _geteiltDateien = []; // aus launchQueue („Öffnen mit")
 export function merkeGeteilt(param) { _geteilt = param; }
 export function merkeGeteilteDateien(files) { _geteiltDateien = Array.from(files || []); }
 
+let _seitenEinfuegen = false;
 export async function mountDocuments(host) {
   _host = host;
+  if (!_seitenEinfuegen && typeof document !== 'undefined') {
+    _seitenEinfuegen = true;
+    document.addEventListener('paste', (e) => {
+      if (!_host || !_host.querySelector('.belege-ansicht') || !document.contains(_host)) return;
+      const ziel = e.target;
+      if (ziel && ziel.closest && ziel.closest('input, textarea, select, [contenteditable="true"], .modal, [role="dialog"]')) return;
+      if (belegeAnnehmen(zwischenablageDateien(e.clipboardData))) e.preventDefault();
+    });
+  }
   const konten = await loadAccounts();
   _idx = {};
   for (const k of konten) _idx[k.nummer] = k;
@@ -118,18 +128,25 @@ async function geteiltesAbholen() {
 
 async function repaint(extra) {
   const [belege, visionBereit] = await Promise.all([listBelege(), isOcrAktiv().catch(() => false)]);
+  // Befund Tablet 2026-10-29 abends (Klaus: „ich füge oben ein Objekt ein … und ich sehe unten erst das Ergebnis“): alle Knöpfe
+  // oben in EINER Leiste, darunter die Ablagefläche und die Meldung, gleich darunter die Belege. Text erfassen, E-Rechnung und
+  // Bankauszug gehen erst auf Knopfdruck auf (ein Bereich unter der Leiste); der Archiv-Kasten steht unter der Liste.
   const ansicht = el('section', { class: 'view belege-ansicht' }, [
     el('h1', { text: t('docs.title') }),
     neuImTresorHinweis(),
-    schnellerfassung(),
+    belegWerkzeuge(),
     extra || null,
-    eRechnungKarte(),
-    bankImportKarte(),
-    uploadKarte(),
     belegSuche(belege),
     belegListe(belege, visionBereit),
+    archivKarte(),
   ]);
   mount(_host, ansicht);
+  // Der eben angekommene Beleg ist markiert und ins Bild gerollt (einmal je Einlesen).
+  if (_neuRollen) {
+    _neuRollen = false;
+    const z = _host.querySelector('.beleg-neu');
+    if (z && z.scrollIntoView) z.scrollIntoView({ block: 'nearest' });
+  }
   // Strichgrafiken statt Emojis (Leitfaden § 5) — auch in später gezeichneten Teilen (Suchtreffer, Meldungen).
   // Einordnen startet nie von selbst beim Öffnen (Leitfaden § 3): erst nach „Einordnen“ (oder dem Einschalten) in dieser
   // Sitzung. Danach kommen neue Belege wie bisher von selbst dazu.
@@ -137,6 +154,7 @@ async function repaint(extra) {
   else if (getSettings().bedeutungssuche === 'an') einordnenAnbieten(belege);
 }
 let _einordnenFrei = false;
+let _neu = new Set(), _neuRollen = false;   // eben eingelesene Belege: markiert, der erste ins Bild gerollt
 
 // Bedeutung an, aber in dieser Sitzung noch nicht freigegeben: die Zeile nennt, was fehlt, und bietet „Einordnen“ an.
 function einordnenAnbieten(belege) {
@@ -167,6 +185,26 @@ function neuImTresorHinweis() {
 
 // ---- Schnellerfassung aus Text ---------------------------------------------
 
+// Bild oder PDF (eingefügt, hineingezogen, aus der Zwischenablage) → Beleg. Namenlose Zwischenablage-Bilder („image.png“)
+// bekommen Datum und Uhrzeit. Text bleibt Text. Derselbe Weg wie „Belege hochladen“ (Platzfrage, verschlüsselt).
+function belegDateien(liste) {
+  const stempel = new Date().toISOString().slice(0, 16).replace('T', ' ').replace(':', '-');
+  return Array.from(liste || []).filter((f) => f && f.size > 0 && /^(image\/|application\/pdf$)/.test(f.type || ''))
+    .map((f, i) => (!f.name || /^image\.\w+$/i.test(f.name)
+      ? new File([f], 'Eingefügt ' + stempel + (i ? '-' + (i + 1) : '') + '.' + ((f.type.split('/')[1] || 'png').replace('jpeg', 'jpg')), { type: f.type })
+      : f));
+}
+function belegeAnnehmen(liste) {
+  const fs = belegDateien(liste);
+  if (!fs.length) return false;
+  if (typeof window !== 'undefined') window.__blpSchnellDatei = fs.map((f) => f.name);   // Probe
+  dateienEinlesen(fs, { quelle: 'einfuegen' }).catch(() => {});
+  return true;
+}
+const mitDateien = (e) => !!(e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0);
+const zwischenablageDateien = (cd) => (cd && cd.files && cd.files.length ? cd.files
+  : Array.from((cd && cd.items) || []).filter((x) => x.kind === 'file').map((x) => x.getAsFile()).filter(Boolean));
+
 function schnellerfassung() {
   const ta = el('textarea', { class: 'beleg-text', placeholder: t('docs.pastePlaceholder'), rows: '5' });
   const out = el('div', { class: 'vorschlag-slot' });
@@ -179,30 +217,10 @@ function schnellerfassung() {
   // Befund Tablet 2026-10-29 (Klaus: „da müssen auch Bilder eingefügt werden können“): ein Bild oder PDF, eingefügt oder
   // hineingezogen (Galerie, Bildprogramm, Dateien-App), wird ein Beleg — derselbe Weg wie „Mehrere Belege hochladen“
   // (Prüfung, Platzfrage, verschlüsselt). Text bleibt Text. Namenlose Zwischenablage-Bilder („image.png“) bekommen Datum und Uhrzeit.
-  const belegDateien = (liste) => {
-    const stempel = new Date().toISOString().slice(0, 16).replace('T', ' ').replace(':', '-');
-    return Array.from(liste || []).filter((f) => f && f.size > 0 && /^(image\/|application\/pdf$)/.test(f.type || ''))
-      .map((f, i) => (!f.name || /^image\.\w+$/i.test(f.name)
-        ? new File([f], 'Eingefügt ' + stempel + (i ? '-' + (i + 1) : '') + '.' + ((f.type.split('/')[1] || 'png').replace('jpeg', 'jpg')), { type: f.type })
-        : f));
-  };
-  const annehmen = (liste) => {
-    const fs = belegDateien(liste);
-    if (!fs.length) return false;
-    if (typeof window !== 'undefined') window.__blpSchnellDatei = fs.map((f) => f.name);   // Probe
-    dateienEinlesen(fs, { quelle: 'einfuegen' }).catch(() => {});
-    return true;
-  };
-  ta.addEventListener('paste', (e) => {
-    const cd = e.clipboardData;
-    const fs = cd && cd.files && cd.files.length ? cd.files
-      : Array.from((cd && cd.items) || []).filter((x) => x.kind === 'file').map((x) => x.getAsFile()).filter(Boolean);
-    if (annehmen(fs)) e.preventDefault();
-  });
-  const mitDateien = (e) => !!(e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0);
+  ta.addEventListener('paste', (e) => { e.stopPropagation(); if (belegeAnnehmen(zwischenablageDateien(e.clipboardData))) e.preventDefault(); });
   ta.addEventListener('dragover', (e) => { if (mitDateien(e)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; ta.classList.add('ablage-aktiv'); } });
   ta.addEventListener('dragleave', () => ta.classList.remove('ablage-aktiv'));
-  ta.addEventListener('drop', (e) => { ta.classList.remove('ablage-aktiv'); if (mitDateien(e) && annehmen(e.dataTransfer.files)) e.preventDefault(); });
+  ta.addEventListener('drop', (e) => { ta.classList.remove('ablage-aktiv'); if (mitDateien(e) && belegeAnnehmen(e.dataTransfer.files)) { e.preventDefault(); e.stopPropagation(); } });
   const btn = el('button', {
     class: 'btn btn-primary', text: t('docs.analyze'),
     onClick: async () => {
@@ -216,13 +234,23 @@ function schnellerfassung() {
       out.appendChild(await vorschlagKarte(res.vorschlag, null, frei.kiText));
     },
   });
-  return el('div', { class: 'card' }, [
-    el('h2', { class: 'card-title', text: t('docs.quickEntry') }),
-    el('p', { class: 'muted small', text: t('docs.quickHint') }),
+  return werkzeugFenster('text', t('docs.quickEntry'), t('docs.quickHint'), [
     ta,
     namen.box,
     el('div', { class: 'btn-row' }, [btn]),
     out,
+  ]);
+}
+
+// Ein Bereich unter der Knopfleiste (Text erfassen, E-Rechnung, Bankauszug): Titel, ⓘ, „Schließen“. Immer nur einer offen.
+function werkzeugFenster(art, titel, hinweis, teile) {
+  return el('div', { class: 'card werkzeug-fenster', 'data-werkzeug-fenster': art }, [
+    el('div', { class: 'werkzeug-kopf' }, [
+      el('h2', { class: 'card-title', text: titel }),
+      el('button', { class: 'btn btn-sm werkzeug-zu', type: 'button', 'data-werkzeug-zu': '', text: t('common.close'), onClick: () => werkzeugOeffnen(null) }),
+    ]),
+    el('p', { class: 'muted small', text: hinweis }),
+    ...teile,
   ]);
 }
 
@@ -412,12 +440,8 @@ function eRechnungKarte() {
       } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
     },
   });
-  return el('div', { class: 'card' }, [
-    el('h2', { class: 'card-title', text: t('docs.eInvoice') }),
-    el('p', { class: 'muted small', text: t('docs.eInvoiceHint') }),
-    el('div', { class: 'btn-row' }, [btn]),
-    out,
-  ]);
+  btn.setAttribute('data-werkzeug-datei', '');
+  return werkzeugFenster('erechnung', t('docs.eInvoice'), t('docs.eInvoiceHint'), [el('div', { class: 'btn-row' }, [btn]), out]);
 }
 
 // Erfasst eine eingelesene Eingangsrechnung als OFFENE VERBINDLICHKEIT (Kreditor) und
@@ -574,12 +598,8 @@ function bankImportKarte() {
       } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
     },
   });
-  return el('div', { class: 'card' }, [
-    el('h2', { class: 'card-title', text: t('docs.bank') }),
-    el('p', { class: 'muted small', text: t('docs.bankHint') }),
-    el('div', { class: 'btn-row' }, [btn]),
-    out,
-  ]);
+  btn.setAttribute('data-werkzeug-datei', '');
+  return werkzeugFenster('bank', t('docs.bank'), t('docs.bankHint'), [el('div', { class: 'btn-row' }, [btn]), out]);
 }
 
 // Erfasst die (Teil-)Zahlung eines Bank-Umsatzes gegen den passenden offenen Posten:
@@ -878,7 +898,7 @@ async function platzFrage(nehmen) {
 
 let _importStatus = null;   // {text, liste?} — überlebt das Neuzeichnen
 
-function uploadKarte() {
+function belegWerkzeuge() {
   const add = async (accept, capture) => {
     const file = await pickFile(accept, capture);
     if (!file) return;
@@ -938,10 +958,9 @@ function uploadKarte() {
       class: 'btn', 'data-workflow-scan': '', href: workflowScanAdresse({ android: istAndroid(navigator.userAgent) }),
       target: istAndroid(navigator.userAgent) ? '_self' : '_blank', rel: 'noopener', text: t('docs.workflowScan'), title: t('docs.workflowScanHint'),
     });
-  return el('div', { class: 'card' }, [
-    el('h2', { class: 'card-title', text: t('docs.archive') }),
-    el('p', { class: 'muted small', text: t('docs.archiveHint') }),
-    el('div', { class: 'btn-row' }, [
+  const werkzeugKnopf = (art, text) => el('button', { class: 'btn', type: 'button', 'data-werkzeug': art, 'aria-expanded': String(_werkzeug === art), text, onClick: () => werkzeugOeffnen(art, { datei: art !== 'text' }) });
+  return el('div', { class: 'card beleg-werkzeuge', 'data-beleg-werkzeuge': '' }, [
+    el('div', { class: 'btn-row beleg-knoepfe' }, [
       // 📷 Scannen (Klaus 2026-10-26): der Scanner-Kern von Workflow PDF, eingebaut — Ecken, gerade ziehen, Filter,
       // Texterkennung, PDF mit Textebene → als Beleg, Text sofort suchbar. „Foto aufnehmen“ bleibt der stille Weg.
       el('button', { class: 'btn btn-primary', 'data-scan-start': '', text: t('docs.scannen'), title: t('docs.scannenHint'), onClick: () => scannerStarten() }),
@@ -949,9 +968,80 @@ function uploadKarte() {
       wfKnopf,
       el('button', { class: 'btn', text: t('docs.uploadMehrere'), 'data-import-viele': '', onClick: () => viele(false) }),
       el('button', { class: 'btn', text: t('docs.ordner'), 'data-import-ordner': '', onClick: () => viele(true) }),
+      werkzeugKnopf('text', t('docs.werkzeugText')),
+      werkzeugKnopf('erechnung', t('docs.werkzeugERechnung')),
+      werkzeugKnopf('bank', t('docs.bankImport')),
     ]),
-    el('p', { class: 'muted small', text: t('docs.workflowScanHint') }),
+    ablageFlaeche(),
     ...status,
+    el('div', { class: 'werkzeug-platz', 'data-werkzeug-platz': '' }, [werkzeugInhalt(_werkzeug)]),
+  ]);
+}
+
+// Was ein Werkzeug-Knopf aufmacht. Text erfassen behält seinen Text über ein Neuzeichnen (_schnellText).
+let _werkzeug = null;
+function werkzeugInhalt(art) {
+  return art === 'text' ? schnellerfassung() : art === 'erechnung' ? eRechnungKarte() : art === 'bank' ? bankImportKarte() : null;
+}
+function werkzeugOeffnen(art, { datei = false } = {}) {
+  _werkzeug = _werkzeug === art ? null : art;
+  const platz = document.querySelector('[data-werkzeug-platz]');
+  if (!platz) return;
+  const inhalt = werkzeugInhalt(_werkzeug);
+  platz.replaceChildren(...(inhalt ? [inhalt] : []));
+  for (const k of document.querySelectorAll('[data-werkzeug]')) k.setAttribute('aria-expanded', String(k.dataset.werkzeug === _werkzeug));
+  if (!inhalt) return;
+  // E-Rechnung und Bankauszug: die Dateiwahl geht gleich auf (noch im selben Tipp, sonst blockt der Browser sie).
+  if (datei) { const b = inhalt.querySelector('[data-werkzeug-datei]'); if (b) b.click(); }
+  else { const ta = inhalt.querySelector('textarea'); if (ta) ta.focus(); }
+}
+
+// Die Ablagefläche (Klaus: „ich will da einen Beleg reinziehen … per Copy-Paste oder per Maus reinziehen“). Hineinziehen,
+// Strg+V, am Tablet lange drücken → „Einfügen“ (darum bearbeitbar, aber ohne Tastatur: inputmode none), oder der Knopf
+// „Einfügen“ (liest die Zwischenablage, wo das Gerät es erlaubt). Text wird hier nicht angenommen — dafür „Text erfassen“.
+function ablageFlaeche() {
+  const satz = el('span', { class: 'ablage-satz', text: t('docs.ablage') });
+  const flaeche = el('div', { class: 'beleg-ablage', 'data-beleg-ablage': '', contenteditable: 'true', inputmode: 'none', spellcheck: 'false',
+    role: 'textbox', 'aria-label': t('docs.ablage'), tabindex: '0' }, [icon('pb-import'), satz]);
+  const zuruecksetzen = () => { if (flaeche.childNodes.length !== 2 || !flaeche.contains(satz)) flaeche.replaceChildren(icon('pb-import'), satz); };
+  flaeche.addEventListener('beforeinput', (e) => { if (e.inputType !== 'insertFromPaste' && e.inputType !== 'insertFromDrop') e.preventDefault(); });
+  flaeche.addEventListener('input', zuruecksetzen);
+  flaeche.addEventListener('paste', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (!belegeAnnehmen(zwischenablageDateien(e.clipboardData))) ablageMeldung(t('docs.ablageKeinBild'));
+  });
+  flaeche.addEventListener('dragover', (e) => { if (mitDateien(e)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; flaeche.classList.add('ablage-aktiv'); } });
+  flaeche.addEventListener('dragleave', () => flaeche.classList.remove('ablage-aktiv'));
+  flaeche.addEventListener('drop', (e) => {
+    flaeche.classList.remove('ablage-aktiv'); e.preventDefault(); e.stopPropagation();
+    if (!mitDateien(e) || !belegeAnnehmen(e.dataTransfer.files)) ablageMeldung(t('docs.ablageKeinBild'));
+  });
+  const einfuegen = el('button', { class: 'btn btn-sm', type: 'button', 'data-ablage-einfuegen': '', text: t('docs.ablageKnopf'), onClick: ausZwischenablage });
+  return el('div', { class: 'ablage-zeile' }, [flaeche, einfuegen]);
+}
+function ablageMeldung(text) {
+  _importStatus = { text };
+  const st = document.querySelector('[data-import-status]'); if (st) st.textContent = text;
+}
+// „Einfügen“-Knopf: die Zwischenablage lesen (Bilder, PDF). Verweigert das Gerät es, sagt die Meldung den anderen Weg.
+async function ausZwischenablage() {
+  const cb = typeof navigator !== 'undefined' && navigator.clipboard;
+  if (!cb || !cb.read) { ablageMeldung(t('docs.ablageNichtErlaubt')); return; }
+  try {
+    const dateien = [];
+    for (const item of await cb.read()) {
+      const typ = item.types.find((x) => /^(image\/|application\/pdf$)/.test(x));
+      if (typ) { const b = await item.getType(typ); dateien.push(new File([b], 'image.' + (typ.split('/')[1] || 'png'), { type: typ })); }
+    }
+    if (!belegeAnnehmen(dateien)) ablageMeldung(t('docs.ablageKeinBild'));
+  } catch { ablageMeldung(t('docs.ablageNichtErlaubt')); }
+}
+
+// Der Archiv-Kasten unter der Liste: was mit den Belegen geschieht (verschlüsselt, Workflow PDF). Nur Erklärung.
+function archivKarte() {
+  return el('div', { class: 'card beleg-archiv', 'data-beleg-archiv': '' }, [
+    el('h2', { class: 'card-title', text: t('docs.archive') }),
+    el('p', { class: 'muted small', text: t('docs.archiveHint') + ' ' + t('docs.workflowScanHint') }),
   ]);
 }
 
@@ -981,6 +1071,7 @@ async function dateienEinlesen(files, { quelle } = {}) {
       await repaint(); return;
     }
     const fehler = [], ohneScan = [];
+    _neu = new Set();
     let n = 0, scans = 0, ganz = 0;
     let eigen = 0, gelesen = 0, mails = 0, mailAnhaenge = 0;
     const angebote = [];   // Rundlauf Workflow PDF: zugeordnete Angebotsnummern
@@ -997,6 +1088,7 @@ async function dateienEinlesen(files, { quelle } = {}) {
           continue;
         }
         const r = await belegAblegen(nehmen[i].file, nehmen[i].typ, quelle); n++;
+        if (r && r.id) _neu.add(r.id);
         if (r.eigen) eigen++;
         if (r.angebot) angebote.push(r.angebot);
         // Eigener Scan (Marke „Workfloh PDF · Scannen“, aus dem eingebauten Scanner oder geteilt): der erkannte Text aus der
@@ -1020,6 +1112,7 @@ async function dateienEinlesen(files, { quelle } = {}) {
       uebergangen: mailUebergangen,
     };
     if (typeof window !== 'undefined') window.__blpImport = { abgelegt: n, uebersprungen: ueberspringen, fehler, scans, ganz, ohneScan, eigen, gelesen, mails, mailAnhaenge, mailUebergangen, angebote, quelle: quelle || null };   // Probe
+    _neuRollen = _neu.size > 0;
     await repaint();
   }
 }
@@ -1127,6 +1220,16 @@ const GRUPPEN_KEY = 'blpr_belege_gruppen';
 function gruppenMerk() { try { return JSON.parse(localStorage.getItem(GRUPPEN_KEY) || 'null') || alleAuf(); } catch { return alleAuf(); } }
 function gruppenSetzen(m) { try { localStorage.setItem(GRUPPEN_KEY, JSON.stringify(m)); } catch { /* nur Komfort */ } }
 
+// Datum in der Liste: heute mit Uhrzeit („heute 17:07“ — Klaus: „gerade erst importiert mit Uhrzeit … dann könnte ich das vergleichen“).
+function datumKurz(iso) {
+  const s = String(iso || ''); if (!s) return '';
+  const d = new Date(s); if (isNaN(d)) return s.slice(0, 10);
+  const heute = new Date();
+  if (d.toDateString() === heute.toDateString()) return t('docs.heute') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  return s.slice(0, 10);
+}
+function zeitVoll(iso) { const d = new Date(String(iso || '')); return isNaN(d) ? String(iso || '') : d.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }); }
+
 function belegZeile(b, visionBereit, { anhangVon = null, gruppe = null, zu = false } = {}) {
   const unter = [
     ...(b.original ? [el('div', { class: 'muted small zeile-unter', 'data-scan': b.scan && b.scan.sicher ? 'sicher' : 'ganz',
@@ -1144,9 +1247,10 @@ function belegZeile(b, visionBereit, { anhangVon = null, gruppe = null, zu = fal
     klapp,
     anhangVon ? icon('blp-anhang', 'zeile-anhang-ic') : null,
     el('span', { class: 'beleg-name', title: b.name + ' · ' + (b.mediaType || ''), text: b.name }),
+    _neu.has(b.id) ? el('span', { class: 'neu-marke', 'data-neu': '', text: t('docs.neu') }) : null,
   ].filter(Boolean));
   return el('tr', {
-    class: 'beleg-zeile' + (anhangVon ? ' beleg-anhang' : '') + (gruppe && gruppe.anhaenge.length ? ' beleg-gruppe' : ''),
+    class: 'beleg-zeile' + (anhangVon ? ' beleg-anhang' : '') + (gruppe && gruppe.anhaenge.length ? ' beleg-gruppe' : '') + (_neu.has(b.id) ? ' beleg-neu' : ''),
     'data-beleg-zeile': b.id, ...(anhangVon ? { 'data-anhang-von': anhangVon } : {}), ...(anhangVon && zu ? { hidden: true } : {}),
   }, [
     el('td', { class: 'pruef-zelle', 'data-beleg-id': b.id }, [
@@ -1156,7 +1260,7 @@ function belegZeile(b, visionBereit, { anhangVon = null, gruppe = null, zu = fal
     // Tipp auf den Namen → Vorschau mit dem Dokument, Löschen und Weitergeben (Befund Tablet 2026-10-29).
     el('td', { class: 'name-zelle', 'data-vorschau-oeffnen': b.id, title: t('docs.vorschau.oeffnen'),
       onClick: (e) => { if (!e.target.closest('button,a,input,summary,details')) belegVorschau(b, { loeschen: () => belegLoeschen(b), angaben: unter.map((u) => u.textContent) }); } }, [name, ...unter]),
-    el('td', { class: 'muted small mono datum-zelle', text: (b.createdAt || '').slice(0, 10) }),
+    el('td', { class: 'muted small mono datum-zelle', title: zeitVoll(b.createdAt), text: datumKurz(b.createdAt) }),
     el('td', { class: 'num muted small groesse-zelle', text: formatBytes(b.size) }),
     el('td', { class: 'link-zelle' }, b.buchungId ? [el('span', { class: 'link-marke', title: t('docs.verknuepft'), 'aria-label': t('docs.verknuepft'), 'data-verknuepft': '' }, [icon('pb-link')])] : []),
     el('td', { class: 'actions' }, [el('div', { class: 'zeilen-knoepfe' }, [gebenKnopf(b), zeilenMenue(b, visionBereit)])]),
@@ -1178,12 +1282,36 @@ function zeilenMenue(b, visionBereit) {
     liste,
   ]);
   d.addEventListener('toggle', () => {
-    if (!d.open) return;
+    if (!d.open) { liste.removeAttribute('style'); return; }
     for (const x of document.querySelectorAll('details.zeilen-menue[open]')) if (x !== d) x.open = false;
+    menueLegen(d.querySelector('summary'), liste);
   });
   return d;
 }
+// Befund Tablet 2026-10-29 abends (Klaus: „ich kann es erst nach Scrollen sehen … der Container müsste sich selber erweitern“): das Menü
+// hängt nicht mehr in der Tabellenkarte (die schnitt es ab), sondern liegt fest am Fenster, so hoch wie seine Einträge — unter dem ⋯,
+// oder darüber, wenn unten kein Platz ist. Nur wenn es höher als das ganze Fenster ist, rollt es in sich.
+function menueLegen(knopf, liste) {
+  if (!knopf || typeof innerHeight === 'undefined') return;
+  const r = knopf.getBoundingClientRect(), rand = 8;
+  liste.style.position = 'fixed'; liste.style.maxHeight = (innerHeight - 2 * rand) + 'px'; liste.style.overflowY = 'auto';
+  liste.style.top = '0px'; liste.style.left = '0px'; liste.style.right = 'auto';
+  const w = liste.offsetWidth, h = liste.offsetHeight;
+  let top = r.bottom + 2;
+  if (top + h > innerHeight - rand) top = r.top - 2 - h >= rand ? r.top - 2 - h : Math.max(rand, innerHeight - rand - h);
+  liste.style.top = Math.round(top) + 'px';
+  liste.style.left = Math.round(Math.max(rand, Math.min(innerWidth - rand - w, r.right - w))) + 'px';
+}
 if (typeof document !== 'undefined') {
+  // Fest am Fenster heißt: beim Rollen der Seite rückt das Menü mit seinem ⋯ mit; ist das ⋯ aus dem Bild, geht es zu.
+  document.addEventListener('scroll', (e) => {
+    for (const x of document.querySelectorAll('details.zeilen-menue[open]')) {
+      if (e.target instanceof Node && x.contains(e.target)) continue;
+      const k = x.querySelector('summary'), r = k.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) { x.open = false; continue; }
+      menueLegen(k, x.querySelector('.zeilen-menue-liste'));
+    }
+  }, true);
   document.addEventListener('click', (e) => {
     for (const x of document.querySelectorAll('details.zeilen-menue[open]')) if (!x.contains(e.target)) x.open = false;
   });

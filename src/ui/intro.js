@@ -99,7 +99,8 @@ function versionZeile() {
   if (!nativ) return null;
   const p = el('p', { class: 'muted small', 'data-app-version': '', text: '' });
   nativ.version().then((v) => { if (v) p.textContent = t('ta.version').replace('{v}', v); }).catch(() => {});
-  return nativ.updates ? el('div', { 'data-app-version-zeile': '' }, [p, updateZeile(nativ.updates)]) : p;
+  // Klaus 2026-10-29: der Update-Knopf steht hinter der Versionsnummer (eine Zeile), die Meldung darunter.
+  return nativ.updates ? el('div', { class: 'version-zeile', 'data-app-version-zeile': '' }, [p, updateZeile(nativ.updates)]) : p;
 }
 
 // „Auf Updates prüfen“ (Leitfaden § 6, Klaus 2026-10-28): vom eigenen Server, nur mit gültiger Unterschrift (prüft die Hülle).
