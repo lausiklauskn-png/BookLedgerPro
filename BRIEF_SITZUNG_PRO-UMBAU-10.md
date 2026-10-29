@@ -18,6 +18,15 @@ Scanner/Kamera WIA, Updates vom eigenen Server, `windows.yml` grün), aber **nie
    Version und Buildnummer erhöhen, `releases` lesen.
 3. **Erst auf Klaus' Wort „Windows veröffentlichen“:** `windows-release.yml` mit „ja“ (eigener Server `family-projekt.de/updates/bookledgerpro/`,
    Ed25519-Unterschrift), Download unabhängig laden und SHA-256 vergleichen. Unsigniertes Setup → SmartScreen-Warnung nennen.
+   **Wer testet was:** Klaus' Freund (hat die Familienakte gebaut, baut parallel ein eigenes Programm; die beiden tauschen sich aus) testet
+   Windows **an seinem eigenen PC mit seinen eigenen Daten**; Klaus testet Android. Keine Daten von Klaus auf dem PC des Freundes.
+   - eine kurze Anleitung für den Freund: Download, Windows-Warnung beim unsignierten Setup („Weitere Informationen“ → „Trotzdem ausführen“),
+     erster Start, was er prüfen soll, wie er Befunde schickt. **Zum Ausprobieren der Test-Modus** (Passwort-Seite → „Test-Modus“ →
+     „+ Neuer Test“ → Inhalt „Mit Demo-Daten“ oder „Vierteljahr“, eigenes Test-Passwort, getrennt von echten Daten, behalten oder spurlos
+     verwerfen); danach „Zu den echten Daten“ und eigener Tresor. Vorher geht der Test-Modus schon in BookLedger Basic im Browser.
+     In der Windows-Fassung prüfen, dass „Test-Modus“ und beide Demo-Inhalte dort wirklich erscheinen und laden;
+   - auf Klaus' Wunsch eine Abgleich-Seite für ihn (Download, kurze Beschreibung, Link zum öffentlichen Repo), Vorbild Familienakte
+     `BRIEF_ABSCHLUSS_2026-10-29_FASSUNG-2.28.3-UND-ABGLEICH.md`.
 4. Danach nach Rückfrage: Leitfaden § 1.7–1.9 und die Befunde aus Umbau 9 (ⓘ hinter dem Wort, textZoom 100, Knöpfe fest, Version im Kopf) in
    Workflow PDF Pro und Private Brain Pro; Private Brain V3; WPP-Windows Tresorordner; Bilder einfügen in WPP und PB; fester Ordner je Einlese-Knopf
    (Klaus' Frage, nur wenn er es will).
@@ -36,7 +45,8 @@ Pro-Umbau 10: BookLedgerPro für Windows. Repos: BookLedgerPro, BookLedger-Basic
 Zuerst lesen: CLAUDE.md je Repo, BookLedgerPro/BRIEF_SITZUNG_PRO-UMBAU-10.md und BRIEF_ABSCHLUSS_2026-10-29_PRO-UMBAU-9.md, docs/WINDOWS.md,
 docs/UPDATES-EIGENER-SERVER.md, Forschung § 23–24.
 Erst: meine Befunde aus der Gegenprobe 0.1.4 aufnehmen und beheben. Dann die Windows-Fassung prüfen und vorbereiten.
-Windows veröffentlichen erst auf mein Wort (vorher releases lesen). BookLedgerPro ist öffentlich: keine Schlüssel in Dateien oder im Chat.
+Windows veröffentlichen erst auf mein Wort (vorher releases lesen). Windows testet mein Freund an seinem eigenen PC mit eigenen Daten,
+ich teste Android: kurze Anleitung für ihn, auf Wunsch eine Abgleich-Seite. BookLedgerPro ist öffentlich: keine Schlüssel in Dateien oder im Chat.
 Ein PR je App, bei grüner CI selbst mergen. Nichts an echten Tresoren ohne Kopie und Rückweg.
 Am Ende: Abschluss mit Stundennachweis, Forschungseintrag, Brief mit Copy-Paste-Startauftrag.
 ```
