@@ -7246,5 +7246,21 @@ await section('Pro-Umbau 3 (Klaus 2026-10-28): Belegliste für Hunderte, Strichg
   ok('i18n DE/EN: neue Listen-Schlüssel zweimal (' + keys.length + ')', keys.length >= 8 && keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2), keys.join(','));
 });
 
+await section('Sicherung in der Leiste (Klaus 2026-10-29): grün nach dem Sichern, rot bei Änderungen nach 10 Minuten', async () => {
+  const S = await import('../src/domain/sicherungAnzeige.js');
+  const T0 = Date.UTC(2026, 9, 29, 17, 0);
+  ok('nie gesichert → rot', S.sicherungStand({ jetzt: T0, letzteSicherung: null, issues: ['no-backup'] }).farbe === 'rot');
+  ok('gerade gesichert, danach geändert, 5 min → grün', S.sicherungStand({ jetzt: T0 + 5 * 60e3, letzteSicherung: T0, geaendertAm: T0 + 60e3, issues: [] }).farbe === 'gruen');
+  ok('geändert und ≥ 10 min → rot (geaendert)', S.sicherungStand({ jetzt: T0 + 10 * 60e3, letzteSicherung: T0, geaendertAm: T0 + 60e3, issues: [] }).grund === 'geaendert');
+  ok('nichts geändert, auch nach Stunden → grün', S.sicherungStand({ jetzt: T0 + 5 * 3600e3, letzteSicherung: T0, geaendertAm: T0 - 1, issues: [] }).farbe === 'gruen');
+  ok('älter als eine Woche oder Speicher knapp → rot', S.sicherungStand({ jetzt: T0, letzteSicherung: T0 - 1, issues: ['backup-stale'] }).grund === 'alt' && S.sicherungStand({ jetzt: T0, letzteSicherung: T0 - 1, issues: ['quota-pressure'] }).grund === 'speicher');
+  ok('„Speicher nicht dauerhaft“ allein färbt nicht rot (in der App kein Thema)', S.sicherungStand({ jetzt: T0, letzteSicherung: T0, issues: ['persist-denied'] }).farbe === 'gruen');
+  const heute = new Date(2026, 9, 29, 18, 31).getTime();
+  ok('Zeit: heute „18:31“, sonst „28.10.“', S.sicherungZeit(heute, heute) === '18:31' && S.sicherungZeit(new Date(2026, 9, 28, 9, 0).getTime(), heute) === '28.10.');
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  const keys = ['sicherung.gesichert', 'sicherung.jetzt', 'sicherung.laeuft', 'sicherung.titelGruen', 'sicherung.nie', 'sicherung.geaendert', 'sicherung.alt', 'sicherung.speicher', 'sicherung.fehler'];
+  ok('i18n DE/EN: Sicherungs-Texte zweimal', keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);
