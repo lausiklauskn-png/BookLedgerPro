@@ -51,5 +51,6 @@ Klaus' Korrekturen werden hier eingetragen und gehen vor.
 | Sitzung | erste → letzte Spur (Ortszeit) | Summe der Blöcke | Spanne | Commits | Repos |
 |---|---|---|---|---|---|
 | Pro-Umbau 5 (2026-10-28 21:47 → 2026-10-29 ~01:10) | Sitzungsbeginn 21:47, Commits 22:01 → 00:54, Abschluss bis etwa 01:10 | 2.9 h (ein Block 22:01–00:54, 42 Commits) | 3.4 h | 42 | BLP · Basic · PB · WPP · Workflow-PDF-Kern |
+| Pro-Umbau 6 (2026-10-29 01:00 → ~04:45) | erste Abfrage 01:00, Commits 01:07 → 04:1x, Abschluss gegen 04:45 | 3.7 h (ein Block, viel Warten auf CI/Emulator) | 3.75 h | 14 | BLP · Basic · WPP |
 
 Dazu Klaus' Zeit in Termux (Server und Schlüssel einrichten, zweimal) und am Bildschirm — ohne Commit, hier nicht messbar. Klaus' eigene Angabe geht vor.
