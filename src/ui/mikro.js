@@ -307,7 +307,12 @@ function anbringen(feld) {
       }
     });
   }
-  feld.after(leiste);
+  // Klaus 2026-10-29 spät: „Mikrofon, DE immer mit da rein, wo reingesprochen wird … nie eine neue Zeile anfangen“ — die Leiste
+  // sitzt rechts IM Feld (Hülle .mikro-im-feld). Ohne Mikrofon bleibt nur der unsichtbare Wort-Speicher hinter dem Feld.
+  if (mitMik) {
+    const huelle = el('span', { class: 'mikro-im-feld' + (mehrzeilig ? ' mikro-mehrzeilig' : ''), 'data-mikro-huelle': '' });
+    feld.before(huelle); huelle.append(feld, leiste);
+  } else feld.after(leiste);
 }
 
 /** Hängt Mikrofone an alle Textfelder unter `root`. */

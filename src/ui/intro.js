@@ -94,18 +94,31 @@ function heroBild() {
 
 /** Wiederverwendbarer Deckblatt-Inhalt (für „Über"-Menü und Vor-Login-Overlay). */
 // Version der App (Leitfaden § 6: „Über“ nennt immer die Version). Nur in der Pro-App, dort aus dem Android-Paket.
-function versionZeile() {
-  const nativ = typeof window !== 'undefined' && window.BLPNative && typeof window.BLPNative.version === 'function' ? window.BLPNative : null;
+// Klaus 2026-10-29 spät: die Version steht auch im Kopf unter dem Namen (Tipp = Updates prüfen) und in den Einstellungen.
+// Eine Quelle für alle drei Stellen: appNativ() + appVersion() (einmal gefragt, dann gemerkt — der Kopf wird oft neu gezeichnet).
+export function appNativ() {
+  return typeof window !== 'undefined' && window.BLPNative && typeof window.BLPNative.version === 'function' ? window.BLPNative : null;
+}
+let _version = null;
+export function appVersion() {
+  const nativ = appNativ();
+  if (!nativ) return Promise.resolve('');
+  if (!_version) _version = Promise.resolve().then(() => nativ.version()).then((v) => v || '').catch(() => { _version = null; return ''; });
+  return _version;
+}
+
+export function versionZeile() {
+  const nativ = appNativ();
   if (!nativ) return null;
   const p = el('p', { class: 'muted small', 'data-app-version': '', text: '' });
-  nativ.version().then((v) => { if (v) p.textContent = t('ta.version').replace('{v}', v); }).catch(() => {});
+  appVersion().then((v) => { if (v) p.textContent = t('ta.version').replace('{v}', v); });
   // Klaus 2026-10-29: der Update-Knopf steht hinter der Versionsnummer (eine Zeile), die Meldung darunter.
   return nativ.updates ? el('div', { class: 'version-zeile', 'data-app-version-zeile': '' }, [p, updateZeile(nativ.updates)]) : p;
 }
 
 // „Auf Updates prüfen“ (Leitfaden § 6, Klaus 2026-10-28): vom eigenen Server, nur mit gültiger Unterschrift (prüft die Hülle).
 // Erst auf Tipp, nie von selbst. Ein farbiger Knopf erst, wenn es etwas Neues gibt.
-function updateZeile(u) {
+export function updateZeile(u) {
   const status = el('p', { class: 'muted small', role: 'status', 'data-update-status': '' });
   const knopf = el('button', { class: 'btn btn-sm', type: 'button', 'data-update-pruefen': '', text: t('upd.pruefen') });
   const box = el('div', { 'data-update': '' }, [knopf, status]);

@@ -2,10 +2,14 @@ name: Android-Hülle
 
 # Baut die native Android-App aus dem unveränderten Web-Stand (Schritt A, Klaus 2026-10-26).
 # Nur ein Prüf-Bau (debug): keine Signatur, keine Veröffentlichung — die kommt erst auf Klaus' Wort.
+# Sparsam (Klaus 2026-10-29): auf main immer (android-release.yml verlangt einen grünen „android“-Lauf auf dem main-Commit),
+# im PR nur, wenn sich Android-Teile ändern; sonst von Hand (workflow_dispatch). Die Web-Teile prüft ci.yml.
 on:
   push:
-    branches: ['**']
+    branches: ['main']
   pull_request:
+    paths: ['android/**', 'native/**', 'tools/native/**', 'capacitor.config.json', 'package.json', 'package-lock.json', '.github/workflows/android.yml']
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -3,11 +3,14 @@ name: Windows-Hülle
 # BookLedgerPro für Windows (Pro-Umbau 5, Klaus 2026-10-28): Tauri 2 / WebView2 + Java-Engine mit dem byte-gleichen
 # Tresor-Paket. Baut einen Prüfbau (mit Prüf-Schnittstelle) und prüft ihn installiert, dann den Auslieferungsbau ohne
 # Prüf-Schnittstelle. Unsigniert, KEINE Veröffentlichung — die kommt erst auf Klaus' Wort.
+# Sparsam (Klaus 2026-10-29): Windows-Minuten zählen im privaten Repo doppelt. Nur wenn sich Windows-Teile ändern
+# (PR und main); vor einer Windows-Veröffentlichung von Hand starten (workflow_dispatch).
 on:
   pull_request:
-    paths: ['windows/**', 'native/**', 'android/app/src/main/java/de/familyprojekt/tresor/**', 'tools/native/**', 'src/**', 'index.html', '.github/workflows/windows.yml']
+    paths: ['windows/**', 'android/app/src/main/java/de/familyprojekt/tresor/**', '.github/workflows/windows.yml']
   push:
     branches: ['main']
+    paths: ['windows/**', 'android/app/src/main/java/de/familyprojekt/tresor/**', '.github/workflows/windows.yml']
   workflow_dispatch:
 
 permissions:

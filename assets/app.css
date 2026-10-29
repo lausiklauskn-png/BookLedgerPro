@@ -953,7 +953,47 @@ input[type="password"], input[type="text"], input[type="number"], input[type="da
 /* Frisch angekommen: „neu“ neben dem Namen (fett, wie eine ungelesene Mail). */
 .neu-marke { flex: none; margin-left: .35rem; padding: 0 .35rem; border-radius: 999px; font-size: .72rem; font-weight: 700; color: var(--accent-strong); border: 1px solid var(--accent); line-height: 1.4; }
 /* Seitentitel klein in der Kopfleiste (Klaus 2026-10-29, Leitfaden § 1.7): die große <h1> nimmt keinen Platz mehr, bleibt aber vorlesbar. */
-.kopf-titel { font-size: .9rem; font-weight: 600; color: var(--text-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kopf-titel { font-size: .9rem; font-weight: 600; color: var(--text-muted); min-width: 0; display: inline-flex; align-items: center; white-space: nowrap; }
+.kopf-titel-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.kopf-titel > .erklaer-knopf { flex: none; margin-inline: .15rem 0; }
 .kopf-titel::before { content: "·"; margin: 0 .35rem 0 .1rem; color: var(--border-control, var(--text-muted)); }
 .brand { min-width: 0; }
 .titel-im-kopf { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; white-space: nowrap !important; border: 0 !important; }
+/* Schriftgröße (Klaus 2026-10-29 spät): „es muss dann auch alle Schrift größer werden. Die Button selber nicht, nur die Schrift in den
+   Buttons.“ Knöpfe, Reiter und Leisteneinträge haben ihre Höhe in px (--control-h) und fast keinen Innenabstand oben/unten; die
+   Schrift darin wächst mit „A··A“ (rem), der Knopf bleibt 28–32 px hoch (bis 150 % gemessen, smoke_befunde9). */
+.btn, .seg, .nav-item, .nav-aktion { padding-block: 1px; line-height: 1.15; }
+.btn-sm { padding-block: 0; }
+/* ⓘ hinter der Beschriftung (schlank.js erklaerZiel): in derselben Zeile, kein Umbruch zwischen Wort und ⓘ. */
+.setting-label > .erklaer-knopf, .card-title > .erklaer-knopf, legend > .erklaer-knopf, :is(h2, h3, h4) > .erklaer-knopf { vertical-align: middle; margin-block: -4px; }
+/* Version unter dem Namen im Kopf, rechtsbündig, als Update-Link (Klaus 2026-10-29 spät). Nur in der App. */
+.brand-stapel { display: inline-flex; flex-direction: column; align-items: flex-end; line-height: 1.05; min-width: 0; }
+.kopf-version { font: inherit; font-size: .68rem; line-height: 1.1; color: var(--accent-strong, var(--accent)); background: none; border: 0; padding: 0 1px;
+  cursor: pointer; text-decoration: underline; text-underline-offset: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kopf-version:hover { color: var(--accent); }
+.update-popover { left: .9rem; right: auto; }
+.update-popover .version-zeile { margin: 0; }
+/* Mikrofon und Sprachmarke IM Feld, rechts (Klaus 2026-10-29 spät: „nie eine neue Zeile anfangen“). */
+.mikro-im-feld { position: relative; display: block; width: 100%; min-width: 0; }
+.btn-row > .mikro-im-feld, .suche-kopf > .mikro-im-feld { flex: 1 1 10rem; width: auto; }
+.mikro-im-feld > input, .mikro-im-feld > textarea { width: 100%; padding-right: calc(56px + 1.2rem) !important; }
+.suche-feld > .mikro-im-feld > input.beleg-text { min-height: 0; height: 30px; padding-left: .6rem; resize: none; }
+.mikro-im-feld > .mikro { position: absolute; right: 3px; top: 3px; margin: 0; flex-wrap: nowrap; gap: 0; }
+.mikro-im-feld .mikro-status:not(:empty), .mikro-im-feld .mikro-woerter:not(:empty) {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 20; display: flex; gap: .25rem; white-space: nowrap;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 6px; box-shadow: var(--shadow); }
+.mikro-im-feld .mikro-liste { left: auto; right: 0; }
+/* Kästchen in Formularen links, Beschriftung und ⓘ direkt dahinter (Klaus 2026-10-29 spät: „Verbraucher/Privatperson … linksbündig,
+   nicht mitten ins Feld“) — vorher zog .form-grid input das Kästchen auf volle Breite. */
+.inline-field > input[type="checkbox"], .field > input[type="checkbox"], .form-grid input[type="checkbox"] { width: auto; flex: none; margin: 0; }
+.form-grid > .inline-field { justify-content: flex-start; justify-self: start; align-self: center; }
+/* Eingang (Deckblatt und Passwort) unabhängig vom Farbthema (Klaus 2026-10-29 spät: „ein blauer Button und ein grünes grafisches
+   Element darüber … passt nicht. Dann lassen wir lieber den Eingang mit dem Passwort unverändert von den Themen“). Fest Petrol hell —
+   die Farben von Logo und Titelbild. Hinter der Anmeldung gilt das gewählte Thema. */
+.lock-screen, .intro-screen {
+  --accent: #0f766e; --accent-strong: #0b5a54; --accent-soft: #e7f4f2; --accent-btn: #0f766e; --accent-btn-hover: #0b5a54; --on-accent: #ffffff;
+  --bg: #f5f9f9; --surface: #ffffff; --surface-2: #edf5f3; --border: #d4e3e1; --border-control: #64748b; --text: #172033; --text-muted: #526176;
+  --warn-bg: #fff7ed; --warn-border: #fdba74; --warn-text: #9a3412; --critical-bg: #fef2f2; --critical-border: #fca5a5; --critical-text: #991b1b;
+  --error: #dc2626; --success: #166534; --shadow: 0 8px 24px rgba(23, 32, 51, .10); --shadow-sm: 0 1px 2px rgba(23, 32, 51, .06);
+  color-scheme: light; color: var(--text); background-color: var(--bg);
+}

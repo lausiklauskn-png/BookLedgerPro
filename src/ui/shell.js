@@ -109,7 +109,7 @@ import { mountDashboard } from './views/dashboard.js';
 import { wirtschaftsjahrVon } from '../domain/geschaeftsjahr.js';
 import { mountAnleitung } from './views/anleitung.js';
 import { schluesselAbgleichSection } from './schluesselabgleich.js';
-import { aboutContent } from './intro.js';
+import { aboutContent, appNativ, appVersion, updateZeile, versionZeile } from './intro.js';
 import { getAiConfig, saveAiConfig, MISTRAL_MODELS } from '../ai/aiConfig.js';
 import { testVision } from '../ai/vision.js';
 import { testMistral } from '../ai/mistral.js';
@@ -249,7 +249,9 @@ function header(s) {
     }, [icon('pb-menu')]),
     // Am Handy ist die Leiste eine Schublade: dann steht nur im roten Fall ein kleiner Sichern-Knopf oben (CSS bis 640 px).
     el('button', { class: 'kopf-sicherung', id: 'kopf-sicherung', type: 'button', hidden: true, onClick: sicherungTipp }, [icon('blp-rettung')]),
-    el('div', { class: 'brand' }, [MycelMark(28), el('span', { class: 'brand-name', text: t('app.name') }),
+    el('div', { class: 'brand' }, [MycelMark(28),
+      // Klaus 2026-10-29 spät: „BookLedgerPro etwas höher und darunter rechts die Versionsnummer, die dann zu einem Update-Link wird“.
+      el('span', { class: 'brand-stapel' }, [el('span', { class: 'brand-name', text: t('app.name') }), kopfVersion()]),
       // Seitentitel klein im Kopf (kopfTitel.js) statt groß über dem Inhalt.
       el('span', { class: 'kopf-titel', 'data-kopf-titel': '', hidden: true })]),
     // Installieren OBEN in der Kopfleiste (Klaus 2026-10-18: „in den Einstellungen vermutet keiner,
@@ -376,6 +378,35 @@ function schriftPopover(anker) {
   document.addEventListener('click', schliessen, true);
   document.addEventListener('keydown', onKey);
   anker.insertAdjacentElement('afterend', pop);
+}
+
+// Versionsnummer unter dem Namen (nur in der App: Android/Windows). Tipp → Fenster mit „Auf Updates prüfen“, das sofort prüft.
+function kopfVersion() {
+  if (!appNativ()) return null;
+  const k = el('button', { class: 'kopf-version', type: 'button', 'data-kopf-version': '', hidden: true,
+    title: t('upd.pruefen'), 'aria-label': t('upd.pruefen'), onClick: (e) => updatePopover(e.currentTarget) });
+  appVersion().then((v) => { if (v) { k.textContent = 'v' + v; k.hidden = false; k.setAttribute('aria-label', t('ta.version').replace('{v}', v) + ' – ' + t('upd.pruefen')); } });
+  return k;
+}
+
+function updatePopover(anker) {
+  const alt = document.querySelector('.update-popover');
+  if (alt) { alt.remove(); return; }
+  const nativ = appNativ(), kopf = document.querySelector('.app-header');
+  if (!nativ || !kopf) return;
+  const zeile = versionZeile();
+  const pop = el('div', { class: 'thema-popover update-popover', role: 'dialog', 'aria-label': t('upd.pruefen'), 'data-update-popover': '' }, [zeile]);
+  const schliessen = (e) => {
+    if (e && (pop.contains(e.target) || anker.contains(e.target))) return;
+    pop.remove(); document.removeEventListener('click', schliessen, true); document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') schliessen(); };
+  document.addEventListener('click', schliessen, true);
+  document.addEventListener('keydown', onKey);
+  kopf.append(pop);
+  // Der Tipp auf die Version IST die Frage nach Updates: gleich prüfen (nie von selbst beim Start, Leitfaden § 6).
+  const pruefen = pop.querySelector('[data-update-pruefen]');
+  if (pruefen) pruefen.click();
 }
 
 function schubladeSchliessen() {
@@ -626,12 +657,18 @@ function nav(zu) {
     'aria-current': route === key ? 'page' : null, 'data-nav': key,
     onClick: () => { navigate(key); schubladeSchliessen(); },
   }, [navIcon(ic), el('span', { class: 'ic-text', text: t(label) })]);
+  // „Auf Updates prüfen“ auch unten bei „Weiteres“ (Klaus 2026-10-29 spät: „direkt, wo man es sieht“) — nur in der App mit Updates.
+  const updateEintrag = () => (appNativ() && appNativ().updates ? el('button', {
+    class: 'nav-aktion', type: 'button', title: t('upd.pruefen'), 'data-nav-updates': '',
+    onClick: (e) => { e.stopPropagation(); schubladeSchliessen(); updatePopover(e.currentTarget); },
+  }, [icon('pb-refresh'), el('span', { class: 'ic-text', text: t('upd.pruefen') })]) : null);
   const gruppen = NAV_GRUPPEN.map(([titel, keys]) => {
     const sichtbar = keys.filter((k) => zeigeAnsicht(s, k) && (k !== 'tresorordner' || tresorordnerVerfuegbar())).map((k) => NAV.find(([n]) => n === k)).filter(Boolean);
     if (!sichtbar.length) return null;
     return el('div', { class: 'nav-gruppe' + (titel ? '' : ' nav-gruppe-solo') }, [
       titel ? el('div', { class: 'nav-gruppe-titel', text: t(titel) }) : null,
       ...sichtbar.map(eintrag),
+      titel === 'nav.gruppe.weiteres' ? updateEintrag() : null,
     ]);
   });
   // Ein-/Ausklappen (nur ab 641 px sichtbar, CSS): merkt die Wahl von Hand.
@@ -818,6 +855,11 @@ function viewSettings() {
 
     // Pro-App (Leitfaden § 2, Klaus 2026-10-28): „Tresor & Ablage“ ganz oben — nur in der Android-App (BLPNative.tresor).
     tresorordnerVerfuegbar() ? tresorAblageSection() : null,
+
+    // Version und „Auf Updates prüfen“ auch hier (Klaus 2026-10-29 spät: „dass man nicht zu viel suchen muss“) — nur in der App.
+    appNativ() ? el('div', { class: 'setting', 'data-einstellung-version': '' }, [
+      el('div', { class: 'setting-label', text: t('upd.titel') }), versionZeile(),
+    ]) : null,
 
     seg(t('settings.modus'), 'nutzungsmodus',
       modusListe.map((m) => [m, t('settings.modus.' + m)]), modus,

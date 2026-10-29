@@ -273,7 +273,8 @@ for (const breite of [360, 640, 700, 1000, 1280]) {
   const e1 = await page.evaluate(() => { const p = document.querySelector('#content p[data-erklaer]'); return { da: !!p, zu: p ? p.hidden : null, knopf: !!document.querySelector('#content [data-erklaer-knopf]') }; });
   ok('Anlagen: langer Erklärsatz liegt hinter ⓘ (zu)', e1.da && e1.zu === true && e1.knopf, JSON.stringify(e1));
   const k = await page.getAttribute('#content [data-erklaer-knopf]', 'data-erklaer-knopf', { timeout: 3000 }).catch(() => 'fehlt');
-  await klick(page, `#content [data-erklaer-knopf="${k}"]`);
+  // Steht der Satz unter dem Seitentitel, ist das sichtbare ⓘ das hinter dem Titel im Kopf (Klaus 2026-10-29 spät).
+  await klick(page, `[data-erklaer-knopf="${k}"]:visible`);
   ok('ⓘ öffnet den Satz', await page.evaluate((k) => document.querySelector(`#content p[data-erklaer="${k}"]`)?.hidden === false, k));
   await nav(page, 'journal'); await nav(page, 'anlagen');
   ok('offen/zu wird gemerkt (nach Neuzeichnen offen)', await page.evaluate((k) => document.querySelector(`#content p[data-erklaer="${k}"]`)?.hidden === false, k));

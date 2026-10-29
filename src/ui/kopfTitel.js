@@ -10,7 +10,21 @@ export function kopfTitelSetzen(doc = document) {
   const h = inhalt.querySelector('h1');
   const text = h ? (h.textContent || '').trim() : '';
   if (h && !h.classList.contains('titel-im-kopf')) h.classList.add('titel-im-kopf');
-  if (ziel.textContent !== text) ziel.textContent = text;
+  // ⓘ der Seite (schlank.js hängt es an die h1, wenn ein Erklärsatz direkt darunter steht): im Kopf ein gleiches ⓘ hinter dem Titel,
+  // das den Knopf an der h1 auslöst (Klaus 2026-10-29 spät: „immer hinter dem Text … nicht eine neue Zeile erzeugen“).
+  const quelle = h ? h.querySelector(':scope > .erklaer-knopf') : null;
+  const alt = ziel.querySelector('.erklaer-knopf');
+  if ((ziel.firstChild ? ziel.firstChild.textContent : '') !== text || (alt ? alt._quelle : null) !== quelle) {
+    const span = doc.createElement('span'); span.className = 'kopf-titel-text'; span.textContent = text;
+    const teile = [span];
+    if (quelle) {
+      const k = quelle.cloneNode(true);
+      k._quelle = quelle; k.dataset.kopfErklaer = '';
+      k.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); quelle.click(); k.setAttribute('aria-expanded', quelle.getAttribute('aria-expanded')); k.title = quelle.title; });
+      teile.push(k);
+    }
+    ziel.replaceChildren(...teile);
+  }
   if (ziel.hidden !== !text) ziel.hidden = !text;
   return text;
 }
