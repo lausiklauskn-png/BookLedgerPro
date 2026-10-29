@@ -87,7 +87,12 @@ def deckblatt_weg(ziel, seconds=120):
                 if b[3] - b[1] > 4:
                     frei = [y for y in range(b[1] + 2, b[3] - 1, 4) if not any(l[0] <= (b[0] + b[2]) // 2 <= l[2] and l[1] <= y <= l[3] for l in leiste)]
                     if frei: adb('shell', 'input', 'tap', (b[0] + b[2]) // 2, frei[len(frei) // 2])
-                    else: adb('shell', 'input', 'swipe', 500, 1300, 500, 900, 300)
+                    else:
+                        # 2026-10-29 (0.1.3, Lauf 40840596381): die ausgeklappte Leiste deckte den Knopf auch ganz unten ab, zwei
+                        # Minuten Wischen ins Leere. Im Wegwerf-Emulator die Leiste über ihren eigenen Knopf schließen, dann tippen.
+                        schliessen = next((a for a in knoten if any(t.startswith('Widget schließen') for t in texte(a)) and rahmen(a)[3] - rahmen(a)[1] > 4), None)
+                        if schliessen: print('SBKIM-Leiste über „Zur Anmeldung“ — geschlossen', flush=True); tap(schliessen)
+                        else: adb('shell', 'input', 'swipe', 500, 1300, 500, 900, 300)
                 else: adb('shell', 'input', 'swipe', 500, 1500, 500, 400, 300)
                 break
         else:

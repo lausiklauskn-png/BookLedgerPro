@@ -890,3 +890,6 @@ input[type="password"], input[type="text"], input[type="number"], input[type="da
 .vorschau-knoepfe { position: sticky; bottom: -1px; background: var(--surface); padding-block: .4rem; flex-wrap: wrap; }
 .beleg-liste .name-zelle { cursor: pointer; }
 .beleg-text.ablage-aktiv { outline: 2px dashed var(--accent); outline-offset: 2px; }
+/* Gegenprobe 2026-10-29 (Punkt 5, Release-Probe 40840596381): die schwebende SBKIM-Leiste darf „Zur Anmeldung“ nie verdecken —
+   unten so viel Platz wie die Leiste, dann lässt sich der Knopf immer darüber rollen. */
+.intro-screen { padding-bottom: calc(1.5rem + var(--leisten-platz)); }

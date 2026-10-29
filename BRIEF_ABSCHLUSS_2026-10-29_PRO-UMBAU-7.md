@@ -33,7 +33,12 @@ WPP `test-vault-journal` 26/26 (+4, Gegenprobe 2 rot) · `test:native-web` 57/57
 
 ## Veröffentlicht (nur Android, Klaus' Wort „die Downloads für die aktuellen Versionen bereitstellen“)
 
-RELEASE_PLATZHALTER
+- **Workflow PDF Pro 1.0.9:** [APK](https://github.com/lausiklauskn-png/Workflow-PDF-Pro/releases/download/v1.0.9/Workflow-PDF-Pro-1.0.9.apk) — Lauf 40840592772
+  (Versuch 1), Quelle `3ff194c` (= #43), Buildnummer 10, 83.242.447 B, SHA-256 `c1abd2dd7171176364fae582a01ee313f19b0c846ff9e17995bfa8fee599474f`;
+  unabhängig geladen, gleich.
+- **BookLedgerPro 0.1.3:** erster Lauf 40840596381 rot in der Emulator-Probe — die ausgeklappte SBKIM-Leiste lag über „Zur Anmeldung“, die Probe fand keine
+  freie Stelle und wischte zwei Minuten ins Leere (Forschung § 21.9). Behoben in der App (Deckblatt unten so viel Platz wie die Leiste, = Klaus' Punkt 5) und in
+  der Probe (Leiste im Wegwerf-Emulator über ihren eigenen Knopf schließen): BLP #411. BLP_ZWEITER_LAUF
 
 ## Gegenprobe für Klaus (am Tablet)
 

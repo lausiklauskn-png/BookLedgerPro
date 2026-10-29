@@ -536,3 +536,8 @@ PRs: BLP #402 (Intent), #403 (0.1.2), #404–#408 (Release-Probe), Basic #16/#17
    durchsucht (0 Treffer). Lehre in den Brief übernommen.
 8. **Umgebung:** die Browser-Proben von Workflow PDF Pro suchen Chromium 1194; im Behälter liegt 1243 → `WFP_CHROMIUM`/`CHROMIUM` setzen, sonst 15 falsche Rote.
    `smoke_belegliste` „303 Belege“ lief einmal in sein Zeitlimit (60 s), beim zweiten Lauf grün — knapp bemessen.
+9. **Die schwebende Leiste über „Zur Anmeldung“ ist kein Emulator-Zufall** (Klaus' Punkt 5 aus Umbau 6): Release-Lauf 40840596381 (0.1.3) stand zwei Minuten vor
+   dem Deckblatt — die ausgeklappte SBKIM-Leiste (Modul 17) deckte den Knopf, die Probe zählte deren Rahmen und Knöpfe als „Leiste“ und fand keine freie Stelle;
+   im Browser bei 360–412 px lag der Knopf ganz unten frei. Je nach Größe, die der Emulator für den Rahmen meldet, klappte es oder nicht — das erklärt die sechs
+   Anläufe von 0.1.2. App: `.intro-screen` unten `var(--leisten-platz)` mehr Platz (Knopf bei 412 px 76 px höher, nie unter der Leiste). Probe: ohne freie
+   Stelle die Leiste über „Widget schließen“ zu, dann tippen.
