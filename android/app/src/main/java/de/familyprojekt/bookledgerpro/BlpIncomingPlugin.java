@@ -21,9 +21,15 @@ public final class BlpIncomingPlugin extends Plugin {
     @Override public void load(){worker.execute(()->{try{inbox();notifyListeners("available",new JSObject());}catch(Exception unavailable){/* pending reports the storage error. */}});}
     // BridgeActivity invokes onNewIntent for the launch intent after loading
     // plugins. Reading it in load as well would enqueue every cold start twice.
-    @Override protected void handleOnNewIntent(Intent intent){accept(((MainActivity)getActivity()).incomingForLaunch(intent));}
-    private void accept(Intent intent){
-        if(intent==null||!Arrays.asList(Intent.ACTION_SEND,Intent.ACTION_SEND_MULTIPLE,Intent.ACTION_VIEW).contains(intent.getAction()))return;
+    @Override protected void handleOnNewIntent(Intent intent){
+        MainActivity a=(MainActivity)getActivity();
+        accept(a.incomingForLaunch(intent),a.zurueckNehmen()?a::zurueckZumSender:null);
+    }
+    /** Aus einer zweiten Kopie der App (MainActivity.uebernehmen): wie ein neuer Eingang; fertig, sobald gespeichert. */
+    void annehmen(Intent intent,Runnable fertig){accept(intent,fertig);}
+    private void accept(Intent intent){accept(intent,null);}
+    private void accept(Intent intent,Runnable fertig){
+        if(intent==null||!Arrays.asList(Intent.ACTION_SEND,Intent.ACTION_SEND_MULTIPLE,Intent.ACTION_VIEW).contains(intent.getAction())){if(fertig!=null)fertig.run();return;}
         boolean restoring=intent==((MainActivity)getActivity()).currentIncoming();
         if(restoring&&intent.getBooleanExtra(ACKNOWLEDGED,false))return;
         String id=restoring?intent.getStringExtra(DELIVERY):UUID.randomUUID().toString();
@@ -37,7 +43,7 @@ public final class BlpIncomingPlugin extends Plugin {
         }
         ((MainActivity)getActivity()).rememberIncoming(delivered);
         Intent receipt=delivered;
-        worker.execute(()->{unstaged.add(receipt);try{flush();}catch(Exception error){/* pending retries and reports an explicit failure. */}notifyListeners("available",new JSObject());});
+        worker.execute(()->{unstaged.add(receipt);try{flush();}catch(Exception error){/* pending retries and reports an explicit failure. */}notifyListeners("available",new JSObject());if(fertig!=null)fertig.run();});
     }
     @PluginMethod public void pending(PluginCall call){worker.submit(call,()->{
         try{

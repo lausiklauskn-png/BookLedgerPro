@@ -119,6 +119,33 @@ export async function pdfVorschaubild(bytes, breite = 160) {
  *   dieselbe Prüfung auf Anweisungen an eine KI wie der OCR-Text (kiTextFreigabe).
  * @returns {Promise<{text:string, seiten:number, gesamt:number, kopf:{producer:string,creator:string}}>}
  */
+/**
+ * Seitenbilder nur zum Ansehen (Vorschau eines Belegs, Befund Tablet 2026-10-29). Nichts verlässt das Gerät; gezeichnet wird
+ * in Bildschirmbreite (höchstens 2-fach), Seite für Seite, damit ein langes PDF den Speicher nicht füllt.
+ * @returns {Promise<{gesamt:number, seite:(i:number)=>Promise<HTMLCanvasElement>, schliessen:()=>void}>}
+ */
+export async function pdfVorschau(bytes, breitePx) {
+  const L = await pdfjs();
+  const pdf = await L.getDocument({ data: bytes.slice(0), isEvalSupported: false }).promise;
+  const dichte = Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);
+  return {
+    gesamt: pdf.numPages,
+    async seite(i) {
+      const p = await pdf.getPage(i);
+      const v1 = p.getViewport({ scale: 1 });
+      const vp = p.getViewport({ scale: Math.min(4, (breitePx * dichte) / v1.width) });
+      const c = document.createElement('canvas');
+      c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+      const x = c.getContext('2d');
+      x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+      await p.render({ canvasContext: x, viewport: vp }).promise;
+      try { p.cleanup(); } catch { /* egal */ }
+      return c;
+    },
+    schliessen() { try { pdf.destroy(); } catch { /* egal */ } },
+  };
+}
+
 export async function pdfTextebene(bytes) {
   const { textebeneZuText } = await import('../domain/workflowPdf.js');
   const L = await pdfjs();

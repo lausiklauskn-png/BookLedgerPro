@@ -88,11 +88,16 @@ export async function anProAppGeben(b) {
 }
 
 /** Der sichtbare Knopf in der Zeile (Symbol + Name; am Handy nur das Symbol, der Name steht im title). */
-export function gebenKnopf(b) {
+/** true in der Pro-App (Knopf heißt „An Pro-App geben …“), false als PWA („Teilen …“) — für die Spaltenbreite der Belegliste. */
+export const gebenInApp = () => !!tresor();
+
+// imMenue: derselbe Weg als beschrifteter Eintrag im ⋯-Menü (Befund Tablet 2026-10-29: nur das Symbol in der Zeile sagte nicht,
+// was es tut). Eigene Marke data-geben-menue, damit [data-geben] eindeutig der Knopf in der Zeile bleibt.
+export function gebenKnopf(b, { imMenue = false } = {}) {
   const app = !!tresor();
   const name = t(app ? 'docs.geben.knopf' : 'docs.geben.teilen');
   return el('button', {
-    class: 'btn btn-sm geben-knopf', type: 'button', 'data-geben': b.id, title: name, 'aria-label': name,
+    class: imMenue ? 'btn btn-sm geben-menue' : 'btn btn-sm geben-knopf', type: 'button', ...(imMenue ? { 'data-geben-menue': b.id } : { 'data-geben': b.id }), title: name, 'aria-label': name,
     onClick: () => (app ? anProAppGeben(b) : normalTeilen(b)).catch((e) => { meldung('fehler'); alert(t('docs.geben.fehler').replace('{e}', String((e && e.message) || e))); }),
   }, [icon('pb-send'), el('span', { class: 'geben-text', text: name })]);
 }
