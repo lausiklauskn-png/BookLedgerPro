@@ -889,13 +889,19 @@ function uploadKarte() {
   // V2 (Klaus 2026-10-26): Workflow PDF zum Scannen öffnen — Android: die Pro-App (Rückfall Web-Fassung),
   // sonst die Web-Fassung in einem neuen Fenster. Zurück kommt der Scan über Teilen (Android) oder Datei wählen.
   // In der App (Befund Tablet 2026-10-28: der Link tat nichts): Workflow PDF Pro über Android starten (BlpTresor.appOeffnen,
-  // feste Paketliste), sonst ehrlich sagen, dass es fehlt. Den Scanner direkt öffnen kann Workflow PDF Pro per Intent (noch) nicht;
-  // zurück kommt der Scan wie bisher über Teilen → BookLedgerPro.
-  const appStart = typeof window !== 'undefined' && window.BLPNative && window.BLPNative.tresor && window.BLPNative.tresor.appOeffnen;
-  const wfKnopf = appStart
+  // feste Paketliste), sonst ehrlich sagen, dass es fehlt. Pro-Umbau 6 (Klaus 2026-10-29): zuerst der Intent
+  // de.familyprojekt.workflowpdf.pro.SCANNEN (BlpTresor.scanStarten, Scanner geht sofort auf); eine ältere Workflow PDF Pro ohne ihn
+  // wird nur gestartet. Zurück kommt der Scan wie bisher über Teilen → BookLedgerPro.
+  const tresorBr = typeof window !== 'undefined' && window.BLPNative && window.BLPNative.tresor;
+  const scanDirekt = tresorBr && tresorBr.scanStarten;
+  const appStart = tresorBr && tresorBr.appOeffnen;
+  const wfKnopf = (scanDirekt || appStart)
     ? el('button', { class: 'btn', type: 'button', 'data-workflow-scan': 'app', text: t('docs.workflowScan'), title: t('docs.workflowScanApp'),
       onClick: async () => {
-        try { await appStart('workflow-pdf-pro'); _importStatus = { text: t('docs.workflowScanGestartet') }; }
+        try {
+          const r = scanDirekt ? await scanDirekt() : (await appStart('workflow-pdf-pro'), { weg: 'app' });
+          _importStatus = { text: r && r.weg === 'direkt' ? t('docs.workflowScanDirekt') : t('docs.workflowScanGestartet') };
+        }
         catch (e) { _importStatus = { text: /APP_FEHLT/.test(String((e && (e.code || e.message)) || e)) ? t('docs.workflowScanFehlt') : t('docs.workflowScanFehler') }; }
         if (typeof window !== 'undefined') window.__blpWfScan = _importStatus.text;   // Probe
         await repaint();

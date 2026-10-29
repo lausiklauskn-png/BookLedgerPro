@@ -250,6 +250,8 @@
       entsperren: function (merken) { return T.entsperren({ merken: !!merken }); },
       sperren: function (vergessen) { return T.sperren({ vergessen: !!vergessen }); },
       appOeffnen: typeof T.appOeffnen === 'function' ? function (app) { return T.appOeffnen({ app: String(app || '') }); } : null,
+      // Pro-Umbau 6: Scanner von Workflow PDF Pro direkt (Intent SCANNEN); ältere Hülle ohne die Methode → null, dann appOeffnen.
+      scanStarten: typeof T.scanStarten === 'function' ? function () { return T.scanStarten(); } : null,
       ordnerOeffnen: function (welcher) { return T.ordnerOeffnen({ welcher: welcher === 'ablage' ? 'ablage' : 'tresor' }); },
       passwortAendern: function () { return T.passwortAendern(); },
       ersatzErstellen: function () { return T.ersatzErstellen(); },

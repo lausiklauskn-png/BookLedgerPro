@@ -2,7 +2,7 @@
 //
 //   node tests/smoke_befunde.mjs        (Chromium + playwright/playwright-core aus der Umgebung)
 //
-// A2 „Mit Workflow PDF scannen“ startet in der App Workflow PDF Pro (appOeffnen), fehlt es: ehrlicher Satz ·
+// A2 „Mit Workflow PDF scannen“ öffnet in der App den Scanner von Workflow PDF Pro (scanStarten, Intent SCANNEN; Rückfälle: ältere WPP, ältere Hülle), fehlt es: ehrlicher Satz ·
 // A3 Mikrofon in der App über Androids Sprachfenster (BLPNative.sprechen gestellt), ohne Sprachfenster kein Mikrofon ·
 // A4 Modell laden mit Balken, Prozent und MB (gestellter Lader meldet Fortschritt), ohne Größe Drehkreis ·
 // B Mikrofon nur an Suche und Freitext (Aufträge-Positionszeile ohne Mikrofon/DE, eine Zeile bei 1000 px) ·
@@ -52,6 +52,8 @@ window.__log = [];
     markieren: async (a) => { log('markieren', a); (window.__marken[a.fach] = window.__marken[a.fach] || new Set()).add(a.id); },
     passwortAendern: async () => ({}), ersatzErstellen: async () => ({ teile: [] }), wiederherstellen: async () => zustand(),
   };
+  // Pro-Umbau 6: Scanner direkt über den Intent SCANNEN; __alteHuelle = BookLedgerPro ohne die Methode, __wppAlt = Workflow PDF Pro ohne den Intent.
+  if (!window.__alteHuelle) T.scanStarten = async () => { log('scanStarten'); if (window.__appFehlt) { const e = new Error('APP_FEHLT'); e.code = 'APP_FEHLT'; throw e; } return { weg: window.__wppAlt ? 'app' : 'direkt' }; };
   const F = { save: async () => ({ saved: true }), share: async () => ({ shared: true }), appInfo: async () => ({ version: '0.1.1-debug' }) };
   let hoerer = null;
   const H = { aufraeumen: async () => log('h.aufraeumen'), erlauben: async () => (log('h.erlauben'), { mitteilung: true }),
@@ -126,9 +128,25 @@ if (APP) {
     ok('in der App ein Knopf (kein toter Web-Link)', art === 'app', String(art));
     await klick(page, '[data-workflow-scan]');
     await warte(page, () => !!window.__blpWfScan);
-    const r = await page.evaluate(() => ({ log: window.__log.filter((x) => x[0] === 'appOeffnen').map((x) => x[1].app), satz: window.__blpWfScan || '' }));
-    ok('startet Workflow PDF Pro (appOeffnen „workflow-pdf-pro“) und nennt den Rückweg über Teilen', r.log.join() === 'workflow-pdf-pro' && /Teilen/.test(r.satz), JSON.stringify(r));
+    const r = await page.evaluate(() => ({ log: window.__log.filter((x) => x[0] === 'scanStarten' || x[0] === 'appOeffnen').map((x) => x[0]), satz: window.__blpWfScan || '' }));
+    ok('öffnet den Scanner direkt (scanStarten, Intent SCANNEN), kein bloßer App-Start, nennt den Rückweg über Teilen', r.log.join() === 'scanStarten' && /Scanner/.test(r.satz) && /Teilen/.test(r.satz), JSON.stringify(r));
     ok('keine Seitenfehler', fehler.length === 0, fehler.join(' | '));
+    await ctx.close();
+  }
+  {
+    const { ctx, page } = await oeffnen('app', 1000, { __wppAlt: true });
+    await nav(page, 'documents'); await klick(page, '[data-workflow-scan]');
+    await warte(page, () => !!window.__blpWfScan);
+    const satz = await page.evaluate(() => window.__blpWfScan || '');
+    ok('ältere Workflow PDF Pro ohne den Intent: App gestartet, Satz „ist offen: dort scannen“', /ist offen: dort scannen/.test(satz), satz);
+    await ctx.close();
+  }
+  {
+    const { ctx, page } = await oeffnen('app', 1000, { __alteHuelle: true });
+    await nav(page, 'documents'); await klick(page, '[data-workflow-scan]');
+    await warte(page, () => !!window.__blpWfScan);
+    const r = await page.evaluate(() => ({ log: window.__log.filter((x) => x[0] === 'scanStarten' || x[0] === 'appOeffnen').map((x) => x[0] + ':' + (x[1].app || '')), satz: window.__blpWfScan || '' }));
+    ok('ältere BookLedgerPro-Hülle ohne scanStarten: Rückfall appOeffnen „workflow-pdf-pro“', r.log.join() === 'appOeffnen:workflow-pdf-pro' && /Teilen/.test(r.satz), JSON.stringify(r));
     await ctx.close();
   }
   {
