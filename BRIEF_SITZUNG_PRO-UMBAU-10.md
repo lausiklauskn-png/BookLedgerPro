@@ -18,6 +18,13 @@ Scanner/Kamera WIA, Updates vom eigenen Server, `windows.yml` grün), aber **nie
    Version und Buildnummer erhöhen, `releases` lesen.
 3. **Erst auf Klaus' Wort „Windows veröffentlichen“:** `windows-release.yml` mit „ja“ (eigener Server `family-projekt.de/updates/bookledgerpro/`,
    Ed25519-Unterschrift), Download unabhängig laden und SHA-256 vergleichen. Unsigniertes Setup → SmartScreen-Warnung nennen.
+   **Klaus testet Windows am PC eines Freundes** (der die Familienakte gebaut hat und parallel ein eigenes Programm baut; die beiden tauschen sich aus):
+   - keine echten Buchhaltungsdaten auf dem fremden PC — Testmandant (Sandbox) oder eine Kopie nur mit Probe-Belegen, nie den echten Tresorordner;
+   - „Passwort merken“ dort nicht ankreuzen (DPAPI legt es im Windows-Konto des Freundes ab);
+   - Aufräum-Anleitung schreiben: App deinstallieren, Datenordner der App (Pfad aus `windows/` nachsehen und nennen) löschen;
+   - Windows warnt beim unsignierten Setup („Weitere Informationen“ → „Trotzdem ausführen“) — in der Anleitung nennen;
+   - auf Klaus' Wunsch eine Abgleich-Seite für den Freund (Download, kurze Beschreibung, Link zum öffentlichen Repo), Vorbild Familienakte
+     `BRIEF_ABSCHLUSS_2026-10-29_FASSUNG-2.28.3-UND-ABGLEICH.md`.
 4. Danach nach Rückfrage: Leitfaden § 1.7–1.9 und die Befunde aus Umbau 9 (ⓘ hinter dem Wort, textZoom 100, Knöpfe fest, Version im Kopf) in
    Workflow PDF Pro und Private Brain Pro; Private Brain V3; WPP-Windows Tresorordner; Bilder einfügen in WPP und PB; fester Ordner je Einlese-Knopf
    (Klaus' Frage, nur wenn er es will).
@@ -36,7 +43,8 @@ Pro-Umbau 10: BookLedgerPro für Windows. Repos: BookLedgerPro, BookLedger-Basic
 Zuerst lesen: CLAUDE.md je Repo, BookLedgerPro/BRIEF_SITZUNG_PRO-UMBAU-10.md und BRIEF_ABSCHLUSS_2026-10-29_PRO-UMBAU-9.md, docs/WINDOWS.md,
 docs/UPDATES-EIGENER-SERVER.md, Forschung § 23–24.
 Erst: meine Befunde aus der Gegenprobe 0.1.4 aufnehmen und beheben. Dann die Windows-Fassung prüfen und vorbereiten.
-Windows veröffentlichen erst auf mein Wort (vorher releases lesen). BookLedgerPro ist öffentlich: keine Schlüssel in Dateien oder im Chat.
+Windows veröffentlichen erst auf mein Wort (vorher releases lesen). Ich teste Windows am PC eines Freundes: nur Testmandant/Probe-Belege,
+kein „Passwort merken“, Aufräum-Anleitung, auf Wunsch eine Abgleich-Seite für ihn. BookLedgerPro ist öffentlich: keine Schlüssel in Dateien oder im Chat.
 Ein PR je App, bei grüner CI selbst mergen. Nichts an echten Tresoren ohne Kopie und Rückweg.
 Am Ende: Abschluss mit Stundennachweis, Forschungseintrag, Brief mit Copy-Paste-Startauftrag.
 ```
