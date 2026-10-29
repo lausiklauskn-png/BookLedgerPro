@@ -863,3 +863,30 @@ input[type="password"], input[type="text"], input[type="number"], input[type="da
 .beleg-liste .name-zelle .zeile-name { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .beleg-liste .name-zelle .beleg-name { min-width: 0; flex: 1 1 auto; }
 .beleg-liste .name-zelle.voll .beleg-name, .beleg-liste .name-zelle.voll .zeile-unter, .beleg-liste .name-zelle.voll > div { white-space: normal; overflow: visible; }
+
+/* Befund Tablet 2026-10-29: der ⋯-Knopf lag rechts außerhalb des Bildschirms. Ursache: „.table td.actions { width: 1% }“ (schlanker)
+   galt auch hier, und mit table-layout: fixed wurde die Spalte 4–10 px breit, die Knöpfe ragten hinaus. Jetzt feste Breite für
+   „Geben“ + ⋯ (bis 1024 px nur Symbole, darüber mit Namen); der Name des Belegs wird gekürzt, nie die Knöpfe. */
+.beleg-liste th.actions, .beleg-liste td.actions { width: 4.9rem; }
+@media (min-width: 1025px) {
+  .beleg-liste.geben-app th.actions, .beleg-liste.geben-app td.actions { width: 13.8rem; }
+  .beleg-liste.geben-pwa th.actions, .beleg-liste.geben-pwa td.actions { width: 8.8rem; }
+}
+.zeilen-menue-liste .geben-menue { display: inline-flex; align-items: center; gap: 6px; }
+.zeilen-menue-liste .geben-menue .ic { width: 16px; height: 16px; }
+/* Befund Tablet 2026-10-29 (Bild): „2026-10-28“ wurde von der Größe überschrieben. Die Festbreitenschrift des Tablets ist breiter als
+   hier gemessen; jetzt normale Schrift mit gleich breiten Ziffern, etwas mehr Breite, und keine Zelle läuft in die Nachbarzelle. */
+.beleg-liste td.datum-zelle, .beleg-liste td.groesse-zelle { font-family: inherit; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
+.beleg-liste .datum-zelle { width: 6.9rem; }
+.beleg-liste .groesse-zelle { width: 5.4rem; }
+@media (max-width: 640px) { .beleg-liste .datum-zelle { width: 6.2rem; } }
+/* Vorschau eines Belegs (Befund Tablet 2026-10-29): Dokument sehen, löschen, weitergeben. */
+.modal.beleg-vorschau { max-width: min(60rem, 96vw); width: 100%; display: flex; flex-direction: column; gap: .4rem; }
+.beleg-vorschau .vorschau-titel { font-size: 1.05rem; overflow-wrap: anywhere; margin: 0; }
+.beleg-vorschau p { margin: 0; }
+.vorschau-flaeche { display: flex; flex-direction: column; align-items: center; gap: .6rem; background: var(--surface-2); border-radius: var(--radius-sm); padding: .5rem; min-height: 4rem; }
+.vorschau-seite, .vorschau-bild { max-width: 100%; height: auto; background: #fff; box-shadow: var(--shadow-sm); }
+.vorschau-pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .82rem; max-height: 40vh; overflow: auto; margin: .3rem 0 0; }
+.vorschau-knoepfe { position: sticky; bottom: -1px; background: var(--surface); padding-block: .4rem; flex-wrap: wrap; }
+.beleg-liste .name-zelle { cursor: pointer; }
+.beleg-text.ablage-aktiv { outline: 2px dashed var(--accent); outline-offset: 2px; }

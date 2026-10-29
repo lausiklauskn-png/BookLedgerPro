@@ -40,7 +40,8 @@ import { getSettings, navigate, updateSettings } from '../../state.js';
 import { zeigeFeature, FEATURE } from '../../domain/nutzungsmodus.js';
 import { emptyState } from '../empty.js';
 import { icon } from '../icons.js';
-import { gebenKnopf } from '../proAppGeben.js';
+import { gebenKnopf, gebenInApp } from '../proAppGeben.js';
+import { belegVorschau } from '../belegVorschau.js';
 import { belegGruppen, PRUEF_SYMBOL, gruppeZu, gruppeUmschalten, alleZu, alleAuf } from '../../domain/belegListe.js';
 import { testMarke } from '../testmarke.js';
 import { namenVorschlagBox } from '../namensvorschlag.js';
@@ -175,6 +176,33 @@ function schnellerfassung() {
   ta.value = _schnellText;
   ta.addEventListener('input', () => { _schnellText = ta.value; clearTimeout(warte); warte = setTimeout(namen.aktualisiere, 400); });
   if (_schnellText) setTimeout(namen.aktualisiere, 0);
+  // Befund Tablet 2026-10-29 (Klaus: „da müssen auch Bilder eingefügt werden können“): ein Bild oder PDF, eingefügt oder
+  // hineingezogen (Galerie, Bildprogramm, Dateien-App), wird ein Beleg — derselbe Weg wie „Mehrere Belege hochladen“
+  // (Prüfung, Platzfrage, verschlüsselt). Text bleibt Text. Namenlose Zwischenablage-Bilder („image.png“) bekommen Datum und Uhrzeit.
+  const belegDateien = (liste) => {
+    const stempel = new Date().toISOString().slice(0, 16).replace('T', ' ').replace(':', '-');
+    return Array.from(liste || []).filter((f) => f && f.size > 0 && /^(image\/|application\/pdf$)/.test(f.type || ''))
+      .map((f, i) => (!f.name || /^image\.\w+$/i.test(f.name)
+        ? new File([f], 'Eingefügt ' + stempel + (i ? '-' + (i + 1) : '') + '.' + ((f.type.split('/')[1] || 'png').replace('jpeg', 'jpg')), { type: f.type })
+        : f));
+  };
+  const annehmen = (liste) => {
+    const fs = belegDateien(liste);
+    if (!fs.length) return false;
+    if (typeof window !== 'undefined') window.__blpSchnellDatei = fs.map((f) => f.name);   // Probe
+    dateienEinlesen(fs, { quelle: 'einfuegen' }).catch(() => {});
+    return true;
+  };
+  ta.addEventListener('paste', (e) => {
+    const cd = e.clipboardData;
+    const fs = cd && cd.files && cd.files.length ? cd.files
+      : Array.from((cd && cd.items) || []).filter((x) => x.kind === 'file').map((x) => x.getAsFile()).filter(Boolean);
+    if (annehmen(fs)) e.preventDefault();
+  });
+  const mitDateien = (e) => !!(e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0);
+  ta.addEventListener('dragover', (e) => { if (mitDateien(e)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; ta.classList.add('ablage-aktiv'); } });
+  ta.addEventListener('dragleave', () => ta.classList.remove('ablage-aktiv'));
+  ta.addEventListener('drop', (e) => { ta.classList.remove('ablage-aktiv'); if (mitDateien(e) && annehmen(e.dataTransfer.files)) e.preventDefault(); });
   const btn = el('button', {
     class: 'btn btn-primary', text: t('docs.analyze'),
     onClick: async () => {
@@ -1125,7 +1153,9 @@ function belegZeile(b, visionBereit, { anhangVon = null, gruppe = null, zu = fal
       el('input', { type: 'checkbox', class: 'beleg-wahl', 'data-beleg-wahl': b.id, 'aria-label': t('docs.wahlEiner').replace('{n}', b.name || ''),
         ...(_wahl.has(b.id) ? { checked: true } : {}), onChange: (e) => { if (e.target.checked) _wahl.add(b.id); else _wahl.delete(b.id); repaint(); } }),
       pruefKnopf(b)]),
-    el('td', { class: 'name-zelle', onClick: (e) => { if (!e.target.closest('button,a,input,summary,details')) e.currentTarget.classList.toggle('voll'); } }, [name, ...unter]),
+    // Tipp auf den Namen → Vorschau mit dem Dokument, Löschen und Weitergeben (Befund Tablet 2026-10-29).
+    el('td', { class: 'name-zelle', 'data-vorschau-oeffnen': b.id, title: t('docs.vorschau.oeffnen'),
+      onClick: (e) => { if (!e.target.closest('button,a,input,summary,details')) belegVorschau(b, { loeschen: () => belegLoeschen(b), angaben: unter.map((u) => u.textContent) }); } }, [name, ...unter]),
     el('td', { class: 'muted small mono datum-zelle', text: (b.createdAt || '').slice(0, 10) }),
     el('td', { class: 'num muted small groesse-zelle', text: formatBytes(b.size) }),
     el('td', { class: 'link-zelle' }, b.buchungId ? [el('span', { class: 'link-marke', title: t('docs.verknuepft'), 'aria-label': t('docs.verknuepft'), 'data-verknuepft': '' }, [icon('pb-link')])] : []),
@@ -1180,7 +1210,7 @@ function belegListe(belege, visionBereit) {
   return el('div', { class: 'card no-pad beleg-liste-karte' }, [
     pruefLeiste(belege),
     kopf,
-    el('table', { class: 'table beleg-liste' }, [
+    el('table', { class: 'table beleg-liste' + (gebenInApp() ? ' geben-app' : ' geben-pwa') }, [
       el('thead', {}, el('tr', {}, [
         el('th', { class: 'pruef-zelle', title: t('docs.pruefung'), 'aria-label': t('docs.pruefung') }), el('th', { text: t('docs.name') }),
         el('th', { class: 'datum-zelle', text: t('docs.date') }), el('th', { class: 'num groesse-zelle', text: t('docs.size') }),
@@ -1237,6 +1267,7 @@ function positionenZeile(b) {
 
 function belegAktionen(b, visionBereit) {
   const wrap = el('div', { class: 'btn-row' });
+  wrap.appendChild(gebenKnopf(b, { imMenue: true }));
   // Texterkennung: mit Vision für Bilder und PDFs; ein PDF mit Textebene (z. B. ein Scan aus Workflow PDF)
   // braucht keine Vision — der Knopf steht dann auch ohne Schlüssel (Klaus 2026-10-26).
   const pdf = b.mediaType === 'application/pdf';
@@ -1262,15 +1293,17 @@ function belegAktionen(b, visionBereit) {
       },
     }));
   }
-  wrap.appendChild(el('button', {
-    class: 'btn btn-sm', text: t('common.delete'),
-    onClick: async () => {
-      if (b.buchungId) { alert(t('docs.deleteLinked')); return; }            // GoBD: verknüpft → nicht löschbar
-      const frist = istAufbewahrungspflichtig(b) ? `\n\n${t('docs.deleteRetention')} ${aufbewahrungBis(b.createdAt)}` : '';
-      if (confirm(t('docs.confirmDelete') + frist)) { await deleteBeleg(b.id); await repaint(); }
-    },
-  }));
+  wrap.appendChild(el('button', { class: 'btn btn-sm', text: t('common.delete'), onClick: () => belegLoeschen(b) }));
   return wrap;
+}
+
+// Löschen mit denselben Regeln überall (⋯-Menü und Vorschau): verknüpft → nicht löschbar (GoBD), sonst Rückfrage mit Frist.
+async function belegLoeschen(b) {
+  if (b.buchungId) { alert(t('docs.deleteLinked')); return false; }
+  const frist = istAufbewahrungspflichtig(b) ? `\n\n${t('docs.deleteRetention')} ${aufbewahrungBis(b.createdAt)}` : '';
+  if (!confirm(t('docs.confirmDelete') + frist)) return false;
+  await deleteBeleg(b.id); await repaint();
+  return true;
 }
 
 // Der OCR-Text (oder ein eingefügter Text) geht als Nächstes an die Kontierung (Mistral EU).

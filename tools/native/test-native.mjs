@@ -208,5 +208,14 @@ ok('Klebstoff: kein Passwort geht durch JavaScript (anlegen/entsperren/ändern o
 const w4 = welt();
 ok('ohne Tresor-Plugin: BLPNative.tresor ist null (Web-App zeigt die Ansicht nicht)', w4.ctx.BLPNative && w4.ctx.BLPNative.tresor === null);
 
+// Befund Tablet 2026-10-29: Teilen aus einer anderen App startete BookLedgerPro ein zweites Mal im Fenster der sendenden App.
+{
+  const m = java('MainActivity'), p = java('BlpIncomingPlugin');
+  ok('Teilen: zweite Kopie reicht an das offene Fenster weiter (uebernehmen) und schließt sich erst nach dem Speichern',
+    m.includes('andere.uebernehmen(anfrage') && m.includes('setIntent(new Intent(Intent.ACTION_MAIN)') && m.includes('bridge.getWebView().stopLoading()')
+    && p.includes('void annehmen(Intent intent,Runnable fertig)') && /notifyListeners\("available",new JSObject\(\)\);if\(fertig!=null\)fertig\.run\(\);/.test(p));
+  ok('Teilen bei laufender App: zurück zur sendenden App (moveTaskToBack), Kaltstart bleibt offen',
+    m.includes('moveTaskToBack(true)') && m.includes('protected void onNewIntent(Intent intent)') && p.includes('a.zurueckNehmen()?a::zurueckZumSender:null'));
+}
 console.log(`\n${gruen} grün · ${rot} ROT`);
 process.exit(rot ? 1 : 0);

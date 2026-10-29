@@ -16,8 +16,31 @@ public class MainActivity extends BridgeActivity {
     private static final String RECEIPT_STATE = "blp.incoming.intent";
     private Intent incomingReceipt;
     private boolean restoreIncoming;
+    // Befund Tablet 2026-10-29: beim Teilen aus Workflow PDF Pro (Samsung, Fenster nebeneinander) stand BookLedgerPro ein
+    // zweites Mal da; der Scan ging an das neue Fenster, das schon offene zeigte ihn nicht. Es gibt jetzt nur EIN Fenster:
+    // eine zweite Kopie reicht die Anfrage an die laufende weiter und schließt sich, bevor ihre Seite etwas tut.
+    private static java.lang.ref.WeakReference<MainActivity> laufend = new java.lang.ref.WeakReference<>(null);
+    private boolean weiterleiter;
 
     @Override public void onCreate(Bundle state) {
+        MainActivity andere = laufend.get();
+        if (andere != null && andere != this && !andere.isFinishing() && !andere.isDestroyed() && andere.getTaskId() != getTaskId()) {
+            weiterleiter = true;
+            Intent anfrage = getIntent();
+            // Die Seite dieser Kopie darf nichts einlesen: sie bekommt eine leere Start-Anfrage, die echte geht an das offene Fenster.
+            setIntent(new Intent(Intent.ACTION_MAIN).setClass(this, MainActivity.class));
+            super.onCreate(null);
+            if (bridge != null) bridge.getWebView().stopLoading();
+            // Klaus 2026-10-29: „das sollte dann wieder zurück zu Workflow-PDF springen und nicht in der Anzeige bleiben“.
+            // Erst wenn die Dateien im Eingang des offenen Fensters liegen (Leserecht hängt an dieser Kopie), schließt sie sich;
+            // im Fenster der sendenden App steht dann wieder diese App.
+            if (!andere.uebernehmen(anfrage, () -> runOnUiThread(() -> {
+                android.widget.Toast.makeText(this, "An BookLedgerPro übergeben", android.widget.Toast.LENGTH_SHORT).show();
+                finish(); overridePendingTransition(0, 0);
+            }))) { finish(); overridePendingTransition(0, 0); }
+            return;
+        }
+        laufend = new java.lang.ref.WeakReference<>(this);
         if (state != null && state.containsKey(RECEIPT_STATE)) {
             incomingReceipt = state.getParcelable(RECEIPT_STATE);
             restoreIncoming = incomingReceipt != null;
@@ -51,6 +74,35 @@ public class MainActivity extends BridgeActivity {
                 if (web.canGoBack()) web.goBack(); else moveTaskToBack(true);
             }
         });
+    }
+
+    /** Nimmt eine Teilen-/Öffnen-Anfrage aus einer zweiten Kopie an (gleicher Prozess). fertig läuft, sobald sie im Eingang liegt. */
+    boolean uebernehmen(Intent anfrage, Runnable fertig) {
+        if (anfrage == null || anfrage.getAction() == null || Intent.ACTION_MAIN.equals(anfrage.getAction()) || bridge == null) return false;
+        com.getcapacitor.PluginHandle h = bridge.getPlugin("BlpIncoming");
+        if (h == null || !(h.getInstance() instanceof BlpIncomingPlugin)) return false;
+        runOnUiThread(() -> ((BlpIncomingPlugin) h.getInstance()).annehmen(anfrage, fertig));
+        return true;
+    }
+
+    // Teilen aus einer anderen App, während dieses Fenster schon lief (onNewIntent, kein Kaltstart): nach dem Speichern im Eingang
+    // zurück zur sendenden App. Beim Kaltstart bleibt BookLedgerPro offen (erst entsperren, dann wird eingelesen).
+    private boolean zurueckNachTeilen;
+    @Override protected void onNewIntent(Intent intent) {
+        zurueckNachTeilen = intent != null && (Intent.ACTION_SEND.equals(intent.getAction()) || Intent.ACTION_SEND_MULTIPLE.equals(intent.getAction()));
+        super.onNewIntent(intent);
+    }
+    boolean zurueckNehmen() { boolean z = zurueckNachTeilen; zurueckNachTeilen = false; return z; }
+    void zurueckZumSender() {
+        runOnUiThread(() -> {
+            android.widget.Toast.makeText(this, "An BookLedgerPro übergeben", android.widget.Toast.LENGTH_SHORT).show();
+            moveTaskToBack(true);
+        });
+    }
+
+    @Override public void onDestroy() {
+        if (!weiterleiter && laufend.get() == this) laufend = new java.lang.ref.WeakReference<>(null);
+        super.onDestroy();
     }
 
     @Override public void onSaveInstanceState(Bundle state) {
