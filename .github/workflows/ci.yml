@@ -1,9 +1,16 @@
 name: CI
 
+# Sparsam (Klaus 2026-10-29: Freiminuten des privaten Repos aufgebraucht): nicht doppelt bei Push UND PR — Push nur auf main,
+# sonst über den PR; ein neuer Stand bricht den alten Lauf ab.
 on:
   push:
-    branches: ['**']
+    branches: ['main']
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   smoke-test:
