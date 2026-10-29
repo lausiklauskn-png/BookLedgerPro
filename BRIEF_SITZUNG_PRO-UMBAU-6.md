@@ -4,14 +4,17 @@ Repos: BookLedgerPro, BookLedger-Basic, Workflow-PDF-Pro, Privat-Brain-Pro, spä
 Branch: der im ersten Prompt vorgegebene. Zuerst lesen: `CLAUDE.md` je Repo, `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-5.md`,
 `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md`, Forschung § 18–19, `docs/UPDATES-EIGENER-SERVER.md`.
 
-## Vorschlag Reihenfolge (Klaus entscheidet)
+## Reihenfolge
+
+0. **Zuerst veröffentlichen** (Punkt 5 unten, Klaus' Wort vom 2026-10-29).
+
 
 1. **BookLedgerPro „Mit Workflow PDF scannen“ auf den neuen Intent umstellen** (Android): `de.familyprojekt.workflowpdf.pro.SCANNEN`, Paket
    `de.familyprojekt.workflowpdf.pro`, Zusatz `von=BookLedgerPro`; fehlt die App → „nicht installiert“. Vorlage im Abschluss § 19.9. Basic nachziehen.
 2. **Meine Familienakte: Updates über Klaus' Server** — Klaus bringt das Repo mit. Startauftrag unten (eigener Abschnitt).
 3. **Private Brain V3** (Schritt 5 aus Umbau 5): Mikrofon-Regel, Gerätecheck, zweites Modell, Hintergrund.
 4. **Workflow PDF Pro Windows: Tresorordner** nachrüsten (Lücke zu Android).
-5. **Veröffentlichen nur auf Klaus' Wort:** BookLedgerPro 0.1.1 (erster Lauf über den eigenen Server, Windows + Android), Workflow PDF Pro 1.0.8,
+5. **Veröffentlichen — Klaus' Wort liegt vor (2026-10-29: „dann in der nächsten Sitzung veröffentlichen“):** BookLedgerPro 0.1.1 (erster Lauf über den eigenen Server, Windows + Android), Workflow PDF Pro 1.0.8,
    Private Brain Pro Windows 1.0.42. Danach unabhängig laden und Prüfsummen vergleichen.
 
 ## Meine Familienakte — Updates über den eigenen Server
@@ -36,7 +39,8 @@ Keine Emojis. Jeder Abschluss mit Stundennachweis und Forschungseintrag. Termux 
 Pro-Umbau 6. Repos: BookLedgerPro, BookLedger-Basic, Workflow-PDF-Pro, Privat-Brain-Pro (Branch wie vorgegeben).
 Zuerst lesen: CLAUDE.md je Repo, BookLedgerPro/BRIEF_SITZUNG_PRO-UMBAU-6.md und BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-5.md,
 docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md, Forschung § 18–19.
-Erst: BookLedgerPro "Mit Workflow PDF scannen" auf den Intent de.familyprojekt.workflowpdf.pro.SCANNEN umstellen, Basic nachziehen.
+Erst veröffentlichen (mein Wort): BookLedgerPro 0.1.1 (Windows+Android, erster Lauf über den eigenen Server), Workflow PDF Pro 1.0.8 (Android+Windows), Private Brain Pro Windows 1.0.42; Downloads unabhängig laden, Prüfsummen vergleichen, Links nennen.
+Dann: BookLedgerPro "Mit Workflow PDF scannen" auf den Intent de.familyprojekt.workflowpdf.pro.SCANNEN umstellen, Basic nachziehen.
 Dann nach Rückfrage: Private Brain V3, WPP-Windows Tresorordner. Ein PR je App, bei grüner CI selbst mergen.
 Nichts veröffentlichen ohne mein Wort, keine Schlüssel im Chat, nichts an echten Tresoren ohne Kopie und Rückweg.
 Am Ende: Abschluss mit Stundennachweis, Forschungseintrag, Brief mit Copy-Paste-Startauftrag.
