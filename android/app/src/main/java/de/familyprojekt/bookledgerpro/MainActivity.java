@@ -58,7 +58,7 @@ public class MainActivity extends BridgeActivity {
             // (z. B. Speichermangel), beendet Android ohne Antwort hier die ganze App. Jetzt: Anzeige aus dem Fenster nehmen und das
             // Fenster neu aufbauen — die Daten liegen verschlüsselt in der App, der Tresor fragt danach wie beim Start.
             @Override public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
-                android.util.Log.e("BookLedgerPro", "Anzeige ausgefallen, didCrash=" + (detail != null && detail.didCrash()));
+                android.util.Log.e("BookLedgerPro", "Anzeige ausgefallen, Fenster wird neu aufgebaut");
                 try { android.view.ViewParent p = view.getParent(); if (p instanceof android.view.ViewGroup) ((android.view.ViewGroup) p).removeView(view); }
                 catch (Exception egal) { /* weiter mit Neuaufbau */ }
                 runOnUiThread(MainActivity.this::recreate);
