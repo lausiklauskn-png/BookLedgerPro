@@ -54,6 +54,9 @@ def wait_node(predicate, seconds=90):
 
 def hat(woerter): return lambda a: bool(texte(a) & set(woerter))
 
+def rahmen(node):
+    return list(map(int, re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node['bounds']).groups()))
+
 def tap(node):
     b = list(map(int, re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node['bounds']).groups()))
     adb('shell', 'input', 'tap', (b[0] + b[2]) // 2, (b[1] + b[3]) // 2)
@@ -70,10 +73,21 @@ def deckblatt_weg(ziel, seconds=120):
         try: knoten = [n.attrib for n in hierarchy().iter('node')]
         except (ET.ParseError, RuntimeError): time.sleep(.5); continue
         if any(hat(ziel)(a) for a in knoten): return
+        # 2026-10-29 (Lauf 40808448264): die schwebende SBKIM-Leiste (LEBT/VERKEHR/…) liegt unten über „Zur Anmeldung“; der Tipp
+        # in die Knopfmitte öffnete das LEBT-Fenster. Ein offenes SBKIM-Fenster wird geschlossen, getippt wird eine Stelle des
+        # Knopfes außerhalb der Leiste, sonst ein Stück weiter gewischt.
+        if any(t.startswith('LEBT — Page-Status') for a in knoten for t in texte(a)):
+            zu = next((a for a in knoten if hat(['Schließen', 'Close'])(a) and rahmen(a)[3] - rahmen(a)[1] > 4), None)
+            if zu: tap(zu); time.sleep(1); continue
+        LEISTE = ('SBKIM Live-Status-Widget', 'LEBT —', 'VERKEHR —', 'FREMD —', 'SBKIM-Siegel —', 'Widget ', '🌐 Mycel')
+        leiste = [rahmen(a) for a in knoten if any(t.startswith(LEISTE) for t in texte(a)) and rahmen(a)[3] > rahmen(a)[1]]
         for a in knoten:
             if hat(DECKBLATT)(a):
-                b = list(map(int, re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', a['bounds']).groups()))
-                if b[3] - b[1] > 4: tap(a)
+                b = rahmen(a)
+                if b[3] - b[1] > 4:
+                    frei = [y for y in range(b[1] + 2, b[3] - 1, 4) if not any(l[0] <= (b[0] + b[2]) // 2 <= l[2] and l[1] <= y <= l[3] for l in leiste)]
+                    if frei: adb('shell', 'input', 'tap', (b[0] + b[2]) // 2, frei[len(frei) // 2])
+                    else: adb('shell', 'input', 'swipe', 500, 1300, 500, 900, 300)
                 else: adb('shell', 'input', 'swipe', 500, 1500, 500, 400, 300)
                 break
         else:
