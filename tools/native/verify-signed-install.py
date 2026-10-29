@@ -20,9 +20,28 @@ def adb(*args):
     if r.returncode: raise RuntimeError('ADB ' + str(args[:3]) + ': ' + (r.stdout + r.stderr)[-3000:])
     return r.stdout
 
-def hierarchy():
+def _dump():
     adb('shell', 'uiautomator', 'dump', '--compressed', '/sdcard/blp-release-probe.xml')
     return ET.fromstring(adb('exec-out', 'cat', '/sdcard/blp-release-probe.xml'))
+
+ANR_WARTEN = ['Wait', 'Warten']
+anr_gesehen = []
+
+def hierarchy():
+    # 2026-10-29 (Lauf 40799662485): über der App lag „Pixel Launcher isn't responding“ — der langsame Emulator, nicht die App.
+    # Solche Systemdialoge mit „Warten“ wegtippen (nie „Close app“) und vermerken; die App selbst bleibt ungeschont geprüft.
+    for _ in range(3):
+        root = _dump()
+        texte_alle = [n.get('text', '') for n in root.iter('node')]
+        anr = [t for t in texte_alle if "isn't responding" in t or 'reagiert nicht' in t]
+        if not anr: return root
+        if any(package.split('.')[-1].lower() in t.lower() or 'BookLedger' in t for t in anr):
+            raise RuntimeError('Die App selbst reagiert nicht: ' + repr(anr))
+        knopf = next((n.attrib for n in root.iter('node') if n.get('text', '').strip() in ANR_WARTEN), None)
+        if knopf is None: return root
+        anr_gesehen.append(anr[0]); print('Systemdialog weggetippt (Warten):', anr[0], flush=True)
+        tap(knopf); time.sleep(2)
+    return _dump()
 
 def texte(node): return {node.get('text', '').strip(), node.get('content-desc', '').strip()}
 
@@ -141,7 +160,7 @@ except Exception:
     diagnose(); raise
 proof = {'applicationId': package, 'apkSha256': digest, 'commit': receipt['commit'], 'versionCode': receipt['versionCode'],
          'api': int(adb('shell', 'getprop', 'ro.build.version.sdk').strip()), 'firstInstall': True, 'reinstallPreservesData': True,
-         'developmentProbe': False,
+         'developmentProbe': False, 'systemdialogeWeggetippt': anr_gesehen,
          'probe': 'sichtbare WebView-Oberfläche; Tresor mit Wegwerf-Passwort angelegt; nach Überinstallieren derselben signierten APK „Entsperren" statt Ersteinrichtung; kein Debug-Zugang'}
 Path(str(apk) + '.installation.json').write_text(json.dumps(proof, indent=2, ensure_ascii=False) + '\n')
 print(json.dumps(proof, ensure_ascii=False))
