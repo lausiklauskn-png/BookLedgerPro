@@ -400,3 +400,80 @@ Klaus' eigene Angabe geht vor.
 
 **Lehre und Regel:** Was eine Sitzung über Repos hinweg tun soll, gehört in jede `CLAUDE.md`, die eine Sitzung liest — nicht nur in einen Brief. Seit
 2026-10-28 steht in BookLedgerPros `CLAUDE.md`: jeder Abschluss bekommt den Abschnitt „Stundennachweis“ und eine Zeile in `docs/STUNDENNACHWEIS.md`.
+
+## 18 · Befunde aus der Umbau-Sitzung 5: Windows, Scanner, Updates vom eigenen Server (2026-10-28, Nacht, gemessen)
+
+1. **BookLedgerPro unter Windows nach dem Vorbild Private Brain Pro** (#399): Tauri 2 + WebView2 als Hülle, die Arbeit in einem Java-21-Kindprozess
+   über stdio (je Zeile ein JSON). So bleibt das Tresor-Paket `de.familyprojekt.tresor` byte-gleich mit Android; nur die Ablage (`SafAblage` →
+   `DateiAblage`) ist ausgetauscht. Das Passwort fragt nur die Hülle in einem eigenen Fenster, „Merken“ über DPAPI mit Entropie je Bindung.
+   Gemessen auf dem GitHub-Windows-Rechner: Installieren, Starten, Entfernen. ⚠ Nicht an einem echten Windows-PC.
+2. **Lehre aus der Abnahme:** nach dem Entfernen durch NSIS steht der Registry-Eintrag noch kurz da; die Probe wartet jetzt auf beides (Programmdatei
+   weg **und** Eintrag weg). Dieselbe Falle hatte Private Brain Pro.
+3. **Scanner und Kamera unter Windows** (WPP #39, gemeinsamer Baustein, Pin `native/pro-scanner-herkunft.json`): WIA über ein eingebettetes
+   PowerShell-Skript (`-EncodedCommand`, Auftrag als Base64-JSON in einer Umgebungsvariable — keine Anführungszeichen-Falle in der Befehlszeile);
+   mehrere Scanner (USB, WLAN/Netz) wählbar, Glas oder Einzug, dpi, Farbe; Kamera (Webcam, angeschlossene Digitalkamera als Webcam) als Livebild.
+   Gemessen auf dem GitHub-Rechner: Geräteliste (0 Geräte), „unbekanntes Gerät → SCANNER_FEHLT“, „kaputter Auftrag → SCANNER_AUFTRAG“.
+   ⚠ **Kein echter Scanner, keine echte Kamera gemessen.** Die Probe für „Kamera aus“ war zuerst blind (sah nur das Fenster); jetzt zählt sie die
+   Spuren aus `getUserMedia` und verlangt, dass alle beendet sind.
+4. **Prüfung aller Pro-Varianten auf Updates** (echte GitHub-Daten, nicht nur Code gelesen): Private Brain Pro Android 1.0.40/1.0.41 → 1.0.42 und
+   Windows 1.0.40 → 1.0.41 funktionieren (Windows 1.0.42 ist nicht veröffentlicht). Workflow PDF Pro Android funktioniert (→ 1.0.7).
+   **Workflow PDF Pro Windows war nie eingerichtet:** `windows/signing/updater.pub` leer, keine `latest.json` — der Knopf meldete „nicht eingerichtet“.
+   Behoben wie Android (#40): die Brücke liest die öffentlichen Veröffentlichungen `windows-vX.Y.Z` mit Setup, „Herunterladen“ öffnet die feste
+   Release-Seite. BookLedgerPro hatte keine Updateprüfung (Repo privat → GitHub-Releases von außen nicht lesbar).
+5. **Updates vom eigenen Server** (#400, Klaus' Wahl): `https://family-projekt.de/updates/bookledgerpro/`, je Plattform eine Feed-Datei
+   (`aktuell-windows.json`, `aktuell-android.json`) mit Ed25519-Unterschrift (`.sig`, Base64). Die App glaubt nur der Unterschrift, nimmt nur eine
+   **neuere** Version, baut die Download-Adresse selbst (feste Basis + Dateiname nach festem Muster) und prüft Größe und SHA-256. Hochladen: GitHub-Lauf
+   nur von Hand, rsync mit einem Schlüssel, der auf dem Server über `rrsync` nur in `/srv/family-project/updates` schreiben darf; die Server-Kennung steht
+   fest im Lauf. Eingerichtet in Klaus' Termux und dort gemessen: Probe von außen lesbar, Hochladen mit dem GitHub-Schlüssel geht, `ls /` wird abgelehnt
+   („SSH_ORIGINAL_COMMAND does not run rsync“), Server-Kennung und öffentlicher Schlüssel stimmen mit Lauf und App überein, Geheimnisse
+   `BLP_UPDATE_UPLOAD_KEY` und `BLP_UPDATE_SIGNING_KEY` in GitHub, Sicherung `~/blp-update-schluessel.age`. ⚠ Der ganze Weg (Lauf → Server → App lädt
+   und installiert) ist erst mit der ersten Veröffentlichung gemessen; die gibt es nur auf Klaus' Wort.
+6. **Eine Feed-Datei je Plattform, nicht eine gemeinsame:** mit einer gemeinsamen Datei hätte eine Android-Veröffentlichung die Windows-Angaben
+   überschrieben (oder umgekehrt), solange beide Läufe getrennt sind. Der Windows-Lauf gleicht nur Windows-Dateien ab (rsync mit Filter).
+7. **Android prüft Ed25519 erst ab Version 13 selbst** (API 33); das Tab S6 hat Android 12, die App läuft ab 7 (minSdk 24). Deshalb die kleine
+   Prüfbibliothek `net.i2p.crypto:eddsa:0.3.0` und ein eigener Base64-Leser (`java.util.Base64` gibt es erst ab Android 8). Vor dem Installieren:
+   gleiches Paket, gleiches Signier-Zertifikat, höherer versionCode — sonst wird nichts installiert. JVM-Probe `UpdateFeedTest` 11 grün mit echten
+   openssl-Unterschriften. ⚠ Androids Installieren-Fenster und die Erlaubnis „Apps installieren“ sind am Gerät nicht gemessen.
+8. **Die eingebaute Java-Laufzeit war zu klein** (rot in CI, Lauf 40779862754): jlink nahm nur `java.base,java.logging`; `DesktopUpdates` braucht
+   `java.net.http`, und Ed25519 liegt in Java 21 noch in `jdk.crypto.ec` (erst ab 22 in `java.base`). Folge: der Kindprozess startete gar nicht
+   (`NoClassDefFoundError` → `APP_RUNTIME_UNAVAILABLE`). Lokal mit jlink nachgestellt: ohne die Module rot, mit grün; `KeyFactory.getInstance("Ed25519")`
+   meldet mit `jdk.crypto.ec` „SunEC version 21“, ohne wirft es. Die Engine-Proben liefen mit dem vollen JDK und sahen es nicht. Lehre: jede neue
+   Java-Klasse aus einem anderen Modul braucht einen Blick auf die jlink-Liste; die Protokoll-Probe gegen die **gebündelte** Laufzeit ist der Wächter
+   und nennt jetzt den Startfehler.
+9. **Zweites Bedeutungs-Modell verdrahtet** (Private Brain Pro #114): Stufe Mittel/Groß nur für die App-Suche, eigene Werte (IndexedDB `pb_meaning_v1`),
+   Mycel/Siegel/Modul 03 bleiben e5-small. Die Suche nutzt das große Modell nur, wenn alles eingeordnet ist, sonst Modul 03. Proben `test-meaning` 34,
+   Gegenprobe 12/12. ⚠ Echtes Modell in der App und am Gerät nicht gemessen (siehe § 16.4 für die Lernlauf-Zahlen).
+10. **`pro-geraet.js` (Fassung 3) nachgezogen** nach Workflow PDF Pro und BookLedgerPro, byte-gleich über die Pins. In Workflow PDF Pro musste er in die
+   Liste der Bedien-Dateien (`bedienFiles`), sonst lud ihn die App nicht.
+11. **Basic** zweimal nachgezogen (#13 auf `26a25fc`, #14 auf `1127038`); für die PWA wirkt jeweils nur der Cache-Bump, alles Neue hängt an
+   `window.BLPNative`.
+
+## 19 · Befunde aus Schritt 4: Workflow-PDF-Kern 1.1.4 und Workflow PDF Pro 1.0.8 (2026-10-29, Nacht, gemessen)
+
+Kern-PR Workflow-PDF #136 (main `2ac96d4`), Pro-App Workflow-PDF-Pro #41 (`upstream/` = Kern `1937478`, 203 Dateien, 0 Abweichung).
+
+1. **Die Arbeitsleiste zeichnete sich endlos neu:** `pruefLeiste` verglich mit `innerHTML`, das der Browser normalisiert (und `strich.js` ersetzt
+   Emojis darin) — nie gleich. Jetzt Vergleich mit dem erzeugten HTML (`l._html`). Lehre: nie gegen die Serialisierung des DOM vergleichen.
+2. **`einordnenLauf` las seinen eigenen Lauf vor der Zuweisung (TDZ):** das Versprechen wurde in `BED.einLauf` gemerkt, während der asynchrone Rumpf
+   schon synchron lief. Jetzt `await Promise.resolve()` als erste Zeile. Lehre: ein asynchroner Selbstbezug braucht erst einen Mikrotakt.
+3. **Nach dem Zurückschalten auf Deutsch stand das Emoji kurz als Text da:** `sprache.js` schrieb das Original zurück, nachdem `strich.js` schon lief.
+   Jetzt ruft der Satz-Aufbau selbst `Strich.ersetzen`; ein `svg[data-strich]` zählt im Schlüssel als sein Emoji, die Wörterbücher bleiben unverändert.
+4. **Kopfzeile bei 320 px nur in CI abgeschnitten:** die CI-Schrift ist breiter; sechs Knöpfe zu 32 statt 31 px machten die Gruppe 5 px breiter. Die
+   flachen Kopf-Maße gelten erst ab 521 px. Lehre: Kopfzeile mit der CI-Schrift messen (`kopfzeile-schrift.mjs`, DejaVu).
+5. **Echter Fehler, in CI gefunden: die erste Suche nach dem Neuladen fand nichts.** Seitentext wird jetzt erst beim Suchen geladen; kam er aus IndexedDB
+   statt neu gerechnet, galt er nicht als „neu“ und die Liste wurde nicht neu gezeichnet. Jetzt zählt auch Text aus dem Speicher als neu. Derselbe Fehler
+   machte WPP `web-core` rot.
+6. **Probe B12b war zweimal blind:** die Bedeutungssuche zeichnet die Liste von selbst neu und deckte den Fehler zu; erst ein eigener Kontext ohne
+   Bedeutungssuche fängt ihn (Fall 16). Lehre: eine Probe braucht einen Kontext, in dem kein anderer Weg dieselbe Arbeit tut.
+7. **`window.ProHintergrund` gibt es in der Pro-App immer** — eine Probe auf sein Dasein misst nichts; geprüft wird `verfuegbar()`.
+8. **Bibliothek lädt nur Vorschaubilder (gemessen):** beim Öffnen 0 Lesezugriffe auf Dateien, 0 auf Seitentext, 0 × `getDocument`. Ausnahme: Sortieren
+   nach Dateigröße liest die Dateien weiter.
+9. **Scanner direkt aus BookLedgerPro (Android):** Workflow PDF Pro versteht jetzt den Intent `de.familyprojekt.workflowpdf.pro.SCANNEN` (Paket fest,
+   Zusatz `von`, höchstens 40 Zeichen), beim Kaltstart und in der laufenden App; „Durchsuchbar“ gilt nur für diesen Scan. Rückweg „Teilen“ →
+   BookLedgerPro (Android erlaubt keine Vorauswahl). JVM-Probe `ScanDirektTest` 2. ⚠ BookLedgerPro ruft den Intent **noch nicht** auf (heute
+   `BlpTresor.appOeffnen`); Windows hat keinen solchen Weg.
+10. **Fach `Eingang-WorkflowPDF`** wird in „Tresor & Ablage“ und als Hinweis über den Karten gezeigt, in 192-KB-Stücken gelesen, über `importDateien`
+    eingelesen und danach „übernommen“ markiert; das Tresor-Paket ist unverändert. ⚠ Nur mit gestellter Brücke gemessen.
+11. Proben: Kern `npm test` 0 · neu `tests/arbeit.mjs` 40 · Gegenprobe `gegenprobe_arbeit.mjs` 16/16 gefangen · drei tote Gegenprobe-Anker, schon auf
+    main kaputt, nebenbei repariert. WPP `verify-upstream` 203/0 · `test:native-web` 57/0. ⚠ Kein Tablet; echtes Sprach- und Bildmodell, echte
+    Android-Mitteilung und echter Ordner nicht gemessen; die SBKIM-Mycel-Pille (byte-1:1) trägt weiter ihr Zeichen.
