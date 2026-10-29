@@ -21,7 +21,7 @@ import { showIntro } from './ui/intro.js';
 // ersten Anstrich: gemessen 144 Modul-Anfragen unter src/, bevor das Deckblatt
 // ueberhaupt gebaut wurde. Build-frei bleibt es (goldene Regel 1): dynamischer
 // import() ist natives ES, kein Bundler.
-import { applyTheme, applyGemerktesThema } from './ui/theme.js';
+import { applyTheme, applyGemerktesThema, applySchrift } from './ui/theme.js';
 import { setLang } from './ui/i18n.js';   // i18n zieht das Deckblatt ohnehin (t())
 import { ladeSymbole } from './ui/icons.js';
 import { strichBeobachten } from './ui/strich.js';
@@ -72,6 +72,7 @@ async function boot() {
   const settings = await hydrateSettings();
   setLang(settings.lang);
   applyTheme(settings.theme, settings.themeFarbe);
+  if (settings.schrift) applySchrift(settings.schrift);
 
   // Kontenplan + Kostenstellen einmalig anlegen.
   const { ensureAccountsSeeded } = await import('./domain/store.js');

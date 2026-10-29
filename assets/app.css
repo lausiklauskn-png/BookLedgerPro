@@ -893,3 +893,52 @@ input[type="password"], input[type="text"], input[type="number"], input[type="da
 /* Gegenprobe 2026-10-29 (Punkt 5, Release-Probe 40840596381): die schwebende SBKIM-Leiste darf „Zur Anmeldung“ nie verdecken —
    unten so viel Platz wie die Leiste, dann lässt sich der Knopf immer darüber rollen. */
 .intro-screen { padding-bottom: calc(1.5rem + var(--leisten-platz)); }
+/* Befund Tablet 2026-10-29 abends: Belege — alle Knöpfe oben, Ablagefläche, Belege gleich darunter, neuer Beleg markiert. */
+.beleg-werkzeuge { display: grid; gap: .55rem; }
+.beleg-knoepfe { gap: .4rem; }
+.ablage-zeile { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; min-width: 0; }
+.beleg-ablage { flex: 1 1 14rem; min-width: 0; display: flex; align-items: center; gap: .5rem; padding: .45rem .7rem; border: 2px dashed var(--border); border-radius: var(--radius-sm);
+  color: var(--text-muted); background: var(--surface-2); font-size: .9rem; cursor: copy; caret-color: transparent; overflow-wrap: anywhere; }
+.beleg-ablage:focus-visible, .beleg-ablage.ablage-aktiv { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); color: var(--text); }
+.beleg-ablage svg { flex: none; width: 1.2rem; height: 1.2rem; }
+.werkzeug-platz:empty { display: none; }
+.werkzeug-fenster { margin: 0; }
+.werkzeug-kopf { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.werkzeug-kopf .card-title { flex: 1 1 auto; margin: 0; }
+[data-werkzeug][aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+.beleg-zeile.beleg-neu > td { background: var(--accent-soft); }
+.beleg-zeile.beleg-neu .beleg-name { font-weight: 600; }
+/* Handy: die Knöpfe etwas kleiner und zeilenfüllend (meist zwei je Zeile), damit die Belege früher kommen. Kein Umbruch im Knopf (≤ 32 px). */
+@media (max-width: 560px) {
+  .beleg-knoepfe { gap: .3rem; }
+  .beleg-knoepfe > .btn { flex: 1 1 auto; font-size: .86rem; padding-inline: .5rem; justify-content: center; }
+  .beleg-werkzeuge [data-import-status]:empty { display: none; }
+  .beleg-werkzeuge { gap: .4rem; padding-block: .7rem; }
+  .beleg-ablage { font-size: .82rem; padding: .35rem .55rem; }
+}
+/* Schriftgröße (Klaus 2026-10-29): Knopf „A··A“ im Kopf, Schieberegler darunter. */
+.schrift-knopf { gap: 0; padding-inline: .45rem; line-height: 1; font-weight: 600; }
+.schrift-a.klein { font-size: .72rem; }
+.schrift-a.gross { font-size: 1.05rem; }
+.schrift-punkte { font-size: .7rem; letter-spacing: .05em; padding-inline: .1rem; color: var(--text-muted); }
+.schrift-popover { min-width: min(92vw, 18rem); display: grid; gap: .5rem; }
+.schrift-zeile { display: flex; align-items: center; gap: .5rem; }
+.schrift-zeile input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--accent); }
+.schrift-wert { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 3.5em; }
+/* „Über“: Version und „Auf Updates prüfen“ in einer Zeile, die Meldung darunter. */
+.version-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; }
+.version-zeile > [data-app-version] { margin: 0; }
+.version-zeile > [data-update] { display: contents; }
+.version-zeile [data-update-status] { flex: 1 1 100%; margin: 0; }
+.version-zeile [data-update-status]:empty { display: none; }
+/* Vorschau: Titel mit X oben rechts (bleibt beim Rollen oben). */
+.vorschau-kopf { display: flex; align-items: flex-start; gap: .5rem; position: sticky; top: -1px; z-index: 2; background: var(--surface); padding-block: .2rem; }
+.vorschau-kopf .vorschau-titel { flex: 1 1 auto; min-width: 0; }
+.vorschau-x { flex: none; width: 2rem; height: 2rem; padding: 0; font-size: 1.05rem; line-height: 1; }
+/* Frisch angekommen: „neu“ neben dem Namen (fett, wie eine ungelesene Mail). */
+.neu-marke { flex: none; margin-left: .35rem; padding: 0 .35rem; border-radius: 999px; font-size: .72rem; font-weight: 700; color: var(--accent-strong); border: 1px solid var(--accent); line-height: 1.4; }
+/* Seitentitel klein in der Kopfleiste (Klaus 2026-10-29, Leitfaden § 1.7): die große <h1> nimmt keinen Platz mehr, bleibt aber vorlesbar. */
+.kopf-titel { font-size: .9rem; font-weight: 600; color: var(--text-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kopf-titel::before { content: "·"; margin: 0 .35rem 0 .1rem; color: var(--border-control, var(--text-muted)); }
+.brand { min-width: 0; }
+.titel-im-kopf { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; white-space: nowrap !important; border: 0 !important; }
