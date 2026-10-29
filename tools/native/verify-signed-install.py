@@ -81,6 +81,11 @@ def deckblatt_weg(ziel, seconds=120):
                 if b[3] - b[1] > 4: tap(a)
                 else: adb('shell', 'input', 'swipe', 500, 1500, 500, 400, 300)
                 break
+        else:
+            # 2026-10-29 (0.1.2): seit Version und „Auf Updates prüfen“ auf dem Deckblatt (#400) liegt „Zur Anmeldung“ unter dem
+            # sichtbaren Bereich und fehlt im Baum ganz. Steht das Deckblatt da (App-Name sichtbar), nach unten wischen.
+            if any('BookLedgerPro' in texte(a) for a in knoten):
+                adb('shell', 'input', 'swipe', 500, 1500, 500, 400, 300)
         time.sleep(1)
     wait_node(hat(ziel), 5)
 
