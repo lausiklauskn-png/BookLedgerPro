@@ -541,3 +541,26 @@ PRs: BLP #402 (Intent), #403 (0.1.2), #404–#408 (Release-Probe), Basic #16/#17
    im Browser bei 360–412 px lag der Knopf ganz unten frei. Je nach Größe, die der Emulator für den Rahmen meldet, klappte es oder nicht — das erklärt die sechs
    Anläufe von 0.1.2. App: `.intro-screen` unten `var(--leisten-platz)` mehr Platz (Knopf bei 412 px 76 px höher, nie unter der Leiste). Probe: ohne freie
    Stelle die Leiste über „Widget schließen“ zu, dann tippen.
+
+## 22 · Befunde aus Klaus' Gegenprobe am Tablet (Pro-Umbau 8, 2026-10-29 abends, gemessen)
+
+1. **„Geht nicht“ war „geht, aber unsichtbar“.** Klaus' Bild zeigte „Eingefügt 2026-10-29 17-07 (Scan).pdf“ — diesen Namen vergibt nur die Schnellerfassung
+   beim Einfügen eines Bildes. Das Einfügen hatte geklappt; der Beleg stand aber unter fünf Kästen, und das Feld sagte nur „Belegtext“. Lehre: eine Wirkung,
+   die man nicht sieht, ist für den Menschen ein Fehler. Was hereinkommt, gehört dorthin, wo man hinschaut, und markiert (Leitfaden § 1.9).
+2. **Ein Klassenname, zwei Felder.** Das Suchfeld trägt wie die Schnellerfassung `.beleg-text`. Nachdem die Schnellerfassung erst auf Knopfdruck aufgeht,
+   tippten zwei Proben ins Suchfeld und wurden aus scheinbar fremdem Grund rot. Lehre: Proben wählen Elemente nach Rolle (`textarea.beleg-text`, `data-…`),
+   nicht nach einer Gestaltungsklasse.
+3. **Ein Menü in einer Tabellenkarte wird abgeschnitten.** `position: absolute` in einem Kasten mit `overflow` → man muss im Menü rollen. Fest am Fenster
+   (`position: fixed`) und beim Rollen mitrücken — **nicht** schließen: der Tipp auf ⋯ rollt die Zeile oft erst ins Bild, und dieses verspätete
+   Rollen schloss das Menü sofort wieder (`smoke_belegliste` fand es).
+4. **Die große Überschrift wandert in den Kopf — und nimmt ein ⓘ mit.** `schlank.js` hängt das ⓘ eines Erklärsatzes an die Überschrift davor; stand der
+   Satz direkt unter der Seitenüberschrift, lag das ⓘ danach unsichtbar im Kopf-Ersatz. Jetzt nur an Zwischenüberschriften (h2–h4).
+5. **Eine Sabotage kann ins Leere gehen.** Die erste Gegenprobe „Menü fest am Fenster“ (Aufruf entfernt) blieb grün, weil das Mitrücken beim Rollen das
+   Menü ohnehin legte; erst die Sabotage der Ursache (`position: fixed`) fing. Ebenso im Reiniger: ein absolut gesetztes Fenster bleibt in seiner
+   Rasterzeile — die Sabotage „über den Kopf“ griff erst ohne Rasterzeile.
+6. **Schriftgröße über das Wurzelelement:** die App misst überwiegend in `rem` (303 Stellen, 179 `px` meist Linien), darum wächst fast alles mit
+   (gemessen: Überschrift ×1,30 bei 130 %). Gemerkt wie das Thema im `localStorage` und vor dem ersten Anstrich gesetzt (`index.html`).
+7. **Basic hat keine App-Hülle:** ein Probenteil, der die App-Brücke braucht, muss sie über `arten` auslassen — sonst ist Basic rot, obwohl nichts fehlt (#415).
+8. **Umgebung:** `smoke_belege` braucht `playwright-core` 1.56 und einen Workflow-PDF-Klon daneben; hier fehlen beide → 14 ROT, auf `main` genauso.
+   BookLedgerPro hat kein `node_modules`; `NODE_PATH` auf ein anderes Repo hilft nur beim Laden.
+9. ⚠ Nicht gemessen: alles am Gerät; Einfügen per langem Druck in der Android-WebView.
