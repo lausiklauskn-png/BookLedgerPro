@@ -564,3 +564,25 @@ PRs: BLP #402 (Intent), #403 (0.1.2), #404–#408 (Release-Probe), Basic #16/#17
 8. **Umgebung:** `smoke_belege` braucht `playwright-core` 1.56 und einen Workflow-PDF-Klon daneben; hier fehlen beide → 14 ROT, auf `main` genauso.
    BookLedgerPro hat kein `node_modules`; `NODE_PATH` auf ein anderes Repo hilft nur beim Laden.
 9. ⚠ Nicht gemessen: alles am Gerät; Einfügen per langem Druck in der Android-WebView.
+
+## 24 · Befunde aus Klaus' Gegenprobe am Tablet (Pro-Umbau 9, 2026-10-29 spät, gemessen)
+
+(§ 23 steht in #417, der Nachtrag zu Umbau 7.)
+
+1. **Die APK hatte größere Schrift als die PWA, weil die WebView Androids Systemschrift übernimmt.** `WebSettings.textZoom` steht ab Werk auf der
+   Systemschrift in Prozent; Chrome für die PWA rechnet anders. Ein eigener Schriftregler („A··A“) und dieser Zoom vervielfachen sich. Abhilfe: `setTextZoom(100)`
+   in `MainActivity`, größer nur über den eigenen Regler. Gilt für jede Pro-App mit Capacitor (WPP, PB haben ihn noch nicht). ⚠ Am Samsung nicht gemessen.
+2. **„Knöpfe nicht größer, nur die Schrift“ heißt: Höhe in px, Innenabstand fast null.** Die App misst in `rem`; ein Knopf mit `padding .25rem` und
+   `line-height 1.25` wuchs bei 150 % auf 38 px. Mit `padding-block: 1px` und `line-height: 1.15` bleibt er bei `--control-h` (30 px), die Schrift wächst
+   ×1,5 (gemessen in 95 Knöpfen bei 640/1000 px).
+3. **Ein ⓘ „vor dem Satz“ erzeugt eine Zeile, wenn davor eine Knopfreihe steht.** In den Einstellungen steht der Erklärsatz unter der Knopfreihe; die alte Regel
+   hängte das ⓘ nur an eine Zwischenüberschrift direkt davor. Jetzt rückwärts zur nächsten Beschriftung (auch eine bis drei Ebenen höher, nie über eine andere
+   Karte), mehrere Sätze teilen sich ein ⓘ, ein Satz unter dem Seitentitel bekommt das ⓘ hinter dem kleinen Titel im Kopf (Stellvertreter-Knopf, weil die h1
+   nur für Vorleser da ist). Die Probe misst, ob links vom ⓘ Text derselben Zeile steht — nicht, ob es „irgendwo“ ein ⓘ gibt.
+4. **Ein Leerzeichen vor dem ⓘ brach zwei alte Proben** (`textContent === 'Modus'` wurde „Modus “). Abstand gehört ins CSS, nicht in den Text.
+5. **„Fehlgeschlagen nach 3 Sekunden, kein Protokoll, `runner_id` 0“ ist kein Fehler im Code.** Die Freiminuten des privaten Repos waren aufgebraucht, das
+   Budget stand auf 0 $ → GitHub startet keine Läufe mehr und berechnet nichts. Die Abrechnungsseite zeigt den Listenpreis (274 $) als „Verbrauch“ und zieht
+   ihn als „enthaltene Nutzung“ wieder ab; zu zahlen war 0. Klaus hat BookLedgerPro daraufhin öffentlich gestellt (vorher geprüft: Signaturschlüssel nur
+   verschlüsselt, keine Zugangsschlüssel im Verlauf, nur Beispiel-IBANs). Läufe sparsamer: Push nur auf `main`, Android/Windows nur bei passenden Pfaden.
+6. **Das Nachzieh-Werkzeug von Basic löschte neue Basic-eigene Dateien**, weil sie im alten Pin noch als „aus Pro“ standen. Jetzt nie löschen, was Basic-eigen ist.
+7. ⚠ Nicht gemessen: alles am Gerät (textZoom, Update-Link mit echtem Server, Mikrofon im Feld bei echter Erkennung).
