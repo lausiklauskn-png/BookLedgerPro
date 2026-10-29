@@ -477,3 +477,37 @@ Kern-PR Workflow-PDF #136 (main `2ac96d4`), Pro-App Workflow-PDF-Pro #41 (`upstr
 11. Proben: Kern `npm test` 0 · neu `tests/arbeit.mjs` 40 · Gegenprobe `gegenprobe_arbeit.mjs` 16/16 gefangen · drei tote Gegenprobe-Anker, schon auf
     main kaputt, nebenbei repariert. WPP `verify-upstream` 203/0 · `test:native-web` 57/0. ⚠ Kein Tablet; echtes Sprach- und Bildmodell, echte
     Android-Mitteilung und echter Ordner nicht gemessen; die SBKIM-Mycel-Pille (byte-1:1) trägt weiter ihr Zeichen.
+
+## 20 · Befunde aus der Umbau-Sitzung 6: Scanner-Intent und Test-APKs (2026-10-29, Nacht, gemessen)
+
+PRs: BLP #402 (Intent), #403 (0.1.2), #404–#408 (Release-Probe), Basic #16/#17, WPP #41 (aus Umbau 5 übernommen), WPP #42 (Doku).
+
+1. **Ein Abschluss kann „alles auf main“ sagen, wenn zwei PRs noch offen sind.** BLP #401 und WPP #41 standen offen, CI lief noch. Lehre: am
+   Sitzungsbeginn den Stand der PRs der Vorsitzung selbst lesen, nicht dem Abschluss glauben.
+2. **Der Brief nannte „BookLedgerPro 0.1.1“ als neue Veröffentlichung — 0.1.1 war seit dem 28.10. abends draußen.** Erst die Liste der Releases zeigte es.
+   Lehre: vor jedem Veröffentlichungslauf `releases` lesen; Version und Buildnummer erhöhen, sonst lehnt die Probe ab oder die App aktualisiert nicht.
+3. **Intent mit Rückfall in Stufen:** `resolveActivity` auf den Intent `SCANNEN` (Paket fest, `<queries>` nennt das Paket schon) → sonst
+   `getLaunchIntentForPackage` → sonst `APP_FEHLT`. Damit läuft BookLedgerPro 0.1.2 auch neben Workflow PDF Pro ≤ 1.0.7 (die Antwort `weg: "app"`
+   wählt den alten Satz). Die Seite fällt bei fehlender Methode (Windows-Hülle, ältere Android-Hülle) auf `appOeffnen` zurück — drei Proben dafür in
+   `smoke_befunde` A2, Gegenprobe (Direktweg weg) genau eine rote Zeile.
+4. **Die Ereignisse der PR-Überwachung meldeten „success“, während GitHub die Läufe noch als „in_progress“ führte; auch zwei Weckrufe kamen vor ihrer
+   Zeit.** Nur die Lauf-Abfrage (`actions/runs/<id>`) zählt. Lehre: bei Freigaben und Merges immer den Lauf selbst lesen.
+5. **Emulator-Probe der Veröffentlichung, acht Anläufe für zwei APKs.** WPP Versuch 1 — nach Enter im Ordner-Dialog stand der Startbildschirm da (Ursache
+   offen, im Browser fehlerfrei nachgespielt, Versuch 2 bestanden, beides API 31; die „API 35“ im Protokoll ist nur die Quelle des WebView-Pakets).
+   BookLedgerPro brauchte sechs Anläufe, jeder zeigte eine neue Schicht:
+   (1) „Passwortfeld 2 ließ sich nicht sicher füllen“ → #404 (drei Wege, Lage ins Protokoll); (2) Systemabbild-Download kaputt („Error on ZipFile“), Probe lief
+   nicht; (3) sichtbar nur **„Pixel Launcher isn't responding“** → #405 tippte „Warten“; (4) das Deckblatt ist seit #400 (Version, „Auf Updates prüfen“) länger,
+   „Zur Anmeldung“ fehlte im Baum → #406 wischt weiter; (5) Siegel-/LEBT-Fenster offen: ein „Warten“-Tipp traf die App, als der Dialog schon weg war →
+   #407 blendet Fehlerdialoge im Wegwerf-Emulator aus (`settings put global hide_error_dialogs 1`) und tippt nichts blind; (6) Erstinstallation bestanden,
+   aber nach dem Überinstallieren traf der Tipp in die Mitte von „Zur Anmeldung“ die **schwebende SBKIM-Leiste** (LEBT-Fenster) → #408 tippt eine freie Stelle
+   des Knopfes; danach grün (Lauf 40811612794). Lehren: eine Probe muss ihre Lage selbst ins Protokoll schreiben (Artefakte sind aus der Sitzung nicht
+   ladbar, Speicherhost gesperrt); nie blind auf einen Dialog tippen, der verschwinden kann; schwebende Leisten über Knöpfen sind auch für Menschen am
+   kleinen Bildschirm eine Falle (für Klaus' Gegenprobe vermerkt). Der Versionssprung 0.1.1 → 0.1.2 brachte die längeren Deckblatt-Zeilen, die die alte
+   Probe nicht kannte — eine Änderung am Deckblatt verlangt einen Blick in `verify-signed-install.py`.
+6. **Gradle fand Maven-Central-Pakete nicht** (WPP Freigabeprüfung, `android-product (35)`), bevor ein Test lief → einmal neu gestartet, grün.
+7. **Zwei Sitzungen gleichzeitig:** die Vorsitzung übernahm Basic #15 während dieser Sitzung; Basic #16 bekam dadurch einen Konflikt in `CLAUDE.md` und
+   `HERKUNFT-PRO.json`. Gelöst durch Zusammenführen und **neues Nachziehen** (der Pin wird geschrieben, nie von Hand gemischt).
+8. **Erster Lauf über den eigenen Server:** BookLedgerPro 0.1.2 — Update-Datei gebaut, unterschrieben, gegen den Schlüssel der App geprüft, nach
+   `family-projekt.de/updates/bookledgerpro/` hochgeladen und von außen geprüft (alles im Lauf grün; aus der Sitzung ist der Host gesperrt).
+9. ⚠ Nicht gemessen: der Intent zwischen zwei echten signierten Apps, am Tablet; „Auf Updates prüfen“ 0.1.2 → nächste Fassung erst mit der nächsten
+   Veröffentlichung. Windows nicht veröffentlicht (Klaus: später).
