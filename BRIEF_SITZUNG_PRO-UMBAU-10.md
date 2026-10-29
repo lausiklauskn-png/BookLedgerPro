@@ -21,7 +21,10 @@ Scanner/Kamera WIA, Updates vom eigenen Server, `windows.yml` grün), aber **nie
    **Wer testet was:** Klaus' Freund (hat die Familienakte gebaut, baut parallel ein eigenes Programm; die beiden tauschen sich aus) testet
    Windows **an seinem eigenen PC mit seinen eigenen Daten**; Klaus testet Android. Keine Daten von Klaus auf dem PC des Freundes.
    - eine kurze Anleitung für den Freund: Download, Windows-Warnung beim unsignierten Setup („Weitere Informationen“ → „Trotzdem ausführen“),
-     erster Start (Tresor anlegen), was er prüfen soll, wie er Befunde schickt;
+     erster Start, was er prüfen soll, wie er Befunde schickt. **Zum Ausprobieren der Test-Modus** (Passwort-Seite → „Test-Modus“ →
+     „+ Neuer Test“ → Inhalt „Mit Demo-Daten“ oder „Vierteljahr“, eigenes Test-Passwort, getrennt von echten Daten, behalten oder spurlos
+     verwerfen); danach „Zu den echten Daten“ und eigener Tresor. Vorher geht der Test-Modus schon in BookLedger Basic im Browser.
+     In der Windows-Fassung prüfen, dass „Test-Modus“ und beide Demo-Inhalte dort wirklich erscheinen und laden;
    - auf Klaus' Wunsch eine Abgleich-Seite für ihn (Download, kurze Beschreibung, Link zum öffentlichen Repo), Vorbild Familienakte
      `BRIEF_ABSCHLUSS_2026-10-29_FASSUNG-2.28.3-UND-ABGLEICH.md`.
 4. Danach nach Rückfrage: Leitfaden § 1.7–1.9 und die Befunde aus Umbau 9 (ⓘ hinter dem Wort, textZoom 100, Knöpfe fest, Version im Kopf) in
