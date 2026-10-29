@@ -46,6 +46,8 @@
     if (['system', 'light', 'dark'].indexOf(hell) < 0) hell = 'system';
     if (hell === 'system') { try { hell = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch (e) { hell = 'light'; } }
     var h = document.documentElement; h.setAttribute('data-theme', hell); h.setAttribute('data-farbe', farbe);
+    /* Schriftgröße (Klaus 2026-10-29): gemerkte Prozent, 85–150 in 5er-Schritten — dieselbe Regel wie schriftNormal in theme.js. */
+    try { var sg = Math.round(Number(localStorage.getItem('blpr_schrift')) / 5) * 5; if (sg >= 85 && sg <= 150 && sg !== 100) { h.style.fontSize = sg + '%'; h.setAttribute('data-schrift', String(sg)); } } catch (e) {}
   })();
   </script>
   <!-- Service-Worker FRÜH anmelden (Klaus 2026-10-26, Lehre aus Workflow PDF „405 Not Allowed"): Teilen aus

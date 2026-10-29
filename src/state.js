@@ -16,6 +16,7 @@ const DEFAULTS = Object.freeze({
   alleEinstellungen: false, // F3: zeigt auch die im Modus ausgeblendeten Einstellungen
   theme: 'system',      // system / light / dark (Helligkeit)
   themeFarbe: 'blau',   // blau / graphit / petrol (Farbe) — Start wie Private Brain Pro
+  schrift: 100,         // Schriftgröße in Prozent (85–150, Klaus 2026-10-29), gemerkt auch im localStorage (theme.js)
   lang: 'de',
   aiAutonomy: 'suggest', // suggest / draft / auto
   taxProfile: 'DE',     // Deutschland zuerst

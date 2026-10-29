@@ -80,3 +80,28 @@ export function applyGemerktesThema() {
 
 export function getThemeMode() { return _mode; }
 export function getFarbe() { return _farbe; }
+
+// ── Schriftgröße (Klaus 2026-10-29: „ein Schieberegler für die Größe der Schrift … weil es auch Leute gibt, die nicht so gut lesen
+// können“). Prozent der Grundschrift am <html> (die App misst in rem → fast alles wächst mit). Gemerkt wie das Thema: im localStorage
+// (nur die Zahl, nichts Persönliches; index.html liest sie vor dem ersten Anstrich) und in den Tresor-Einstellungen.
+export const SCHRIFT_KEY = 'blpr_schrift';
+export const SCHRIFT_MIN = 85, SCHRIFT_MAX = 150, SCHRIFT_SCHRITT = 5;
+
+/** Reine Logik (node-getestet): auf 5er-Schritte runden, in die Grenzen holen; Unbekanntes → 100. */
+export function schriftNormal(v) {
+  const n = Math.round(Number(v) / SCHRIFT_SCHRITT) * SCHRIFT_SCHRITT;
+  return Number.isFinite(n) && n > 0 ? Math.min(SCHRIFT_MAX, Math.max(SCHRIFT_MIN, n)) : 100;
+}
+
+/** Setzt die Schriftgröße (Prozent) und merkt sie. Gibt den angewandten Wert zurück. */
+export function applySchrift(v) {
+  const p = schriftNormal(v);
+  const html = document.documentElement;
+  html.style.fontSize = p === 100 ? '' : p + '%';
+  html.setAttribute('data-schrift', String(p));
+  try { localStorage.setItem(SCHRIFT_KEY, String(p)); } catch { /* nur für diese Sitzung */ }
+  return p;
+}
+export function gemerkteSchrift() {
+  try { return schriftNormal(localStorage.getItem(SCHRIFT_KEY) || 100); } catch { return 100; }
+}

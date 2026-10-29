@@ -5,7 +5,8 @@
 
 import { el, mount, clear } from './dom.js';
 import { t, setLang, LANGS, istProApp } from './i18n.js';
-import { applyTheme, FARBEN, HELLIGKEITEN } from './theme.js';
+import { kopfTitelBeobachten } from './kopfTitel.js';
+import { applyTheme, FARBEN, HELLIGKEITEN, applySchrift, gemerkteSchrift, SCHRIFT_MIN, SCHRIFT_MAX, SCHRIFT_SCHRITT } from './theme.js';
 import { icon, ladeSymbole } from './icons.js';
 import { strichBeobachten } from './strich.js';
 import { schlankBeobachten } from './schlank.js';
@@ -181,6 +182,7 @@ export function renderShell(container, { onLock } = {}) {
   try { mikrofonBeobachten(container); } catch { /* ohne MutationObserver: Felder bleiben tippbar */ }
   // Strichgrafiken statt Emojis in ALLEN Ansichten, Dialogen und Hinweisen (Pro-Umbau 4, Leitfaden § 5): einmal am <body>.
   try { strichBeobachten(document.body); schlankBeobachten(document.body); } catch { /* ohne Beobachter bleibt der Text */ }
+  try { kopfTitelBeobachten(document.body); } catch { /* ohne Beobachter bleibt die Überschrift im Inhalt */ }
   _container = container;
   _onLock = onLock || (() => {});
   ladeSymbole();
@@ -243,7 +245,9 @@ function header(s) {
         e.currentTarget.setAttribute('aria-expanded', open ? 'true' : 'false');
       },
     }, [icon('pb-menu')]),
-    el('div', { class: 'brand' }, [MycelMark(28), el('span', { class: 'brand-name', text: t('app.name') })]),
+    el('div', { class: 'brand' }, [MycelMark(28), el('span', { class: 'brand-name', text: t('app.name') }),
+      // Seitentitel klein im Kopf (kopfTitel.js) statt groß über dem Inhalt.
+      el('span', { class: 'kopf-titel', 'data-kopf-titel': '', hidden: true })]),
     // Installieren OBEN in der Kopfleiste (Klaus 2026-10-18: „in den Einstellungen vermutet keiner,
     // dass er die App installieren kann"). Immer da, solange die App nicht installiert ist — nicht nur,
     // wenn Chrome es anbietet. Der Tipp geht an den Knopf von assets/installieren.js (byte-1:1 aus Sage,
@@ -270,6 +274,11 @@ function header(s) {
         class: 'btn btn-ghost btn-sm btn-icon thema-knopf', title: t('app.themeTitle'), 'aria-label': t('app.themeTitle'),
         'data-thema-knopf': '', onClick: (e) => themaPopover(e.currentTarget, s),
       }, [icon('blp-palette')]),
+      // Schriftgröße (Klaus 2026-10-29): „ein kleines A, Punkt, Punkt, ein großes A … da weiß man, da kann die Schrift vergrößert werden“.
+      el('button', {
+        class: 'btn btn-ghost btn-sm schrift-knopf', type: 'button', title: t('app.schriftTitel'), 'aria-label': t('app.schriftTitel'),
+        'data-schrift-knopf': '', 'aria-haspopup': 'dialog', onClick: (e) => schriftPopover(e.currentTarget),
+      }, [el('span', { class: 'schrift-a klein', 'aria-hidden': 'true', text: 'A' }), el('span', { class: 'schrift-punkte', 'aria-hidden': 'true', text: '··' }), el('span', { class: 'schrift-a gross', 'aria-hidden': 'true', text: 'A' })]),
       el('button', {
         class: 'btn btn-ghost btn-sm btn-icon',
         title: t('app.reloadTitle'), 'aria-label': t('app.reload'),
@@ -328,6 +337,33 @@ function themaPopover(anker, s) {
     if (!b) return;
     setTimeout(() => { const neu = themaWahl(getSettings(), { kompakt: true }); pop.replaceChildren(neu); }, 0);
   });
+  const schliessen = (e) => {
+    if (e && (pop.contains(e.target) || anker.contains(e.target))) return;
+    pop.remove(); document.removeEventListener('click', schliessen, true); document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') schliessen(); };
+  document.addEventListener('click', schliessen, true);
+  document.addEventListener('keydown', onKey);
+  anker.insertAdjacentElement('afterend', pop);
+}
+
+// Der Schieberegler für die Schriftgröße, oben unter dem Kopf (wie die Farbwahl). Wirkt sofort; gemerkt beim Loslassen.
+function schriftPopover(anker) {
+  const alt = document.querySelector('.schrift-popover');
+  if (alt) { alt.remove(); return; }
+  const jetzt = gemerkteSchrift();
+  const wert = el('span', { class: 'schrift-wert', 'data-schrift-wert': '', text: jetzt + ' %' });
+  const regler = el('input', { type: 'range', min: String(SCHRIFT_MIN), max: String(SCHRIFT_MAX), step: String(SCHRIFT_SCHRITT), value: String(jetzt),
+    'data-schrift-regler': '', 'aria-label': t('app.schriftTitel'), 'aria-valuetext': jetzt + ' %' });
+  const setzen = (v, merken) => { const p = applySchrift(v); regler.value = String(p); regler.setAttribute('aria-valuetext', p + ' %'); wert.textContent = p + ' %'; if (merken) updateSettings({ schrift: p }, { still: true }).catch(() => {}); };
+  regler.addEventListener('input', () => setzen(regler.value, false));
+  regler.addEventListener('change', () => setzen(regler.value, true));
+  const normal = el('button', { class: 'btn btn-sm', type: 'button', 'data-schrift-normal': '', text: t('app.schriftNormal'), onClick: () => setzen(100, true) });
+  const pop = el('div', { class: 'thema-popover schrift-popover', role: 'dialog', 'aria-label': t('app.schriftTitel') }, [
+    el('div', { class: 'setting-label', text: t('app.schriftTitel') }),
+    el('div', { class: 'schrift-zeile' }, [el('span', { class: 'schrift-a klein', 'aria-hidden': 'true', text: 'A' }), regler, el('span', { class: 'schrift-a gross', 'aria-hidden': 'true', text: 'A' })]),
+    el('div', { class: 'btn-row' }, [wert, normal]),
+  ]);
   const schliessen = (e) => {
     if (e && (pop.contains(e.target) || anker.contains(e.target))) return;
     pop.remove(); document.removeEventListener('click', schliessen, true); document.removeEventListener('keydown', onKey);

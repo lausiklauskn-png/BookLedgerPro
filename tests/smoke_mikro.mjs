@@ -114,6 +114,8 @@ try {
   if (!istTextarea) ok('einzeiliges Feld: datalist mit dem Eintrag', await feld.evaluate((f) => { const d = document.getElementById(f.getAttribute('list') || ''); return !!d && [...d.options].some((o) => o.value === 'Vorab Zahlung an Muster GmbH'); }));
   // mehrzeilig: Belegtext → Chips
   await page.evaluate(() => window.__p.navigate('documents'));
+  await warte(() => document.querySelector('[data-werkzeug="text"]'));
+  await page.evaluate(() => { if (!document.querySelector('#content textarea.beleg-text')) document.querySelector('[data-werkzeug="text"]').click(); });   // Pro-Umbau 8
   await warte(() => document.querySelector('#content textarea.beleg-text') && document.querySelector('#content textarea.beleg-text + .mikro'));
   const ta = await page.$('#content textarea.beleg-text');
   if (ta) {

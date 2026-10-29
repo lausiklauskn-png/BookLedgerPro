@@ -30,7 +30,11 @@ export function belegVorschau(b, { loeschen, angaben = [] } = {}) {
   const loeschKnopf = el('button', { class: 'btn btn-sm', type: 'button', 'data-vorschau-loeschen': '', text: t('common.delete'),
     onClick: async () => { if (loeschen && (await loeschen())) zu(); } });
   const box = el('div', { class: 'modal modal-weit beleg-vorschau', 'data-beleg-vorschau': b.id }, [
-    el('h2', { class: 'vorschau-titel', text: b.name || '' }),
+    // Befund Tablet 2026-10-29 abends: ein X oben rechts schließt, ohne nach unten zu rollen.
+    el('div', { class: 'vorschau-kopf' }, [
+      el('h2', { class: 'vorschau-titel', text: b.name || '' }),
+      el('button', { class: 'btn btn-ghost btn-sm vorschau-x', type: 'button', 'data-vorschau-x': '', title: t('docs.vorschau.schliessen'), 'aria-label': t('docs.vorschau.schliessen'), text: '✕', onClick: () => zu() }),
+    ]),
     el('p', { class: 'muted small', text: [(b.mediaType || ''), kb(b.size || 0), (b.createdAt || '').slice(0, 10)].filter(Boolean).join(' · ') }),
     ...angaben.filter(Boolean).map((a) => el('p', { class: 'muted small', text: a })),
     flaeche,

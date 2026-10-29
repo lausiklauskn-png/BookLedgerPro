@@ -23,6 +23,17 @@ Pro-App, die später eine **Windows-Fassung** bekommt. Je Fassung erscheinen **n
    **Gepflegt in Private Brain Pro** (Klaus 2026-10-28): `native/pro-bedienung.js`/`.css`, Pin `native/pro-bedienung-herkunft.json`
    (`tools/native/pro-bedienung-pins.mjs --schreiben`), Kopie in die anderen Apps mit `tools/native/bedienung-nachziehen.mjs --quelle ../privat-brain-pro`.
 
+7. **Seitentitel klein in der Kopfleiste, nicht groß über dem Inhalt** (Klaus 2026-10-29: „Oben das Wort Belege, das nimmt so unheimlich
+   viel Platz weg … oben in der Kopfleiste irgendwo klein … das musst du dir merken für die Zukunft“). Die Kopfleiste ist fest oben, der
+   Titel bleibt beim Rollen sichtbar; die große Überschrift ist nur noch für Vorleser da. BookLedgerPro: `src/ui/kopfTitel.js`.
+8. **Schriftgröße per Schieberegler** (Klaus 2026-10-29: „weil es auch Leute gibt, die nicht so gut lesen können“): ein kleiner Knopf
+   **„A··A“** im Kopf öffnet einen Regler (85–150 %, „Zurück auf 100 %“). Wirkt sofort, gemerkt (auch vor der Anmeldung). Gilt für App,
+   Windows und PWA. BookLedgerPro: `applySchrift` in `src/ui/theme.js`.
+9. **Was hereinkommt, steht dort, wo man hinschaut** (Klaus 2026-10-29, Belege): alle Knöpfe oben in **einer** Leiste, darunter eine
+   Ablagefläche (hineinziehen, einfügen) und gleich die Liste; das Neue ist **markiert („neu“, mit Uhrzeit)** und ins Bild gerollt. Selten
+   Gebrauchtes (Text erfassen, E-Rechnung, Bankauszug) geht erst auf Knopfdruck auf; keine doppelten Titel (Überschrift + gleichlautender
+   Knopf). Menüs (⋯) und Vorschauen sind so groß wie ihr Inhalt und ganz im Bild; eine Vorschau hat oben ein X.
+
 ## 2 · Namen für Tresore (nur EIN Ding heißt „Tresor“)
 | Name | Was | Zeile |
 |---|---|---|
