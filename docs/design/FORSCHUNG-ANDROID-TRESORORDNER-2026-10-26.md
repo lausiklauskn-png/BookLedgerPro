@@ -564,3 +564,26 @@ PRs: BLP #402 (Intent), #403 (0.1.2), #404–#408 (Release-Probe), Basic #16/#17
 8. **Umgebung:** `smoke_belege` braucht `playwright-core` 1.56 und einen Workflow-PDF-Klon daneben; hier fehlen beide → 14 ROT, auf `main` genauso.
    BookLedgerPro hat kein `node_modules`; `NODE_PATH` auf ein anderes Repo hilft nur beim Laden.
 9. ⚠ Nicht gemessen: alles am Gerät; Einfügen per langem Druck in der Android-WebView.
+
+## 23 · Befunde aus dem Absturz von 0.1.3 und dem Sicherungs-Balken (2026-10-29 abends, gemessen und benannt)
+
+1. **Eine ausgefallene Anzeige beendet die ganze App.** Stirbt der Renderer der WebView (Speicher, GPU, Absturz im Renderer), ruft Android
+   `onRenderProcessGone`. Capacitors `BridgeWebViewClient` gibt dort ohne eigene Zuhörer `false` zurück — dann beendet Android den App-Prozess, und Samsung
+   zeigt „… da diese App einen Fehler enthält“. Wer `true` zurückgibt, muss die alte WebView selbst wegräumen und neu aufbauen (`recreate()`); die Daten liegen im
+   Tresor, nichts geht verloren außer dem ungesicherten Bildschirmzustand. ⚠ Ob genau das am Tablet geschah, ist unbelegt: ohne Logcat bleibt es die
+   wahrscheinlichste von mehreren Ursachen.
+2. **Capacitor ruft `onNewIntent` beim Start selbst.** `BridgeActivity.load()` reicht `getIntent()` an `onNewIntent` weiter, damit Plugins den Startgrund
+   sehen. Ein Merker „nach dem Teilen zurückspringen“ darf deshalb nur bei `intent != getIntent()` gesetzt werden, sonst gilt ein Kaltstart aus dem Teilen
+   schon als zweite Anfrage.
+3. **Lint fängt, was der Emulator nie zeigt.** `RenderProcessGoneDetail.didCrash()` gibt es erst ab API 26, die App läuft ab 24; lokal fiel es nicht auf, erst
+   `lintDebug` in der CI. Lehre: Java-Zugriffe auf neuere Android-Klassen immer gegen `minSdk` prüfen, auch in einer Protokollzeile.
+4. **Ein Hinweis, der gleich nach der Handlung wiederkommt, wirkt wie ein Fehler.** Der Balken zählte nur „wie alt ist die letzte Sicherung“ und kannte
+   keine Änderungszeit; nach einer Sicherung kam er wieder, wenn die Sicherungsdatei nicht als „erledigt“ ankam. Jetzt rechnet eine reine Funktion aus
+   letzter Sicherung **und** letzter Änderung (`db.js` merkt sie bei jedem Schreiben) — rot erst, wenn nach der Sicherung etwas geändert wurde und 10 min
+   vergangen sind. Ein Zustand, der bleiben darf, gehört in ein kleines farbiges Element an fester Stelle, nicht in einen Balken über dem Inhalt
+   (Leitfaden § 1, „ein farbiger nächster Schritt“).
+5. **Zwei Sitzungen in einem Repo.** Während #414 lief, wurde #413 der anderen Sitzung gemergt; beide änderten die Kopfleiste, `app.css` und `sw.js`
+   (v281 hier, v282 dort). Aufgelöst mit beiden Ständen und v283; danach alle Proben beider PRs neu gefahren (auch `smoke_befunde8` der anderen Sitzung).
+   Lehre: vor dem Mergen `origin/main` frisch holen, `CACHE_VERSION` immer über dem Stand auf main wählen (NETZWEIT § 3a).
+6. ⚠ Nicht gemessen: alles am Gerät; ein echter Renderer-Ausfall wurde nicht ausgelöst (nur die Verdrahtung geprüft).
+

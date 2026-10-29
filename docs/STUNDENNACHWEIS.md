@@ -54,5 +54,6 @@ Klaus' Korrekturen werden hier eingetragen und gehen vor.
 | Pro-Umbau 6 (2026-10-29 01:00 → ~04:45) | erste Abfrage 01:00, Commits 01:07 → 04:1x, Abschluss gegen 04:45 | 3.7 h (ein Block, viel Warten auf CI/Emulator) | 3.75 h | 14 | BLP · Basic · WPP |
 | Pro-Umbau 7 (2026-10-29 06:47 → ~10:35) | erste Spur 06:47, Klaus' Tablet-Befunde 07:45–08:15, Commits 08:34 → 10:30, Abschluss gegen 10:35 | 3.8 h (ein Block, Warten auf CI und drei Veröffentlichungsläufe) | 3.8 h | 9 | BLP · Basic · WPP (Familienakte nur gelesen) |
 | Pro-Umbau 8 (2026-10-29 17:37 → ~19:20) | erste Spur 17:37, Reiniger 17:40 → 18:24, BLP 18:15 → 19:05, Basic 19:10, Abschluss gegen 19:20 | 1.7 h (ein Block, Warten auf Proben/CI) | 1.7 h | 9 | Reiniger · BLP · Basic (WPP/PB gelesen) |
+| Pro-Umbau 7, Nachtrag (2026-10-29 18:31 → ~22:15) | Klaus' Bilder 18:31, Commits 18:49 → 19:13, Merges 19:26/19:32, Pause 19:33–21:56, Abschluss bis ~22:15 | 1.3 h (zwei Blöcke: 1.0 h + 0.3 h) | 3.7 h | 4 | BLP · Basic |
 
 Dazu Klaus' Zeit in Termux (Server und Schlüssel einrichten, zweimal) und am Bildschirm — ohne Commit, hier nicht messbar. Klaus' eigene Angabe geht vor.

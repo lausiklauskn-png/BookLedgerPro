@@ -76,3 +76,31 @@ Summe der Blöcke ≈ 3,8 h, Spanne ≈ 3,8 h. Klaus' Zeit am Tablet (Gegenprobe
 Zeile in `docs/STUNDENNACHWEIS.md`.
 
 Nächste Sitzung: `BRIEF_SITZUNG_PRO-UMBAU-8.md`.
+
+## Nachtrag am Abend (2026-10-29, 18:31–19:33 und 21:56–22:15): Absturz von 0.1.3 und Sicherungs-Knopf
+
+Klaus' Befunde mit der veröffentlichten APK 0.1.3: Samsung meldete „BookLedgerPro geschlossen, da diese App einen Fehler enthält“; zwei Minuten
+später lief die App wieder. Und der Balken „Jetzt sichern“ stand gleich nach einer Sicherung wieder oben und verdeckte die Kopfleiste.
+
+- **BLP #414** (gemergt `0b5b586`, CI grün auf `dcdc891`):
+  - **Absturz-Schutz:** `MainActivity` fängt `onRenderProcessGone` ab (die Anzeige-Engine ist ausgefallen): alte WebView aus dem Fenster, `recreate()`,
+    `return true`. Vorher gab Capacitor `false` zurück, dann beendet Android die ganze App. Ob das am Tablet die Ursache war, ist **nicht belegt**
+    (kein Logcat vom Gerät).
+  - **Rücksprung nur bei echter neuer Anfrage:** Capacitors `load()` ruft beim Start selbst `onNewIntent(getIntent())`; mit einem Teilen-Intent als
+    Startgrund setzte das den Rücksprung-Merker, obwohl kein zweites Teilen kam. Jetzt nur, wenn `intent != getIntent()`.
+  - **Sicherung in der Leiste statt Balken:** oben in der linken Leiste ein kleiner Knopf (`#nav-sicherung`), grün „Gesichert · 18:31“, rot „Jetzt sichern“,
+    wenn seit der letzten Sicherung etwas geändert wurde und 10 min vergangen sind, nie gesichert, zu alt oder Speicher knapp. Am Handy (Leiste als Schublade)
+    nur im roten Fall ein kleiner Knopf im Kopf. Rechnung rein in `src/domain/sicherungAnzeige.js`, Änderungszeit aus `db.js` (`geaendertAm`), Meldung
+    `blp-gesichert` aus der Tresor-Sicherung. Tipp: offener Tresorordner → Sicherung ins Fach, sonst die gewohnte Sicherungsdatei.
+  - Android **0.1.4** / Buildnummer 5, `sw.js` v283 (nach dem Hereinnehmen von #413 der anderen Sitzung: Kopfleiste und CSS beider Stände zusammen).
+  - Lint: `RenderProcessGoneDetail.didCrash()` braucht API 26, die App läuft ab 24 — aus der Protokollzeile genommen.
+- **Basic #22** (gemergt `ade97c5`): Pro `0b5b586` nachgezogen, 571 Dateien, 59 umgeschrieben.
+- Proben: `run.mjs` 2610/0 · `test-native` 50 · `smoke_befunde7` 47 (neu Teil D, 14 Zeilen: grün/rot, Uhrzeit, kein Balken, Handy-Knopf, Tipp sichert) ·
+  `smoke_befunde8` 125 · `smoke_design` 92 · `smoke_befunde` 52 · `smoke_umbau4` 23 · `smoke_ohne_web` 28 · `smoke_belegliste` 23 · `smoke_tresorordner` 30 ·
+  `smoke_handnamen` 21 · `smoke_mikro` 19. Basic: `basic_gleichstand` 23 · `run.mjs` 2608/0 · `smoke_befunde7` 26 · `smoke_befunde8` 70 · `smoke_design` 92.
+- **Nicht veröffentlicht:** 0.1.4 wartet auf Klaus' Wort. ⚠ Nichts davon am Tablet; die Absturzursache bleibt offen.
+
+### Stundennachweis (Nachtrag)
+
+Klaus' Bild vom Absturz und vom Balken 18:31 (Ortszeit Berlin, 17:31 UTC), Commits 18:49 → 19:13, Merges #414 19:26 und Basic #22 19:32, Pause bis 21:56
+(Warten auf Klaus), Abschluss 21:56 → etwa 22:15. Summe der Blöcke ≈ 1,3 h, Spanne 3,7 h. Zeile in `docs/STUNDENNACHWEIS.md`. Klaus' eigene Angabe geht vor.
