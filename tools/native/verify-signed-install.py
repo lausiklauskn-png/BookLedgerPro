@@ -93,18 +93,39 @@ try:
       if time.monotonic() > deadline: raise RuntimeError('Passwortfelder der Ersteinrichtung fehlen')
       time.sleep(.5)
   # Der Emulator verliert bei langem „input text“ Zeichen: in kleinen Stücken tippen und jedes Feld nachlesen.
+  # 2026-10-29 (0.1.2, erster Versuch): Feld 2 ließ sich viermal nicht füllen, Feld 1 schon; den Nachweis gab es nur als
+  # Artefakt. Jetzt drei Wege im Wechsel — Tippen aufs Feld, Tastatur weg und erneut tippen, Tab aus dem Feld davor —
+  # und bei Fehlern die Lage aller Felder (Länge, Fokus, Lage) im Protokoll selbst.
+  def lage():
+      try:
+          return [{'laenge': len(n.get('text', '')), 'fokus': n.get('focused'), 'bounds': n.get('bounds')} for n in passwortfelder()]
+      except Exception as e:
+          return repr(e)
+  def gefuellt(i):
+      t = passwortfelder()[i].get('text', '')
+      return t == pw or (len(t) == len(pw) and set(t) <= set('•●*'))
+  protokoll = []
   for i in range(2):
-      for versuch in range(4):
-          feld = passwortfelder()[i]; tap(feld); time.sleep(1.5)
+      for versuch in range(6):
+          weg = ('tippen', 'tastatur-weg', 'tab')[versuch % 3]
+          if weg == 'tastatur-weg':
+              adb('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE'); time.sleep(1)
+          if weg == 'tab' and i > 0:
+              tap(passwortfelder()[i - 1]); time.sleep(1); adb('shell', 'input', 'keyevent', 'KEYCODE_MOVE_END')
+              adb('shell', 'input', 'keyevent', 'KEYCODE_TAB'); time.sleep(1)
+          else:
+              tap(passwortfelder()[i]); time.sleep(1.5)
           adb('shell', 'input', 'keyevent', 'KEYCODE_MOVE_END')
           adb('shell', 'input', 'keyevent', *(['67'] * 30))
           for k in range(0, len(pw), 3):
               adb('shell', 'input', 'text', pw[k:k + 3]); time.sleep(.4)
           time.sleep(.8)
-          t = passwortfelder()[i].get('text', '')
-          if t == pw or (len(t) == len(pw) and set(t) <= set('•●*')): break
+          if gefuellt(i) and (i == 0 or gefuellt(0)): break
+          protokoll.append({'feld': i + 1, 'versuch': versuch + 1, 'weg': weg, 'lage': lage()})
       else:
-          raise RuntimeError('Passwortfeld %d ließ sich nicht sicher füllen' % (i + 1))
+          print('Passwortfelder:', json.dumps(protokoll, ensure_ascii=False), flush=True)
+          raise RuntimeError('Passwortfeld %d ließ sich nicht sicher füllen; Lage: %s' % (i + 1, json.dumps(lage())))
+  if protokoll: print('Passwortfelder (gefüllt nach Umwegen):', json.dumps(protokoll, ensure_ascii=False), flush=True)
   adb('shell', 'input', 'keyevent', 'KEYCODE_ENTER')
   try:
       wait_node(hat(SHAMIR), 60)
