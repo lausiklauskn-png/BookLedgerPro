@@ -154,6 +154,21 @@ public final class BlpTresorPlugin extends Plugin {
         call.reject("APP_FEHLT");
     }
 
+    /** „Mit Workflow PDF scannen“ (Pro-Umbau 6): erst der Intent SCANNEN (Scanner geht sofort auf), sonst — ältere Workflow PDF Pro
+     *  ohne diesen Intent — die App normal starten. Ohne installierte App: APP_FEHLT. Antwort { weg: "direkt" | "app" }. */
+    @PluginMethod public void scanStarten(PluginCall call) {
+        Intent direkt = new Intent(ScanAufruf.AKTION).setPackage(ScanAufruf.PAKET)
+            .putExtra(ScanAufruf.EXTRA_VON, ScanAufruf.VON).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        boolean hatDirekt = direkt.resolveActivity(getContext().getPackageManager()) != null;
+        Intent start = getContext().getPackageManager().getLaunchIntentForPackage(ScanAufruf.PAKET);
+        String weg = ScanAufruf.weg(hatDirekt, start != null);
+        if (weg == null) { call.reject("APP_FEHLT"); return; }
+        try {
+            getActivity().startActivity("direkt".equals(weg) ? direkt : start.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            call.resolve(new JSObject().put("weg", weg));
+        } catch (android.content.ActivityNotFoundException fehlt) { call.reject("APP_FEHLT"); }
+    }
+
     // ---------- Ordner wählen ----------
     @PluginMethod public void ordnerWaehlen(PluginCall call) {
         Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
