@@ -22,12 +22,19 @@ stellt dieselben Capacitor-Plugins bereit (`windows/bridge/capacitor-tauri.js`),
 Daten: WebView-Daten und Engine-Einstellungen unter `%LOCALAPPDATA%\de.familyprojekt.bookledgerpro\`; die Einstellungsdatei der Engine ist DPAPI-verschlüsselt.
 Deinstallieren lässt Tresorordner und Daten stehen.
 
+## Zum Testen weitergeben
+
+Kurze Anleitung für einen Tester am eigenen PC mit eigenen Daten: [WINDOWS-TESTANLEITUNG.md](WINDOWS-TESTANLEITUNG.md).
+Version der Windows-Fassung seit Pro-Umbau 10 gleich der Android-Fassung (0.1.4).
+
 ## Prüfen
 
 ```bash
 node windows/engine/test.mjs           # Engine mit gestellter Hülle (44 Zeilen)
 node windows/engine/protocol-test.mjs  # echter Kindprozess über stdio
 node tests/smoke_windows.mjs           # Klebstoff im Windows-Modus (Chromium, gestellte Brücke)
+node tests/smoke_befunde9.mjs          # ⓘ, Schrift A··A, Version im Kopf — auch als „win“ (Pro-Umbau 10)
+# Engine-Proben brauchen ein UTF-8-Locale (LANG=C.UTF-8), sonst scheitert der Ordnername „Tresor‑ordner“ an Java
 ```
 
 GitHub `windows.yml`: Engine (Linux und Windows), eigene Java-Laufzeit (jlink), Prüfbau mit Prüf-Schnittstelle installiert und zweimal gestartet
