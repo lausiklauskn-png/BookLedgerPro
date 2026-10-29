@@ -21,6 +21,8 @@ import { ladeRegistry, speichereRegistry } from '../core/mandantenStore.js';
 import { aktiverMandant, mandantenAuswahlListe, umbenenneMandant, entferneMandant, validateMandantName, istSandbox, sandboxAuswahlListe, naechsterTestName } from '../domain/mandanten.js';
 import { erstelleSandboxTresor, wechsleZuSandbox, leereSandboxTresor, loescheSandboxTresor, loescheAlleSandboxes, behalteUndVerlasseSandbox } from '../core/sandboxStore.js';
 import { durabilityStatus } from '../core/durability.js';
+import { geaendertAm } from '../core/db.js';
+import { sicherungStand, sicherungZeit } from '../domain/sicherungAnzeige.js';
 import { parseUebernahmeParam, merkeUebernahme, merkeUebernahmeFehler } from '../domain/uebernahmeExtern.js';
 
 // Übergabe von Tomy-WorkFloh (?uebernahme=…, docs/UEBERNAHME_TOMY.md): einmal beim Laden
@@ -245,6 +247,8 @@ function header(s) {
         e.currentTarget.setAttribute('aria-expanded', open ? 'true' : 'false');
       },
     }, [icon('pb-menu')]),
+    // Am Handy ist die Leiste eine Schublade: dann steht nur im roten Fall ein kleiner Sichern-Knopf oben (CSS bis 640 px).
+    el('button', { class: 'kopf-sicherung', id: 'kopf-sicherung', type: 'button', hidden: true, onClick: sicherungTipp }, [icon('blp-rettung')]),
     el('div', { class: 'brand' }, [MycelMark(28), el('span', { class: 'brand-name', text: t('app.name') }),
       // Seitentitel klein im Kopf (kopfTitel.js) statt groß über dem Inhalt.
       el('span', { class: 'kopf-titel', 'data-kopf-titel': '', hidden: true })]),
@@ -636,7 +640,12 @@ function nav(zu) {
     'aria-expanded': zu ? 'false' : 'true',
     onClick: () => { try { localStorage.setItem(NAV_KEY, zu ? 'auf' : 'zu'); } catch { /* ignore */ } paint(); },
   }, [icon(zu ? 'blp-ausklappen' : 'blp-einklappen'), el('span', { class: 'ic-text', text: t('nav.einklappen') })]);
-  return el('nav', { class: 'app-nav', 'aria-label': t('a11y.nav') }, [...gruppen, klapp]);
+  // Sicherung oben in der Leiste (Klaus 2026-10-29: „eher in der Menüleiste links … farblich gekennzeichnet“, kein Balken).
+  const sicherung = el('div', { class: 'nav-gruppe nav-gruppe-solo nav-sicherung' }, [
+    el('button', { class: 'nav-aktion sicherung-knopf', id: 'nav-sicherung', type: 'button', 'data-sicherung': '', onClick: sicherungTipp },
+      [icon('blp-rettung'), el('span', { class: 'ic-text', 'data-sicherung-text': '', text: t('sicherung.jetzt') })]),
+  ]);
+  return el('nav', { class: 'app-nav', 'aria-label': t('a11y.nav') }, [sicherung, ...gruppen, klapp]);
 }
 
 function renderRoute() {
@@ -676,23 +685,51 @@ function renderRoute() {
 // ---- Durabilitäts-Banner ----------------------------------------------------
 
 async function refreshDurability() {
+  const knopf = document.getElementById('nav-sicherung');
+  const kopf = document.getElementById('kopf-sicherung');
   const slot = document.getElementById('durability-slot');
-  if (!slot) return;
+  if (slot) clear(slot);   // der frühere Balken oben entfällt (Klaus 2026-10-29)
+  if (!knopf && !kopf) return;
+  if (_sicherungLaeuft) return;
   const st = await durabilityStatus();
-  clear(slot);
-  if (st.level === 'ok') return;
+  const stand = sicherungStand({ jetzt: Date.now(), letzteSicherung: st.lastBackup, geaendertAm: geaendertAm(), issues: st.issues });
+  const zeit = st.lastBackup ? sicherungZeit(st.lastBackup) : '';
+  const titel = stand.grund === 'ok' ? t('sicherung.titelGruen') : t('sicherung.' + stand.grund);
+  const text = stand.farbe === 'gruen' ? t('sicherung.gesichert').replace('{zeit}', zeit) : t('sicherung.jetzt');
+  for (const k of [knopf, kopf]) {
+    if (!k) continue;
+    k.classList.toggle('sicherung-gruen', stand.farbe === 'gruen');
+    k.classList.toggle('sicherung-rot', stand.farbe === 'rot');
+    k.dataset.sicherung = stand.farbe;
+    k.title = titel.replace('{zeit}', zeit);
+    k.setAttribute('aria-label', text + ' — ' + k.title);
+  }
+  const span = knopf && knopf.querySelector('[data-sicherung-text]');
+  if (span) span.textContent = text;
+  if (kopf) kopf.hidden = stand.farbe !== 'rot';
+}
 
-  const msgs = [];
-  // In der Pro-App räumt kein Browser den Speicher (Android hält die App-Daten): dort kein „nicht dauerhaft“-Banner.
-  if (st.issues.includes('persist-denied') && !istProApp()) msgs.push(t('durability.persistDenied'));
-  if (st.issues.includes('quota-pressure')) msgs.push(t('durability.quotaPressure'));
-  if (st.issues.includes('no-backup')) msgs.push(t('durability.noBackup'));
-  else if (st.issues.includes('backup-stale')) msgs.push(t('durability.backupStale'));
+// Tipp auf „Sichern“: in der App bei offenem Tresorordner direkt dorthin (ohne Passwort), sonst die verschlüsselte Sicherungsdatei.
+let _sicherungLaeuft = false;
+async function sicherungTipp() {
+  if (_sicherungLaeuft) return;
+  const b = typeof window !== 'undefined' && window.BLPNative && window.BLPNative.tresor;
+  let offen = false;
+  if (b) { try { offen = !!((await b.zustand()) || {}).offen; } catch { offen = false; } }
+  if (!offen) { await backupJetzt(); await refreshDurability(); return; }
+  _sicherungLaeuft = true;
+  const span = document.querySelector('#nav-sicherung [data-sicherung-text]');
+  if (span) span.textContent = t('sicherung.laeuft');
+  try {
+    const r = await b.sichern();
+    if (r && r.grund === 'fehler') alert(t('sicherung.fehler').replace('{e}', r.fehler || ''));
+  } finally { _sicherungLaeuft = false; await refreshDurability(); }
+}
 
-  slot.appendChild(el('div', { class: `banner banner-${st.level === 'critical' ? 'critical' : 'warn'}`, role: 'status', 'aria-live': 'polite' }, [
-    el('span', { class: 'banner-text', text: msgs.join(' ') }),
-    el('button', { class: 'btn btn-sm', text: t('durability.backupNow'), onClick: backupJetzt }),
-  ]));
+// Grün → rot nach 10 Minuten mit Änderungen: einmal je Minute nachsehen; eine automatische Sicherung in den Tresorordner meldet sich.
+if (typeof window !== 'undefined') {
+  setInterval(() => { refreshDurability().catch(() => {}); }, 60 * 1000);
+  window.addEventListener('blp-gesichert', () => { refreshDurability().catch(() => {}); });
 }
 
 // Datensicherungs-Aktionen (Modul ui/datensicherung.js) frischen nach Backup/Restore

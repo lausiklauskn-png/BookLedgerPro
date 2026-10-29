@@ -101,7 +101,14 @@ export async function kvDel(key) {
 
 // ---- Records-Store (keyPath: id) -------------------------------------------
 
+// Zeitpunkt der letzten Änderung an Buchungsdaten oder Dateien (nur im Speicher, kein zusätzliches Schreiben) — für die
+// Sicherungsanzeige in der Leiste (Klaus 2026-10-29: nach dem Sichern grün, erst bei neuen Änderungen wieder rot).
+let _geaendertAm = 0;
+export function geaendertAm() { return _geaendertAm; }
+const geaendert = () => { _geaendertAm = Date.now(); };
+
 export async function recPut(record) {
+  geaendert();
   if (!record || !record.id) throw new Error('recPut: id fehlt');
   return wrap((await tx(STORES.RECORDS, 'readwrite')).put(record));
 }
@@ -109,6 +116,7 @@ export async function recGet(id) {
   return wrap((await tx(STORES.RECORDS, 'readonly')).get(id));
 }
 export async function recDel(id) {
+  geaendert();
   return wrap((await tx(STORES.RECORDS, 'readwrite')).delete(id));
 }
 export async function recAll(type) {
@@ -120,6 +128,7 @@ export async function recAll(type) {
 // ---- Files-Store ------------------------------------------------------------
 
 export async function filePut(fileRecord) {
+  geaendert();
   if (!fileRecord || !fileRecord.id) throw new Error('filePut: id fehlt');
   return wrap((await tx(STORES.FILES, 'readwrite')).put(fileRecord));
 }
@@ -127,6 +136,7 @@ export async function fileGet(id) {
   return wrap((await tx(STORES.FILES, 'readonly')).get(id));
 }
 export async function fileDel(id) {
+  geaendert();
   return wrap((await tx(STORES.FILES, 'readwrite')).delete(id));
 }
 export async function fileAllMeta() {

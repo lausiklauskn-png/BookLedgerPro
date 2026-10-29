@@ -354,6 +354,15 @@ const STRINGS = {
     'durability.noBackup': 'Noch kein Backup vorhanden.',
     'durability.backupStale': 'Letztes Backup ist älter als eine Woche.',
     'durability.backupNow': 'Jetzt sichern',
+    'sicherung.gesichert': 'Gesichert · {zeit}',
+    'sicherung.jetzt': 'Jetzt sichern',
+    'sicherung.laeuft': 'Sichert …',
+    'sicherung.titelGruen': 'Letzte Sicherung {zeit}. Tippen sichert erneut.',
+    'sicherung.nie': 'Noch keine Sicherung. Tippen sichert jetzt.',
+    'sicherung.geaendert': 'Seit der letzten Sicherung ({zeit}) wurde etwas geändert. Tippen sichert jetzt.',
+    'sicherung.alt': 'Die letzte Sicherung ({zeit}) ist älter als eine Woche. Tippen sichert jetzt.',
+    'sicherung.speicher': 'Wenig freier Speicher. Tippen sichert jetzt.',
+    'sicherung.fehler': 'Sicherung ging nicht: {e}',
 
     // Datensicherungs-UX (Schritt 3)
     'backup.now': 'Jetzt sichern',
@@ -1993,6 +2002,15 @@ const STRINGS = {
     'durability.noBackup': 'No backup yet.',
     'durability.backupStale': 'Last backup is older than a week.',
     'durability.backupNow': 'Back up now',
+    'sicherung.gesichert': 'Saved · {zeit}',
+    'sicherung.jetzt': 'Back up now',
+    'sicherung.laeuft': 'Backing up …',
+    'sicherung.titelGruen': 'Last backup {zeit}. Tap to back up again.',
+    'sicherung.nie': 'No backup yet. Tap to back up now.',
+    'sicherung.geaendert': 'Changed since the last backup ({zeit}). Tap to back up now.',
+    'sicherung.alt': 'The last backup ({zeit}) is older than a week. Tap to back up now.',
+    'sicherung.speicher': 'Low free storage. Tap to back up now.',
+    'sicherung.fehler': 'Backup failed: {e}',
 
     // Backup UX (step 3)
     'backup.now': 'Back up now',

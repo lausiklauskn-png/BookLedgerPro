@@ -54,6 +54,16 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(state);
         if (bridge == null) return;
         bridge.setWebViewClient(new BridgeWebViewClient(bridge) {
+            // Befund Tablet 2026-10-29 („BookLedgerPro geschlossen, da diese App einen Fehler enthält“): fällt die Anzeige aus
+            // (z. B. Speichermangel), beendet Android ohne Antwort hier die ganze App. Jetzt: Anzeige aus dem Fenster nehmen und das
+            // Fenster neu aufbauen — die Daten liegen verschlüsselt in der App, der Tresor fragt danach wie beim Start.
+            @Override public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
+                android.util.Log.e("BookLedgerPro", "Anzeige ausgefallen, Fenster wird neu aufgebaut");
+                try { android.view.ViewParent p = view.getParent(); if (p instanceof android.view.ViewGroup) ((android.view.ViewGroup) p).removeView(view); }
+                catch (Exception egal) { /* weiter mit Neuaufbau */ }
+                runOnUiThread(MainActivity.this::recreate);
+                return true;
+            }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 if ("https".equals(uri.getScheme()) && "localhost".equals(uri.getHost()) && uri.getPort() == -1)
@@ -89,7 +99,10 @@ public class MainActivity extends BridgeActivity {
     // zurück zur sendenden App. Beim Kaltstart bleibt BookLedgerPro offen (erst entsperren, dann wird eingelesen).
     private boolean zurueckNachTeilen;
     @Override protected void onNewIntent(Intent intent) {
-        zurueckNachTeilen = intent != null && (Intent.ACTION_SEND.equals(intent.getAction()) || Intent.ACTION_SEND_MULTIPLE.equals(intent.getAction()));
+        // Capacitor ruft onNewIntent beim Start selbst mit getIntent() auf (BridgeActivity.load) — das ist kein „schon offenes
+        // Fenster“. Nur eine wirklich neue Anfrage (anderes Intent-Objekt) springt nach dem Speichern zur sendenden App zurück.
+        zurueckNachTeilen = intent != null && intent != getIntent()
+            && (Intent.ACTION_SEND.equals(intent.getAction()) || Intent.ACTION_SEND_MULTIPLE.equals(intent.getAction()));
         super.onNewIntent(intent);
     }
     boolean zurueckNehmen() { boolean z = zurueckNachTeilen; zurueckNachTeilen = false; return z; }

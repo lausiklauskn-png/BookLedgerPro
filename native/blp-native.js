@@ -224,6 +224,7 @@
               if (aufgabe) aufgabe.stand('Beleg-Originale', 0, 0);
               try { localStorage.setItem(MERK, JSON.stringify({ fp: fp, zeit: Date.now(), id: e.id })); } catch (x) { /* nur Merkzettel */ }
               return modul('./src/core/durability.js').then(function (d) { return d.markBackupDone(); }).catch(function () {}).then(function () {
+                try { window.dispatchEvent(new Event('blp-gesichert')); } catch (x) { /* Anzeige frischt sich sonst nach einer Minute auf */ }
                 // Danach die Beleg-Originale einzeln ins Fach (nur neue, nur bei entsperrtem App-Tresor).
                 return modul('./src/core/tresorBelege.js').then(function (tb) { return tb.belegeInsFach(tresor); })
                   .catch(function () { return null; })

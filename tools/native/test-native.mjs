@@ -217,5 +217,11 @@ ok('ohne Tresor-Plugin: BLPNative.tresor ist null (Web-App zeigt die Ansicht nic
   ok('Teilen bei laufender App: zurück zur sendenden App (moveTaskToBack), Kaltstart bleibt offen',
     m.includes('moveTaskToBack(true)') && m.includes('protected void onNewIntent(Intent intent)') && p.includes('a.zurueckNehmen()?a::zurueckZumSender:null'));
 }
+// Befund Tablet 2026-10-29 (Absturz-Dialog): Ausfall der Anzeige lädt neu statt abzustürzen; Rücksprung nur bei echter neuer Anfrage.
+{
+  const m = java('MainActivity');
+  ok('Anzeige ausgefallen → onRenderProcessGone true + recreate (kein Absturz der App)', /onRenderProcessGone[\s\S]{0,600}recreate[\s\S]{0,80}return true;/.test(m));
+  ok('Rücksprung nur bei echter neuer Anfrage (nicht beim Start durch BridgeActivity.load)', m.includes('intent != getIntent()'));
+}
 console.log(`\n${gruen} grün · ${rot} ROT`);
 process.exit(rot ? 1 : 0);

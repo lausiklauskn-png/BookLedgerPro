@@ -214,4 +214,32 @@ console.log('— C. Bilder in die Schnellerfassung einfügen oder hineinziehen �
   ok('keine Seitenfehler', fehler.length === 0, fehler.join(' | '));
   await ctx.close(); }
 
+console.log('— D. Sicherung in der Leiste statt Balken —');
+for (const art of arten) {
+  const { ctx, page, fehler } = await oeffnen(art, 1280);
+  const lesen = () => page.evaluate(() => { const k = document.getElementById('nav-sicherung'); const kopf = document.getElementById('kopf-sicherung');
+    return { da: !!k, farbe: k && k.dataset.sicherung, text: k && k.textContent.trim(), balken: document.querySelectorAll('#durability-slot *').length, kopfSichtbar: !!kopf && !kopf.hidden && getComputedStyle(kopf).display !== 'none', oben: !!k && k.closest('.app-nav').firstElementChild.contains(k) }; });
+  await page.waitForFunction(() => document.getElementById('nav-sicherung')?.dataset.sicherung, null, { timeout: 8000 }).catch(() => {});
+  let m = await lesen();
+  ok(`${art}: Eintrag oben in der Leiste, rot „Jetzt sichern“, kein Balken`, m.da && m.oben && m.farbe === 'rot' && /Jetzt sichern/.test(m.text) && m.balken === 0, JSON.stringify(m));
+  ok(`${art}: am breiten Bildschirm kein zusätzlicher Knopf oben`, !m.kopfSichtbar, JSON.stringify(m));
+  await page.evaluate(async () => { const d = await import('./src/core/durability.js'); await d.markBackupDone(); window.dispatchEvent(new Event('blp-gesichert')); });
+  await page.waitForFunction(() => document.getElementById('nav-sicherung')?.dataset.sicherung === 'gruen', null, { timeout: 5000 }).catch(() => {});
+  m = await lesen();
+  ok(`${art}: nach dem Sichern grün „Gesichert · HH:MM“`, m.farbe === 'gruen' && /^Gesichert · \d\d:\d\d$/.test(m.text), JSON.stringify(m));
+  await page.evaluate(async () => { const db = await import('./src/core/db.js'); await db.recPut({ id: 'probe-aenderung', type: 'probe' }); window.dispatchEvent(new Event('blp-gesichert')); });
+  await page.waitForTimeout(400);
+  m = await lesen();
+  ok(`${art}: Änderung kurz nach dem Sichern bleibt grün`, m.farbe === 'gruen', JSON.stringify(m));
+  await page.evaluate(async () => { const db = await import('./src/core/db.js'); await db.kvSet('lastBackupAt', Date.now() - 11 * 60e3); await db.recPut({ id: 'probe-aenderung-2', type: 'probe' }); window.dispatchEvent(new Event('blp-gesichert')); });
+  await page.waitForFunction(() => document.getElementById('nav-sicherung')?.dataset.sicherung === 'rot', null, { timeout: 5000 }).catch(() => {});
+  m = await lesen();
+  ok(`${art}: Änderung und 10 Minuten vorbei → wieder rot`, m.farbe === 'rot' && /Jetzt sichern/.test(m.text), JSON.stringify(m));
+  await page.setViewportSize({ width: 400, height: 800 }); await page.evaluate(() => window.__probe.navigate('documents')); await page.waitForTimeout(500);
+  m = await lesen();
+  ok(`${art}: am Handy (Leiste als Schublade) roter Knopf oben`, m.kopfSichtbar, JSON.stringify(m));
+  ok(`${art}: keine Seitenfehler (D)`, fehler.length === 0, fehler.join(' | '));
+  await ctx.close();
+}
+
 await schluss();

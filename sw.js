@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v282';
+const CACHE_VERSION = 'v283';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -93,6 +93,7 @@ const CORE_ASSETS = [
   './src/core/tresorBelege.js',
   './src/domain/backupStrategie.js',
   './src/domain/tresorordner.js',
+  './src/domain/sicherungAnzeige.js',
   './src/ui/datensicherung.js',
   './src/ui/dom.js',
   './src/ui/i18n.js',
