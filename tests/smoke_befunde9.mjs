@@ -19,7 +19,7 @@ const CHROMIUM = ['/opt/pw-browsers/chromium/chrome', '/opt/pw-browsers/chromium
 let gruen = 0, rot = 0;
 const ok = (name, cond, info) => { if (cond) { gruen++; console.log('  ✓ ' + name); } else { rot++; console.log('  ✗ ROT: ' + name + (info ? '  — ' + info : '')); } };
 
-const BRUECKE = `
+const BRUECKE = (plattform) => `
 window.__log = [];
 (function () {
   const z = window.__z = { gewaehlt: true, vorhanden: true, offen: false, gemerkt: true, erreichbar: true, ordner: 'Privat Brain Pro Hauptablageordner', pfad: 'Privat Brain Pro Hauptablageordner', speicher: 'karte' };
@@ -53,12 +53,12 @@ window.__log = [];
   window.__mitteilungAbbruch = () => { const b = window.__log.filter((x) => x[0] === 'h.beginnen').pop(); if (b && hoerer) hoerer({ id: b[1].id, grund: 'mitteilung' }); };
   const SP = { zuhoeren: async () => ({ text: '' }) };
   const U = { pruefen: async () => ({ version: '0.1.3' }), installieren: async () => ({}), addListener: () => ({ remove() {} }) };
-  window.Capacitor = { isNativePlatform: () => true, Plugins: { BlpTresor: T, BlpFiles: F, ProHintergrund: H, BlpUpdates: U, BlpSpeech: SP } };
+  window.Capacitor = { isNativePlatform: () => true, getPlatform: () => '${plattform}', Plugins: { BlpTresor: T, BlpFiles: F, ProHintergrund: H, BlpUpdates: U, BlpSpeech: SP } };
 })();`;
 
-const PROBE = (app) => `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+const PROBE = (art) => { const app = art !== 'pwa'; return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="./assets/tokens.css"><link rel="stylesheet" href="./assets/app.css">
-${app ? '<link rel="stylesheet" href="./native/pro-bedienung.css"><script src="./native/pro-bedienung.js"></script><script src="./native/pro-hintergrund.js"></script><script>' + BRUECKE + '</script><script src="./native/blp-native.js"></script>' : ''}</head>
+${app ? '<link rel="stylesheet" href="./native/pro-bedienung.css"><script src="./native/pro-bedienung.js"></script><script src="./native/pro-hintergrund.js"></script><script>' + BRUECKE(art === 'win' ? 'windows' : 'android') + '</script><script src="./native/blp-native.js"></script>' : ''}</head>
 <body><div id="app-root"></div><script src="./assets/wfpdf/pdf-lib.min.js"></script><script type="module">
 import { setupVault } from './src/core/vault.js';
 import { hydrateSettings, updateSettings, getSettings, navigate } from './src/state.js';
@@ -80,12 +80,13 @@ window.__blpEmbedderStub = { embedQuery: async (s) => vec(s), embedPassage: asyn
   await saveBeleg(new File([await d.save()], 'Echt.pdf', { type: 'application/pdf' })); }
 window.__saveBeleg = saveBeleg;
 window.__probeBereit = true;
-</script></body></html>`;
+</script></body></html>`; };
 
 const TYP = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg' };
 const server = createServer(async (req, res) => {
   const pfad = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-  if (pfad === '/__app.html' || pfad === '/__pwa.html') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(PROBE(pfad === '/__app.html')); }
+  const probeArt = { '/__app.html': 'app', '/__pwa.html': 'pwa', '/__win.html': 'win' }[pfad];
+  if (probeArt) { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(PROBE(probeArt)); }
   const datei = join(WURZEL, pfad);
   if (!datei.startsWith(WURZEL)) { res.writeHead(403); return res.end(); }
   try { const b = await readFile(datei); res.writeHead(200, { 'content-type': TYP[extname(datei)] || 'application/octet-stream' }); res.end(b); }
@@ -138,7 +139,8 @@ const oeffnen = async (art, breite, hoehe = 900) => { const ctx = await browser.
   await page.goto(BASIS + '/__' + art + '.html'); await page.waitForFunction(() => window.__probeBereit === true, null, { timeout: 30000 });
   await page.evaluate(() => window.__probe.navigate('documents')); await page.waitForSelector('[data-zeilen-menue]', { timeout: 8000 }).catch(() => {}); await page.waitForTimeout(300);
   return { ctx, page, fehler }; };
-const arten = ['pwa', ...(existsSync(join(WURZEL, 'native/blp-native.js')) ? ['app'] : [])];
+// „win“ = dieselbe App in der Windows-Hülle (getPlatform() = 'windows', Pro-Umbau 10): ⓘ, Schrift und Version im Kopf gelten dort ebenso.
+const arten = ['pwa', ...(existsSync(join(WURZEL, 'native/blp-native.js')) ? ['app', 'win'] : [])];
 
 // Ein ⓘ ist „allein“, wenn in seiner Zeile kein Text seines Elternteils steht (es also eine eigene Zeile erzeugt).
 const erklaerLage = (page) => page.evaluate(() => {
@@ -254,26 +256,26 @@ for (const art of arten) for (const b of [1000, 640, 400]) {
     return { da: true, text: v.textContent, unter: rv.top >= rn.bottom - 2, rechts: Math.abs(rv.right - rn.right) <= 2, sichtbar: rv.width > 0 && rv.right <= innerWidth };
   });
   if (art === 'pwa') { ok(`pwa ${b} px: keine Versionsnummer im Kopf (Updates kommen über Pages)`, !kopf.da); await ctx.close(); continue; }
-  ok(`app ${b} px: „v0.1.1“ steht unter „BookLedgerPro“, rechtsbündig, im Bild`, kopf.da && kopf.text === 'v0.1.1' && kopf.unter && kopf.rechts && kopf.sichtbar, JSON.stringify(kopf));
+  ok(`${art} ${b} px: „v0.1.1“ steht unter „BookLedgerPro“, rechtsbündig, im Bild`, kopf.da && kopf.text === 'v0.1.1' && kopf.unter && kopf.rechts && kopf.sichtbar, JSON.stringify(kopf));
   await page.click('[data-kopf-version]');
   await page.waitForFunction(() => /aktuelle Version 0\.1\.3/.test((document.querySelector('[data-update-popover] [data-update-status]') || {}).textContent || ''), null, { timeout: 4000 }).catch(() => {});
   const pop = await page.evaluate(() => { const p = document.querySelector('[data-update-popover]'); if (!p) return null; const r = p.getBoundingClientRect();
     return { text: p.textContent, imBild: r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0, pruefen: window.__log.length >= 0 }; });
-  ok(`app ${b} px: Tipp auf die Version öffnet das Fenster und prüft gleich (Version + Ergebnis)`, !!pop && /Version 0\.1\.1/.test(pop.text) && /aktuelle Version 0\.1\.3/.test(pop.text) && pop.imBild, JSON.stringify(pop));
+  ok(`${art} ${b} px: Tipp auf die Version öffnet das Fenster und prüft gleich (Version + Ergebnis)`, !!pop && /Version 0\.1\.1/.test(pop.text) && /aktuelle Version 0\.1\.3/.test(pop.text) && pop.imBild, JSON.stringify(pop));
   await page.keyboard.press('Escape');
-  ok(`app ${b} px: Escape schließt das Fenster`, await page.evaluate(() => !document.querySelector('[data-update-popover]')));
+  ok(`${art} ${b} px: Escape schließt das Fenster`, await page.evaluate(() => !document.querySelector('[data-update-popover]')));
   await page.evaluate(() => window.__probe.navigate('settings')); await page.waitForTimeout(400);
   const ein = await page.evaluate(() => { const z = document.querySelector('[data-einstellung-version]'); const alle = [...document.querySelectorAll('#content > section > *')];
     return { da: !!z && !!z.querySelector('[data-update-pruefen]') && /Version 0\.1\.1/.test(z.textContent), platz: z ? alle.indexOf(z) : -1 }; });
-  ok(`app ${b} px: Einstellungen oben: „Version und Updates“ mit Version und „Auf Updates prüfen“`, ein.da && ein.platz >= 0 && ein.platz <= 3, JSON.stringify(ein));
+  ok(`${art} ${b} px: Einstellungen oben: „Version und Updates“ mit Version und „Auf Updates prüfen“`, ein.da && ein.platz >= 0 && ein.platz <= 3, JSON.stringify(ein));
   if (b >= 641) {
     const nav = await page.evaluate(() => { const k = document.querySelector('[data-nav-updates]'); const g = k && k.closest('.nav-gruppe'); return { da: !!k, gruppe: g ? g.querySelector('.nav-gruppe-titel').textContent : '' }; });
-    ok(`app ${b} px: „Auf Updates prüfen“ in der Leiste bei „Weiteres“`, nav.da && nav.gruppe === 'Weiteres', JSON.stringify(nav));
+    ok(`${art} ${b} px: „Auf Updates prüfen“ in der Leiste bei „Weiteres“`, nav.da && nav.gruppe === 'Weiteres', JSON.stringify(nav));
     await page.click('[data-nav-updates]');
     await page.waitForFunction(() => /aktuelle Version/.test((document.querySelector('[data-update-popover] [data-update-status]') || {}).textContent || ''), null, { timeout: 4000 }).catch(() => {});
-    ok(`app ${b} px: der Eintrag prüft gleich`, await page.evaluate(() => /aktuelle Version 0\.1\.3/.test(document.querySelector('[data-update-popover]')?.textContent || '')));
+    ok(`${art} ${b} px: der Eintrag prüft gleich`, await page.evaluate(() => /aktuelle Version 0\.1\.3/.test(document.querySelector('[data-update-popover]')?.textContent || '')));
   }
-  ok(`app ${b} px: keine Seitenfehler`, fehler.length === 0, fehler.join(' | '));
+  ok(`${art} ${b} px: keine Seitenfehler`, fehler.length === 0, fehler.join(' | '));
   await ctx.close();
 }
 console.log('— E. Eingang (Passwort, Deckblatt) unabhängig vom Farbthema —');
