@@ -259,7 +259,8 @@ for (const art of arten) for (const [b, h] of [[1000, 900], [400, 800]]) {
   await ctx.close(); }
 
 console.log('— E. „Über“: Update-Knopf hinter der Versionsnummer —');
-{ const { ctx, page, fehler } = await oeffnen('app', 1000, 900);
+if (!arten.includes('app')) console.log('  (ohne App-Hülle — Version und Updates gibt es nur in der App)');
+else { const { ctx, page, fehler } = await oeffnen('app', 1000, 900);
   // Gestellte Update-Brücke (die Hülle liefert sie nur mit dem eigenen Server): Version und „Auf Updates prüfen“.
   const da = await page.evaluate(() => !!(window.BLPNative && window.BLPNative.updates && window.BLPNative.version));
   if (da) {
