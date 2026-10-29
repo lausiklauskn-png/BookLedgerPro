@@ -223,5 +223,7 @@ ok('ohne Tresor-Plugin: BLPNative.tresor ist null (Web-App zeigt die Ansicht nic
   ok('Anzeige ausgefallen → onRenderProcessGone true + recreate (kein Absturz der App)', /onRenderProcessGone[\s\S]{0,600}recreate[\s\S]{0,80}return true;/.test(m));
   ok('Rücksprung nur bei echter neuer Anfrage (nicht beim Start durch BridgeActivity.load)', m.includes('intent != getIntent()'));
 }
+// Befund Tablet 2026-10-29 spät: die APK hatte größere Schrift als die PWA (WebView übernimmt Androids Systemschrift).
+ok('Schrift wie die PWA: WebView textZoom fest 100 (größer nur über „A··A“)', /setTextZoom\(100\)/.test(java('MainActivity')));
 console.log(`\n${gruen} grün · ${rot} ROT`);
 process.exit(rot ? 1 : 0);

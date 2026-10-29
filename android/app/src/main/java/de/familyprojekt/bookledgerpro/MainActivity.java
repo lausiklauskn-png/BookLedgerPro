@@ -53,6 +53,10 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(de.familyprojekt.hintergrund.ProHintergrundPlugin.class);
         super.onCreate(state);
         if (bridge == null) return;
+        // Klaus 2026-10-29 spät: „warum die APK-Variante im Gegensatz zur PWA immer eine größere Schrift hat“. Die WebView übernimmt
+        // die Schriftgröße aus Androids Einstellungen (textZoom = Systemschrift in Prozent), der Browser der PWA nicht. Die App startet
+        // klein (100 %) wie die PWA; größer macht man sie mit „A··A“ im Kopf — dort wächst die Schrift, die Knöpfe bleiben.
+        bridge.getWebView().getSettings().setTextZoom(100);
         bridge.setWebViewClient(new BridgeWebViewClient(bridge) {
             // Befund Tablet 2026-10-29 („BookLedgerPro geschlossen, da diese App einen Fehler enthält“): fällt die Anzeige aus
             // (z. B. Speichermangel), beendet Android ohne Antwort hier die ganze App. Jetzt: Anzeige aus dem Fenster nehmen und das

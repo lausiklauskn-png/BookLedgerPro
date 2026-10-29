@@ -39,23 +39,62 @@ function knopfSchlank(b) {
   return 1;
 }
 
+// Wo das ⓘ hinkommt (Klaus 2026-10-29 spät: „Info-Button … dürfen keine neue Zeile erzeugen, sondern hinter dem Wort stehen, zum
+// Beispiel hinter Modus oder hinter Alle Einstellungen zeigen oder Erscheinungsbild … immer hinter dem Text, was er anzeigen will“):
+// rückwärts vom Satz die nächste Beschriftung suchen — Überschrift (h1–h4), <summary>, .setting-label, .card-title, legend, oder die
+// Beschriftung eines Einstellungs-Kastens davor —, auch eine bis drei Ebenen höher (der Satz steckt oft in einem Behälter unter der
+// Knopfreihe). Nie über eine andere Karte, Tabelle oder ein Formular hinweg. Eine h1 steht klein im Kopf: dort zeigt kopfTitel.js das ⓘ.
+// Nur ohne jede Beschriftung bleibt es an der Stelle des Satzes (wie bisher).
+const BESCHRIFTUNG = '.setting-label, .card-title, legend';
+const TITEL = 'h1, h2, h3, h4, summary, ' + BESCHRIFTUNG;
+const GRENZE = '.card, section, details, form, table, .modal, [role="dialog"], fieldset';
+export function erklaerZiel(p) {
+  let n = p;
+  for (let stufe = 0; stufe < 4 && n && n.parentElement; stufe++) {
+    for (let v = n.previousElementSibling; v; v = v.previousElementSibling) {
+      if (v.matches(TITEL)) return v;
+      // Kopfzeile mit Titel und Knöpfen („Bankauszug importieren … [Schließen]“): der Titel darin.
+      if (v.matches('div') && v.firstElementChild && v.firstElementChild.matches(TITEL) && !v.matches(GRENZE)) return v.firstElementChild;
+      if (v.matches('.setting, .card-title-row, .card-head, header')) { const l = v.querySelector(':scope > :is(' + TITEL + '), :scope > * > :is(' + BESCHRIFTUNG + ')'); if (l) return l; }
+      // Feld oder Zeile mit einer Beschriftung vorn („Suchbereich“, „Sprache:“).
+      if (v.matches('.field, .btn-row')) { const l = v.querySelector(':scope > :is(span, label):first-child'); if (l && l.textContent.trim()) return l; }
+      if (v.matches(GRENZE)) break;
+    }
+    n = n.parentElement;
+    if (n.matches('section.view, #content, main, .modal, [role="dialog"]')) {
+      // Satz direkt in der Seite ohne eigene Beschriftung: er erklärt die Seite → hinter den Seitentitel (im Kopf).
+      if (n.matches('section.view')) { const h = n.querySelector(':scope > h1'); if (h) return h; }
+      break;
+    }
+    if (n.matches('.card, details, form, fieldset')) {
+      // Kopf der Karte (Titel, <summary>, legend) — sonst nicht weiter hinaus.
+      const k = n.querySelector(':scope > :is(' + TITEL + '), :scope > :is(.card-title-row, .card-head) :is(' + TITEL + ')');
+      if (k && (k.compareDocumentPosition(p) & Node.DOCUMENT_POSITION_FOLLOWING)) return k;
+      break;
+    }
+  }
+  return null;
+}
+
 function erklaerSchlank(p) {
-  if (p.dataset.erklaer || p.closest(AUS) || p.closest('table,li,[aria-live],[role="status"],.form-error,label')) return 0;
+  if (p.dataset.erklaer || p.closest(AUS) || p.closest('table,li,[aria-live],[role="status"],.form-error,label,.empty-state,.deckblatt')) return 0;
   if (p.hasAttribute('aria-live') || p.getAttribute('role') === 'status' || [...p.attributes].some((a) => /^data-.*(status|stapel|zustand|fehler|ergebnis)/.test(a.name))) return 0;
   const text = (p.textContent || '').trim();
   if (text.length < ERKLAER_MIN) return 0;
   const k = textSchluessel(text);
   p.dataset.erklaer = k;
+  const ziel = erklaerZiel(p);
+  // Steht an dieser Beschriftung schon ein ⓘ, nimmt es den Satz mit — nie zwei ⓘ (oder zwei Zeilen) für eine Beschriftung.
+  const da = ziel && [...ziel.children].find((c) => c.classList && c.classList.contains('erklaer-knopf'));
+  if (da && da._saetze) { da._saetze.push(p); p.hidden = da.getAttribute('aria-expanded') !== 'true'; return 1; }
   const knopf = document.createElement('button');
   knopf.type = 'button'; knopf.className = 'erklaer-knopf'; knopf.dataset.erklaerKnopf = k;
   knopf.append(icon('pb-info'));
-  const setzen = (offen) => { p.hidden = !offen; knopf.setAttribute('aria-expanded', String(offen)); const tt = t(offen ? 'common.erklaerungZu' : 'common.erklaerungAuf'); knopf.title = tt; knopf.setAttribute('aria-label', tt); };
+  knopf._saetze = [p];
+  const setzen = (offen) => { for (const s of knopf._saetze) s.hidden = !offen; knopf.setAttribute('aria-expanded', String(offen)); const tt = t(offen ? 'common.erklaerungZu' : 'common.erklaerungAuf'); knopf.title = tt; knopf.setAttribute('aria-label', tt); };
   setzen(merk()[k] === true);
-  knopf.addEventListener('click', () => { const offen = p.hidden; setzen(offen); merken(k, offen); });
-  // Das ⓘ steht hinten an der Zwischenüberschrift davor (wenn es eine gibt), sonst an der Stelle des Satzes.
-  // Nicht an die Seitenüberschrift (h1): die steht klein im Kopf (kopfTitel.js), im Inhalt ist sie nur noch für Vorleser da.
-  const vor = p.previousElementSibling;
-  if (vor && /^(H2|H3|H4)$/.test(vor.tagName)) vor.append(' ', knopf); else p.before(knopf);
+  knopf.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const offen = knopf.getAttribute('aria-expanded') !== 'true'; setzen(offen); merken(k, offen); });
+  if (ziel) ziel.append(knopf); else p.before(knopf);
   return 1;
 }
 
