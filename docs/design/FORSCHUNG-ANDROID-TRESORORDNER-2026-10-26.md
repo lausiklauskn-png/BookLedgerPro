@@ -586,3 +586,23 @@ PRs: BLP #402 (Intent), #403 (0.1.2), #404–#408 (Release-Probe), Basic #16/#17
    verschlüsselt, keine Zugangsschlüssel im Verlauf, nur Beispiel-IBANs). Läufe sparsamer: Push nur auf `main`, Android/Windows nur bei passenden Pfaden.
 6. **Das Nachzieh-Werkzeug von Basic löschte neue Basic-eigene Dateien**, weil sie im alten Pin noch als „aus Pro“ standen. Jetzt nie löschen, was Basic-eigen ist.
 7. ⚠ Nicht gemessen: alles am Gerät (textZoom, Update-Link mit echtem Server, Mikrofon im Feld bei echter Erkennung).
+
+## 25 · Befunde aus Pro-Umbau 10: Windows vorbereitet, ein ⓘ je Kasten, SBKIM-Suche (2026-10-30, gemessen)
+
+1. **Ein ⓘ, das „nichts tut“, kann einen Satz schalten, den die Ansicht selbst versteckt.** Bei „Neue Buchung“ lag hinter dem ⓘ nur der §13b-Hinweis;
+   die Ansicht blendet ihn per Inline-Stil aus, solange die Umsatzart „Inland“ ist. Das ⓘ schaltete `hidden` korrekt — sichtbar wurde nichts. Lehre: ein
+   Text, dessen Sichtbarkeit die Ansicht steuert (Inline-Stil), ist kein Erklärsatz; die Probe misst „sichtbar nach dem Tipp“ (`getClientRects`), nicht `hidden`.
+2. **`replaceChildren(…, null)` schreibt das Wort „null“.** DOM-Methoden mit Rest-Argumenten wandeln `null` in Text um (anders als die eigene `el()`).
+   Gefunden nur auf einem Bildschirmfoto, keine Probe sah es. Abhilfe `.filter(Boolean)`; `smoke_befunde10` F prüft den sichtbaren Text.
+3. **`querySelector('a, b')` liefert das erste Element in Dokumentreihenfolge, nicht nach Reihenfolge der Selektoren.** `.empty-state p, .empty-state` gab den
+   Kasten statt des Satzes — das ⓘ stand in einer eigenen Zeile. Zwei Aufrufe mit `||`.
+4. **Eine eigene Probe kann das falsche Feld wählen.** „Auswahl mit einer Option, die 13b enthält“ traf das Soll-Konto (Konto 1577 „§13b“) statt der Umsatzart —
+   sechs rote Zeilen ohne Fehler im Code. Felder nach Wert (`option[value=inland]`) oder Rolle wählen, nicht nach Anzeigetext.
+5. **Probe-Gerüst kopieren statt neu schreiben** (Kopf einer bewährten Probe bis `const arten`) machte Bildschirmfotos aller 27 Ansichten in einem Lauf —
+   die Befunde „null“, einsames ⓘ (Nachkalkulation, Shop-Buchung, Selbsttest) kamen erst über die Bilder.
+6. **Windows-Modus in vorhandene Proben statt eigener Probe:** `smoke_befunde9` als „win“ (Brücke mit `getPlatform() = 'windows'`) +61 Zeilen; Gegenprobe
+   „Version unter Windows weg“ rot. Die Engine-Proben brauchen ein UTF-8-Locale (`LANG=C.UTF-8`), sonst scheitert Java an „Tresor‑ordner“.
+7. **SBKIM/Mycel (Vergleich mit dem Sage-Kanon, gelesen, nicht gemessen):** die Knotensuche der eigenen Seite vergleicht nur drei feste Sporen — dasselbe wie
+   „Wer ist im Raum?“; BookLedgerPro reicht dem Netz keinen Korpus (`prepareCorpus`/`setLocalCorpus` fehlen). Zwischen Pro-Apps auf einem Gerät ist der
+   Tresorordner der bessere Weg. Vorschläge als Ja/Nein-Liste an Klaus.
+8. ⚠ Nicht gemessen: alles am Gerät; das Windows-Setup an einem echten PC (kommt mit Klaus' Freund).
