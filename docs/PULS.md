@@ -5,7 +5,13 @@
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.
 > Pflege: bei Sitzungsende oben „Letzter Stand" + „Nächste konkrete Schritte" aktualisieren.
 
-## ▶ Neuester Stand (2026-10-28, Nacht, später): Klaus' Befunde vom Tablet (zweiter PR nach Umbau 4)
+## ▶ Neuester Stand (2026-10-30, spät): Pro-Umbau 13 — Chefcode, gemeinsamer Kasten „Überall suchen“
+- Chefcode (Klaus: Schritt 1+2, „Chef legt fest, alle 3“) in PB, WPP, BLP über den gemeinsamen Baustein `pro-chefcode.js` (Fassung 5); BLP „Mit Ausschnitt
+  antworten“ nur im eigenen Netz (Filter prüft jede Frage). BLP nutzt in der App den gemeinsamen Kasten „Überall suchen“. Fund: „Anderen antworten“ war in
+  0.1.6 still leer (Float32Array) — behoben. **0.1.7** / Code 8, **nichts veröffentlicht**.
+- **Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-14.md`. Abschluss: `BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-13.md`.
+
+## ▶ Stand (2026-10-28, Nacht, später): Klaus' Befunde vom Tablet (zweiter PR nach Umbau 4)
 - Kamera öffnet wieder (FileProvider-Pfad Pictures/), „Mit Workflow PDF scannen“ startet in der App Workflow PDF Pro, Mikrofon über Androids
   Sprachfenster (kein „not-allowed“ mehr), Modell-Laden mit Balken/Prozent/MB, Mikrofon nur an Suche und Notiz (Strichgrafik wie PB),
   schlanker (≤ 32 px wie PB, Stift/Papierkorb, Erklärsätze hinter ⓘ), Prüfen über Auswahl, Angebotsplaner/Bedarfsanalyse schlank in BLP-Farben.

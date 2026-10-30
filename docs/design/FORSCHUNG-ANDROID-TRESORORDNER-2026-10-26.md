@@ -647,3 +647,30 @@ PRs: BLP #402 (Intent), #403 (0.1.2), #404–#408 (Release-Probe), Basic #16/#17
    ebenso rot (Bau ohne Netz), die achte war ein Ausreißer bei paralleler Last und allein grün.
 7. ⚠ Nicht gemessen: am Gerät, echte Tresorordner mit Einträgen anderer Apps, echtes Relais, Java im Behälter nicht übersetzt.
 
+
+## 28 · Befunde aus Pro-Umbau 13: Chefcode, Ausschnitt nur im eigenen Netz, ein Kasten in drei Apps (2026-10-30, gemessen im Prüf-Browser)
+
+1. **Das eigene Netz war schon da:** Modul 23 (Kanon, byte-1:1) kann seit 2026-10-13 ein eigenes Netz aus einem Code (`setNetwork`/`saveNetwork`/
+   `applyNetwork`: Raum-Marke SHA-256, Schlüssel PBKDF2 150 000 Runden, Zettel AES-GCM, ungültig fällt nie still ins öffentliche Netz). Der Chefcode
+   ist deshalb nur Bedienung (`native/pro-chefcode.js`, Fassung 5) — kein eigener Krypto-Code, keine Änderung am Kanon. Die Probe läuft gegen das
+   echte Modul 23 und liest `_meta.network`.
+2. **Der Ausschnitt muss bei jeder Frage geprüft werden, nicht beim Einschalten:** Modul 23 koppelt den Antwort-Korpus einmal; ein Netzwechsel im
+   Mycel-Fenster (Kanon-UI) oder ein erneutes „Antworten an“ dort würde denselben Korpus ins öffentliche Netz bringen. Lösung ohne Kanon-Eingriff:
+   `configure({ match })` nimmt einen Filter vor Modul 04 an (`antwortFilter`), der außerhalb eines eigenen Netzes **gar nicht** antwortet (auch
+   kein Titel — sonst verriete ein Treffer über den Belegtext dessen Inhalt). Gegenprobe: ohne diese Zeile gingen drei Ausschnitte mit „Büromiete …
+   890,00 EUR“ ins öffentliche Netz.
+3. **Kanon-Grenze 200 Zeichen:** Modul 23 kappt jede Antwortzeile bei `RDV_LABEL_MAX = 200` (beim Senden und beim Lesen). Klaus' Plan nannte ≤ 300
+   für den Ausschnitt; Titel + Ausschnitt zusammen sind jetzt höchstens 200. Mehr ginge nur mit einer Änderung in Sage.
+4. **Fund in 0.1.6:** „Anderen antworten“ übergab die Vektoren als gewöhnliche Listen; Modul 04 (`validateCorpus`) verlangt `Float32Array` und warf.
+   Modul 23 fängt den Fehler („ehrlich leer statt Bruch“) — BookLedgerPro 0.1.6 hat im echten Netz also vermutlich **nie** einen Treffer
+   zurückgegeben, ohne dass es jemand sah. Gefunden erst, als die neue Probe das echte Modul 04 statt eines Stellvertreters fragte. Behoben in 0.1.7.
+5. **Ein Kasten, drei Apps:** BookLedgerPro nimmt in der App den gemeinsamen Kasten aus Private Brain Pro; was dort fehlte, kam als Fassung 2 hinzu
+   (eigene Gruppen `gruppe` für Angebotsplaner/Bedarfsanalyse, Rückruf `nachSuche` für den KI-Schalter). Die PWA (Basic) hat `native/` nicht und
+   behält ihre Fassung.
+6. **Probe-Lehren:** (a) In PB setzen andere Teile ihre Kästen später zwischen Mycel- und Chefcode-Kasten — die Probe prüft die Reihenfolge, nicht die
+   Nachbarschaft. (b) „Code nirgends im Bild“ traf in WPP die Kennung `sbkim-rdv-werkstatt` (der Testcode hieß „WERKSTATT…“) — Prüfung jetzt auf die
+   ganze Zeichenfolge und auf Feldwerte. (c) Eine Gegenprobe rutschte zuerst durch (Mindestlänge 6): Modul 23 lehnte selbst ab, die Probe prüft jetzt
+   den Satz des Bausteins und die Grenze 11/12. (d) Das Mycel-Fenster (Kanon) zeigt einen gespeicherten Netz-Code beim Bearbeiten wieder an — wer die App
+   bedient, kann ihn dort sehen (Kanon-Verhalten, nicht geändert).
+7. ⚠ Nicht gemessen: echtes Relais, zwei Arbeitsplätze mit demselben Code, am Gerät. `smoke_umbau11` flattert im Behälter in der Gruppe B (je Lauf
+   eine andere Zeile, auch auf main) — die alte Ansicht zeichnet sich bei jedem Status ganz neu; betrifft nur noch die PWA-Fassung.
