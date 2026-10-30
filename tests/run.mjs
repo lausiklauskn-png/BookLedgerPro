@@ -7323,11 +7323,14 @@ await section('Pro-Umbau 13 (Klaus 2026-10-30): Chefcode-Ausschnitt nur im eigen
   ok('Überall suchen: in der App der gemeinsame Kasten (ProUeberall Fassung ≥ 2), PWA behält die eigene Fassung', /U\.FASSUNG >= 2/.test(sb) && /if \(gemeinsamerKasten\(\)\) return;/.test(sb) && /tresorOhne: \['bookledgerpro'\]/.test(sb));
   const nw = _readSpore(new URL('../src/ui/views/network.js', import.meta.url), 'utf8');
   ok('Mycel-Seite: Chefcode-Kasten (gemeinsamer Baustein), Ausschnitt-Schalter nur im eigenen Netz', /window\.ProChefcode/.test(nw) && /if \(!st\.eigen\) ausschnitt\.disabled = true;/.test(nw));
-  const pw = _readSpore(new URL('../tools/native/prepare-web.mjs', import.meta.url), 'utf8');
-  ok('App-Paket lädt pro-ueberall.css/.js und pro-chefcode.js', ['pro-ueberall.js', 'pro-ueberall.css', 'pro-chefcode.js'].every((n) => pw.includes("'" + n + "'")));
-  const gr = _readSpore(new URL('../android/app/build.gradle', import.meta.url), 'utf8');
-  const tc = JSON.parse(_readSpore(new URL('../windows/src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
-  ok('Version 0.1.7 · Code 8 (Android), Windows gleich', /versionCode 8\b/.test(gr) && /versionName "0\.1\.7"/.test(gr) && tc.version === '0.1.7');
+  const { existsSync: _app } = await import('node:fs');
+  if (_app(new URL('../tools/native/prepare-web.mjs', import.meta.url))) {   // BookLedger Basic hat keine App-Teile (android/, windows/, native/)
+    const pw = _readSpore(new URL('../tools/native/prepare-web.mjs', import.meta.url), 'utf8');
+    ok('App-Paket lädt pro-ueberall.css/.js und pro-chefcode.js', ['pro-ueberall.js', 'pro-ueberall.css', 'pro-chefcode.js'].every((n) => pw.includes("'" + n + "'")));
+    const gr = _readSpore(new URL('../android/app/build.gradle', import.meta.url), 'utf8');
+    const tc = JSON.parse(_readSpore(new URL('../windows/src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
+    ok('Version 0.1.7 · Code 8 (Android), Windows gleich', /versionCode 8\b/.test(gr) && /versionName "0\.1\.7"/.test(gr) && tc.version === '0.1.7');
+  }
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
   const keys = [...new Set([...nw.matchAll(/t\('(net\.ausschnitt[A-Za-z]*)'\)/g)].map((x) => x[1]))];
   ok('i18n DE/EN: Ausschnitt-Sätze zweimal (' + keys.length + ')', keys.length >= 4 && (i18.match(/'net\.ausschnittAnText'/g) || []).length === 2 && keys.every((kk) => (i18.match(new RegExp(`'${kk.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2));
