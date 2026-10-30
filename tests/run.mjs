@@ -7298,5 +7298,40 @@ await section('Pro-Umbau 11 (Klaus 2026-10-30): Überall suchen, Netz-Korpus nur
   ok('i18n DE/EN: alle Schlüssel von Überall suchen und Konto finden zweimal (' + keys.length + ')', keys.length >= 30 && keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2), keys.filter((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length < 2).join(','));
 });
 
+await section('Pro-Umbau 13 (Klaus 2026-10-30): Chefcode-Ausschnitt nur im eigenen Netz, gemeinsamer Kasten Überall suchen', async () => {
+  const U = await import('../src/domain/ueberall.js');
+  const belege = [{ id: 'b1', name: 'Rechnung-Heizung.pdf', createdAt: '2026-10-12T10:00:00Z' }, { id: 'b2', name: 'Quittung.jpg', createdAt: '2026-10-13T08:00:00Z' }];
+  const texte = new Map([['b1', 'Reparatur der Heizung im Keller, Austausch des Ventils. ' + 'x'.repeat(3000)]]);
+  const k = U.netzKorpusEintraege(belege, null, { texte });
+  ok('Mit Ausschnitt: Titelzeile bleibt Titel · Datum, der Belegtext zählt nur beim Vergleichen (gekappt)', k[0].label === 'Beleg · Rechnung-Heizung · 2026-10-12' && /Heizung im Keller/.test(k[0].text) && k[0].text.length <= k[0].label.length + 3 + U.AUSSCHNITT_TEXT_MAX && k[1].text === k[1].label);
+  ok('Ohne texte wie 0.1.6: text = label', U.netzKorpusEintraege(belege, null).every((e) => e.text === e.label));
+  const l = U.ausschnittLabel(k[0].label, texte.get('b1'), 'Ventil');
+  ok('ausschnittLabel: Titel — Ausschnitt um das Suchwort, höchstens 200 Zeichen (Kanon RDV_LABEL_MAX)', l.startsWith(k[0].label + ' — ') && /Ventil/.test(l) && l.length <= U.ANTWORT_LABEL_MAX, l);
+  ok('ausschnittLabel: ohne Text oder bei zu langem Titel nur der Titel', U.ausschnittLabel('T', '', 'x') === 'T' && U.ausschnittLabel('L'.repeat(170), 'Heizung', 'Heizung') === 'L'.repeat(170));
+  let eigen = true;
+  const echt = { queryLocal: async () => [{ label: k[0].label, anchorId: 'beleg:b1', score: 0.9 }, { label: 'Konto 4210', anchorId: '4210', score: 0.5 }], relatedness: () => 0.7 };
+  const f = U.antwortFilter(echt, { eigen: () => eigen, texte });
+  const im = await f.queryLocal('Heizung', 5, {});
+  ok('Antwort-Filter im eigenen Netz: Belegtreffer mit Ausschnitt, andere Treffer unverändert, Rest von Modul 04 durchgereicht', / — .*Heizung/.test(im[0].label) && im[1].label === 'Konto 4210' && f.relatedness() === 0.7);
+  eigen = false;
+  ok('Antwort-Filter außerhalb eines eigenen Netzes: gar keine Antwort (bei jeder Frage neu geprüft)', (await f.queryLocal('Heizung', 5, {})).length === 0);
+  ok('Antwort-Filter ohne Prüfung (eigen fehlt): gar keine Antwort', (await U.antwortFilter(echt, { texte }).queryLocal('Heizung')).length === 0);
+  const nz = _readSpore(new URL('../src/sbkim/netz.js', import.meta.url), 'utf8');
+  ok('Netz-Korpus mit Float32Array (Modul 04 validateCorpus; 0.1.6 gab Listen, jede Antwort blieb still leer)', /passageVec: v instanceof Float32Array \? v : Float32Array\.from\(v\)/.test(nz));
+  ok('antwortenAn mit texte nur im eigenen Netz, Filter wird gesetzt und beim Ausschalten abgemeldet', /if \(texte && !imEigenenNetz\(\)\) return \{ ok: false/.test(nz) && /match: texte \? antwortFilter\(echt, \{ eigen: imEigenenNetz, texte \}\) : null/.test(nz) && /prepareCorpus: null, match: null/.test(nz));
+  const sb = _readSpore(new URL('../src/ui/views/sbkimsuche.js', import.meta.url), 'utf8');
+  ok('Überall suchen: in der App der gemeinsame Kasten (ProUeberall Fassung ≥ 2), PWA behält die eigene Fassung', /U\.FASSUNG >= 2/.test(sb) && /if \(gemeinsamerKasten\(\)\) return;/.test(sb) && /tresorOhne: \['bookledgerpro'\]/.test(sb));
+  const nw = _readSpore(new URL('../src/ui/views/network.js', import.meta.url), 'utf8');
+  ok('Mycel-Seite: Chefcode-Kasten (gemeinsamer Baustein), Ausschnitt-Schalter nur im eigenen Netz', /window\.ProChefcode/.test(nw) && /if \(!st\.eigen\) ausschnitt\.disabled = true;/.test(nw));
+  const pw = _readSpore(new URL('../tools/native/prepare-web.mjs', import.meta.url), 'utf8');
+  ok('App-Paket lädt pro-ueberall.css/.js und pro-chefcode.js', ['pro-ueberall.js', 'pro-ueberall.css', 'pro-chefcode.js'].every((n) => pw.includes("'" + n + "'")));
+  const gr = _readSpore(new URL('../android/app/build.gradle', import.meta.url), 'utf8');
+  const tc = JSON.parse(_readSpore(new URL('../windows/src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
+  ok('Version 0.1.7 · Code 8 (Android), Windows gleich', /versionCode 8\b/.test(gr) && /versionName "0\.1\.7"/.test(gr) && tc.version === '0.1.7');
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  const keys = [...new Set([...nw.matchAll(/t\('(net\.ausschnitt[A-Za-z]*)'\)/g)].map((x) => x[1]))];
+  ok('i18n DE/EN: Ausschnitt-Sätze zweimal (' + keys.length + ')', keys.length >= 4 && (i18.match(/'net\.ausschnittAnText'/g) || []).length === 2 && keys.every((kk) => (i18.match(new RegExp(`'${kk.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);

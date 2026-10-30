@@ -39,8 +39,54 @@ function quellenLesen() {
 function quellenMerken(q) { try { localStorage.setItem(MERK, JSON.stringify(q)); } catch { /* egal */ } }
 
 export async function mountSbkimSuche(host) {
+  _kiHost = null;
   _host = host; _frage = ''; _treffer = []; _netzInfo = ''; _netzZu = false; _ki = null;
+  if (gemeinsamerKasten()) return;
   zeichnen();
+}
+
+// ── Pro-Umbau 13 (Brief 13, Aufgabe 3): in der App derselbe Kasten wie in Private Brain Pro und Workflow PDF Pro (gemeinsamer
+// Baustein native/pro-ueberall.js, Quelle Private Brain Pro, Fassung 2). BookLedgerPro gibt nur seine Quellen dazu: Belege,
+// Buchungen, Kunden, Aufträge (Gruppe „BookLedgerPro“) und Angebotsplaner/Bedarfsanalyse (eigene Gruppen über `gruppe`), die
+// Tresor-Brücke (BLPNative.tresor) und das Öffnen. Die KI-Prüfung (Klaus m12) hängt über nachSuche unter der Liste.
+// Ohne den Baustein (PWA, BookLedger Basic) bleibt die eigene Fassung unten.
+function gemeinsamerKasten() {
+  const U = typeof window !== 'undefined' ? window.ProUeberall : null;
+  if (!U || !window.ProBedienung || typeof U.kasten !== 'function' || !(U.FASSUNG >= 2)) return false;
+  const b = tresor();
+  const k = U.kasten({
+    appName: 'BookLedgerPro', appLabel: t('ue.q.app') + ' · ' + t('ue.q.apps'),
+    app: async (frage) => [...await suchenApp(frage), ...(await suchenApps(frage)).map((z) => ({ ...z, herkunft: 'app', gruppe: t('ue.herkunft.' + z.herkunft), quelle: z.herkunft }))],
+    tresor: b && typeof b.verzeichnis === 'function' ? () => ({ zustand: () => b.zustand(), fach: (fach) => b.verzeichnis(fach) }) : null,
+    tresorOhne: ['bookledgerpro'],
+    netz: () => window.SbkimRendezvous || null,
+    mycelOeffnen: () => mycelFensterOeffnen(),
+    kannOeffnen: (z) => z.herkunft === 'app' || (z.herkunft === 'tresor' && z.typ === 'eingang-bookledgerpro'),
+    oeffnen: (z) => oeffnen(z.herkunft === 'app' && z.quelle ? { ...z, herkunft: z.quelle } : z),
+    nachSuche: (erg, frage) => { _treffer = erg.treffer.filter((z) => z.herkunft !== 'netz'); _frage = frage; _ki = null; kiZeichnen(); },
+  });
+  k.element.id = 'blpUeberall'; k.element.classList.add('card');
+  if (k.eingabe) { k.eingabe.setAttribute('data-mikro', ''); k.eingabe.setAttribute('data-mikro-key', 'ueberall'); k.eingabe.setAttribute('data-ue-frage', ''); }
+  _kiHost = el('div', { 'data-ue-ki-bereich': '' });
+  mount(_host, el('section', { class: 'view' }, [el('h1', { text: t('ue.titel') }), k.element, _kiHost]));
+  return true;
+}
+let _kiHost = null;
+function kiZeichnen() {
+  if (!_kiHost) return zeichnen();
+  if (!_treffer.length) { _kiHost.replaceChildren(); return; }
+  const kiSchalter = el('input', { type: 'checkbox', role: 'switch', 'data-ue-ki-schalter': '' });
+  kiSchalter.checked = !!_ki;
+  kiSchalter.addEventListener('change', () => kiPruefen(kiSchalter));
+  const passt = _ki && _ki.passt ? [..._ki.passt.values()] : [];
+  _kiHost.replaceChildren(el('div', { class: 'card' }, [
+    el('label', { class: 'ue-ki-zeile' }, [kiSchalter, el('span', { text: t('ue.kiSchalter') })]),
+    _ki && _ki.laeuft ? el('p', { class: 'muted small', text: t('ue.kiLaeuft') }) : null,
+    _ki && _ki.hinweis ? el('p', { class: 'muted small', 'data-ue-ki-hinweis': '', text: _ki.hinweis }) : null,
+    _ki && _ki.passt ? el('p', { class: 'muted small', text: t('ue.kiErgebnis').replace('{n}', String(_ki.passt.size)) + (_ki.aus ? ' · ' + t('ue.kiAus').replace('{n}', String(_ki.aus)) : '') }) : null,
+    passt.length ? el('ul', { class: 'ue-ul', 'data-ue-ki-liste': '' }, passt.map((v) => el('li', { class: 'ue-zeile', 'data-ue-ki': 'passt' }, [
+      el('span', { class: 'ue-name', text: v.label || '' }), v.begruendung ? el('span', { class: 'small ue-ki', text: v.begruendung }) : null].filter(Boolean)))) : null,
+  ].filter(Boolean)));
 }
 
 // ── Lesen der eingebetteten Apps (gleicher Ursprung). Öffnet die Datenbank NUR, wenn es sie schon gibt — ein onupgradeneeded
@@ -103,6 +149,7 @@ async function suchenTresor(frage) {
     stelle: (FAECHER.find((f) => f.fach === x.fach) || {}).ordner + (x.ausschnitt ? ' · ' + x.ausschnitt : '') })), hinweis: '' };
 }
 
+const zeichnenAlt = (...a) => zeichnen(...a);
 async function suchen() {
   const frage = _frage.trim();
   if (!frage || _laeuft) return;
@@ -132,6 +179,7 @@ async function suchen() {
 }
 
 async function kiPruefen(schalter) {
+  const zeichnen = _kiHost ? kiZeichnen : zeichnenAlt;
   if (!schalter.checked) { _ki = null; return zeichnen(); }
   const cfg = await getAiConfig().catch(() => ({}));
   if (!cfg.mistralKey) { _ki = { hinweis: t('ue.kiOhneSchluessel') }; return zeichnen(); }

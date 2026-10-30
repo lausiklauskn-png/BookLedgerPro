@@ -89,15 +89,60 @@ export function buchungsBetrag(b) {
  * @param {Map<string,object>|object} [buchungen] Buchung je Kennung (für den Betrag)
  * @returns {{label:string, text:string, anchorId:string}[]}
  */
-export function netzKorpusEintraege(belege, buchungen) {
+export function netzKorpusEintraege(belege, buchungen, { texte = null } = {}) {
   const hol = (id) => (!id || !buchungen) ? null : (buchungen instanceof Map ? buchungen.get(id) : buchungen[id]);
   return (belege || []).slice(0, NETZ_KORPUS_MAX).filter((b) => b && b.id).map((b) => {
     const datum = txt(b.belegDatum || (b.mail && b.mail.datum) || txt(b.createdAt).slice(0, 10));
     const betrag = buchungsBetrag(hol(b.buchungId));
     const titel = txt(b.name).replace(/\.[a-z0-9]{2,4}$/i, '').slice(0, 120);
     const label = ['Beleg', titel, datum, betrag].filter(Boolean).join(' · ');
-    return { label, text: label, anchorId: 'beleg:' + b.id };
+    // Mit Ausschnitt (Pro-Umbau 13, nur im eigenen Netz): der Belegtext zählt beim Vergleichen mit — er bleibt im Speicher dieses
+    // Geräts; hinaus geht höchstens der Ausschnitt, den antwortFilter an den Titel hängt.
+    const inhalt = texte ? txt(texte instanceof Map ? texte.get(b.id) : texte[b.id]).replace(/\s+/g, ' ').trim().slice(0, AUSSCHNITT_TEXT_MAX) : '';
+    return { label, text: inhalt ? label + ' · ' + inhalt : label, anchorId: 'beleg:' + b.id };
   });
+}
+
+/** So viel Belegtext geht in den Vergleich (nur lokal, nie hinaus). */
+export const AUSSCHNITT_TEXT_MAX = 1500;
+/** Modul 23 kappt jede Antwortzeile hart bei 200 Zeichen (RDV_LABEL_MAX, Kanon) — mehr als das kann ein Ausschnitt nie sein. */
+export const ANTWORT_LABEL_MAX = 200;
+
+/**
+ * Titel · Datum · Betrag — Ausschnitt um die Suchwörter, zusammen höchstens `max` Zeichen (Klaus' Plan: „Ausschnitt ≤ 300 Zeichen,
+ * nie die Datei“; das Kanon-Modul lässt 200 zu). Bleibt für den Ausschnitt zu wenig Platz (< 40 Zeichen), nur der Titel.
+ */
+export function ausschnittLabel(label, text, frage, max = ANTWORT_LABEL_MAX) {
+  const l = txt(label).slice(0, max);
+  const roh = txt(text).replace(/\s+/g, ' ').trim();
+  const rest = max - l.length - 3;
+  if (!roh || rest < 40) return l;
+  const a = ausschnitt(roh, suchwoerter(frage), rest);
+  return a ? (l + ' — ' + a).slice(0, max) : l;
+}
+
+/**
+ * Antwort-Filter für Modul 23 (configure({match})): reicht alles an Modul 04 durch, nur queryLocal nicht.
+ *   • Steht kein eigenes Netz (eigen() falsch), antwortet er NICHTS — bei jeder einzelnen Frage neu geprüft. So geht weder ein
+ *     Ausschnitt noch ein Treffer, der nur über den Belegtext gefunden wurde, je ins öffentliche Netz (auch nicht, wenn jemand das
+ *     Netz im Mycel-Fenster wechselt oder dort das Antworten einschaltet).
+ *   • Im eigenen Netz hängt er an jeden Belegtreffer einen Ausschnitt um die Suchwörter (ausschnittLabel).
+ * @param {object} echt   Modul 04 (window.SbkimMatch)
+ * @param {{eigen:()=>boolean, texte:Map<string,string>}} p   texte: Belegkennung → erkannter Text
+ */
+export function antwortFilter(echt, { eigen, texte }) {
+  const f = Object.create(echt || null);
+  f.queryLocal = async (frage, k, opts) => {
+    if (typeof eigen !== 'function' || !eigen()) return [];
+    const hits = await echt.queryLocal(frage, k, opts);
+    return (Array.isArray(hits) ? hits : []).map((h) => {
+      const id = txt(h && h.anchorId).startsWith('beleg:') ? txt(h.anchorId).slice(6) : '';
+      const t = id && texte ? (texte instanceof Map ? texte.get(id) : texte[id]) : '';
+      return { ...h, label: ausschnittLabel(h && h.label, t, frage) };
+    });
+  };
+  f.__blpAusschnitt = true;
+  return f;
 }
 
 /** Antworten aus dem Netz (Modul 23 askNode) in Trefferzeilen; fremder Text bleibt Text (Anzeige über textContent). */

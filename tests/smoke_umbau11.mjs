@@ -191,7 +191,7 @@ for (const [art, b] of [['pwa', 1280], ['app', 1280], ['win', 1000], ['pwa', 400
   await page.click('[data-net-antworten]');
   await page.waitForFunction(() => window.__netz.an > 0, null, { timeout: 8000 }).catch(() => {});
   const korp = await page.evaluate(() => window.__netz.korpus);
-  ok(`${art} ${b} px E: „Anderen antworten“ an → Korpus nur Titel · Datum · Betrag, nie der Belegtext`, Array.isArray(korp) && korp.length === 4 && korp.every((e) => /^Beleg · /.test(e.label) && !/Büromiete|890,00/.test(e.text) && Array.isArray(e.passageVec)), JSON.stringify((korp || []).map((e) => e.label)));
+  ok(`${art} ${b} px E: „Anderen antworten“ an → Korpus nur Titel · Datum · Betrag, nie der Belegtext`, Array.isArray(korp) && korp.length === 4 && korp.every((e) => /^Beleg · /.test(e.label) && !/Büromiete|890,00/.test(e.text) && e.passageVec instanceof Float32Array && e.passageVec.length > 0), JSON.stringify((korp || []).map((e) => e.label)));
   await page.waitForSelector('[data-net-antworten]'); await page.click('[data-net-antworten]');
   ok(`${art} ${b} px E: aus → Antworten abgeschaltet`, await page.evaluate(() => window.__netz.aus > 0));
   await page.click('[data-net-verbinden]'); await page.waitForTimeout(400);
