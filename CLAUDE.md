@@ -482,4 +482,6 @@ Klick gehen alle Informationen an und wieder aus“. Gilt für App **und** PWA (
 - **SBKIM-Suche:** Mikrofon und Sprachmarke im Suchfeld (`data-mikro`), die eigene Sprach-Zeile ist weg (Engines/EU-Politik wie in `mikro.js`).
 - Einstellungen: „null“ unter „Tresor entsperren“ weg (`replaceChildren(null)`). Anleitung: „Bedienung in Kürze“, Stift/Papierkorb.
 - 0.1.5 (Android Code 6, Windows gleich). Proben `tests/smoke_befunde10.mjs` **54** (pwa/app/win × 1000/400) · `befunde9` 170 (+Windows-Modus) ·
-  `befunde8` 129 · `run.mjs` 2610/0 · Gegenprobe 3/3 gefangen. `sw.js` v285. ⚠ Nicht am Tablet. Vorschläge Mycel/SBKIM: Abschluss Umbau 10.
+  `befunde8` 129 · `run.mjs` 2610/0 · Gegenprobe 3/3 gefangen. `sw.js` v285. ⚠ Nicht am Tablet. Vorschläge Mycel/SBKIM: Ja/Nein-Liste https://claude.ai/artifact/CRYeXoARoNLnHEAscXeTHk.
+  **Veröffentlicht (Klaus' Wort):** Android **0.1.5** (`5cf5d33e…4b64`, eigener Server) und **Windows 0.1.5** zum ersten Mal (`e01025f0…9bf6`, eigener Server,
+  unsigniert), Abschluss `BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-10.md`, Forschung § 25; **nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-11.md`. Nicht erneut auslösen.
