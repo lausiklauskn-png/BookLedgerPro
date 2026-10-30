@@ -500,3 +500,15 @@ Klaus: „arbeitsplatzübergreifend Dokumente und Notizen in den Programmen im N
 - **Kanon-Fenster im Design der App:** `assets/sbkim-blp.css` legt Tokens über die Inline-Stile von Modul 16/17/23 (Module byte-1:1 unverändert).
 - 0.1.6 (Android Code 7, Windows gleich), `sw.js` v286. Proben `tests/smoke_umbau11.mjs` **129** (pwa/app/win, hell/dunkel) · `run.mjs` „Pro-Umbau 11“.
   ⚠ Kein echtes Relais gemessen, kein Gerät. WPP/PB: „Überall suchen“ dort ist der nächste Schritt (Brief Umbau 12).
+
+## 🔑 Pro-Umbau 13: Chefcode, „Überall suchen“ als gemeinsamer Kasten (Klaus 2026-10-30: „Ja, Schritt 1+2“, „Chef legt fest, alle 3“)
+
+- **Chefcode** (nur App): Kasten auf der Mycel-Seite = gemeinsamer Baustein `native/pro-chefcode.js` (Quelle Private Brain Pro, Bedien-Bausteine **Fassung 5**,
+  `tools/native/bedienung-nachziehen.mjs`, nie von Hand). Gleicher Code = eigenes Netz über Modul 23 (Kanon unverändert), ≥ 12 Zeichen, Feld danach leer.
+- **„Mit Ausschnitt antworten“** (`[data-net-ausschnitt]`, ab Werk aus, nur im eigenen Netz): `antwortenAn({ texte })` in `src/sbkim/netz.js`; der Filter
+  `antwortFilter` (`src/domain/ueberall.js`, über `configure({ match })`) antwortet außerhalb eines eigenen Netzes **gar nicht** (jede Frage neu geprüft) und
+  hängt im eigenen Netz Titel — Ausschnitt an (≤ 200 Zeichen, Kanon `RDV_LABEL_MAX`). Chefcode entfernt → Ausschnitt-Antworten aus.
+- **„Überall suchen“ in der App** = gemeinsamer Kasten `native/pro-ueberall.js` (Fassung 2: `gruppe`, `nachSuche`), PWA/Basic behält `sbkimsuche.js`-Fassung.
+- **Fund:** Netz-Korpus muss `Float32Array` tragen (Modul 04 `validateCorpus`); 0.1.6 antwortete still leer.
+- 0.1.7 (Android Code 8, Windows gleich), `sw.js` v287. Proben `tests/smoke_umbau13.mjs` **54** · `run.mjs` „Pro-Umbau 13“ · Gegenprobe 4/4. ⚠ Nicht am Gerät,
+  kein echtes Relais. Abschluss `BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-13.md`, **nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-14.md`.

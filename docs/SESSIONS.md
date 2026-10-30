@@ -5,6 +5,14 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-10-30 (spät) — Pro-Umbau 13: Chefcode, gemeinsamer Kasten „Überall suchen“
+
+**Was getan:** Befunde gesucht (keine; Klaus: „weitermachen“) · Chefcode-Plan freigegeben (Schritt 1+2, alle drei Apps) · `pro-chefcode.js` in PB (Fassung 5),
+WPP und BLP nachgezogen · BLP: gemeinsamer Kasten „Überall suchen“ in der App, „Mit Ausschnitt antworten“ mit `antwortFilter`, Float32Array-Fund · 0.1.7 ·
+`smoke_umbau13` (54), `run.mjs` „Pro-Umbau 13“ · Forschung § 28.
+**Stand:** siehe Abschluss. Nichts veröffentlicht, nicht am Gerät.
+**Offen/Nächstes:** `BRIEF_SITZUNG_PRO-UMBAU-14.md` (Veröffentlichen auf Wort, Probe über drei Orte).
+
 ## 2026-10-28 (Nacht, später) — Klaus' Tablet-Befunde (zweiter PR)
 
 **Was getan:** A Kamera (file_paths), Workflow PDF Pro starten, BlpSpeechPlugin (Sprachfenster), Modell-Fortschritt · B Mikrofon-Positivliste,

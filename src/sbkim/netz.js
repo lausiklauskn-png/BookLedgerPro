@@ -6,17 +6,25 @@
 //   • netzFragen(): „Überall suchen“ fragt die anderen Knoten im Raum (nutzer-ausgelöst, Modul 23 askNode).
 // Alles fail-soft: fehlt ein Modul, sagt die Antwort warum (reason), nichts wirft bis in die Ansicht.
 
-import { netzKorpusEintraege } from '../domain/ueberall.js';
+import { netzKorpusEintraege, antwortFilter } from '../domain/ueberall.js';
 
 const W = () => (typeof window !== 'undefined' ? window : {});
 const rdv = () => W().SbkimRendezvous || null;
 let _an = false;   // eigener Merker: Antworten in dieser Sitzung eingeschaltet
+let _mitAusschnitt = false;   // Pro-Umbau 13: Antworten mit Ausschnitt (nur im eigenen Netz, Chefcode)
+
+/** Steht Modul 23 gerade in einem eigenen Netz (Chefcode oder eigenes Netz aus dem Mycel-Fenster)? Bei jeder Frage neu gelesen. */
+export function imEigenenNetz() {
+  const r = rdv();
+  return !!(r && r._meta && r._meta.network === 'eigen');
+}
 
 /** Zustand für die Anzeige: geladen · antwortet · Anzahl beantworteter Fragen · Name im Raum. */
 export function netzStand() {
   const r = rdv();
   const m = (r && r._meta) || {};
-  return { geladen: !!r, antwortet: !!m.answering || _an, beantwortet: Number(m.answeredCount) || 0, name: m.nodeName || '', fenster: !!W().SbkimRendezvousUI };
+  return { geladen: !!r, antwortet: !!m.answering || _an, beantwortet: Number(m.answeredCount) || 0, name: m.nodeName || '', fenster: !!W().SbkimRendezvousUI,
+    eigen: m.network === 'eigen', mitAusschnitt: _mitAusschnitt };
 }
 
 /** Öffnet das Mycel-Fenster (Kanon-UI von Modul 23): Verbinden, Wer ist im Raum, eigenes Netz. */
@@ -30,28 +38,41 @@ export function mycelFensterOeffnen() {
  * Baut den Netz-Korpus (nur Titel · Datum · Betrag) mit Vektoren aus Modul 03.
  * @param {{belege:object[], buchungen?:Map|object, onStatus?:(s:string,i?:number,n?:number)=>void}} p
  */
-export async function netzKorpusBauen({ belege, buchungen, onStatus } = {}) {
+export async function netzKorpusBauen({ belege, buchungen, texte = null, onStatus } = {}) {
   const emb = W().SbkimEmbedding;
   if (!emb || typeof emb.embedPassage !== 'function') throw new Error('Modul 03 (Sprachmodell) ist nicht geladen.');
   if (typeof emb.init === 'function') await emb.init();
-  const eintraege = netzKorpusEintraege(belege, buchungen);
+  const eintraege = netzKorpusEintraege(belege, buchungen, { texte });
   const aus = [];
   for (let i = 0; i < eintraege.length; i++) {
     if (onStatus) onStatus('korpus', i + 1, eintraege.length);
     const v = await emb.embedPassage(eintraege[i].text);
-    aus.push({ ...eintraege[i], passageVec: Array.from(v) });
+    // Modul 04 (queryLocal → validateCorpus) verlangt Float32Array; eine gewöhnliche Liste ließ jede Antwort still leer (Fund Pro-Umbau 13).
+    aus.push({ ...eintraege[i], passageVec: v instanceof Float32Array ? v : Float32Array.from(v) });
   }
   return aus;
 }
 
-/** Schaltet das Antwortrecht an: Korpus übergeben, anmelden (Identität bei Bedarf), lauschen. */
-export async function antwortenAn({ belege, buchungen, onStatus } = {}) {
+/**
+ * Schaltet das Antwortrecht an: Korpus übergeben, anmelden (Identität bei Bedarf), lauschen.
+ * `texte` (Belegkennung → erkannter Text) heißt „mit Ausschnitt“ (Pro-Umbau 13): nur im eigenen Netz erlaubt; der Antwort-Filter
+ * (antwortFilter) prüft das zusätzlich bei jeder einzelnen Frage und antwortet außerhalb eines eigenen Netzes gar nicht.
+ */
+export async function antwortenAn({ belege, buchungen, texte = null, onStatus } = {}) {
   const r = rdv();
   if (!r || typeof r.enableAnswering !== 'function') return { ok: false, reason: 'Mycel nicht geladen.' };
+  if (texte && !imEigenenNetz()) return { ok: false, reason: 'Ausschnitte nur im eigenen Netz (Chefcode).' };
+  // Läuft das Antworten schon, erst sauber aus: der neue Korpus (mit oder ohne Ausschnitt) soll die alte Fassung ersetzen.
+  if (r._meta && r._meta.answering) antwortenAus();
   let korpus;
-  try { korpus = await netzKorpusBauen({ belege, buchungen, onStatus }); }
+  try { korpus = await netzKorpusBauen({ belege, buchungen, texte, onStatus }); }
   catch (e) { return { ok: false, reason: String((e && e.message) || e) }; }
-  try { r.configure({ prepareCorpus: async () => korpus }); } catch (e) { return { ok: false, reason: String((e && e.message) || e) }; }
+  const echt = W().SbkimMatch;
+  if (texte && (!echt || typeof echt.queryLocal !== 'function')) return { ok: false, reason: 'Modul 04 (Treffer) ist nicht geladen.' };
+  try {
+    r.configure({ prepareCorpus: async () => korpus, match: texte ? antwortFilter(echt, { eigen: imEigenenNetz, texte }) : null });
+  } catch (e) { return { ok: false, reason: String((e && e.message) || e) }; }
+  _mitAusschnitt = !!texte;
   if (onStatus) onStatus('anmelden');
   const an = typeof r.connectAndAnnounce === 'function' ? await r.connectAndAnnounce({}).catch((e) => ({ ok: false, reason: String(e && e.message || e) })) : { ok: true };
   if (an && an.ok === false) return { ok: false, reason: an.reason || 'Anmelden fehlgeschlagen.', anzahl: korpus.length };
@@ -65,7 +86,8 @@ export function antwortenAus() {
   const r = rdv();
   _an = false;
   try { if (r && typeof r.disableAnswering === 'function') r.disableAnswering(); } catch { /* fail-soft */ }
-  try { if (r && typeof r.configure === 'function') r.configure({ prepareCorpus: null }); } catch { /* fail-soft */ }
+  try { if (r && typeof r.configure === 'function') r.configure({ prepareCorpus: null, match: null }); } catch { /* fail-soft */ }
+  _mitAusschnitt = false;
   return { ok: true };
 }
 

@@ -23,7 +23,8 @@ export const NIE = [/(^|\/)\.node-secret\.json$/, /(^|\/)\.[^/]+$/];
 // Gemeinsame Bedien-Bausteine aller Pro-Apps (Quelle Private Brain Pro, byte-gleich, Pin native/pro-bedienung-herkunft.json).
 // Fassung 2 (Pro-Umbau 4): dazu die Hintergrundaufgabe pro-hintergrund.js (lädt direkt nach pro-bedienung.js).
 // Scanner und Kamera unter Windows (Pro-Umbau 5): Quelle Workflow PDF Pro, byte-gleich (Pin native/pro-scanner-herkunft.json).
-export const NATIV = ['blp-native.js', 'pro-bedienung.js', 'pro-bedienung.css', 'pro-hintergrund.js', 'pro-geraet.js', 'pro-scanner.js', 'pro-scanner.css'];
+// Fassung 5 (Pro-Umbau 13): „Überall suchen“ (pro-ueberall.js/.css) und der Chefcode (pro-chefcode.js) — dieselben Kästen wie in PB und WPP.
+export const NATIV = ['blp-native.js', 'pro-bedienung.js', 'pro-bedienung.css', 'pro-hintergrund.js', 'pro-geraet.js', 'pro-scanner.js', 'pro-scanner.css', 'pro-ueberall.js', 'pro-ueberall.css', 'pro-chefcode.js'];
 export const ANKER = '<script>if (\'serviceWorker\' in navigator) {';
 
 export const sha256 = (b) => createHash('sha256').update(b).digest('hex');
@@ -42,7 +43,9 @@ export function indexAnpassen(html, nativUrl, bedienung = null) {
   const vor = bedienung ? '<link rel="stylesheet" href="' + bedienung.css + '">\n  <script src="' + bedienung.js + '"></script>\n  '
     + (bedienung.hintergrund ? '<script src="' + bedienung.hintergrund + '"></script>\n  ' : '')
     + (bedienung.geraet ? '<script src="' + bedienung.geraet + '"></script>\n  ' : '')
-    + (bedienung.scannerCss ? '<link rel="stylesheet" href="' + bedienung.scannerCss + '">\n  <script src="' + bedienung.scannerJs + '"></script>\n  ' : '') : '';
+    + (bedienung.scannerCss ? '<link rel="stylesheet" href="' + bedienung.scannerCss + '">\n  <script src="' + bedienung.scannerJs + '"></script>\n  ' : '')
+    + (bedienung.ueberallCss ? '<link rel="stylesheet" href="' + bedienung.ueberallCss + '">\n  <script src="' + bedienung.ueberallJs + '"></script>\n  ' : '')
+    + (bedienung.chefcode ? '<script src="' + bedienung.chefcode + '"></script>\n  ' : '') : '';
   return teile[0] + vor + '<script src="' + nativUrl + '"></script>\n  ' + ANKER + teile[1];
 }
 
@@ -64,12 +67,12 @@ export async function prepareWeb({ wurzel = root, aus = join(root, 'www') } = {}
   for (const n of NATIV) nativ.set(n, await readFile(join(wurzel, 'native', n)));
   const url = 'native/blp-native.js?v=' + sha256(nativ.get('blp-native.js')).slice(0, 16);
   const v = (n) => 'native/' + n + '?v=' + sha256(nativ.get(n)).slice(0, 16);
-  const html = indexAnpassen(inhalt.get('index.html').toString('utf8'), url, { js: v('pro-bedienung.js'), css: v('pro-bedienung.css'), hintergrund: v('pro-hintergrund.js'), geraet: v('pro-geraet.js'), scannerCss: v('pro-scanner.css'), scannerJs: v('pro-scanner.js') });
+  const html = indexAnpassen(inhalt.get('index.html').toString('utf8'), url, { js: v('pro-bedienung.js'), css: v('pro-bedienung.css'), hintergrund: v('pro-hintergrund.js'), geraet: v('pro-geraet.js'), scannerCss: v('pro-scanner.css'), scannerJs: v('pro-scanner.js'), ueberallCss: v('pro-ueberall.css'), ueberallJs: v('pro-ueberall.js'), chefcode: v('pro-chefcode.js') });
   inhalt.set('index.html', Buffer.from(html, 'utf8'));
 
   await rm(aus, { recursive: true, force: true });
   await mkdir(aus, { recursive: true });
-  const beleg = { quelle: 'BookLedgerPro', abweichungen: ['index.html: native/pro-bedienung.css/.js, native/pro-hintergrund.js, native/pro-scanner.css/.js und <script> für native/blp-native.js vor der Service-Worker-Anmeldung'], dateien: [] };
+  const beleg = { quelle: 'BookLedgerPro', abweichungen: ['index.html: native/pro-bedienung.css/.js, native/pro-hintergrund.js, native/pro-scanner.css/.js, native/pro-ueberall.css/.js, native/pro-chefcode.js und <script> für native/blp-native.js vor der Service-Worker-Anmeldung'], dateien: [] };
   for (const [p, b] of inhalt) {
     await mkdir(dirname(join(aus, p)), { recursive: true });
     await writeFile(join(aus, p), b);

@@ -15,13 +15,41 @@ import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID } from '../../sbkim/nodeProfi
 import { getGeraetename, setGeraetename, displayNodeName, shortKennung } from '../geraetename.js';
 import { PEERS, checkAllPeers } from '../../sbkim/peers.js';
 import { buildPassageText, buildCapText, buildNeedsText, embedTexts, EMBED_MODEL } from '../../sbkim/embed.js';
-import { netzStand, mycelFensterOeffnen, antwortenAn, antwortenAus } from '../../sbkim/netz.js';
-import { listBelege } from '../../domain/documents.js';
+import { netzStand, mycelFensterOeffnen, antwortenAn, antwortenAus, imEigenenNetz } from '../../sbkim/netz.js';
+import { listBelege, getBelegText } from '../../domain/documents.js';
 import { listBuchungen } from '../../domain/store.js';
 import { SiegelWappenGross } from '../mycel.js';
 
 let _host = null;
 let _antwortMeldung = '';
+let _ausschnittWunsch = false;   // „Mit Ausschnitt antworten“ (Pro-Umbau 13), nur für diese Sitzung
+
+/** Erkannter Text je Beleg (verschlüsselt am Beleg, hier nur im Speicher) — für Antworten mit Ausschnitt. */
+async function belegTexte(belege) {
+  const m = new Map();
+  for (const b of belege) if ((b.textZeichen || 0) > 0) { const t0 = await getBelegText(b.id).catch(() => ''); if (t0) m.set(b.id, t0); }
+  return m;
+}
+async function antwortenStarten(meldung, mitAusschnitt) {
+  const belege = await listBelege().catch(() => []);
+  const buchungen = new Map((await listBuchungen().catch(() => [])).map((b) => [b.id, b]));
+  const texte = mitAusschnitt ? await belegTexte(belege) : null;
+  const r = await antwortenAn({ belege, buchungen, texte, onStatus: (art, i, n) => { meldung.textContent = art === 'korpus' ? t('net.antwortenBaut').replace('{i}', String(i)).replace('{n}', String(n)) : t('net.antwortenMeldet'); } });
+  _antwortMeldung = r.ok ? t(mitAusschnitt ? 'net.ausschnittAnText' : 'net.antwortenAnText').replace('{n}', String(r.anzahl || 0)) : t('net.antwortenFehler').replace('{r}', r.reason || '');
+  return r;
+}
+
+/** Kasten „Chefcode“ (gemeinsamer Baustein der Pro-Apps, nur in der App geladen). Fällt das eigene Netz weg, sind Ausschnitte aus. */
+function chefcodeKasten() {
+  const C = typeof window !== 'undefined' ? window.ProChefcode : null;
+  if (!C || !window.ProBedienung) return null;
+  const k = C.kasten({ beiWechsel: (lage) => {
+    if (lage !== 'eigen' && netzStand().mitAusschnitt) { antwortenAus(); _ausschnittWunsch = false; _antwortMeldung = t('net.ausschnittRuht'); }
+    repaint();
+  } });
+  k.element.id = 'blpChefcode'; k.element.classList.add('card');
+  return k.element;
+}
 
 export async function mountNetwork(host) {
   _host = host;
@@ -34,6 +62,7 @@ async function repaint() {
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('net.title') }),
     einfachCard(ident),
+    chefcodeKasten(),
     programmeCard(),
     el('details', { class: 'card net-entwickler', 'data-net-entwickler': '' }, [
       el('summary', { class: 'card-title', text: t('net.entwickler') }),
@@ -61,10 +90,19 @@ function einfachCard(ident) {
     if (!schalter.checked) { antwortenAus(); _antwortMeldung = t('net.antwortenAusText'); return repaint(); }
     if (!window.confirm(t('net.antwortenFrage'))) { schalter.checked = false; return; }
     schalter.disabled = true;
-    const belege = await listBelege().catch(() => []);
-    const buchungen = new Map((await listBuchungen().catch(() => [])).map((b) => [b.id, b]));
-    const r = await antwortenAn({ belege, buchungen, onStatus: (art, i, n) => { meldung.textContent = art === 'korpus' ? t('net.antwortenBaut').replace('{i}', String(i)).replace('{n}', String(n)) : t('net.antwortenMeldet'); } });
-    _antwortMeldung = r.ok ? t('net.antwortenAnText').replace('{n}', String(r.anzahl || 0)) : t('net.antwortenFehler').replace('{r}', r.reason || '');
+    await antwortenStarten(meldung, _ausschnittWunsch && imEigenenNetz());
+    repaint();
+  });
+  // Pro-Umbau 13 (Klaus' Plan Schritt 2): Antworten mit Ausschnitt — nur im eigenen Netz (Chefcode), ab Werk aus.
+  const ausschnitt = el('input', { type: 'checkbox', role: 'switch', 'data-net-ausschnitt': '' });
+  ausschnitt.checked = st.mitAusschnitt || (_ausschnittWunsch && st.eigen);
+  if (!st.eigen) ausschnitt.disabled = true;
+  ausschnitt.addEventListener('change', async () => {
+    if (ausschnitt.checked && !window.confirm(t('net.ausschnittFrage'))) { ausschnitt.checked = false; return; }
+    _ausschnittWunsch = ausschnitt.checked;
+    if (!netzStand().antwortet) return repaint();   // wirkt beim nächsten „Anderen antworten“
+    ausschnitt.disabled = true;
+    await antwortenStarten(meldung, _ausschnittWunsch && imEigenenNetz());
     repaint();
   });
   const siegel = el('button', { class: 'net-siegel', type: 'button', 'data-net-siegel': '', title: t('siegel.leiste'), 'aria-label': t('siegel.leiste'),
@@ -86,6 +124,8 @@ function einfachCard(ident) {
     ]),
     el('label', { class: 'field' }, [el('span', { text: t('net.geraetename') }), gn]),
     el('label', { class: 'ue-ki-zeile' }, [schalter, el('span', { text: t('net.antworten') })]),
+    el('label', { class: 'ue-ki-zeile', 'data-net-ausschnitt-zeile': '' }, [ausschnitt, el('span', { text: t('net.ausschnitt') })]),
+    st.eigen ? null : el('p', { class: 'muted small', 'data-net-ausschnitt-hinweis': '', text: t('net.ausschnittNurEigen') }),
     meldung,
   ]);
 }
