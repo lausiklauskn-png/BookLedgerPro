@@ -1,0 +1,100 @@
+/* assets/sbkim-blp.css — Siegel, schwebendes Fenster und Mycel-Fenster im Design von BookLedgerPro (Pro-Umbau 11, Klaus 2026-10-30:
+   „Das Design soll an BLP angepasst sein, auch im Siegel/Flying Widget, ausdrücklich von mir verlangt“).
+
+   Die Kanon-Module (16 Siegel, 17 Widget, 23 Mycel-Fenster) bleiben byte-1:1 aus Sage — sie setzen ihre Farben als Inline-Stil.
+   Dieses Blatt legt die Farben von BookLedgerPro darüber (Tokens aus tokens.css, hell und dunkel, alle drei Farben): Fläche, Text,
+   Linien, Knöpfe flach wie in der App. Bedeutungsfarben bleiben erkennbar (gedämpft · Akzent · Warnung · Siegel-Gold).
+   Gemessen in tests/smoke_umbau11.mjs (hell + dunkel: Fläche = --surface, Text lesbar, Kontrast ≥ 4,5). */
+
+/* ── Die Flächen ─────────────────────────────────────────────────────────────── */
+#sbkim-widget.sbkim-widget,
+#sbkim-rdv-btn,
+#sbkim-rdv-panel,
+#sbkim-siegel-modal [role="dialog"],
+#sbkim-membran-modal [role="dialog"],
+#sbkim-widget-lebt-modal [role="dialog"],
+#sbkim-widget-verkehr-modal [role="dialog"] {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  font-family: var(--font) !important;
+}
+#sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"] { border-radius: var(--radius-lg) !important; }
+#sbkim-siegel-modal { --siegel-gold: #8c6e2f; --siegel-line: var(--border); --siegel-ink: var(--surface); --siegel-bronze: #8c6e2f; }
+@media (prefers-color-scheme: dark) { #sbkim-siegel-modal { --siegel-gold: #d9b56a; --siegel-bronze: #c9a24f; } }
+:root[data-theme="dark"] #sbkim-siegel-modal { --siegel-gold: #d9b56a; --siegel-bronze: #c9a24f; }
+:root[data-theme="light"] #sbkim-siegel-modal { --siegel-gold: #8c6e2f; --siegel-bronze: #8c6e2f; }
+
+/* Schrift der App, Kennungen bleiben in Festbreite */
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"]) [style*="font"]:not([style*="monospace"]):not(code) { font-family: var(--font) !important; }
+
+/* ── Text in den Fenstern: Inline-Farben auf die App-Farben ─────────────────────── */
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"], #sbkim-widget, #sbkim-widget-lebt-modal, #sbkim-widget-verkehr-modal) [style*="color"] {
+  color: var(--text) !important;
+}
+/* gedämpft (Grau, halbtransparentes Weiß) */
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal, #sbkim-membran-modal, #sbkim-widget, #sbkim-widget-lebt-modal, #sbkim-widget-verkehr-modal)
+  :is([style*="color: rgb(154, 167, 182)"], [style*="color: rgb(126, 139, 154)"], [style*="color: rgb(199, 210, 222)"], [style*="color: #c7d2de"],
+      [style*="color: rgba(245, 245, 255, 0."], [style*="color: rgba(245,245,255,0."]) {
+  color: var(--text-muted) !important;
+}
+/* Akzent (Türkis des Kanons → Akzent der App) */
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal, #sbkim-membran-modal, #sbkim-widget)
+  :is([style*="color: var(--accent"], [style*="color: rgb(110, 231, 211)"], [style*="color: rgb(159, 247, 223)"], [style*="color: rgb(159, 210, 255)"], [style*="color: rgb(207, 224, 255)"]) {
+  color: var(--accent-strong) !important;
+}
+/* Warnung (Bernstein) */
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal, #sbkim-membran-modal) [style*="color: rgb(230, 185, 128)"] { color: var(--warn-text) !important; }
+/* Siegel-Gold bleibt Gold, aber lesbar auf heller Fläche */
+#sbkim-siegel-modal :is([style*="color: var(--siegel-gold"], [style*="color: rgb(245, 230, 184)"], [style*="color: var(--siegel-bronze"]) { color: var(--siegel-gold) !important; }
+/* Weiß auf Grün (Häkchen-Marken) bleibt */
+#sbkim-siegel-modal [style*="background: #16A34A"], #sbkim-siegel-modal [style*="background: #16A34A"] * { color: #fff !important; }
+
+/* ── Kästen und Linien ───────────────────────────────────────────────────── */
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"]) [style*="background: rgba(10, 16, 24"],
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"]) [style*="background: rgba(0, 0, 0, 0.35)"],
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"]) [style*="background: rgb(16, 16, 42)"],
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"]) [style*="background: rgba(201, 169, 97"],
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"]) [style*="background: rgba(140, 110, 47"] {
+  background: var(--bg) !important;
+}
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"]) [style*="background: rgba(110, 231, 211"] {
+  background: var(--accent-soft) !important;
+}
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"], #sbkim-widget) [style*="border"] {
+  border-color: var(--border) !important;
+}
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"]) :is(input, textarea, select) {
+  background: var(--surface) !important; color: var(--text) !important; border: 1px solid var(--border-control) !important;
+  border-radius: var(--radius-sm) !important; font-family: var(--font) !important;
+}
+
+/* ── Knöpfe flach wie in der App (≤ 32 px) ────────────────────────────────── */
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"]) button {
+  background: var(--surface) !important; color: var(--text) !important; border: 1px solid var(--border-control) !important;
+  border-radius: var(--radius-sm) !important; box-shadow: none !important; font-family: var(--font) !important;
+}
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"]) button[style*="background: var(--accent"] {
+  background: var(--accent-btn) !important; color: var(--on-accent) !important; border-color: var(--accent-btn) !important;
+}
+:is(#sbkim-rdv-panel, #sbkim-siegel-modal [role="dialog"], #sbkim-membran-modal [role="dialog"]) button:hover { border-color: var(--accent) !important; }
+
+/* ── Mycel-Knopf (Pille unten): wie ein App-Knopf, rechts neben der Leiste statt darüber ── */
+#sbkim-rdv-btn {
+  font: 500 .8rem var(--font) !important; padding: 6px 11px !important; border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+@media (min-width: 641px) {
+  body:has(.app-nav) :is(#sbkim-rdv-btn, #sbkim-rdv-panel)[style*="left: 14px"] { left: calc(var(--nav-w) + 12px) !important; }
+  body:has(.app.nav-zu) :is(#sbkim-rdv-btn, #sbkim-rdv-panel)[style*="left: 14px"] { left: calc(var(--nav-w-zu) + 12px) !important; }
+}
+
+/* ── Schwebendes Fenster (Modul 17): ruhige Leiste in App-Farben ───────────── */
+#sbkim-widget.sbkim-widget { border-radius: var(--radius) !important; }
+#sbkim-widget .sbkim-widget-label { color: var(--text-muted) !important; font-family: var(--font) !important; letter-spacing: .02em; }
+#sbkim-widget .sbkim-widget-slot { background: transparent !important; color: var(--text) !important; }
+#sbkim-widget .sbkim-widget-btn { background: transparent !important; color: var(--text-muted) !important; border: 1px solid var(--border) !important; }
+#sbkim-widget .sbkim-widget-btn:hover { color: var(--text) !important; border-color: var(--accent) !important; }

@@ -13,7 +13,6 @@ import { schlankBeobachten } from './schlank.js';
 import { MycelMark, SiegelBadge, SiegelWappenGross } from './mycel.js';
 import { identityExists, loadIdentity } from '../sbkim/identity.js';
 import { CANONICAL_NODE_ID, SEAL_STAGE, NODE_PROFILE } from '../sbkim/nodeProfile.js';
-import { checkAllPeers } from '../sbkim/peers.js';
 import { getSettings, updateSettings, navigate, getRoute, subscribe, AI_LEVELS } from '../state.js';
 import { WORKFLOH_ZIELE, zielKey } from '../domain/vorgang.js';
 import { getMandantId, lockVault, changePassword } from '../core/vault.js';
@@ -261,7 +260,6 @@ function header(s) {
     // Neben dem Namen, nicht in .header-right: am Handy steht er so in der ersten Zeile, wo Platz ist.
     installKopfKnopf(),
     el('div', { class: 'header-right' }, [
-      flyingWidget(),
       label ? el('span', { class: 'mandant', title: t('mandant.label') }, [
         icon('blp-mandant'),
         el('span', { class: 'mandant-id', text: t('mandant.label') + ': ' + label }),
@@ -443,136 +441,28 @@ function installKopfKnopf() {
   });
 }
 
-// ── Flying Widget (Modul-17-Idee, App-eigen) ─────────────────────────────────
-// Ein schwebendes Lampen-Panel OBEN in der Kopfzeile, überall in der App sichtbar —
-// fasst alle vier Funktionen in EINEM Widget zusammen (statt drei Einzel-Chips):
-//   LEBT    — Identität vorhanden (grün) / kanonisch / abweichend (gelb) / keine (grau).
-//   VERKEHR — Klick prüft die angeschlossenen Knoten live (pulst); grün = erreichbar.
-//   FREMD   — wird rot, wenn ein fremder Zugriff erkannt wird (fremde postMessage-Quelle /
-//             SW-Endpoint-Probe). Klick öffnet das Fremdzugriff-Fenster. (Membran-Idee.)
-//   SIEGEL  — das Wappen; Klick öffnet das Siegel groß (Bronze/Gold, Drift = ausgegraut).
-// Rein lokal/offline. Die volle Tiefe von Modul 15/16/17 (Allowlist, Replay, Self-Check)
-// läuft weiterhin auf der SBKIM-Knotenseite (sbkim/mycelknoten.html).
-function flyingWidget() {
-  const lamp = (key, onClick) => el('button', {
-    class: `fw-lamp fw-${key}`, title: t('fw.' + key + 'Title'), onClick,
-  }, [el('span', { class: 'fw-dot' }), el('span', { class: 'fw-label', text: t('fw.' + key) })]);
-
-  const lebt = lamp('lebt', () => navigate('network'));
-  const verkehr = lamp('verkehr', () => verkehrCheck(verkehr));
-  const fremd = lamp('fremd', () => openFremdModal());
-
-  // SIEGEL-Lampe = das kleine Wappen (öffnet das Siegel-Modal).
-  const siegelState = { drift: false, id: null };
-  const siegel = el('button', {
-    class: 'fw-lamp fw-siegel', 'data-stufe': SEAL_STAGE, style: 'display:none',
-    title: t('siegel.checking'), 'aria-label': t('siegel.aria'),
-    onClick: () => openSiegelModal(siegelState),
-  }, [SiegelBadge(), el('span', { class: 'fw-label', text: t('fw.siegel') })]);
-
-  // LEBT + SIEGEL aus der Identität ableiten (lokal).
-  (async () => {
-    try {
-      if (!(await identityExists())) { lebt.classList.add('is-off'); lebt.title = t('fw.lebtNone'); return; }
-      const ident = await loadIdentity();
-      siegelState.id = ident ? ident.id : null;
-      lebt.classList.add('is-on');
-      siegel.style.display = '';
-      if (ident && ident.id === CANONICAL_NODE_ID) {
-        lebt.title = t('fw.lebtOk');
-        siegel.title = SEAL_STAGE === 'verified-match' ? t('siegel.match') : t('siegel.spore');
-      } else {
-        lebt.classList.add('is-warn'); lebt.title = t('fw.lebtDrift');
-        siegelState.drift = true; siegel.classList.add('is-drift'); siegel.title = t('siegel.driftTitle');
-      }
-    } catch { lebt.classList.add('is-off'); lebt.title = t('fw.lebtNone'); }
-  })();
-
-  // FREMD-Lampe an den Fremdzugriff-Wächter hängen.
-  startFremdWatch();
-  const refreshFremd = () => {
-    const n = _fremd.events.length;
-    fremd.classList.toggle('is-alert', n > 0);
-    fremd.title = n > 0 ? t('fw.fremdAlert').replace('%N%', String(n)) : t('fw.fremdTitle');
-  };
-  _fremd.listeners.push(refreshFremd);
-  refreshFremd();
-
-  return el('div', { class: 'flying-widget', role: 'group', 'aria-label': t('fw.aria') }, [lebt, verkehr, fremd, siegel]);
+// ── Siegel unten in der Leiste (Pro-Umbau 11, Klaus 2026-10-30, m7/m9: „es muss auch ein Siegel mit rein … unten neben das Impressum“).
+// Die frühere app-eigene Lampengruppe oben (LEBT/VERKEHR/FREMD) ist weg: dieselben Lampen zeigt das Kanon-Widget (Modul 17, byte-1:1,
+// im Design von BookLedgerPro über assets/sbkim-blp.css) — kein Nachbau neben dem Original (Klaus m10). Das Siegel steht zusätzlich
+// fest unten in der Leiste mit „läuft mit SBKIM“ und öffnet das Siegel groß; es bleibt sichtbar, auch wenn das Widget geschlossen ist.
+function siegelLeiste() {
+  return el('div', { class: 'nav-gruppe nav-gruppe-solo nav-siegel' }, [
+    el('button', { class: 'nav-aktion siegel-knopf', type: 'button', 'data-nav-siegel': '', 'data-stufe': SEAL_STAGE,
+      title: t('siegel.leiste'), 'aria-label': t('siegel.leiste'),
+      onClick: async () => { schubladeSchliessen(); openSiegelModal(await siegelZustand()); } },
+    [el('span', { class: 'siegel-mini' }, [SiegelBadge()]), el('span', { class: 'ic-text', text: t('siegel.leiste') })]),
+  ]);
 }
 
-// VERKEHR: prüft die angeschlossenen Knoten live und pulst dabei (opt-in, Klick).
-async function verkehrCheck(lampEl) {
-  lampEl.classList.add('is-pulse');
-  lampEl.title = t('fw.verkehrChecking');
+async function siegelZustand() {
+  const st = { drift: false, id: null, keine: false };
   try {
-    const { summary } = await checkAllPeers();
-    lampEl.classList.toggle('is-on', summary.reachable > 0);
-    lampEl.title = t('fw.verkehrResult').replace('%R%', String(summary.reachable)).replace('%T%', String(summary.total));
-  } catch { lampEl.title = t('fw.verkehrTitle'); }
-  finally { setTimeout(() => lampEl.classList.remove('is-pulse'), 700); }
-}
-
-// FREMD/Membran-Wächter (lokal, RAM-only): meldet fremde postMessage-Quellen (z. B.
-// KI-Browser-Agent / fremdes iframe) und SW-Endpoint-Proben über den Membran-Kanal.
-// Wirft nie; offline-tauglich. Volle Modul-15-Tiefe (Allowlist/Replay) bleibt der
-// SBKIM-Knotenseite vorbehalten.
-const _fremd = { events: [], listeners: [], started: false };
-function fremdNotify() { for (const fn of _fremd.listeners) { try { fn(); } catch { /* ignore */ } } }
-function fremdRecord(kind, detail) {
-  _fremd.events.push({ ts: Date.now(), kind, detail: String(detail || '') });
-  if (_fremd.events.length > 50) _fremd.events.shift();
-  fremdNotify();
-}
-function startFremdWatch() {
-  if (_fremd.started) return;
-  _fremd.started = true;
-  try {
-    window.addEventListener('message', (e) => {
-      try {
-        const origin = e.origin || '';
-        if (origin && origin !== location.origin) fremdRecord('postMessage', origin);
-      } catch { /* ignore */ }
-    });
-  } catch { /* ignore */ }
-  try {
-    const bc = new BroadcastChannel('sbkim-membrane');
-    bc.onmessage = (e) => {
-      if (e && e.data && e.data.type === 'SBKIM_MEMBRANE_PROBE') fremdRecord('endpoint-probe', e.data.from);
-    };
-  } catch { /* BroadcastChannel evtl. nicht verfügbar — egal */ }
-}
-
-// Fremdzugriff-Fenster: listet erkannte Zugriffe, Test-Knopf (simuliert einen fremden
-// Zugriff → Lampe wird rot), Leeren. Esc/Backdrop schließt.
-function openFremdModal() {
-  const overlay = el('div', { class: 'modal-overlay', role: 'dialog', 'aria-modal': 'true' });
-  const onKey = (e) => { if (e.key === 'Escape') close(); };
-  const close = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
-  document.addEventListener('keydown', onKey);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-
-  const list = el('div', { class: 'report-line-group' });
-  const render = () => {
-    list.replaceChildren();
-    if (!_fremd.events.length) { list.append(el('p', { class: 'muted small', text: t('fw.fremdEmpty') })); return; }
-    for (const ev of [..._fremd.events].reverse()) {
-      list.append(el('div', { class: 'report-line' }, [
-        el('span', { text: new Date(ev.ts).toLocaleTimeString() }),
-        el('span', { class: 'mono small', text: ev.kind + ': ' + ev.detail }),
-      ]));
-    }
-  };
-  render();
-  const testBtn = el('button', { class: 'btn', text: t('fw.fremdTest'), onClick: () => { fremdRecord('test', t('fw.fremdTestOrigin')); render(); } });
-  const clearBtn = el('button', { class: 'btn', text: t('fw.fremdClear'), onClick: () => { _fremd.events.length = 0; fremdNotify(); render(); } });
-  overlay.appendChild(el('div', { class: 'modal' }, [
-    el('h2', { text: t('fw.fremdModalTitle') }),
-    el('p', { class: 'muted small', text: t('fw.fremdIntro') }),
-    list,
-    el('div', { class: 'btn-row' }, [testBtn, clearBtn, el('button', { class: 'btn btn-primary', text: t('common.close'), onClick: close })]),
-  ]));
-  document.body.appendChild(overlay);
+    if (!(await identityExists())) { st.keine = true; return st; }
+    const ident = await loadIdentity();
+    st.id = ident ? ident.id : null;
+    st.drift = !!(ident && ident.id !== CANONICAL_NODE_ID);
+  } catch { st.keine = true; }
+  return st;
 }
 
 // Siegel-Modal: zeigt das Wappen GROSS (mit lesbarem Band) + die bezeugten Eckdaten
@@ -605,6 +495,8 @@ function openSiegelModal(state) {
     el('p', { class: 'muted small', text: t('siegel.attests') }),
     el('div', { class: 'btn-row' }, [
       el('button', { class: 'btn btn-primary', text: t('net.title'), onClick: () => { close(); navigate('network'); } }),
+      // Das Kanon-Siegel (Modul 16) bezeugt selbst, welche Module wirklich geladen sind — dorthin, wenn es da ist.
+      document.getElementById('sbkim-siegel-badge') ? el('button', { class: 'btn', 'data-siegel-module': '', text: t('siegel.module'), onClick: () => { close(); document.getElementById('sbkim-siegel-badge').click(); } }) : null,
       el('button', { class: 'btn', text: t('common.close'), onClick: close }),
     ]),
   ]));
@@ -682,7 +574,7 @@ function nav(zu) {
     el('button', { class: 'nav-aktion sicherung-knopf', id: 'nav-sicherung', type: 'button', 'data-sicherung': '', onClick: sicherungTipp },
       [icon('blp-rettung'), el('span', { class: 'ic-text', 'data-sicherung-text': '', text: t('sicherung.jetzt') })]),
   ]);
-  return el('nav', { class: 'app-nav', 'aria-label': t('a11y.nav') }, [sicherung, ...gruppen, klapp]);
+  return el('nav', { class: 'app-nav', 'aria-label': t('a11y.nav') }, [sicherung, ...gruppen, siegelLeiste(), klapp]);
 }
 
 function renderRoute() {

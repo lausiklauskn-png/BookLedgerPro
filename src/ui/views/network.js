@@ -1,10 +1,11 @@
-// src/ui/views/network.js — Mycel-Netzwerk (SBKIM). Lokale Andock-Vorbereitung:
-// Identität erzeugen, Spore & SIGNAL.json herunterladen, fremde Spore verifizieren.
-// Die LIVE-Registrierung im Hub + Handshake sind der menschlich vermittelte Schritt
-// (Modul 09) — dabei werden fremde Repos NICHT von hier aus verändert.
+// src/ui/views/network.js — Mycel (SBKIM). Pro-Umbau 11 (Klaus 2026-10-30, Ja zu m8/m11): oben ein einfacher Kasten in Alltagssprache —
+// verbinden (Kanon-Fenster von Modul 23), Gerätename, „Anderen antworten“ an/aus, das Siegel und die verbundenen Programme. Alles für
+// Fachleute (Identität, Spore, SIGNAL.json, fremde Spore prüfen, Briefkasten) liegt hinter „Für Entwickler“ und bleibt unverändert.
+// Die LIVE-Registrierung im Hub + Handshake bleiben der menschlich vermittelte Schritt (Modul 09) — fremde Repos werden NICHT verändert.
 
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
+import { navigate } from '../../state.js';
 import { downloadJson } from '../../core/files.js';
 import { identityExists, createIdentity, loadIdentity, importIdentity, replaceIdentity } from '../../sbkim/identity.js';
 import { buildSpore, verifySpore } from '../../sbkim/spore.js';
@@ -14,8 +15,13 @@ import { NODE_PROFILE, KEYWORDS, CANONICAL_NODE_ID } from '../../sbkim/nodeProfi
 import { getGeraetename, setGeraetename, displayNodeName, shortKennung } from '../geraetename.js';
 import { PEERS, checkAllPeers } from '../../sbkim/peers.js';
 import { buildPassageText, buildCapText, buildNeedsText, embedTexts, EMBED_MODEL } from '../../sbkim/embed.js';
+import { netzStand, mycelFensterOeffnen, antwortenAn, antwortenAus } from '../../sbkim/netz.js';
+import { listBelege } from '../../domain/documents.js';
+import { listBuchungen } from '../../domain/store.js';
+import { SiegelWappenGross } from '../mycel.js';
 
 let _host = null;
+let _antwortMeldung = '';
 
 export async function mountNetwork(host) {
   _host = host;
@@ -27,14 +33,79 @@ async function repaint() {
   const ident = exists ? await loadIdentity() : null;
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('net.title') }),
-    el('div', { class: 'banner banner-warn', text: t('net.andockNote') }),
-    identityCard(ident),
-    ident ? deployCard(ident) : null,
-    ident ? embeddingCard(ident) : null,
-    briefkastenCard(),
-    toolsCard(),
-    verifyCard(),
+    einfachCard(ident),
+    programmeCard(),
+    el('details', { class: 'card net-entwickler', 'data-net-entwickler': '' }, [
+      el('summary', { class: 'card-title', text: t('net.entwickler') }),
+      el('div', { class: 'banner banner-warn', text: t('net.andockNote') }),
+      identityCard(ident),
+      ident ? deployCard(ident) : null,
+      ident ? embeddingCard(ident) : null,
+      briefkastenCard(),
+      toolsCard(),
+      verifyCard(),
+    ]),
   ]));
+}
+
+// Der einfache Kasten (m8): verbinden · Gerätename · anderen antworten · Siegel.
+function einfachCard(ident) {
+  const st = netzStand();
+  const gn = el('input', { type: 'text', maxlength: '40', autocomplete: 'off', 'data-sbkim-geraetename': '', 'data-net-geraetename': '', value: getGeraetename(),
+    placeholder: t('net.geraetenamePlaceholder'), 'aria-label': t('net.geraetename'),
+    onInput: (e) => { setGeraetename(e.target.value.slice(0, 40)); try { window.dispatchEvent(new CustomEvent('sbkim:geraetename-changed')); } catch { /* fail-soft */ } } });
+  const meldung = el('p', { class: 'muted small', role: 'status', 'data-net-antwort-status': '', text: _antwortMeldung });
+  const schalter = el('input', { type: 'checkbox', role: 'switch', 'data-net-antworten': '' });
+  schalter.checked = st.antwortet;
+  schalter.addEventListener('change', async () => {
+    if (!schalter.checked) { antwortenAus(); _antwortMeldung = t('net.antwortenAusText'); return repaint(); }
+    if (!window.confirm(t('net.antwortenFrage'))) { schalter.checked = false; return; }
+    schalter.disabled = true;
+    const belege = await listBelege().catch(() => []);
+    const buchungen = new Map((await listBuchungen().catch(() => [])).map((b) => [b.id, b]));
+    const r = await antwortenAn({ belege, buchungen, onStatus: (art, i, n) => { meldung.textContent = art === 'korpus' ? t('net.antwortenBaut').replace('{i}', String(i)).replace('{n}', String(n)) : t('net.antwortenMeldet'); } });
+    _antwortMeldung = r.ok ? t('net.antwortenAnText').replace('{n}', String(r.anzahl || 0)) : t('net.antwortenFehler').replace('{r}', r.reason || '');
+    repaint();
+  });
+  const siegel = el('button', { class: 'net-siegel', type: 'button', 'data-net-siegel': '', title: t('siegel.leiste'), 'aria-label': t('siegel.leiste'),
+    onClick: () => { const b = document.getElementById('sbkim-siegel-badge'); if (b) b.click(); else document.querySelector('[data-nav-siegel]')?.click(); } }, [SiegelWappenGross()]);
+  return el('div', { class: 'card net-einfach', 'data-net-einfach': '' }, [
+    el('div', { class: 'net-kopf' }, [
+      siegel,
+      el('div', { class: 'net-kopf-text' }, [
+        el('h2', { class: 'card-title', text: t('net.einfachTitel') }),
+        el('p', { class: 'net-kurz', 'data-net-kurz': '', text: t('net.kurz') }),
+        el('p', { class: 'muted small', 'data-net-sbkim': '', text: t('net.laeuftMit') + (ident ? ' · ' + t('net.kennung') + ' ' + shortKennung(ident.id) : '') }),
+      ]),
+    ]),
+    el('details', { class: 'ue-mehr' }, [el('summary', { text: t('ue.mehrDazu') }), el('p', { class: 'small', text: t('net.mehr1') }), el('p', { class: 'small', text: t('net.mehr2') })]),
+    el('div', { class: 'btn-row' }, [
+      el('button', { class: 'btn btn-primary', type: 'button', 'data-net-verbinden': '', text: t('net.verbinden'),
+        onClick: () => { if (!mycelFensterOeffnen()) { _antwortMeldung = t('net.fensterFehlt'); repaint(); } } }),
+      el('button', { class: 'btn', type: 'button', 'data-net-ueberall': '', text: t('ue.titel'), onClick: () => navigate('sbkimsuche') }),
+    ]),
+    el('label', { class: 'field' }, [el('span', { text: t('net.geraetename') }), gn]),
+    el('label', { class: 'ue-ki-zeile' }, [schalter, el('span', { text: t('net.antworten') })]),
+    meldung,
+  ]);
+}
+
+// Die verbundenen Programme (Klaus: „die Apps aus der Menüleiste von BookLedgerPro und die Pro-Apps“).
+function programmeCard() {
+  const nativ = typeof window !== 'undefined' && window.BLPNative && window.BLPNative.tresor;
+  const zeile = (name, wie, knopf) => el('li', { class: 'ue-zeile', 'data-net-programm': name }, [el('strong', { text: name }), el('span', { class: 'muted small', text: wie }), knopf].filter(Boolean));
+  const oeffnen = (app) => nativ && typeof nativ.appOeffnen === 'function'
+    ? el('button', { class: 'btn btn-sm', type: 'button', text: t('net.oeffnen'), onClick: () => nativ.appOeffnen(app).catch(() => {}) }) : null;
+  return el('div', { class: 'card', 'data-net-programme': '' }, [
+    el('h2', { class: 'card-title', text: t('net.programme') }),
+    el('ul', { class: 'ue-ul' }, [
+      zeile(t('nav.calculate'), t('net.wieEingebettet'), el('button', { class: 'btn btn-sm', type: 'button', text: t('net.oeffnen'), onClick: () => navigate('calculate') })),
+      zeile(t('nav.needs'), t('net.wieEingebettet'), el('button', { class: 'btn btn-sm', type: 'button', text: t('net.oeffnen'), onClick: () => navigate('needs') })),
+      zeile('Workflow PDF Pro', nativ ? t('net.wieTresor') : t('net.wieNurApp'), oeffnen('workflow-pdf-pro')),
+      zeile('Private Brain Pro', nativ ? t('net.wieTresor') : t('net.wieNurApp'), oeffnen('private-brain')),
+      zeile(t('net.andere'), t('net.wieNetz'), null),
+    ]),
+  ]);
 }
 
 // Briefkasten/Verkehr: prüft live, ob die angeschlossenen Knoten erreichbar sind

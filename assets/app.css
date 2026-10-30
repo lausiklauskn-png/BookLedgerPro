@@ -999,3 +999,36 @@ input[type="password"], input[type="text"], input[type="number"], input[type="da
   --error: #dc2626; --success: #166534; --shadow: 0 8px 24px rgba(23, 32, 51, .10); --shadow-sm: 0 1px 2px rgba(23, 32, 51, .06);
   color-scheme: light; color: var(--text); background-color: var(--bg);
 }
+
+/* ── Pro-Umbau 11 (Klaus 2026-10-30): Überall suchen · Passendes Konto finden · Mycel-Kasten · Siegel in der Leiste ── */
+.ue-kurz, .net-kurz { margin: .1rem 0 .3rem; font-weight: 500; }
+.ue-mehr { margin: 0 0 .6rem; }
+.ue-mehr > summary { cursor: pointer; color: var(--accent-strong); font-size: .85rem; width: fit-content; }
+.ue-mehr > p { margin: .35rem 0 0; color: var(--text-muted); }
+.ue-feld { display: flex; gap: .5rem; align-items: flex-start; flex-wrap: wrap; }
+.ue-feld > :first-child { flex: 1 1 14rem; min-width: 0; }
+.ue-quellen { display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin-top: .55rem; font-size: .88rem; }
+.ue-quelle, .ue-ki-zeile { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; }
+.ue-ki-zeile { margin-top: .6rem; font-size: .88rem; }
+.ue-gruppe + .ue-gruppe { margin-top: .8rem; }
+.ue-gruppe-titel { margin: 0 0 .3rem; font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
+.ue-ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.ue-zeile { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .6rem; padding: .35rem 0; border-top: 1px solid var(--border); }
+.ue-zeile:first-child { border-top: 0; }
+.ue-zeile .btn-link { padding: 0; min-height: 0; text-align: left; font-weight: 600; }
+.ue-name { font-weight: 600; overflow-wrap: anywhere; }
+.ue-stelle { flex-basis: 100%; overflow-wrap: anywhere; }
+.ue-ki { flex-basis: 100%; color: var(--success, #2e7d32); }
+.ue-zeile[data-ue-ki="passt"] { background: var(--accent-soft); border-radius: var(--radius-sm); padding-inline: .4rem; }
+.net-kopf { display: flex; gap: .9rem; align-items: center; }
+.net-kopf-text { min-width: 0; }
+.net-kopf-text .card-title { margin: 0; }
+.net-siegel { flex: none; padding: 0; border: 0; background: transparent; cursor: pointer; line-height: 0; border-radius: 50%; }
+.net-siegel .siegel-wappen-gross { margin: 0; }
+.net-siegel .siegel-wappen-gross svg { width: 76px; height: 76px; }
+.net-entwickler > summary { cursor: pointer; }
+.net-entwickler[open] > summary { margin-bottom: .8rem; }
+.nav-siegel { margin-top: auto; }
+.siegel-knopf .siegel-mini { display: inline-flex; width: 20px; justify-content: center; flex: none; }
+.siegel-knopf .siegel-wappen svg { width: 20px; height: 20px; }
+.siegel-knopf[data-stufe="verified-match"] .siegel-wappen { filter: drop-shadow(0 0 3px #e8b92366); }

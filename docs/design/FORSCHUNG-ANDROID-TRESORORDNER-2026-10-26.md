@@ -606,3 +606,26 @@ PRs: BLP #402 (Intent), #403 (0.1.2), #404–#408 (Release-Probe), Basic #16/#17
    „Wer ist im Raum?“; BookLedgerPro reicht dem Netz keinen Korpus (`prepareCorpus`/`setLocalCorpus` fehlen). Zwischen Pro-Apps auf einem Gerät ist der
    Tresorordner der bessere Weg. Vorschläge als Ja/Nein-Liste an Klaus.
 8. ⚠ Nicht gemessen: alles am Gerät; das Windows-Setup an einem echten PC (kommt mit Klaus' Freund).
+
+## 26 · Befunde aus Pro-Umbau 11: Mycel und „Überall suchen“ (2026-10-30, gemessen im Prüf-Browser)
+
+1. **Wofür SBKIM und das Mycel gebaut wurden** (Sage `PAPER_NUTZEN_UND_INTEGRATION.md`, Module 22/23 gelesen): kleine Programme finden einander
+   *semantisch*, verbinden sich *signiert* und tauschen *kontrolliert* aus — ohne Server, ohne Konto. Für BookLedgerPro heißt das: auf einem Gerät
+   ist der Tresorordner der Weg zwischen den Pro-Apps (verschlüsselt, ohne Internet), das Netz ist für **andere Geräte und Personen** (Büro-PC ↔ Tablet,
+   Steuerberater, Klaus' Probe über drei Orte). Die frühere „SBKIM-Suche“ suchte nur drei fest eingetragene Sporen — dasselbe wie „Wer ist im Raum?“.
+2. **Die Korpus-leer-Falle war real:** BookLedgerPro rief Modul 23 ohne `prepareCorpus` auf und antwortete anderen nie. Modul 23 kennt dafür
+   `configure({prepareCorpus})` + `enableAnswering()`; Modul 04 beantwortet Fragen nur mit Vektoren (Modul 03 muss geladen sein). Jetzt: Schalter
+   „Anderen antworten“ baut einen Korpus **nur aus Titel · Datum · Betrag** (nie Belegtext), höchstens 300 Belege, nur im Speicher, nur solange die App offen ist.
+3. **Kanon-Fenster lassen sich ohne Eingriff ins Modul umfärben:** Modul 16/17/23 setzen Farben als Inline-Stil; der Browser schreibt sie normalisiert ins
+   `style`-Attribut („color: rgb(238, 242, 248)“). Attribut-Selektoren auf diese Schreibweise + `!important` legen die App-Tokens darüber
+   (`assets/sbkim-blp.css`); das Siegel-Fenster bringt eigene CSS-Variablen (`--siegel-ink`, `--siegel-gold`) mit, die man direkt setzt. Gemessen: Fläche =
+   `--surface`, jede sichtbare Schrift ≥ 4,5 : 1 in Hell **und** Dunkel. Modul 22 (schwebende Suche) wurde **nicht** eingebaut: ein drittes schwebendes
+   Fenster neben Widget und Mycel-Knopf widerspräche Klaus' „ein Ort statt drei“ (m1); dieselbe Mechanik (Wörter + Bedeutung + Richter nur auf Schalter)
+   steht jetzt in „Überall suchen“ und „Passendes Konto finden“.
+4. **Eingebettete Apps lesen, ohne sie anzulegen:** `indexedDB.open(name)` ohne Version legt eine fehlende Datenbank an. `onupgradeneeded` heißt „neu“ →
+   Transaktion abbrechen, nichts lesen. Probe: nach einer Suche gibt es `WorkflowNeeds1` weiterhin nicht.
+5. **Eigene Probe-Fehler:** (a) Der Suchknopf blieb nach der Suche gesperrt, weil das letzte Neuzeichnen *vor* `finally { _laeuft = false }` lief —
+   gefunden, weil der zweite Klick der Probe 30 s wartete. (b) Der Schalter „Anderen antworten“ las den Zustand aus `_meta.answering`; mit gestelltem Modul
+   fiel er nach dem Neuzeichnen zurück — ein eigener Merker in `src/sbkim/netz.js` trägt jetzt den Sitzungszustand. (c) „gesperrter Tresorordner“: die Probe
+   las den Status, solange noch „Sucht …“ dastand; sie wartet jetzt auf den Satz.
+6. ⚠ Nicht gemessen: ein echtes Relais (aus dem Behälter gesperrt), eine echte Antwort über zwei Orte, das Sprachmodell im Antwortweg, alles am Gerät.

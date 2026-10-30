@@ -11,8 +11,8 @@ Für einen Tester an seinem eigenen Windows-PC mit eigenen Daten (Klaus 2026-10-
 
 ## Installieren
 
-1. Setup laden: `https://family-projekt.de/updates/bookledgerpro/BookLedgerPro-Windows-0.1.5-x64-setup.exe`
-   (der Link gilt, sobald Klaus die Windows-Fassung freigibt).
+1. Setup laden: `https://family-projekt.de/updates/bookledgerpro/BookLedgerPro-Windows-0.1.6-x64-setup.exe`
+   (wer 0.1.5 schon hat: „v0.1.5“ oben antippen → Update, oder das neue Setup einfach darüber installieren — die Daten bleiben).
 2. Doppelklick. Windows zeigt **„Der Computer wurde durch Windows geschützt“** (SmartScreen), weil das Setup nicht mit einem gekauften
    Zertifikat unterschrieben ist. → **„Weitere Informationen“** → **„Trotzdem ausführen“**.
 3. Installiert wird nur für den angemeldeten Benutzer, ohne Administrator. Fehlt WebView2, lädt das Setup es selbst nach.
@@ -36,8 +36,12 @@ Für einen Tester an seinem eigenen Windows-PC mit eigenen Daten (Klaus 2026-10-
 | Buchung, Kunde, Rechnung anlegen | lässt sich speichern und wiederfinden |
 | Schrift „A··A“ oben | Schrift größer, Knöpfe bleiben gleich hoch |
 | ⓘ neben dem Titel eines Kastens | ein Tipp zeigt alle Erklärungen des Kastens, ein zweiter blendet sie aus |
-| Version oben unter „BookLedgerPro“ (`v0.1.5`) | Tipp prüft auf Updates: „aktuelle Version“ |
-| Mikrofon und „DE ▾“ rechts im Suchfeld (auch SBKIM-Suche) | Windows-Spracherkennung, ohne Internet; „DE ▾“ wählt die Sprache |
+| Version oben unter „BookLedgerPro“ (`v0.1.6`) | Tipp prüft auf Updates: „aktuelle Version“ |
+| Mikrofon und „DE ▾“ rechts im Suchfeld (auch „Überall suchen“) | Windows-Spracherkennung, ohne Internet; „DE ▾“ wählt die Sprache |
+| Netz → **„Überall suchen“** | ein Wort aus einem Beleg oder Kunden: eine Liste, jede Zeile sagt, woher sie kommt (BookLedgerPro, Angebotsplaner, Tresorordner) |
+| Buchungen → Neue Buchung → **„Passendes Konto finden“** | „Tanken“ oder „Büromiete“ eingeben → passendes Konto, „Als Soll“ setzt es ins Formular |
+| Unten in der linken Leiste **„Läuft mit SBKIM · Siegel“** | Tipp zeigt das Siegel groß; „Bausteine prüfen“ öffnet das Kanon-Siegel in den Farben der App |
+| Netz → **Mycel** → „Verbinden …“ | das Mycel-Fenster in den Farben der App; **Probe über zwei Orte** (Klaus' Rechner und deiner): beide verbinden, „Wer ist im Raum?“ — siehst du den anderen? Dann bei beiden „Anderen antworten“ an und in „Überall suchen“ den Haken „Netz“ setzen |
 | Scannen (falls ein Scanner da ist) | Belege → Scannen → „Scanner oder Kamera …“ |
 | Schließen und wieder öffnen | Passwort, dann ist alles noch da |
 
