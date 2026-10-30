@@ -52,6 +52,15 @@ Das heißt:
 - **Am Ende veröffentlichen (Klaus' Wort liegt damit vor):** neue Version (0.1.6 o. höher, vorher `releases` lesen, Buildnummer erhöhen) — Android-APK
   (`android-release.yml`), Windows (`windows-release.yml`, „ja“), Basic/PWA über Pages nachziehen; Download-Seite https://claude.ai/artifact/MFaYdbzH9MreBQSC5Mkr1H
   aktualisieren; Windows-Testanleitung anpassen. Alle Regeln unten („Was nicht passieren darf“) gelten weiter.
+- **Ganz zum Schluss: Gesamtpaket als eine HTML-Seite** (Klaus 2026-10-30: „ein Paket … damit wir diese alle einmal zusammen runterladen und auf dem Rechner
+  installieren können“). Die Download-Seite https://claude.ai/artifact/MFaYdbzH9MreBQSC5Mkr1H wird zum Gesamtpaket: je App **die aktuelle Version in allen
+  gebauten Varianten** (Android-APK, Windows-Setup, PWA/Browser), jeweils mit Größe und SHA-256, wo vorhanden:
+  BookLedgerPro (Android, Windows) · BookLedger Basic (PWA) · Workflow PDF (PWA) · Workflow PDF Pro (Android, Windows) · Private Brain Pro (Android, Windows;
+  dazu die PWA/V3, falls aktuell) · Workflow Calculate / Angebotsplaner und Workflow Needs / Bedarfsanalyse (PWAs; Quelle laut `apps/HERKUNFT.json`) ·
+  Projekt-Reiniger (alle Varianten: Basic/Pro, Android, Windows, Browser) · Meine Familienakte (aktuelle Version, auch wenn Klaus' Abgleich noch aussteht).
+  Vor dem Eintragen jeden Stand an der Quelle lesen (`releases` der Repos bzw. Update-Server/Pages), nichts aus dem Gedächtnis; was nicht prüfbar ist (z. B. Repo
+  nicht erreichbar), als „nicht geprüft“ kennzeichnen. Oben eine kurze Reihenfolge zum Installieren (Android über die vorhandene App, Windows-SmartScreen,
+  PWA „Installieren“); keine Schlüssel, keine Daten.
 
 ## Reihenfolge
 
@@ -73,7 +82,8 @@ Zuerst lesen: CLAUDE.md je Repo, BookLedgerPro/BRIEF_SITZUNG_PRO-UMBAU-11.md (Ab
 Forschung § 25, docs/TRESORORDNER.md; Sage-Protokol lesend klonen. Meine Antworten: https://claude.ai/artifact/CRYeXoARoNLnHEAscXeTHk (Sammlung „antworten“).
 Arbeite ohne Rückfragen: offene Punkte selbst so entscheiden, wie es für die Aufgabe am sinnvollsten ist, und im Abschluss begründen.
 Ziel: die Apps aus der Menüleiste von BookLedgerPro und die Pro-Apps verbinden sich über Mycel/Sage-Protokoll, „Überall suchen“ über alle diese Apps, Siegel sichtbar, Design wie BLP.
-Am Ende veröffentlichen (freigegeben): neue Version für Android (APK) und Windows, Basic/PWA nachziehen, Download-Seite aktualisieren — vorher releases lesen, Version + Buildnummer erhöhen.
+Am Ende veröffentlichen (freigegeben): neue Version für Android (APK) und Windows, Basic/PWA nachziehen — vorher releases lesen, Version + Buildnummer erhöhen.
+Zum Schluss: Gesamtpaket als eine HTML-Seite (Download-Seite) mit allen Apps in aktueller Version und allen Varianten (BLP, Basic, Workflow PDF/Pro, Private Brain, Calculate, Needs, Projekt-Reiniger, Familienakte).
 BookLedgerPro ist öffentlich: keine Schlüssel in Dateien oder im Chat. Ein PR je App, bei grüner CI selbst mergen. Nichts an echten Tresoren ohne Kopie und Rückweg.
 Am Ende: Abschluss mit Stundennachweis, Forschungseintrag, Brief mit Copy-Paste-Startauftrag.
 ```
