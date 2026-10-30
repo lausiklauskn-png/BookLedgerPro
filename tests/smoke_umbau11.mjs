@@ -126,7 +126,9 @@ const warteStapel = (page) => page.waitForFunction(() => window.SbkimRendezvous 
 const kontrast = (a, b) => { const L = (c) => { const v = c.match(/[\d.]+/g).slice(0, 3).map(Number).map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
   const [h, d] = [L(a), L(b)].sort((x, y) => y - x); return (h + 0.05) / (d + 0.05); };
 
-for (const [art, b] of [['pwa', 1280], ['app', 1280], ['win', 1000], ['pwa', 400], ['app', 400]]) {
+// In BookLedger Basic fehlt native/ — dort laufen nur die PWA-Teile (wie smoke_befunde10).
+const NATIV = existsSync(join(WURZEL, 'native/blp-native.js'));
+for (const [art, b] of [['pwa', 1280], ['app', 1280], ['win', 1000], ['pwa', 400], ['app', 400]].filter(([a]) => NATIV || a === 'pwa')) {
   const { ctx, page, fehler } = await oeffnen(art, b);
   await warteStapel(page); await page.evaluate(NETZ_STUB);
   const breit = b > 640;
