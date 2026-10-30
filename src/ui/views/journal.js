@@ -1,6 +1,7 @@
 // src/ui/views/journal.js — Journal: Liste + Neue-Buchung-Formular, Festschreiben, Storno.
 
 import { el, mount } from '../dom.js';
+import { kontoFindenKnopf } from '../kontoFinden.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
 import { loadAccounts, listBuchungen, saveEntwurf, festschreiben, storno, getBuchung, deleteEntwurf, ensureSeedKonten, getBuchungssperre } from '../../domain/store.js';
@@ -225,7 +226,7 @@ function buchungForm(konten, idx) {
       el('span', { text: t('journal.begruendung') }),
       fBegruendung,
     ]),
-    el('div', { class: 'btn-row' }, [beraterBtn, bewirtungBtn, beraterStatus]),
+    el('div', { class: 'btn-row' }, [kontoFindenKnopf({ setzen: (nr, seite) => { const f = seite === 'haben' ? fHaben : fSoll; if ([...f.options].some((o) => o.value === nr)) { f.value = nr; f.dispatchEvent(new Event('change', { bubbles: true })); } } }), beraterBtn, bewirtungBtn, beraterStatus]),
     el('p', { class: 'muted small', text: t('journal.aiReasonNote') }),
     zeigeUst ? el('p', { class: 'muted small', text: t('journal.bewirtungHint') }) : null,
     err,

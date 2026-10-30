@@ -1,6 +1,7 @@
 // src/ui/views/accounts.js — Kontenplan mit Salden + Konten anlegen/bearbeiten/löschen.
 
 import { el, mount } from '../dom.js';
+import { kontoFindenKnopf } from '../kontoFinden.js';
 import { t } from '../i18n.js';
 import { formatEuro } from '../../domain/money.js';
 import { loadAccounts, listBuchungen, addKonto, updateKonto, deleteKonto } from '../../domain/store.js';
@@ -65,6 +66,7 @@ async function repaint() {
   mount(_host, el('section', { class: 'view' }, [
     el('h1', { text: t('accounts.title') }),
     kontoForm(),
+    el('div', { class: 'btn-row' }, [kontoFindenKnopf()]),
     el('div', { class: 'card no-pad' }, [
       el('div', { class: 'pad muted small', text: `${konten.length} ${t('accounts.count')}` }),
       table,

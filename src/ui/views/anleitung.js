@@ -77,6 +77,14 @@ function schritteCard() {
       'Bearbeiten ist der Stift, Löschen der Papierkorb. „A··A“ oben macht die Schrift größer.',
     ]),
 
+    // Pro-Umbau 11 (Klaus 2026-10-30): Programme verbinden und überall suchen.
+    schritt('i', 'Programme verbinden und überall suchen', [
+      'Netz → „Überall suchen“: ein Wort genügt. Die Liste zeigt Treffer aus BookLedgerPro, aus Angebotsplaner und Bedarfsanalyse und – in der App – aus dem Tresorordner von Workflow PDF Pro und Private Brain Pro. Jede Zeile sagt, woher sie kommt.',
+      'Der Haken „Netz“ fragt zusätzlich deine anderen Arbeitsplätze (erst Netz → Mycel → „Verbinden …“). Andere Programme antworten nur mit Titeln, nie mit dem Inhalt.',
+      'In „Neue Buchung“ findet „Passendes Konto finden“ das Konto zu einem Stichwort („Tanken“, „Büromiete“).',
+      'Unten links „Läuft mit SBKIM · Siegel“: das Siegel zeigt, dass die Bausteine des Mycels wirklich geladen sind.',
+    ]),
+
     schritt(1, 'Beleg aus Text erfassen (Belege → Schnellerfassung)', [
       'Menü „Belege" → Feld „Schnellerfassung aus Text".',
       'Beispieltext rechts mit „Kopieren" holen und in das große Textfeld einfügen.',

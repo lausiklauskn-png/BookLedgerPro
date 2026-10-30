@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v285';
+const CACHE_VERSION = 'v286';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -40,6 +40,7 @@ const CORE_ASSETS = [
   './manifest.webmanifest',
   './assets/tokens.css',
   './assets/app.css',
+  './assets/sbkim-blp.css',
   './assets/icon.svg',
   // Strichsymbole (Klaus 2026-10-26): PBP-Satz byte-1:1 + BLP-Fachsymbole, geladen von src/ui/icons.js.
   './assets/pb-icons.svg',
@@ -249,6 +250,9 @@ const CORE_ASSETS = [
   './src/sbkim/searchCorpus.js',
   './src/sbkim/kontoSynonyme.js',
   './src/ui/views/sbkimsuche.js',
+  './src/domain/ueberall.js',
+  './src/sbkim/netz.js',
+  './src/ui/kontoFinden.js',
   './src/sbkim/wappen.js',
   './docs/TRANSPARENZ_ZWISCHENSTAND.html',
   // SBKIM Andock-Runtime + Auto-Lauschen (Stufe 2) — byte-identisch aus Sage.

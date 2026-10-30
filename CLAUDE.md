@@ -485,3 +485,18 @@ Klick gehen alle Informationen an und wieder aus“. Gilt für App **und** PWA (
   `befunde8` 129 · `run.mjs` 2610/0 · Gegenprobe 3/3 gefangen. `sw.js` v285. ⚠ Nicht am Tablet. Vorschläge Mycel/SBKIM: Ja/Nein-Liste https://claude.ai/artifact/CRYeXoARoNLnHEAscXeTHk.
   **Veröffentlicht (Klaus' Wort):** Android **0.1.5** (`5cf5d33e…4b64`, eigener Server) und **Windows 0.1.5** zum ersten Mal (`e01025f0…9bf6`, eigener Server,
   unsigniert), Abschluss `BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-10.md`, Forschung § 25; **nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-11.md`. Nicht erneut auslösen.
+
+## 🕸 Pro-Umbau 11: Mycel und „Überall suchen“ (Klaus 2026-10-30, autonom nach seiner Ja/Nein-Liste)
+
+Klaus: „arbeitsplatzübergreifend Dokumente und Notizen in den Programmen im Netz finden“ · Ja zu m1/m2/m4/m5/m7/m8/m10/m11/m12. Gilt für App **und** PWA.
+- **„Überall suchen“** (Netz → Überall suchen; Ansichtsschlüssel bleibt `sbkimsuche`, `src/ui/views/sbkimsuche.js`, reine Logik `src/domain/ueberall.js`):
+  eine Liste mit Herkunft aus BookLedgerPro (Belege mit Text, Buchungen, Kunden, Aufträge), Angebotsplaner/Bedarfsanalyse (IndexedDB `WorkflowCalculate1`/
+  `WorkflowNeeds1`, nur gelesen, nie angelegt), Tresorordner (nur App) und auf Haken das Netz (Modul 23 `discover`/`askNode`). Kurze Zeile + „Mehr dazu“,
+  KI-Prüfung nur als Schalter (Mistral EU, nur Titel und Fundstelle).
+- **„Passendes Konto finden“** (`src/ui/kontoFinden.js`) in Neue Buchung (setzt Soll/Haben) und bei den Konten: sofort über Wörter, auf Wunsch nach Bedeutung.
+- **Mycel-Seite als einfacher Kasten** (`network.js`): Siegel, „Läuft mit SBKIM“, Verbinden (Kanon-Fenster), Gerätename, **„Anderen antworten“** (Korpus nur
+  Titel · Datum · Betrag, `src/sbkim/netz.js` → `configure({prepareCorpus})` + `enableAnswering`), verbundene Programme; Fachliches hinter „Für Entwickler“.
+- **Siegel unten in der Leiste** (`siegelLeiste` in `shell.js`), app-eigene Lampengruppe oben entfernt (das Kanon-Widget 17 zeigt dieselben Lampen).
+- **Kanon-Fenster im Design der App:** `assets/sbkim-blp.css` legt Tokens über die Inline-Stile von Modul 16/17/23 (Module byte-1:1 unverändert).
+- 0.1.6 (Android Code 7, Windows gleich), `sw.js` v286. Proben `tests/smoke_umbau11.mjs` **129** (pwa/app/win, hell/dunkel) · `run.mjs` „Pro-Umbau 11“.
+  ⚠ Kein echtes Relais gemessen, kein Gerät. WPP/PB: „Überall suchen“ dort ist der nächste Schritt (Brief Umbau 12).

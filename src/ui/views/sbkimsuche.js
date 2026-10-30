@@ -1,201 +1,220 @@
-// src/ui/views/sbkimsuche.js — Ansicht „SBKIM-Suche" (mehrstufige semantische Suche).
-// Zwei Such-BEREICHE über denselben Maschinenraum (austauschbarer Korpus):
-//   • Konten  — passendes Buchungskonto finden (Korpus = Konten)
-//   • Knoten  — gleichwertige Mycel-Knoten finden (Korpus = Peer-Sporen)   ← Ur-Gedanke
-// Pipeline je Bereich: Vorfilter (lokal, embed.js) → Richter (opt-in, Mistral EU/BYOK)
-// → Fail-soft. Der Richter ist NIE eine Eintritts-Barriere. Muster: docs/SBKIM-SUCHE-MUSTER.md.
+// src/ui/views/sbkimsuche.js — „Überall suchen“ (Pro-Umbau 11, Klaus 2026-10-30, Ja zu m1/m4/m5/m7/m12).
+// Die frühere Seite „SBKIM-Suche“ (Konten + drei feste Knoten-Sporen) ist weg: die Kontosuche ist ein Knopf „Passendes Konto
+// finden“ in „Neue Buchung“ und bei den Konten (src/ui/kontoFinden.js), die Knoten findet man im Mycel-Fenster. Der Schlüssel der
+// Ansicht bleibt `sbkimsuche` (Menü, Modi, alte Lesezeichen), Beschriftung „Überall suchen“.
 //
-// EHRLICHER HINWEIS: Modell-Laden (~30 MB, opt-in) und der echte Mistral-Richter-Lauf
-// brauchen Netz + Browser — in der Bau-Umgebung NICHT testbar. Vertrags-/Modus-/Fail-soft-
-// und Korpus-Logik (match.js/hybridSearch.js/searchCorpus.js) ist node-getestet.
+// Eine Suche, eine Liste, jede Zeile mit Herkunft:
+//   • diese App — Belege (Name + erkannter Text, verschlüsselt am Beleg), Buchungen, Kunden, Aufträge
+//   • Angebotsplaner und Bedarfsanalyse — die eingebetteten Apps (gleicher Ursprung, ihre Datenbanken nur gelesen)
+//   • Tresorordner — die Fächer aller Pro-Apps auf diesem Gerät (nur in der App, verschlüsselt, ohne Internet; Klaus m5)
+//   • Netz — andere Arbeitsplätze im Mycel, nur wenn eingeschaltet und verbunden (Klaus m6: für alle da, jeder schaltet selbst)
+// Die KI-Prüfung ist nur ein Schalter unter der Liste (m12, aus): mit Mistral-Schlüssel liest sie Titel und Fundstelle.
+//
+// Reine Logik in src/domain/ueberall.js (node-geprüft), Browser-Probe tests/smoke_umbau11.mjs.
 
 import { el, mount } from '../dom.js';
-import { t } from '../i18n.js';
-import { loadAccounts } from '../../domain/store.js';
+import { t, tOpt } from '../i18n.js';
+import { getSettings, navigate } from '../../state.js';
+import { listBelege, getBelegText } from '../../domain/documents.js';
+import { listBuchungen } from '../../domain/store.js';
+import { listAuftraege, listKunden } from '../../domain/crm-store.js';
+import { suchwoerter, wortTreffer, ausschnitt, eintragText } from '../../domain/belegsuche.js';
+import { appsSuchen, gruppieren, netzZeilen, kiKandidaten } from '../../domain/ueberall.js';
+import { FAECHER, eintraegeSuchen } from '../../domain/tresorordner.js';
+import { netzFragen, mycelFensterOeffnen } from '../../sbkim/netz.js';
 import { getAiConfig } from '../../ai/aiConfig.js';
-import { loadEmbedder, EMBED_DIM } from '../../sbkim/embed.js';
-import { accountCorpusEntries, embedCorpus, fetchNodeSpores, nodeCorpusEntries, embedMissingVectors } from '../../sbkim/searchCorpus.js';
-import { sbkimHybridSearch } from '../../sbkim/hybridSearch.js';
-import { testMarke } from '../testmarke.js';
+import { hybridMatch } from '../../sbkim/match.js';
+import { belegVorschau } from '../belegVorschau.js';
 
-let _host = null;
-let _busy = false;
-let _bereich = 'konten';        // 'konten' | 'knoten'
-let _corpusKonten = null;       // gecachte, eingebettete Korpora (Session)
-let _corpusKnoten = null;
-let _query = '';                // aktuelle Eingabe — bleibt über Neuzeichnen (Ergebnis) erhalten
+const MERK = 'blpr_ueberall_v1';   // gewählte Quellen (nur Komfort, localStorage)
+let _host = null, _frage = '', _laeuft = false, _treffer = [], _netzInfo = '', _netzZu = false, _ki = null;
+
+const tresor = () => (typeof window !== 'undefined' && window.BLPNative && window.BLPNative.tresor) || null;
+
+function quellenLesen() {
+  const v = { app: true, apps: true, tresor: true, netz: false };
+  try { Object.assign(v, JSON.parse(localStorage.getItem(MERK) || '{}')); } catch { /* Vorgabe */ }
+  return v;
+}
+function quellenMerken(q) { try { localStorage.setItem(MERK, JSON.stringify(q)); } catch { /* egal */ } }
 
 export async function mountSbkimSuche(host) {
-  _host = host;
-  _query = '';   // frisch geöffnet → leeres Feld (geschlossen = zurückgesetzt)
-  repaint();
+  _host = host; _frage = ''; _treffer = []; _netzInfo = ''; _netzZu = false; _ki = null;
+  zeichnen();
 }
 
-function bereichBtn(id, label) {
-  const active = _bereich === id;
-  return el('button', {
-    class: 'btn btn-sm' + (active ? ' btn-primary' : ''),
-    text: label,
-    onClick: () => { if (_bereich !== id && !_busy) { _bereich = id; repaint(); } },
+// ── Lesen der eingebetteten Apps (gleicher Ursprung). Öffnet die Datenbank NUR, wenn es sie schon gibt — ein onupgradeneeded
+// bedeutet „neu“: dann bricht der Lauf ab, statt eine leere Datenbank für die App anzulegen.
+function dbLesen(name, faecher) {
+  return new Promise((ok) => {
+    if (typeof indexedDB === 'undefined') return ok({});
+    let neu = false;
+    let r;
+    try { r = indexedDB.open(name); } catch { return ok({}); }
+    r.onupgradeneeded = () => { neu = true; try { r.transaction.abort(); } catch { /* egal */ } };
+    r.onerror = () => ok({});
+    r.onblocked = () => ok({});
+    r.onsuccess = () => {
+      const db = r.result;
+      if (neu) { db.close(); return ok({}); }
+      const da = faecher.filter((f) => db.objectStoreNames.contains(f));
+      if (!da.length) { db.close(); return ok({}); }
+      const aus = {};
+      const tx = db.transaction(da, 'readonly');
+      for (const f of da) { const q = tx.objectStore(f).getAll(); q.onsuccess = () => { aus[f] = q.result || []; }; }
+      tx.oncomplete = () => { db.close(); ok(aus); };
+      tx.onerror = () => { db.close(); ok(aus); };
+    };
   });
 }
 
-// Spracheingabe (Klaus 2026-10-30: „Das Mikrofon ist wieder nicht in dem Stichwort … drin. Genauso die Wahl der Sprache“): Mikrofon und
-// Sprachmarke sitzen wie an jedem Suchfeld rechts IM Feld (src/ui/mikro.js, data-mikro). Engines und EU-Politik gelten dort genauso
-// (Browser-Erkennung / EU-Schlüssel, „bindend“ sperrt den Browser; in der App Androids Sprachfenster bzw. Windows-Spracherkennung).
+async function suchenApp(frage) {
+  const woerter = suchwoerter(frage);
+  if (!woerter.length) return [];
+  const aus = [];
+  for (const b of await listBelege().catch(() => [])) {
+    const text = (b.textZeichen || 0) > 0 ? await getBelegText(b.id).catch(() => '') : '';
+    if (wortTreffer(b.name + ' ' + text, woerter)) aus.push({ herkunft: 'app', typ: 'beleg', id: b.id, name: b.name, stelle: ausschnitt(text || b.name, woerter), meta: b });
+  }
+  const [buchungen, kunden, auftraege] = await Promise.all([listBuchungen().catch(() => []), listKunden().catch(() => []), listAuftraege().catch(() => [])]);
+  for (const [typ, liste] of [['buchung', buchungen], ['kunde', kunden], ['auftrag', auftraege]]) {
+    for (const e of liste) {
+      const text = eintragText(typ, e);
+      if (wortTreffer(text, woerter)) aus.push({ herkunft: 'app', typ, id: e.id, name: (typ === 'buchung' ? (e.beschreibung || e.datum) : typ === 'kunde' ? e.name : (e.titel || e.nr)) || '', stelle: ausschnitt(text, woerter) });
+    }
+  }
+  return aus;
+}
 
-function repaint(result, status) {
-  const input = el('input', { type: 'text', class: 'beleg-text', placeholder: t('sbkimsuche.placeholder'), value: _query, 'data-mikro': '', 'data-mikro-key': 'sbkimsuche' });
-  input.addEventListener('input', () => { _query = input.value; });
-  const statusP = el('p', { class: 'muted small', text: status || '' });
-  const out = el('div', { class: 'sbkimsuche-out' });
-  if (result) out.appendChild(renderResult(result));
+async function suchenApps(frage) {
+  const [c, n] = await Promise.all([dbLesen('WorkflowCalculate1', ['angebote', 'kunden']), dbLesen('WorkflowNeeds1', ['vorgaenge'])]);
+  return appsSuchen({ angebote: c.angebote, kunden: c.kunden, vorgaenge: n.vorgaenge }, frage);
+}
 
-  const run = async () => {
-    const q = (input.value || '').trim();
-    if (!q || _busy) return;
-    _busy = true;
-    btn.setAttribute('disabled', '');
-    try {
-      const setStatus = (s) => { statusP.textContent = s; };
-      setStatus(t('sbkimsuche.loadingModel'));
-      const embedder = await loadEmbedder({ onStatus: setStatus });   // Anfrage-Einbettung (+ ggf. Korpus)
-      const corpus = await ensureCorpus(embedder, setStatus);
-      if (!corpus || corpus.length === 0) { repaint(null, t('sbkimsuche.noCorpus')); return; }
-      const cfg = await getAiConfig();
-      setStatus(cfg.mistralKey ? t('sbkimsuche.judging') : t('sbkimsuche.prefiltering'));
-      const res = await sbkimHybridSearch(q, corpus, {
-        apiKey: cfg.mistralKey, provider: 'mistral', euOnly: true,
-        queryLabel: 'BookLedgerPro', model: cfg.mistralModel, k: 10,
-        minScore: 0,   // Suche: Vorfilter reicht IMMER Top-k durch; der Richter wählt aus.
-      });
-      repaint(res, '');
-    } catch (e) {
-      repaint(null, t('sbkimsuche.error').replace('%E%', String((e && e.message) || e)));
-    } finally { _busy = false; }
+async function suchenTresor(frage) {
+  const b = tresor();
+  if (!b) return { treffer: [], hinweis: '' };
+  let z = null;
+  try { z = await b.zustand(); } catch { /* unten */ }
+  if (!z || !z.offen) return { treffer: [], hinweis: t('ue.tresorZu') };
+  const faecher = [];
+  for (const f of FAECHER) { try { const r = await b.verzeichnis(f.fach); faecher.push({ ...f, eintraege: r.eintraege || [] }); } catch { /* Fach fehlt */ } }
+  return { treffer: eintraegeSuchen(faecher, frage).map((x) => ({ herkunft: 'tresor', typ: x.fach, id: x.eintrag.id, name: x.eintrag.name || x.eintrag.id,
+    stelle: (FAECHER.find((f) => f.fach === x.fach) || {}).ordner + (x.ausschnitt ? ' · ' + x.ausschnitt : '') })), hinweis: '' };
+}
+
+async function suchen() {
+  const frage = _frage.trim();
+  if (!frage || _laeuft) return;
+  const q = quellenLesen();
+  _laeuft = true; _treffer = []; _netzInfo = ''; _netzZu = false; _ki = null;
+  zeichnen(t('ue.sucht'));
+  let status;
+  try {
+    const teile = await Promise.all([
+      q.app ? suchenApp(frage) : [],
+      q.apps ? suchenApps(frage) : [],
+      q.tresor && tresor() ? suchenTresor(frage) : { treffer: [], hinweis: '' },
+    ]);
+    _treffer = [...teile[0], ...teile[1], ...teile[2].treffer];
+    status = teile[2].hinweis || undefined;
+    if (q.netz) {
+      zeichnen(t('ue.fragtNetz'));
+      const n = await netzFragen(frage);
+      if (!n.ok) { _netzZu = n.reason !== 'nicht-geladen'; _netzInfo = _netzZu ? t('ue.netzZu') : t('ue.netzFehlt'); }
+      else if (!n.knoten) _netzInfo = t('ue.netzLeer');
+      else { const z = netzZeilen(n.antworten); _treffer.push(...z); _netzInfo = t('ue.netzAntworten').replace('{n}', String(n.knoten)).replace('{z}', String(z.length)); }
+    }
+  } catch (e) {
+    status = t('ue.fehler').replace('{e}', String((e && e.message) || e));
+  } finally { _laeuft = false; }
+  zeichnen(status);
+}
+
+async function kiPruefen(schalter) {
+  if (!schalter.checked) { _ki = null; return zeichnen(); }
+  const cfg = await getAiConfig().catch(() => ({}));
+  if (!cfg.mistralKey) { _ki = { hinweis: t('ue.kiOhneSchluessel') }; return zeichnen(); }
+  _ki = { laeuft: true }; zeichnen();
+  const r = await hybridMatch({ text: _frage.trim(), label: 'BookLedgerPro' }, kiKandidaten(_treffer),
+    { apiKey: cfg.mistralKey, provider: 'mistral', euOnly: true, model: cfg.mistralModel }).catch((e) => ({ available: false, reason: String(e && e.message || e) }));
+  if (!r || !r.available) { _ki = { hinweis: t('ue.kiNichtDa').replace('{r}', (r && r.reason) || '') }; return zeichnen(); }
+  const passt = new Map((r.verdicts || []).filter((v) => v.passt).map((v) => [v.anchorId || v.label, v]));
+  _ki = { passt, aus: (r.verdicts || []).filter((v) => v.ausgeschlossen).length };
+  zeichnen();
+}
+
+function oeffnen(z) {
+  if (z.herkunft === 'app' && z.typ === 'beleg' && z.meta) return belegVorschau(z.meta);
+  const ziel = { buchung: 'journal', kunde: 'customers', auftrag: 'orders' }[z.typ] || { calculate: 'calculate', needs: 'needs', tresor: 'tresorordner' }[z.herkunft];
+  if (ziel) navigate(ziel);
+}
+
+function zeile(z) {
+  const v = _ki && _ki.passt ? _ki.passt.get(z.herkunft + ':' + z.typ + ':' + z.id) : null;
+  const kopf = z.herkunft === 'netz'
+    ? el('span', { class: 'ue-name', text: z.name })
+    : el('button', { class: 'btn-link ue-name', type: 'button', text: z.name || '—', onClick: () => oeffnen(z) });
+  return el('li', { class: 'ue-zeile', 'data-ue-herkunft': z.herkunft, 'data-ue-typ': z.typ, ...(v ? { 'data-ue-ki': 'passt' } : {}) }, [
+    kopf,
+    el('span', { class: 'muted small ue-art', text: tOpt('ue.typ.' + z.typ) || '' }),
+    z.stelle ? el('span', { class: 'muted small ue-stelle', text: z.herkunft === 'netz' ? t('ue.vonKnoten').replace('{k}', z.knoten || '?') + (z.bestaetigt ? '' : ' · ' + t('ue.unbestaetigt')) : z.stelle }) : null,
+    v && v.begruendung ? el('span', { class: 'small ue-ki', text: v.begruendung }) : null,
+  ].filter(Boolean));
+}
+
+function zeichnen(status) {
+  const q = quellenLesen();
+  const input = el('input', { type: 'search', class: 'beleg-text', 'data-ue-frage': '', placeholder: t('ue.platzhalter'), value: _frage, 'data-mikro': '', 'data-mikro-key': 'ueberall', 'aria-label': t('ue.titel') });
+  input.addEventListener('input', () => { _frage = input.value; });
+  input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); suchen(); } });
+  const knopf = el('button', { class: 'btn btn-primary', type: 'button', 'data-ue-suchen': '', text: t('ue.suchen'), onClick: () => suchen() });
+  if (_laeuft) knopf.setAttribute('disabled', '');
+
+  const haken = (k, label, sichtbar = true) => {
+    if (!sichtbar) return null;
+    const cb = el('input', { type: 'checkbox', 'data-ue-quelle': k });
+    cb.checked = !!q[k];
+    cb.addEventListener('change', () => { const n = quellenLesen(); n[k] = cb.checked; quellenMerken(n); });
+    return el('label', { class: 'ue-quelle' }, [cb, el('span', { text: label })]);
   };
 
-  const btn = el('button', { class: 'btn btn-primary', text: t('sbkimsuche.run'), onClick: run });
-  input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); run(); } });
+  const gruppen = gruppieren(_treffer);
+  const liste = el('div', { class: 'ue-liste', 'data-ue-liste': '' }, gruppen.map((g) => el('section', { class: 'ue-gruppe', 'data-ue-gruppe': g.herkunft }, [
+    el('h3', { class: 'ue-gruppe-titel', text: t('ue.herkunft.' + g.herkunft) + ' · ' + g.liste.length }),
+    el('ul', { class: 'ue-ul' }, g.liste.map(zeile)),
+  ])));
 
-  // Knoten↔Knoten-Match (Drei-Schichten-Erkennen): unsere EIGENE Spore ist die Anfrage.
-  // Heute (ohne cap/needs in den Sporen) läuft es im domain-Modus; mit cap/needs → schichten.
-  const runNodeMatch = async () => {
-    if (_busy) return;
-    _busy = true; nodeBtn.setAttribute('disabled', '');
-    try {
-      const setStatus = (s) => { statusP.textContent = s; };
-      setStatus(t('sbkimsuche.loadingNodes'));
-      const [self] = await fetchNodeSpores(['./sbkim/spore.json']);
-      if (!self) { repaint(null, t('sbkimsuche.noSelf')); return; }
-      const vec = (v) => (Array.isArray(v) && v.length === EMBED_DIM) ? v : undefined;
-      const queryNode = { queryVec: vec(self.domainVector), queryCapVec: vec(self.capVector), queryNeedsVec: vec(self.needsVector) };
-      const embedder = await loadEmbedder({ onStatus: setStatus });
-      const full = await ensureCorpus(embedder, setStatus);
-      const selbst = self.id || self.nodeName;
-      const corpus = (full || []).filter((e) => (e.anchorId || e.label) !== selbst);   // ohne mich selbst
-      if (corpus.length === 0) { repaint(null, t('sbkimsuche.noCorpus')); return; }
-      const cfg = await getAiConfig();
-      setStatus(cfg.mistralKey ? t('sbkimsuche.judging') : t('sbkimsuche.prefiltering'));
-      const res = await sbkimHybridSearch('', corpus, {
-        apiKey: cfg.mistralKey, provider: 'mistral', euOnly: true,
-        queryLabel: 'BookLedgerPro', model: cfg.mistralModel, k: 10, queryNode,
-      });
-      repaint(res, '');
-    } catch (e) {
-      repaint(null, t('sbkimsuche.error').replace('%E%', String((e && e.message) || e)));
-    } finally { _busy = false; }
-  };
-  const nodeBtn = el('button', { class: 'btn', text: t('sbkimsuche.nodeMatch'), onClick: runNodeMatch });
+  const kiSchalter = el('input', { type: 'checkbox', role: 'switch', 'data-ue-ki-schalter': '' });
+  kiSchalter.checked = !!_ki;
+  kiSchalter.addEventListener('change', () => kiPruefen(kiSchalter));
 
+  const fertig = !_laeuft && _frage.trim() && (_treffer.length || _netzInfo || status === undefined);
   mount(_host, el('section', { class: 'view' }, [
-    el('h1', { text: t('sbkimsuche.title') }),
-    el('p', { class: 'muted', text: t('sbkimsuche.intro') }),
-    el('div', { class: 'banner banner-info', text: t('sbkimsuche.optinNote') }),
-    el('div', { class: 'card' }, [
-      el('div', { class: 'field' }, [
-        el('span', { text: t('sbkimsuche.bereich') }),
-        el('div', { class: 'btn-row' }, [
-          bereichBtn('konten', t('sbkimsuche.bereichKonten')),
-          bereichBtn('knoten', t('sbkimsuche.bereichKnoten')),
-        ]),
-      ]),
-      el('p', { class: 'muted small', text: t(_bereich === 'knoten' ? 'sbkimsuche.hintKnoten' : 'sbkimsuche.hintKonten') }),
-      el('label', { class: 'field' }, [el('span', { text: t('sbkimsuche.label') }), input]),
-      el('div', { class: 'btn-row' }, _bereich === 'knoten' ? [btn, nodeBtn] : [btn]),
-      // TEMPORÄR: Browser-Test-Marken (co-located → fehlt der Knopf, fehlt die Marke).
-      el('div', { class: 'btn-row' }, _bereich === 'knoten'
-        ? [testMarke('sbkim-knoten', '🜲 mein Knoten ↔ Netz')]
-        : [testMarke('sbkim-konten', 'SBKIM-Suche: Konten')]),
-      statusP,
-    ]),
-    out,
-  ]));
-}
-
-/** Baut (und cached) den Korpus des aktiven Bereichs. */
-async function ensureCorpus(embedder, setStatus) {
-  if (_bereich === 'knoten') {
-    if (_corpusKnoten) return _corpusKnoten;
-    setStatus(t('sbkimsuche.loadingNodes'));
-    const spores = await fetchNodeSpores();
-    let entries = nodeCorpusEntries(spores);
-    if (entries.some((e) => e.needsEmbed)) entries = await embedMissingVectors(entries, embedder.embedPassage);
-    _corpusKnoten = entries;
-    return _corpusKnoten;
-  }
-  if (_corpusKonten) return _corpusKonten;
-  const konten = await loadAccounts();
-  const entries = accountCorpusEntries(konten);
-  setStatus(t('sbkimsuche.buildingCorpus').replace('%N%', String(entries.length)));
-  _corpusKonten = await embedCorpus(entries, embedder.embedPassage,
-    (done, total) => setStatus(t('sbkimsuche.embedding').replace('%D%', String(done)).replace('%T%', String(total))));
-  return _corpusKonten;
-}
-
-function pct(x) { return `${Math.round((Number(x) || 0) * 100)}%`; }
-
-function trefferListe(treffer, withReason) {
-  if (!treffer || treffer.length === 0) return el('p', { class: 'muted small', text: t('sbkimsuche.noneJudged') });
-  // Sage 04.J: ein ausgeschlossener Treffer ging nicht an die KI — kein Score, ein ⚠.
-  return el('ul', { class: 'sbkimsuche-list' }, treffer.map((v) => el('li', v.ausgeschlossen ? { 'data-ausgeschlossen': v.ausgeschlossen } : {}, [
-    el('strong', { text: (v.ausgeschlossen ? '⚠ ' : '') + v.label }),
-    el('span', { class: 'muted small', text: v.ausgeschlossen ? ` · ${t('sbkim.ausgeschlossen')}` : ` · ${t('sbkimsuche.score')} ${pct(v.score)}` }),
-    v.modus ? el('span', { class: 'muted small', text: ` · ${t(v.modus === 'schichten' ? 'sbkimsuche.modusSchichten' : 'sbkimsuche.modusDomain')}` }) : null,
-    withReason && v.begruendung ? el('p', { class: 'muted small', text: v.begruendung }) : null,
-  ].filter(Boolean))));
-}
-
-function renderResult(res) {
-  if (res.mode === 'vorfilter-leer') {
-    return el('div', { class: 'card' }, [el('p', { class: 'muted', text: t('sbkimsuche.empty') })]);
-  }
-  if (res.mode === 'nur-vorfilter') {
-    return el('div', { class: 'card' }, [
-      el('div', { class: 'banner banner-info', text: t('sbkimsuche.modeNoKey') }),
-      trefferListe(res.treffer, false),
-    ]);
-  }
-  if (res.mode === 'fail-soft-vorfilter') {
-    return el('div', { class: 'card' }, [
-      el('div', { class: 'banner banner-warn', text: t('sbkimsuche.modeFailsoft').replace('%R%', res.reason || '') }),
-      trefferListe(res.treffer, false),
-    ]);
-  }
-  // mode === 'richter'
-  const att = res.attestation || {};
-  const kinder = [
-    el('h2', { class: 'card-title', text: t('sbkimsuche.modeJudge') }),
-    el('p', { class: 'muted small', text: t('sbkimsuche.judgeMeta').replace('%P%', att.provider || 'mistral').replace('%R%', att.region || 'eu').replace('%M%', att.model || '') }),
-    trefferListe(res.treffer, true),
-  ];
-  // Transparenz: IMMER die geprüften Kandidaten (vom Vorfilter vorgelegt) zeigen — so sieht man,
-  // ob ein „keiner passt" am Recall (Schicht 1) oder am Urteil (Schicht 2) liegt.
-  if (Array.isArray(res.geprueft) && res.geprueft.length) {
-    kinder.push(el('details', { class: 'sbkimsuche-geprueft' }, [
-      el('summary', { class: 'muted small', text: t('sbkimsuche.geprueft').replace('%N%', String(res.geprueft.length)) }),
-      el('ul', { class: 'sbkimsuche-list' }, res.geprueft.map((c) => el('li', {}, [el('span', { class: 'muted small', text: c.label })]))),
-    ]));
-  }
-  return el('div', { class: 'card' }, kinder);
+    el('h1', { text: t('ue.titel') }),
+    el('div', { class: 'card', 'data-ue-karte': '' }, [
+      el('h2', { class: 'card-title', text: t('ue.titel') }),
+      el('p', { class: 'ue-kurz', 'data-ue-kurz': '', text: t('ue.kurz') }),
+      el('details', { class: 'ue-mehr', 'data-ue-mehr': '' }, [el('summary', { text: t('ue.mehrDazu') }), el('p', { class: 'small', text: t('ue.mehrText') }), el('p', { class: 'small', text: t('ue.mehrNetz') })]),
+      el('div', { class: 'ue-feld' }, [input, knopf]),
+      el('div', { class: 'ue-quellen', 'data-ue-quellen': '' }, [
+        haken('app', t('ue.q.app')),
+        haken('apps', t('ue.q.apps')),
+        haken('tresor', t('ue.q.tresor'), !!tresor()),
+        haken('netz', t('ue.q.netz')),
+      ].filter(Boolean)),
+      status ? el('p', { class: 'muted small', 'data-ue-status': '', role: 'status', text: status }) : null,
+      _netzInfo ? el('p', { class: 'muted small', 'data-ue-netzinfo': '' }, [el('span', { text: _netzInfo + ' ' }),
+        _netzZu ? el('button', { class: 'btn btn-sm', type: 'button', text: t('ue.mycelOeffnen'), onClick: () => mycelFensterOeffnen() }) : null].filter(Boolean)) : null,
+    ].filter(Boolean)),
+    _frage.trim() && !_laeuft && _treffer.length === 0 && fertig ? el('p', { class: 'muted', 'data-ue-leer': '', text: t('ue.nichts') }) : null,
+    _treffer.length ? el('div', { class: 'card' }, [
+      el('h2', { class: 'card-title', text: t('ue.ergebnis').replace('{n}', String(_treffer.length)) }),
+      liste,
+      el('label', { class: 'ue-ki-zeile' }, [kiSchalter, el('span', { text: t('ue.kiSchalter') })]),
+      _ki && _ki.laeuft ? el('p', { class: 'muted small', text: t('ue.kiLaeuft') }) : null,
+      _ki && _ki.hinweis ? el('p', { class: 'muted small', 'data-ue-ki-hinweis': '', text: _ki.hinweis }) : null,
+      _ki && _ki.passt ? el('p', { class: 'muted small', text: t('ue.kiErgebnis').replace('{n}', String(_ki.passt.size)) + (_ki.aus ? ' · ' + t('ue.kiAus').replace('{n}', String(_ki.aus)) : '') }) : null,
+    ].filter(Boolean)) : null,
+  ].filter(Boolean)));
 }

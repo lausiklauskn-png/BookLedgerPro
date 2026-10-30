@@ -7264,5 +7264,39 @@ await section('Sicherung in der Leiste (Klaus 2026-10-29): grün nach dem Sicher
   ok('i18n DE/EN: Sicherungs-Texte zweimal', keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2));
 });
 
+await section('Pro-Umbau 11 (Klaus 2026-10-30): Überall suchen, Netz-Korpus nur Titel/Datum/Betrag, Konto finden, Siegel', async () => {
+  const U = await import('../src/domain/ueberall.js');
+  const daten = { angebote: [{ id: 'a1', nummer: 'A-2026-007', titel: 'Fassade streichen', kundeId: 'k1', status: 'gestellt', positionen: [{ titel: 'Gerüst', menge: 1 }] }],
+    kunden: [{ id: 'k1', name: 'Malerbetrieb Sonne', nr: 'K-17' }], vorgaenge: [{ id: 'V-3', titel: 'Website Bäckerei', kunde: { firma: 'Bäckerei Korn' } }] };
+  const a = U.appsSuchen(daten, 'gerüst');
+  ok('Angebotsplaner: Position „Gerüst“ findet das Angebot (Herkunft calculate)', a.length === 1 && a[0].herkunft === 'calculate' && a[0].typ === 'angebot' && /A-2026-007/.test(a[0].name));
+  ok('Kunde des Angebots über den Namen, Umlaute gefaltet', U.appsSuchen(daten, 'sonne').some((x) => x.typ === 'kunde') && U.appsSuchen(daten, 'backerei').some((x) => x.herkunft === 'needs'));
+  ok('UND über alle Wörter; leere Frage → keine Treffer', U.appsSuchen(daten, 'fassade bäckerei').length === 0 && U.appsSuchen(daten, '  ').length === 0);
+  const belege = [{ id: 'b1', name: 'Rechnung-Strom-Oktober.pdf', createdAt: '2026-10-12T10:00:00Z', buchungId: 'x1', textZeichen: 900 }, { id: 'b2', name: 'Quittung.jpg', createdAt: '2026-10-13T08:00:00Z' }];
+  const buch = new Map([['x1', { zeilen: [{ betrag: 10000 }, { betrag: 1900 }, { betrag: 11900 }] }]]);
+  const k = U.netzKorpusEintraege(belege, buch);
+  ok('Netz-Korpus: Titel ohne Endung, Datum, Betrag aus der Buchung', k[0].label === 'Beleg · Rechnung-Strom-Oktober · 2026-10-12 · 119,00 €' && k[0].anchorId === 'beleg:b1');
+  ok('Netz-Korpus: ohne Buchung kein Betrag, nie Belegtext (text = label)', k[1].label === 'Beleg · Quittung · 2026-10-13' && k.every((e) => e.text === e.label && !('passageVec' in e)));
+  ok('Netz-Korpus höchstens NETZ_KORPUS_MAX Belege', U.netzKorpusEintraege(Array.from({ length: U.NETZ_KORPUS_MAX + 5 }, (_, i) => ({ id: 'i' + i, name: 'x' })), null).length === U.NETZ_KORPUS_MAX);
+  const z = U.netzZeilen([{ ok: true, nodeName: 'BLP · Büro-PC', bestaetigt: true, results: [{ label: 'Beleg · Miete · 2026-10-01', score: 0.9, anchorId: 'beleg:m' }] }, { ok: false, reason: 'timeout' }]);
+  ok('Netz-Antworten: Zeile mit Knoten, gescheiterte Knoten fallen weg', z.length === 1 && z[0].herkunft === 'netz' && z[0].knoten === 'BLP · Büro-PC' && z[0].bestaetigt);
+  const g = U.gruppieren([{ herkunft: 'netz' }, { herkunft: 'app' }, { herkunft: 'tresor' }, { herkunft: 'calculate' }, { herkunft: 'unbekannt' }]);
+  ok('Gruppen in fester Reihenfolge app · calculate · tresor · netz, Unbekanntes weg', g.map((x) => x.herkunft).join(',') === 'app,calculate,tresor,netz');
+  ok('KI-Kandidaten: nie Netz-Zeilen, höchstens 12', U.kiKandidaten([{ herkunft: 'netz', name: 'n' }, ...Array.from({ length: 20 }, (_, i) => ({ herkunft: 'app', typ: 'beleg', id: 'b' + i, name: 'B' + i }))]).length === 12);
+  const { accountCorpusEntries } = await import('../src/sbkim/searchCorpus.js');
+  const kt = U.kontoWortTreffer(accountCorpusEntries([{ nummer: '4210', name: 'Miete', art: 'aufwand' }, { nummer: '4530', name: 'Laufende Kfz-Betriebskosten', art: 'aufwand' }, { nummer: '1000', name: 'Kasse', art: 'aktiv' }]), 'büromiete');
+  ok('Konto finden ohne Modell: „Büromiete“ → 4210 über die Alltags-Stichworte', kt.length >= 1 && kt[0].anchorId === '4210', JSON.stringify(kt.map((x) => x.anchorId)));
+  const sb = _readSpore(new URL('../src/ui/views/sbkimsuche.js', import.meta.url), 'utf8');
+  ok('Überall suchen: Mikrofon im Feld, eingebettete Apps nur gelesen (kein Anlegen fremder Datenbanken)', /'data-mikro': ''/.test(sb) && /onupgradeneeded = \(\) => \{ neu = true; try \{ r\.transaction\.abort\(\)/.test(sb) && !/readwrite/.test(sb));
+  const sh = _readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
+  ok('Siegel unten in der Leiste, keine app-eigene Lampengruppe mehr oben', /siegelLeiste\(\), klapp\]/.test(sh) && !/function flyingWidget/.test(sh));
+  const ix = _readSpore(new URL('../index.html', import.meta.url), 'utf8');
+  const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
+  ok('sbkim-blp.css in index.html und im Vorrat, neue Dateien im Vorrat', ix.includes('./assets/sbkim-blp.css') && ["'./assets/sbkim-blp.css'", "'./src/domain/ueberall.js'", "'./src/sbkim/netz.js'", "'./src/ui/kontoFinden.js'"].every((f) => sw.includes(f)));
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  const keys = [...new Set([...sb.matchAll(/t\('((?:ue|kf|net)\.[A-Za-z.]+)'\)/g), ..._readSpore(new URL('../src/ui/kontoFinden.js', import.meta.url), 'utf8').matchAll(/t\('((?:kf|common)\.[A-Za-z.]+)'\)/g)].map((x) => x[1]))];
+  ok('i18n DE/EN: alle Schlüssel von Überall suchen und Konto finden zweimal (' + keys.length + ')', keys.length >= 30 && keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2), keys.filter((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length < 2).join(','));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);
