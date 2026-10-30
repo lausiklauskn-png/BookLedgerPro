@@ -629,3 +629,21 @@ PRs: BLP #402 (Intent), #403 (0.1.2), #404–#408 (Release-Probe), Basic #16/#17
    fiel er nach dem Neuzeichnen zurück — ein eigener Merker in `src/sbkim/netz.js` trägt jetzt den Sitzungszustand. (c) „gesperrter Tresorordner“: die Probe
    las den Status, solange noch „Sucht …“ dastand; sie wartet jetzt auf den Satz.
 6. ⚠ Nicht gemessen: ein echtes Relais (aus dem Behälter gesperrt), eine echte Antwort über zwei Orte, das Sprachmodell im Antwortweg, alles am Gerät.
+
+## 27 · Befunde aus Pro-Umbau 12: „Überall suchen“ als gemeinsamer Baustein (2026-10-30, gemessen im Prüf-Browser)
+
+1. **Der Verteilweg trägt einen neuen Baustein ohne neues Werkzeug:** `bedienung-nachziehen.mjs` nimmt die Pfade aus dem Pin der Quelle (`pfade`);
+   zwei Einträge in `pro-bedienung-pins.mjs` genügten, und Workflow PDF Pro bekam `pro-ueberall.*` samt erweiterter Probe byte-gleich.
+2. **Fremde Fächer lesen braucht eine eigene Brücke:** das Tresor-Paket kann `verzeichnis(fach)` für jedes Fach, aber PB und WPP reichten bisher
+   nur das eigene Schreiben bzw. den Eingang durch. Neu je App `tresorFach` (nur Zeilen, gleiche Sperr-Regel). Die PB-Probe zählte die Sperr-Stellen
+   in Java genau (2) — mit der neuen Methode 3; die Probe prüft jetzt die neue Stelle ausdrücklich, statt nur die Zahl zu heben.
+3. **Schrift per rem, Knöpfe per px:** PB und WPP setzen Schriften fast nur in rem; die Grundschrift am `<html>` vergrößert damit Text, nicht Knöpfe.
+   Der gemeinsame Knopf wuchs trotzdem um 3 px (Innenabstand umschloss die größere Schrift) — mit 2 px Innenabstand bleibt er bis 130 % bei 30 px.
+4. **Platz im Kopf ist gemessen, nicht geschätzt:** in PB blieben bei 360 px zwischen Titel und ← → ☰ nach „A··A“ nur 6 px für das Siegel (die
+   Siegel-Probe wurde rot). „A··A“ steht dort deshalb im ☰-Menü (Tipp darauf lässt das Menü offen).
+5. **Eigene Probe-Fehler:** (a) Testeinträge ohne Wortzähler (`tf`) ließen die normale PB-Suche abstürzen — Seitenfehler gefunden von „Keine
+   Seitenfehler“. (b) In WPP lädt der Kern Modul 23 nach; ein früh gesetzter Stub wurde überschrieben, der Netz-Schritt wartete bis zum Zeitlimit.
+6. **Rote Proben im Behälter sind nicht automatisch neue Fehler:** 8 PB-Proben waren rot; derselbe Lauf auf main (eigener Arbeitsbaum) zeigte 7 davon
+   ebenso rot (Bau ohne Netz), die achte war ein Ausreißer bei paralleler Last und allein grün.
+7. ⚠ Nicht gemessen: am Gerät, echte Tresorordner mit Einträgen anderer Apps, echtes Relais, Java im Behälter nicht übersetzt.
+
