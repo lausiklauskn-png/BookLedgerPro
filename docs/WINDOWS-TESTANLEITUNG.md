@@ -11,7 +11,7 @@ Für einen Tester an seinem eigenen Windows-PC mit eigenen Daten (Klaus 2026-10-
 
 ## Installieren
 
-1. Setup laden: `https://family-projekt.de/updates/bookledgerpro/BookLedgerPro-Windows-0.1.4-x64-setup.exe`
+1. Setup laden: `https://family-projekt.de/updates/bookledgerpro/BookLedgerPro-Windows-0.1.5-x64-setup.exe`
    (der Link gilt, sobald Klaus die Windows-Fassung freigibt).
 2. Doppelklick. Windows zeigt **„Der Computer wurde durch Windows geschützt“** (SmartScreen), weil das Setup nicht mit einem gekauften
    Zertifikat unterschrieben ist. → **„Weitere Informationen“** → **„Trotzdem ausführen“**.
@@ -35,9 +35,9 @@ Für einen Tester an seinem eigenen Windows-PC mit eigenen Daten (Klaus 2026-10-
 | Belege hineinziehen, öffnen, suchen | kommt alles an, stimmt die Vorschau |
 | Buchung, Kunde, Rechnung anlegen | lässt sich speichern und wiederfinden |
 | Schrift „A··A“ oben | Schrift größer, Knöpfe bleiben gleich hoch |
-| ⓘ hinter einer Beschriftung | öffnet und schließt den Satz |
-| Version oben unter „BookLedgerPro“ (`v0.1.4`) | Tipp prüft auf Updates: „aktuelle Version“ |
-| Mikrofon im Suchfeld | Windows-Spracherkennung, ohne Internet |
+| ⓘ neben dem Titel eines Kastens | ein Tipp zeigt alle Erklärungen des Kastens, ein zweiter blendet sie aus |
+| Version oben unter „BookLedgerPro“ (`v0.1.5`) | Tipp prüft auf Updates: „aktuelle Version“ |
+| Mikrofon und „DE ▾“ rechts im Suchfeld (auch SBKIM-Suche) | Windows-Spracherkennung, ohne Internet; „DE ▾“ wählt die Sprache |
 | Scannen (falls ein Scanner da ist) | Belege → Scannen → „Scanner oder Kamera …“ |
 | Schließen und wieder öffnen | Passwort, dann ist alles noch da |
 

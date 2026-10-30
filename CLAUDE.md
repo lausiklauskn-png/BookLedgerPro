@@ -468,3 +468,18 @@ Klaus hat 0.1.1 am Tablet in geteilter Ansicht (≈ 1000 px) geprüft. Gilt für
   weg) → je eigene rote Zeilen. `smoke_design` 92 (neu: Maß ≤ 32 px bei 700/1024 px) · `smoke_mikro` 19 (auf die Positivliste umgestellt) · `smoke_apps` 22
   (Blau = BLP-Blau) · `test-native` 44 · `run.mjs` 2602/0 · `smoke_scanner` 13 (Zeile „eigener Scan“ las seit #389 den falschen Ort, jetzt aria-label) ·
   `smoke_belege` 46/14 wie auf main. `sw.js` v276. ⚠ Nicht am Tablet; Kamera und Sprachfenster nur über Manifest/Java-Proben und gestellte Brücken geprüft.
+
+## 🧭 Pro-Umbau 10: kein Titel oben, ein ⓘ je Kasten, Mikrofon in der SBKIM-Suche (Klaus 2026-10-30)
+
+Klaus: „oben aus dem Kopf das Belege raus … wir können links sehen, was es ist“ · „nur einen Informationsbutton … in jedem Container … bei einem
+Klick gehen alle Informationen an und wieder aus“. Gilt für App **und** PWA (Basic nachziehen).
+- **Kein Seitentitel** mehr, auch nicht klein im Kopf (`src/ui/kopfTitel.js`): die `<h1>` bleibt nur für Vorleser (`.titel-im-kopf`).
+- **Ein ⓘ je Kasten** (`src/ui/schlank.js` `erklaerZiel`/`kastenTitel`): jeder Erklärsatz in einer `.card` gehört zum ⓘ hinter deren Titel
+  (sonst erste Feldbeschriftung); ein Tipp öffnet alle Sätze. Ein Satz unter der Seitenüberschrift zieht in den ersten Kasten, ohne Kasten
+  hinter den Satz der Leer-Anzeige; eine Seite ganz ohne beides lässt ihn sichtbar. Außerhalb von Kästen (Einstellungen) bleibt Umbau 9.
+- **Hinweise mit Inline-Stil** (die Ansicht blendet sie selbst ein/aus, z. B. §13b) sind keine Erklärsätze — vorher lag der §13b-Hinweis
+  hinter dem ⓘ von „Neue Buchung“ und das ⓘ tat scheinbar nichts.
+- **SBKIM-Suche:** Mikrofon und Sprachmarke im Suchfeld (`data-mikro`), die eigene Sprach-Zeile ist weg (Engines/EU-Politik wie in `mikro.js`).
+- Einstellungen: „null“ unter „Tresor entsperren“ weg (`replaceChildren(null)`). Anleitung: „Bedienung in Kürze“, Stift/Papierkorb.
+- 0.1.5 (Android Code 6, Windows gleich). Proben `tests/smoke_befunde10.mjs` **54** (pwa/app/win × 1000/400) · `befunde9` 170 (+Windows-Modus) ·
+  `befunde8` 129 · `run.mjs` 2610/0 · Gegenprobe 3/3 gefangen. `sw.js` v285. ⚠ Nicht am Tablet. Vorschläge Mycel/SBKIM: Abschluss Umbau 10.

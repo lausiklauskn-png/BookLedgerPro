@@ -847,6 +847,7 @@ input[type="password"], input[type="text"], input[type="number"], input[type="da
 .field > span { font-size: .8rem; }
 .btn-symbol { min-width: 28px; padding-inline: 4px; }
 .btn-symbol .ic { width: 16px; height: 16px; }
+.erklaer-zusammen { white-space: nowrap; }
 .erklaer-knopf { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; margin-inline: .2rem; border: 0; border-radius: 50%;
   background: transparent; color: var(--text-muted); cursor: pointer; vertical-align: middle; }
 .erklaer-knopf:hover, .erklaer-knopf[aria-expanded="true"] { color: var(--accent); background: var(--accent-soft); }
@@ -957,6 +958,7 @@ input[type="password"], input[type="text"], input[type="number"], input[type="da
 .kopf-titel-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .kopf-titel > .erklaer-knopf { flex: none; margin-inline: .15rem 0; }
 .kopf-titel::before { content: "·"; margin: 0 .35rem 0 .1rem; color: var(--border-control, var(--text-muted)); }
+.kopf-titel[hidden] { display: none; }
 .brand { min-width: 0; }
 .titel-im-kopf { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; white-space: nowrap !important; border: 0 !important; }
 /* Schriftgröße (Klaus 2026-10-29 spät): „es muss dann auch alle Schrift größer werden. Die Button selber nicht, nur die Schrift in den

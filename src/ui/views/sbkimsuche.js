@@ -12,11 +12,10 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { loadAccounts } from '../../domain/store.js';
-import { getAiConfig, saveAiConfig } from '../../ai/aiConfig.js';
+import { getAiConfig } from '../../ai/aiConfig.js';
 import { loadEmbedder, EMBED_DIM } from '../../sbkim/embed.js';
 import { accountCorpusEntries, embedCorpus, fetchNodeSpores, nodeCorpusEntries, embedMissingVectors } from '../../sbkim/searchCorpus.js';
 import { sbkimHybridSearch } from '../../sbkim/hybridSearch.js';
-import { makeBrowserRecognizer, startRecording, recognizeEU, speechFehlerHinweis, policyEngines, pickEngine, browserSpeechSupported } from '../../ai/speech.js';
 import { testMarke } from '../testmarke.js';
 
 let _host = null;
@@ -24,16 +23,11 @@ let _busy = false;
 let _bereich = 'konten';        // 'konten' | 'knoten'
 let _corpusKonten = null;       // gecachte, eingebettete Korpora (Session)
 let _corpusKnoten = null;
-let _speechEngine = 'browser';  // 'browser' (Web Speech API) | 'eu' (Cloud Speech-to-Text EU/BYOK)
-let _speechLang = 'de-DE';      // Spracheingabe-Sprache
-let _speechPolicy = 'frei';     // EU-Politik: 'frei' (beide Engines) | 'bindend' (nur EU)
 let _query = '';                // aktuelle Eingabe — bleibt über Neuzeichnen (Ergebnis) erhalten
-const SPEECH_LANGS = [['de-DE', 'Deutsch'], ['en-US', 'English'], ['ru-RU', 'Русский']];
 
 export async function mountSbkimSuche(host) {
   _host = host;
   _query = '';   // frisch geöffnet → leeres Feld (geschlossen = zurückgesetzt)
-  try { _speechPolicy = (await getAiConfig()).speechPolicy === 'bindend' ? 'bindend' : 'frei'; } catch { _speechPolicy = 'frei'; }
   repaint();
 }
 
@@ -46,95 +40,12 @@ function bereichBtn(id, label) {
   });
 }
 
-// Spracheingabe: Mikro-Knopf + Engine-Umschalter (Browser / EU-BYOK) + Datenschutz-Hinweis.
-function speechControls(input) {
-  const status = el('span', { class: 'muted small' });
-  const notice = el('p', { class: 'muted small speech-notice' });
-  // EU-Politik (Regel #8): bindend = nur EU-Engine, Web-Speech gesperrt; frei = beide.
-  const enginesErlaubt = policyEngines(_speechPolicy);
-  const browserErlaubt = enginesErlaubt.includes('browser');
-  const policySel = el('select', { class: 'speech-policy' }, [
-    el('option', { value: 'frei' }, t('speech.policyFrei')),
-    el('option', { value: 'bindend' }, t('speech.policyBindend')),
-  ]);
-  policySel.value = _speechPolicy;
-  policySel.addEventListener('change', async () => {
-    _speechPolicy = policySel.value === 'bindend' ? 'bindend' : 'frei';
-    try { await saveAiConfig({ speechPolicy: _speechPolicy }); } catch { /* Tresor gesperrt: nur Sitzung */ }
-    repaint();   // Engine-Auswahl/Sichtbarkeit neu aufbauen (Eingabe bleibt via _query)
-  });
-
-  const browserBtn = el('button', { class: 'btn btn-sm', text: t('speech.engineBrowser') });
-  const euBtn = el('button', { class: 'btn btn-sm', text: t('speech.engineEu') });
-  const langSel = el('select', { class: 'speech-lang' }, SPEECH_LANGS.map(([code, name]) => el('option', { value: code }, name)));
-  langSel.value = _speechLang;
-  langSel.addEventListener('change', () => { _speechLang = langSel.value; });
-  const micBtn = el('button', { class: 'btn', text: '🎤 ' + t('speech.start') });
-  const resetMic = () => { micBtn.textContent = '🎤 ' + t('speech.start'); micBtn.removeAttribute('disabled'); };
-  const setEngine = (id) => {
-    // Politik entscheidet: bindend erzwingt eu; browser nur, wenn erlaubt UND unterstützt.
-    _speechEngine = pickEngine(_speechPolicy, id, browserSpeechSupported());
-    browserBtn.classList.toggle('btn-primary', _speechEngine === 'browser');
-    euBtn.classList.toggle('btn-primary', _speechEngine === 'eu');
-    notice.textContent = _speechEngine === 'eu' ? t('speech.noticeEu') : t('speech.noticeBrowser');
-  };
-  if (browserErlaubt) browserBtn.addEventListener('click', () => setEngine('browser'));
-  euBtn.addEventListener('click', () => setEngine('eu'));
-
-  let activeRec = null;   // Web-Speech-Recognizer
-  let recCtl = null;      // EU-Aufnahme-Controller
-
-  micBtn.addEventListener('click', async () => {
-    // ---- Browser (Web Speech API) ----
-    if (_speechEngine === 'browser') {
-      if (activeRec) { activeRec.stop(); return; }
-      const rec = makeBrowserRecognizer({ lang: _speechLang });
-      if (!rec) { status.textContent = t('speech.unsupported'); return; }
-      activeRec = rec;
-      micBtn.textContent = '⏹ ' + t('speech.stop'); status.textContent = t('speech.listening');
-      rec.onresult = (e) => { const tx = (((e.results || [])[0] || [])[0] || {}).transcript || ''; if (tx) { input.value = tx; _query = tx; status.textContent = ''; } };
-      rec.onerror = (e) => { status.textContent = t('speech.error').replace('%E%', String((e && e.error) || '')); };
-      rec.onend = () => { activeRec = null; resetMic(); };
-      try { rec.start(); } catch { activeRec = null; resetMic(); }
-      return;
-    }
-    // ---- EU (BYOK, Cloud Speech-to-Text EU) ----
-    if (recCtl) { // läuft → stoppen & erkennen
-      const ctl = recCtl; recCtl = null;
-      micBtn.setAttribute('disabled', ''); status.textContent = t('speech.transcribing');
-      try {
-        ctl.stop();
-        const audio = await ctl.done;
-        const cfg = await getAiConfig();
-        if (!cfg.speechKey) { status.textContent = t('speech.noKey'); resetMic(); return; }
-        const alt = SPEECH_LANGS.map(([c]) => c).filter((c) => c !== _speechLang);
-        const text = await recognizeEU(audio, { apiKey: cfg.speechKey, languageCode: _speechLang, alternativeLanguageCodes: alt });
-        input.value = text || ''; _query = input.value; status.textContent = text ? '' : t('speech.empty');
-      } catch (e) {
-        const hint = speechFehlerHinweis((e && e.message) || '');
-        status.textContent = t('speech.error').replace('%E%', String((e && e.message) || e)) + (hint ? ' — ' + hint : '');
-      } finally { resetMic(); }
-      return;
-    }
-    // EU: Aufnahme starten
-    try { recCtl = await startRecording(); micBtn.textContent = '⏹ ' + t('speech.stopRec'); status.textContent = t('speech.recording'); }
-    catch { recCtl = null; status.textContent = t('speech.micDenied'); }
-  });
-
-  setEngine(_speechEngine);
-  const row = [el('span', { class: 'muted small', text: t('speech.engineLabel') })];
-  if (browserErlaubt) row.push(browserBtn);
-  row.push(euBtn, langSel,
-    el('span', { class: 'muted small', text: t('speech.policyLabel') }), policySel,
-    micBtn, status);
-  return el('div', { class: 'speech-block' }, [
-    el('div', { class: 'btn-row speech-row' }, row),
-    notice,
-  ]);
-}
+// Spracheingabe (Klaus 2026-10-30: „Das Mikrofon ist wieder nicht in dem Stichwort … drin. Genauso die Wahl der Sprache“): Mikrofon und
+// Sprachmarke sitzen wie an jedem Suchfeld rechts IM Feld (src/ui/mikro.js, data-mikro). Engines und EU-Politik gelten dort genauso
+// (Browser-Erkennung / EU-Schlüssel, „bindend“ sperrt den Browser; in der App Androids Sprachfenster bzw. Windows-Spracherkennung).
 
 function repaint(result, status) {
-  const input = el('input', { type: 'text', class: 'beleg-text', placeholder: t('sbkimsuche.placeholder'), value: _query, 'data-kein-mikro': '' });   // hat ein eigenes Mikrofon (speechControls)
+  const input = el('input', { type: 'text', class: 'beleg-text', placeholder: t('sbkimsuche.placeholder'), value: _query, 'data-mikro': '', 'data-mikro-key': 'sbkimsuche' });
   input.addEventListener('input', () => { _query = input.value; });
   const statusP = el('p', { class: 'muted small', text: status || '' });
   const out = el('div', { class: 'sbkimsuche-out' });
@@ -211,7 +122,6 @@ function repaint(result, status) {
       ]),
       el('p', { class: 'muted small', text: t(_bereich === 'knoten' ? 'sbkimsuche.hintKnoten' : 'sbkimsuche.hintKonten') }),
       el('label', { class: 'field' }, [el('span', { text: t('sbkimsuche.label') }), input]),
-      speechControls(input),
       el('div', { class: 'btn-row' }, _bereich === 'knoten' ? [btn, nodeBtn] : [btn]),
       // TEMPORÄR: Browser-Test-Marken (co-located → fehlt der Knopf, fehlt die Marke).
       el('div', { class: 'btn-row' }, _bereich === 'knoten'

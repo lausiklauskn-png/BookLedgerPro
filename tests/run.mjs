@@ -2351,7 +2351,9 @@ await section('Mikrofon: Wort-Speicher (aufnehmen, vorschlagen, Grenze, löschen
   ok('sw.js kennt mikro.js', /\.\/src\/ui\/mikro\.js/.test(sw));
   const st = _readSpore(new URL('../src/state.js', import.meta.url), 'utf8');
   ok('Vorgaben: mikroSprachen, mikroStandardSprache, wortSpeicherAn, wortSpeicher', ['mikroSprachen', 'mikroStandardSprache', 'wortSpeicherAn', 'wortSpeicher'].every((k) => new RegExp('^\\s*' + k + ':', 'm').test(st)));
-  ok('SBKIM-Suche behält ihr eigenes Mikrofon (data-kein-mikro)', /data-kein-mikro/.test(_readSpore(new URL('../src/ui/views/sbkimsuche.js', import.meta.url), 'utf8')));
+  // Umbau 10 (Klaus 2026-10-30): Mikrofon und Sprache auch in der SBKIM-Suche im Feld — keine eigene Sprach-Zeile mehr.
+  { const sb = _readSpore(new URL('../src/ui/views/sbkimsuche.js', import.meta.url), 'utf8');
+    ok('SBKIM-Suche: Mikrofon im Feld (data-mikro), keine eigene Sprach-Zeile', /'data-mikro': ''/.test(sb) && !/data-kein-mikro|speechControls\(/.test(sb)); }
 });
 
 // ─── 🔎 Suche über Belege: Wörter und Bedeutung (Klaus 2026-10-26, A1/A2) ───

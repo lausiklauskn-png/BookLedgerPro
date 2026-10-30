@@ -69,6 +69,14 @@ function schritteCard() {
     el('h2', { class: 'card-title', text: t('guide.stepsTitle') }),
     el('p', { class: 'guide-highlight', text: t('guide.stepsHint') }),
 
+    // Bedienung in Kürze (Pro-Umbau 10, Klaus 2026-10-30): kein Seitentitel oben, ein ⓘ je Kasten, Mikrofon und Sprache im Suchfeld.
+    schritt('i', 'Bedienung in Kürze', [
+      'Wo du bist, zeigt die Leiste links (markiertes Symbol). Oben steht kein Seitentitel mehr.',
+      'Erklärungen liegen hinter dem ⓘ neben dem Titel eines Kastens: ein Tipp zeigt alle Erklärungen dieses Kastens, ein zweiter blendet sie aus.',
+      'Mikrofon und Sprache (z. B. „DE ▾“) sitzen rechts im Such- oder Notizfeld. Tipp auf „DE ▾“ wählt die Sprache, die du sprichst.',
+      'Bearbeiten ist der Stift, Löschen der Papierkorb. „A··A“ oben macht die Schrift größer.',
+    ]),
+
     schritt(1, 'Beleg aus Text erfassen (Belege → Schnellerfassung)', [
       'Menü „Belege" → Feld „Schnellerfassung aus Text".',
       'Beispieltext rechts mit „Kopieren" holen und in das große Textfeld einfügen.',
@@ -84,7 +92,7 @@ function schritteCard() {
     ], 'Testverkauf Beratung'),
 
     schritt(3, 'Entwurf bearbeiten · löschen · festschreiben', [
-      'In der Buchungen-Tabelle beim Entwurf: „Bearbeiten" (Felder werden vorbefüllt), „Löschen" oder „Festschreiben".',
+      'In der Buchungen-Tabelle beim Entwurf: Stift (Bearbeiten, Felder werden vorbefüllt), Papierkorb (Löschen) oder „Festschreiben".',
       'Festschreiben macht die Buchung unveränderlich (GoBD) — danach nur noch „Stornieren".',
     ]),
 
@@ -119,7 +127,7 @@ function resetCard() {
   return el('div', { class: 'card' }, [
     el('h2', { class: 'card-title', text: t('guide.resetTitle') }),
     el('ul', { class: 'guide-list' }, [
-      el('li', { class: 'small', text: 'Beispiel-Entwürfe: in der Buchungen-Tabelle mit „Löschen" entfernen.' }),
+      el('li', { class: 'small', text: 'Beispiel-Entwürfe: in der Buchungen-Tabelle mit dem Papierkorb entfernen.' }),
       el('li', { class: 'small', text: 'Festgeschriebene Buchungen sind unveränderlich (GoBD) — Korrektur nur per „Stornieren".' }),
       el('li', { class: 'small', text: 'Kompletter Neustart (alles löschen): Recht & Doku → „Alle Daten löschen". Vorher Backup ziehen!' }),
     ]),
