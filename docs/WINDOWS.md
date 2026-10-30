@@ -25,7 +25,7 @@ Deinstallieren lässt Tresorordner und Daten stehen.
 ## Zum Testen weitergeben
 
 Kurze Anleitung für einen Tester am eigenen PC mit eigenen Daten: [WINDOWS-TESTANLEITUNG.md](WINDOWS-TESTANLEITUNG.md).
-Version der Windows-Fassung seit Pro-Umbau 10 gleich der Android-Fassung (0.1.4).
+Version der Windows-Fassung seit Pro-Umbau 10 gleich der Android-Fassung (0.1.5).
 
 ## Prüfen
 

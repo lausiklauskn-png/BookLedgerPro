@@ -1160,11 +1160,12 @@ function tresorAblageSection() {
       }
       knoepfe.push(knopf(t('ta.ansicht'), () => navigate('tresorordner'), false, 'data-ta-ansicht'));
     }
-    host.replaceChildren(kopf, ...(infoInhalt ? [infoInhalt] : [el('p', { class: 'muted small', text: t('ta.info') })]),
+    // Ohne Meldung kein Kind: replaceChildren(null) schriebe das Wort „null“ in die Seite (Klaus' Bild 2026-10-30).
+    host.replaceChildren(...[kopf, ...(infoInhalt ? [infoInhalt] : [el('p', { class: 'muted small', text: t('ta.info') })]),
       el('div', { class: 'ta-teil', 'data-ta-ablage': '' }, ablage),
       el('div', { class: 'ta-teil', 'data-ta-tresor': '' }, tresor),
       el('div', { class: 'btn-row' }, knoepfe),
-      _taMeldung ? el('p', { class: 'small', role: 'status', 'data-ta-meldung': '', text: _taMeldung }) : null);
+      _taMeldung ? el('p', { class: 'small', role: 'status', 'data-ta-meldung': '', text: _taMeldung }) : null].filter(Boolean));
   }
   render();
   return host;

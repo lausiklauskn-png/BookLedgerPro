@@ -185,11 +185,12 @@ for (const art of arten) for (const b of [1000, 640, 400]) {
       const l = await erklaerLage(page);
       if (l.allein.length || l.doppelt) funde.push(k + ': ' + l.allein.join(', ') + (l.doppelt ? ' doppelt ' + l.doppelt : ''));
     }
+    // Umbau 10: der Satz unter der Seitenüberschrift zieht mit seinem ⓘ in den ersten Kasten (kein Titel mehr im Kopf).
     await page.evaluate(() => window.__probe.navigate('kassenbuch')); await page.waitForTimeout(400);
-    const kopf = await page.evaluate(() => { const k = document.querySelector('[data-kopf-titel] .erklaer-knopf'); if (!k) return null; const h = document.querySelector('#content h1 > .erklaer-knopf'); const p = h && h._saetze[0];
-      const r = k.getBoundingClientRect(), t = document.querySelector('[data-kopf-titel] .kopf-titel-text').getBoundingClientRect(); const neben = Math.abs(r.top + r.height / 2 - (t.top + t.height / 2)) < 6 && r.left >= t.right - 1;
-      const zu = p.hidden; k.click(); const auf = !p.hidden; k.click(); return { neben, wechselt: zu && auf && p.hidden }; });
-    ok(`${art} ${b} px: Satz unter dem Seitentitel → ⓘ hinter dem Titel im Kopf, Tipp öffnet und schließt`, !!kopf && kopf.neben && kopf.wechselt, JSON.stringify(kopf));
+    const kopf = await page.evaluate(() => { const view = document.querySelector('#content section.view'), p = [...view.querySelectorAll('p[data-erklaer]')].find((x) => /GoBD-Kassenbericht/.test(x.textContent));
+      if (!p) return null; const kasten = p.closest('.card'), k = kasten && kasten.querySelector('.erklaer-knopf'); if (!k) return { imKasten: !!kasten };
+      const zu = p.hidden; k.click(); const auf = !p.hidden; k.click(); return { imKasten: true, imKopf: !!document.querySelector('[data-kopf-titel] .erklaer-knopf'), wechselt: zu && auf && p.hidden }; });
+    ok(`${art} ${b} px: Satz unter dem Seitentitel → im ersten Kasten, dessen ⓘ öffnet und schließt ihn; nichts im Kopf`, !!kopf && kopf.imKasten && !kopf.imKopf && kopf.wechselt, JSON.stringify(kopf));
     ok(`${art} ${b} px: in keiner Ansicht ein ⓘ auf eigener Zeile`, funde.length === 0, funde.join(' || '));
   }
   ok(`${art} ${b} px: keine Seitenfehler`, fehler.length === 0, fehler.join(' | '));

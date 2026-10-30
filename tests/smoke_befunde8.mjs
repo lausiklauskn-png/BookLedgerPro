@@ -272,15 +272,16 @@ else { const { ctx, page, fehler } = await oeffnen('app', 1000, 900);
   ok('keine Seitenfehler', fehler.length === 0, fehler.join(' | '));
   await ctx.close(); }
 
-console.log('— F. Titel klein im Kopf, ⋯-Menü ganz sichtbar, X in der Vorschau, „neu“ mit Uhrzeit —');
+console.log('— F. Kein Titel im Kopf (Umbau 10), ⋯-Menü ganz sichtbar, X in der Vorschau, „neu“ mit Uhrzeit —');
 for (const art of arten) for (const [b, h] of [[1000, 700], [400, 800]]) {
   const { ctx, page, fehler } = await oeffnen(art, b, h);
-  const kopf = await page.evaluate(() => { const k = document.querySelector('[data-kopf-titel]'), h1 = document.querySelector('#content h1'), r = k.getBoundingClientRect();
-    return { text: k.textContent, sichtbar: !k.hidden && r.width > 0 && r.right <= innerWidth + 1, h1weg: !!h1 && h1.classList.contains('titel-im-kopf') && h1.getBoundingClientRect().height <= 1 && h1.textContent === 'Belege' }; });
-  ok(`${art} ${b}: „Belege“ steht klein im Kopf, die große Überschrift nimmt keinen Platz (für Vorleser bleibt sie)`, kopf.text === 'Belege' && kopf.sichtbar && kopf.h1weg, JSON.stringify(kopf));
-  await page.evaluate(() => window.__probe.navigate('journal')); await page.waitForTimeout(400);
-  const k2 = await page.evaluate(() => ({ kopf: document.querySelector('[data-kopf-titel]').textContent, h1: (document.querySelector('#content h1') || {}).textContent || '' }));
-  ok(`${art} ${b}: auf einer anderen Seite steht deren Titel im Kopf`, !!k2.kopf && k2.kopf === k2.h1.trim() && k2.kopf !== 'Belege', JSON.stringify(k2));
+  // Umbau 10 (Klaus 2026-10-30): „oben aus dem Kopf das Belege raus … wir können links sehen, was es ist“ — kein Titel mehr, auch nicht im Kopf.
+  for (const ansicht of ['documents', 'journal', 'accounts']) {
+    await page.evaluate((a) => window.__probe.navigate(a), ansicht); await page.waitForTimeout(350);
+    const kopf = await page.evaluate(() => { const k = document.querySelector('[data-kopf-titel]'), h1 = document.querySelector('#content h1');
+      return { kopfLeer: !k || (k.hidden && !k.textContent && k.getBoundingClientRect().width === 0), h1weg: !!h1 && h1.classList.contains('titel-im-kopf') && h1.getBoundingClientRect().height <= 1 && !!h1.textContent.trim() }; });
+    ok(`${art} ${b} ${ansicht}: kein Seitentitel im Kopf und keiner über dem Inhalt (die Überschrift bleibt für Vorleser)`, kopf.kopfLeer && kopf.h1weg, JSON.stringify(kopf));
+  }
   await page.evaluate(() => window.__probe.navigate('documents')); await page.waitForSelector('[data-zeilen-menue]');
   await page.evaluate(async () => { for (let i = 0; i < 18; i++) await window.__saveBeleg(new File([new TextEncoder().encode('%PDF-1.4 m ' + i)], 'Menü-' + i + '.pdf', { type: 'application/pdf' })); window.__probe.navigate('dashboard'); });
   await page.waitForTimeout(300); await page.evaluate(() => window.__probe.navigate('documents')); await page.waitForSelector('[data-zeilen-menue]');
