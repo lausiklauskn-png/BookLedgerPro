@@ -39,7 +39,18 @@ Proben BLP (im Behälter): `run.mjs` 2624/0 · neu **`smoke_umbau11` 129** (pwa/
 
 ## Veröffentlicht
 
-VEROEFFENTLICHT_PLATZHALTER
+Klaus' Wort lag im Auftrag vor („am Ende veröffentlichen (freigegeben)“).
+
+- **Android 0.1.6:** [APK](https://github.com/lausiklauskn-png/BookLedgerPro/releases/download/v0.1.6/BookLedgerPro-0.1.6.apk) · Tag `v0.1.6`, Quelle
+  `918dbd87a6e3ddc187f0ef8c2bf734e889ad0b3a` (#427), Buildnummer 7, 28.315.259 B, SHA-256 `66db9781cd573891a88b9b301cc672f279fc61aa1d2acf32b8a7e78640c5c3d1`;
+  **unabhängig geladen und gleich**. Erster Versuch (Lauf 40987582189) brach vor dem Bau ab, weil die Android-Prüfung auf main noch lief (Torwächter
+  „android grün auf diesem Commit“); nach deren Grün neu ausgelöst. Auch über den eigenen Server (Lauf lädt dorthin hoch) und in der App über „v0.1.5“ antippen.
+- **Windows 0.1.6:** [Setup](https://family-projekt.de/updates/bookledgerpro/BookLedgerPro-Windows-0.1.6-x64-setup.exe), Lauf 40987585298 (Engine-Proben,
+  Auslieferungsbau installiert/gestartet/entfernt, `aktuell-windows.json` unterschrieben, hochgeladen, von außen verglichen), Quelle `918dbd8`,
+  40.976.593 B, SHA-256 `ef92354323a1d8b41945e5b1304aae9d21f0b19994f4bb5d7c9394d5f69d18e0`, unsigniert (SmartScreen). ⚠ family-projekt.de ist aus dem Behälter
+  gesperrt (403) — Beleg ist der Vergleich im Lauf.
+- **Basic/PWA:** Pro `918dbd8` + dieser Abschluss nachgezogen, über Pages.
+- Gesamtpaket aller Apps: https://claude.ai/artifact/MFaYdbzH9MreBQSC5Mkr1H (neue Fassung). Nicht erneut auslösen.
 
 ## Nicht gemessen / offen
 
@@ -50,4 +61,6 @@ VEROEFFENTLICHT_PLATZHALTER
 
 ## Stundennachweis
 
-STUNDEN_PLATZHALTER
+Erste Spur 30.10. ≈ 02:05 (Ortszeit Berlin: Briefe, Antworten, Sage), Bau 02:20 → 02:33 (Commit), Proben bis 02:33, Merge 02:43, Android + Windows
+0.1.6 02:44 → 02:57, Basic, Gesamtpaket und Abschluss bis ≈ 03:10. Ein Block, dazwischen Warten auf CI und zwei Veröffentlichungsläufe. Spanne ≈ 1,1 h
+(Obergrenze). Klaus' Zeit (Liste ankreuzen, Notizen) liegt davor; seine eigene Angabe geht vor. Zeile in `docs/STUNDENNACHWEIS.md`.
