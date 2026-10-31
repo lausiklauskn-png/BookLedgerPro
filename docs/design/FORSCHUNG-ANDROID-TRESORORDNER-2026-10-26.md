@@ -674,3 +674,25 @@ PRs: BLP #402 (Intent), #403 (0.1.2), #404–#408 (Release-Probe), Basic #16/#17
    bedient, kann ihn dort sehen (Kanon-Verhalten, nicht geändert).
 7. ⚠ Nicht gemessen: echtes Relais, zwei Arbeitsplätze mit demselben Code, am Gerät. `smoke_umbau11` flattert im Behälter in der Gruppe B (je Lauf
    eine andere Zeile, auch auf main) — die alte Ansicht zeichnet sich bei jedem Status ganz neu; betrifft nur noch die PWA-Fassung.
+
+## 30 · Befunde aus der Familienakte-Sitzung: Kopf, „Mit KI arbeiten“ und Unkenntlichmachen (2026-10-31, gemessen im Prüf-Browser)
+
+(§ 29 ist Sitzung A, parallel in einer anderen Sitzung.) Meine-Familienakte PR #30 (gemergt `d9ee275`), dazu Brief 14 (#431/#432) mit Sitzungen A–F.
+
+1. **Nachladen bricht die Einzeldatei:** das neue Kopf-Icon als `<img src="./favicon.svg">` war in der Browser-PWA unauffällig, aber die Einzeldatei
+   (von der Platte geöffnet) meldete `ERR_FILE_NOT_FOUND` — nur `einzeldatei.test` sah es (CI 14/15). Lehre: in der Familienakte jedes Bild im Kopf
+   inline (SVG im JSX), nie aus `public/` nachladen.
+2. **Deutsche Hauptwörter sind keine Namen:** das Zwei-Wort-Muster aus BookLedgerPro (`namensmuster.js`) machte aus „im Bereich Fahrzeuge“, „Knöpfe Oben
+   Rechts“ und dem App-Namen „Meine Familienakte“ Platzhalter. Lösung: der feste Rahmen des Auftrags wird nie bearbeitet; im eigenen Wunsch gelten nur
+   Akte-Namen, Anrede/Kontext und Firma; das strenge Zwei-Wort-Muster nur in Unterlagen („im Zweifel verdecken“).
+3. **Namen aus fremden Briefen:** Modul 25 kennt Namen nur aus einer Liste. „Sehr geehrte Frau Mara Testfeld“ (nicht in der Akte) ging im ersten Lauf im
+   Klartext durch — erst das Namensmuster fängt Absender/Empfänger fremder Schreiben. Und ein Dateititel wie „Schreiben“ darf nicht als Name in die Liste
+   (wurde sonst überall verdeckt).
+4. **Telefon mit Leerzeichen** („0170 1234567“) kennt Modul 25 nicht; ein eigenes Muster `TELEFON` in `lib/ki-auftrag.ts` (wie in PB `native-mail-ai.js`).
+   Dazu Anschrift (Straße + Nr.), PLZ/Ort, Kennzeichen, Versicherten-/Vertragsnummern. Modul 25 bleibt byte-1:1 (SHA-Pin), daher aus eslint ausgenommen.
+5. **Modul 25 in Node prüfen:** im `vm`-Kontext scheitert `instanceof RegExp` (anderer Realm) — die Probe lädt den Kanon über `new Function` im selben Realm.
+6. **Grenzen der KI-Seiten:** ChatGPT (`chatgpt.com/?q=`) und Claude (`claude.ai/new?q=`) nehmen den Text in der Adresse, Claude Code und eine bestehende
+   Sitzung nicht — dort Zwischenablage. Ein Rückweg aus der Sitzung ohne Schnittstelle geht nur über Einfügen; die Zuordnung Platzhalter → Klartext lebt
+   bis der Tab zu ist. Bilder/Scans ohne Textebene gehen noch nicht mit (keine Texterkennung in der Familienakte → Sitzung F).
+7. **CI und private Repos:** in der privaten Familienakte startete die Prüfung nicht (Freiminuten verbraucht, `runner_id 0`); Klaus stellte das Repo zum
+   Merge öffentlich. ⚠ Nicht gemessen: Tablet, echte KI, echtes Teilen nach ChatGPT/Claude.
