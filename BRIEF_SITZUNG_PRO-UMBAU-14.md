@@ -80,6 +80,37 @@ Zuerst lesen: `CLAUDE.md` je Repo, `BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-13.md`,
 - Proben mit **erfundenen** Briefen (DIN 5008 Form A/B, Rechnung, Behördenbrief, Arztbrief, Mail), auch in falscher Einlesereihenfolge;
   Gegenprobe. Grenzen benennen: Handschrift, schräge Scans, Briefe ohne Kopf.
 
+### Sitzung E — Geschenk-Seite: alle Apps, alle Fassungen, eine HTML (Klaus 2026-10-31)
+- Nach dem Umbau **eine** HTML-Seite, wenig Text: je App eine Karte mit einem Satz „wofür“ und Knöpfen **Browser (PWA) · Android (APK) ·
+  Windows** — nur die Fassungen, die es wirklich gibt. Vorbild und Ausgangspunkt: Private Brain Pro `docs/geschenk/geschenk-jens.html`
+  (Artefakt „Geschenk für Jens“, Fassung 26: kurz, keine „Neu“-Listen, keine Emojis, Filme dazu).
+- Apps (Stand heute): Private Brain Pro, Private Brain V3 Pro, Workflow PDF Pro, Workflow PDF (PWA), BookLedgerPro, BookLedger Basic (PWA),
+  Familienakte, Mein WorkFloh (PWA), dazu Workflow Calculate/Needs, wenn Klaus will.
+- **Geprüft am 2026-10-31, was dafür zu klären ist:** Downloads aus **privaten** Repos (Familienakte, Mein WorkFloh, Tomys-Hub, Kimhub …) sind
+  nur angemeldet ladbar, und private Repos haben ohne Bezahlplan keine öffentliche PWA-Adresse. Für ein Geschenk müssen die Dateien öffentlich
+  liegen: eigener Server `family-projekt.de/updates/<app>/` (wie BookLedgerPro), öffentliche Releases oder das Repo öffentlich machen. Jede
+  Verknüpfung vor dem Veröffentlichen **unabhängig laden und SHA-256 mit der Veröffentlichung vergleichen** (wie bisher).
+- Nur mit Klaus' Wort veröffentlichen (Artefakt aktualisieren, nicht neu anlegen — die Adresse von Jens' Geschenk bleibt).
+
+## Vorschläge für weitere Apps aus dem Pool (Klaus 2026-10-31: „prüft, wo ähnliche Funktionen sinnvoll wären“)
+
+Gelesen wurde die Repo-Liste und, wo vorhanden, die CLAUDE.md; gebaut wird nichts davon ohne Klaus' Ja je Zeile.
+
+| App | Chefcode / Netz | Überall suchen | Briefkopf + Thema | Begründung |
+|---|---|---|---|---|
+| **Mein WorkFloh** und **Tomys-Hub / WorkFloh** | ja — dort gibt es schon einen **Chef-Code** (Zeiten korrigieren); mit der Chef-PIN aus Sitzung A zu **einem** Chef-Zugang zusammenführen | ja: Aufträge, Kunden, Anhänge | ja: Anhänge und Posteingang; Kundennummer mit der vorhandenen Kundenkartei (`k.nr`) abgleichen | Betrieb mit Mitarbeitern — genau der Fall „Chef und Arbeitsplätze“; beide WorkFlohs immer parallel (Regel dort) |
+| **Workflow PDF** (PWA) | nur über das Mycel-Fenster „Netz“ (Kanon) | ja, ohne Tresorordner | **ja, zuerst hier** (Quelle des Bausteins) | PWA zeigt es am schnellsten; WPP und die WorkFlohs ziehen den Kern nach |
+| **Company-Brain** | ja | ja | ja | Firmen-Gegenstück zu Private Brain; dort ist „Chef und Belegschaft“ der Normalfall |
+| **papas-aktenschrank** | nein (Familie, ein Gerät) | ja | **ja, mit den Lebensbereichen der Familienakte** | ein Aktenschrank lebt von Datum, Absender und Thema |
+| **Mein-In-and-Out-Book** | nein | ja | ja: Rechnungsnummer, Datum, Absender | Ein- und Ausgänge sind Belege — Sortierung wie bei BookLedgerPro |
+| **Sende-Prüfer** | nein | nein | ja für eingehende Mails (Absender, Datum, Wichtigkeit) | sortiert dann Post nach Dringlichkeit, bevor geprüft wird |
+| **Kim-sync** / **Datei-Post** | **ja**: der Chefcode als Schlüssel für Räume bzw. Empfänger im eigenen Netz | – | – | beide schicken schon zwischen Geräten; ein gemeinsamer Code statt eigener Raumcodes |
+| **Kimhub / kim-hub-company** | ja (Firmen-Hub) | ja, als Startpunkt der Suche über alle Apps | – | der Hub ist der natürliche Ort für „Überall suchen“ in einer Firma |
+| Rezeptbücher, Mixarium, Küchenzettel, Kochfreunde | nein | höchstens innerhalb der App | nein | keine Briefe, kein Betrieb — nicht sinnvoll |
+
+Empfohlene Reihenfolge nach Sitzung D: (1) beide WorkFlohs (Chef-Zugang vereinen, Briefkopf für Anhänge), (2) Company-Brain, (3) papas-aktenschrank,
+(4) Kim-sync/Datei-Post mit Chefcode, (5) der Rest nach Bedarf.
+
 ### Danach (wie gehabt, nur auf Klaus' Wort)
 Veröffentlichen (BLP 0.1.7, PB 1.0.43, WPP 1.0.10 und Folgende), Probe über drei Orte mit Chefcode (Abhakliste im Abschluss 13 / Brief 13).
 
@@ -105,7 +136,7 @@ Hinweis im Sage-Protokoll (netzübergreifende Suche, eigenes Netz), dann Briefko
 Repos: BookLedgerPro, BookLedger-Basic, Workflow-PDF-Pro, Workflow-PDF, Privat-Brain-Pro, Mein-WorkFloh, Meine-Familienakte, Sage-Protokol (Branch wie vorgegeben).
 Zuerst lesen: CLAUDE.md je Repo, BookLedgerPro/BRIEF_SITZUNG_PRO-UMBAU-14.md (Plan Sitzung A–D), BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-13.md, Forschung § 28.
 Meine Antworten auf die vier Fragen im Brief: [1: … 2: … 3: … 4: …]
-Beginne mit Sitzung A; was nicht in diese Sitzung passt, mit neuem Brief und Startauftrag übergeben.
+Beginne mit Sitzung A (danach B, C, D, E Geschenk-Seite, dann die Vorschläge für weitere Apps); was nicht in diese Sitzung passt, mit neuem Brief und Startauftrag übergeben.
 Nichts veröffentlichen ohne mein Wort. Keine Schlüssel, PINs oder Chefcodes in Dateien oder im Chat. Kanon-Module byte-1:1. Bausteine nur in ihrer Quelle ändern.
 Ein PR je App, bei grüner CI selbst mergen. Abschluss mit Stundennachweis, Forschungseintrag, Brief mit Startauftrag.
 ```
