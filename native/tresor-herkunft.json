@@ -1,6 +1,6 @@
 {
   "quelle": "lausiklauskn-png/Workflow-PDF-Pro",
-  "commit": "9122fc0291e711c42a5220fd69e1c728cb071d03",
+  "commit": "5e78919de6dfb04cf65cec1dce884f4bc628c274",
   "ordnerFormat": "familyprojekt-tresorordner/1",
   "vaultCryptoRumpf": "a12fb6d58dead0a463dc2dd034dc0c6e10b9f98d7c84a1cab6fcca475a6c64cf",
   "dateien": {
@@ -12,7 +12,8 @@
     "android/app/src/main/java/de/familyprojekt/tresor/Json.java": "478353b515e25550a3e3899943359d2074cf16a4e60a8eb6761f83a979598369",
     "android/app/src/main/java/de/familyprojekt/tresor/SafAblage.java": "1a363a2c559cc300d27fef852960e16d2cc56c3bc6d88804a1dc8c647e789d23",
     "android/app/src/main/java/de/familyprojekt/tresor/TresorOrdner.java": "cac580294e3922420d0108a8bf495d3701cdb9c9c795a5e448a06d2f7d591921",
+    "android/app/src/main/java/de/familyprojekt/tresor/Umzug.java": "9150aea15a9313bd3e9462478f1146452d45de1d54ca296c0735cf9c8f425497",
     "android/app/src/main/java/de/familyprojekt/tresor/VaultCrypto.java": "ba8d5328acbedfe1780babcac45351c29664adf7430ba01ba646b21ba64962d2",
-    "android/app/src/test/java/de/familyprojekt/tresor/TresorOrdnerTest.java": "5e2aeffc76810fb8a3c347c7edfa5e7da18b442ec4ac23584c5955fa2d427e41"
+    "android/app/src/test/java/de/familyprojekt/tresor/TresorOrdnerTest.java": "78fd9becdf4fd8ebbbba8d827ffd460ac9e1a6d0b3e52065369e073734671206"
   }
 }
