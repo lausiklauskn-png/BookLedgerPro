@@ -26,7 +26,7 @@ Nichts veröffentlicht, nichts am Tablet gemessen. Alle PRs mit grüner CI selbs
 - Angebotsplaner/Bedarfsanalyse: neues Aussehen erst beim zweiten Öffnen (Vorrat).
 - „KI-Begründung vorschlagen“ ersetzt das Feld direkt (Klaus wünscht Vorschlag → annehmen, markiert).
 - Scanner-/Druckerauswahl nicht gebaut.
-- Ursachen und Lehren: `docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md` § 14–15.
+- Ursachen und Lehren: Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md § 14–15.
 
 Nächste Sitzung: [`BRIEF_SITZUNG_PRO-UMBAU-5.md`](BRIEF_SITZUNG_PRO-UMBAU-5.md).
 

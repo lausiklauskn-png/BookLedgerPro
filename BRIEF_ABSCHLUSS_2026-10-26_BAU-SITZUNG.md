@@ -57,4 +57,4 @@ kommt Windows. BookLedger Basic ist die PWA, die bleibt.
 ## Nächste Sitzung
 
 **Android-Tresorordner für BookLedgerPro:** `BRIEF_SITZUNG_ANDROID-TRESORORDNER.md`, Forschung
-`docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`.
+Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md.

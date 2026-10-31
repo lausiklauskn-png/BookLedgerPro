@@ -23,7 +23,7 @@ BookLedgerPro: `run.mjs` 2580/0 · `test-native` 37/0 · `smoke_tresorordner` 30
   „Private Brain“-Ordner auf der SD-Karte; laut Regel erst an einer Kopie mit Klaus am Gerät. Brief: `BRIEF_SITZUNG_TRESORORDNER-SCHRITT-D.md`.
 
 ## Funde
-In der Forschung § 8 (`docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`): Ordnernamen passen schon · Fach-Schlüssel sind
+In der Forschung § 8 (Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md): Ordnernamen passen schon · Fach-Schlüssel sind
 32-Byte-Datenschlüssel · HMAC-Namen → Inhaltsverzeichnis · Fingerabdruck ohne eigenen Merker · doppelte Sicherung macht Gegenprobe
 blind · Basic ohne `native/` · Termux-Einfügen beantwortet Passwort-Abfrage · JVM-Proben ohne Gradle · Repo-Name `Workflow-PDF-Pro`.
 

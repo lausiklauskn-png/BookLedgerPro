@@ -102,7 +102,7 @@
   Ordner bekommt die automatische Sicherung, **und BookLedgerPro soll den entsperrten Tresorordner öffnen und durchsuchen können** ·
   Paket `de.familyprojekt.bookledgerpro` per `init` · Reihenfolge a–d · Relais ganz zum Schluss. Steht im Brief; die Sitzung baut los.
 - **Nächste Sitzung:** `BRIEF_SITZUNG_ANDROID-TRESORORDNER.md` (fünf Fragen an Klaus zuerst, dann Schritte A–D),
-  Forschung `docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`, Abschluss `BRIEF_ABSCHLUSS_2026-10-26_BAU-SITZUNG.md`.
+  Forschung Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md, Abschluss `BRIEF_ABSCHLUSS_2026-10-26_BAU-SITZUNG.md`.
 - **Fund:** `VaultCrypto.java` (PBV1) ist in Private Brain Pro und Workflow PDF Pro schon gleich (bis auf `package`); die
   **Ordnerschicht** darüber gibt es zweimal verschieden. Bessere Vorlage: Workflow PDF Pro (`DocumentVault`, Schlüssel-Plätze,
   `VaultRecovery` 5/3, Rust-Zwilling). Vorschlag: Hauptschlüssel über den Fächern, Fach-Schlüssel nur neu verpackt.

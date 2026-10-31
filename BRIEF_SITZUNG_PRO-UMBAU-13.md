@@ -1,7 +1,7 @@
 # Brief für die nächste Sitzung: Pro-Umbau 13 — Befunde, Chefcode nach Klaus' Plan, Probe über drei Orte (geschrieben 2026-10-30)
 
 Repos: BookLedgerPro, BookLedger-Basic, Workflow-PDF-Pro, Privat-Brain-Pro (Branch wie vorgegeben). Zuerst lesen: `CLAUDE.md` je Repo,
-`BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-12.md`, Forschung § 27 (`docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`),
+`BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-12.md`, Forschung § 27 (Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md),
 Private Brain Pro `docs/UEBERALL-SUCHEN.md`, `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md`.
 
 ## Ausgangslage

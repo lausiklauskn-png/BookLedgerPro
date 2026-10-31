@@ -28,7 +28,7 @@ Schutzmodule beider Apps unverändert (Kern-Prüfung 200/0, Drift-Guard 22/0).
 - Ein sehr großer Katalog (Zehntausende Mails) geht als eine Nachricht über die Brücke — ungemessen.
 
 ## Funde
-Forschung § 9 (`docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`): Probe an der Kopie über die Kennung · verschiedene Köpfe der
+Forschung § 9 (Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md): Probe an der Kopie über die Kennung · verschiedene Köpfe der
 Apps · `JSObject.fromJSONObject` im Lambda · Private Brains `www/` ohne OCR · Umlaute in der JVM · Teilen-Knopf im Klappmenü ·
 Gegenproben brauchen Kontrollen (ein blinder Fall gefunden) · Verzeichnis nur bei Änderung · Windows-Engine mit fester Liste ·
 Termux-Tresore ≠ SD-Tresor.

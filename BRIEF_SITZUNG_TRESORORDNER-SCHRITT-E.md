@@ -6,7 +6,7 @@ Stand 2026-10-27 spät. Schritt D ist gebaut: Workflow-PDF-Pro#30 (gemergt) und 
 ## Startauftrag zum Einfügen (Kurzfassung, Copy-Paste)
 
 ```
-BookLedgerPro (lausiklauskn-png/BookLedgerPro), Tresorordner Schritt E (Probe am Gerät). Lies zuerst CLAUDE.md, dann BRIEF_SITZUNG_TRESORORDNER-SCHRITT-E.md, BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-D.md, docs/TRESORORDNER.md und die Forschung docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md (§ 9). Repos dazunehmen: Workflow-PDF-Pro und Privat-Brain-Pro (beide docs/TRESORORDNER.md).
+BookLedgerPro (lausiklauskn-png/BookLedgerPro), Tresorordner Schritt E (Probe am Gerät). Lies zuerst CLAUDE.md, dann BRIEF_SITZUNG_TRESORORDNER-SCHRITT-E.md, BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-D.md, docs/TRESORORDNER.md und die Forschung Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md (§ 9). Repos dazunehmen: Workflow-PDF-Pro und Privat-Brain-Pro (beide docs/TRESORORDNER.md).
 1. Termux ist erledigt (Probe 2026-10-27: 64, alle drei .age-Dateien da) – nicht erneut fragen.
 2. Die Test-APKs sind veröffentlicht (2026-10-28: Workflow PDF Pro 1.0.6, Private Brain Pro 1.0.41, BookLedgerPro 0.1.0 – Links im Brief) und der SD-Ordner ist geklärt (Hauptablageordner wird der Tresorordner) – nicht erneut fragen. Erst prüfen, ob ich alle drei installiert habe.
 3. Dann mit mir am Tablet: Probe an der Kopie „Tresor-Probe“ (Dateien-App), Einzug Private Brain Pro und Workflow PDF Pro, Öffnen mit BookLedgerPro, Rechnungsmail ins Eingangsfach und übernehmen, Rückweg. Erst danach der echte Ordner, nur auf mein Wort.
