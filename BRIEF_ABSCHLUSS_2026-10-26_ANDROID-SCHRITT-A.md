@@ -1,7 +1,7 @@
 # Abschluss: Sitzung „Android-Tresorordner", Schritte A und A2 (2026-10-26, abends)
 
 Vorgänger: `BRIEF_SITZUNG_ANDROID-TRESORORDNER.md` (Klaus' fünf Antworten stehen dort). Nachfolger:
-`BRIEF_SITZUNG_TRESORORDNER-SCHRITT-B.md`. Forschungseinträge: `docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md` § 7.
+`BRIEF_SITZUNG_TRESORORDNER-SCHRITT-B.md`. Forschungseinträge: Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md § 7.
 
 ## Was gebaut und auf `main` ist
 

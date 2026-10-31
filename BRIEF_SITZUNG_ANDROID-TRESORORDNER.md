@@ -7,7 +7,7 @@ Mach einen Brief … der Rest geht rüber in die Sitzung von BookLedgerPro."*
 
 1. `CLAUDE.md` (Regeln, Fahrplan Pro/Basic/Tresorordner)
 2. `docs/design/PLAN-TRESORORDNER-2026-10-26.md` (Fächer, Regeln, Reihenfolge, Weg 2 Relais)
-3. **`docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`** (was die Vorbild-Apps wirklich tun — mit einem Fund, der den
+3. **Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md** (was die Vorbild-Apps wirklich tun — mit einem Fund, der den
    Plan an einer Stelle berichtigt)
 4. In Private Brain Pro: `docs/ANDROID.md`, `docs/SPEICHERORT-UND-TRESOR.md`, `docs/SIGNIERUNG-UND-GITHUB.md`,
    `docs/PRUEFSTAND-ANDROID.md`; in Workflow PDF Pro: `AGENTS.md` (dauerhafte Regeln, Gleichstand), `docs/SIGNIERUNG-UND-GITHUB.md`,

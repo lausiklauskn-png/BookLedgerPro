@@ -1,3 +1,5 @@
+**🔬 Regel: Forschung nur in Kimhub (Klaus 2026-10-31):** jeder Forschungseintrag (Sitzungs-Befunde, Messungen, Stunden-Auswertungen, Forschungsnotizen) kommt nach Kimhub `forschung/messungen/`; in diesem Repo werden keine Forschungseinträge geführt und keine Forschungsdateien angelegt. Öffentliche Forschungsaufgaben stehen in Sage-Protokol. Der Stundennachweis bleibt in BookLedgerPro `docs/STUNDENNACHWEIS.md`.
+
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
 **Pro-Umbau 14, Sitzung A2 (2026-10-31):** Netz liest den ganzen Brief — „Mit Ausschnitt antworten“ vergleicht jeden Beleg in Abschnitten (Briefende immer dabei), eine Antwortzeile je Beleg, Korpus baut sich bei neuen Belegen selbst neu (`src/sbkim/netz.js`, `src/domain/ueberall.js`, Ereignis `blp-belege-geaendert` aus `documents.js`); Probe `tests/smoke_netzbrief.mjs` 11 · Gegenprobe `tests/gegenprobe_netzbrief.mjs` 5/5 (#436, Basic #30). Private Brain Pro/V3 antworteten im Netz nie (Liste statt Float32Array) — PB #119, V3 #32. Inventur Tresorordner und sechs Fragen an Klaus: `BRIEF_ABSCHLUSS_2026-10-31_PRO-UMBAU-14A2.md`; **nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-14-NACH-A2.md`.
@@ -21,7 +23,6 @@ Haken „Durchsuchbar“), Basic #18/#19; **veröffentlicht (Klaus' Wort, nur An
 `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md` — Einstellungen als Knöpfe wie heute, **kein Explorer**, ⓘ, flach, ein farbiger nächster Schritt.
 **Test-APKs veröffentlicht (2026-10-28, Klaus' Wort):** Workflow PDF Pro 1.0.6, Private Brain Pro 1.0.41, BookLedgerPro 0.1.0 (erste signierte APK, Repo privat, `android-release.yml`, Links in `docs/PULS.md`). (Schritt E erledigt, siehe oben.) B (Paket in Workflow PDF Pro) und C/C2 (BookLedgerPro im Ordner) sind gebaut: `BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-B-C.md`, Bedienung `docs/TRESORORDNER.md`. BookLedgerPro ist **Android-App** (signiert über `signing/`, Zertifikat `7a6217eb…`). Nichts veröffentlichen ohne Klaus' Wort.
 
-**🔬 Regel: Forschung nur in Kimhub (Klaus 2026-10-31: „einheitlich alles in Kimhub … in den einzelnen Repos soll keine Forschungseinträge sein“):** jeder Forschungseintrag kommt nach **Kimhub `forschung/messungen/`** (`<app>-<thema>-<datum>.md` oder als Abschnitt in die passende Datei, z. B. `pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md` für alle Pro-Apps); hier stehen nur Verweise. Der Stundennachweis bleibt in BookLedgerPro `docs/STUNDENNACHWEIS.md`.
 
 **⏱ Regel: Stundennachweis (Klaus 2026-10-28: „ihr schreibt meine Arbeitsstunden nicht auf“):** jeder Abschluss bekommt den Abschnitt „Stundennachweis“ (erste/letzte Spur, Blöcke, Obergrenze) und eine Zeile in `docs/STUNDENNACHWEIS.md`; Klaus' eigene Angabe geht vor.
 

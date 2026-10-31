@@ -140,7 +140,7 @@ App-Links für den WorkFloh-Rundlauf offen.
 
 **Was getan:** BookLedger Basic in beide Marktplätze eingetragen (family-project #373, PWA-Toolpoint #182, Basic #3);
 Private Brain Pro und Workflow PDF Pro nachgelesen (Capacitor, `Vault`/`DocumentVault`/`VaultCrypto`/`VaultRecovery`, Signatur,
-Release); `docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`, `BRIEF_SITZUNG_ANDROID-TRESORORDNER.md`,
+Release); Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md, `BRIEF_SITZUNG_ANDROID-TRESORORDNER.md`,
 `BRIEF_ABSCHLUSS_2026-10-26_BAU-SITZUNG.md`.
 **Stand:** kein Code geändert; `run.mjs` unverändert grün. Fund: zwei Ordnerschichten über einem Schloss (siehe Forschung § 1).
 **Offen/Nächstes:** fünf Fragen an Klaus im Brief, dann Schritt A (BookLedgerPro als installierbare App ohne Ordner). Nichts

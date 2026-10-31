@@ -1,7 +1,7 @@
 # Brief für die nächste Sitzung: Pro-Umbau 12 — „Überall suchen“ in Workflow PDF Pro und Private Brain Pro, Probe über drei Orte (geschrieben 2026-10-30)
 
 Repos: BookLedgerPro, BookLedger-Basic, Workflow-PDF-Pro, Privat-Brain-Pro (Branch wie vorgegeben). Zuerst lesen: `CLAUDE.md` je Repo,
-`BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-11.md`, Forschung § 26 (`docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`), `docs/TRESORORDNER.md`,
+`BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-11.md`, Forschung § 26 (Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md), `docs/TRESORORDNER.md`,
 `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md`.
 
 ## Ausgangslage

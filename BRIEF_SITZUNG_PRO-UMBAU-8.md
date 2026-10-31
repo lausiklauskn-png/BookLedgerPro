@@ -2,7 +2,7 @@
 
 Repos: BookLedgerPro, BookLedger-Basic, Workflow-PDF-Pro, Privat-Brain-Pro (bei Bedarf Meine-Familienakte, Privat-Brain-Pro-V3).
 Branch: der im ersten Prompt vorgegebene. Zuerst lesen: `CLAUDE.md` je Repo, `BRIEF_ABSCHLUSS_2026-10-29_PRO-UMBAU-7.md`,
-`docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md`, Forschung § 20–21 (`docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`).
+`docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md`, Forschung § 20–21 (Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md).
 
 ## Ausgangslage
 

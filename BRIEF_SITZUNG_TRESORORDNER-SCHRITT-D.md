@@ -6,7 +6,7 @@ Abschluss: `BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-B-C.md`.
 ## Startauftrag zum Einfügen (Kurzfassung, Copy-Paste)
 
 ```
-BookLedgerPro (lausiklauskn-png/BookLedgerPro), Tresorordner Schritt D. Lies zuerst CLAUDE.md, dann BRIEF_SITZUNG_TRESORORDNER-SCHRITT-D.md, BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-B-C.md, docs/TRESORORDNER.md und die Forschung docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md (§ 2, 8). Repos dazunehmen: Workflow-PDF-Pro (dort wird das Paket de.familyprojekt.tresor gepflegt, docs/TRESORORDNER.md) und Privat-Brain-Pro.
+BookLedgerPro (lausiklauskn-png/BookLedgerPro), Tresorordner Schritt D. Lies zuerst CLAUDE.md, dann BRIEF_SITZUNG_TRESORORDNER-SCHRITT-D.md, BRIEF_ABSCHLUSS_2026-10-27_TRESORORDNER-B-C.md, docs/TRESORORDNER.md und die Forschung Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md (§ 2, 8). Repos dazunehmen: Workflow-PDF-Pro (dort wird das Paket de.familyprojekt.tresor gepflegt, docs/TRESORORDNER.md) und Privat-Brain-Pro.
 1. Termux-Probe der Freigabe als EINE Zeile (Passwort danach von Hand): age -d ~/blp-freigabe.age | wc -c  → erwartet 64.
 2. Stell mir die zwei Fragen aus dem Brief (wo der Knopf „In den Tresorordner einziehen“ steht; Probe-Kopie meiner SD-Karte per Dateien-App oder Termux).
 3. Dann D1 Workflow PDF Pro (Einzug + Inhaltsverzeichnis, eigener PR, Gleichstand-Regeln dort), D2 Private Brain Pro (Einzug + Inhaltsverzeichnis + Rechnungsmails ins Eingang-BookLedgerPro, eigener PR, Schutzmodule unverändert), danach BookLedgerPro/Basic nachziehen.

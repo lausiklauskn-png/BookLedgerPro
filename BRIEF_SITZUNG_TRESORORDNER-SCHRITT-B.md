@@ -6,7 +6,7 @@ Abschluss: `BRIEF_ABSCHLUSS_2026-10-26_ANDROID-SCHRITT-A.md`.
 ## Startauftrag zum Einfügen (Kurzfassung, Copy-Paste)
 
 ```
-BookLedgerPro (lausiklauskn-png/BookLedgerPro), Tresorordner Schritt B. Lies zuerst CLAUDE.md, dann BRIEF_SITZUNG_TRESORORDNER-SCHRITT-B.md, BRIEF_SITZUNG_ANDROID-TRESORORDNER.md (meine fünf Antworten gelten) und docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md (§ 1, 2, 7). Stand: Android-Hülle und Signatur sind auf main (Zertifikat 7a6217eb…), noch ohne Tresorordner.
+BookLedgerPro (lausiklauskn-png/BookLedgerPro), Tresorordner Schritt B. Lies zuerst CLAUDE.md, dann BRIEF_SITZUNG_TRESORORDNER-SCHRITT-B.md, BRIEF_SITZUNG_ANDROID-TRESORORDNER.md (meine fünf Antworten gelten) und Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md (§ 1, 2, 7). Stand: Android-Hülle und Signatur sind auf main (Zertifikat 7a6217eb…), noch ohne Tresorordner.
 1. Gib mir zuerst den Termux-Block zum Löschen der offenen Freigabe-Kopie (ohne Erklärung, ich schicke die Ausgabe zurück).
 2. Stell mir die eine Frage: wo wird das gemeinsame Paket de.familyprojekt.tresor gepflegt (deine Empfehlung: Workflow PDF Pro)?
 3. Dann bau Schritt B (gemeinsamer Kopf mit Hauptschlüssel, ein Passwort, Ersatzschlüssel 5/3, verschlüsseltes Inhaltsverzeichnis je Fach), danach C, C2, D wie im Brief.
@@ -17,7 +17,7 @@ Termux-Befehle immer als ein Block ohne Erklärung, GitHub-Schritte als kurze Li
 
 1. `CLAUDE.md` (oben: Fahrplan, Android-Hülle)
 2. `BRIEF_SITZUNG_ANDROID-TRESORORDNER.md` — **Klaus' fünf Antworten** (gelten, nicht neu fragen) und die Schritte B–D im Wortlaut
-3. `docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md` — § 1–2 (zwei Ordnerschichten, Vorschlag Hauptschlüssel) und
+3. Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md — § 1–2 (zwei Ordnerschichten, Vorschlag Hauptschlüssel) und
    § 7 (Befunde aus Schritt A: Hauptzweig, Actions-Rechte, Netz im Behälter)
 4. `docs/ANDROID.md` — was die Hülle kann und nicht kann
 5. `docs/design/PLAN-TRESORORDNER-2026-10-26.md` — Fächer, Regeln, Passwort/Ersatzschlüssel

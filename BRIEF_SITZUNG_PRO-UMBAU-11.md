@@ -1,7 +1,7 @@
 # Brief für die nächste Sitzung: Pro-Umbau 11 — Mycel/SBKIM nach Klaus' Ja/Nein-Liste (geschrieben 2026-10-30)
 
 Repos: BookLedgerPro, BookLedger-Basic, Workflow-PDF-Pro, Privat-Brain-Pro (Branch wie vorgegeben). Zuerst lesen: `CLAUDE.md` je Repo,
-`BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-10.md`, Forschung § 25 (`docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md`), `docs/TRESORORDNER.md`,
+`BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-10.md`, Forschung § 25 (Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md), `docs/TRESORORDNER.md`,
 `docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md`; im Sage-Protokol (öffentlich, lesend klonen) `docs/HYBRID-MATCH-KONZEPT.md`, `docs/PAPER_NUTZEN_UND_INTEGRATION.md`,
 `src/modules/22_such_widget.js`, `src/modules/23_rendezvous_ui.js`.
 

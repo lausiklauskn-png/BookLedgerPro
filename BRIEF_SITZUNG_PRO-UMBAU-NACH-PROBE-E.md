@@ -3,7 +3,7 @@
 ## Startauftrag zum Einfügen (Kurzfassung, Copy-Paste)
 
 ```
-BookLedgerPro (lausiklauskn-png/BookLedgerPro) + Privat-Brain-Pro + Workflow-PDF-Pro: Reparaturen und Bedien-Umbau nach der Tablet-Probe. Lies zuerst CLAUDE.md, dann BRIEF_SITZUNG_PRO-UMBAU-NACH-PROBE-E.md, BRIEF_ABSCHLUSS_2026-10-28_TRESORORDNER-E.md, docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md und die Forschung docs/design/FORSCHUNG-ANDROID-TRESORORDNER-2026-10-26.md (§ 10). Repos dazunehmen: Privat-Brain-Pro, Workflow-PDF-Pro, Workflow-PDF.
+BookLedgerPro (lausiklauskn-png/BookLedgerPro) + Privat-Brain-Pro + Workflow-PDF-Pro: Reparaturen und Bedien-Umbau nach der Tablet-Probe. Lies zuerst CLAUDE.md, dann BRIEF_SITZUNG_PRO-UMBAU-NACH-PROBE-E.md, BRIEF_ABSCHLUSS_2026-10-28_TRESORORDNER-E.md, docs/design/LEITFADEN-PRO-APPS-BEDIENUNG.md und die Forschung Kimhub forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md (§ 10). Repos dazunehmen: Privat-Brain-Pro, Workflow-PDF-Pro, Workflow-PDF.
 1. Erledigt, nicht erneut fragen: Tresorordner läuft am echten Ordner (SD-Karte/Privat Brain Pro Hauptablageordner), alle drei Apps eingezogen; Einstellungen = Knöpfe wie heute, KEIN Explorer; alter Browser-Tresor in der Pro-App weg; Reihenfolge Tresorordner-Ansicht 1→2→4→3.
 2. Zuerst fragen: (a) BookLedgerPro 0.1.1 jetzt veröffentlichen (enthält #381 Teilen, #382 englische Rechnung + Sperren)? (b) Wo wird die gemeinsame Bedien-Datei gepflegt (Empfehlung: Private Brain Pro)? (c) Öffentlicher Herausgeber-Schlüssel fb6cd374…709ee2f fest in die Apps?
 3. Dann: „Sperren“-Fehler in Workflow PDF Pro beheben; Private Brain Pro #105 übernehmen OHNE Explorer-Teil; Umbau Einstellungen nach Leitfaden, Private Brain Pro zuerst, dann Workflow PDF Pro, dann BookLedgerPro.
