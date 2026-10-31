@@ -7274,7 +7274,7 @@ await section('Pro-Umbau 11 (Klaus 2026-10-30): Überall suchen, Netz-Korpus nur
   ok('UND über alle Wörter; leere Frage → keine Treffer', U.appsSuchen(daten, 'fassade bäckerei').length === 0 && U.appsSuchen(daten, '  ').length === 0);
   const belege = [{ id: 'b1', name: 'Rechnung-Strom-Oktober.pdf', createdAt: '2026-10-12T10:00:00Z', buchungId: 'x1', textZeichen: 900 }, { id: 'b2', name: 'Quittung.jpg', createdAt: '2026-10-13T08:00:00Z' }];
   const buch = new Map([['x1', { zeilen: [{ betrag: 10000 }, { betrag: 1900 }, { betrag: 11900 }] }]]);
-  const k = U.netzKorpusEintraege(belege, buch);
+  const k = U.netzKorpusEintraege(belege, buch).sort((a, b) => a.anchorId.localeCompare(b.anchorId));
   ok('Netz-Korpus: Titel ohne Endung, Datum, Betrag aus der Buchung', k[0].label === 'Beleg · Rechnung-Strom-Oktober · 2026-10-12 · 119,00 €' && k[0].anchorId === 'beleg:b1');
   ok('Netz-Korpus: ohne Buchung kein Betrag, nie Belegtext (text = label)', k[1].label === 'Beleg · Quittung · 2026-10-13' && k.every((e) => e.text === e.label && !('passageVec' in e)));
   ok('Netz-Korpus höchstens NETZ_KORPUS_MAX Belege', U.netzKorpusEintraege(Array.from({ length: U.NETZ_KORPUS_MAX + 5 }, (_, i) => ({ id: 'i' + i, name: 'x' })), null).length === U.NETZ_KORPUS_MAX);
@@ -7298,12 +7298,42 @@ await section('Pro-Umbau 11 (Klaus 2026-10-30): Überall suchen, Netz-Korpus nur
   ok('i18n DE/EN: alle Schlüssel von Überall suchen und Konto finden zweimal (' + keys.length + ')', keys.length >= 30 && keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2), keys.filter((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length < 2).join(','));
 });
 
+await section('Pro-Umbau 14 A2 (Klaus 2026-10-31): Netz liest den ganzen Brief, neueste zuerst, Korpus baut sich neu', async () => {
+  const U = await import('../src/domain/ueberall.js');
+  const fuell = Array.from({ length: 40 }, (_, i) => `Absatz ${i + 1}: Wir bestätigen den Eingang Ihrer Unterlagen und prüfen die Angaben zur Lieferung sorgfältig.`).join(' ');
+  const brief = 'Sehr geehrte Damen und Herren, ' + fuell + ' Mit freundlichen Grüßen Hans Meier';
+  const belege = [{ id: 'alt', name: 'Brief-Lieferung.pdf', createdAt: '2026-09-01T10:00:00Z' }, { id: 'neu', name: 'Quittung.jpg', createdAt: '2026-10-30T08:00:00Z' }];
+  const texte = new Map([['alt', brief]]);
+  const k = U.netzKorpusEintraege(belege, null, { texte });
+  const alt = k.filter((e) => e.anchorId === 'beleg:alt');
+  ok('Ganzer Brief: viele Abschnitte, alle mit derselben anchorId, das Briefende (Meier) ist ein eigener Eintrag', brief.length > 3000 && alt.length > 10 && alt.some((e) => /Hans Meier/.test(e.text)), String(alt.length));
+  ok('Ohne Ausschnitt nie Belegtext (öffentlich nur Titel · Datum · Betrag)', U.netzKorpusEintraege(belege, null).every((e) => e.text === e.label));
+  ok('Neueste zuerst', k[0].anchorId === 'beleg:neu');
+  const viele = Array.from({ length: 200 }, (_, i) => 's' + i);
+  const w = U.abschnitteWaehlen(viele, 10);
+  ok('Lange Belege gekappt: Anfang und immer das Ende (Gruß, Unterschrift)', w.length === 10 && w[0] === 's0' && w[9] === 's199' && w.includes('s197'));
+  const gross = U.netzKorpusEintraege(Array.from({ length: 120 }, (_, i) => ({ id: 'g' + i, name: 'B' + i, createdAt: '2026-10-' + String(10 + (i % 20)).padStart(2, '0') })), null,
+    { texte: new Map(Array.from({ length: 120 }, (_, i) => ['g' + i, brief])) });
+  ok('Insgesamt höchstens NETZ_ABSCHNITTE_MAX Einträge, jeder Beleg bleibt mit mindestens einem Eintrag', gross.length <= U.NETZ_ABSCHNITTE_MAX && new Set(gross.map((e) => e.anchorId)).size === 120, String(gross.length));
+  // Antwort-Filter: mehrere Abschnitte desselben Belegs → eine Antwortzeile, Ausschnitt um den Namen am Briefende
+  const echt = { queryLocal: async (_f, kk) => [{ label: alt[0].label, anchorId: 'beleg:alt', score: 0.9 }, { label: alt[0].label, anchorId: 'beleg:alt', score: 0.85 }, { label: 'Beleg · Quittung', anchorId: 'beleg:neu', score: 0.5 }].slice(0, kk) };
+  const f = U.antwortFilter(echt, { eigen: () => true, texte });
+  const h = await f.queryLocal('Brief von Herrn Meier', 5, {});
+  ok('Antwort-Filter: je Beleg eine Zeile; Ausschnitt zeigt „Meier“ vom Briefende, ≤ 200 Zeichen', h.length === 2 && /Meier/.test(h[0].label) && h[0].label.length <= U.ANTWORT_LABEL_MAX, JSON.stringify(h.map((x) => x.label)));
+  const nz = _readSpore(new URL('../src/sbkim/netz.js', import.meta.url), 'utf8');
+  const doc = _readSpore(new URL('../src/domain/documents.js', import.meta.url), 'utf8');
+  ok('Neubau bei Beleg-Änderung: Ereignis aus documents.js, entprellt, setLocalCorpus ohne Aus/An, Vektoren wiederverwendet',
+    /BELEGE_GEAENDERT = 'blp-belege-geaendert'/.test(doc) && (doc.match(/geaendert\((rec\.id|id|belegId)\)/g) || []).length >= 4
+    && /addEventListener\(BELEGE_GEAENDERT, _beiAenderung\)/.test(nz) && /setTimeout\(\(\) => \{ korpusNeuBauen\(\); \}, KORPUS_NEU_MS\)/.test(nz)
+    && /m\.setLocalCorpus\(korpus\)/.test(nz) && /_vecCache\.get\(e\.text\)/.test(nz));
+});
+
 await section('Pro-Umbau 13 (Klaus 2026-10-30): Chefcode-Ausschnitt nur im eigenen Netz, gemeinsamer Kasten Überall suchen', async () => {
   const U = await import('../src/domain/ueberall.js');
   const belege = [{ id: 'b1', name: 'Rechnung-Heizung.pdf', createdAt: '2026-10-12T10:00:00Z' }, { id: 'b2', name: 'Quittung.jpg', createdAt: '2026-10-13T08:00:00Z' }];
   const texte = new Map([['b1', 'Reparatur der Heizung im Keller, Austausch des Ventils. ' + 'x'.repeat(3000)]]);
-  const k = U.netzKorpusEintraege(belege, null, { texte });
-  ok('Mit Ausschnitt: Titelzeile bleibt Titel · Datum, der Belegtext zählt nur beim Vergleichen (gekappt)', k[0].label === 'Beleg · Rechnung-Heizung · 2026-10-12' && /Heizung im Keller/.test(k[0].text) && k[0].text.length <= k[0].label.length + 3 + U.AUSSCHNITT_TEXT_MAX && k[1].text === k[1].label);
+  const k = U.netzKorpusEintraege(belege, null, { texte }).filter((e) => e.anchorId === 'beleg:b1').concat(U.netzKorpusEintraege(belege, null, { texte }).filter((e) => e.anchorId === 'beleg:b2'));
+  ok('Mit Ausschnitt: Titelzeile bleibt Titel · Datum, der Belegtext zählt nur beim Vergleichen (je Abschnitt ≤ 260 Zeichen)', k[0].label === 'Beleg · Rechnung-Heizung · 2026-10-12' && /Heizung im Keller/.test(k[0].text) && k.filter((e) => e.anchorId === 'beleg:b1').every((e) => e.text.length <= e.label.length + 3 + 260) && k[k.length - 1].text === k[k.length - 1].label);
   ok('Ohne texte wie 0.1.6: text = label', U.netzKorpusEintraege(belege, null).every((e) => e.text === e.label));
   const l = U.ausschnittLabel(k[0].label, texte.get('b1'), 'Ventil');
   ok('ausschnittLabel: Titel — Ausschnitt um das Suchwort, höchstens 200 Zeichen (Kanon RDV_LABEL_MAX)', l.startsWith(k[0].label + ' — ') && /Ventil/.test(l) && l.length <= U.ANTWORT_LABEL_MAX, l);
@@ -7317,8 +7347,8 @@ await section('Pro-Umbau 13 (Klaus 2026-10-30): Chefcode-Ausschnitt nur im eigen
   ok('Antwort-Filter außerhalb eines eigenen Netzes: gar keine Antwort (bei jeder Frage neu geprüft)', (await f.queryLocal('Heizung', 5, {})).length === 0);
   ok('Antwort-Filter ohne Prüfung (eigen fehlt): gar keine Antwort', (await U.antwortFilter(echt, { texte }).queryLocal('Heizung')).length === 0);
   const nz = _readSpore(new URL('../src/sbkim/netz.js', import.meta.url), 'utf8');
-  ok('Netz-Korpus mit Float32Array (Modul 04 validateCorpus; 0.1.6 gab Listen, jede Antwort blieb still leer)', /passageVec: v instanceof Float32Array \? v : Float32Array\.from\(v\)/.test(nz));
-  ok('antwortenAn mit texte nur im eigenen Netz, Filter wird gesetzt und beim Ausschalten abgemeldet', /if \(texte && !imEigenenNetz\(\)\) return \{ ok: false/.test(nz) && /match: texte \? antwortFilter\(echt, \{ eigen: imEigenenNetz, texte \}\) : null/.test(nz) && /prepareCorpus: null, match: null/.test(nz));
+  ok('Netz-Korpus mit Float32Array (Modul 04 validateCorpus; 0.1.6 gab Listen, jede Antwort blieb still leer)', /v = roh instanceof Float32Array \? roh : Float32Array\.from\(roh\)/.test(nz) && /passageVec: v \}/.test(nz));
+  ok('antwortenAn mit texte nur im eigenen Netz, Filter wird gesetzt und beim Ausschalten abgemeldet', /if \(texte && !imEigenenNetz\(\)\) return \{ ok: false/.test(nz) && /match: texte \? antwortFilter\(echt, \{ eigen: imEigenenNetz, texte: _texteLive \}\) : null/.test(nz) && /prepareCorpus: null, match: null/.test(nz));
   const sb = _readSpore(new URL('../src/ui/views/sbkimsuche.js', import.meta.url), 'utf8');
   ok('Überall suchen: in der App der gemeinsame Kasten (ProUeberall Fassung ≥ 2), PWA behält die eigene Fassung', /U\.FASSUNG >= 2/.test(sb) && /if \(gemeinsamerKasten\(\)\) return;/.test(sb) && /tresorOhne: \['bookledgerpro'\]/.test(sb));
   const nw = _readSpore(new URL('../src/ui/views/network.js', import.meta.url), 'utf8');

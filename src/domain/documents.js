@@ -14,6 +14,13 @@ function key() {
   return k;
 }
 
+// Pro-Umbau 14 A2: nach jeder Änderung an Belegen (neu, Text, Verknüpfung, gelöscht) ein Ereignis — das Mycel baut damit seinen
+// Antwort-Korpus von selbst neu (src/sbkim/netz.js, entprellt). Ohne Fenster (Node-Proben) still.
+export const BELEGE_GEAENDERT = 'blp-belege-geaendert';
+function geaendert(id) {
+  try { if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') window.dispatchEvent(new CustomEvent(BELEGE_GEAENDERT, { detail: { id } })); } catch { /* fail-soft */ }
+}
+
 function neueId() {
   return 'beleg:' + Date.now().toString(36) + ':' + Math.random().toString(36).slice(2, 8);
 }
@@ -59,6 +66,7 @@ export async function saveBeleg(file, opt = {}) {
   }
   await filePut(rec);
   const { data: _, ...meta } = rec;
+  geaendert(rec.id);
   return meta;
 }
 
@@ -82,6 +90,7 @@ export async function setBelegText(id, text) {
   delete rec.vektorDaten; delete rec.vektorAnzahl; delete rec.vektorZerlegung;
   await filePut(rec);
   const { data: _d, textDaten: _t, vektorDaten: _v, originalDaten: _o, pruefDaten: _p, kiDaten: _k, ...meta } = rec;
+  geaendert(id);
   return meta;
 }
 
@@ -158,10 +167,12 @@ export async function linkBeleg(belegId, buchungId) {
   if (!rec) throw new Error('Beleg nicht gefunden');
   rec.buchungId = buchungId;
   await filePut(rec);
+  geaendert(belegId);
 }
 
 export async function deleteBeleg(id) {
   await fileDel(id);
+  geaendert(id);
 }
 
 // GoBD-Aufbewahrung: reine Helfer in aufbewahrung.js (ohne Speicher-Abhängigkeit), hier re-exportiert.

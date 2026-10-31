@@ -4,7 +4,7 @@
 // Workflow Calculate, Bedarfsanalyse = Workflow Needs), der Tresorordner der Pro-Apps (nur in der App) und auf Wunsch das Netz.
 // Kein DOM, keine IndexedDB, keine Brücke — in tests/run.mjs node-geprüft; die Ansicht steht in src/ui/views/sbkimsuche.js.
 
-import { suchwoerter, wortTreffer, ausschnitt, normalisieren } from './belegsuche.js';
+import { suchwoerter, wortTreffer, ausschnitt, normalisieren, zerlegen } from './belegsuche.js';
 
 /** Herkunft einer Trefferzeile, in der Reihenfolge der Liste. */
 export const HERKUNFT = Object.freeze(['app', 'calculate', 'needs', 'tresor', 'netz']);
@@ -14,6 +14,22 @@ export const JE_HERKUNFT_MAX = 25;
 
 /** Höchstens so viele Belege bietet BookLedgerPro dem Netz an (je Antwort gehen ohnehin nur die besten k zurück). */
 export const NETZ_KORPUS_MAX = 300;
+
+/** Mit Ausschnitt (Pro-Umbau 14 A2, Klaus: „Herr Meier am Ende wird nicht gefunden“): jeder Abschnitt eines Belegs ist ein eigener
+ *  Eintrag (gleiche anchorId). Höchstens so viele Abschnitte je Beleg (Anfang + Briefende bleiben immer) und insgesamt. */
+export const NETZ_ABSCHNITTE_JE_BELEG = 60;
+export const NETZ_ABSCHNITTE_MAX = 4000;
+/** So viele Abschnitte vom Ende bleiben bei langen Belegen immer dabei (Gruß, Unterschrift, Name). */
+export const NETZ_ENDE_ABSCHNITTE = 3;
+
+/** Wählt höchstens `max` Abschnitte: die ersten und immer die letzten NETZ_ENDE_ABSCHNITTE (Briefende). */
+export function abschnitteWaehlen(abschnitte, max = NETZ_ABSCHNITTE_JE_BELEG) {
+  const a = Array.isArray(abschnitte) ? abschnitte : [];
+  if (max <= 0) return [];
+  if (a.length <= max) return a.slice();
+  const ende = Math.min(NETZ_ENDE_ABSCHNITTE, max);
+  return [...a.slice(0, max - ende), ...a.slice(a.length - ende)];
+}
 
 const txt = (v) => (v === undefined || v === null ? '' : String(v));
 
@@ -91,20 +107,28 @@ export function buchungsBetrag(b) {
  */
 export function netzKorpusEintraege(belege, buchungen, { texte = null } = {}) {
   const hol = (id) => (!id || !buchungen) ? null : (buchungen instanceof Map ? buchungen.get(id) : buchungen[id]);
-  return (belege || []).slice(0, NETZ_KORPUS_MAX).filter((b) => b && b.id).map((b) => {
+  // Neueste zuerst (Klaus: neue Belege sollen gleich gefunden werden; die Kappung trifft die ältesten).
+  const sortiert = (belege || []).filter((b) => b && b.id).map((b, i) => ({ b, i }))
+    .sort((x, y) => txt(y.b.createdAt).localeCompare(txt(x.b.createdAt)) || x.i - y.i).map((x) => x.b).slice(0, NETZ_KORPUS_MAX);
+  const aus = [];
+  let budget = NETZ_ABSCHNITTE_MAX;
+  for (const b of sortiert) {
     const datum = txt(b.belegDatum || (b.mail && b.mail.datum) || txt(b.createdAt).slice(0, 10));
     const betrag = buchungsBetrag(hol(b.buchungId));
     const titel = txt(b.name).replace(/\.[a-z0-9]{2,4}$/i, '').slice(0, 120);
     const label = ['Beleg', titel, datum, betrag].filter(Boolean).join(' · ');
-    // Mit Ausschnitt (Pro-Umbau 13, nur im eigenen Netz): der Belegtext zählt beim Vergleichen mit — er bleibt im Speicher dieses
-    // Geräts; hinaus geht höchstens der Ausschnitt, den antwortFilter an den Titel hängt.
-    const inhalt = texte ? txt(texte instanceof Map ? texte.get(b.id) : texte[b.id]).replace(/\s+/g, ' ').trim().slice(0, AUSSCHNITT_TEXT_MAX) : '';
-    return { label, text: inhalt ? label + ' · ' + inhalt : label, anchorId: 'beleg:' + b.id };
-  });
+    const anchorId = 'beleg:' + b.id;
+    // Mit Ausschnitt (Pro-Umbau 13, nur im eigenen Netz): der GANZE Belegtext zählt beim Vergleichen mit, in Abschnitten (A2) — er
+    // bleibt im Speicher dieses Geräts; hinaus geht höchstens der Ausschnitt, den antwortFilter an den Titel hängt.
+    const roh = texte ? txt(texte instanceof Map ? texte.get(b.id) : texte[b.id]) : '';
+    const teile = roh ? abschnitteWaehlen(zerlegen(roh), Math.max(1, Math.min(NETZ_ABSCHNITTE_JE_BELEG, budget))) : [];
+    if (!teile.length) { aus.push({ label, text: label, anchorId }); budget -= 1; continue; }
+    for (const abschnitt of teile) aus.push({ label, text: label + ' · ' + abschnitt, anchorId, abschnitt });
+    budget -= teile.length;
+  }
+  return aus;
 }
 
-/** So viel Belegtext geht in den Vergleich (nur lokal, nie hinaus). */
-export const AUSSCHNITT_TEXT_MAX = 1500;
 /** Modul 23 kappt jede Antwortzeile hart bei 200 Zeichen (RDV_LABEL_MAX, Kanon) — mehr als das kann ein Ausschnitt nie sein. */
 export const ANTWORT_LABEL_MAX = 200;
 
@@ -134,8 +158,16 @@ export function antwortFilter(echt, { eigen, texte }) {
   const f = Object.create(echt || null);
   f.queryLocal = async (frage, k, opts) => {
     if (typeof eigen !== 'function' || !eigen()) return [];
-    const hits = await echt.queryLocal(frage, k, opts);
-    return (Array.isArray(hits) ? hits : []).map((h) => {
+    // Mehrere Abschnitte eines Belegs tragen dieselbe anchorId: mehr holen, je Beleg nur der beste Treffer (A2).
+    const kk = Number.isInteger(k) && k > 0 ? k : 5;
+    const hits = await echt.queryLocal(frage, kk * 4, opts);
+    const gesehen = new Set();
+    return (Array.isArray(hits) ? hits : []).filter((h) => {
+      const a = txt(h && h.anchorId);
+      if (!a) return true;
+      if (gesehen.has(a)) return false;
+      gesehen.add(a); return true;
+    }).slice(0, kk).map((h) => {
       const id = txt(h && h.anchorId).startsWith('beleg:') ? txt(h.anchorId).slice(6) : '';
       const t = id && texte ? (texte instanceof Map ? texte.get(id) : texte[id]) : '';
       return { ...h, label: ausschnittLabel(h && h.label, t, frage) };

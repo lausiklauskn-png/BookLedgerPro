@@ -31,11 +31,14 @@ async function belegTexte(belege) {
   return m;
 }
 async function antwortenStarten(meldung, mitAusschnitt) {
-  const belege = await listBelege().catch(() => []);
-  const buchungen = new Map((await listBuchungen().catch(() => [])).map((b) => [b.id, b]));
-  const texte = mitAusschnitt ? await belegTexte(belege) : null;
-  const r = await antwortenAn({ belege, buchungen, texte, onStatus: (art, i, n) => { meldung.textContent = art === 'korpus' ? t('net.antwortenBaut').replace('{i}', String(i)).replace('{n}', String(n)) : t('net.antwortenMeldet'); } });
-  _antwortMeldung = r.ok ? t(mitAusschnitt ? 'net.ausschnittAnText' : 'net.antwortenAnText').replace('{n}', String(r.anzahl || 0)) : t('net.antwortenFehler').replace('{r}', r.reason || '');
+  // Quelle für den ersten Bau UND jeden Neubau (Pro-Umbau 14 A2): neue oder geänderte Belege kommen von selbst dazu.
+  const laden = async () => {
+    const belege = await listBelege().catch(() => []);
+    const buchungen = new Map((await listBuchungen().catch(() => [])).map((b) => [b.id, b]));
+    return { belege, buchungen, texte: mitAusschnitt ? await belegTexte(belege) : null };
+  };
+  const r = await antwortenAn({ laden, onStatus: (art, i, n) => { meldung.textContent = art === 'korpus' ? t('net.antwortenBaut').replace('{i}', String(i)).replace('{n}', String(n)) : t('net.antwortenMeldet'); } });
+  _antwortMeldung = r.ok ? t(mitAusschnitt ? 'net.ausschnittAnText' : 'net.antwortenAnText').replace('{n}', String(r.anzahl || 0)).replace('{a}', String(r.abschnitte || 0)) : t('net.antwortenFehler').replace('{r}', r.reason || '');
   return r;
 }
 
