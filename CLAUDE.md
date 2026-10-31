@@ -1,5 +1,7 @@
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**Pro-Umbau 14, Sitzung A2 (2026-10-31):** Netz liest den ganzen Brief — „Mit Ausschnitt antworten“ vergleicht jeden Beleg in Abschnitten (Briefende immer dabei), eine Antwortzeile je Beleg, Korpus baut sich bei neuen Belegen selbst neu (`src/sbkim/netz.js`, `src/domain/ueberall.js`, Ereignis `blp-belege-geaendert` aus `documents.js`); Probe `tests/smoke_netzbrief.mjs` 11 · Gegenprobe `tests/gegenprobe_netzbrief.mjs` 5/5 (#436, Basic #30). Private Brain Pro/V3 antworteten im Netz nie (Liste statt Float32Array) — PB #119, V3 #32. Inventur Tresorordner und sechs Fragen an Klaus: `BRIEF_ABSCHLUSS_2026-10-31_PRO-UMBAU-14A2.md`; **nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-14-NACH-A2.md`.
+
 **Fahrplan Pro/Basic/Tresorordner (Klaus 2026-10-26):** D22, Workflow PDF „beides" und R3 sind gebaut; der Stand `c52523f` ist
 **nach `BookLedger-Basic` kopiert** (PWA, Name „BookLedger Basic", DB-Endung `bookledgerbasic`, Vorrat `blpb-`; dort
 `tools/pro-nachziehen.mjs --pro ../BookLedgerPro` + `HERKUNFT-PRO.json`, Verträge und SBKIM-Knoten bleiben Pro — Regeln in
