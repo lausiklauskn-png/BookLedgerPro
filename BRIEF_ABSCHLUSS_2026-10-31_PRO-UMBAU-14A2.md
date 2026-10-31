@@ -44,21 +44,15 @@ Korrigiert: `docs/TRESORORDNER.md` sagte „nur in der Android-App“.
 
 ## Nicht gemacht (benannt)
 - Sitzung B (Familienakte) nicht begonnen: eine andere Sitzung arbeitet heute am selben Repo (Kopf, Aktualisieren, „Mit KI arbeiten“) — kein Doppelbau.
-- Forschungseintrag: Klaus' Regel „Forschung nur in Kimhub“ (2026-10-31) — diese Sitzung durfte Kimhub nicht anhängen. Text unten, zum Übernehmen.
+- V3 #32 nicht gemergt: `test-ki-tresor` in der CI 2 von 3 Läufen rot, Ursache offen (Klaus: erst prüfen).
 - Nichts veröffentlicht, keine Version erhöht (0.1.8 aus #433 ist noch offen).
 
-## Forschung (für Kimhub `forschung/messungen/`)
-**Pro-Umbau 14 A2 — Netzantworten.** (1) Ein Antwort-Korpus muss für Modul 04 je Eintrag `passageVec instanceof Float32Array` (384) tragen; EIN abweichender
-Eintrag lässt `validateCorpus` werfen, Modul 23 fängt das und antwortet still leer. Gefunden in BLP 0.1.6 (Umbau 13), jetzt auch in Private Brain Pro und V3 —
-dort seit Einführung des Antwortrechts. Lehre: jede App, die `prepareCorpus` gibt, braucht eine Probe gegen das echte Modul 04, keinen Stub. (2) Modul 23
-koppelt den Korpus einmal beim Einschalten (`ensureAnswerCorpus`, Schnappschuss). Für „neue Belege zählen sofort“ reicht die öffentliche Fläche
-`setLocalCorpus(array|function)` — Kanon unverändert. (3) Gegenprobe: zwei von fünf Sabotagen waren zuerst blind — eine erzeugte einen Syntaxfehler (die Probe
-starb am Zeitablauf statt rot zu melden), eine traf keine Frage, die mehrere Abschnitte desselben Belegs fand. Beides nachgeschärft (Seiten-Ladefehler ist jetzt
-eine rote Zeile; eigenes Wort nur im langen Brief).
+## Forschung
+In Kimhub: `forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md` § 31 (Befunde) und § 32 (Zeiten je Abschnitt, CI-Dauer je Job), Eintrag `2026-10-31-pro-umbau-14a2-netzbrief` (Kimhub #417).
 
 ## Stundennachweis
 Erste Spur 31.10. 12:49 (Uhr des Behälters; Briefe, Stand der Repos), BLP-Bau und Proben bis ≈ 13:05, PB/V3 13:00–13:06, PRs 13:07, Merge BLP 13:08,
-Basic 13:10, Inventur (Hintergrund) bis 13:11, Abschluss bis ≈ 13:16; CI von PB/V3 im Anschluss. Ein Block, ≈ 0,5 h (Obergrenze mit CI ≈ 0,8 h).
+Basic 13:10, Inventur (Hintergrund) bis 13:11, Abschluss bis ≈ 13:16; CI von PB/V3 im Anschluss. Danach CI beobachten und Konflikte lösen bis 13:48 (PB #119 gemergt), Suche nach der Ursache in V3 #32 13:55–14:10, Kimhub-Eintrag und Brief bis ≈ 14:25. Ein Block 12:49–14:25, ≈ 1,6 h (davon ≈ 0,5 h Wartezeit auf CI).
 Klaus' eigene Angabe geht vor.
 
 ## Nächste Sitzung
