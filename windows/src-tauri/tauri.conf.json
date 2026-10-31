@@ -2,7 +2,7 @@
   "$schema":"https://schema.tauri.app/config/2",
   "productName":"BookLedgerPro",
   "mainBinaryName":"bookledgerpro",
-  "version":"0.1.7",
+  "version":"0.1.8",
   "identifier":"de.familyprojekt.bookledgerpro",
   "build":{"frontendDist":"../dist","beforeBuildCommand":"node tools/build-web.mjs"},
   "app":{"withGlobalTauri":false,"windows":[],"security":{"csp":null}},

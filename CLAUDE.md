@@ -512,3 +512,14 @@ Klaus: „arbeitsplatzübergreifend Dokumente und Notizen in den Programmen im N
 - **Fund:** Netz-Korpus muss `Float32Array` tragen (Modul 04 `validateCorpus`); 0.1.6 antwortete still leer.
 - 0.1.7 (Android Code 8, Windows gleich), `sw.js` v287. Proben `tests/smoke_umbau13.mjs` **54** · `run.mjs` „Pro-Umbau 13“ · Gegenprobe 4/4. ⚠ Nicht am Gerät,
   kein echtes Relais. Abschluss `BRIEF_ABSCHLUSS_2026-10-30_PRO-UMBAU-13.md`, **nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-14.md`.
+
+## 🔐 Pro-Umbau 14, Sitzung A: Chef getrennt (Klaus 2026-10-31: „getrennt von den anderen“, Frage 1: Beitritts-Zettel)
+
+- Bedien-Bausteine **Fassung 6** aus Private Brain Pro (`tools/native/bedienung-nachziehen.mjs`, nie von Hand): `native/pro-chefcode.js` Fassung 2.
+  Chef: „Ich bin der Chef“ → Chef-PIN (6–12 Ziffern) zweimal + Code; gespeichert neben Modul 23 nur `pro_chef_v1_<Schublade>` (Rolle, Salz,
+  PBKDF2-Prüfwert 600 000 Runden, Fehlversuche) — nie PIN oder Code. Gesperrt: nur Zustand, PIN-Feld, „Entsperren“; entsperrt 5 min:
+  neuer Code, Beitritts-Zettel `CHEF1-…` (Kopieren/Teilen), PIN ändern, Entfernen, Sperren. Mitarbeiter: „Mit Zettel beitreten“, sehen den Code
+  nie, ändern nur mit Chef-PIN; neuer Zettel des Chefs geht ohne PIN. Nach 5 falschen PINs Wartezeit.
+- „Mit Ausschnitt antworten“ hängt weiter an `imEigenenNetz` (unverändert).
+- 0.1.8 (Android Code 9, Windows gleich), nicht veröffentlicht. Proben `smoke_umbau13` **57** (neu: ab Werk kein Code-Feld, Chef-Ablauf) · `run.mjs` 2638/0 ·
+  `test-native` 52. Ausführlich und Gegenprobe (8/8): Private Brain Pro `docs/UEBERALL-SUCHEN.md`. ⚠ Nicht am Gerät, kein Relais.
