@@ -179,11 +179,17 @@ for (const [art, b] of [['app', 1280], ['win', 1000], ['app', 400], ['pwa', 400]
   ok(`${art} ${b} px C: ${app ? 'Kasten „Chefcode“ auf der Mycel-Seite, öffentlich ab Werk' : 'PWA ohne Chefcode-Kasten'}; „Mit Ausschnitt“ gesperrt ohne eigenes Netz, mit Hinweis`,
     c0.kasten === app && (!app || c0.lage === 'oeffentlich') && c0.aus === true && c0.hinweis, JSON.stringify(c0));
   if (app) {
+    // Fassung 2 (Pro-Umbau 14): ohne Chef-PIN kein Code-Feld; „Ich bin der Chef“ → PIN zweimal + Code
+    ok(`${art} ${b} px C: ab Werk kein Code-Feld, nur „Ich bin der Chef“ und „Mit Zettel beitreten“`, await page.evaluate(() => !document.querySelector('#blpChefcode [data-pro-cc-feld]')
+      && !!document.querySelector('#blpChefcode [data-pro-knopf="chefcode-chef"]') && !!document.querySelector('#blpChefcode [data-pro-knopf="chefcode-zettel"]')));
+    await page.click('#blpChefcode [data-pro-knopf="chefcode-chef"]');
+    await page.fill('#blpChefcode [data-pro-cc-pin]', '615243');
+    await page.fill('#blpChefcode [data-pro-cc-pin2]', '615243');
     await page.fill('#blpChefcode [data-pro-cc-feld]', 'probe-buero-2026-ab');
     await page.click('#blpChefcode [data-pro-knopf="chefcode-uebernehmen"]');
     await page.waitForFunction(() => window.SbkimRendezvous._meta.network === 'eigen' && document.querySelector('[data-net-ausschnitt]') && !document.querySelector('[data-net-ausschnitt]').disabled, null, { timeout: 20000 }).catch(() => {});
     ok(`${art} ${b} px C: Chefcode → Modul 23 im eigenen Netz, „Mit Ausschnitt“ frei, Code nirgends im Bild`, await page.evaluate(() =>
-      window.SbkimRendezvous._meta.network === 'eigen' && !document.querySelector('[data-net-ausschnitt]').disabled && !/PROBEBUERO|probe-buero/i.test(document.body.innerHTML + document.body.innerText)));
+      window.SbkimRendezvous._meta.network === 'eigen' && !document.querySelector('[data-net-ausschnitt]').disabled && !/PROBEBUERO|probe-buero|615243/i.test(document.body.innerHTML + document.body.innerText)));
     await page.click('[data-net-ausschnitt]'); await page.waitForTimeout(200);
     await page.click('[data-net-antworten]');
     await page.waitForFunction(() => window.__netz.an > 0 && window.__netz.match, null, { timeout: 10000 }).catch(() => {});
