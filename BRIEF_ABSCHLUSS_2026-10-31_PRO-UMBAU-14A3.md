@@ -11,7 +11,7 @@ Grundlage: `BRIEF_SITZUNG_PRO-UMBAU-14-NACH-A2.md` mit Klaus' Antworten (1–6 b
 | 1, 2 | Tresor-Paket: Fächer „Private Brain V3“, „Familienakte“, „Eingang-Familienakte“ (acht Fächer, fünf Apps) | WPP #49 | gemergt |
 | 5 | **Workflow PDF Pro antwortet im Netz** (`native/native-netz.js`) | WPP #49 | gemergt |
 | 6 | Dokumentiert, was im Tresor liegt und was in der App bleibt (`Workflow-PDF-Pro/docs/TRESORORDNER.md`) | WPP #49 | gemergt |
-| 1, 2 | Nachgezogen: Tresor-Paket + Bedien-Bausteine Fassung 7 (Überall suchen kennt die neuen Fächer) | PB #121, BLP (dieser PR) | CI läuft |
+| 1, 2 | Nachgezogen: Tresor-Paket + Bedien-Bausteine Fassung 7 (Überall suchen kennt die neuen Fächer) | PB #121, BLP #440 | gemergt (Klaus) |
 
 ### Ursache V3 #32 (Punkt 7)
 CI-Log Lauf 41207246025: `IndexedDB-Re-Open mit Version 10 scheiterte: The requested version (10) is less than the existing version (11)`.
@@ -28,10 +28,20 @@ Jetzt nur warten und wiederholen; die Probe hält fest, dass die Datei IndexedDB
 - Datenbank des Kerns nur lesend, ohne Version.
 - Probe `tools/native/test-netz.mjs` 16 grün gegen das echte Modul 04, Gegenprobe 4/4 mit eigenem Namen; `test:native-web` 73/0.
 
+### Fortsetzung (15:30–16:25)
+| Was | PR | Stand |
+|---|---|---|
+| Basic nachgezogen auf Pro `43f8a15` | Basic #35 | gemergt |
+| Workflow PDF Pro: Bausteine Fassung 7 | WPP #50 | gemergt |
+| **3 „Ort ändern“, Kern:** `de.familyprojekt.tresor.Umzug` (kopieren, jede Datei per SHA-256 prüfen, Kopf zuletzt, nie überschreiben, fremder Tresor abgewiesen, Vermerk `Tresorordner/umgezogen.json` am alten Ort); JUnit 12 grün, Gegenprobe 13/13 | WPP #50 | gemergt |
+| Tresor-Paket mit Umzug nachgezogen | BLP #441, PB #122 | gemergt |
+| Forschung Teil 1 in Kimhub (`forschung/messungen/pro-umbau-14-a3-2026-10-31.md`, Eintrag in `sitzungen.json`) | Kimhub #419 | gemergt |
+
+PB #122: Windows-Abnahme einmal rot an „test-only empty publisher list is read“ (`page.route` griff nicht), main im selben Stand grün, nach einem Neustart grün. Kommentar im PR.
+
 ## Was NICHT getan ist (offen für die nächste Sitzung)
-- **3 „Ort ändern“ mit Umzug** (Workflow PDF Pro, Android SAF + Windows) — nicht begonnen.
+- **3 „Ort ändern“:** Kern gebaut (siehe oben). Fehlt: Knopf „Ort ändern …“ (Android: Ordnerwahl, Umzug im Hintergrund, Umschalten ohne den gemerkten Schlüssel zu verlieren; WPP zusätzlich den Dokumenttresor auf „Workflow PDF Pro/“ am neuen Ort umstellen), Hinweis bei Vermerk in den anderen Apps, Windows.
 - **4 Windows-Tresorordner in PB und WPP** (Vorlage BLP `windows/engine/src/DesktopTresor.java`) — nicht begonnen.
-- WPP braucht noch Bausteine Fassung 7 (nach dem Merge von PB #121 nachziehen).
 - Workflow-PDF (PWA) antwortet noch nicht im Netz.
 - V3 und die Familienakte ziehen das Tresor-Paket noch nicht ein (Fächer leer).
 - B Familienakte, C Sage-Hinweis, D Briefkopf, E Geschenk-Seite — nicht begonnen.
@@ -41,9 +51,9 @@ Kein Gerät, kein Windows, kein echtes Relais, kein echtes Sprachmodell (gestell
 im Browser gefahren (nur seine Logik). Android-Bau nur in der CI. Nichts veröffentlicht.
 
 ## Stundennachweis
-Erste Spur 14:34 (Uhr des Behälters, Reflog), letzte ≈ 15:30. Ein Block, ≈ 0.9 h, CI-Wartezeit darin ≈ 0.2 h. Obergrenze 0.9 h. Zeile in `docs/STUNDENNACHWEIS.md`.
+Erste Spur 14:34 (Uhr des Behälters, Reflog), letzte ≈ 15:30. Ein Block, ≈ 0.9 h, CI-Wartezeit darin ≈ 0.2 h. Obergrenze 0.9 h. Fortsetzung 15:30 → ≈ 16:25, ≈ 0.9 h (CI-Wartezeit ≈ 0.4 h). Zeilen in `docs/STUNDENNACHWEIS.md`.
 Klaus' eigene Angabe geht vor.
 
 ## Forschung
 Befunde dieser Sitzung (Ursache aus dem Log statt Wiederholung; Modul 23 überschreibt einen Funktions-Korpus; gestelltes Wort-Hash-Modell und Mindest-Nähe
-von Modul 04) gehören nach Kimhub `forschung/messungen/` — dort in der nächsten Sitzung eintragen (hier nicht angelegt, Regel „Forschung nur in Kimhub“).
+von Modul 04) gehören nach Kimhub `forschung/messungen/` — eingetragen (Kimhub #419).
