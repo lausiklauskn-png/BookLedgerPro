@@ -126,7 +126,7 @@ Veröffentlichen (BLP 0.1.7, PB 1.0.43, WPP 1.0.10 und Folgende), Probe über dr
 Nichts veröffentlichen ohne Klaus' Wort. Keine Schlüssel, Passwörter, PINs oder Chefcodes in Dateien oder im Chat. Kanon-Module (Sage) byte-1:1.
 Bausteine nur in ihrer Quelle ändern (Bedienung/Chefcode/Überall: Private Brain Pro; Tresor/Scanner: WPP; Briefkopf: Workflow-PDF), Kopien nie
 von Hand. Familienakte: Oberfläche des Freundes nur mit Klaus' Ja je Punkt. Keine Emojis. Kein Force-Push. Abschluss mit Stundennachweis und
-Forschungseintrag.
+Forschungseintrag in Kimhub (`forschung/messungen/`).
 
 ## Startauftrag zum Einfügen
 
@@ -138,5 +138,5 @@ Zuerst lesen: CLAUDE.md je Repo, BookLedgerPro/BRIEF_SITZUNG_PRO-UMBAU-14.md (Pl
 Meine Antworten auf die vier Fragen im Brief: [1: … 2: … 3: … 4: …]
 Beginne mit Sitzung A (danach B, C, D, E Geschenk-Seite, dann die Vorschläge für weitere Apps); was nicht in diese Sitzung passt, mit neuem Brief und Startauftrag übergeben.
 Nichts veröffentlichen ohne mein Wort. Keine Schlüssel, PINs oder Chefcodes in Dateien oder im Chat. Kanon-Module byte-1:1. Bausteine nur in ihrer Quelle ändern.
-Ein PR je App, bei grüner CI selbst mergen. Abschluss mit Stundennachweis, Forschungseintrag, Brief mit Startauftrag.
+Ein PR je App, bei grüner CI selbst mergen. Abschluss mit Stundennachweis, Forschungseintrag in Kimhub (`forschung/messungen/`), Brief mit Startauftrag.
 ```

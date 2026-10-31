@@ -110,6 +110,8 @@ export async function importSnapshot(snapshot, mode = 'merge') {
   }
   for (const r of records) await recPut(r);
   for (const f of files) await filePut(f);
+  // Pro-Umbau 14 A2: eingespielte Belege → das Mycel baut seinen Antwort-Korpus neu (src/sbkim/netz.js).
+  try { if (files.length && typeof window !== 'undefined' && window.dispatchEvent) window.dispatchEvent(new CustomEvent('blp-belege-geaendert', { detail: { id: null } })); } catch { /* fail-soft */ }
   return { records: records.length, files: files.length };
 }
 

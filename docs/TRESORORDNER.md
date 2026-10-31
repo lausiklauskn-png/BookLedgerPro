@@ -9,7 +9,7 @@ Ersatzschlüssel** (5 Teile, 3 genügen). Die Ordnerschicht ist das Paket `de.fa
 
 | | Wo | Wie |
 |---|---|---|
-| Ordner wählen | Menü → Weiteres → **Tresorordner** (nur in der Android-App) | Androids Ordnerwahl, dauerhafte Freigabe (SD-Karte oder Tablet). Den Ordner **über** „Private Brain“ wählen, nicht diesen selbst — die App warnt. |
+| Ordner wählen | Menü → Weiteres → **Tresorordner** (Android- und Windows-App) | Android: Androids Ordnerwahl, dauerhafte Freigabe (SD-Karte oder Tablet). Windows: Ordner-Dialog, jedes Laufwerk (auch USB-Stick), ganzer Pfad in „Tresor & Ablage“ (`windows/engine/src/DesktopTresor.java`). Den Ordner **über** „Private Brain“ wählen, nicht diesen selbst — die App warnt. |
 | Anlegen / Entsperren | Knöpfe in der Ansicht | Passwort nur im **Fenster von Android** (nie in der WebView). „Auf diesem Gerät entsperrt lassen“ merkt den Hauptschlüssel im Android-Schlüsselspeicher. |
 | Automatische Sicherung | `BookLedgerPro/Sicherung/` | Der ganze Bestand der App (`dumpAll`, Buchungen schon mit dem App-Schlüssel verschlüsselt) als PBV1-Datei mit dem Fach-Schlüssel — beim Gang in den Hintergrund, alle 15 Minuten, 20 s nach dem Start, aber nur wenn sich etwas geändert hat und höchstens alle 10 Minuten. „Jetzt sichern“ sichert sofort (wenn etwas geändert ist). Fehler stehen als Hinweis da. |
 | Beleg-Originale | `BookLedgerPro/Belege/` | Nach jeder Sicherung (bei entsperrter App) bzw. per Knopf „Belege ins Fach legen“: jedes neue Original einzeln, mit Textauszug im Inhaltsverzeichnis — so finden die anderen Apps sie. Kein Doppel (SHA-256). |
