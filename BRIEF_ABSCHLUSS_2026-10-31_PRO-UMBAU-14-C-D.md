@@ -14,7 +14,7 @@ mitten in der Arbeit aufgeteilt: diese Sitzung macht Workflow-PDF (PWA) „Im Ne
 | Basic nachgezogen — doppelt mit der anderen Sitzung (#35), deshalb geschlossen | Basic #34 | geschlossen |
 | **C:** Sage-Hinweis „Netzübergreifende Suche (Antworten aus einer App) und Chefcode“ in `docs/INTERFACES.md` (Modul 23) und `docs/NETZWEIT.md` § 3d | Sage #1160 | gemergt |
 | Workflow-PDF (PWA) **antwortet im Netz** wie Workflow PDF Pro (`assets/netz.js`, ab Werk aus; öffentlich nur Dateiname, im eigenen Netz mit Ausschnitt) | Workflow-PDF #138 | gemergt |
-| **D:** Briefkopf lesen und danach sortieren (`assets/briefkopf.js` Quelle, `assets/briefkopf-ansicht.js`), Version 1.1.6 | Workflow-PDF (dieser Zweig) | siehe PR |
+| **D:** Briefkopf lesen und danach sortieren (`assets/briefkopf.js` Quelle, `assets/briefkopf-ansicht.js`), Version 1.1.6, Cache v111 | Workflow-PDF #139 | gemergt (`fb85507`), Prüfkette und Pages-Lauf grün |
 
 ### D Briefkopf — was es kann
 - Briefdatum, Absender, Empfänger (Abgleich mit Familiennamen), Nummern (Kunden-, Rechnungs-, Auftrags-, Vertrags-, Versicherungsnummer,
@@ -25,11 +25,35 @@ mitten in der Arbeit aufgeteilt: diese Sitzung macht Workflow-PDF (PWA) „Im Ne
 - Proben: `tests/briefkopf.mjs` 56 grün (Teil A erfundene Briefe, Teil B echter Browser) · Gegenprobe 14/14 gefangen. Beim Bau drei blinde Wächter
   geschärft, ein echter Fund behoben (Postfach als Absender).
 
-## Was NICHT getan ist (offen)
+## Stand dieser Aufgabe: fertig gebaut, offen sind nur Gegenproben
+
+Alles aus dem Anteil dieser Sitzung (Workflow-PDF im Netz, Sage C, D Briefkopf in Workflow-PDF) ist **gebaut und gemergt**, die CI auf main
+ist grün (Workflow-PDF Prüfkette Lauf 22, Pages-Lauf 139). Es fehlt **kein Code**. Wer weitermacht (z. B. Codex), fährt nur noch die
+Gegenproben unten nach und meldet das Ergebnis. Findet eine davon etwas, ist das ein Fehler zum Beheben im selben Repo, keine neue Bauarbeit.
+
+### Gegenproben zum Nachfahren (je Repo frisch von `origin/main`)
+
+| # | Repo | Befehl | Erwartet |
+|---|---|---|---|
+| 1 | Workflow-PDF | `npm install && npm test` | Rückgabe 0 (Kette mit `&&`; braucht Chromium für playwright-core) |
+| 2 | Workflow-PDF | `node tests/briefkopf.mjs` | 56 grün · 0 ROT |
+| 3 | Workflow-PDF | `node tests/gegenprobe_briefkopf.mjs` | 14 gefangen · 0 durchgerutscht · 0 tote Anker |
+| 4 | Workflow-PDF | `node tests/netz.mjs` | 28 grün · 0 ROT |
+| 5 | Workflow-PDF | `node tests/gegenprobe_netz.mjs` | 6 gefangen · 0 · 0 · 0 |
+| 6 | Workflow-PDF | `node tests/version.mjs` und `node tests/gegenprobe_version.mjs` | grün; Version 1.1.6 = `package.json` = Meta, Cache `workfloh-pdf-v111` |
+| 7 | BookLedgerPro | `node tests/run.mjs` | 0 fehlgeschlagen |
+| 8 | BookLedger-Basic | `node tests/basic_gleichstand.mjs` | grün (Pin auf Pro `8ad35e1` oder neuer) |
+| 9 | Sage-Protokol | `docs/INTERFACES.md` (Modul 23) und `docs/NETZWEIT.md` § 3d lesen | Hinweis „Netzübergreifende Suche und Chefcode“ steht da |
+| 10 | Klaus am Tablet (nicht Codex) | Workflow PDF öffnen, drei echte Briefe einlesen, Sortieren „Briefdatum, Absender“, Thema-Filter | Sichttest; nur Klaus kann ihn grün melden |
+
+Ergebnis je Zeile mit Zahl melden (grün/rot und die Zahlen aus der Schlusszeile), nicht „alles ok“. Rote Zeile: Namen der Zusicherung
+nennen, beheben, eigener PR im betroffenen Repo.
+
+## Neue Bauarbeit — NICHT Teil dieser Aufgabe (eigene Sitzungen)
 - D in den anderen Apps: Workflow PDF Pro (Kern über `upstream/` nachziehen), Mein WorkFloh/Tomys (Anhänge), BLP/Basic (Belege), PB (an die
   vorhandenen Kategorien anschließen), Familienakte. Reihenfolge laut Plan.
 - **Frage an Klaus:** Themenliste für Betriebe (BLP, WorkFloh) — der Baustein nimmt eine eigene Liste an, gebaut ist nur die private.
-- B Familienakte und E Geschenk-Seite: nicht in dieser Sitzung (Aufteilung).
+- B Familienakte und E Geschenk-Seite (Aufteilung: andere Sitzung bzw. später).
 - Texterkennung für Scans ohne Textebene liefert dem Briefkopf noch keine Zeilen.
 
 ## Nicht geprüft
@@ -43,13 +67,14 @@ Hilfsagenten parallel (Netz 22 min, Sage 17 min). Obergrenze 1.2 h. Zeile in `do
 In Kimhub `forschung/messungen/pro-apps-tresorordner-und-umbau-2026-10-26-bis-31.md` § 34 (zwei Sitzungen am selben Auftrag; blinde Wächter beim
 Briefkopf). Hier keine Forschungseinträge.
 
-## Startauftrag zum Einfügen
+## Startauftrag zum Einfügen (für Codex: nur Gegenproben)
 
 ```
-Pro-Umbau 14 D weiter: Briefkopf in die anderen Apps nachziehen. Quelle ist Workflow-PDF assets/briefkopf.js (byte-1:1 kopieren, nie von Hand ändern). Reihenfolge: Workflow PDF Pro (Kern über upstream/ nachziehen), Mein WorkFloh (Anhänge, parallel zu Tomys), BookLedgerPro/Basic (Belege), Private Brain Pro (an die vorhandenen Kategorien anschließen, nicht doppelt), Familienakte. Vorher klären: Themenliste für Betriebe (BLP, WorkFloh).
-Repos: Workflow-PDF, Workflow-PDF-Pro, Mein-WorkFloh, BookLedgerPro, BookLedger-Basic, Privat-Brain-Pro, Meine-Familienakte, Kimhub (Branch wie vorgegeben).
-Zuerst lesen: CLAUDE.md je Repo, Workflow-PDF CLAUDE.md Abschnitt „Briefkopf lesen“, BookLedgerPro/BRIEF_ABSCHLUSS_2026-10-31_PRO-UMBAU-14-C-D.md und den Abschluss der Parallel-Sitzung (A3 Rest).
-Vorher prüfen, ob eine andere Sitzung in denselben Repos arbeitet (offene PRs, Zweige von heute) — nicht doppelt bauen.
-Nichts veröffentlichen ohne mein Wort. Keine Schlüssel, PINs oder Chefcodes in Dateien oder im Chat. Kanon-Module byte-1:1. Bausteine nur in ihrer Quelle ändern. Keine Versionssprünge der Datenbank von außen.
-Ein PR je App, bei grüner CI selbst mergen, Basic nachziehen. Forschung nur in Kimhub. Abschluss mit Stundennachweis, Brief mit Startauftrag.
+Aufgabe: Gegenproben für Pro-Umbau 14 „Parallel-Teil“ (Workflow-PDF im Netz, Sage C, D Briefkopf). Es ist alles gebaut und gemergt; du baust nichts Neues, du prüfst nur nach.
+Repos: lausiklauskn-png/Workflow-PDF, BookLedgerPro, BookLedger-Basic, Sage-Protokol. Je Repo frisch von origin/main arbeiten (git fetch origin && git checkout -B <eigener-zweig> origin/main).
+Zuerst lesen: BookLedgerPro/BRIEF_ABSCHLUSS_2026-10-31_PRO-UMBAU-14-C-D.md (Tabelle „Gegenproben zum Nachfahren“), CLAUDE.md bzw. AGENTS.md je Repo, in Workflow-PDF/CLAUDE.md die Abschnitte „Briefkopf lesen und danach sortieren“ und „Im Netz antworten“.
+Fahren: Workflow-PDF: npm install && npm test · node tests/briefkopf.mjs (56) · node tests/gegenprobe_briefkopf.mjs (14/14) · node tests/netz.mjs (28) · node tests/gegenprobe_netz.mjs (6/6) · node tests/version.mjs + node tests/gegenprobe_version.mjs. BookLedgerPro: node tests/run.mjs (0 fehlgeschlagen). BookLedger-Basic: node tests/basic_gleichstand.mjs. Sage-Protokol: Hinweis in docs/INTERFACES.md (Modul 23) und docs/NETZWEIT.md § 3d vorhanden.
+Melden: je Befehl die Schlusszeile mit Zahlen und den Rückgabewert (direkt gelesen, nicht hinter einer Pipe). Rot: Name der Zusicherung nennen, Ursache suchen, Fehler im selben Repo beheben (ein PR je Repo), Probe danach erneut fahren.
+Nicht tun: nichts veröffentlichen ohne Klaus' Wort; keine Schlüssel, PINs oder Chefcodes in Dateien oder im Chat; Kanon-Module byte-1:1 (sbkim/, vendor/sbkim/, assets/briefkopf.js ist Quelle in Workflow-PDF und wird nur dort geändert); Bausteine nur in ihrer Quelle ändern; keine Versionssprünge der Datenbank von außen; keine neue Bauarbeit (D in anderen Apps, B, E sind eigene Sitzungen); nicht auf GitHub kommentieren ohne Klaus' Wort. Wer CACHE_VERSION in Workflow-PDF erhöht, erhöht auch die Version (Meta + package.json).
+Forschung nur in Kimhub. Abschluss mit Stundennachweis (Zeile in BookLedgerPro/docs/STUNDENNACHWEIS.md) und kurzem Ergebnisbrief.
 ```
