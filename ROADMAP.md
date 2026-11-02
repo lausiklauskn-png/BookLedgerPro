@@ -9,9 +9,12 @@ Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 - [x] Belege erst nach dauerhafter Ablage bestätigen; Wiederholung erhält Buchungsbezug, Mailoriginal und Anhänge.
 - [x] Ausgang und tatsächliche Zielbestätigung sichtbar; alle Apps bleiben eigenständig.
 - [x] Logik-, Browser-, Java- und Gegenproben lokal ausführen.
-- [ ] Android-/Windows-CI einschließlich installiertem Windows-Paket auf dem exakten PR-Stand.
-- [ ] Nach Merge PWA-Änderungen in BookLedger Basic nachziehen.
-- [ ] Vollständige App-Paare mit den fertiggestellten Gegenstellen sowie Geräteprobe und Veröffentlichungen.
+- [x] Android-/Windows-CI und installierter Windows-Aufbau auf dem geprüften Produktstand.
+- [x] PWA-Änderungen in BookLedger Basic nachgezogen (Basic #39, Produktpin 3ca7bb9).
+- [x] Android und Windows 0.1.8 veröffentlicht, öffentliche Downloads und signierte Feeds geprüft.
+- [x] Windows-App-Paar mit Familienakte vollständig geprüft.
+- [ ] Android-App-Paar mit Familienakte vollständig prüfen; bisher VM-Abbruch, Ursache offen.
+- [ ] Persönliche Geräte-/Scanner-/SD-Probe anhand konkreter Nutzer-Rückmeldungen.
 
 ## ✅ Phase 0 — Fundament (aktuell)
 - [x] Build-freie ES-Modul-Shell, PWA-Manifest, App-Service-Worker (versionierter Cache)

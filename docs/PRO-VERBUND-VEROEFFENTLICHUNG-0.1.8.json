@@ -1,0 +1,67 @@
+{
+  "releases": [
+    {
+      "repo": "BookLedgerPro",
+      "tag": "windows-0.1.8-server",
+      "source": "3ca7bb919245bb0ff7a293fe93beee92fbd28f61",
+      "run": 41509273086,
+      "publishedAt": "2026-11-02T19:31:17Z",
+      "url": "https://family-projekt.de/updates/bookledgerpro/aktuell-windows.json",
+      "publicHashCheck": "CI verified Ed25519 feed signature against app public key, independently fetched feed/signature/installer; installer unsigned as before. Local host blocked by cloud policy.",
+      "assets": [
+        {
+          "name": "BookLedgerPro-Windows-0.1.8-x64-setup.exe",
+          "size": 41055678,
+          "digest": "sha256:b3936cd3308af9e078dc33a31b85947689033b07b1fb96af6cbb477f68872b5a",
+          "browser_download_url": "https://family-projekt.de/updates/bookledgerpro/BookLedgerPro-Windows-0.1.8-x64-setup.exe"
+        }
+      ]
+    },
+    {
+      "repo": "BookLedgerPro",
+      "tag": "v0.1.8",
+      "source": "3ca7bb919245bb0ff7a293fe93beee92fbd28f61",
+      "run": 41526886410,
+      "publishedAt": "2026-11-02T21:25:20Z",
+      "url": "https://github.com/lausiklauskn-png/BookLedgerPro/releases/tag/v0.1.8",
+      "publicHashCheck": "Anonymous curl downloaded 28360730 bytes; local SHA256 equals GitHub asset digest. CI separately verified own-server APK, Ed25519 feed and signature; signed install/overinstall with existing vault passed.",
+      "assets": [
+        {
+          "browser_download_url": "https://github.com/lausiklauskn-png/BookLedgerPro/releases/download/v0.1.8/BookLedgerPro-0.1.8.apk",
+          "digest": "sha256:c72928b5c79268b3290b341eb14b52ee363ca7e1b4ad3b65c85f312df36a4460",
+          "name": "BookLedgerPro-0.1.8.apk",
+          "size": 28360730
+        },
+        {
+          "browser_download_url": "https://github.com/lausiklauskn-png/BookLedgerPro/releases/download/v0.1.8/BookLedgerPro-0.1.8.apk.installation.json",
+          "digest": "sha256:0e36814379821a2e9d64ee0eaeaab8bd267ab567eaf7d1ad96636d1d2e0c5851",
+          "name": "BookLedgerPro-0.1.8.apk.installation.json",
+          "size": 533
+        },
+        {
+          "browser_download_url": "https://github.com/lausiklauskn-png/BookLedgerPro/releases/download/v0.1.8/BookLedgerPro-0.1.8.apk.json",
+          "digest": "sha256:af04154abfed01b3d0f2d2794b3acbe987a399876be6b9a3a059544e45e3c865",
+          "name": "BookLedgerPro-0.1.8.apk.json",
+          "size": 373
+        },
+        {
+          "browser_download_url": "https://github.com/lausiklauskn-png/BookLedgerPro/releases/download/v0.1.8/BookLedgerPro-0.1.8.apk.sha256",
+          "digest": "sha256:814dc1ab9704304a2a236642b62c39a3f946fd021b7bf779e5cba107ed7f7f1b",
+          "name": "BookLedgerPro-0.1.8.apk.sha256",
+          "size": 90
+        }
+      ]
+    }
+  ],
+  "overall_pair_acceptance_complete": false,
+  "windows_pair": {
+    "run": 41506243317,
+    "job": 125490024327,
+    "complete": true
+  },
+  "android_pair": {
+    "run": 41514065036,
+    "job": 125515602769,
+    "complete": false
+  }
+}
