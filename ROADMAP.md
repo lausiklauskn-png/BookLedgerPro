@@ -2,6 +2,17 @@
 
 Jede Phase ist ein eigener PR. Auto-Merge, sobald die Checks grün sind.
 
+## Familienakte-Pro-Verbund (2026-11-02)
+
+- [x] Gemeinsames FPT1-Paket mit ausgewählten Übergaben und Private-Brain-Eingang übernehmen.
+- [x] Android-/Windows-Brücke: 20 MiB, Tresorkennung, Herkunft, Rückgabe und Empfängermarke.
+- [x] Belege erst nach dauerhafter Ablage bestätigen; Wiederholung erhält Buchungsbezug, Mailoriginal und Anhänge.
+- [x] Ausgang und tatsächliche Zielbestätigung sichtbar; alle Apps bleiben eigenständig.
+- [x] Logik-, Browser-, Java- und Gegenproben lokal ausführen.
+- [ ] Android-/Windows-CI einschließlich installiertem Windows-Paket auf dem exakten PR-Stand.
+- [ ] Nach Merge PWA-Änderungen in BookLedger Basic nachziehen.
+- [ ] Vollständige App-Paare mit den fertiggestellten Gegenstellen sowie Geräteprobe und Veröffentlichungen.
+
 ## ✅ Phase 0 — Fundament (aktuell)
 - [x] Build-freie ES-Modul-Shell, PWA-Manifest, App-Service-Worker (versionierter Cache)
 - [x] Krypto (`crypto.js`), Shamir (`shamir.js`), IndexedDB (`db.js`)

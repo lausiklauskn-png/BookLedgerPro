@@ -54,6 +54,9 @@ import { pruefberichtZeigen, ungeprueftHalt, auffaelligHalt, kiReinigungHalt, te
 import { fotoZuScan } from '../../core/scanPdf.js';
 import { scannen } from '../scanner.js';
 import { platzPlan, mb } from '../../domain/importPlatz.js';
+import { proMerkmale, proHash, proBelegKennung } from '../../domain/proUebergabe.js';
+import { fileGet, getActiveDbName } from '../../core/db.js';
+import { getSessionKey } from '../../core/vault.js';
 
 let _host = null;
 let _idx = {};
@@ -788,16 +791,16 @@ function umsatzRow(u, posten = []) {
 // Ein Foto wird beim Ablegen zum Scan-PDF (Klaus 2026-10-14: „Ja, Scan + Original behalten",
 // „wie bei Workflow PDF"). Das Original liegt unverändert und verschlüsselt am selben Beleg.
 // Lässt sich kein Scan bauen, wird das Foto wie bisher abgelegt — und das wird gesagt.
-async function belegAblegen(file, typ, quelle, mail) {
+async function belegAblegen(file, typ, quelle, mail, uebergabe, proKontext) {
   const art = file.type || typ || '';
   if (/^image\//.test(art)) {
     try {
       const sc = await fotoZuScan(file, { qualitaet: (getSettings() || {}).scanQualitaet });
       const pdf = new File([sc.pdf], sc.name, { type: 'application/pdf' });
-      const b = await saveBeleg(pdf, { original: file, originalTyp: art, scan: sc, quelle, mail });
+      const b = await saveBeleg(pdf, { original: file, originalTyp: art, scan: sc, quelle, mail, uebergabe, proKontext });
       return { scan: true, sicher: sc.sicher, grund: sc.grund, id: b && b.id };
     } catch (e) {
-      const b = await saveBeleg(file, { typ, quelle, mail });
+      const b = await saveBeleg(file, { typ, quelle, mail, uebergabe, proKontext });
       return { scan: false, grund: String((e && e.message) || e), id: b && b.id };
     }
   }
@@ -811,7 +814,7 @@ async function belegAblegen(file, typ, quelle, mail) {
       angebot = await angebotZuPdf(kopf, bytes);
     } catch { herkunft = undefined; angebot = null; }
   }
-  const b = await saveBeleg(file, { typ, herkunft, quelle, mail, angebot: angebot ? { id: angebot.id, nummer: angebot.nummer } : undefined });
+  const b = await saveBeleg(file, { typ, herkunft, quelle, mail, angebot: angebot ? { id: angebot.id, nummer: angebot.nummer } : undefined, uebergabe, proKontext });
   if (angebot && b && b.id) {
     try { await setzeAngebotVerweise(angebot.id, { wfpdfBelegId: b.id, wfpdfBelegName: b.name || file.name || '', wfpdfZurueckAm: new Date().toISOString() }); }
     catch { /* der Beleg steht; der Vermerk am Angebot ist Beiwerk */ }
@@ -837,44 +840,66 @@ async function angebotZuPdf(kopf, bytes) {
 
 // Textebene eines PDFs sofort am Beleg merken (eigener Scan oder Mail-Anhang, Klaus 2026-10-26): Wort-/Bedeutungssuche
 // und die Positionen (Steuer-Plan S1) — ohne KI, nichts verlässt das Gerät. @returns true, wenn Text gemerkt wurde
-async function textebeneMerken(id, file) {
+async function textebeneMerken(id, file, proKontext) {
   try {
     const tb = await pdfTextebene(await readFileBytes(file));
     const text = tb ? String(tb.text || '').trim() : '';
     if (typeof window !== 'undefined') window.__blpScanText = { zeichen: text.length, seiten: tb && tb.seiten };   // Probe
     if (!text) return false;
-    await textMerken(id, text);
-    await positionenMerken(id, text);
+    await textMerken(id, text, proKontext);
+    await positionenMerken(id, text, proKontext);
     return true;
   } catch (e) { if (typeof window !== 'undefined') window.__blpScanText = { fehler: String((e && e.message) || e) }; return false; }
 }
-async function positionenMerken(id, text) {
-  try { const pos = belegPositionen(text); await setBelegPositionen(id, pos); if (typeof window !== 'undefined') window.__blpPositionen = { id, anzahl: pos.positionen.length, stimmt: pos.stimmt }; }   // Probe
+async function positionenMerken(id, text, proKontext) {
+  try { const pos = belegPositionen(text); await setBelegPositionen(id, pos, proKontext); if (typeof window !== 'undefined') window.__blpPositionen = { id, anzahl: pos.positionen.length, stimmt: pos.stimmt }; }   // Probe
   catch { /* Positionen sind Beiwerk */ }
 }
 
 // Eine geteilte Mail (.eml, Klaus 2026-10-26: „nur für die Ablage … Rechnungsanhänge differenziert auslesen"):
 // die Mail selbst wird ein Beleg (Original verschlüsselt, Kopf + Text durchsuchbar), jeder PDF-/Bild-Anhang ein eigener
 // Beleg mit Verweis auf die Mail; PDF-Anhänge mit Textebene bekommen Text und Positionen sofort. Keine KI dabei.
-async function mailEinlesen(file, quelle) {
+async function mailEinlesen(file, quelle, uebergabe, proKontext) {
   const bytes = await readFileBytes(file);
   const m = parseEml(bytes);
   const von = absenderName(m.kopf.von), betreff = m.kopf.betreff || '', datum = (m.kopf.datum || '').slice(0, 10);
   const eml = new File([bytes], mailBelegName(m), { type: MAIL_TYP });
-  const mailBeleg = await saveBeleg(eml, { typ: MAIL_TYP, quelle: quelle || 'mail', mail: { von, betreff, datum, anhaenge: m.anhaenge.length } });
-  await textMerken(mailBeleg.id, mailAlsText(m));
+  const mailBeleg = await saveBeleg(eml, { typ: MAIL_TYP, quelle: quelle || 'mail', mail: { von, betreff, datum, anhaenge: m.anhaenge.length }, uebergabe, proKontext });
+  await textMerken(mailBeleg.id, mailAlsText(m), proKontext);
   let anhaenge = 0, gelesen = 0;
   const uebergangen = [];
-  for (const a of m.anhaenge) {
+  for (const [nummer, a] of m.anhaenge.entries()) {
     const typ = belegTyp(a.name, a.typ);
     if (!typ || typ === MAIL_TYP || a.inline) { uebergangen.push(a.name); continue; }
     const f = new File([a.bytes], a.name, { type: typ });
-    const r = await belegAblegen(f, typ, quelle || 'mail', { von, betreff, datum, mailId: mailBeleg.id });
+    const anhangVertrag = uebergabe ? { ...uebergabe,
+      id: 'anlage-' + await proHash(new TextEncoder().encode(JSON.stringify([uebergabe.quelle, uebergabe.id, nummer]))),
+      name: f.name, mime: f.type, groesse: f.size, sha256: await proHash(await f.arrayBuffer()), bezug: uebergabe.id } : undefined;
+    const r = await belegAblegen(f, typ, quelle || 'mail', { von, betreff, datum, mailId: mailBeleg.id }, anhangVertrag, proKontext);
     anhaenge++;
-    if (r.id && typ === 'application/pdf' && await textebeneMerken(r.id, f)) gelesen++;
+    if (r.id && typ === 'application/pdf' && await textebeneMerken(r.id, f, proKontext)) gelesen++;
   }
   if (m.uebergangen) uebergangen.push(`+${m.uebergangen}`);
   return { id: mailBeleg.id, belege: 1 + anhaenge, anhaenge, gelesen, uebergangen, betreff, von };
+}
+
+/** Derselbe Beleg-/Scan-/Mailweg, aber eine verlässliche Rückgabe erst nach dauerhaftem Original.
+ * Kein Kontieren, keine externe KI und keine native Übernahmemarke in diesem Schritt. */
+export async function proDateiAufnehmen(file, wert) {
+  const proKontext = { db: getActiveDbName(), key: getSessionKey() };
+  if (!proKontext.key) throw new Error('Bitte die Ablage von BookLedgerPro entsperren.');
+  const m = await proMerkmale(file, wert);
+  const typ = belegTyp(file.name, file.type);
+  if (!typ) throw new Error('BookLedgerPro nimmt PDF, Bilder und E-Mails (.eml) an.');
+  const r = typ === MAIL_TYP ? await mailEinlesen(file, 'pro-verbund', m, proKontext) : await belegAblegen(file, typ, 'pro-verbund', undefined, m, proKontext);
+  if (!r?.id || r.id !== await proBelegKennung(m)) throw new Error('Der Beleg wurde nicht passend gespeichert.');
+  const rec = await fileGet(r.id);
+  const bytes = rec?.originalDaten ? await getOriginalBytes(r.id) : await getBelegBytes(r.id);
+  if (proKontext.db !== getActiveDbName() || proKontext.key !== getSessionKey()) throw new Error('Tresor oder Mandant hat gewechselt. Die Empfangsbestätigung bleibt offen.');
+  if (!rec?.proUebergabe || JSON.stringify(rec.proUebergabe) !== JSON.stringify(m) || !bytes || await proHash(bytes) !== m.sha256) throw new Error('Der gespeicherte Originalbeleg konnte nicht bestätigt werden.');
+  _neu.add(r.id); _neuRollen = true;
+  _importStatus = { text: 'Pro-Übergabe dauerhaft als Beleg aufgenommen. Bitte den Beleg wie gewohnt prüfen und einordnen.' };
+  return { id: m.id, quelle: m.quelle, ziel: 'bookledgerpro', sha256: m.sha256, groesse: m.groesse, belegId: r.id, stand: 'im-eingang' };
 }
 
 // „X Dateien, Y MB, frei Z" — und fragen, wenn es nicht passt oder eine Datei sehr groß ist.
@@ -1559,9 +1584,10 @@ let _bedeutungZustand = { stand: 'aus', text: '' };   // aus | laedt | ordnet | 
 let _ordnetLauf = 0;
 let _letzteTreffer = [];
 
-async function textMerken(id, text) {
-  try { const m = await setBelegText(id, text); _texte.set(id, { stand: m.textStand, text: String(text || '') }); _vektoren.delete(id); }
+async function textMerken(id, text, proKontext) {
+  try { const m = await setBelegText(id, text, proKontext); _texte.set(id, { stand: m.textStand, text: String(text || '') }); _vektoren.delete(id); }
   catch { /* Tresor zu oder Beleg weg: Suche bleibt ohne diesen Text */ }
+  if (proKontext && (proKontext.db !== getActiveDbName() || proKontext.key !== getSessionKey())) return;
   if (_embedder) belegEinordnen(id).catch(() => {});
 }
 

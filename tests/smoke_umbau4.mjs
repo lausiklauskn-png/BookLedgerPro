@@ -27,13 +27,14 @@ const ok = (name, cond, info) => { if (cond) { gruen++; console.log('  ✓ ' + n
 const BRUECKE = `
 window.__log = [];
 (function () {
-  const z = window.__z = { gewaehlt: true, vorhanden: true, offen: false, gemerkt: true, erreichbar: true, ordner: 'Privat Brain Pro Hauptablageordner', pfad: 'Privat Brain Pro Hauptablageordner', speicher: 'karte' };
+  const z = window.__z = { gewaehlt: true, vorhanden: true, offen: false, gemerkt: true, erreichbar: true, kennung: 'erfundener-tresor', uebergaben: true, ordner: 'Privat Brain Pro Hauptablageordner', pfad: 'Privat Brain Pro Hauptablageordner', speicher: 'karte' };
   const log = (m, a) => window.__log.push([m, JSON.parse(JSON.stringify(a || {}))]);
   const E = (id, verweis, extra = {}) => ({ id, name: id + '.pdf', art: 'application/pdf', verweis, verschluesselung: 'fpt1', datum: 1761650000000 + id.length, groesse: 9, auszug: 'Rechnung ' + id, ...extra });
   window.__marken = {};
   window.__fach = { 'eingang-bookledgerpro': [E('Rechnung-Strom', 'Mails/r1.fpt'), E('Rechnung-Gas', 'Mails/r2.fpt'), E('Quittung', 'q.fpt')],
     'private-brain': [E('Notiz', 'Katalog/n1', { verschluesselung: 'pbv1', schreiber: 'private-brain' })], 'bookledgerpro': [E('Sicherung-1', 'Sicherung/s1.fpt')] };
   const zustand = () => ({ ...z, faecher: z.offen ? [] : undefined, ersatz: z.offen ? { vorhanden: false } : undefined });
+  let upload = null, teile = [];
   const T = {
     zustand: async () => (log('zustand'), zustand()),
     ordnerWaehlen: async () => { log('ordnerWaehlen'); z.gewaehlt = true; return zustand(); },
@@ -43,8 +44,10 @@ window.__log = [];
     ordnerOeffnen: async (a) => { log('ordnerOeffnen', a); return {}; },
     verzeichnis: async (a) => { if (!z.offen) throw new Error('TRESOR_GESPERRT'); return { eintraege: window.__fach[a.fach] || [], marken: [...(window.__marken[a.fach] || [])] }; },
     appOeffnen: async (a) => { log('appOeffnen', a); return {}; },
-    ablegenBeginnen: async (a) => { if (!z.offen) throw new Error('TRESOR_GESPERRT'); log('ablegenBeginnen', a); return { ticket: 't1' }; },
-    ablegenTeil: async (a) => (log('ablegenTeil', { laenge: a.data.length }), {}), ablegenFertig: async (a) => (log('ablegenFertig', a), { id: 'neu1' }), ablegenAbbrechen: async () => ({}),
+    ablegenBeginnen: async (a) => { if (!z.offen) throw new Error('TRESOR_GESPERRT'); log('ablegenBeginnen', a); upload = a; teile = []; return { ticket: 't1' }; },
+    ablegenTeil: async (a) => { log('ablegenTeil', { laenge: a.data.length }); teile.push(Uint8Array.from(atob(a.data), c => c.charCodeAt(0))); return {}; },
+    ablegenFertig: async (a) => { log('ablegenFertig', a); const bytes = await new Blob(teile).arrayBuffer(); const sha256 = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(b => b.toString(16).padStart(2, '0')).join(''); return { id: 'neu1', name: upload.name, art: upload.art, groesse: bytes.byteLength, sha256, schreiber: 'bookledgerpro' }; },
+    ablegenAbbrechen: async () => ({}), uebergabeStand: async () => ({ bestaetigt: false }),
     lesenOeffnen: async (a) => { log('lesenOeffnen', a); const e = (window.__fach[a.fach] || []).find((x) => x.id === a.id); if (!e || e.verschluesselung !== 'fpt1') throw new Error('TRESOR_NUR_IN_DER_APP'); return { ticket: 'l' + a.id, name: e.name, art: 'application/pdf', groesse: 9 }; },
     lesenTeil: async () => ({ data: btoa('%PDF-1.4 probe'), fertig: true }),
     markieren: async (a) => { log('markieren', a); (window.__marken[a.fach] = window.__marken[a.fach] || new Set()).add(a.id); },
@@ -214,14 +217,15 @@ if (existsSync(join(WURZEL, 'native/blp-native.js'))) {
   await klick(page, '[data-geben]');
   await page.waitForSelector('[data-geben-auswahl]').catch(() => {});
   const a = await page.evaluate(() => ({ ziele: [...document.querySelectorAll('[data-geben-auswahl] .btn-primary')].map((b) => b.textContent), normal: !!document.querySelector('[data-geben-normal]'), grenze: document.querySelector('[data-geben-grenze]')?.textContent || '' }));
-  ok('Auswahl: Workflow PDF Pro (Eingangsfach), „Normal teilen“ eigener Knopf, Grenze Private Brain genannt', a.ziele.join() === 'Workflow PDF Pro' && a.normal && /Private Brain Pro/.test(a.grenze), JSON.stringify(a));
+  ok('Auswahl: drei eigenständige Pro-Apps, normales Teilen und ausdrückliche Quittungsgrenze', a.ziele.join() === 'Workflow PDF Pro,Private Brain Pro,Familienakte Pro' && a.normal && /erst die Ziel-App bestätigt/.test(a.grenze), JSON.stringify(a));
   await klick(page, '[data-geben-workflow-pdf-pro]');
   await page.waitForSelector('[data-geben-gesperrt]').catch(() => {});
   ok('Tresor gesperrt: fragt „Entsperren oder normal teilen?“ — nichts abgelegt, nichts geteilt', await page.evaluate(() => !window.__log.some((x) => x[0] === 'ablegenBeginnen') && window.__geteilt.length === 0));
   await klick(page, '[data-geben-entsperren]');
   await page.waitForFunction(() => window.__log.some((x) => x[0] === 'ablegenFertig'), null, { timeout: 5000 }).catch(() => {});
   const ab = await page.evaluate(() => window.__log.filter((x) => x[0] === 'ablegenBeginnen').map((x) => x[1]));
-  ok('nach „Entsperren“: Beleg liegt im Fach eingang-workflowpdf (eigener Name), Meldung nennt Fach', ab.length === 1 && ab[0].fach === 'eingang-workflowpdf' && /\.pdf$/.test(ab[0].name) && /Eingang-WorkflowPDF/.test((await page.evaluate(() => (window.__alerts || []).join(' ')))), JSON.stringify(ab));
+  await page.waitForFunction(() => (window.__alerts || []).some(x => x.includes('Zielbestätigung ist noch offen')));
+  ok('nach „Entsperren“: Vertrag adressiert Workflow PDF, Originalname bleibt und Zielbestätigung bleibt offen', ab.length === 1 && ab[0].uebergabe?.ziel === 'workflow-pdf-pro' && ab[0].uebergabe?.vaultId === 'erfundener-tresor' && /\.pdf$/.test(ab[0].name) && /Zielbestätigung ist noch offen/.test((await page.evaluate(() => (window.__alerts || []).join(' ')))), JSON.stringify(ab));
   // Gesperrt → „Normal teilen“ geht den Teilen-Weg, ausdrücklich gewählt
   await page.evaluate(async () => { await window.Capacitor.Plugins.BlpTresor.sperren({}); });
   await klick(page, '[data-geben]'); await page.waitForSelector('[data-geben-auswahl]').catch(() => {});

@@ -1,9 +1,10 @@
+import { proMerkmale, proBelegKennung, proHash } from "./proUebergabe.js";
 // src/domain/documents.js
 // Verschlüsselter Beleg-Store. Belege (Bild/PDF) liegen AES-GCM-verschlüsselt im
 // IndexedDB-files-Store; Metadaten unverschlüsselt für Listenanzeige. Verknüpfung
 // zu Buchungen über buchungId.
 
-import { filePut, fileGet, fileDel, fileAllMeta } from '../core/db.js';
+import { filePut, filePutWennNeu, fileGet, fileDel, fileAllMeta, getActiveDbName } from '../core/db.js';
 import { encryptBytesWithKey, decryptBytesWithKey } from '../core/crypto.js';
 import { getSessionKey } from '../core/vault.js';
 import { readFileBytes } from '../core/files.js';
@@ -25,6 +26,19 @@ function neueId() {
   return 'beleg:' + Date.now().toString(36) + ':' + Math.random().toString(36).slice(2, 8);
 }
 
+function proKontextPruefen(kontext) {
+  if (kontext && (kontext.key !== getSessionKey() || kontext.db !== getActiveDbName())) throw new Error('Tresor oder Mandant hat gewechselt. Bitte erneut übernehmen.');
+}
+async function proVorhanden(vorhanden, uebergabe, kontext) {
+  proKontextPruefen(kontext);
+  if (!vorhanden.proUebergabe || JSON.stringify(vorhanden.proUebergabe) !== JSON.stringify(uebergabe)) throw new Error('Diese Übergabekennung bezeichnet einen anderen Beleg.');
+  const original = await decryptBytesWithKey(kontext.key, vorhanden.originalDaten || vorhanden.data);
+  if (await proHash(original) !== uebergabe.sha256) throw new Error('Der bereits gespeicherte Originalbeleg stimmt nicht.');
+  proKontextPruefen(kontext);
+  const { data: _d, originalDaten: _o, textDaten: _t, vektorDaten: _v, pruefDaten: _p, kiDaten: _k, positionenDaten: _q, ...meta } = vorhanden;
+  return meta;
+}
+
 /** Speichert eine Datei verschlüsselt als Beleg, gibt die Metadaten zurück.
  *  `opt.typ` ersetzt einen fehlenden Dateityp (aus einem Ordner kommt oft '').
  *  `opt.original` (File) ist das Originalfoto eines Scans (Klaus 2026-10-14: „Scan + Original
@@ -32,10 +46,20 @@ function neueId() {
  *  `opt.scan` = {sicher, grund, weg} sagt, wie der Scan entstand.
  *  Geprüft wird NICHT beim Ablegen (Klaus 2026-10-14: prüfen erst auf Knopfdruck). */
 export async function saveBeleg(file, opt = {}) {
+  const kontext = opt.uebergabe ? opt.proKontext || { db: getActiveDbName(), key: key() } : null;
+  proKontextPruefen(kontext);
   const bytes = await readFileBytes(file);
-  const data = await encryptBytesWithKey(key(), bytes);   // { v, iv, ct }
+  const uebergabe = opt.uebergabe ? await proMerkmale(opt.original || file, opt.uebergabe, { namePruefen: false }) : null;
+  const proId = uebergabe ? await proBelegKennung(uebergabe) : null;
+  if (proId) {
+    const vorhanden = await fileGet(proId);
+    if (vorhanden) return proVorhanden(vorhanden, uebergabe, kontext);
+  }
+  proKontextPruefen(kontext);
+  const data = await encryptBytesWithKey(kontext ? kontext.key : key(), bytes);   // { v, iv, ct }
   const rec = {
-    id: neueId(),
+    id: proId || neueId(),
+    ...(uebergabe ? { proUebergabe: uebergabe } : {}),
     name: file.name || 'Beleg',
     mediaType: file.type || opt.typ || 'application/octet-stream',
     size: bytes.length,
@@ -60,11 +84,15 @@ export async function saveBeleg(file, opt = {}) {
   }
   if (opt.original) {
     const ob = await readFileBytes(opt.original);
-    rec.originalDaten = await encryptBytesWithKey(key(), ob);   // verschlüsselt — von fileAllMeta() ausgeblendet
+    rec.originalDaten = await encryptBytesWithKey(kontext ? kontext.key : key(), ob);   // verschlüsselt — von fileAllMeta() ausgeblendet
     rec.original = { name: opt.original.name || 'Foto', mediaType: opt.original.type || opt.originalTyp || 'application/octet-stream', size: ob.length };
     if (opt.scan) rec.scan = { sicher: !!opt.scan.sicher, grund: String(opt.scan.grund || ''), weg: String(opt.scan.weg || '') };
   }
-  await filePut(rec);
+  if (proId) {
+    proKontextPruefen(kontext);
+    const gespeichert = await filePutWennNeu(rec, kontext.db);
+    if (!gespeichert.neu) return proVorhanden(gespeichert.record, uebergabe, kontext);
+  } else await filePut(rec);
   const { data: _, ...meta } = rec;
   geaendert(rec.id);
   return meta;
@@ -77,34 +105,38 @@ export async function saveBeleg(file, opt = {}) {
 const enc = new TextEncoder(), dec = new TextDecoder();
 
 /** Speichert den erkannten Text verschlüsselt am Beleg; leerer Text löscht ihn. @returns Metadaten */
-export async function setBelegText(id, text) {
+export async function setBelegText(id, text, proKontext) {
+  proKontextPruefen(proKontext);
   const rec = await fileGet(id);
   if (!rec) throw new Error('Beleg nicht gefunden');
   const s = String(text == null ? '' : text).trim();
   if (s) {
-    rec.textDaten = await encryptBytesWithKey(key(), enc.encode(s));
+    rec.textDaten = await encryptBytesWithKey(proKontext ? proKontext.key : key(), enc.encode(s));
     rec.textZeichen = s.length;
     rec.textStand = new Date().toISOString();
   } else { delete rec.textDaten; rec.textZeichen = 0; delete rec.textStand; }
   // Neuer Text → alte Vektoren gelten nicht mehr.
   delete rec.vektorDaten; delete rec.vektorAnzahl; delete rec.vektorZerlegung;
-  await filePut(rec);
+  proKontextPruefen(proKontext);
+  await filePut(rec, proKontext?.db);
   const { data: _d, textDaten: _t, vektorDaten: _v, originalDaten: _o, pruefDaten: _p, kiDaten: _k, ...meta } = rec;
   geaendert(id);
   return meta;
 }
 
 /** Positionen einer Rechnung (domain/belegPositionen.js) verschlüsselt am Beleg; offen nur Anzahl und „stimmt". */
-export async function setBelegPositionen(id, ergebnis) {
+export async function setBelegPositionen(id, ergebnis, proKontext) {
+  proKontextPruefen(proKontext);
   const rec = await fileGet(id);
   if (!rec) throw new Error('Beleg nicht gefunden');
   const e = ergebnis && Array.isArray(ergebnis.positionen) ? ergebnis : null;
   if (e && e.positionen.length) {
-    rec.positionenDaten = await encryptBytesWithKey(key(), enc.encode(JSON.stringify(e)));
+    rec.positionenDaten = await encryptBytesWithKey(proKontext ? proKontext.key : key(), enc.encode(JSON.stringify(e)));
     rec.positionenAnzahl = e.positionen.length;
     rec.positionenStimmt = e.stimmt == null ? null : !!e.stimmt;
   } else { delete rec.positionenDaten; rec.positionenAnzahl = 0; delete rec.positionenStimmt; }
-  await filePut(rec);
+  proKontextPruefen(proKontext);
+  await filePut(rec, proKontext?.db);
   const { data: _d, textDaten: _t, vektorDaten: _v, originalDaten: _o, pruefDaten: _p, kiDaten: _k, positionenDaten: _q, ...meta } = rec;
   return meta;
 }

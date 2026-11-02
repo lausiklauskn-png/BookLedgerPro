@@ -13,12 +13,15 @@ import { getSettings, navigate } from '../../state.js';
 import { FAECHER, eintraegeSuchen, oeffenbar, istSicherung, sicherungLesen, fehlerText, bedeutungsText, uebernehmbar, neueEintraege, unterordnerGruppen, appFuer } from '../../domain/tresorordner.js';
 import { cosinus } from '../../domain/belegsuche.js';
 import { importSnapshot } from '../../core/backup.js';
-import { merkeGeteilteDateien } from './documents.js';
+import { proDateiAufnehmen } from './documents.js';
+import { proAltVertrag } from '../../domain/proUebergabe.js';
+import { proAusgaenge, proBestaetigung } from '../../core/proVerbund.js';
 import { belegeInsFach } from '../../core/tresorBelege.js';
 
 let _host = null, _zustand = null, _faecher = [], _frage = '', _meldung = '', _teile = null, _laeuft = false;
 const _wahl = new Map();          // 4 · Mehrfach-Übernahme: 'fach|id' → {fach, eintrag}
 let _alleOffen = null;            // 2 · „Alle auf / Alle zu“: null = Vorgabe (Eingang offen)
+let _proAusgang = [];
 const _vektoren = new Map();   // Eintrags-Kennung → Vektor (nur RAM)
 
 const brueckeVon = () => (typeof window !== 'undefined' && window.BLPNative && window.BLPNative.tresor) || null;
@@ -34,6 +37,7 @@ async function neuLaden() {
   if (!b) { _zustand = null; return zeichnen(); }
   try { _zustand = await b.zustand(); } catch (e) { _zustand = { problem: String(e && e.message || e) }; }
   _faecher = [];
+  _proAusgang = _zustand?.kennung ? await proAusgaenge(_zustand.kennung).catch(() => []) : [];
   if (_zustand && _zustand.offen) {
     for (const f of FAECHER) {
       try {
@@ -148,17 +152,33 @@ async function bedeutungsTreffer(frage) {
 
 async function uebernehmen(fach, e) { return uebernehmenViele([{ fach, eintrag: e }]); }
 
-// 4 · Mehrere auf einmal: alle lesen, dann markieren, dann gemeinsam an die Belege (derselbe Weg wie „Teilen“).
-// Scheitert eine Datei, wird nichts markiert und nichts übergeben — die Meldung nennt sie.
+// 4 · Erst alle Quellen lesen, anschließend je Original dauerhaft speichern und erst dann quittieren.
+// Ein späterer Fehler lässt schon gespeicherte Belege bestehen; stabile Kennungen machen den erneuten Versuch sicher.
 async function uebernehmenViele(liste) {
-  const b = brueckeVon(), dateien = [];
+  const b = brueckeVon(), dateien = [], z = await b.zustand();
+  if (!z?.offen || !z.kennung) throw new Error('Bitte den zugehörigen Pro-Tresor verbinden und entsperren.');
   for (const x of liste) {
     try { dateien.push(await b.lesen(x.fach, x.eintrag.id)); }
     catch (e) { throw new Error(t('tresor.uebernehmenFehler').replace('{name}', x.eintrag.name || '') + ' ' + fehlerText(e)); }
   }
-  for (const x of liste) await b.markieren(x.fach, x.eintrag.id);
+  for (const [i, x] of liste.entries()) {
+    let vertrag;
+    try { vertrag = JSON.parse(x.eintrag.auszug || ''); } catch { /* bestehender Eintrag ohne Vertrag */ }
+    const kanonisch = vertrag?.vertrag === 'familienakte-uebergabe/1';
+    if (kanonisch) {
+      if (x.fach !== 'eingang-bookledgerpro' || !b.uebergabeBeschreibung || !z.uebergaben) throw new Error('Bitte BookLedgerPro aktualisieren, um diese Pro-Übergabe zu prüfen.');
+      vertrag = await b.uebergabeBeschreibung(z.kennung, x.eintrag.id);
+    } else vertrag = await proAltVertrag(z.kennung, x.fach, x.eintrag, dateien[i]);
+    const quittung = await proDateiAufnehmen(dateien[i], vertrag);
+    const aktuell = await b.zustand();
+    if (!aktuell?.offen || aktuell.kennung !== z.kennung) throw new Error('Der Pro-Tresor hat gewechselt. Der gespeicherte Beleg bleibt erhalten; die Bestätigung ist noch offen.');
+    if (kanonisch) {
+      const r = await b.uebergabeQuittieren(z.kennung, x.eintrag.id, quittung.sha256);
+      if (r?.stand !== 'im-eingang') throw new Error('Beleg gespeichert; Rückmeldung noch offen. Bitte erneut übernehmen.');
+    }
+    else await b.markieren(x.fach, x.eintrag.id);
+  }
   _wahl.clear();
-  merkeGeteilteDateien(dateien);
   navigate('documents');
 }
 
@@ -223,6 +243,13 @@ function zeichnen(suchen = false) {
   if (!b) return mount(_host, el('div', { class: 'card' }, [el('h2', { class: 'card-title', text: t('tresor.titel') }), el('p', { text: t('tresor.nurApp') })]));
   const teile = [statusKarte()];
   if (_zustand && _zustand.offen) {
+    if (_proAusgang.length) teile.push(el('div', { class: 'card', 'data-pro-ausgang': '' }, [
+      el('h3', { text: 'Pro-Übergaben' }),
+      ..._proAusgang.map(a => el('div', {}, [
+        el('p', { text: `${a.vertrag.name} → ${{ familienakte: 'Familienakte Pro', 'workflow-pdf-pro': 'Workflow PDF Pro', 'private-brain': 'Private Brain Pro' }[a.vertrag.ziel] || a.vertrag.ziel}: ${a.stand === 'im-eingang' ? 'vom Ziel im Eingang bestätigt' : a.stand === 'weitergegeben' ? 'weitergegeben – Zielbestätigung offen' : 'noch offen – Beleg erneut weitergeben'}` }),
+        a.entryId ? knopf('Zielbestätigung prüfen', () => tun(async () => { await proBestaetigung(b, a); })) : null,
+      ])),
+    ]));
     const ergebnis = el('div', { 'data-tresor-treffer': '' });
     teile.push(suchKarte(ergebnis));
     if (_frage.trim()) {

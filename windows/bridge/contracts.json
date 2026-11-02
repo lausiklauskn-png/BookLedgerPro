@@ -3,7 +3,7 @@
   "BlpIncoming": ["pending", "read", "acknowledge", "history", "restore", "discardArchived"],
   "BlpTresor": ["zustand", "ordnerWaehlen", "ordnerOeffnen", "appOeffnen", "anlegen", "entsperren", "passwortAendern",
     "wiederherstellen", "ersatzErstellen", "sperren", "ablegenBeginnen", "ablegenTeil", "ablegenFertig", "ablegenAbbrechen",
-    "verzeichnis", "lesenOeffnen", "lesenTeil", "markieren"],
+    "verzeichnis", "lesenOeffnen", "lesenTeil", "markieren", "uebergabeBeschreibung", "uebergabeQuittieren", "uebergabeStand"],
   "BlpSpeech": ["verfuegbar", "zuhoeren"],
   "BlpFenster": ["schliessen"],
   "ProScanner": ["geraete", "scannen"],

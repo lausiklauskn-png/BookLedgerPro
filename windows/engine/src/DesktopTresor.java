@@ -4,6 +4,7 @@ import de.familyprojekt.tresor.DateiAblage;
 import de.familyprojekt.tresor.Eintrag;
 import de.familyprojekt.tresor.Fach;
 import de.familyprojekt.tresor.TresorOrdner;
+import de.familyprojekt.tresor.Uebergaben;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -26,7 +27,7 @@ final class DesktopTresor {
     private boolean vonHandGesperrt;
     private final Map<String,Ablegen> ablegen=new HashMap<>();
     private final Map<String,InputStream> lesen=new HashMap<>();
-    private static final class Ablegen{String fach,unterordner,name,art,auszug;long datum,groesse;File datei;}
+    private static final class Ablegen{String fach,unterordner,name,art,auszug;long datum,groesse;File datei;JSONObject uebergabe;}
 
     DesktopTresor(DesktopService service,DesktopService.Host host){this.service=service;this.host=host;}
 
@@ -59,13 +60,16 @@ final class DesktopTresor {
             case "lesenOeffnen": return lesenOeffnen(o.optString("fach"),o.optString("id"));
             case "lesenTeil": return lesenTeil(o.optString("ticket"));
             case "markieren": {offenPruefen();offen.markeSetzen(o.optString("fach"),o.optString("id"));return DesktopService.ja();}
+            case "uebergabeBeschreibung": return new JSONObject(uebergaben(o.optString("vaultId")).beschreibung(o.optString("entryId")));
+            case "uebergabeQuittieren": {uebergaben(o.optString("vaultId")).quittieren(o.optString("entryId"),o.optString("sha256"));return new JSONObject().put("stand","im-eingang");}
+            case "uebergabeStand": return new JSONObject().put("bestaetigt",uebergaben(o.optString("vaultId")).bestaetigt(o.optString("ziel"),o.optString("entryId")));
             default: throw new IOException("INVALID_INPUT");
         }
     }
 
     // ---------- Zustand ----------
     JSONObject zustand()throws Exception {
-        JSONObject z=new JSONObject();
+        JSONObject z=new JSONObject().put("uebergaben",true);
         z.put("gewaehlt",prefs().has("ordner")).put("ordner",prefs().get("name","")).put("gemerkt",prefs().has("merken"));
         // Ganzer Pfad (Leitfaden § 5). Unter Windows ist das der Laufwerkspfad selbst, ohne Speicher-Vorsatz.
         z.put("pfad",prefs().get("ordner","")).put("speicher","");
@@ -228,6 +232,12 @@ final class DesktopTresor {
         a.art=DesktopFiles.mime(o.optString("art",null));
         a.auszug=o.optString("auszug","");
         a.datum=DesktopFiles.integer(o.opt("datum"));
+        a.uebergabe=o.optJSONObject("uebergabe");
+        if(a.uebergabe!=null){
+            uebergaben(a.uebergabe.optString("vaultId"));
+            a.fach=Uebergaben.eingang(a.uebergabe.optString("ziel")).slug;
+            a.name=o.optString("name","");a.art=o.optString("art","");
+        }
         Path dir=service.directory.resolve("cache/tresor-ablegen");Files.createDirectories(dir);DesktopFiles.noLinks(dir);
         a.datei=Files.createTempFile(dir,"ablegen-",".tmp").toFile();
         String ticket=UUID.randomUUID().toString();ablegen.put(ticket,a);
@@ -237,7 +247,7 @@ final class DesktopTresor {
         Ablegen a=ablegen.get(o.optString("ticket"));
         if(a==null)throw new IOException("TRESOR_UEBERGABE_UNGUELTIG");
         byte[] b;try{b=Base64.getMimeDecoder().decode(o.optString("data",""));}catch(IllegalArgumentException x){throw new IOException("FILE_INVALID");}
-        if(a.groesse+b.length>1L<<30)throw new IOException("TRESOR_DATEI_ZU_GROSS");
+        if(a.groesse+b.length>(a.uebergabe!=null?Uebergaben.MAX_BYTES:1L<<30))throw new IOException("TRESOR_DATEI_ZU_GROSS");
         try(FileOutputStream out=new FileOutputStream(a.datei,true)){out.write(b);}
         a.groesse+=b.length;
         return new JSONObject().put("groesse",a.groesse);
@@ -248,12 +258,20 @@ final class DesktopTresor {
             if(a==null)throw new IOException("TRESOR_UEBERGABE_UNGUELTIG");
             offenPruefen();
             try(InputStream in=new FileInputStream(a.datei)){
-                Eintrag e=offen.ablegen(a.fach,a.unterordner,a.name,a.art,a.datum,in,a.auszug);
+                JSONObject m=a.uebergabe;
+                Eintrag e=m==null?offen.ablegen(a.fach,a.unterordner,a.name,a.art,a.datum,in,a.auszug)
+                    :uebergaben(m.optString("vaultId")).senden(m.optString("ziel"),m.optString("id"),m.optString("dokumentId"),m.optString("bezug",null),a.name,a.art,in);
                 return new JSONObject(e.alsMap());
             }
         }finally{if(a!=null)a.datei.delete();}
     }
 
+    private Uebergaben uebergaben(String id)throws IOException {
+        offenPruefen();
+        if(id.isEmpty()||!id.equals(offen.id())||!id.equals(TresorOrdner.kennung(ablage())))throw new IOException("TRESOR_UEBERGABE_FREMD");
+        if(ablage().gibtEs(de.familyprojekt.tresor.Umzug.VERMERK))throw new IOException("TRESOR_UMGEZOGEN");
+        return new Uebergaben(offen);
+    }
     // ---------- Lesen ----------
     private JSONObject verzeichnis(String fach)throws Exception {
         offenPruefen();

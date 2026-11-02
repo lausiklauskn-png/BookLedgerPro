@@ -43,6 +43,12 @@ jobs:
           npx --prefix windows playwright-core install chromium
           node tools/native/scanner-nachziehen.mjs
           NODE_PATH=windows/node_modules node tools/native/test-pro-scanner.mjs
+      - name: Pro-Übergaben dauerhaft, wiederholbar und mit Zielbestätigung
+        run: |
+          NODE_PATH=windows/node_modules node tests/pro_uebergabe.mjs
+          NODE_PATH=windows/node_modules node tests/gegenprobe_pro_uebergabe.mjs
+          NODE_PATH=windows/node_modules node tests/smoke_tresorordner.mjs
+          NODE_PATH=windows/node_modules node tests/smoke_umbau4.mjs
 
   windows:
     runs-on: windows-latest

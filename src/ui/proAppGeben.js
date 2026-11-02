@@ -6,21 +6,22 @@
 // nie still den anderen Weg. „Normal teilen“ ist immer ein eigener, sichtbarer Knopf (Androids Teilen-Auswahl).
 // Als PWA (BookLedger Basic, Browser) gibt es keinen Tresorordner: der Knopf heißt ehrlich „Teilen …“ und teilt die Datei.
 //
-// ⚠ Benannte Grenzen: Private Brain hat im Tresor-Paket (Fach.java, gepflegt in Workflow PDF Pro) kein Übergabefach —
-// dorthin geht es nur über „Normal teilen“ (Private Brain Pro steht in Androids Teilen-Liste). Workflow PDF Pro legt sein
-// Fach „Eingang-WorkflowPDF“ an, zeigt es aber (Stand 2026-10-28) noch nicht in der App; die Datei liegt dort und ist in
-// der Dateien-App und in der Tresorordner-Ansicht von BookLedgerPro zu sehen.
+// Der kanonische Vertrag nutzt die Eingänge der drei Gegenstellen. Die bloße Ablage meldet
+// „weitergegeben“; eine Empfängermarke wird gesondert aus der Ziel-App gelesen.
 
 import { el } from './dom.js';
 import { t } from './i18n.js';
 import { icon } from './icons.js';
 import { dialog } from './belegDialoge.js';
 import { getBelegBytes } from '../domain/documents.js';
+import { proSenden } from '../core/proVerbund.js';
+import { fehlerText } from '../domain/tresorordner.js';
 
 /** Pro-Apps mit Übergabefach (slug = Fach im Tresorordner) bzw. ohne (nur über normales Teilen). */
 export const ZIELE = [
   { app: 'workflow-pdf-pro', name: 'Workflow PDF Pro', fach: 'eingang-workflowpdf', ordner: 'Eingang-WorkflowPDF' },
-  { app: 'private-brain', name: 'Private Brain Pro', fach: null, ordner: null },
+  { app: 'private-brain', name: 'Private Brain Pro', fach: 'eingang-private-brain', ordner: 'Eingang-Private-Brain' },
+  { app: 'familienakte', name: 'Familienakte Pro', fach: 'eingang-familienakte', ordner: 'Eingang-Familienakte' },
 ];
 
 const tresor = () => (typeof window !== 'undefined' && window.BLPNative && window.BLPNative.tresor) || null;
@@ -63,8 +64,9 @@ async function insFach(b, ziel) {
     if (!z || !z.offen) { alert(t('docs.geben.nichtEntsperrt')); meldung('gesperrt'); return 'gesperrt'; }
   }
   const datei = await belegDatei(b);
-  await T.ablegen(ziel.fach, '', datei, datei.name, String(b.name || ''), Date.now());
-  const text = t('docs.geben.abgelegt').replace('{app}', ziel.name).replace('{ordner}', ziel.ordner);
+  const a = await proSenden(T, datei, b.id, ziel.app, b.proUebergabe?.id);
+  const text = a.stand === 'im-eingang' ? `${ziel.name} hat diese Fassung im Eingang bestätigt. Die Quelle bleibt erhalten.`
+    : `An ${ziel.name} weitergegeben. Die Zielbestätigung ist noch offen; die Quelle bleibt erhalten. In der Tresorordner-Ansicht kannst du die Bestätigung prüfen.`;
   meldung(text);
   alert(text);
   return 'abgelegt';
@@ -75,7 +77,7 @@ export async function anProAppGeben(b) {
   if (!tresor()) return normalTeilen(b);
   const w = await dialog(t('docs.geben.titel'), [
     el('p', { class: 'small', text: t('docs.geben.text') }),
-    el('p', { class: 'small muted', 'data-geben-grenze': '', text: t('docs.geben.ohneFach').replace('{app}', 'Private Brain Pro') }),
+    el('p', { class: 'small muted', 'data-geben-grenze': '', text: 'Jede App bleibt einzeln nutzbar. Die Weitergabe bestätigt die Ablage im Übergabefach; erst die Ziel-App bestätigt ihren dauerhaften Eingang.' }),
   ], [
     { text: t('beleg.abbrechen'), wert: null, data: 'data-geben-abbrechen' },
     { text: t('docs.geben.normal'), wert: 'normal', data: 'data-geben-normal' },
@@ -98,6 +100,6 @@ export function gebenKnopf(b, { imMenue = false } = {}) {
   const name = t(app ? 'docs.geben.knopf' : 'docs.geben.teilen');
   return el('button', {
     class: imMenue ? 'btn btn-sm geben-menue' : 'btn btn-sm geben-knopf', type: 'button', ...(imMenue ? { 'data-geben-menue': b.id } : { 'data-geben': b.id }), title: name, 'aria-label': name,
-    onClick: () => (app ? anProAppGeben(b) : normalTeilen(b)).catch((e) => { meldung('fehler'); alert(t('docs.geben.fehler').replace('{e}', String((e && e.message) || e))); }),
+    onClick: () => (app ? anProAppGeben(b) : normalTeilen(b)).catch((e) => { meldung('fehler'); alert(t('docs.geben.fehler').replace('{e}', fehlerText(e))); }),
   }, [icon('pb-send'), el('span', { class: 'geben-text', text: name })]);
 }

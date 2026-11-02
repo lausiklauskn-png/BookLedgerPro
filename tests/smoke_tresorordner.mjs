@@ -36,7 +36,7 @@ window.__log = [];
   const b64 = (s) => btoa(String.fromCharCode(...s));
   const eintrag = (fach, e, bytes) => { faecher[fach].push(e); if (bytes) inhalte.set(fach + '|' + e.id, bytes); };
   window.__fach = { eintrag, faecher, inhalte };
-  const zustand = () => ({ ...z, erreichbar: z.gewaehlt, faecher: z.offen ? Object.keys(faecher).map((f) => ({ fach: f })) : undefined,
+  const zustand = () => ({ ...z, kennung: 'erfundener-pro-tresor', erreichbar: z.gewaehlt, faecher: z.offen ? Object.keys(faecher).map((f) => ({ fach: f })) : undefined,
     ersatz: z.offen ? (z.ersatz ? { vorhanden: true, angelegt: z.ersatz } : { vorhanden: false }) : undefined });
   const T = {
     zustand: async () => (log('zustand'), zustand()),
@@ -62,7 +62,13 @@ window.__log = [];
     verzeichnis: async (a) => { log('verzeichnis', a); if (!z.offen) throw new Error('TRESOR_GESPERRT'); return { eintraege: faecher[a.fach], marken: [...(marken.get(a.fach) || [])] }; },
     lesenOeffnen: async (a) => { log('lesenOeffnen', a); const e = faecher[a.fach].find((x) => x.id === a.id); if (!e || e.verschluesselung !== 'fpt1') throw new Error('TRESOR_NUR_IN_DER_APP'); tickets.set('l' + a.id, { bytes: inhalte.get(a.fach + '|' + a.id), pos: 0 }); return { ticket: 'l' + a.id, name: e.name, art: e.art, groesse: e.groesse }; },
     lesenTeil: async (a) => { const t = tickets.get(a.ticket); const stueck = t.bytes.subarray(t.pos, t.pos + 262144); t.pos += stueck.length; const fertig = t.pos >= t.bytes.length; return { data: b64(stueck), fertig }; },
-    markieren: async (a) => { log('markieren', a); if (!marken.has(a.fach)) marken.set(a.fach, new Set()); marken.get(a.fach).add(a.id); },
+    markieren: async (a) => {
+      const { listBelege, getBelegBytes } = await import('./src/domain/documents.js');
+      const original = inhalte.get(a.fach + '|' + a.id), sha = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', original)), x => x.toString(16).padStart(2, '0')).join('');
+      const gespeichert = (await listBelege()).find(x => x.proUebergabe?.sha256 === sha);
+      if (!gespeichert || new TextDecoder().decode(await getBelegBytes(gespeichert.id)) !== new TextDecoder().decode(original)) throw new Error('Vor dauerhaftem Original markiert');
+      log('markieren', a); if (!marken.has(a.fach)) marken.set(a.fach, new Set()); marken.get(a.fach).add(a.id);
+    },
   };
   window.Capacitor = { isNativePlatform: () => true, Plugins: { BlpTresor: T } };
 })();`;
@@ -185,9 +191,10 @@ await page.waitForFunction(() => /Belege im Fach/.test(document.querySelector('[
 ok('Knopf „Belege ins Fach legen“: kein Doppel („0 neu, 1 lagen schon da“)', await page.evaluate(() => window.__fach.faecher['bookledgerpro'].filter((e) => e.verweis.startsWith('Belege/')).length === 1 && /0 neu, 1 lagen schon da/.test(document.querySelector('[data-tresor-meldung]')?.textContent || '')));
 
 console.log('— D. Fächer lesen, suchen, übernehmen, einspielen —');
-await page.evaluate(() => {
+await page.evaluate(async () => {
   const enc = (s) => new TextEncoder().encode(s);
-  window.__fach.eintrag('eingang-bookledgerpro', { id: '11111111-1111-4111-8111-111111111111', name: 'Rechnung Bäckerei.pdf', art: 'application/pdf', datum: Date.now() - 1000, groesse: 9, auszug: 'Brötchen 7,50 EUR vom 26.10.2026', verweis: '11111111-1111-4111-8111-111111111111.fpt', schreiber: 'private-brain', verschluesselung: 'fpt1', sha256: '' }, enc('%PDF-1.4 x'));
+  const bytes = enc('%PDF-1.4 x'), sha256 = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), x => x.toString(16).padStart(2, '0')).join('');
+  window.__fach.eintrag('eingang-bookledgerpro', { id: '11111111-1111-4111-8111-111111111111', name: 'Rechnung Bäckerei.pdf', art: 'application/pdf', datum: Date.now() - 1000, groesse: bytes.length, auszug: 'Brötchen 7,50 EUR vom 26.10.2026', verweis: '11111111-1111-4111-8111-111111111111.fpt', schreiber: 'private-brain', verschluesselung: 'fpt1', sha256 }, bytes);
   window.__fach.eintrag('private-brain', { id: 'mail-1', name: 'Mietvertrag.eml', art: 'message/rfc822', datum: Date.now() - 5000, groesse: 1234, auszug: 'Miete Oktober', verweis: 'Mails/ab12', schreiber: 'private-brain', verschluesselung: 'app', sha256: '' });
 });
 await page.evaluate(() => window.__probe.neu());
@@ -212,7 +219,7 @@ await page.evaluate(() => window.__probe.updateSettings({ bedeutungssuche: 'aus'
 await page.click('[data-tresor-fach="eingang-bookledgerpro"] [data-tresor-uebernehmen]');
 await page.waitForFunction(() => window.__probe.getRoute() === 'documents');
 const mk = await page.evaluate(() => window.__log.filter((x) => x[0] === 'markieren').map((x) => x[1]));
-ok('Übernehmen: Datei gelesen, Marke gesetzt, weiter zu den Belegen (Teilen-Weg)', mk.length === 1 && mk[0].fach === 'eingang-bookledgerpro' && await page.evaluate(() => window.__log.some((x) => x[0] === 'lesenOeffnen')));
+ok('Übernehmen: Original dauerhaft als Beleg gespeichert, erst danach Marke und weiter zu den Belegen', mk.length === 1 && mk[0].fach === 'eingang-bookledgerpro' && await page.evaluate(() => window.__log.some((x) => x[0] === 'lesenOeffnen')));
 ok('… die Datei im Eingang bleibt (nichts gelöscht)', await page.evaluate(() => window.__fach.faecher['eingang-bookledgerpro'].length === 1));
 await page.evaluate(() => window.__probe.neu());
 await warte(page, '[data-tresor-fach]');

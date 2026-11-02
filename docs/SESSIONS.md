@@ -5,6 +5,17 @@ Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 
 ---
 
+## 2026-11-02 — Familienakte-Pro-Verbund: dauerhafter Belegeingang und bestätigte Rückgabe
+
+**Was getan:** kanonisches Tresor-Paket aus Workflow PDF Pro #51 übernommen; native Übergaben für Android und Windows;
+ausgewählter Ausgang mit Zielbestätigung; Belegeingang über den bestehenden PDF-/Foto-/Mailweg, atomare Speicherung,
+Prüfsumme, feste Wiederholungskennung, Erhalt von Buchungsbezug und Mailanhängen; Mandantenwechsel abgefangen; Cache v288.
+**Stand:** lokale Logik 2645/0, native Brücke 52/0, Java-Engine 69/0, Browservertrag 9/0, Gegenproben 6/6,
+Tresorordner 30/0 und Sendeoberfläche 23/0. Nativer Dialog/Datenträger gestellter Prüfrand; originale Dateien und
+verschlüsselte Browserablage tatsächlich verwendet. Vollständige Android-/Windows-CI steht noch aus.
+**Offen/Nächstes:** CI/Installer dieses PR, nach Merge Basic nachziehen, die übrigen Apps und alle Zielpaare fertigstellen,
+Geräteprobe und neue Releases. Der gesamte Familienakte-Auftrag bleibt offen; keine fertige Geschenk-Datei behaupten.
+
 ## 2026-10-30 (spät) — Pro-Umbau 13: Chefcode, gemeinsamer Kasten „Überall suchen“
 
 **Was getan:** Befunde gesucht (keine; Klaus: „weitermachen“) · Chefcode-Plan freigegeben (Schritt 1+2, alle drei Apps) · `pro-chefcode.js` in PB (Fassung 5),
