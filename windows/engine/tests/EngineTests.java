@@ -2,6 +2,8 @@ package de.familyprojekt.bookledgerpro;
 
 import de.familyprojekt.tresor.DateiAblage;
 import de.familyprojekt.tresor.TresorOrdner;
+import de.familyprojekt.tresor.Uebergaben;
+import de.familyprojekt.tresor.Eintrag;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.SecureRandom;
@@ -72,6 +74,7 @@ public final class EngineTests {
         check("Dialog bekam Modus create und zweimal",host.shown.get(host.shown.size()-1).getString("mode").equals("create")&&host.shown.get(host.shown.size()-1).getBoolean("zweimal"));
         check("Fächer gelistet (eigenes Fach dabei)",z.getJSONArray("faecher").toString().contains("bookledgerpro"));
         check("zweites Anlegen → TRESOR_DA",fehler(()->call(s,"BlpTresor","anlegen")).equals("TRESOR_DA"));
+        proVerbund(s, vault, z.getString("kennung"));
 
         byte[] inhalt=new byte[600_000];new SecureRandom().nextBytes(inhalt);
         String ticket=call(s,"BlpTresor","ablegenBeginnen",new JSONObject().put("fach","bookledgerpro").put("unterordner","Belege").put("name","Rechnung:2026?.pdf").put("art","application/pdf").put("auszug","Probe").put("datum",1761600000000L)).getString("ticket");
@@ -201,6 +204,40 @@ public final class EngineTests {
             check("Update: Unterschrift von openssl (wie in GitHub) wird erkannt",new DesktopUpdates(ordner,netz,"0.1.1",opub).pruefen().optString("neu").equals("0.1.2"));
         } else System.out.println("(openssl fehlt: Gegenprobe mit openssl übersprungen)");
         check("Update: der eingebaute Schlüssel ist ein gültiger Ed25519-Schlüssel",java.security.KeyFactory.getInstance("Ed25519").generatePublic(new java.security.spec.X509EncodedKeySpec(Base64.getDecoder().decode(DesktopUpdates.SCHLUESSEL)))!=null);
+    }
+    static JSONObject proSenden(DesktopService s, String vaultId, String transferId, byte[] bytes) {
+        JSONObject m=new JSONObject().put("vaultId",vaultId).put("ziel","familienakte").put("id",transferId).put("dokumentId","beleg:2026:17").put("bezug","quelle-17");
+        String ticket=call(s,"BlpTresor","ablegenBeginnen",new JSONObject().put("fach","bookledgerpro").put("name","Rechnung:2026?.pdf").put("art","application/pdf").put("datum",0).put("uebergabe",m)).getString("ticket");
+        try {
+            for(int pos=0;pos<bytes.length;pos+=196608){int n=Math.min(196608,bytes.length-pos);call(s,"BlpTresor","ablegenTeil",new JSONObject().put("ticket",ticket).put("data",Base64.getEncoder().encodeToString(Arrays.copyOfRange(bytes,pos,pos+n))));}
+            return call(s,"BlpTresor","ablegenFertig",new JSONObject().put("ticket",ticket));
+        } finally { call(s,"BlpTresor","ablegenAbbrechen",new JSONObject().put("ticket",ticket)); }
+    }
+    static void proVerbund(DesktopService s, Path vault, String id)throws Exception {
+        check("Pro-Verbund: Fähigkeit für Windows sichtbar",call(s,"BlpTresor","zustand").getBoolean("uebergaben"));
+        byte[] bytes="%PDF-1.4 Erfundene gemeinsame Rechnung".getBytes(StandardCharsets.UTF_8);
+        try(TresorOrdner familie=TresorOrdner.oeffnen(new DateiAblage(vault.toFile()),"familienakte","Probe-Passwort-2026")){
+            Uebergaben f=new Uebergaben(familie);
+            JSONObject e=proSenden(s,id,"blp-erfunden-17",bytes), wieder=proSenden(s,id,"blp-erfunden-17",bytes);
+            check("Pro-Verbund: Wiederholung derselben Kennung bleibt genau eine Fassung",e.getString("id").equals(wieder.getString("id"))&&f.offen().size()==1);
+            check("Pro-Verbund: Originalname, Bytes und Quellbezug bleiben erhalten",Arrays.equals(f.lesen(e.getString("id")),bytes)&&f.beschreibung(e.getString("id")).get("name").equals("Rechnung:2026?.pdf")&&f.beschreibung(e.getString("id")).get("bezug").equals("quelle-17"));
+            JSONObject stand=new JSONObject().put("vaultId",id).put("ziel","familienakte").put("entryId",e.getString("id"));
+            check("Pro-Verbund: Ablage ist keine Empfängerbestätigung",!call(s,"BlpTresor","uebergabeStand",stand).getBoolean("bestaetigt"));
+            f.quittieren(e.getString("id"),e.getString("sha256"));
+            check("Pro-Verbund: ausschließlich Empfängermarke bestätigt den Eingang",call(s,"BlpTresor","uebergabeStand",stand).getBoolean("bestaetigt"));
+            Eintrag rueck=f.senden("bookledgerpro","family-rueck-17","akte-17","blp-erfunden-17","Antwort.pdf","application/pdf",new java.io.ByteArrayInputStream(bytes));
+            JSONObject q=new JSONObject().put("vaultId",id).put("entryId",rueck.id).put("sha256",rueck.sha256);
+            check("Pro-Verbund: Rückgabe-Vertrag nennt Familienakte und ihren Bezug",call(s,"BlpTresor","uebergabeBeschreibung",q).getString("bezug").equals("blp-erfunden-17"));
+            JSONObject falsch=new JSONObject(q.toString()).put("sha256","0".repeat(64));
+            check("Pro-Verbund: falsche Prüfsumme setzt keine Marke",fehler(()->call(s,"BlpTresor","uebergabeQuittieren",falsch)).equals("TRESOR_UEBERGABE_PRUEFSUMME")&&!f.bestaetigt("bookledgerpro",rueck.id));
+            call(s,"BlpTresor","uebergabeQuittieren",q);
+            check("Pro-Verbund: richtige Rückmeldung bleibt lesbar und wiederholbar",f.bestaetigt("bookledgerpro",rueck.id)&&call(s,"BlpTresor","uebergabeQuittieren",q).getString("stand").equals("im-eingang")&&familie.verzeichnis("eingang-bookledgerpro").size()==1);
+            check("Pro-Verbund: fremder Tresor wird vor der Ablage abgewiesen",fehler(()->proSenden(s,"fremd","blp-fremd",bytes)).equals("TRESOR_UEBERGABE_FREMD"));
+            byte[] gross=new byte[20*1024*1024];new SecureRandom().nextBytes(gross);
+            JSONObject g=proSenden(s,id,"blp-gross",gross);
+            check("Pro-Verbund: 20 MiB gehen durch die echten Stück-Methoden bytegleich",Arrays.equals(gross,f.lesen(g.getString("id"))));
+            check("Pro-Verbund: größer als 20 MiB wird abgewiesen",fehler(()->proSenden(s,id,"blp-zu-gross",new byte[20*1024*1024+1])).equals("TRESOR_DATEI_ZU_GROSS"));
+        }
     }
     static boolean fehlerKonstruktor(Path data,Fake host){try{new DesktopService(data,host);return false;}catch(Exception e){return true;}}
     static boolean enthaelt(Path dir,byte[] stueck)throws Exception {

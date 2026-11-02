@@ -162,9 +162,9 @@
   // hin und her (Base64, 256 KiB) und die automatische Sicherung des Bestands ins eigene Fach.
   var T = P.BlpTresor, tresor = null;
   if (T) {
-    var ablegen = function (fach, unterordner, blob, name, auszug, datum, aufgabe) {
-      return T.ablegenBeginnen({ fach: fach, unterordner: unterordner || '', name: name || 'Datei', art: blob.type || 'application/octet-stream',
-        auszug: auszug || '', datum: typeof datum === 'number' ? datum : Date.now() }).then(function (r) {
+    var ablegen = function (fach, unterordner, blob, name, auszug, datum, aufgabe, uebergabe) {
+      return T.ablegenBeginnen({ fach: fach, unterordner: unterordner || '', name: name || 'Datei', art: uebergabe ? blob.type : (blob.type || 'application/octet-stream'),
+        auszug: auszug || '', datum: typeof datum === 'number' ? datum : Date.now(), ...(uebergabe ? { uebergabe: uebergabe } : {}) }).then(function (r) {
         var ticket = r.ticket, pos = 0, STUECK = 192 * 1024;
         var weiter = function () {
           if (pos >= blob.size) return T.ablegenFertig({ ticket: ticket });
@@ -260,6 +260,13 @@
       verzeichnis: function (fach) { return T.verzeichnis({ fach: fach }); },
       lesen: lesenBlob,
       markieren: function (fach, id) { return T.markieren({ fach: fach, id: id }); },
+      uebergabeSenden: function (vaultId, vertrag, file) {
+        if (file.size > 20 * 1024 * 1024) return Promise.reject(new Error('Höchstens 20 MiB je Pro-Übergabe.'));
+        return ablegen('bookledgerpro', '', file, file.name, '', 0, null, Object.assign({}, vertrag, { vaultId: vaultId }));
+      },
+      uebergabeBeschreibung: function (vaultId, entryId) { return T.uebergabeBeschreibung({ vaultId: vaultId, entryId: entryId }); },
+      uebergabeQuittieren: function (vaultId, entryId, sha256) { return T.uebergabeQuittieren({ vaultId: vaultId, entryId: entryId, sha256: sha256 }); },
+      uebergabeStand: function (vaultId, ziel, entryId) { return T.uebergabeStand({ vaultId: vaultId, ziel: ziel, entryId: entryId }); },
       ablegen: ablegen,
       sichern: function () { return sichern(true); },
       letzteSicherung: function () { return merkLesen(); },

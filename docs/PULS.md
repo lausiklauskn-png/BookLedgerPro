@@ -1,5 +1,22 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
+## Neuester Stand: Familienakte-Pro-Verbund, 2. November 2026
+
+Der Bauzweig `codex/familienakte-pro-verbund` ergänzt BookLedgerPro für freiwillige Übergaben an Familienakte Pro,
+Workflow PDF Pro und Private Brain Pro. Die gemeinsame Quelle ist Workflow-PDF-Pro #51 (`f3569f0`).
+Android und Windows nutzen denselben Vertrag und bestehende Stückübertragung. Der Ausgang bleibt offen, bis die
+Empfänger-App ihren dauerhaften Eingang markiert. Im BookLedger-Eingang laufen PDF, Foto und Mail durch den vorhandenen
+Belegweg; die Marke folgt erst nach Speicherung und Prüfung der Originalbytes. Wiederholung erhält Buchungsverknüpfungen.
+Ein Mandantenwechsel während Speicherung oder Mailtextergänzung wird abgefangen. Cache v288 enthält die neuen Module.
+
+Lokale Nachweise: `tests/run.mjs` 2645/0, `test-native` 52/0, Windows-Java 69/0, Browservertrag 9/0,
+Gegenprobe 6/6 erkannt, Tresorordner 30/0, Sendeoberfläche 23/0. Java-Prüfung mit gestellter Hülle und echten Dateien;
+Browser mit echten IndexedDB-/Kryptofunktionen und gestellter nativer Grenze. Kein echter Android-Datenträger geprüft.
+
+Nächste konkrete Schritte: vollständige Android-/Windows-CI dieses Zweigs prüfen, danach mergen und Basic mit seinem
+Übernahmewerkzeug nachziehen. Gegenstellen in Private Brain Pro und Workflow PDF Pro sowie Familienakte fertigstellen
+und die App-Paare praktisch prüfen. Noch keine neue Veröffentlichung. Das Geschenk-HTML kommt erst nach dem Gesamtbau.
+
 > **Diese Datei ist der zentrale Andockpunkt für jede neue Sitzung.** Sie ergänzt
 > `CLAUDE.md` (Regeln/Verträge), `ROADMAP.md` (Phasen-Checklisten) und `docs/SESSIONS.md`
 > (Verlauf). Wer hier + im obersten SESSIONS-Eintrag liest, weiß **genau, wo es weitergeht**.

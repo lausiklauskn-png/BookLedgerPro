@@ -26,6 +26,7 @@ import de.familyprojekt.tresor.Eintrag;
 import de.familyprojekt.tresor.Fach;
 import de.familyprojekt.tresor.SafAblage;
 import de.familyprojekt.tresor.TresorOrdner;
+import de.familyprojekt.tresor.Uebergaben;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -64,7 +65,7 @@ public final class BlpTresorPlugin extends Plugin {
     private final Map<String, Ablegen> ablegen = new HashMap<>();
     private final Map<String, InputStream> lesen = new HashMap<>();
 
-    private static final class Ablegen { String fach, unterordner, name, art, auszug; long datum, groesse; File datei; }
+    private static final class Ablegen { String fach, unterordner, name, art, auszug; long datum, groesse; File datei; JSONObject uebergabe; }
 
     private SharedPreferences prefs() { return getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE); }
     private static String code(Exception e) {
@@ -86,7 +87,7 @@ public final class BlpTresorPlugin extends Plugin {
         });
     }
     private JSObject zustandJetzt() throws Exception {
-        JSObject z = new JSObject();
+        JSObject z = new JSObject().put("uebergaben", true);
         SharedPreferences p = prefs();
         z.put("gewaehlt", p.contains("baum")).put("ordner", p.getString("name", "")).put("gemerkt", p.contains("merken"));
         // Ganzer Pfad und Speicher (Leitfaden § 5): „Gerät“ oder „SD-Karte“ + Pfad hinter dem Doppelpunkt der Dokument-Kennung.
@@ -369,6 +370,12 @@ public final class BlpTresorPlugin extends Plugin {
                 a.art = NativeUtil.mime(call.getString("art"));
                 a.auszug = call.getString("auszug", "");
                 a.datum = NativeUtil.integer(call.getData().opt("datum"));
+                a.uebergabe = call.getData().optJSONObject("uebergabe");
+                if (a.uebergabe != null) {
+                    uebergaben(a.uebergabe.optString("vaultId"));
+                    a.fach = Uebergaben.eingang(a.uebergabe.optString("ziel")).slug;
+                    a.name = call.getString("name", ""); a.art = call.getString("art", "");
+                }
                 File ordner = new File(getContext().getCacheDir(), "tresor-ablegen");
                 if (!ordner.isDirectory() && !ordner.mkdirs()) throw new IOException("TRESOR_NICHT_VERFUEGBAR");
                 a.datei = File.createTempFile("ablegen-", ".tmp", ordner);
@@ -384,7 +391,7 @@ public final class BlpTresorPlugin extends Plugin {
                 Ablegen a = ablegen.get(call.getString("ticket"));
                 if (a == null) throw new IOException("TRESOR_UEBERGABE_UNGUELTIG");
                 byte[] b = Base64.decode(call.getString("data", ""), Base64.DEFAULT);
-                if (a.groesse + b.length > 1L << 30) throw new IOException("TRESOR_DATEI_ZU_GROSS");
+                if (a.groesse + b.length > (a.uebergabe != null ? Uebergaben.MAX_BYTES : 1L << 30)) throw new IOException("TRESOR_DATEI_ZU_GROSS");
                 try (FileOutputStream out = new FileOutputStream(a.datei, true)) { out.write(b); }
                 a.groesse += b.length;
                 call.resolve(new JSObject().put("groesse", a.groesse));
@@ -397,7 +404,12 @@ public final class BlpTresorPlugin extends Plugin {
             try {
                 if (a == null) throw new IOException("TRESOR_UEBERGABE_UNGUELTIG");
                 if (offen == null) throw new IOException("TRESOR_GESPERRT");
-                Eintrag e = offen.ablegen(a.fach, a.unterordner, a.name, a.art, a.datum, new FileInputStream(a.datei), a.auszug);
+                Eintrag e;
+                try (InputStream in = new FileInputStream(a.datei)) {
+                    JSONObject m = a.uebergabe;
+                    e = m == null ? offen.ablegen(a.fach, a.unterordner, a.name, a.art, a.datum, in, a.auszug)
+                        : uebergaben(m.optString("vaultId")).senden(m.optString("ziel"), m.optString("id"), m.optString("dokumentId"), m.optString("bezug", null), a.name, a.art, in);
+                }
                 call.resolve(new JSObject(new JSONObject(e.alsMap()).toString()));
             } catch (Exception e) { call.reject(code(e)); }
             finally { if (a != null) a.datei.delete(); }
@@ -464,5 +476,20 @@ public final class BlpTresorPlugin extends Plugin {
         });
     }
 
+    private Uebergaben uebergaben(String id) throws IOException {
+        if (offen == null) throw new IOException("TRESOR_GESPERRT");
+        if (id.isEmpty() || !id.equals(offen.id()) || !id.equals(TresorOrdner.kennung(ablage()))) throw new IOException("TRESOR_UEBERGABE_FREMD");
+        if (ablage().gibtEs(de.familyprojekt.tresor.Umzug.VERMERK)) throw new IOException("TRESOR_UMGEZOGEN");
+        return new Uebergaben(offen);
+    }
+    @PluginMethod public void uebergabeBeschreibung(PluginCall call) {
+        worker.submit(call, () -> { try { call.resolve(new JSObject(new JSONObject(uebergaben(call.getString("vaultId", "")).beschreibung(call.getString("entryId", ""))).toString())); } catch (Exception e) { call.reject(code(e)); } });
+    }
+    @PluginMethod public void uebergabeQuittieren(PluginCall call) {
+        worker.submit(call, () -> { try { uebergaben(call.getString("vaultId", "")).quittieren(call.getString("entryId", ""), call.getString("sha256", "")); call.resolve(new JSObject().put("stand", "im-eingang")); } catch (Exception e) { call.reject(code(e)); } });
+    }
+    @PluginMethod public void uebergabeStand(PluginCall call) {
+        worker.submit(call, () -> { try { call.resolve(new JSObject().put("bestaetigt", uebergaben(call.getString("vaultId", "")).bestaetigt(call.getString("ziel", ""), call.getString("entryId", "")))); } catch (Exception e) { call.reject(code(e)); } });
+    }
     @Override protected void handleOnDestroy() { worker.close(this::schliessen); }
 }

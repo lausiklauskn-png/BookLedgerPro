@@ -1,5 +1,9 @@
 # Stundennachweis (Klaus' Arbeitszeit an den Pro-Apps)
 
+**2. November 2026, Familienakte-Pro-Verbund:** Umsetzung und Prüfungen laufen über die Familienakte-Sitzung weiter.
+Klaus' persönliche Arbeitszeit ist aus dieser Sitzung nicht messbar; deshalb noch keine zusätzliche Stundenzahl angesetzt.
+Die lokalen Prüfläufe und folgenden Commits belegen nur technische Arbeit, keine durchgehende Anwesenheit von Klaus.
+
 Klaus 2026-10-28: *„Ich habe das Gefühl, ihr schreibt meine Arbeitsstunden nicht auf bei GitHub."* — **Das stimmt.** Einen Stundennachweis gab es bisher nur
 in den Abschlussberichten des Workflow-PDF-Kerns, zuletzt am 2026-10-11. In BookLedgerPro, Private Brain Pro, Workflow PDF Pro und BookLedger Basic
 stand seit dem 2026-10-12 **keiner**. Hier ist er nachgetragen.

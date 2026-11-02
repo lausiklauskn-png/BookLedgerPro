@@ -82,8 +82,12 @@ function tx(store, mode) {
 
 function wrap(request) {
   return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result);
+    const transaction = request.transaction;
+    let result;
+    request.onsuccess = () => { result = request.result; };
     request.onerror = () => reject(request.error);
+    transaction.addEventListener('complete', () => resolve(result), { once: true });
+    transaction.addEventListener('abort', () => reject(transaction.error || new Error('Speichern abgebrochen')), { once: true });
   });
 }
 
@@ -127,10 +131,30 @@ export async function recAll(type) {
 
 // ---- Files-Store ------------------------------------------------------------
 
-export async function filePut(fileRecord) {
+export async function filePut(fileRecord, expectedDb) {
   geaendert();
   if (!fileRecord || !fileRecord.id) throw new Error('filePut: id fehlt');
+  if (expectedDb) {
+    const db = await openDb();
+    if (db.name !== expectedDb || getActiveDbName() !== expectedDb) throw new Error('Der aktive Mandant hat gewechselt. Bitte erneut übernehmen.');
+    return wrap(db.transaction(STORES.FILES, 'readwrite').objectStore(STORES.FILES).put(fileRecord));
+  }
   return wrap((await tx(STORES.FILES, 'readwrite')).put(fileRecord));
+}
+/** Neuer Pro-Eingang darf eine gleichzeitig angelegte oder bereits verknüpfte Fassung nie überschreiben. */
+export async function filePutWennNeu(record, expectedDb = getActiveDbName()) {
+  const db = await openDb();
+  if (db.name !== expectedDb || getActiveDbName() !== expectedDb) throw new Error('Der aktive Mandant hat gewechselt. Bitte erneut übernehmen.');
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORES.FILES, 'readwrite'), store = transaction.objectStore(STORES.FILES);
+    const r = store.get(record.id); let result;
+    transaction.oncomplete = () => { if (result.neu) geaendert(); resolve(result); };
+    transaction.onabort = () => reject(transaction.error || new Error('Beleg konnte nicht gespeichert werden'));
+    r.onsuccess = () => {
+      if (r.result) result = { neu: false, record: r.result };
+      else { store.add(record); result = { neu: true, record }; }
+    };
+  });
 }
 export async function fileGet(id) {
   return wrap((await tx(STORES.FILES, 'readonly')).get(id));

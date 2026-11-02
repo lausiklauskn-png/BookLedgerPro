@@ -2,6 +2,14 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**Familienakte-Pro-Verbund (2026-11-02, Bauzweig):** Gemeinsames Tresor-Paket aus Workflow PDF Pro #51 (`f3569f0`),
+ausgewählte Hin-/Rückgabe über Android und Windows. Der Belegeingang bestätigt erst nach verschlüsselter Ablage und
+Wiederlesen; Wiederholungen behalten Kennung und Buchungsbezug. Mailoriginal und Anhänge bleiben ebenfalls wiederholbar.
+Kleine Ausgangsdatensätze und getrennte Zielbestätigung in der Tresorordner-Ansicht. Cache v288.
+Lokale Nachweise: Logik 2645, native Brücke 52, Java-Engine 69, Browservertrag 9, Gegenproben 6/6,
+Tresorordner-Oberfläche 30 und Sendeoberfläche 23. CI/Installer auf dem exakten PR-Stand noch abzuwarten.
+**Nächstes:** `docs/PULS.md`. Der gesamte Familienakte-Auftrag ist damit noch nicht fertig; Basic nach Merge nachziehen.
+
 **Pro-Umbau 14 A3 (2026-10-31):** Tresor-Paket aus Workflow PDF Pro (#49) mit acht Fächern nachgezogen (neu „Private Brain V3“, „Familienakte“, „Eingang-Familienakte“), Bedien-Bausteine **Fassung 7** (Überall suchen kennt die neuen Fächer). WPP antwortet jetzt auch im Netz (`native/native-netz.js` dort), V3 #32 mit Fix #34 gemergt (Ursache: Versionssprung von außen in `ki-tresor.js`). Proben `run.mjs` 2645/0 · `test-native` 52 · `test-pro-bedienung` 64 · `smoke_umbau13` 57 · `smoke_tresorordner` 30 · `smoke_netzbrief` 11. **Nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-14-A3-REST.md`.
 
 **Pro-Umbau 14, Sitzung A2 (2026-10-31):** Netz liest den ganzen Brief — „Mit Ausschnitt antworten“ vergleicht jeden Beleg in Abschnitten (Briefende immer dabei), eine Antwortzeile je Beleg, Korpus baut sich bei neuen Belegen selbst neu (`src/sbkim/netz.js`, `src/domain/ueberall.js`, Ereignis `blp-belege-geaendert` aus `documents.js`); Probe `tests/smoke_netzbrief.mjs` 11 · Gegenprobe `tests/gegenprobe_netzbrief.mjs` 5/5 (#436, Basic #30). Private Brain Pro/V3 antworteten im Netz nie (Liste statt Float32Array) — PB #119, V3 #32. Inventur Tresorordner und sechs Fragen an Klaus: `BRIEF_ABSCHLUSS_2026-10-31_PRO-UMBAU-14A2.md`; **nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-14-NACH-A2.md`.

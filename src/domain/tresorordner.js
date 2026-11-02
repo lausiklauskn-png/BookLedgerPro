@@ -107,6 +107,12 @@ export function fehlerText(code) {
   return k ? FEHLER[k] : 'Das ging nicht (' + (c || 'unbekannt') + ').';
 }
 const FEHLER = {
+  TRESOR_UEBERGABE_FREMD: 'Die Übergabe gehört zu einem anderen Tresor. Bitte den zugehörigen Ordner öffnen.',
+  TRESOR_UEBERGABE_PRUEFSUMME: 'Die Originaldatei stimmt nicht mit der Übergabe überein. Der Eingang wurde nicht bestätigt.',
+  TRESOR_UEBERGABE_KONFLIKT: 'Diese Übergabekennung bezeichnet bereits eine andere Fassung. Bitte die Datei neu weitergeben.',
+  TRESOR_UEBERGABE_UNGUELTIG: 'Die Übergabe ist unvollständig oder unzulässig. Bitte erneut aus der Quell-App weitergeben.',
+  TRESOR_DATEI_ZU_GROSS: 'Für eine Pro-Übergabe sind höchstens 20 MiB je Datei möglich.',
+  TRESOR_UMGEZOGEN: 'Dieser Tresor wurde verschoben. Bitte seinen neuen Ort verbinden.',
   TRESOR_PASSWORT_FALSCH: 'Das Passwort stimmt nicht. Es wurde nichts verändert.',
   TRESOR_PASSWORT_KURZ: 'Das Passwort braucht mindestens 10 Zeichen.',
   TRESOR_PASSWORT_UNGLEICH: 'Die beiden Passwörter sind nicht gleich.',
