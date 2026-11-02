@@ -1,21 +1,24 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
-## Neuester Stand: Familienakte-Pro-Verbund, 2. November 2026
+## Neuester Stand: Pro-Verbund-Veröffentlichung, 2. November 2026
 
-Der Bauzweig `codex/familienakte-pro-verbund` ergänzt BookLedgerPro für freiwillige Übergaben an Familienakte Pro,
-Workflow PDF Pro und Private Brain Pro. Die gemeinsame Quelle ist Workflow-PDF-Pro #51 (`f3569f0`).
-Android und Windows nutzen denselben Vertrag und bestehende Stückübertragung. Der Ausgang bleibt offen, bis die
-Empfänger-App ihren dauerhaften Eingang markiert. Im BookLedger-Eingang laufen PDF, Foto und Mail durch den vorhandenen
-Belegweg; die Marke folgt erst nach Speicherung und Prüfung der Originalbytes. Wiederholung erhält Buchungsverknüpfungen.
-Ein Mandantenwechsel während Speicherung oder Mailtextergänzung wird abgefangen. Cache v288 enthält die neuen Module.
+Android und Windows **0.1.8 sind veröffentlicht**, Quelle 3ca7bb919245bb0ff7a293fe93beee92fbd28f61.
+Android-Lauf 41526886410: bestehende Signatur, Produktionsinstallation, Tresor und Überinstallation
+mit Datenerhalt; öffentlicher Download und Server-Feed geprüft. Windows-Lauf 41509273086:
+wirklicher Installer und öffentlicher signierter Feed geprüft (Installer weiterhin unsigniert).
+[Downloads und Nachweise](../BRIEF_ABSCHLUSS_2026-11-02_FAMILIENAKTE-PRO-VERBUND.md),
+[maschinenlesbar](PRO-VERBUND-VEROEFFENTLICHUNG-0.1.8.json).
 
-Lokale Nachweise: `tests/run.mjs` 2645/0, `test-native` 52/0, Windows-Java 69/0, Browservertrag 9/0,
-Gegenprobe 6/6 erkannt, Tresorordner 30/0, Sendeoberfläche 23/0. Java-Prüfung mit gestellter Hülle und echten Dateien;
-Browser mit echten IndexedDB-/Kryptofunktionen und gestellter nativer Grenze. Kein echter Android-Datenträger geprüft.
+Windows-App-Paar mit Familienakte vollständig bestanden (41506243317 / 125490024327).
+Android-Paar nicht vollständig geprüft: Emulator bei nativer Ordnerwahl nicht mehr erreichbar,
+Ursache unbewiesen, zwei Family-triggerEvent-Fehler erfasst. Familienakte #59 bleibt Entwurf.
+Die normale Produktprüfung ist grün; dies ist keine vollständige Gesamtabnahme aller App-Paare.
+Basic ist mit #39 auf den Produktstand nachgezogen; keine neuen PWA-Funktionen in diesem Nachtrag.
 
-Nächste konkrete Schritte: vollständige Android-/Windows-CI dieses Zweigs prüfen, danach mergen und Basic mit seinem
-Übernahmewerkzeug nachziehen. Gegenstellen in Private Brain Pro und Workflow PDF Pro sowie Familienakte fertigstellen
-und die App-Paare praktisch prüfen. Noch keine neue Veröffentlichung. Das Geschenk-HTML kommt erst nach dem Gesamtbau.
+**Nächstes:** vorhandene Testreihe mit erfundenen Dateien auf einem persönlichen Android-Gerät
+oder gezielte Klärung der VM-Ursache. Konkrete Nutzerfehler zuerst Datenverlust, falsche
+Bestätigung, Startblockade; keine weitere allgemeine Testserie, keine gleichen Releases erneut.
+[Startauftrag](../BRIEF_SITZUNG_2026-11-02_NACH-PRO-VERBUND.md).
 
 > **Diese Datei ist der zentrale Andockpunkt für jede neue Sitzung.** Sie ergänzt
 > `CLAUDE.md` (Regeln/Verträge), `ROADMAP.md` (Phasen-Checklisten) und `docs/SESSIONS.md`

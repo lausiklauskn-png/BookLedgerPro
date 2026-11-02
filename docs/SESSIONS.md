@@ -1,5 +1,18 @@
 # Sitzungs-Log
 
+## 2026-11-02 — Abschluss: 0.1.8 auf Android und Windows veröffentlicht
+
+Produktbau #445/#446 und Basic #39 übernommen. Android-Lauf 41526886410 und Windows-Lauf
+41509273086 erfolgreich; bestehende Signier-/Updateidentitäten, tatsächliche Installation
+und öffentliche Hash-/Feedkontrollen. Windows-Paar mit Familienakte vollständig geprüft.
+Android-Paar bleibt nach VM-Abbruch und zwei Family-triggerEvent-Seitenfehlern offen;
+Familienakte #59 bleibt Entwurf. Keine vollständige Gesamtabnahme oder persönliches Gerät behauptet.
+Keine Produktdatei geändert. Nächstes: gezielte Nutzer-Rückmeldung oder VM-Ursache; keine
+allgemeine neue Testserie und keine Wiederholung derselben Releases.
+Abschluss, Downloads, Stundenfenster und Startauftrag:
+`BRIEF_ABSCHLUSS_2026-11-02_FAMILIENAKTE-PRO-VERBUND.md`.
+
+
 Chronologische Notizen über Sitzungen hinweg. Neueste oben. Pflicht-Felder:
 **Datum · Was getan · Stand · Offen/Nächstes.**
 
