@@ -36,6 +36,15 @@ public final class BlpFilesPlugin extends Plugin {
     private File offen() { return new File(new File(getContext().getCacheDir(), "speichern"), "offen.bin"); }
     private Uri zuletzt; private long zuletztZeit;
 
+    private static byte[] decode(PluginCall call) {
+        String data = call.getString("data");
+        if (data == null) return null;
+        try {
+            byte[] bytes = Base64.decode(data, Base64.DEFAULT);
+            return bytes.length > NativeUtil.MAX_BYTES ? null : bytes;
+        } catch (IllegalArgumentException malformed) { return null; }
+    }
+
     @PluginMethod public void save(PluginCall call) {
         byte[] bytes = decode(call);
         if (bytes == null) { call.reject("FILE_INVALID"); return; }
