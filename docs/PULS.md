@@ -1,6 +1,24 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
-## Neuester Stand: Pro-Verbund-Veröffentlichung, 2. November 2026
+## Neuester Stand: Tresor-Plan in BookLedgerPro, 3. November 2026 (nicht veröffentlicht)
+
+Klaus' „Ja zum Plan“ (gemeinsamer Tresor-Plan aller Pro-Apps), Befund SD-Karte: zwei
+`bookledgerpro-backup-….blpr.json` mit 0 Byte direkt im Hauptablageordner. Gebaut auf Branch
+`ccr-709c886f-8v07gh` (kein PR, nichts veröffentlicht, Version unverändert 0.1.8):
+- **„Speichern unter“ ohne 0-Byte-Reste** (`BlpFilesPlugin.java`): Inhalt vor dem Android-Dialog im
+  App-Zwischenspeicher (statt nur im RAM), gestreamt geschrieben; scheitert es oder fehlt der Inhalt,
+  wird die angelegte Datei gelöscht (`DocumentsContract.deleteDocument`) und der Fehler genannt.
+- **Speichern in den Tresorordner** (gemerkter Baum oder Ordner „Tresorordner“) fragt danach: dort lassen
+  oder wieder entfernen (`saveZuruecknehmen`).
+- **Kein zweiter leerer Tresor:** ohne `tresorordner.json` erst der Satz „In diesem Ordner liegt kein Tresor …“,
+  „neu anlegen“ zugeklappt und nur nach Rückfrage; im Verwaltungs- oder einem Fach-Ordner nie.
+- **Hilfe „Wo liegt was?“** in Tresorordner-Ansicht und Einstellungen › Tresor & Ablage; „Speichern unter …“
+  (Tresor-Einträge) und „Original speichern …“ (Belege) mit echtem Namen.
+Proben: `run.mjs` 2655/0 · `test-native` 62 · `smoke_tresorordner` 32 · neu `smoke_tresorplan` 11 · JUnit
+`NativeUtilTest` 6. ⚠ Java des Plugins nur gelesen (kein Android-SDK hier), nicht am Gerät.
+**Nächstes:** PR prüfen lassen, CI (Android-Bau), dann am Tablet „Speichern unter“ in Download und in den Tresor.
+
+## Stand: Pro-Verbund-Veröffentlichung, 2. November 2026
 
 Android und Windows **0.1.8 sind veröffentlicht**, Quelle 3ca7bb919245bb0ff7a293fe93beee92fbd28f61.
 Android-Lauf 41526886410: bestehende Signatur, Produktionsinstallation, Tresor und Überinstallation

@@ -7366,5 +7366,34 @@ await section('Pro-Umbau 13 (Klaus 2026-10-30): Chefcode-Ausschnitt nur im eigen
   ok('i18n DE/EN: Ausschnitt-Sätze zweimal (' + keys.length + ')', keys.length >= 4 && (i18.match(/'net\.ausschnittAnText'/g) || []).length === 2 && keys.every((kk) => (i18.match(new RegExp(`'${kk.replace(/\./g, '\\.')}'`, 'g')) || []).length >= 2));
 });
 
+await section('Tresor-Plan 2026-11-03: falscher Ordner, Wo liegt was?, Speichern mit echtem Namen', async () => {
+  const to = await import('../src/domain/tresorordner.js');
+  ok('ordnerArt: „Tresorordner“ (auch als letzter Teil eines Pfads, gleich welche Schreibung) ist der Verwaltungsordner',
+    to.ordnerArt('Tresorordner') === 'verwaltung' && to.ordnerArt('Privat Brain Pro Hauptablageordner/tresorordner') === 'verwaltung');
+  ok('ordnerArt: App- und Eingangsordner sind Fächer', ['BookLedgerPro', 'Workflow PDF Pro', 'Private Brain', 'X/Eingang-Private-Brain', 'familienakte'].every((n) => to.ordnerArt(n) === 'fach'));
+  ok('ordnerArt: Hauptablageordner, alter Ablageordner, Leeres → kein Hinweis', ['Privat Brain Pro Hauptablageordner', 'Privat Brain Pro Ablageordner', 'Download', '', null].every((n) => to.ordnerArt(n) === ''));
+  const { existsSync: _da } = await import('node:fs');
+  const fachJava = new URL('../android/app/src/main/java/de/familyprojekt/tresor/Fach.java', import.meta.url);
+  if (_da(fachJava)) {
+    const ordner = [..._readSpore(fachJava, 'utf8').matchAll(/new Fach\("[a-z0-9-]+", "([^"]+)"/g)].map((m) => m[1]);
+    ok('FACH_ORDNER = genau die ' + ordner.length + ' Fächer aus Fach.java (neun, mit Eingang-Private-Brain)', ordner.length === 9 && JSON.stringify([...ordner].sort()) === JSON.stringify([...to.FACH_ORDNER].sort()));
+  }
+  const tv = _readSpore(new URL('../src/ui/views/tresorordner.js', import.meta.url), 'utf8');
+  ok('Tresorordner-Ansicht: „anlegen“ nur nach confirm(neuAnlegenFrage), nie im Verwaltungs- oder Fachordner', /if \(!confirm\(t\('tresor\.neuAnlegenFrage'\)/.test(tv) && /if \(!z\.istFachOrdner && !art\)/.test(tv));
+  const sh = _readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
+  ok('Tresor & Ablage: Hilfe „Wo liegt was?“ und „Ordner mit tresorordner.json wählen“', /woLiegtWas\(\{ kasten: false \}\)/.test(sh) && /t\('ta\.waehlenMitTresor'\)/.test(sh));
+  const dv = _readSpore(new URL('../src/ui/views/documents.js', import.meta.url), 'utf8');
+  ok('Belege: ⋯ › „Original speichern …“ mit echtem Namen (a[download] = b.name)', /'data-beleg-speichern': b\.id/.test(dv) && /download: b\.name \|\| 'Beleg'/.test(dv));
+  const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
+  ok('sw.js: woLiegtWas.js im Vorrat, Cache ≥ v289', sw.includes("'./src/ui/woLiegtWas.js'") && Number(sw.match(/CACHE_VERSION = 'v(\d+)'/)[1]) >= 289);
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  const keys = ['wlw.titel', 'wlw.1', 'wlw.2', 'wlw.3', 'wlw.4', 'wlw.5', 'wlw.6', 'wlw.7', 'wlw.app', 'wlw.weg', 'wlw.namen', 'tresor.keinTresor', 'tresor.waehlenHinweis', 'tresor.neuAnlegenFrage',
+    'tresor.ordnerIstVerwaltung', 'tresor.ordnerIstFachName', 'tresor.waehlenMitTresor', 'tresor.neuAnlegen', 'tresor.speichern', 'docs.speichern', 'ta.waehlenMitTresor'];
+  ok('i18n DE/EN: ' + keys.length + ' neue Sätze je zweimal', keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
+  const { t, setLang } = await import('../src/ui/i18n.js');
+  setLang('de');
+  ok('Hilfe nennt Fach „BookLedgerPro“ mit Sicherung/Belege, Eingang und den Menüweg', /„BookLedgerPro“.*„Sicherung“.*„Belege“.*„Eingang-BookLedgerPro“/.test(t('wlw.app')) && /Tresor & Ablage/.test(t('wlw.weg')));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);

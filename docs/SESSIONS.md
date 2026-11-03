@@ -1,5 +1,17 @@
 # Sitzungs-Log
 
+## 2026-11-03 — Tresor-Plan: 0-Byte-Sicherungen, kein zweiter Tresor, „Wo liegt was?“
+
+**Was getan:** Ursache der 0-Byte-Dateien im Code gesucht (Inhalt nur im RAM während des Speichern-Dialogs;
+Dialog legt die Datei leer an; nach Beenden der App oder Schreibfehler blieb sie leer) und behoben
+(Zwischenspeicher, Streamen, Löschen bei Fehler, klare Sätze); Rückfrage bei „Speichern unter“ in den Tresor;
+„Tresorordner anlegen“ nur nach Rückfrage, nie im Verwaltungs-/Fachordner; Hilfe „Wo liegt was?“;
+„Speichern unter …“/„Original speichern …“ mit echtem Namen; CLAUDE.md „acht“ → neun Fächer. `sw.js` v289.
+**Stand:** Branch `ccr-709c886f-8v07gh`, kein PR, nichts veröffentlicht. `run.mjs` 2655/0 (vorher 2645) ·
+`test-native` 62 (vorher 52) · `smoke_tresorordner` 32 · `smoke_tresorplan` 11 · JUnit NativeUtilTest 6.
+**Offen:** Plugin-Java nicht kompiliert (kein Android-SDK), nicht am Gerät; die echte Ursache am Tablet
+(Beenden im Hintergrund vs. Schreibfehler) ist nicht gemessen. `smoke_ohne_web` 2 ROT wie auf main (Übernehmen, Teil 4).
+
 ## 2026-11-02 — Abschluss: 0.1.8 auf Android und Windows veröffentlicht
 
 Produktbau #445/#446 und Basic #39 übernommen. Android-Lauf 41526886410 und Windows-Lauf

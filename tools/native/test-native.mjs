@@ -88,7 +88,7 @@ ok('Namen der Brücken stimmen (BlpIncoming, BlpFiles)', java('BlpIncomingPlugin
 ok('Eingang nimmt nur content:-Adressen aus dem Intent (nie aus JS)', java('IncomingFiles').includes('"content".equals(uri.getScheme())') && !java('BlpIncomingPlugin').includes('getString("uri")'));
 
 console.log('— Klebstoff native/blp-native.js in einer gestellten WebView');
-function welt({ nativ = true, batch = null, chunk = 4, webviewQueue = false } = {}) {
+function welt({ nativ = true, batch = null, chunk = 4, webviewQueue = false, dateien = null, bestaetigen = true, inhalt = null } = {}) {
   const log = [];
   const listener = [];
   const daten = new Map();
@@ -105,12 +105,12 @@ function welt({ nativ = true, batch = null, chunk = 4, webviewQueue = false } = 
     history: async () => ({ receipts: [] }), discardArchived: async () => {},
     addListener: (n, f) => { listener.push(f); },
   };
-  const Dateien = { save: async (a) => { log.push(['save', a]); return { saved: true }; }, share: async (a) => { log.push(['share', a]); return { shared: true }; } };
+  const Dateien = dateien ? dateien(log) : { save: async (a) => { log.push(['save', a]); return { saved: true }; }, share: async (a) => { log.push(['share', a]); return { shared: true }; } };
   const angehaengt = [];
   const doc = {
     documentElement: { setAttribute: (k, v) => log.push('attr:' + k + '=' + v) },
     body: { appendChild: (d) => angehaengt.push(d) },
-    createElement: () => ({ setAttribute() {}, style: {}, remove() {} }),
+    createElement: () => { const d = { setAttribute() {}, style: {}, remove() {} }; Object.defineProperty(d, 'textContent', { set(v) { log.push('hinweis:' + v); } }); return d; },
     _klick: [], addEventListener(t, f, cap) { if (t === 'click') this._klick.push([f, cap]); },
   };
   class FR { readAsDataURL(b) { b.arrayBuffer().then((ab) => { this.result = 'data:' + (b.type || '') + ';base64,' + Buffer.from(ab).toString('base64'); this.onload(); }); } }
@@ -120,7 +120,8 @@ function welt({ nativ = true, batch = null, chunk = 4, webviewQueue = false } = 
     atob: (s) => Buffer.from(s, 'base64').toString('binary'),
     setTimeout: () => 0,
     navigator: {}, document: doc,
-    fetch: async (href) => ({ blob: async () => new Blob([Buffer.from('Sicherung ' + href)], { type: 'application/json' }) }),
+    fetch: async (href) => ({ blob: async () => new Blob(inhalt === null ? [Buffer.from('Sicherung ' + href)] : [inhalt], { type: 'application/json' }) }),
+    confirm: (frage) => { log.push('frage:' + frage); return bestaetigen; },
     Capacitor: nativ ? { isNativePlatform: () => true, Plugins: { BlpIncoming: Eingang, BlpFiles: Dateien } } : undefined,
   };
   ctx.window = ctx;
@@ -182,6 +183,46 @@ ok('… Tipp auf <a download> geht an Androids Speichern-Dialog (Name, Art, Inha
 const ohne = { target: { closest: () => null }, preventDefault() { throw new Error('nein'); }, stopImmediatePropagation() {} };
 let ruhig = true; try { s.doc._klick[0][0](ohne); } catch { ruhig = false; }
 ok('… gewöhnliche Tipps bleiben unberührt', ruhig);
+
+// Befund SD-Karte 2026-11-03: Sicherungen mit 0 Byte, offen neben dem Tresor (gemeinsamer Plan, Punkte 4/5).
+const tippe = async (w, name) => {
+  const a2 = { href: 'blob:https://localhost/9', getAttribute: (k) => (k === 'download' ? name : null) };
+  w.doc._klick[0][0]({ target: { closest: (sel) => (sel === 'a[download]' ? a2 : null) }, preventDefault() {}, stopImmediatePropagation() {} });
+  await warte(); await warte(); await warte();
+};
+const hinweise = (w) => w.log.filter((x) => typeof x === 'string' && x.startsWith('hinweis:')).map((x) => x.slice(8));
+const leer = welt({ inhalt: '' });
+await tippe(leer, 'leer.json');
+ok('Speichern: leerer Inhalt geht gar nicht erst an den Dialog (keine 0-Byte-Datei), Satz „Die Datei ist leer“',
+  !leer.log.some((x) => Array.isArray(x) && x[0] === 'save') && hinweise(leer).some((h) => /leer – nichts gespeichert/.test(h)));
+const kaputt = welt({ dateien: (log) => ({ save: async (a) => { log.push(['save', a]); throw Object.assign(new Error('SAVE_FAILED'), { code: 'SAVE_FAILED' }); } }) });
+await tippe(kaputt, 'bookledgerpro-backup.blpr.json');
+ok('Speichern scheitert (SAVE_FAILED): klarer Satz „wieder gelöscht“, kein „Gespeichert“', hinweise(kaputt).some((h) => /wieder gelöscht/.test(h)) && !hinweise(kaputt).some((h) => /^Gespeichert/.test(h)));
+const liegen = welt({ dateien: (log) => ({ save: async (a) => { log.push(['save', a]); throw new Error('SAVE_FAILED_EMPTY_LEFT'); } }) });
+await tippe(liegen, 'x.blpr.json');
+ok('… ließ sich die leere Datei nicht löschen: Name und „von Hand löschen“', hinweise(liegen).some((h) => /„x\.blpr\.json“ \(0 Byte\).*von Hand löschen/.test(h)));
+const imTresor = (bestaetigen) => welt({ bestaetigen, dateien: (log) => ({
+  save: async (a) => { log.push(['save', a]); return { saved: true, imTresor: true }; },
+  saveZuruecknehmen: async () => { log.push('zuruecknehmen'); return { entfernt: true }; } }) });
+const nein = imTresor(false);
+await tippe(nein, 'bookledgerpro-backup.blpr.json');
+ok('Speichern in den Tresorordner: Rückfrage nennt Datei und den verschlüsselten Ort „BookLedgerPro/Sicherung“',
+  nein.log.some((x) => typeof x === 'string' && /^frage:„bookledgerpro-backup\.blpr\.json“ liegt jetzt im Tresorordner/.test(x) && /BookLedgerPro\/Sicherung/.test(x)));
+ok('… „Abbrechen“ nimmt genau diese Datei wieder heraus und sagt es', nein.log.includes('zuruecknehmen') && hinweise(nein).some((h) => /Wieder entfernt/.test(h)));
+const ja = imTresor(true);
+await tippe(ja, 'b.json');
+ok('… „OK“ lässt sie liegen (nichts zurückgenommen), Meldung „im Tresorordner“', !ja.log.includes('zuruecknehmen') && hinweise(ja).some((h) => /im Tresorordner/.test(h)));
+const ausserhalb = welt({ dateien: (log) => ({ save: async (a) => { log.push(['save', a]); return { saved: true, imTresor: false }; }, saveZuruecknehmen: async () => { log.push('zuruecknehmen'); return {}; } }) });
+await tippe(ausserhalb, 'c.json');
+ok('… außerhalb des Tresors keine Rückfrage', !ausserhalb.log.some((x) => typeof x === 'string' && x.startsWith('frage:')) && !ausserhalb.log.includes('zuruecknehmen'));
+const filesJava = lies('android/app/src/main/java/de/familyprojekt/bookledgerpro/BlpFilesPlugin.java').toString('utf8');
+const savedRumpf = filesJava.slice(filesJava.indexOf('private void saved('), filesJava.indexOf('saveZuruecknehmen'));
+ok('BlpFilesPlugin (nur gelesen, Android nicht gebaut): Inhalt vor dem Dialog in den Zwischenspeicher, nicht nur im RAM',
+  /out\.write\(bytes\); out\.getFD\(\)\.sync\(\);[\s\S]*startActivityForResult\(call, intent, "saved"\)/.test(filesJava.slice(filesJava.indexOf('public void save('), filesJava.indexOf('private void loeschen'))) && !/private byte\[\] pending/.test(filesJava));
+ok('… nach gescheitertem Schreiben und bei verlorenem Inhalt wird die angelegte Datei gelöscht (DocumentsContract.deleteDocument)',
+  /DocumentsContract\.deleteDocument/.test(filesJava) && (savedRumpf.match(/loeschen\(uri\)/g) || []).length >= 2 && /catch \(Exception error\) \{\s*datei\.delete\(\);\s*loeschen\(uri\);/.test(savedRumpf));
+ok('… leerer Inhalt wird abgewiesen, Tresor-Erkennung über NativeUtil.imTresor und den gemerkten Baum', /bytes\.length == 0\) \{ call\.reject\("FILE_EMPTY"\)/.test(filesJava)
+  && /NativeUtil\.imTresor\(baumId, DocumentsContract\.getDocumentId\(uri\)\)/.test(filesJava) && /BlpTresorPlugin\.PREFS/.test(filesJava));
 
 console.log('— Tresorordner (Schritt C): gemeinsames Paket und Brücke');
 const { pruefen: tresorPruefen } = await import('./tresor-nachziehen.mjs');

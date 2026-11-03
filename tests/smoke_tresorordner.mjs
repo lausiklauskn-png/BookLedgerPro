@@ -134,14 +134,25 @@ const page = await ctx.newPage();
 page.setDefaultTimeout(15000);
 const fehler = [];
 page.on('pageerror', (e) => fehler.push(String(e.message || e)));
-page.on('dialog', (d) => d.accept());
+let dialogeAblehnen = 0;   // Rückfrage „neuer, leerer Tresor?“ (Plan 2026-11-03): die ersten N Fragen mit „Abbrechen“ beantworten
+page.on('dialog', (d) => (dialogeAblehnen > 0 ? (dialogeAblehnen--, d.dismiss()) : d.accept()));
 await page.goto(BASIS + '/__mit.html'); await page.waitForFunction(() => window.__probeBereit === true);
 ok('mit Brücke verfügbar', await page.evaluate(() => window.__probe.tresorordnerVerfuegbar()));
 await page.evaluate(() => window.__probe.neu());
 await warte(page, '[data-tresor-waehlen]');
 await page.click('[data-tresor-waehlen]');
-await warte(page, '[data-tresor-anlegen]');
-ok('nach der Ordnerwahl: „anlegen“ mit Ordnername', await page.evaluate(() => /SD-Karte/.test(document.querySelector('[data-tresor-status]').textContent)));
+await warte(page, '[data-tresor-kein-tresor]');
+ok('nach der Ordnerwahl: Ordnername und „kein Tresor – wähle den Ordner mit tresorordner.json“ (Plan 2026-11-03)', await page.evaluate(() => /SD-Karte/.test(document.querySelector('[data-tresor-status]').textContent)
+  && /tresorordner\.json/.test(document.querySelector('[data-tresor-kein-tresor]').textContent)));
+ok('… „neu anlegen“ ist zugeklappt, der Hauptknopf wählt einen anderen Ordner', await page.evaluate(() => !document.querySelector('[data-tresor-neu-anlegen]').open
+  && document.querySelector('[data-tresor-status] .btn-primary')?.hasAttribute('data-tresor-waehlen')));
+await page.click('[data-tresor-neu-anlegen] > summary');
+await page.check('[data-tresor-merken]');
+dialogeAblehnen = 1;
+await page.click('[data-tresor-anlegen]');
+await page.waitForTimeout(300);
+ok('… Rückfrage mit „Abbrechen“ beantwortet: kein neuer Tresor', await page.evaluate(() => !window.__log.some((x) => x[0] === 'anlegen')));
+if (!(await page.evaluate(() => document.querySelector('[data-tresor-neu-anlegen]')?.open))) await page.click('[data-tresor-neu-anlegen] > summary');
 await page.check('[data-tresor-merken]');
 await page.click('[data-tresor-anlegen]');
 await warte(page, '[data-tresor-offen]');

@@ -2,6 +2,10 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**Tresor-Plan (Klaus 2026-11-03: „Ja zum Plan“, nicht veröffentlicht):** „Speichern unter“ hinterlässt keine 0-Byte-Dateien mehr
+(`BlpFilesPlugin`: Inhalt im Zwischenspeicher, Löschen bei Fehler), fragt beim Speichern in den Tresorordner nach; „Tresorordner anlegen“ nur nach
+Rückfrage, nie im Verwaltungs-/Fachordner; Hilfe „Wo liegt was?“ (`src/ui/woLiegtWas.js`). Proben `smoke_tresorplan` 11, `test-native` 62. Stand: `docs/PULS.md`.
+
 **Familienakte-Pro-Verbund (Abschluss 2026-11-02):** Produktbau #445/#446 auf main;
 Android und Windows **0.1.8 veröffentlicht**, bestehende Identitäten erhalten.
 Windows-App-Paar mit Familienakte vollständig geprüft; Android-Paar wegen abgebrochener
@@ -11,7 +15,7 @@ Aktuell: `docs/PULS.md`, `BRIEF_ABSCHLUSS_2026-11-02_FAMILIENAKTE-PRO-VERBUND.md
 Nachfolge: `BRIEF_SITZUNG_2026-11-02_NACH-PRO-VERBUND.md`. Bereits veröffentlichte Versionen
 nicht erneut auslösen. Die folgenden älteren Abschnitte sind historische Zwischenstände.
 
-**Pro-Umbau 14 A3 (2026-10-31):** Tresor-Paket aus Workflow PDF Pro (#49) mit acht Fächern nachgezogen (neu „Private Brain V3“, „Familienakte“, „Eingang-Familienakte“), Bedien-Bausteine **Fassung 7** (Überall suchen kennt die neuen Fächer). WPP antwortet jetzt auch im Netz (`native/native-netz.js` dort), V3 #32 mit Fix #34 gemergt (Ursache: Versionssprung von außen in `ki-tresor.js`). Proben `run.mjs` 2645/0 · `test-native` 52 · `test-pro-bedienung` 64 · `smoke_umbau13` 57 · `smoke_tresorordner` 30 · `smoke_netzbrief` 11. **Nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-14-A3-REST.md`.
+**Pro-Umbau 14 A3 (2026-10-31):** Tresor-Paket aus Workflow PDF Pro (#49) nachgezogen — heute **neun Fächer** (`Fach.java`; `eingang-private-brain` kam am 01.11. dazu, früher hieß es hier „acht“) (neu „Private Brain V3“, „Familienakte“, „Eingang-Familienakte“), Bedien-Bausteine **Fassung 7** (Überall suchen kennt die neuen Fächer). WPP antwortet jetzt auch im Netz (`native/native-netz.js` dort), V3 #32 mit Fix #34 gemergt (Ursache: Versionssprung von außen in `ki-tresor.js`). Proben `run.mjs` 2645/0 · `test-native` 52 · `test-pro-bedienung` 64 · `smoke_umbau13` 57 · `smoke_tresorordner` 30 · `smoke_netzbrief` 11. **Nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-14-A3-REST.md`.
 
 **Pro-Umbau 14, Sitzung A2 (2026-10-31):** Netz liest den ganzen Brief — „Mit Ausschnitt antworten“ vergleicht jeden Beleg in Abschnitten (Briefende immer dabei), eine Antwortzeile je Beleg, Korpus baut sich bei neuen Belegen selbst neu (`src/sbkim/netz.js`, `src/domain/ueberall.js`, Ereignis `blp-belege-geaendert` aus `documents.js`); Probe `tests/smoke_netzbrief.mjs` 11 · Gegenprobe `tests/gegenprobe_netzbrief.mjs` 5/5 (#436, Basic #30). Private Brain Pro/V3 antworteten im Netz nie (Liste statt Float32Array) — PB #119, V3 #32. Inventur Tresorordner und sechs Fragen an Klaus: `BRIEF_ABSCHLUSS_2026-10-31_PRO-UMBAU-14A2.md`; **nächste Sitzung:** `BRIEF_SITZUNG_PRO-UMBAU-14-NACH-A2.md`.
 
