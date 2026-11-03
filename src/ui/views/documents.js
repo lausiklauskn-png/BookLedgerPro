@@ -1446,6 +1446,19 @@ function belegAktionen(b, visionBereit) {
       },
     }));
   }
+  // „Original speichern …“ mit dem echten Namen (gemeinsamer Tresor-Plan 2026-11-03, Punkt 6). In der App geht der Tipp an
+  // Androids Speichern-Dialog; liegt das Ziel im Tresorordner, fragt die App nach (native/blp-native.js).
+  wrap.appendChild(el('button', {
+    class: 'btn btn-sm', type: 'button', 'data-beleg-speichern': b.id, text: t('docs.speichern'),
+    onClick: async () => {
+      const bytes = await getBelegBytes(b.id);
+      if (!bytes) { alert(t('docs.geben.fehlt')); return; }
+      const url = URL.createObjectURL(new Blob([bytes], { type: b.mediaType || 'application/octet-stream' }));
+      const a = el('a', { href: url, download: b.name || 'Beleg' });
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    },
+  }));
   wrap.appendChild(el('button', { class: 'btn btn-sm', text: t('common.delete'), onClick: () => belegLoeschen(b) }));
   return wrap;
 }

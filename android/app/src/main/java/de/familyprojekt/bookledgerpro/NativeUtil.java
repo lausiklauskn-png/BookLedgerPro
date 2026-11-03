@@ -43,4 +43,19 @@ final class NativeUtil {
     static boolean eigeneAdresse(String scheme, String host) {
         return "https".equals(scheme) && "lausiklauskn-png.github.io".equals(host);
     }
+
+    /** Liegt das Dokument (Kennung „Speicher:Pfad“ des Android-Speichers) im Baum des gemerkten Tresorordners oder in einem
+     *  Ordner „Tresorordner“? Groß-/Kleinschreibung zählt nicht (SD-Karten mit FAT/exFAT). Leere Werte: nein.
+     *  Erkennbar ist nur, was unter dem in BookLedgerPro gewählten Tresorordner liegt — ein Tresor, den nur andere Apps kennen, nicht. */
+    static boolean imTresor(String baumId, String dokId) {
+        if (dokId == null || !dokId.contains(":")) return false;
+        String dok = dokId.toLowerCase(Locale.ROOT);
+        String pfad = dok.substring(dok.indexOf(':') + 1);
+        for (String teil : pfad.split("/")) if (teil.equals("tresorordner")) return true;
+        if (baumId == null || !baumId.contains(":")) return false;
+        String baum = baumId.toLowerCase(Locale.ROOT);
+        while (baum.endsWith("/")) baum = baum.substring(0, baum.length() - 1);
+        if (baum.endsWith(":")) return dok.startsWith(baum);
+        return dok.startsWith(baum + "/");
+    }
 }

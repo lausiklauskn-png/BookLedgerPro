@@ -21,7 +21,7 @@
   var WINDOWS = PLATTFORM === 'windows';
   document.documentElement.setAttribute('data-nativ', PLATTFORM);
 
-  function hinweis(text) {
+  function hinweis(text, ms) {
     try {
       var d = document.createElement('div');
       d.setAttribute('role', 'status'); d.setAttribute('data-nativ-hinweis', '');
@@ -29,7 +29,7 @@
       d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483000;max-width:90vw;' +
         'padding:10px 14px;border-radius:10px;background:#1f2933;color:#fff;font:15px/1.35 system-ui,sans-serif;box-shadow:0 4px 18px rgba(0,0,0,.3)';
       (document.body || document.documentElement).appendChild(d);
-      setTimeout(function () { d.remove(); }, 4000);
+      setTimeout(function () { d.remove(); }, ms || 4000);
     } catch (e) { /* nur Anzeige */ }
   }
 
@@ -48,16 +48,46 @@
   }
 
   // ---- 2 · Speichern -------------------------------------------------------------------------------------------
+  // Befund SD-Karte 2026-11-03: zwei Sicherungen mit 0 Byte neben dem Tresor. Die Hülle legt den Inhalt jetzt vor dem
+  // Dialog im App-Zwischenspeicher ab und löscht eine angelegte Datei wieder, wenn das Schreiben scheitert (BlpFilesPlugin).
+  // Hier: leere Inhalte gar nicht erst anbieten, jeden Fehler beim Namen nennen, und „Speichern unter“ in den Tresorordner
+  // erkennen (keine offenen Dateien neben dem Tresor; die Sicherung liegt verschlüsselt in BookLedgerPro/Sicherung).
+  var SPEICHER_FEHLER = {
+    SAVE_FAILED: 'Speichern ging nicht. Die angefangene Datei wurde wieder gelöscht. Bitte noch einmal versuchen.',
+    SAVE_FAILED_EMPTY_LEFT: 'Speichern ging nicht. Die leere Datei „{name}“ (0 Byte) ließ sich nicht löschen – bitte in der Dateien-App von Hand löschen.',
+    SAVE_DATA_LOST: 'Speichern ging nicht: der Inhalt ging unterwegs verloren. Die leere Datei wurde gelöscht. Bitte noch einmal speichern.',
+    SAVE_NO_SPACE: 'Speichern ging nicht: kein Platz im Speicher der App.',
+    FILE_EMPTY: 'Die Datei ist leer – nichts gespeichert.',
+    FILE_INVALID: 'Die Datei ist zu groß oder beschädigt – nichts gespeichert.',
+  };
+  var TRESOR_FRAGE = '„{name}“ liegt jetzt im Tresorordner, offen neben den verschlüsselten Fächern.\n\n' +
+    'Offene Dateien gehören nicht in den Tresor-Ordner: die Sicherung von BookLedgerPro liegt schon verschlüsselt in „BookLedgerPro/Sicherung“. ' +
+    'Besser z. B. unter „Download“ speichern.\n\nOK = trotzdem dort lassen · Abbrechen = wieder entfernen';
+  function speicherFehler(e, name) {
+    var c = String((e && (e.code || e.message)) || e || '');
+    var satz = SPEICHER_FEHLER[c] || 'Speichern ging nicht. Bitte noch einmal versuchen.';
+    return satz.replace('{name}', name || 'Datei');
+  }
   function speichern(href, name) {
+    name = name || 'Datei';
     return fetch(href).then(function (r) { return r.blob(); }).then(function (blob) {
-      if (blob.size > MAX) throw new Error('zu groß');
+      if (blob.size > MAX) throw new Error('FILE_INVALID');
+      if (!blob.size) throw new Error('FILE_EMPTY');
       return base64(blob).then(function (data) {
-        return Dateien.save({ name: name || 'Datei', mime: blob.type || 'application/octet-stream', data: data });
+        return Dateien.save({ name: name, mime: blob.type || 'application/octet-stream', data: data });
       });
     }).then(function (r) {
-      hinweis(r && r.saved ? 'Gespeichert: ' + (name || 'Datei') : 'Nicht gespeichert.');
+      if (r && r.saved && r.imTresor) {
+        if (window.confirm(TRESOR_FRAGE.replace('{name}', name))) { hinweis('Gespeichert (im Tresorordner): ' + name, 6000); return r; }
+        var weg = typeof Dateien.saveZuruecknehmen === 'function' ? Dateien.saveZuruecknehmen() : Promise.resolve({ entfernt: false });
+        return weg.then(function (x) {
+          hinweis(x && x.entfernt ? 'Wieder entfernt. Bitte einen Ordner außerhalb des Tresors wählen.' : '„' + name + '“ ließ sich nicht entfernen – bitte in der Dateien-App löschen.', 8000);
+          return { saved: false, entfernt: !!(x && x.entfernt) };
+        });
+      }
+      hinweis(r && r.saved ? 'Gespeichert: ' + name : 'Nicht gespeichert.');
       return r;
-    }).catch(function () { hinweis('Speichern ging nicht. Bitte noch einmal versuchen.'); });
+    }).catch(function (e) { hinweis(speicherFehler(e, name), 9000); return { saved: false, fehler: String((e && (e.code || e.message)) || e) }; });
   }
   if (Dateien) {
     document.addEventListener('click', function (e) {

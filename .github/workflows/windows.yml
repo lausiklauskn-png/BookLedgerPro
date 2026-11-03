@@ -48,6 +48,7 @@ jobs:
           NODE_PATH=windows/node_modules node tests/pro_uebergabe.mjs
           NODE_PATH=windows/node_modules node tests/gegenprobe_pro_uebergabe.mjs
           NODE_PATH=windows/node_modules node tests/smoke_tresorordner.mjs
+          NODE_PATH=windows/node_modules node tests/smoke_tresorplan.mjs
           NODE_PATH=windows/node_modules node tests/smoke_umbau4.mjs
 
   windows:

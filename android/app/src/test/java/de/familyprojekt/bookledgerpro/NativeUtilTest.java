@@ -28,4 +28,17 @@ public class NativeUtilTest {
         try { NativeUtil.integer("5"); fail(); } catch (java.io.IOException ok) { }
     }
     @Test public void hexKlein() { assertEquals("00ff10", NativeUtil.hex(new byte[] {0, (byte) 255, 16})); }
+    /** Befund SD-Karte 2026-11-03: Sicherungen per „Speichern unter“ lagen offen neben dem Tresor. */
+    @Test public void speichernImTresorErkannt() {
+        String baum = "1A2B-3C4D:Privat Brain Pro Hauptablageordner";
+        assertTrue(NativeUtil.imTresor(baum, "1A2B-3C4D:Privat Brain Pro Hauptablageordner/bookledgerpro-backup.blpr.json"));
+        assertTrue(NativeUtil.imTresor(baum, "1a2b-3c4d:privat brain pro hauptablageordner/BookLedgerPro/x.json"));
+        assertTrue(NativeUtil.imTresor(null, "primary:Irgendwo/Tresorordner/x.json"));
+        assertFalse(NativeUtil.imTresor(baum, "1A2B-3C4D:Privat Brain Pro Hauptablageordner alt/x.json"));
+        assertFalse(NativeUtil.imTresor(baum, "primary:Download/bookledgerpro-backup.blpr.json"));
+        assertFalse(NativeUtil.imTresor(baum, "primary:Privat Brain Pro Hauptablageordner/x.json"));
+        assertFalse(NativeUtil.imTresor(null, "primary:Download/x.json"));
+        assertFalse(NativeUtil.imTresor(baum, null));
+        assertTrue(NativeUtil.imTresor("1A2B-3C4D:", "1A2B-3C4D:x.json"));
+    }
 }

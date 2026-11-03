@@ -102,6 +102,7 @@ import { mountLegal } from './views/legal.js';
 import { mountNetwork } from './views/network.js';
 import { mountSbkimSuche } from './views/sbkimsuche.js';
 import { mountTresorordner, tresorordnerVerfuegbar, neuImTresorordner } from './views/tresorordner.js';
+import { woLiegtWas } from './woLiegtWas.js';
 import { mikrofonBeobachten, SPRACHEN as MIKRO_SPRACHEN, wortSpeicherZahl } from './mikro.js';
 import { mountSafebox } from './views/safebox.js';
 import { mountDashboard } from './views/dashboard.js';
@@ -1033,13 +1034,17 @@ function tresorAblageSection() {
     const tresor = [el('h4', { class: 'ta-unter', text: t('ta.tresor') })];
     const knoepfe = [];
     if (!z.gewaehlt) {
-      tresor.push(el('p', { class: 'muted small', text: t('ta.keinOrdner') }));
+      tresor.push(el('p', { class: 'muted small', text: t('ta.keinOrdner') }), el('p', { class: 'muted small', 'data-ta-waehlen-hinweis': '', text: t('tresor.waehlenHinweis') }));
       knoepfe.push(knopf(t('ta.waehlen'), tun(() => b.ordnerWaehlen()), true, 'data-ta-waehlen'));
     } else {
       tresor.push(ortZeile(offen, pfadText(z, ''), 'tresor', 'data-ta-tresor-ort'));
       if (z.erreichbar === false || !z.vorhanden) {
-        if (z.erreichbar !== false) tresor.push(el('p', { class: 'muted small', text: t('ta.anlegenWeiter') }));
-        knoepfe.push(knopf(t('ta.weiter'), () => navigate('tresorordner'), true, 'data-ta-weiter'));
+        // Gemeinsamer Plan 2026-11-03: erst den richtigen Ordner anbieten; neu anlegen nur in der Tresorordner-Ansicht nach Rückfrage.
+        if (z.erreichbar !== false) {
+          tresor.push(el('p', { class: 'small', 'data-ta-kein-tresor': '', text: t('ta.anlegenWeiter') }));
+          knoepfe.push(knopf(t('ta.waehlenMitTresor'), tun(() => b.ordnerWaehlen()), true, 'data-ta-waehlen'));
+        }
+        knoepfe.push(knopf(t('ta.weiter'), () => navigate('tresorordner'), z.erreichbar === false, 'data-ta-weiter'));
       } else if (!offen) {
         knoepfe.push(knopf(t('ta.entsperren'), tun(() => b.entsperren(!!z.gemerkt)), true, 'data-ta-entsperren'));
       } else {
@@ -1057,6 +1062,7 @@ function tresorAblageSection() {
       el('div', { class: 'ta-teil', 'data-ta-ablage': '' }, ablage),
       el('div', { class: 'ta-teil', 'data-ta-tresor': '' }, tresor),
       el('div', { class: 'btn-row' }, knoepfe),
+      woLiegtWas({ kasten: false }),
       _taMeldung ? el('p', { class: 'small', role: 'status', 'data-ta-meldung': '', text: _taMeldung }) : null].filter(Boolean));
   }
   render();

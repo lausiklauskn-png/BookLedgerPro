@@ -54,7 +54,8 @@ import org.json.JSONObject;
  */
 @CapacitorPlugin(name = "BlpTresor")
 public final class BlpTresorPlugin extends Plugin {
-    private static final String PREFS = "blp-tresorordner-v1", ALIAS = "bookledgerpro-tresorordner-merken-v1";
+    static final String PREFS = "blp-tresorordner-v1";
+    private static final String ALIAS = "bookledgerpro-tresorordner-merken-v1";
     private static final String APP = Fach.BOOKLEDGER_APP;
     private final PluginWorker worker = new PluginWorker("tresor");
     private SafAblage ablage;

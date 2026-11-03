@@ -3,7 +3,10 @@ package de.familyprojekt.bookledgerpro;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
+import android.provider.DocumentsContract;
+import android.provider.OpenableColumns;
 import android.util.Base64;
 import androidx.activity.result.ActivityResult;
 import androidx.core.content.FileProvider;
@@ -24,41 +27,100 @@ import java.util.UUID;
 @CapacitorPlugin(name = "BlpFiles")
 public final class BlpFilesPlugin extends Plugin {
     private final PluginWorker worker = new PluginWorker("files");
-    private byte[] pending;
-
-    private static byte[] decode(PluginCall call) {
-        String data = call.getString("data");
-        if (data == null) return null;
-        try {
-            byte[] bytes = Base64.decode(data, Base64.DEFAULT);
-            return bytes.length > NativeUtil.MAX_BYTES ? null : bytes;
-        } catch (IllegalArgumentException malformed) { return null; }
-    }
+    // Befund SD-Karte 2026-11-03: zwei Sicherungen „bookledgerpro-backup-….blpr.json“ mit 0 Byte. Androids Speichern-Dialog
+    // (ACTION_CREATE_DOCUMENT) legt die Datei schon beim Tipp auf „Speichern“ leer an. Bis hierher lag der Inhalt nur im
+    // Arbeitsspeicher (bis 100 MB); wurde die App im Hintergrund beendet, während der Dialog offen war (großer Inhalt, Tablet),
+    // kam sie ohne Inhalt zurück und meldete nur „Nicht gespeichert.“ — die leere Datei blieb. Ebenso nach einem Schreibfehler.
+    // Jetzt: Inhalt vor dem Dialog in den App-Zwischenspeicher (übersteht das Beenden), danach gestreamt in die Datei; scheitert
+    // etwas, wird die angelegte Datei wieder gelöscht und der Fehler genannt.
+    private File offen() { return new File(new File(getContext().getCacheDir(), "speichern"), "offen.bin"); }
+    private Uri zuletzt; private long zuletztZeit;
 
     @PluginMethod public void save(PluginCall call) {
         byte[] bytes = decode(call);
         if (bytes == null) { call.reject("FILE_INVALID"); return; }
-        pending = bytes;
+        if (bytes.length == 0) { call.reject("FILE_EMPTY"); return; }
+        File datei = offen();
+        try {
+            File dir = datei.getParentFile();
+            if (dir != null && !dir.isDirectory() && !dir.mkdirs()) throw new java.io.IOException();
+            try (FileOutputStream out = new FileOutputStream(datei)) { out.write(bytes); out.getFD().sync(); }
+        } catch (Exception keinPlatz) { datei.delete(); call.reject("SAVE_NO_SPACE"); return; }
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
             .setType(NativeUtil.mime(call.getString("mime"))).putExtra(Intent.EXTRA_TITLE, NativeUtil.filename(call.getString("name")));
         startActivityForResult(call, intent, "saved");
     }
 
+    private void loeschen(Uri uri) {
+        try { DocumentsContract.deleteDocument(getContext().getContentResolver(), uri); } catch (Exception egal) { /* unten gemeldet */ }
+    }
+    private boolean nochDa(Uri uri) {
+        try (Cursor c = getContext().getContentResolver().query(uri, new String[] { OpenableColumns.SIZE }, null, null, null)) {
+            return c != null && c.moveToFirst();
+        } catch (Exception weg) { return false; }
+    }
+    private long groesse(Uri uri) {
+        try (Cursor c = getContext().getContentResolver().query(uri, new String[] { OpenableColumns.SIZE }, null, null, null)) {
+            if (c != null && c.moveToFirst() && !c.isNull(0)) return c.getLong(0);
+        } catch (Exception unbekannt) { /* manche Anbieter nennen keine Größe */ }
+        return -1;
+    }
+    private boolean imTresor(Uri uri) {
+        try {
+            String baum = getContext().getSharedPreferences(BlpTresorPlugin.PREFS, Context.MODE_PRIVATE).getString("baum", null);
+            String baumId = baum == null ? null : DocumentsContract.getTreeDocumentId(Uri.parse(baum));
+            return NativeUtil.imTresor(baumId, DocumentsContract.getDocumentId(uri));
+        } catch (Exception unbekannt) { return false; }
+    }
+
     @ActivityCallback private void saved(PluginCall call, ActivityResult result) {
-        byte[] bytes = pending; pending = null;
-        if (call == null) return;
+        File datei = offen();
         Intent data = result.getData();
-        if (result.getResultCode() != Activity.RESULT_OK || data == null || data.getData() == null || bytes == null) {
-            call.resolve(new JSObject().put("saved", false)); return;
+        if (result.getResultCode() != Activity.RESULT_OK || data == null || data.getData() == null) {
+            datei.delete();
+            if (call != null) call.resolve(new JSObject().put("saved", false));
+            return;
         }
         Uri uri = data.getData();
-        worker.submit(call, () -> {
-            try (OutputStream out = getContext().getContentResolver().openOutputStream(uri, "wt")) {
+        Runnable schreiben = () -> {
+            if (!datei.isFile()) {
+                // Inhalt verloren (Zwischenspeicher geleert): die leer angelegte Datei nicht stehen lassen.
+                loeschen(uri);
+                if (call != null) call.reject(nochDa(uri) ? "SAVE_FAILED_EMPTY_LEFT" : "SAVE_DATA_LOST");
+                return;
+            }
+            long soll = datei.length();
+            try {
+                OutputStream out;
+                try { out = getContext().getContentResolver().openOutputStream(uri, "wt"); }
+                catch (Exception keinWt) { out = getContext().getContentResolver().openOutputStream(uri, "w"); } // frisch angelegt, also leer
                 if (out == null) throw new java.io.IOException("SAVE_FAILED");
-                out.write(bytes);
-                call.resolve(new JSObject().put("saved", true));
-            } catch (Exception error) { call.reject("SAVE_FAILED"); }
-        });
+                try (OutputStream o = out; java.io.InputStream in = new java.io.FileInputStream(datei)) {
+                    byte[] puffer = new byte[65536]; int n;
+                    while ((n = in.read(puffer)) != -1) o.write(puffer, 0, n);
+                    o.flush();
+                }
+                if (soll > 0 && groesse(uri) == 0) throw new java.io.IOException("SAVE_FAILED");
+                datei.delete();
+                boolean tresor = imTresor(uri);
+                if (tresor) { zuletzt = uri; zuletztZeit = System.currentTimeMillis(); }
+                if (call != null) call.resolve(new JSObject().put("saved", true).put("imTresor", tresor));
+            } catch (Exception error) {
+                datei.delete();
+                loeschen(uri);
+                if (call != null) call.reject(nochDa(uri) ? "SAVE_FAILED_EMPTY_LEFT" : "SAVE_FAILED");
+            }
+        };
+        // Nach einem Neustart der App (call == null oder ohne Seite) wird trotzdem geschrieben: die Datei ist dann vollständig statt leer.
+        if (call == null) worker.execute(schreiben); else worker.submit(call, schreiben);
+    }
+
+    /** „Speichern unter“ in den Tresorordner (Regel des gemeinsamen Plans: keine offenen Dateien in den Tresor). Die Seite fragt
+     *  nach dem Speichern „Trotzdem dort lassen?“; „Abbrechen“ entfernt genau die eben gespeicherte Datei (höchstens 10 Minuten). */
+    @PluginMethod public void saveZuruecknehmen(PluginCall call) {
+        Uri uri = zuletzt; long zeit = zuletztZeit; zuletzt = null;
+        if (uri == null || System.currentTimeMillis() - zeit > 10 * 60 * 1000L) { call.resolve(new JSObject().put("entfernt", false)); return; }
+        worker.submit(call, () -> { loeschen(uri); call.resolve(new JSObject().put("entfernt", !nochDa(uri))); });
     }
 
     @PluginMethod public void share(PluginCall call) {

@@ -10,7 +10,8 @@
 import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { getSettings, navigate } from '../../state.js';
-import { FAECHER, eintraegeSuchen, oeffenbar, istSicherung, sicherungLesen, fehlerText, bedeutungsText, uebernehmbar, neueEintraege, unterordnerGruppen, appFuer } from '../../domain/tresorordner.js';
+import { woLiegtWas } from '../woLiegtWas.js';
+import { FAECHER, eintraegeSuchen, oeffenbar, istSicherung, sicherungLesen, fehlerText, bedeutungsText, uebernehmbar, neueEintraege, unterordnerGruppen, appFuer, ordnerArt } from '../../domain/tresorordner.js';
 import { cosinus } from '../../domain/belegsuche.js';
 import { importSnapshot } from '../../core/backup.js';
 import { proDateiAufnehmen } from './documents.js';
@@ -71,19 +72,38 @@ function statusKarte() {
   const b = brueckeVon(), z = _zustand || {};
   const kinder = [el('h2', { class: 'card-title', text: t('tresor.titel') }), el('p', { class: 'muted small', text: t('tresor.intro') })];
   if (!z.gewaehlt) {
-    kinder.push(el('div', { class: 'btn-row' }, [knopf(t('tresor.waehlen'), () => tun(() => b.ordnerWaehlen()), { primaer: true, attr: { 'data-tresor-waehlen': '' } })]));
+    kinder.push(el('p', { class: 'muted small', 'data-tresor-waehlen-hinweis': '', text: t('tresor.waehlenHinweis') }),
+      el('div', { class: 'btn-row' }, [knopf(t('tresor.waehlen'), () => tun(() => b.ordnerWaehlen()), { primaer: true, attr: { 'data-tresor-waehlen': '' } })]));
   } else if (z.erreichbar === false) {
     kinder.push(el('p', { 'data-tresor-problem': '', text: fehlerText(z.problem) }),
       el('div', { class: 'btn-row' }, [knopf(t('tresor.nochmal'), () => tun(async () => null)), knopf(t('tresor.andererOrdner'), () => tun(() => b.ordnerWaehlen()))]));
   } else if (!z.vorhanden) {
+    // Gemeinsamer Plan 2026-11-03: kein zweiter, leerer Tresor ohne ausdrückliche Rückfrage. Zuerst sagen, was los ist,
+    // und den richtigen Ordner anbieten; „neu anlegen“ ist der zweite Knopf und fragt noch einmal.
     const m = merkenFeld();
+    const art = ordnerArt(z.pfad || z.ordner);
+    const name = String(z.ordner || '').split('/').filter(Boolean).pop() || '';
     kinder.push(el('p', { text: t('tresor.ordner').replace('{ordner}', z.ordner || '') }));
     if (z.istFachOrdner) kinder.push(el('p', { 'data-tresor-problem': '', text: fehlerText('TRESOR_ORDNER_IST_FACH') }));
-    kinder.push(el('p', { class: 'muted small', text: t('tresor.anlegenHinweis') }), m.label,
+    else if (art === 'verwaltung') kinder.push(el('p', { 'data-tresor-problem': 'verwaltung', text: t('tresor.ordnerIstVerwaltung') }));
+    else if (art === 'fach') kinder.push(el('p', { 'data-tresor-problem': 'fach', text: t('tresor.ordnerIstFachName').replace('{ordner}', name) }));
+    kinder.push(el('p', { 'data-tresor-kein-tresor': '', text: t('tresor.keinTresor') }),
       el('div', { class: 'btn-row' }, [
-        knopf(t('tresor.anlegen'), () => tun(() => b.anlegen(m.box.checked)), { primaer: true, attr: { 'data-tresor-anlegen': '' } }),
-        knopf(t('tresor.andererOrdner'), () => tun(() => b.ordnerWaehlen())),
+        knopf(t('tresor.waehlenMitTresor'), () => tun(() => b.ordnerWaehlen()), { primaer: true, attr: { 'data-tresor-waehlen': '' } }),
       ]));
+    // Im Verwaltungs- oder einem Fach-Ordner nie einen neuen Tresor anbieten.
+    if (!z.istFachOrdner && !art) {
+      kinder.push(el('details', { 'data-tresor-neu-anlegen': '' }, [
+        el('summary', { class: 'small', text: t('tresor.neuAnlegen') }),
+        el('p', { class: 'muted small', text: t('tresor.anlegenHinweis') }), m.label,
+        el('div', { class: 'btn-row' }, [
+          knopf(t('tresor.anlegen'), () => tun(async () => {
+            if (!confirm(t('tresor.neuAnlegenFrage').replace('{ordner}', z.ordner || ''))) return { abgebrochen: true };
+            return b.anlegen(m.box.checked);
+          }), { attr: { 'data-tresor-anlegen': '' } }),
+        ]),
+      ]));
+    }
   } else if (!z.offen) {
     const m = merkenFeld();
     const teile = el('textarea', { rows: '5', 'data-tresor-teile': '', 'data-kein-mikro': '', placeholder: 'FPT1-…' });
@@ -193,6 +213,16 @@ async function ansehen(fach, e) {
   await navigator.share({ files: [datei], title: e.name });
 }
 
+// „Speichern unter …“ mit dem echten Namen aus dem verschlüsselten Verzeichnis (gemeinsamer Plan, Punkt 6). In der App geht
+// der Tipp an Androids Speichern-Dialog (native/blp-native.js); liegt das Ziel im Tresorordner, fragt die App nach.
+async function speichernUnter(fach, e) {
+  const datei = await brueckeVon().lesen(fach, e.id);
+  const url = URL.createObjectURL(datei);
+  const a = el('a', { href: url, download: e.name || datei.name || 'Datei' });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
 async function einspielen(fach, e, mitEinstellungen) {
   if (!confirm(mitEinstellungen ? t('tresor.einspielenErsetzenFrage') : t('tresor.einspielenFrage'))) return;
   const datei = await brueckeVon().lesen(fach, e.id);
@@ -210,6 +240,7 @@ function eintragZeile(f, e, ausschnittText) {
   } else if (oeffenbar(e)) {
     if (f.fach !== 'bookledgerpro') knoepfe.push(knopf(uebernommen ? t('tresor.nochmalUebernehmen') : t('tresor.uebernehmen'), () => tun(() => uebernehmen(f.fach, e)), { attr: { 'data-tresor-uebernehmen': e.id } }));
     if (navigator.share) knoepfe.push(knopf(t('tresor.ansehen'), () => tun(() => ansehen(f.fach, e))));
+    knoepfe.push(knopf(t('tresor.speichern'), () => tun(() => speichernUnter(f.fach, e)), { attr: { 'data-tresor-speichern': e.id } }));
   } else {
     const app = appFuer(f, e);
     if (app && brueckeVon().appOeffnen) knoepfe.push(knopf(t('tresor.inAppOeffnen').replace('{app}', app.name), () => inAppOeffnen(app), { attr: { 'data-tresor-app': app.app } }));
@@ -242,6 +273,9 @@ function zeichnen(suchen = false) {
   const b = brueckeVon();
   if (!b) return mount(_host, el('div', { class: 'card' }, [el('h2', { class: 'card-title', text: t('tresor.titel') }), el('p', { text: t('tresor.nurApp') })]));
   const teile = [statusKarte()];
+  // Hilfe „Wo liegt was?“ (gemeinsamer Plan): offen, solange kein Tresor verbunden ist.
+  const z = _zustand || {};
+  teile.push(woLiegtWas({ offen: !z.gewaehlt || (z.erreichbar !== false && !z.vorhanden) }));
   if (_zustand && _zustand.offen) {
     if (_proAusgang.length) teile.push(el('div', { class: 'card', 'data-pro-ausgang': '' }, [
       el('h3', { text: 'Pro-Übergaben' }),
