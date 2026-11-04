@@ -277,6 +277,8 @@
     tresor = Object.freeze({
       zustand: function () { return T.zustand(); },
       ordnerWaehlen: function () { return T.ordnerWaehlen(); },
+      // Klaus 2026-11-04: nur den Speicher wählen, Hauptordner finden oder anlegen, ein Passwort. Ältere Hülle → null.
+      einrichten: typeof T.tresorEinrichten === 'function' ? function (merken) { return T.tresorEinrichten({ merken: !!merken }); } : null,
       anlegen: function (merken) { return T.anlegen({ merken: !!merken }); },
       entsperren: function (merken) { return T.entsperren({ merken: !!merken }); },
       sperren: function (vergessen) { return T.sperren({ vergessen: !!vergessen }); },

@@ -49,6 +49,7 @@ import { parseUebernahmeParam, merkeUebernahme, merkeUebernahmeFehler } from '..
   } catch { /* fail-soft: App startet normal */ }
 })();
 import { geteiltParam, ohneGeteilt } from '../domain/workflowPdf.js';
+import { fehlerText as tresorFehlerText } from '../domain/tresorordner.js';
 import { merkeGeteilt, merkeGeteilteDateien } from './views/documents.js';
 
 // Aus Androids Teilen-Liste (Klaus 2026-10-26, Schritt 2 V1): sw.js hat die Dateien abgelegt und auf
@@ -1033,16 +1034,24 @@ function tresorAblageSection() {
     } else ablage.push(el('p', { class: 'muted small', 'data-ta-nur-app': '', text: t('ta.nurApp') }));
     const tresor = [el('h4', { class: 'ta-unter', text: t('ta.tresor') })];
     const knoepfe = [];
+    // Klaus 2026-11-04: „nur den Speicher wählen“. Gibt es den Weg (neue Hülle), ist er der Hauptknopf; sonst wie bisher.
+    const einrichten = b.einrichten ? knopf(t('ta.einrichten'), async () => {
+      _taMeldung = '';
+      try { const r = await b.einrichten(!!z.gemerkt); if (r && r.angelegt) _taMeldung = t('ta.einrichtenFertig'); }
+      catch (e) { _taMeldung = tresorFehlerText(String((e && (e.code || e.message)) || e)); }
+      paint();
+    }, true, 'data-ta-einrichten') : null;
     if (!z.gewaehlt) {
-      tresor.push(el('p', { class: 'muted small', text: t('ta.keinOrdner') }), el('p', { class: 'muted small', 'data-ta-waehlen-hinweis': '', text: t('tresor.waehlenHinweis') }));
-      knoepfe.push(knopf(t('ta.waehlen'), tun(() => b.ordnerWaehlen()), true, 'data-ta-waehlen'));
+      tresor.push(el('p', { class: 'muted small', text: t('ta.keinOrdner') }), el('p', { class: 'muted small', 'data-ta-waehlen-hinweis': '', text: t(einrichten ? 'ta.einrichtenHinweis' : 'tresor.waehlenHinweis') }));
+      knoepfe.push(einrichten || knopf(t('ta.waehlen'), tun(() => b.ordnerWaehlen()), true, 'data-ta-waehlen'));
     } else {
       tresor.push(ortZeile(offen, pfadText(z, ''), 'tresor', 'data-ta-tresor-ort'));
       if (z.erreichbar === false || !z.vorhanden) {
         // Gemeinsamer Plan 2026-11-03: erst den richtigen Ordner anbieten; neu anlegen nur in der Tresorordner-Ansicht nach Rückfrage.
         if (z.erreichbar !== false) {
           tresor.push(el('p', { class: 'small', 'data-ta-kein-tresor': '', text: t('ta.anlegenWeiter') }));
-          knoepfe.push(knopf(t('ta.waehlenMitTresor'), tun(() => b.ordnerWaehlen()), true, 'data-ta-waehlen'));
+          if (einrichten) knoepfe.push(einrichten);
+          knoepfe.push(knopf(t('ta.waehlenMitTresor'), tun(() => b.ordnerWaehlen()), !einrichten, 'data-ta-waehlen'));
         }
         knoepfe.push(knopf(t('ta.weiter'), () => navigate('tresorordner'), z.erreichbar === false, 'data-ta-weiter'));
       } else if (!offen) {

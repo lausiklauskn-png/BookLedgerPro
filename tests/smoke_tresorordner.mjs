@@ -43,6 +43,7 @@ window.__log = [];
     ordnerWaehlen: async () => { log('ordnerWaehlen'); z.gewaehlt = true; z.ordner = 'SD-Karte'; return zustand(); },
     anlegen: async (a) => { log('anlegen', a); z.vorhanden = true; z.offen = true; z.gemerkt = !!a.merken; return zustand(); },
     entsperren: async (a) => { log('entsperren', a); z.offen = true; return zustand(); },
+    ...(window.__einrichtenProbe ? { tresorEinrichten: async (a) => { log('tresorEinrichten', a); return { ...zustand(), angelegt: true }; } } : {}),
     sperren: async (a) => { log('sperren', a); z.offen = false; return zustand(); },
     passwortAendern: async () => (log('passwortAendern'), { geaendert: true }),
     ersatzErstellen: async () => { log('ersatzErstellen'); z.ersatz = Date.now(); return { teile: [1, 2, 3, 4, 5].map((i) => 'FPT1-PROBE-' + i), n: 5, k: 3 }; },
@@ -267,5 +268,28 @@ ok('gesperrt: keine Fächer mehr sichtbar, „Entsperren“ und „Passwort verg
 ok('keine Fehler auf der Seite', fehler.length === 0, fehler.join(' | '));
 const alle = await page.evaluate(() => JSON.stringify(window.__log));
 ok('kein Aufruf an die Brücke trägt ein Passwort', !/pass|kennwort/i.test(alle));
+
+console.log('— F. Ein-Schritt-Weg „Tresor einrichten – nur Speicher wählen“ (Klaus 2026-11-04) —');
+{
+  const c2 = await browser.newContext(); const p2 = await c2.newPage(); p2.setDefaultTimeout(15000);
+  // Neue Hülle: die Brücke kennt tresorEinrichten. Gestellt: Speicher gewählt, Tresor „Family-Projekt“ angelegt und offen.
+  await p2.addInitScript(() => { window.__einrichtenProbe = true; });
+  await p2.goto(BASIS + '/__mit.html'); await p2.waitForFunction(() => window.__probeBereit === true);
+  const hatBruecke = await p2.evaluate(() => typeof window.BLPNative?.tresor?.einrichten);
+  ok('neue Hülle: die Brücke bietet einrichten an', hatBruecke === 'function', hatBruecke);
+  await p2.evaluate(() => window.__probe.neu());
+  await warte(p2, '[data-tresor-status]');
+  ok('ohne gewählten Ordner ist „Tresor einrichten – nur Speicher wählen …“ der Hauptknopf, kein „Ordner wählen“', await p2.evaluate(() => {
+    const k = document.querySelector('[data-tresor-status] .btn-primary');
+    return !!k && k.hasAttribute('data-tresor-einrichten') && /nur Speicher wählen/.test(k.textContent) && !document.querySelector('[data-tresor-waehlen]')
+      && /Family-Projekt/.test(document.querySelector('[data-tresor-waehlen-hinweis]').textContent);
+  }));
+  await p2.click('[data-tresor-einrichten]');
+  await p2.waitForFunction(() => window.__log.some((x) => x[0] === 'tresorEinrichten'));
+  ok('ein Tipp ruft genau tresorEinrichten, ohne Passwort im Aufruf', await p2.evaluate(() => {
+    const r = window.__log.filter((x) => x[0] === 'tresorEinrichten'); return r.length === 1 && !/pass|kennwort/i.test(JSON.stringify(r));
+  }));
+  await c2.close();
+}
 
 await schluss();
