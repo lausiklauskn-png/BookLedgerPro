@@ -71,9 +71,11 @@ function merkenFeld() {
 function statusKarte() {
   const b = brueckeVon(), z = _zustand || {};
   const kinder = [el('h2', { class: 'card-title', text: t('tresor.titel') }), el('p', { class: 'muted small', text: t('tresor.intro') })];
+  // Klaus 2026-11-04: „nur den Speicher wählen“ (neue Hülle); ältere Hülle wie bisher.
+  const einrichten = b.einrichten ? knopf(t('ta.einrichten'), () => tun(() => b.einrichten(!!z.gemerkt)), { primaer: true, attr: { 'data-tresor-einrichten': '' } }) : null;
   if (!z.gewaehlt) {
-    kinder.push(el('p', { class: 'muted small', 'data-tresor-waehlen-hinweis': '', text: t('tresor.waehlenHinweis') }),
-      el('div', { class: 'btn-row' }, [knopf(t('tresor.waehlen'), () => tun(() => b.ordnerWaehlen()), { primaer: true, attr: { 'data-tresor-waehlen': '' } })]));
+    kinder.push(el('p', { class: 'muted small', 'data-tresor-waehlen-hinweis': '', text: t(einrichten ? 'ta.einrichtenHinweis' : 'tresor.waehlenHinweis') }),
+      el('div', { class: 'btn-row' }, [einrichten || knopf(t('tresor.waehlen'), () => tun(() => b.ordnerWaehlen()), { primaer: true, attr: { 'data-tresor-waehlen': '' } })]));
   } else if (z.erreichbar === false) {
     kinder.push(el('p', { 'data-tresor-problem': '', text: fehlerText(z.problem) }),
       el('div', { class: 'btn-row' }, [knopf(t('tresor.nochmal'), () => tun(async () => null)), knopf(t('tresor.andererOrdner'), () => tun(() => b.ordnerWaehlen()))]));
@@ -89,8 +91,9 @@ function statusKarte() {
     else if (art === 'fach') kinder.push(el('p', { 'data-tresor-problem': 'fach', text: t('tresor.ordnerIstFachName').replace('{ordner}', name) }));
     kinder.push(el('p', { 'data-tresor-kein-tresor': '', text: t('tresor.keinTresor') }),
       el('div', { class: 'btn-row' }, [
-        knopf(t('tresor.waehlenMitTresor'), () => tun(() => b.ordnerWaehlen()), { primaer: true, attr: { 'data-tresor-waehlen': '' } }),
-      ]));
+        einrichten,
+        knopf(t('tresor.waehlenMitTresor'), () => tun(() => b.ordnerWaehlen()), { primaer: !einrichten, attr: { 'data-tresor-waehlen': '' } }),
+      ].filter(Boolean)));
     // Im Verwaltungs- oder einem Fach-Ordner nie einen neuen Tresor anbieten.
     if (!z.istFachOrdner && !art) {
       kinder.push(el('details', { 'data-tresor-neu-anlegen': '' }, [

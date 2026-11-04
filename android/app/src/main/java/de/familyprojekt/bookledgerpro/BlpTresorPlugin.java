@@ -11,6 +11,7 @@ import android.security.keystore.KeyProperties;
 import android.text.Editable;
 import android.text.InputType;
 import android.util.Base64;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -22,11 +23,14 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import de.familyprojekt.tresor.Ablage;
 import de.familyprojekt.tresor.Eintrag;
 import de.familyprojekt.tresor.Fach;
+import de.familyprojekt.tresor.Hauptordner;
 import de.familyprojekt.tresor.SafAblage;
 import de.familyprojekt.tresor.TresorOrdner;
 import de.familyprojekt.tresor.Uebergaben;
+import de.familyprojekt.tresor.UnterAblage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -58,7 +62,7 @@ public final class BlpTresorPlugin extends Plugin {
     private static final String ALIAS = "bookledgerpro-tresorordner-merken-v1";
     private static final String APP = Fach.BOOKLEDGER_APP;
     private final PluginWorker worker = new PluginWorker("tresor");
-    private SafAblage ablage;
+    private Ablage ablage;
     private TresorOrdner offen;
     // Von Hand gesperrt (Tablet-Probe 2026-10-28: „Sperren“ tat nichts, weil zustand() mit dem gemerkten Schlüssel
     // sofort wieder öffnete). Bis zum nächsten Entsperren oder App-Neustart öffnet der gemerkte Schlüssel nicht von selbst.
@@ -73,11 +77,14 @@ public final class BlpTresorPlugin extends Plugin {
         String m = e.getMessage();
         return m != null && m.matches("[A-Z_]{3,60}") ? m : "TRESOR_FEHLER";
     }
-    private SafAblage ablage() throws IOException {
+    /** Freigegebener Ordner („baum“) plus Tresor-Hauptordner darunter („pfad“, "" = der freigegebene Ordner selbst). */
+    private Ablage ablage() throws IOException {
         if (ablage != null) return ablage;
         String baum = prefs().getString("baum", null);
         if (baum == null) throw new IOException("TRESOR_KEIN_ORDNER");
-        ablage = new SafAblage(getContext().getContentResolver(), Uri.parse(baum));
+        SafAblage s = new SafAblage(getContext().getContentResolver(), Uri.parse(baum));
+        String pfad = prefs().getString("pfad", "");
+        ablage = pfad.isEmpty() ? s : new UnterAblage(s, pfad);
         return ablage;
     }
 
@@ -92,11 +99,11 @@ public final class BlpTresorPlugin extends Plugin {
         SharedPreferences p = prefs();
         z.put("gewaehlt", p.contains("baum")).put("ordner", p.getString("name", "")).put("gemerkt", p.contains("merken"));
         // Ganzer Pfad und Speicher (Leitfaden § 5): „Gerät“ oder „SD-Karte“ + Pfad hinter dem Doppelpunkt der Dokument-Kennung.
-        String id = baumId(); z.put("pfad", id.contains(":") ? id.substring(id.indexOf(':') + 1) : id).put("speicher", id.startsWith("primary:") ? "geraet" : id.contains(":") ? "karte" : "");
+        String id = mitPfad(baumId()); z.put("pfad", id.contains(":") ? id.substring(id.indexOf(':') + 1) : id).put("speicher", id.startsWith("primary:") ? "geraet" : id.contains(":") ? "karte" : "");
         z.put("offen", offen != null);
         if (!p.contains("baum")) return z;
         try {
-            SafAblage a = ablage();
+            Ablage a = ablage();
             boolean da = TresorOrdner.vorhanden(a);
             z.put("erreichbar", true).put("vorhanden", da);
             z.put("istFachOrdner", !da && a.gibtEs("tresor.json") && !a.gibtEs(TresorOrdner.KOPF));
@@ -112,6 +119,11 @@ public final class BlpTresorPlugin extends Plugin {
         return z;
     }
 
+    /** Dokumentkennung samt Hauptordner darunter (Android-Speicher: „…:Pfad/Name“). */
+    private String mitPfad(String id) {
+        String pfad = prefs().getString("pfad", "");
+        return pfad.isEmpty() || !id.contains(":") ? id : id + (id.endsWith(":") ? "" : "/") + pfad;
+    }
     private String baumId() {
         String b = prefs().getString("baum", null); if (b == null) return "";
         try { return android.provider.DocumentsContract.getTreeDocumentId(Uri.parse(b)); } catch (Exception e) { return ""; }
@@ -123,7 +135,7 @@ public final class BlpTresorPlugin extends Plugin {
         worker.submit(call, () -> {
             String b = prefs().getString("baum", null);
             if (b == null) { call.reject("TRESOR_KEIN_ORDNER"); return; }
-            Uri baum = Uri.parse(b); String id = baumId();
+            Uri baum = Uri.parse(b); String id = mitPfad(baumId());
             if ("ablage".equals(call.getString("welcher"))) {
                 try { if (ablage().istOrdner(APP_ORDNER) && id.contains(":")) id = id + (id.endsWith(":") ? "" : "/") + APP_ORDNER; }
                 catch (IOException e) { /* dann der Tresorordner selbst */ }
@@ -189,11 +201,125 @@ public final class BlpTresorPlugin extends Plugin {
                 String name = baum.getLastPathSegment() == null ? "" : baum.getLastPathSegment();
                 if (name.contains(":")) name = name.substring(name.indexOf(':') + 1);
                 // Ein anderer Ordner: der gemerkte Schlüssel gehört zum alten und wird vergessen.
-                if (!prefs().edit().putString("baum", baum.toString()).putString("name", name).remove("merken").remove("kennung").commit()) throw new IOException("TRESOR_NICHT_VERFUEGBAR");
+                if (!prefs().edit().putString("baum", baum.toString()).putString("name", name).remove("pfad").remove("merken").remove("kennung").commit()) throw new IOException("TRESOR_NICHT_VERFUEGBAR");
                 ablage = null;
                 call.resolve(zustandJetzt());
             } catch (Exception e) { call.reject(code(e)); }
         });
+    }
+
+    // ---------- „Tresor einrichten – nur Speicher wählen“ (Klaus 2026-11-04) ----------
+    // Speicher wählen → Hauptordner am Inhalt finden oder anlegen (Name frei, Vorschlag „Family-Projekt“) → EIN Passwort-Fenster.
+    // Logik in TresorEinrichtung (JUnit); hier nur Ordnerwahl und Fenster. Bis zur Bestätigung ist nichts geschrieben.
+    @PluginMethod public void tresorEinrichten(PluginCall call) {
+        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+            | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+        startActivityForResult(call, i, "einrichtenGewaehlt");
+    }
+    private static JSObject abgebrochen() { return new JSObject().put("abgebrochen", true); }
+    @ActivityCallback private void einrichtenGewaehlt(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        Intent data = result.getData();
+        if (result.getResultCode() != Activity.RESULT_OK || data == null || data.getData() == null) { call.resolve(abgebrochen()); return; }
+        Uri baum = data.getData();
+        boolean merken = Boolean.TRUE.equals(call.getBoolean("merken", false));
+        worker.submit(call, () -> {
+            try {
+                int f = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+                if ((data.getFlags() & f) != f) throw new IOException("TRESOR_NICHT_VERFUEGBAR");
+                getContext().getContentResolver().takePersistableUriPermission(baum, f);
+                SafAblage s = new SafAblage(getContext().getContentResolver(), baum);
+                String id = android.provider.DocumentsContract.getTreeDocumentId(baum);
+                Hauptordner.Ergebnis e = TresorEinrichtung.pruefen(s, id);
+                if (Hauptordner.ANLEGEN_DARIN.equals(e.art)) getActivity().runOnUiThread(() -> einrichtenName(call, baum, s, e, merken, false));
+                else getActivity().runOnUiThread(() -> einrichtenPasswort(call, baum, s, e, null, merken));
+            } catch (Exception e) { call.reject(code(e)); }
+        });
+    }
+    private LinearLayout kasten(Context c) {
+        LinearLayout box = new LinearLayout(c); box.setOrientation(LinearLayout.VERTICAL);
+        int rand = (int) (20 * c.getResources().getDisplayMetrics().density); box.setPadding(rand, rand / 2, rand, 0);
+        return box;
+    }
+    private static final String NAME_GEHT_NICHT = "Dieser Name geht nicht (keine Zeichen wie / \\ : * ? \" < > |, nicht der Name eines Fachs, kein Ordner mit Inhalt). Bitte anderen Namen.";
+    /** Name des neuen Hauptordners, nur wenn im Speicher schon anderes liegt. UI-Thread. */
+    private void einrichtenName(PluginCall call, Uri baum, SafAblage s, Hauptordner.Ergebnis e, boolean merken, boolean falsch) {
+        Context c = getActivity(); LinearLayout box = kasten(c);
+        TextView hilfe = new TextView(c); hilfe.setText("Im gewählten Speicher entsteht ein Ordner für alle Pro-Apps. Name frei wählbar:"); box.addView(hilfe);
+        EditText feld = new EditText(c); feld.setSingleLine(true); feld.setText(Hauptordner.VORSCHLAG); feld.selectAll(); box.addView(feld);
+        TextView status = new TextView(c); if (falsch) status.setText(NAME_GEHT_NICHT); box.addView(status);
+        AlertDialog d = new AlertDialog.Builder(c).setTitle("Neuer Tresor-Hauptordner").setView(box)
+            .setNegativeButton("Abbrechen", (x, w) -> call.resolve(abgebrochen())).setPositiveButton("Weiter", null).create();
+        d.setOnCancelListener(x -> call.resolve(abgebrochen()));
+        d.setOnShowListener(x -> d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String n;
+            try { n = Hauptordner.name(feld.getText().toString()); } catch (IOException ungueltig) { status.setText(NAME_GEHT_NICHT); return; }
+            d.dismiss();
+            worker.submit(call, () -> {
+                try {
+                    boolean belegt = s.gibtEs(n) && (!s.istOrdner(n) || !s.liste(n).isEmpty());
+                    getActivity().runOnUiThread(() -> { if (belegt) einrichtenName(call, baum, s, e, merken, true); else einrichtenPasswort(call, baum, s, e, n, merken); });
+                } catch (Exception f) { call.reject(code(f)); }
+            });
+        }));
+        d.show(); feld.requestFocus();
+    }
+    /** EIN Passwort-Fenster. Gefunden: Passwort des Tresors (falsch → neu versuchen). Neu: zweimal + Bestätigung. UI-Thread. */
+    private void einrichtenPasswort(PluginCall call, Uri baum, SafAblage s, Hauptordner.Ergebnis e, String name, boolean merkenVorgabe) {
+        boolean neu = !e.gefunden();
+        Context c = getActivity(); LinearLayout box = kasten(c);
+        String zeige = e.gefunden() ? (e.pfad.isEmpty() ? "der gewählte Ordner" : e.pfad) : name == null ? "der gewählte Ordner" : name;
+        TextView ort = new TextView(c); ort.setText((neu ? "Neu: " : "Gefunden: ") + zeige); box.addView(ort);
+        TextView hilfe = new TextView(c);
+        hilfe.setText(neu ? "Ein Passwort für den neuen gemeinsamen Tresor aller Pro-Apps. Es verlässt das Gerät nie. Mindestens 10 Zeichen."
+            : "Das Passwort dieses Tresors (dasselbe wie in den anderen Pro-Apps). Es wird kein neuer Tresor angelegt.");
+        box.addView(hilfe);
+        EditText eins = new EditText(c), zwei = new EditText(c);
+        for (EditText f : new EditText[] {eins, zwei}) f.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        eins.setHint("Passwort"); zwei.setHint("Passwort wiederholen");
+        box.addView(eins); if (neu) box.addView(zwei);
+        CheckBox notiert = new CheckBox(c); notiert.setText("Ich habe das Passwort sicher notiert. Ohne Passwort kann niemand die Dateien wieder lesen.");
+        if (neu) box.addView(notiert);
+        CheckBox merken = new CheckBox(c); merken.setText("Auf diesem Gerät merken"); merken.setChecked(merkenVorgabe); box.addView(merken);
+        TextView status = new TextView(c); box.addView(status);
+        android.widget.ScrollView scroll = new android.widget.ScrollView(c); scroll.addView(box);
+        Runnable leeren = () -> { eins.getText().clear(); zwei.getText().clear(); };
+        AlertDialog d = new AlertDialog.Builder(c).setTitle(neu ? "Tresor einrichten" : "Tresor öffnen").setView(scroll)
+            .setNegativeButton("Abbrechen", (x, w) -> { leeren.run(); call.resolve(abgebrochen()); })
+            .setPositiveButton(neu ? "Einrichten" : "Öffnen", null).create();
+        d.setOnCancelListener(x -> { leeren.run(); call.resolve(abgebrochen()); });
+        d.setOnShowListener(x -> d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String p = Normalizer.normalize(eins.getText(), Normalizer.Form.NFC);
+            if (neu && (p.codePointCount(0, p.length()) < TresorOrdner.MIN_PASSWORT || !p.equals(Normalizer.normalize(zwei.getText(), Normalizer.Form.NFC)) || !notiert.isChecked())) {
+                status.setText("Bitte mindestens 10 Zeichen, zweimal gleich, und das Notieren bestätigen."); return;
+            }
+            boolean behalten = merken.isChecked();
+            leeren.run(); d.setCancelable(false);
+            d.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false); d.getButton(AlertDialog.BUTTON_NEGATIVE).setEnabled(false);
+            status.setText(neu ? "Tresor wird angelegt …" : "Passwort wird geprüft …");
+            worker.submit(call, () -> {
+                try {
+                    TresorEinrichtung.Ergebnis r = TresorEinrichtung.einrichten(s, e, name, p);
+                    String ordner = baum.getLastPathSegment() == null ? "" : baum.getLastPathSegment();
+                    if (ordner.contains(":")) ordner = ordner.substring(ordner.indexOf(':') + 1);
+                    if (!r.pfad.isEmpty()) ordner = ordner.isEmpty() ? r.pfad : ordner + "/" + r.pfad;
+                    if (!prefs().edit().putString("baum", baum.toString()).putString("pfad", r.pfad).putString("name", ordner)
+                        .remove("merken").remove("kennung").commit()) { r.tresor.close(); throw new IOException("TRESOR_NICHT_VERFUEGBAR"); }
+                    ablage = null;
+                    uebernehmen(r.tresor, behalten);
+                    JSObject z = zustandJetzt().put("angelegt", r.angelegt);
+                    getActivity().runOnUiThread(() -> { d.dismiss(); call.resolve(z); });
+                } catch (Exception f) {
+                    String k = code(f);
+                    if (!neu && "TRESOR_PASSWORT_FALSCH".equals(k)) getActivity().runOnUiThread(() -> {
+                        status.setText("Das Passwort passt nicht zu diesem Tresor. Es wurde nichts verändert. Bitte erneut eingeben.");
+                        d.setCancelable(true); d.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true); d.getButton(AlertDialog.BUTTON_NEGATIVE).setEnabled(true);
+                    });
+                    else { getActivity().runOnUiThread(d::dismiss); call.reject(k); }
+                }
+            });
+        }));
+        d.show(); eins.requestFocus();
     }
 
     // ---------- Passwort-Dialog (nur nativ) ----------
@@ -233,7 +359,7 @@ public final class BlpTresorPlugin extends Plugin {
         boolean merken = Boolean.TRUE.equals(call.getBoolean("merken", false));
         worker.submit(call, () -> {
             try {
-                SafAblage a = ablage();
+                Ablage a = ablage();
                 if (TresorOrdner.vorhanden(a)) throw new IOException("TRESOR_DA");
                 if (a.gibtEs("tresor.json")) throw new IOException("TRESOR_ORDNER_IST_FACH");
             } catch (Exception e) { call.reject(code(e)); return; }
@@ -341,7 +467,7 @@ public final class BlpTresorPlugin extends Plugin {
     private void entsperrenGemerkt() {
         byte[] haupt = null;
         try {
-            SafAblage a = ablage();
+            Ablage a = ablage();
             String id = TresorOrdner.kennung(a);
             if (!id.equals(prefs().getString("kennung", ""))) return;
             byte[] wert = Base64.decode(prefs().getString("merken", ""), Base64.NO_WRAP);
