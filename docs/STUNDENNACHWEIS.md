@@ -89,3 +89,4 @@ werden nicht addiert. Der gemeinsame endgültige Eintrag wird in Kimhub geführt
 | Arbeit | Einordnung |
 | --- | --- |
 | Pro-Verbund in BookLedgerPro und veröffentlichte 0.1.8-Pakete | Teil desselben gemeinsamen Sitzungsfensters; keine zusätzlichen, parallel addierbaren Stunden. Aktive Arbeitszeit nicht gemessen. |
+| Tresor-Plan in vier Pro-Apps, Android-Testfassungen (03.11. 20:04 – 04.11. ≈ 01:30 UTC) | Fenster ≈ 5 h 25 min inkl. Warten auf Klaus und CI; aktive Zeit nicht gemessen. `BRIEF_ABSCHLUSS_2026-11-04_TRESOR-PLAN.md` |
