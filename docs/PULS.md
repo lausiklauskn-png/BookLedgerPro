@@ -1,6 +1,15 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
-## Neuester Stand: Tresor-Plan in BookLedgerPro, 3. November 2026 (nicht veröffentlicht)
+## Neuester Stand: Android-Testfassung 0.1.9 veröffentlicht, 3./4. November 2026
+
+Klaus' Wort („Ja zu 1 und 2“: zusammenführen und Test-Versionen fürs Tablet). Tresor-Plan #449 und Version #450 auf main,
+Quelle `476385606b7113d2e8bae79f9a498052941b48be`. Lauf `android-release.yml` 41742187280 grün (Signatur, Emulator, GitHub,
+eigener Server). [APK 0.1.9](https://github.com/lausiklauskn-png/BookLedgerPro/releases/download/v0.1.9/BookLedgerPro-0.1.9.apk):
+28.364.906 B, SHA-256 `8d7f340fa04628310d61b5c93cda44fdbbdab829387f4dd2a23bfad84baa1250`, von GitHub unabhängig geladen und gleich.
+family-projekt.de war aus der prüfenden Sitzung nicht erreichbar (Proxy 403); den Server prüft der Lauf selbst. Nur Android.
+Nicht erneut auslösen. **Nächstes:** Klaus' Probe am Tablet; BookLedger Basic für `src/`-Teile von #449 nachziehen.
+
+## Stand: Tresor-Plan in BookLedgerPro, 3. November 2026 (nicht veröffentlicht)
 
 Klaus' „Ja zum Plan“ (gemeinsamer Tresor-Plan aller Pro-Apps), Befund SD-Karte: zwei
 `bookledgerpro-backup-….blpr.json` mit 0 Byte direkt im Hauptablageordner. Gebaut auf Branch

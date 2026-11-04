@@ -1,5 +1,10 @@
 # Sitzungs-Log
 
+## 2026-11-03/04 — Android 0.1.9 veröffentlicht
+
+**Was getan:** #449 und #450 (0.1.9, Code 10) gemergt, `android-release.yml` Lauf 41742187280 grün, APK von GitHub unabhängig
+geprüft (28.364.906 B, SHA-256 `8d7f340f…1250`). **Offen:** Tablet-Probe, Basic nachziehen, Windows 0.1.9 nicht veröffentlicht.
+
 ## 2026-11-03 — Tresor-Plan: 0-Byte-Sicherungen, kein zweiter Tresor, „Wo liegt was?“
 
 **Was getan:** Ursache der 0-Byte-Dateien im Code gesucht (Inhalt nur im RAM während des Speichern-Dialogs;

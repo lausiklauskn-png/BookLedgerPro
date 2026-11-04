@@ -2,9 +2,9 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
-**Tresor-Plan (Klaus 2026-11-03: „Ja zum Plan“, nicht veröffentlicht):** „Speichern unter“ hinterlässt keine 0-Byte-Dateien mehr
+**Tresor-Plan (Klaus 2026-11-03: „Ja zum Plan“):** „Speichern unter“ hinterlässt keine 0-Byte-Dateien mehr
 (`BlpFilesPlugin`: Inhalt im Zwischenspeicher, Löschen bei Fehler), fragt beim Speichern in den Tresorordner nach; „Tresorordner anlegen“ nur nach
-Rückfrage, nie im Verwaltungs-/Fachordner; Hilfe „Wo liegt was?“ (`src/ui/woLiegtWas.js`). Proben `smoke_tresorplan` 11, `test-native` 62. Stand: `docs/PULS.md`.
+Rückfrage, nie im Verwaltungs-/Fachordner; Hilfe „Wo liegt was?“ (`src/ui/woLiegtWas.js`). Proben `smoke_tresorplan` 11, `test-native` 62. **Android 0.1.9 veröffentlicht** (Lauf 41742187280, SHA-256 `8d7f340f…1250`, nicht erneut auslösen). Stand: `docs/PULS.md`.
 
 **Familienakte-Pro-Verbund (Abschluss 2026-11-02):** Produktbau #445/#446 auf main;
 Android und Windows **0.1.8 veröffentlicht**, bestehende Identitäten erhalten.
