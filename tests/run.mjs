@@ -7511,7 +7511,7 @@ await section('Pro-App-Verbund (Klaus 2026-11-09): Karte als Vorschau-Hilfe, byt
   ok('assets/pro-verbund.html vorhanden', existsSync(u('assets/pro-verbund.html')));
   const roh = readFileSync(u('assets/pro-verbund.html'));
   const pin = JSON.parse(readFileSync(u('assets/pro-verbund.herkunft.json'), 'utf8'));
-  ok('SHA-256 gleich dem Pin (assets/pro-verbund.herkunft.json)', createHash('sha256').update(roh).digest('hex') === pin.sha256 && pin.datei === 'assets/pro-verbund.html' && pin.quelle === ['lausiklauskn-png', 'BookLedgerPro'].join('/')); // zusammengesetzt: Basic schreibt Repo-Adressen um, die Quelle bleibt Pro
+  ok('SHA-256 gleich dem Pin (assets/pro-verbund.herkunft.json)', createHash('sha256').update(roh).digest('hex') === pin.sha256 && pin.datei === 'assets/pro-verbund.html' && pin.quelle === ['lausiklauskn-png', 'BookLedger' + 'Pro'].join('/')); // zerlegt: Basic schreibt „BookLedgerPro“ in Tests um, die Quelle bleibt Pro
   const html = roh.toString('utf8');
   const fremd = [...html.matchAll(/(?:src|href)\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]).filter((x) => !x.startsWith('#'));
   const netz = [...html.matchAll(/https?:\/\/[^\s"'<>)]+/g)].map((m) => m[0]).filter((x) => !/^http:\/\/www\.w3\.org\//.test(x));
