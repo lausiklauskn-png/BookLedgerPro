@@ -174,6 +174,7 @@ Grundlage: `docs/design/SAMMLUNG-DESIGN-2026-10-26.md`, Brief `docs/BRIEF_NACHFO
 ## ☐ Phase 8 — Neuausrichtung (geplant 2026-11-09, wartet auf Klaus' Ja/Nein)
 Plan: `docs/design/BAUPLAN-NEUAUSRICHTUNG-2026-11-09.md`.
 - [ ] 8.1 Ausmisten und Aufräumen · [ ] 8.2 Eingang + Geldkarte · [ ] 8.3 Kasse per Sprache, Steuer-Rücklage
+  (Teil gebaut 2026-11-09: [x] Tagesabschluss mit Sprache/Foto, [x] Quittungsvorlage · offen: Steuer-Rücklage auf der Startseite)
 - [ ] 8.4 Zahl → Beleg, Prüfungsmappe, Fristen · [ ] 8.5 Regel-Paket + Ausfüllhilfe · [ ] 8.6 Bank Stufe 1/2
-- [ ] 8.7 ELSTER-Versand (Windows) · [ ] 8.8 „Frag dein Geld“ mit Private Brain Pro
+- [ ] 8.7 ELSTER-Versand (Windows) · [ ] 8.8 „BLP-Fragen“ mit Private Brain Pro (nur der Chef fragt, F5)
 - [ ] 8.9 Postausgang ohne Tresor (alle Pro-Apps) · [ ] 8.10 Tresor-Abgleich Tablet ⇄ Rechner im Mycel-Netz

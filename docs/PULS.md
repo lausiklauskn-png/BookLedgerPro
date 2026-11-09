@@ -1,6 +1,15 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
-## Neuester Stand: Bauplan Neuausrichtung, 9. November 2026 (nichts gebaut)
+## Neuester Stand: Kasse & Tagesabschluss, 9. November 2026 (nicht veröffentlicht)
+
+Weg (c) gebaut: „Kasse & Shop“ mit Tagesabschluss (gezählter Bestand → Tageseinnahme zurückgerechnet, USt 19 % heraus, Foto,
+festgeschrieben, fehlende Tage, Eingabe per Sprache, Nachfrage bei auffällig hoher Einnahme) und Quittungsvorlage (Kopie als Beleg,
+Durchschläge am Abschluss, nicht gebucht); Alis-Moderaum-Kasse ohne „Bar“ (#84). Klaus: F3 ja,
+F4 später, F5 „BLP-Fragen“ nur für den Chef; J3–J6 Empfehlung „alle Ja“, sein Ja steht aus. Proben `run.mjs` 2695/0,
+`smoke_tagesabschluss` 43 (Gegenprobe 11/11). Abschluss `BRIEF_ABSCHLUSS_2026-11-09_KASSE-TAGESABSCHLUSS.md`;
+**nächste Sitzung:** `BRIEF_SITZUNG_2026-11-09_NACH-KASSE.md`.
+
+## Stand: Bauplan Neuausrichtung, 9. November 2026 (nichts gebaut)
 
 Analyse mit Klaus: BookLedgerPro wird „Geld und Steuer für kleine Betriebe und Familien“ (Tomy, Alinas Moderaum,
 Perfect Skin; privat Anlage N), keine Profi-Werkzeuge. Geldkarte als Brücke zur Familienakte, Kasse per Sprache,
@@ -42,7 +51,7 @@ Android und Windows **0.1.8 sind veröffentlicht**, Quelle 3ca7bb919245bb0ff7a29
 Android-Lauf 41526886410: bestehende Signatur, Produktionsinstallation, Tresor und Überinstallation
 mit Datenerhalt; öffentlicher Download und Server-Feed geprüft. Windows-Lauf 41509273086:
 wirklicher Installer und öffentlicher signierter Feed geprüft (Installer weiterhin unsigniert).
-[Downloads und Nachweise](../BRIEF_ABSCHLUSS_2026-11-02_FAMILIENAKTE-PRO-VERBUND.md),
+[Downloads und Nachweise](archiv/briefe/BRIEF_ABSCHLUSS_2026-11-02_FAMILIENAKTE-PRO-VERBUND.md),
 [maschinenlesbar](PRO-VERBUND-VEROEFFENTLICHUNG-0.1.8.json).
 
 Windows-App-Paar mit Familienakte vollständig bestanden (41506243317 / 125490024327).
@@ -54,7 +63,7 @@ Basic ist mit #39 auf den Produktstand nachgezogen; keine neuen PWA-Funktionen i
 **Nächstes:** vorhandene Testreihe mit erfundenen Dateien auf einem persönlichen Android-Gerät
 oder gezielte Klärung der VM-Ursache. Konkrete Nutzerfehler zuerst Datenverlust, falsche
 Bestätigung, Startblockade; keine weitere allgemeine Testserie, keine gleichen Releases erneut.
-[Startauftrag](../BRIEF_SITZUNG_2026-11-02_NACH-PRO-VERBUND.md).
+[Startauftrag](archiv/briefe/BRIEF_SITZUNG_2026-11-02_NACH-PRO-VERBUND.md).
 
 > **Diese Datei ist der zentrale Andockpunkt für jede neue Sitzung.** Sie ergänzt
 > `CLAUDE.md` (Regeln/Verträge), `ROADMAP.md` (Phasen-Checklisten) und `docs/SESSIONS.md`

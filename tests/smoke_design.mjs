@@ -137,8 +137,9 @@ ok('Kopfleiste ohne Tresor-Kennung bei einem Mandanten (Klaus 2026-10-26)', awai
 ok('Vollbild: Inhalt nutzt die ganze Breite (keine 1200-px-Grenze)', await page.evaluate(() => { const b = document.querySelector('.app-body').getBoundingClientRect(); return Math.round(b.width) === document.documentElement.clientWidth; }));
 
 console.log('— Seitenleiste: Gruppen, Ein-/Ausklappen, Teilbild —');
-ok('Gruppen mit Überschriften stehen', await page.evaluate(() => document.querySelectorAll('.nav-gruppe-titel').length === 6));
-ok('Alle 25 Ansichten im Modus Selbstständig sichtbar (Calculate/Needs statt BLP-Angebote, Klaus 2026-10-26)', await page.evaluate(() => document.querySelectorAll('.nav-item').length === 25 && !document.querySelector('.nav-item[data-nav="angebote"]') && !!document.querySelector('.nav-item[data-nav="calculate"] img.ic-img')));
+// Ausmisten (Klaus 2026-11-09, J3): ohne „Profi-Funktionen“ fällt die Gruppe Team (Mitarbeiter, Lohn) weg, ebenso die Nachkalkulation.
+ok('Gruppen mit Überschriften stehen (ohne Profi: fünf, Team fehlt)', await page.evaluate(() => document.querySelectorAll('.nav-gruppe-titel').length === 5 && ![...document.querySelectorAll('.nav-gruppe-titel')].some((e) => e.textContent === 'Team')));
+ok('22 Ansichten im Modus Selbstständig ohne Profi (25 − Mitarbeiter, Lohn, Nachkalkulation; Calculate/Needs statt BLP-Angebote)', await page.evaluate(() => document.querySelectorAll('.nav-item').length === 22 && !document.querySelector('.nav-item[data-nav="lohn"]') && !document.querySelector('.nav-item[data-nav="angebote"]') && !!document.querySelector('.nav-item[data-nav="calculate"] img.ic-img')));
 ok('Breit: Leiste aufgeklappt, Namen sichtbar', await page.evaluate(() => !document.querySelector('.app').classList.contains('nav-zu') && getComputedStyle(document.querySelector('.nav-item .ic-text')).display !== 'none'));
 await page.click('.nav-klapp');
 await page.waitForTimeout(100);
@@ -211,7 +212,7 @@ await seite2.close();
 
 console.log('— Modus-Schalter (F) —');
 await gehe('settings');
-ok('Einstellungen: Modus-Schalter mit vier Modi, kein Einfach/Profi mehr', await page.evaluate(() => { const segs = [...document.querySelectorAll('.setting')].find((s) => s.querySelector('.setting-label').textContent === 'Modus'); const t = [...segs.querySelectorAll('.seg')].map((b) => b.textContent.replace(/\u00ad/g, '').trim()); return t.join('|') === 'Privat|Kleinunternehmer|Selbstständig|Berater' && !document.body.textContent.includes('Profi'); }));
+ok('Einstellungen: Modus-Schalter mit vier Modi, kein Einfach-Modus, Schalter „Profi-Funktionen“ (J3)', await page.evaluate(() => { const segs = [...document.querySelectorAll('.setting')].find((s) => s.querySelector('.setting-label').textContent === 'Modus'); const t = [...segs.querySelectorAll('.seg')].map((b) => b.textContent.replace(/\u00ad/g, '').trim()); return t.join('|') === 'Privat|Kleinunternehmer|Selbstständig|Berater' && !document.body.textContent.includes('Einfach') && [...document.querySelectorAll('.setting-label')].some((l) => l.textContent === 'Profi-Funktionen'); }));
 const anzahlSelbst = await page.evaluate(() => document.querySelectorAll('.setting').length);
 await page.evaluate(async () => { await window.__probe.updateSettings({ nutzungsmodus: 'privat' }); });
 await page.waitForTimeout(200);

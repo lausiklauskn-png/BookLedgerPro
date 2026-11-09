@@ -106,8 +106,19 @@ const ANSICHT_AUSGEBLENDET = Object.freeze({
   verein: new Set(['anlagen', 'payables', 'orders', 'angebote', 'calculate', 'needs', 'shopbuchung', 'nachkalkulation', 'employees', 'lohn']),
 });
 
+// ---- Profi-Funktionen (Klaus 2026-11-09, Bauplan Neuausrichtung J3 „Ausmisten“) ----------------------------------
+// Lohn/Mitarbeiter, Nachkalkulation (wandert nach Workflow Calculate), Kostenstellen und die Wahl der Bilanzierung sind
+// Profi-Werkzeuge. Sie stehen hinter dem Schalter „Profi-Funktionen“ (settings.profiFunktionen, ab Werk aus); im
+// Modus Berater sind sie immer da. Nichts wird gelöscht – ausgeblendet ist nur die Ansicht, die Daten bleiben und sind
+// mit dem Schalter sofort wieder da. Wer schon bilanziert, behält die Bilanz-Auswahl und die Bilanz-Berichte.
+export const PROFI_ANSICHTEN = Object.freeze(['employees', 'lohn', 'nachkalkulation']);
+export function profiAn(settings) {
+  return !!(settings && (settings.profiFunktionen === true || nutzungsmodusVon(settings) === NUTZUNGSMODUS.BERATER));
+}
+
 /** Soll die NAV-Ansicht `key` im Modus der Settings sichtbar sein? */
 export function zeigeAnsicht(settings, key) {
+  if (PROFI_ANSICHTEN.includes(key) && !profiAn(settings)) return false;
   // BLPs eigene Angebote sind durch Workflow Calculate ersetzt (Klaus 2026-10-26, D15b): nur noch sichtbar, wenn
   // alte Angebote angesehen werden sollen (angeboteAlt, Knopf im Calculate-Rahmen); die Übergabe-Route bleibt erreichbar.
   if (key === 'angebote' && !(settings && settings.angeboteAlt)) return false;
@@ -150,6 +161,7 @@ const FEATURE_AUSGEBLENDET = Object.freeze({
 
 /** Ist das fachliche Feature im Modus der Settings relevant/sichtbar? */
 export function zeigeFeature(settings, feature) {
+  if ((feature === FEATURE.MITARBEITER || feature === FEATURE.KOSTENSTELLEN) && !profiAn(settings)) return false;
   const aus = FEATURE_AUSGEBLENDET[nutzungsmodusVon(settings)];
   return aus ? !aus.has(feature) : true;
 }
@@ -177,6 +189,7 @@ const EINSTELLUNG_AUSGEBLENDET = Object.freeze({
 
 /** Soll der Einstellungs-Abschnitt sichtbar sein? F3 (`alleEinstellungen`) zeigt alles. */
 export function zeigeEinstellung(settings, abschnitt) {
+  if (abschnitt === EINSTELLUNG.GEWINNERMITTLUNG && !profiAn(settings) && !(settings && (settings.gewinnermittlung === 'bilanz' || settings.alleEinstellungen === true))) return false;
   if (settings && settings.alleEinstellungen === true) return true;
   const aus = EINSTELLUNG_AUSGEBLENDET[nutzungsmodusVon(settings)];
   return aus ? !aus.has(abschnitt) : true;

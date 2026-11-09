@@ -12,6 +12,7 @@
 //
 // Reine Logik in src/domain/ueberall.js (node-geprüft), Browser-Probe tests/smoke_umbau11.mjs.
 
+import { tresorBedeutung, tresorFundZeigen } from '../tresorFund.js';
 import { el, mount } from '../dom.js';
 import { t, tOpt } from '../i18n.js';
 import { getSettings, navigate } from '../../state.js';
@@ -56,13 +57,17 @@ function gemeinsamerKasten() {
   const b = tresor();
   const k = U.kasten({
     appName: 'BookLedgerPro', appLabel: t('ue.q.app') + ' · ' + t('ue.q.apps'),
-    app: async (frage) => [...await suchenApp(frage), ...(await suchenApps(frage)).map((z) => ({ ...z, herkunft: 'app', gruppe: t('ue.herkunft.' + z.herkunft), quelle: z.herkunft }))],
+    // Klaus 2026-11-09: auch „nach Bedeutung“ in den Fächern der anderen Pro-Apps, mit „in Meine Familienakte“ usw. je Zeile.
+    app: async (frage) => [...await suchenApp(frage), ...(await suchenApps(frage)).map((z) => ({ ...z, herkunft: 'app', gruppe: t('ue.herkunft.' + z.herkunft), quelle: z.herkunft })),
+      ...await tresorBedeutung(b, frage).catch(() => [])],
     tresor: b && typeof b.verzeichnis === 'function' ? () => ({ zustand: () => b.zustand(), fach: (fach) => b.verzeichnis(fach) }) : null,
     tresorOhne: ['bookledgerpro'],
     netz: () => window.SbkimRendezvous || null,
     mycelOeffnen: () => mycelFensterOeffnen(),
-    kannOeffnen: (z) => z.herkunft === 'app' || (z.herkunft === 'tresor' && z.typ === 'eingang-bookledgerpro'),
-    oeffnen: (z) => oeffnen(z.herkunft === 'app' && z.quelle ? { ...z, herkunft: z.quelle } : z),
+    // Tresor-Funde im gemeinsamen Format (fpt1) lassen sich nur zum Lesen öffnen (src/ui/tresorFund.js).
+    kannOeffnen: (z) => (z.herkunft === 'app' && (z.quelle !== 'tresor' || z.oeffenbar)) || (z.herkunft === 'tresor' && (z.oeffenbar || z.typ === 'eingang-bookledgerpro')),
+    oeffnen: (z) => ((z.herkunft === 'tresor' || z.quelle === 'tresor') && z.daten && b ? tresorFundZeigen(b, z.typ, z.daten)
+      : oeffnen(z.herkunft === 'app' && z.quelle ? { ...z, herkunft: z.quelle } : z)),
     nachSuche: (erg, frage) => { _treffer = erg.treffer.filter((z) => z.herkunft !== 'netz'); _frage = frage; _ki = null; kiZeichnen(); },
   });
   k.element.id = 'blpUeberall'; k.element.classList.add('card');

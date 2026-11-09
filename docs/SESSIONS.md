@@ -1,5 +1,12 @@
 # Sitzungs-Log
 
+## 2026-11-09 — Kasse & Tagesabschluss (Weg c)
+
+**Was getan:** Alis-Moderaum-Kasse ohne „Bar“ (#84); „Kasse & Shop“ mit Tagesabschluss, Sprache → Felder, fehlende Tage,
+Quittungsvorlage; Basic nachgezogen. Klaus' Antworten F3–F5 im Bauplan. **Stand:** Entwurfs-PRs, nichts veröffentlicht.
+**Nächstes:** `BRIEF_SITZUNG_2026-11-09_NACH-KASSE.md`. **Offen/ungeprüft:** Tablet, echte Sprache/Kamera, Abschluss-Storno-Knopf,
+gemischte Steuersätze, J3–J6.
+
 ## 2026-11-09 — Planung Neuausrichtung (nichts gebaut)
 
 **Was getan:** Analyse BookLedgerPro gegen herkömmliche Buchhaltungs-Apps; Bauplan mit Klaus erarbeitet

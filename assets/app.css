@@ -512,6 +512,9 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
   .content { padding: 0; }
   .card { box-shadow: none; border-color: #ccc; break-inside: avoid; }
   body { background: #fff; }
+  /* Quittungsvorlage (Tagesabschluss, Klaus 2026-11-09): nur das Quittungsblatt drucken. */
+  html.druck-quittung .view > :not(.quittung-karte) { display: none !important; }
+  html.druck-quittung .quittung-karte { border: 0; padding: 0; }
 }
 
 /* ---- Responsiv (Handyformat) ---------------------------------------------- */

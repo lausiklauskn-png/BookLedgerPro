@@ -7,12 +7,17 @@
 import { normalisieren, suchwoerter, wortTreffer, ausschnitt } from './belegsuche.js';
 
 /** Fächer in der Reihenfolge der Anzeige; `eigen` = BookLedgerPro schreibt, `eingang` = Übergabefach an BookLedgerPro. */
+// Alle neun Fächer (Fach.java, Stand 01.11.2026); `app` = welche App dort schreibt (für „gefunden in …“, Klaus 2026-11-09).
 export const FAECHER = Object.freeze([
-  { fach: 'bookledgerpro', ordner: 'BookLedgerPro', eigen: true },
-  { fach: 'eingang-bookledgerpro', ordner: 'Eingang-BookLedgerPro', eingang: true },
-  { fach: 'private-brain', ordner: 'Private Brain' },
-  { fach: 'workflow-pdf-pro', ordner: 'Workflow PDF Pro' },
-  { fach: 'eingang-workflowpdf', ordner: 'Eingang-WorkflowPDF' },
+  { fach: 'bookledgerpro', ordner: 'BookLedgerPro', eigen: true, app: 'BookLedgerPro' },
+  { fach: 'eingang-bookledgerpro', ordner: 'Eingang-BookLedgerPro', eingang: true, app: 'BookLedgerPro' },
+  { fach: 'private-brain', ordner: 'Private Brain', app: 'Private Brain Pro' },
+  { fach: 'workflow-pdf-pro', ordner: 'Workflow PDF Pro', app: 'Workflow PDF Pro' },
+  { fach: 'eingang-workflowpdf', ordner: 'Eingang-WorkflowPDF', app: 'Workflow PDF Pro' },
+  { fach: 'familienakte', ordner: 'Familienakte', app: 'Meine Familienakte' },
+  { fach: 'eingang-familienakte', ordner: 'Eingang-Familienakte', app: 'Meine Familienakte' },
+  { fach: 'private-brain-v3', ordner: 'Private Brain V3', app: 'Private Brain V3' },
+  { fach: 'eingang-private-brain', ordner: 'Eingang-Private-Brain', app: 'Private Brain Pro' },
 ]);
 
 export const SICHERUNG_MAGIC = 'BLPR-TRESORORDNER-SICHERUNG';

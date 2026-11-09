@@ -10,6 +10,8 @@ import { kassenbuchEintraege, kassenbericht, anfangsbestandZeilen, KASSE_KONTO }
 import { KONTOART } from '../../domain/accounts.js';
 import { buildKassenbuchCsv } from '../../domain/export.js';
 import { downloadText } from '../../core/files.js';
+import { navigate } from '../../state.js';
+import { tagesabschlussKarte, quittungKarte } from './tagesabschluss.js';
 
 const BOM = '﻿';
 const GELDKONTEN = ['1000', '1200', '1210'];
@@ -38,8 +40,18 @@ async function repaint() {
   const eintraege = kassenbuchEintraege(buchungen, _konto, periode);
   const bericht = kassenbericht(eintraege, anfang);
 
-  mount(_host, el('section', { class: 'view' }, [
+  // „Kasse & Shop“ (Klaus 2026-11-09, Weg c): oben der Tagesabschluss der offenen Ladenkasse (nur für das
+  // Kassenkonto), dann Quittungsvorlage und der Weg zur Shop-Übernahme, darunter das Kassenbuch wie bisher.
+  const ta = _konto === KASSE_KONTO ? await tagesabschlussKarte(() => repaint()).catch((e) => el('div', { class: 'card hinweis small', text: String(e && e.message || e) })) : null;
+  mount(_host, el('section', { class: 'view', 'data-kasse-shop': '' }, [
     el('h1', { text: t('kasse.title') }),
+    ta,
+    el('div', { class: 'card no-print', 'data-zur-shop': '' }, [
+      el('h2', { class: 'card-title', text: t('tagab.shopTitel') }),
+      el('p', { class: 'muted small', text: t('tagab.shopErklaer') }),
+      el('button', { class: 'btn btn-sm', type: 'button', text: t('nav.shopbuchung'), onClick: () => navigate('shopbuchung') }),
+    ]),
+    quittungKarte(() => { if (ta && ta.quittungenNeu) ta.quittungenNeu(); }),
     el('p', { class: 'muted small', text: t('kasse.intro') }),
     steuerLeiste(geldkonten),
     anfangsbestandKarte(anfang, idx),

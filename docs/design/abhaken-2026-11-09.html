@@ -1,0 +1,245 @@
+<title>BookLedgerPro Entscheidungen 9.11.</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: Lesespalte wie die Abhak-Seiten der Familienakte; je Punkt ein Abschnitt mit Erklärung, Empfehlung und Frage. */
+:root {
+  --bg: #f5f7fa; --fg: #17212b; --muted: #5b6878; --line: #d8dee6; --card: #ffffff; --soft: #eef2f6;
+  --accent: #0c79d8; --rot: #c62d3a; --rot-bg: #fdecee; --gruen: #2f8a4f; --gruen-bg: #eef8f1; --gelb-bg: #fff6dd;
+  --display: "Fraunces", Georgia, serif; --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11161c; --fg: #e6ebf1; --muted: #9aa7b6; --line: #2a3440; --card: #18202a; --soft: #1d2731;
+  --accent: #5bb3ff; --rot: #ff6b6b; --rot-bg: #2e1517; --gruen: #5fc78a; --gruen-bg: #13281b; --gelb-bg: #2b2412; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11161c; --fg: #e6ebf1; --muted: #9aa7b6; --line: #2a3440; --card: #18202a; --soft: #1d2731;
+  --accent: #5bb3ff; --rot: #ff6b6b; --rot-bg: #2e1517; --gruen: #5fc78a; --gruen-bg: #13281b; --gelb-bg: #2b2412; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+main { max-width: 880px; margin: 0 auto; display: grid; gap: 32px; }
+h1, h2 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 1.9rem; line-height: 1.15; } h2 { font-size: 1.25rem; }
+p, ul { margin: 0; } ul { padding-left: 1.3em; display: grid; gap: 4px; }
+section { display: grid; gap: 10px; min-width: 0; }
+.eyebrow { font: 600 .75rem/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.muted { color: var(--muted); }
+.gruppe { font: 600 .8rem/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.empf { background: var(--gruen-bg); border-left: 3px solid var(--gruen); padding: 6px 10px; border-radius: 4px; font-size: .92rem; }
+.empf b { color: var(--gruen); }
+.warn { background: var(--rot-bg); border-left: 3px solid var(--rot); padding: 6px 10px; border-radius: 4px; font-size: .92rem; }
+.frage { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 6px; }
+.frage b { color: var(--accent); }
+.frage .ftext { display: grid; gap: 8px; min-width: 0; }
+.wahl { display: flex; flex-wrap: wrap; gap: 6px; }
+.wahl button, .sp { font: 600 .85rem/1 var(--body); border: 1.5px solid var(--line); background: var(--soft); color: var(--fg); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+.wahl button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--bg); }
+.wahl .stift { font-size: 1rem; padding: 6px 10px; }
+.frage textarea { width: 100%; font: inherit; color: var(--fg); background: var(--bg); border: 1.5px solid var(--line); border-radius: 8px; padding: 8px; }
+.speichern { display: flex; align-items: center; gap: 10px; }
+.sp { background: var(--gruen); border-color: var(--gruen); color: var(--bg); }
+.sp:disabled { opacity: .45; cursor: default; }
+.st { font-size: .85rem; color: var(--gruen); font-weight: 700; }
+.st.fehler { color: var(--rot); }
+.stand { font-size: .9rem; color: var(--muted); }
+button:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<main>
+  <header style="display:grid;gap:8px">
+    <span class="eyebrow">BookLedgerPro · Stand 9. November 2026</span>
+    <h1>Offene Entscheidungen nach Kasse &amp; Tagesabschluss</h1>
+    <p class="muted">Unter jedem Punkt: Ja, Nein, Später, ✎ für eine Anmerkung und „✓ Speichern“. Bitte über diesen Link öffnen, dann lese ich die Antworten direkt. Grün steht meine Empfehlung.</p>
+    <p class="stand" id="stand">Beantwortet: 0 von 12</p>
+  </header>
+
+  <div class="gruppe">Bauplan, Ja/Nein-Liste</div>
+
+  <section>
+    <span class="eyebrow">J3 · Bauplan Schritt 1</span>
+    <h2>Mit dem Ausmisten beginnen</h2>
+    <p>Lohn und Mitarbeiter, Bilanz, Kostenstellen und die alte Angebotsansicht kommen hinter „Profi“ oder werden ausgeblendet. Daten bleiben, nichts wird gelöscht. Die Nachkalkulation verweist auf Calculate. Alte Briefe wandern nach <code>docs/archiv/</code>.</p>
+    <p class="empf"><b>Empfehlung: Ja.</b> Weniger Menüpunkte machen die App für Tomy und Alinas Moderaum einfacher, und es kostet keine Daten.</p>
+    <div class="frage" data-f="j3"><div class="ftext"><span><b>So entscheiden?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-j3" rows="2" placeholder="Deine Anmerkung" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">J4 · Gesetze</span>
+    <h2>Regel-Paket je Jahr statt KI-Raten</h2>
+    <p>Steuersätze, Pauschalen, Fristen und Formularzeilen kommen als unterschriebenes Paket über den eigenen Update-Server. Eine KI hilft beim Erstellen, ein Mensch prüft vor dem Veröffentlichen. In der App rät keine KI Steuerregeln.</p>
+    <p class="empf"><b>Empfehlung: Ja.</b> Steuerregeln müssen nachprüfbar sein; eine KI in der App kann sich irren, ohne dass es jemand merkt.</p>
+    <div class="frage" data-f="j4"><div class="ftext"><span><b>So entscheiden?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-j4" rows="2" placeholder="Deine Anmerkung" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">J5 · Finanzamt</span>
+    <h2>ELSTER-Versand über die Windows-Fassung</h2>
+    <p>Die Schnittstelle des Finanzamts gibt es nur für Windows. Das Tablet erstellt die Meldung und legt einen Versandauftrag in den Tresor, die Windows-Fassung sendet und legt das Protokoll zurück. Bis dahin gibt es eine Ausfüllhilfe auf die Zeile genau.</p>
+    <p class="empf"><b>Empfehlung: Ja</b>, zuerst nur die Ausfüllhilfe. Den Versand erst bauen, wenn die Herstellerregistrierung da ist (F4: später).</p>
+    <div class="frage" data-f="j5"><div class="ftext"><span><b>So entscheiden?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-j5" rows="2" placeholder="Deine Anmerkung" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">J6 · Bank</span>
+    <h2>Bank in Stufen, FinTS später</h2>
+    <p>Stufe 1: GiroCode (QR) an Rechnungen. Stufe 2: SEPA-Datei für Überweisung und Lastschrift. Stufe 3, die direkte Bankverbindung (FinTS, Registrierung bei der Kreditwirtschaft), wird später entschieden.</p>
+    <p class="empf"><b>Empfehlung: Ja.</b> Stufe 1 und 2 brauchen keine Anmeldung bei Banken und helfen sofort.</p>
+    <div class="frage" data-f="j6"><div class="ftext"><span><b>So entscheiden?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-j6" rows="2" placeholder="Deine Anmerkung" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">F5 · Private Brain Pro</span>
+    <h2>„BLP-Fragen“, nur der Chef fragt</h2>
+    <p>Fragen ans Geld in normalen Worten („Wie viel fürs Tanken im Oktober?“), Antwort mit Verweis auf den Beleg. BookLedgerPro antwortet nur einem Gerät, das mit der Chef-PIN entsperrt ist. Private Brain Pro liest nur, bucht nichts. Gebaut wird das in Schritt 8.</p>
+    <p class="empf"><b>Empfehlung: Ja</b>, so wie du es vorgeschlagen hast. Der Name ist ein Arbeitstitel; schreib gern einen besseren dazu.</p>
+    <div class="frage" data-f="f5"><div class="ftext"><span><b>Name und Regel so festhalten?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-f5" rows="2" placeholder="Deine Anmerkung oder ein anderer Name" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+
+  <div class="gruppe">Kasse &amp; Tagesabschluss (PR #456, Alis-Moderaum #84)</div>
+
+  <section>
+    <span class="eyebrow">K1 · Zusammenführen</span>
+    <h2>Die drei Entwürfe auf main bringen</h2>
+    <p>BookLedgerPro #456, Alis-Moderaum #84 und danach BookLedger Basic #41 (neu nachgezogen). Alle Prüfungen sind grün. Veröffentlicht wird dabei nichts, keine APK, keine Windows-Fassung. Die Basic-Webseite zeigt danach die neue Kasse.</p>
+    <p class="empf"><b>Empfehlung: Ja</b>, jetzt zusammenführen. Am Tablet kannst du dann die Basic-Webseite prüfen, ohne dass eine App veröffentlicht werden muss.</p>
+    <div class="frage" data-f="k1"><div class="ftext"><span><b>Jetzt zusammenführen?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-k1" rows="2" placeholder="Deine Anmerkung" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">K2 · Korrektur</span>
+    <h2>Knopf „Abschluss stornieren“</h2>
+    <p>Heute geht eine Korrektur nur über die einzelnen Buchungen unter „Buchungen“ (Storno). Neu: ein Knopf am Abschluss, der alle Buchungen dieses Tages auf einmal storniert und den Tag wieder offen macht. Das Zählprotokoll bleibt als Beleg.</p>
+    <p class="empf"><b>Empfehlung: Ja.</b> Wer sich verzählt hat, braucht einen einfachen Weg zurück.</p>
+    <div class="frage" data-f="k2"><div class="ftext"><span><b>So bauen?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-k2" rows="2" placeholder="Deine Anmerkung" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">K3 · Ruhetage</span>
+    <h2>Ruhetage selbst einstellen</h2>
+    <p>Heute gilt nur Sonntag als Ruhetag, andere geschlossene Tage markiert man einzeln mit „zu“. Neu: in den Einstellungen die Ruhetage wählen (zum Beispiel Sonntag und Montag), dann werden sie nie als „fehlt“ gemeldet.</p>
+    <p class="empf"><b>Empfehlung: Ja.</b> Viele Läden haben montags zu.</p>
+    <div class="frage" data-f="k3"><div class="ftext"><span><b>So bauen?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-k3" rows="2" placeholder="Welche Ruhetage hat Alinas Moderaum?" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">K4 · Quittung</span>
+    <h2>Quittung über 250 € sperren?</h2>
+    <p>Heute wird eine Quittung über 250 € trotzdem gedruckt und abgelegt, mit dem Hinweis, dass sie für Firmenkunden keine ausreichende Rechnung ist. Als Zahlungsbestätigung für Privatkundinnen ist sie gültig.</p>
+    <p class="empf"><b>Empfehlung: Nein, nicht sperren.</b> Hinweis lassen, Drucken erlauben.</p>
+    <div class="frage" data-f="k4"><div class="ftext"><span><b>Sperren?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-k4" rows="2" placeholder="Deine Anmerkung" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">K5 · Nachfrage</span>
+    <h2>Grenzen für „Ungewöhnlich viel eingenommen“</h2>
+    <p>Die App fragt nach Privatgeld, wenn die Einnahme mehr als doppelt so hoch ist wie an einem üblichen Tag und mindestens 100 € darüber liegt. Solange es weniger als drei frühere Abschlüsse gibt: ab 1.000 €. Die Grenzen sind gewählt, nicht gemessen.</p>
+    <p class="warn">Kleine Beträge (200 € von Oma an einem 350-€-Tag) erkennt keine Grenze. Dafür bleibt das Feld „Privat eingelegt“.</p>
+    <p class="empf"><b>Empfehlung: Ja</b>, so lassen und nach einigen Wochen echter Abschlüsse nachschärfen.</p>
+    <div class="frage" data-f="k5"><div class="ftext"><span><b>Grenzen so lassen?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-k5" rows="2" placeholder="Deine Anmerkung" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">K6 · Steuerberater</span>
+    <h2>Frageliste für den Steuerberater</h2>
+    <p>Eine kurze Liste in den Bauplan schreiben, zum Mitnehmen:</p>
+    <ul>
+      <li>Reicht die offene Ladenkasse mit täglichem Zählprotokoll für Alinas Moderaum?</li>
+      <li>Ist die Kasse nur für Karte (SumUp) keine elektronische Kasse mit Bargeld, also ohne TSE erlaubt?</li>
+      <li>Werden Gutscheine über diese Kasse angenommen? (Gutscheine zählen wie Bargeld.)</li>
+      <li>Ist es in Ordnung, dass Barverkäufe in der Warenwirtschaft nur den Bestand senken, ohne Preis?</li>
+      <li>Ab welchem Betrag müssen Geschenke (z. B. von Oma) dem Finanzamt gemeldet werden?</li>
+    </ul>
+    <p class="empf"><b>Empfehlung: Ja.</b></p>
+    <div class="frage" data-f="k6"><div class="ftext"><span><b>Liste so aufnehmen?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-k6" rows="2" placeholder="Weitere Fragen für den Steuerberater" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+
+  <div class="gruppe">Privat</div>
+
+  <section>
+    <span class="eyebrow">P1 · Haushaltsbuch</span>
+    <h2>„Bargeld zählen“ für den Modus Privat</h2>
+    <p>Geldbörse oder Haushaltskasse ab und zu zählen, auch per Sprache. Die App bucht nur die Lücke als „Bar ausgegeben, ohne Beleg“, ohne Steuer, ohne Festschreiben, ohne „Tag fehlt“. Ist mehr Geld da als erwartet, fragt sie: „Woher? Geschenk · Rückzahlung · vergessene Abhebung“.</p>
+    <p class="empf"><b>Empfehlung: Ja</b>, in Bauplan Schritt 2 (Eingang und Geldkarte) aufnehmen, weil es die Kategorien des Haushaltsbuchs braucht.</p>
+    <div class="frage" data-f="p1"><div class="ftext"><span><b>In den Bauplan aufnehmen?</b></span>
+      <div class="wahl"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nein">Nein</button><button type="button" data-w="spaeter">Später</button><button type="button" class="stift" aria-label="Notiz schreiben">✎</button></div>
+      <textarea id="notiz-p1" rows="2" placeholder="Deine Anmerkung" hidden></textarea>
+      <div class="speichern"><button type="button" class="sp" disabled>✓ Speichern</button><span class="st" aria-live="polite"></span></div></div></div>
+  </section>
+</main>
+<script>
+(() => {
+  let db = null;
+  const karten = [...document.querySelectorAll(".frage[data-f]")];
+  const lokal = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem("blp-ab-" + k) || "null"); localStorage.setItem("blp-ab-" + k, JSON.stringify(v)); } catch { return null; } };
+  const stand = () => {
+    const n = karten.filter((k) => k.dataset.gespeichert === "1").length;
+    document.getElementById("stand").textContent = "Beantwortet: " + n + " von " + karten.length;
+  };
+  const zeigen = (k, d) => {
+    if (!d) return;
+    k.querySelectorAll(".wahl [data-w]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.w === d.antwort)));
+    const t = k.querySelector("textarea"); if (d.notiz) { t.value = d.notiz; t.hidden = false; }
+    k.dataset.antwort = d.antwort || "";
+    k.dataset.gespeichert = "1";
+    k.querySelector(".st").textContent = "Gespeichert ✓";
+    stand();
+  };
+  karten.forEach((k) => {
+    const sp = k.querySelector(".sp"), st = k.querySelector(".st"), t = k.querySelector("textarea");
+    const geaendert = () => { sp.disabled = false; st.textContent = ""; st.classList.remove("fehler"); };
+    k.querySelectorAll(".wahl [data-w]").forEach((b) => b.addEventListener("click", () => {
+      k.querySelectorAll(".wahl [data-w]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      k.dataset.antwort = b.dataset.w; geaendert();
+    }));
+    k.querySelector(".stift").addEventListener("click", () => { t.hidden = false; t.focus(); });
+    t.addEventListener("input", geaendert);
+    sp.addEventListener("click", async () => {
+      const d = { antwort: k.dataset.antwort || "", notiz: t.value.trim(), wann: new Date().toISOString() };
+      sp.disabled = true; st.textContent = "Wird gespeichert …";
+      try {
+        if (db) await db.doc("antworten/" + k.dataset.f).set(d);
+        lokal(k.dataset.f, d);
+        st.textContent = db ? "Gespeichert ✓" : "Nur in diesem Browser gespeichert";
+        k.dataset.gespeichert = "1"; stand();
+      } catch (e) { sp.disabled = false; st.textContent = "Nicht gespeichert, bitte noch einmal tippen"; st.classList.add("fehler"); }
+    });
+    zeigen(k, lokal(k.dataset.f));
+  });
+  if (window.claude && claude.use) claude.use("db").then((d) => {
+    if (!d) return; db = d;
+    karten.forEach((k) => db.doc("antworten/" + k.dataset.f).get().then((x) => { const v = x && (x.data ? (typeof x.data === "function" ? x.data() : x.data) : x); if (v && v.antwort !== undefined) zeigen(k, v); }).catch(() => {}));
+  }).catch(() => {});
+})();
+</script>
