@@ -189,3 +189,71 @@ export function quittungPruefen(q = {}) {
   const u = ustHeraus(brutto, q.ustSatz == null ? 19 : q.ustSatz);
   return { ok: !fehlt.length && brutto <= KLEINBETRAG_GRENZE_CENT, fehlt, hinweise, ust: { netto: u.netto, ust: u.ust } };
 }
+
+// ---- Auffällig hohe Einnahme: einmal nachfragen (Klaus 2026-11-09, „die Spende von Oma“) ------------------------
+// Steckt jemand Privatgeld in die Kasse und es wird nicht als Einlage eingetragen, hält die Rückrechnung es für Verkäufe
+// und es wird mit Umsatzsteuer gebucht. Deshalb: ist die Einnahme ungewöhnlich hoch, fragt der Abschluss einmal nach.
+// Grenzen GEWÄHLT, nicht gemessen: mit mindestens 3 früheren Tagen „mehr als das Doppelte des Medians und mindestens
+// 100 € darüber“; mit weniger Verlauf „über 1.000 €“. Kleine Beträge (200 € an einem 350-€-Tag) fängt keine Statistik:
+// dafür steht das Feld „Privat eingelegt“ im Abschluss.
+export const AUFFAELLIG = Object.freeze({ faktor: 2, abstandCent: 10000, ohneVerlaufCent: 100000, mindestTage: 3 });
+
+/** @param frueher Tageseinnahmen früherer Abschlüsse in Cent (jüngste zuletzt) @returns {{auffaellig:boolean, ueblichCent:number|null}} */
+export function einnahmeAuffaellig(einnahmeCent, frueher = []) {
+  const e = ganz(einnahmeCent);
+  const werte = (frueher || []).map(ganz).filter((x) => x > 0).slice(-30).sort((a, b) => a - b);
+  if (werte.length < AUFFAELLIG.mindestTage) return { auffaellig: e > AUFFAELLIG.ohneVerlaufCent, ueblichCent: null };
+  const m = werte.length % 2 ? werte[(werte.length - 1) / 2] : Math.round((werte[werte.length / 2 - 1] + werte[werte.length / 2]) / 2);
+  return { auffaellig: e > m * AUFFAELLIG.faktor && e > m + AUFFAELLIG.abstandCent, ueblichCent: m };
+}
+
+// ---- Quittungen des Tages ---------------------------------------------------------------------------------------
+// Quittungen werden NICHT gebucht (das Geld steckt schon in der Tageseinnahme), sondern als Belege aufbewahrt und mit
+// dem Tagesabschluss verknüpft. Übersteigen die quittierten Beträge die Einnahme, stimmt die Zählung wahrscheinlich nicht.
+
+/** @returns {{anzahl:number, summeCent:number}} */
+export function quittungenSumme(liste = []) {
+  const l = (liste || []).filter((q) => ganz(q.bruttoCent) > 0);
+  return { anzahl: l.length, summeCent: l.reduce((n, q) => n + ganz(q.bruttoCent), 0) };
+}
+
+/** Hinweis, wenn mehr quittiert als eingenommen wurde (nur Hinweis, kein Halt). */
+export function quittungenPruefen(einnahmeCent, liste = []) {
+  const s = quittungenSumme(liste);
+  return s.summeCent > Math.max(0, ganz(einnahmeCent))
+    ? `Quittungen (${(s.summeCent / 100).toFixed(2).replace('.', ',')} €) übersteigen die Bareinnahme – Zählung prüfen.` : '';
+}
+
+function winAnsiText(s) { return String(s == null ? '' : s).replace(/[^\u0000-\u007F -ÿ€–—„“”‚‘’…]/g, '?'); }
+
+/**
+ * Quittung als PDF (DIN A6 quer, Helvetica) – die Kopie, die als Beleg aufbewahrt wird. PDFLib wird hineingereicht.
+ * @returns {Promise<Uint8Array>}
+ */
+export async function quittungPdfBauen(PDFLib, q, texte = {}) {
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdf = await PDFDocument.create({ updateMetadata: false });
+  pdf.setTitle(winAnsiText(`${texte.kopf || 'Quittung'} ${q.datum || ''}`));
+  pdf.setProducer('BookLedgerPro');
+  pdf.setKeywords([`blp-quittung=${q.datum || ''}`]);
+  const seite = pdf.addPage([420, 298]);
+  const f = await pdf.embedFont(StandardFonts.Helvetica), fb = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const u = ustHeraus(q.bruttoCent, q.ustSatz);
+  const euro = (c) => (ganz(c) / 100).toFixed(2).replace('.', ',') + ' €';
+  const datum = String(q.datum || '').split('-').reverse().join('.');
+  let y = 260;
+  seite.drawText(winAnsiText(texte.kopf || 'Quittung'), { x: 24, y, size: 16, font: fb }); y -= 30;
+  const zeile = (l, v) => {
+    seite.drawText(winAnsiText(l), { x: 24, y, size: 10, font: f, color: rgb(0.3, 0.3, 0.3) });
+    seite.drawText(winAnsiText(v).slice(0, 60), { x: 150, y, size: 10, font: f });
+    y -= 22;
+  };
+  zeile(texte.aussteller || 'Aussteller', [q.aussteller, q.anschrift].filter(Boolean).join(', '));
+  zeile(texte.datum || 'Datum', datum);
+  zeile(texte.leistung || 'Menge und Art', q.leistung || '');
+  zeile(texte.brutto || 'Betrag (inkl. USt)', euro(q.bruttoCent));
+  zeile(texte.satz || 'Steuersatz', `${satzNorm(q.ustSatz)} %` + (u.ust ? ` (${texte.darin || 'darin USt'} ${euro(u.ust)})` : ''));
+  seite.drawLine({ start: { x: 150, y: 40 }, end: { x: 396, y: 40 }, thickness: 0.6 });
+  seite.drawText(winAnsiText(texte.unterschrift || 'Unterschrift'), { x: 24, y: 42, size: 10, font: f, color: rgb(0.3, 0.3, 0.3) });
+  return pdf.save();
+}

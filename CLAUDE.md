@@ -4,7 +4,8 @@
 
 **Kasse & Tagesabschluss (Klaus 2026-11-09, Weg c offene Ladenkasse):** Ansicht `kassenbuch` heißt „Kasse & Shop“: Tagesabschluss
 (`src/domain/tagesabschluss.js` rein, `tagesabschluss-store.js`, `src/ui/views/tagesabschluss.js`; i18n-Präfix `tagab.` – `ta.` ist „Tresor & Ablage“),
-Quittungsvorlage, Weg zur Shop-Übernahme. Proben `run.mjs` „Tagesabschluss“, `tests/smoke_tagesabschluss.mjs` 30. Keine TSE, kein Bargeld in einer Kasse.
+Quittungsvorlage (gedruckte Quittung → PDF-Beleg, Durchschläge im Abschluss, nie gebucht), Nachfrage bei auffällig hoher Einnahme
+(Privatgeld?), Weg zur Shop-Übernahme. Proben `run.mjs` „Tagesabschluss“, `tests/smoke_tagesabschluss.mjs` 43. Keine TSE, kein Bargeld in einer Kasse.
 Bauplan: `docs/design/BAUPLAN-NEUAUSRICHTUNG-2026-11-09.md` (J3–J6 warten auf Klaus' Ja). Stand: `BRIEF_ABSCHLUSS_2026-11-09_KASSE-TAGESABSCHLUSS.md`.
 
 **Tresor-Plan (Klaus 2026-11-03: „Ja zum Plan“):** „Speichern unter“ hinterlässt keine 0-Byte-Dateien mehr

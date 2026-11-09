@@ -7439,9 +7439,28 @@ await section('Tagesabschluss offene Ladenkasse (Klaus 2026-11-09, Weg c)', asyn
   ok('Quittung: fehlender Name/Anschrift wird genannt', T.quittungPruefen({ ...q, aussteller: '', anschrift: '' }).fehlt.length === 2);
   const gross = T.quittungPruefen({ ...q, bruttoCent: 30000 });
   ok('Quittung über 250 €: nicht ok, Hinweis auf vollständige Rechnung', !gross.ok && /250/.test(gross.hinweise[0]));
+  // Nachfrage bei auffällig hoher Einnahme (Klaus 2026-11-09, „die Spende von Oma“)
+  ok('auffällig: ohne Verlauf erst über 1.000 €', !T.einnahmeAuffaellig(100000, []).auffaellig && T.einnahmeAuffaellig(100001, []).auffaellig);
+  ok('auffällig: mit Verlauf mehr als das Doppelte des Medians und ≥ 100 € darüber', T.einnahmeAuffaellig(90000, [30000, 40000, 35000]).auffaellig && !T.einnahmeAuffaellig(70000, [30000, 40000, 35000]).auffaellig);
+  ok('auffällig: Median wird genannt, Nulltage zählen nicht', T.einnahmeAuffaellig(1000, [0, 30000, 40000, 35000]).ueblichCent === 35000);
+  ok('auffällig: kleiner Tag (2 € sonst) mit 50 € ist nicht auffällig (100-€-Abstand)', !T.einnahmeAuffaellig(5000, [200, 300, 250]).auffaellig);
+  // Quittungen
+  ok('Quittungen: Summe und Anzahl', JSON.stringify(T.quittungenSumme([{ bruttoCent: 4900 }, { bruttoCent: 1000 }, { bruttoCent: 0 }])) === JSON.stringify({ anzahl: 2, summeCent: 5900 }));
+  ok('Quittungen über der Einnahme → Hinweis, sonst leer', /übersteigen/.test(T.quittungenPruefen(5000, [{ bruttoCent: 4900 }, { bruttoCent: 1000 }])) && T.quittungenPruefen(78200, [{ bruttoCent: 4900 }]) === '');
+  {
+    const PL = (await import('node:module')).createRequire(import.meta.url)('./vendor/pdf-lib.min.js');
+    const bytes = await T.quittungPdfBauen(PL, { aussteller: 'Muster Boutique', anschrift: 'Musterweg 1', datum: '2026-11-09', leistung: '1 Seidentuch', bruttoCent: 4900, ustSatz: 19 });
+    const d = await PL.PDFDocument.load(bytes);
+    ok('Quittung als PDF: eine Seite A6 quer, Titel und Marke blp-quittung', d.getPageCount() === 1 && Math.round(d.getPage(0).getWidth()) === 420 && /Quittung 2026-11-09/.test(d.getTitle()) && /blp-quittung=2026-11-09/.test(d.getKeywords()));
+  }
+  const tvq = _readSpore(new URL('../src/ui/views/tagesabschluss.js', import.meta.url), 'utf8');
+  const stq = _readSpore(new URL('../src/domain/tagesabschluss-store.js', import.meta.url), 'utf8');
+  ok('Store: ohne Bestätigung kein Abschluss bei auffälliger Einnahme', /if \(auff\.auffaellig && !opt\.auffaelligBestaetigt\)/.test(stq));
+  ok('Store: Quittungen werden verknüpft, nicht gebucht (kein saveEntwurf für Quittungen)', /linkBeleg\(bid, einnahmeId\)/.test(stq) && !/quittung[^\n]*saveEntwurf/.test(stq));
+  ok('Ansicht: gedruckte Quittung wird als Beleg abgelegt', /quittungAblegen\(q, bytes\)/.test(tvq));
   // Verdrahtung
   const kv = _readSpore(new URL('../src/ui/views/kassenbuch.js', import.meta.url), 'utf8');
-  ok('Kasse & Shop zeigt Tagesabschluss, Quittung und den Weg zur Shop-Übernahme', /tagesabschlussKarte\(/.test(kv) && /quittungKarte\(\)/.test(kv) && /navigate\('shopbuchung'\)/.test(kv));
+  ok('Kasse & Shop zeigt Tagesabschluss, Quittung und den Weg zur Shop-Übernahme', /tagesabschlussKarte\(/.test(kv) && /quittungKarte\(/.test(kv) && /navigate\('shopbuchung'\)/.test(kv));
   const st = _readSpore(new URL('../src/domain/tagesabschluss-store.js', import.meta.url), 'utf8');
   ok('Store: erst prüfen (validateBuchung), dann schreiben; zweiter Abschluss je Tag abgewiesen', st.indexOf('validateBuchung({') < st.indexOf('saveBeleg(opt.foto') && /schon einen festgeschriebenen Tagesabschluss/.test(st));
   const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');

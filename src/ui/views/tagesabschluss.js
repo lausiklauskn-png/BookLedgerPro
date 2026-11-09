@@ -10,8 +10,10 @@ import { el } from '../dom.js';
 import { t } from '../i18n.js';
 import { getSettings } from '../../state.js';
 import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js';
-import { rueckrechnung, tagesabschlussBuchungen, satzZuFeldern, fehlendeTage, quittungPruefen, ustHeraus } from '../../domain/tagesabschluss.js';
-import { listTagesabschluesse, kassenStandFuer, tagesabschlussFestschreiben } from '../../domain/tagesabschluss-store.js';
+import { rueckrechnung, tagesabschlussBuchungen, satzZuFeldern, fehlendeTage, quittungPruefen, ustHeraus,
+  einnahmeAuffaellig, quittungenSumme, quittungenPruefen, quittungPdfBauen } from '../../domain/tagesabschluss.js';
+import { listTagesabschluesse, kassenStandFuer, tagesabschlussFestschreiben, listQuittungen, quittungAblegen } from '../../domain/tagesabschluss-store.js';
+import { pdfLibLaden } from '../../core/scanPdf.js';
 
 const heuteIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const gesternIso = () => { const d = new Date(); d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -37,10 +39,14 @@ export async function tagesabschlussKarte(neuZeichnen) {
   const satzIn = el('textarea', { rows: '2', 'data-mikro': 'tagesabschluss', 'data-ta-satz': '', name: 'notiz-tagesabschluss',
     placeholder: t('tagab.satzPlatz') });
   const fotoIn = el('input', { type: 'file', accept: 'image/*,application/pdf', capture: 'environment', 'data-ta-foto': '' });
+  const quittungIn = el('input', { type: 'file', accept: 'image/*,application/pdf', multiple: true, 'data-ta-quittungen': '' });
   const ausgabenBox = el('div', { class: 'ta-ausgaben', 'data-ta-ausgaben': '' });
   const ergebnis = el('div', { class: 'ta-ergebnis', 'data-ta-ergebnis': '', 'aria-live': 'polite' });
   const meldung = el('p', { class: 'small', 'data-ta-meldung': '' });
   let stand = { anfangCent: 0, gebuchtCent: 0, gebuchtAnzahl: 0, offeneEntwuerfe: 0 };
+  let appQuittungen = [];
+  // Nachfrage bei auffällig hoher Einnahme: gilt nur für genau den bestätigten Betrag (ändert sich die Zählung, wird neu gefragt).
+  let bestaetigtFuer = null;
 
   const ausgabeZeile = (a = {}) => {
     const betrag = el('input', { type: 'text', inputmode: 'decimal', placeholder: '0,00', value: a.betragCent ? formatCents(a.betragCent) : '', 'data-ta-ausgabe-betrag': '', style: 'width:7rem' });
@@ -100,7 +106,25 @@ export async function tagesabschlussKarte(neuZeichnen) {
         el('ul', {}, buchungen.map((b) => el('li', { text: `${b.beschreibung}: ` + b.zeilen.map((z) => `${z.seite} ${z.konto} ${formatEuro(z.betrag)}`).join(' · ') }))),
       ]));
       r.hinweise.forEach((h) => teile.push(el('p', { class: 'muted small', text: h })));
-      festKnopf.disabled = false;
+      const qs = quittungenSumme(appQuittungen);
+      if (qs.anzahl) teile.push(el('p', { class: 'muted small', 'data-ta-app-quittungen': String(qs.anzahl),
+        text: t('tagab.appQuittungen').replace('{n}', qs.anzahl).replace('{betrag}', formatEuro(qs.summeCent)) }));
+      const qh = quittungenPruefen(r.einnahmeCent, appQuittungen);
+      if (qh) teile.push(el('p', { class: 'small hinweis-rot', 'data-ta-quittung-hinweis': '', text: qh }));
+      const auff = einnahmeAuffaellig(r.einnahmeCent, abschluesse.filter((a) => a.datum < e.datum).map((a) => a.einnahmeCent));
+      if (auff.auffaellig && bestaetigtFuer !== r.einnahmeCent) {
+        teile.push(el('div', { class: 'card hinweis small', 'data-ta-nachfrage': '' }, [
+          el('strong', { text: t('tagab.auffTitel') + ' ' }),
+          el('span', { text: auff.ueblichCent != null ? t('tagab.auffSonst').replace('{betrag}', formatEuro(auff.ueblichCent)) : t('tagab.auffOhne') }),
+          el('div', { class: 'btn-row' }, [
+            el('button', { class: 'btn btn-sm btn-primary', type: 'button', text: t('tagab.auffPrivat'), 'data-ta-privat-ja': '',
+              onClick: () => { einIn.focus(); einIn.scrollIntoView({ block: 'center' }); } }),
+            el('button', { class: 'btn btn-sm', type: 'button', text: t('tagab.auffStimmt'), 'data-ta-stimmt': '',
+              onClick: () => { bestaetigtFuer = r.einnahmeCent; rechnen(); } }),
+          ]),
+        ]));
+      } else festKnopf.disabled = false;
+      festKnopf.dataset.auffaellig = auff.auffaellig ? 'ja' : 'nein';
     }
     if (stand.offeneEntwuerfe) teile.push(el('p', { class: 'muted small', text: t('tagab.offeneEntwuerfe').replace('{n}', stand.offeneEntwuerfe) }));
     ergebnis.replaceChildren(...teile.filter(Boolean));
@@ -108,6 +132,7 @@ export async function tagesabschlussKarte(neuZeichnen) {
 
   async function standLaden() {
     stand = await kassenStandFuer(datumIn.value || heuteIso());
+    appQuittungen = await listQuittungen(datumIn.value || heuteIso());
     rechnen();
   }
 
@@ -128,7 +153,8 @@ export async function tagesabschlussKarte(neuZeichnen) {
     const e = eingabe();
     festKnopf.disabled = true;
     try {
-      const rec = await tagesabschlussFestschreiben(e, { foto: fotoIn.files && fotoIn.files[0] ? fotoIn.files[0] : null });
+      const rec = await tagesabschlussFestschreiben(e, { foto: fotoIn.files && fotoIn.files[0] ? fotoIn.files[0] : null,
+        quittungFotos: [...(quittungIn.files || [])], auffaelligBestaetigt: bestaetigtFuer != null && bestaetigtFuer === rueckrechnung({ ...e, anfangCent: stand.anfangCent, gebuchtCent: stand.gebuchtCent }).einnahmeCent });
       meldung.textContent = t('tagab.fertig').replace('{datum}', rec.datum).replace('{betrag}', formatEuro(rec.einnahmeCent));
       meldung.dataset.fertig = rec.datum;
       if (neuZeichnen) setTimeout(neuZeichnen, 600);
@@ -154,12 +180,16 @@ export async function tagesabschlussKarte(neuZeichnen) {
     el('div', { class: 'btn-row' }, [el('button', { class: 'btn btn-sm', type: 'button', text: '+ ' + t('tagab.ausgabe'), 'data-ta-ausgabe-neu': '', onClick: () => ausgabeZeile() })]),
     el('div', { class: 'form-grid' }, [feld(t('tagab.bank'), bankIn), feld(t('tagab.entnahme'), entIn), feld(t('tagab.einlage'), einIn)]),
     feld(t('tagab.foto'), fotoIn),
+    feld(t('tagab.quittungenFotos'), quittungIn),
+    el('p', { class: 'muted small', text: t('tagab.quittungenErklaer') }),
     ergebnis,
     el('div', { class: 'btn-row' }, [festKnopf]),
     meldung,
     abschluesse.length ? letzteAbschluesse(abschluesse) : null,
   );
   await standLaden();
+  // Nach einer gedruckten Quittung nur die Quittungs-Zeile auffrischen – nie neu zeichnen (sonst gingen Eingaben verloren).
+  box.quittungenNeu = async () => { appQuittungen = await listQuittungen(datumIn.value || heuteIso()); rechnen(); };
   return box;
 }
 
@@ -196,7 +226,7 @@ function letzteAbschluesse(liste) {
 // ---- Quittungsvorlage --------------------------------------------------------------------------------
 
 /** Karte „Quittung“: eine ausgefüllte Kleinbetragsrechnung oder ein leeres Blatt für den Quittungsblock drucken. */
-export function quittungKarte() {
+export function quittungKarte(nachAblegen) {
   const s = getSettings(); const f = s.firma || {};
   const box = el('div', { class: 'card quittung-karte', 'data-quittung': '' });
   const leistung = el('input', { type: 'text', placeholder: t('tagab.q.leistungPlatz'), 'data-q-leistung': '' });
@@ -204,6 +234,7 @@ export function quittungKarte() {
   const satz = el('select', { 'data-q-satz': '' }, [el('option', { value: '19', text: '19 %' }), el('option', { value: '7', text: '7 %' }), el('option', { value: '0', text: '0 %' })]);
   const datum = el('input', { type: 'date', value: heuteIso(), 'data-q-datum': '' });
   const pruef = el('p', { class: 'small', 'data-q-pruef': '' });
+  const abgelegt = el('p', { class: 'small', 'data-q-abgelegt': '' });
   const blatt = el('div', { class: 'quittung-blatt', 'data-q-blatt': '' });
 
   const daten = () => ({ aussteller: f.name || '', anschrift: f.anschrift || '', datum: datum.value, leistung: leistung.value.trim(),
@@ -248,10 +279,24 @@ export function quittungKarte() {
     el('p', { class: 'muted small no-print', text: t('tagab.q.erklaer') }),
     el('div', { class: 'form-grid no-print' }, [feld(t('tagab.q.leistung'), leistung), feld(t('tagab.q.brutto'), betrag), feld(t('tagab.q.satz'), satz), feld(t('tagab.q.datum'), datum)]),
     el('div', { class: 'btn-row no-print' }, [
-      el('button', { class: 'btn btn-sm', type: 'button', text: t('tagab.q.ausgefuellt'), 'data-q-zeigen': '', onClick: () => { if (zeigen(false)) drucken(); } }),
+      el('button', { class: 'btn btn-sm', type: 'button', text: t('tagab.q.ausgefuellt'), 'data-q-zeigen': '', onClick: async () => {
+        if (!zeigen(false)) return;
+        drucken();
+        // Kopie als Beleg aufbewahren (Kleinbetragsrechnung: Doppel 8 Jahre), mit dem Tagesabschluss dieses Tages verknüpft.
+        try {
+          const q = daten();
+          const bytes = await quittungPdfBauen(await pdfLibLaden(), q, { kopf: t('tagab.q.kopf'), aussteller: t('tagab.q.aussteller'),
+            datum: t('tagab.q.datum'), leistung: t('tagab.q.leistung'), brutto: t('tagab.q.brutto'), satz: t('tagab.q.satz'),
+            darin: t('tagab.q.darin'), unterschrift: t('tagab.q.unterschrift') });
+          const rec = await quittungAblegen(q, bytes);
+          abgelegt.textContent = t('tagab.q.abgelegt').replace('{datum}', rec.datum);
+          abgelegt.dataset.belegId = rec.belegId;
+          if (nachAblegen) nachAblegen(rec);
+        } catch (err) { abgelegt.textContent = t('tagab.q.nichtAbgelegt') + ' ' + String(err && err.message || err); }
+      } }),
       el('button', { class: 'btn btn-sm', type: 'button', text: t('tagab.q.leer'), 'data-q-leer': '', onClick: () => { zeigen(true); drucken(); } }),
     ]),
-    el('div', { class: 'no-print' }, [pruef]),
+    el('div', { class: 'no-print' }, [pruef, abgelegt]),
     blatt,
   );
   return box;

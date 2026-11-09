@@ -51,7 +51,7 @@ async function repaint() {
       el('p', { class: 'muted small', text: t('tagab.shopErklaer') }),
       el('button', { class: 'btn btn-sm', type: 'button', text: t('nav.shopbuchung'), onClick: () => navigate('shopbuchung') }),
     ]),
-    quittungKarte(),
+    quittungKarte(() => { if (ta && ta.quittungenNeu) ta.quittungenNeu(); }),
     el('p', { class: 'muted small', text: t('kasse.intro') }),
     steuerLeiste(geldkonten),
     anfangsbestandKarte(anfang, idx),

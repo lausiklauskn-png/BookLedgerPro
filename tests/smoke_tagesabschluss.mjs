@@ -183,6 +183,74 @@ try {
   await page.click('[data-q-zeigen]');
   ok('über 250 €: Hinweis auf vollständige Rechnung', /250 €/.test(await page.textContent('[data-q-pruef]')));
 
+  console.log('— H. Quittung als Beleg, Durchschläge, Nachfrage bei hoher Einnahme —');
+  const morgen = await page.evaluate(() => { const d = new Date(); d.setDate(d.getDate() + 1);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); });
+  await page.waitForFunction(() => document.querySelectorAll('[data-q-abgelegt]').length === 1 && /abgelegt/.test(document.querySelector('[data-q-abgelegt]').textContent), null, { timeout: 15000 }).catch(() => {});
+  await page.evaluate(() => { const a = document.querySelector('[data-q-abgelegt]'); a.textContent = ''; delete a.dataset.belegId; });
+  await page.fill('[data-q-leistung]', '1 Seidentuch');
+  await page.fill('[data-q-betrag]', '49,00');
+  await page.fill('[data-q-datum]', morgen);
+  await page.evaluate(() => { document.querySelector('[data-ta-satz]').value = 'noch nicht fertig'; });
+  await page.click('[data-q-zeigen]');
+  // warten, bis GENAU diese Quittung (Tag morgen) gespeichert ist – waitForFunction wartet nicht auf async
+  for (let i = 0; i < 50; i++) {
+    if (await page.evaluate(async (m) => (await window.__p.tas.listQuittungen(m)).length === 1, morgen)) break;
+    await page.waitForTimeout(200);
+  }
+  const qa = await page.evaluate(async (m) => {
+    const belege = await window.__p.docs.listBelege();
+    const q = await window.__p.tas.listQuittungen(m);
+    const roh = await window.__p.recAll('quittung');
+    const b = belege.find((x) => x.quelle === 'quittung' && q[0] && x.id === q[0].belegId);
+    return { text: document.querySelector('[data-q-abgelegt]')?.textContent || '', beleg: !!b, pdf: b && b.mediaType === 'application/pdf',
+      anzahl: q.length, betrag: q[0] && q[0].bruttoCent, verknuepft: q[0] && b && q[0].belegId === b.id,
+      verschluesselt: roh.every((r) => r.enc) && !JSON.stringify(roh).includes('Seidentuch'),
+      gebucht: (await window.__p.store.listBuchungen()).some((x) => /Seidentuch|Quittung/.test(x.beschreibung)) };
+  }, morgen);
+  ok('gedruckte Quittung als PDF-Beleg abgelegt und dem Tag zugeordnet', /abgelegt/.test(qa.text) && qa.beleg && qa.pdf && qa.anzahl === 1 && qa.betrag === 4900 && qa.verknuepft, JSON.stringify(qa));
+  ok('Quittungs-Datensatz verschlüsselt, keine Buchung für die Quittung', qa.verschluesselt && !qa.gebucht);
+  await page.waitForTimeout(600);
+  ok('Quittung drucken lässt den angefangenen Tagesabschluss stehen (kein Neuzeichnen)', await page.evaluate(() => document.querySelector('[data-ta-satz]').value === 'noch nicht fertig'));
+  await page.evaluate(async (m) => { const d = document.querySelector('[data-ta-datum]'); d.value = m; d.dispatchEvent(new Event('change')); await new Promise((r) => setTimeout(r, 500)); }, morgen);
+  // 612 Anfang (Endbestand heute) + 1.500 gezählt-Plus → Einnahme 1.500 € (ohne Verlauf > 1.000 € → auffällig)
+  await page.fill('[data-ta-end]', '2.112,00');
+  await page.waitForTimeout(200);
+  const vor = await page.evaluate(() => ({ ein: document.querySelector('[data-ta-einnahme]')?.dataset.taEinnahme, nachfrage: !!document.querySelector('[data-ta-nachfrage]'),
+    aus: document.querySelector('[data-ta-fest]').disabled, appQ: document.querySelector('[data-ta-app-quittungen]')?.dataset.taAppQuittungen }));
+  ok('App-Quittung des Tages wird im Abschluss genannt (1 Stück)', vor.appQ === '1', JSON.stringify(vor));
+  ok('auffällig hohe Einnahme (1.500 €): Nachfrage, Festschreiben gesperrt', vor.ein === '150000' && vor.nachfrage && vor.aus, JSON.stringify(vor));
+  await page.click('[data-ta-privat-ja]');
+  ok('„Ja – Privateinlage“ führt ins Feld „Privat eingelegt“', await page.evaluate(() => document.activeElement === document.querySelector('[data-ta-einlage]')));
+  await page.fill('[data-ta-einlage]', '1.000,00');
+  await page.waitForTimeout(200);
+  const nach = await page.evaluate(() => ({ ein: document.querySelector('[data-ta-einnahme]')?.dataset.taEinnahme, nachfrage: !!document.querySelector('[data-ta-nachfrage]'), aus: document.querySelector('[data-ta-fest]').disabled }));
+  ok('mit 1.000 € Privateinlage: Einnahme 500 €, keine Nachfrage, Festschreiben frei', nach.ein === '50000' && !nach.nachfrage && !nach.aus, JSON.stringify(nach));
+  await page.fill('[data-ta-einlage]', '');
+  await page.waitForTimeout(200);
+  ok('Einlage wieder weg → Nachfrage kommt wieder', await page.evaluate(() => !!document.querySelector('[data-ta-nachfrage]') && document.querySelector('[data-ta-fest]').disabled));
+  const ohne = await page.evaluate(async (m) => { try { await window.__p.tas.tagesabschlussFestschreiben({ datum: m, endCent: 211200 }); return 'angenommen'; } catch (e) { return String(e.message); } }, morgen);
+  ok('Store: ohne Bestätigung kein Abschluss bei auffälliger Einnahme', /Ungewöhnlich hohe Einnahme/.test(ohne), ohne);
+  await page.click('[data-ta-stimmt]');
+  ok('„Nein, stimmt so“ gibt das Festschreiben frei', await page.evaluate(() => !document.querySelector('[data-ta-nachfrage]') && !document.querySelector('[data-ta-fest]').disabled));
+  await page.setInputFiles('[data-ta-quittungen]', [
+    { name: 'durchschlag-1.png', mimeType: 'image/png', buffer: PNG }, { name: 'durchschlag-2.png', mimeType: 'image/png', buffer: PNG }]);
+  await page.click('[data-ta-fest]');
+  await page.waitForFunction((m) => document.querySelector('[data-ta-meldung]')?.dataset.fertig === m, morgen, { timeout: 15000 }).catch(() => {});
+  const qf = await page.evaluate(async (m) => {
+    const rec = await window.__p.tas.getTagesabschluss(m);
+    const belege = await window.__p.docs.listBelege();
+    const ein = rec && rec.buchungIds[0];
+    const qb = belege.filter((b) => rec && rec.quittungBelegIds.includes(b.id));
+    const bs = (await window.__p.store.listBuchungen()).filter((b) => b.datum === m);
+    return { da: !!rec, ids: rec && rec.quittungBelegIds.length, alleVerknuepft: qb.length === 3 && qb.every((b) => b.buchungId === ein),
+      durch: belege.filter((b) => b.quelle === 'quittung-durchschlag').length, q: rec && rec.quittungen, auff: rec && rec.auffaellig,
+      buchungen: bs.length, einnahme: rec && rec.einnahmeCent };
+  }, morgen);
+  ok('Abschluss mit Bestätigung festgeschrieben, Antwort vermerkt', qf.da && qf.auff && qf.auff.antwort === 'kein-privatgeld' && qf.einnahme === 150000, JSON.stringify(qf));
+  ok('2 Durchschläge + 1 App-Quittung als Belege an der Einnahme-Buchung', qf.ids === 3 && qf.durch === 2 && qf.alleVerknuepft && qf.q.anzahl === 1 && qf.q.durchschlaege === 2, JSON.stringify(qf));
+  ok('Quittungen nicht gebucht: nur die Einnahme-Buchung an dem Tag', qf.buchungen === 1, String(qf.buchungen));
+
   console.log('— G. schmal (360 px) —');
   await page.setViewportSize({ width: 360, height: 800 });
   ok('kein Querlaufen bei 360 px', await page.evaluate(() => document.documentElement.scrollWidth <= 362), String(await page.evaluate(() => document.documentElement.scrollWidth)));

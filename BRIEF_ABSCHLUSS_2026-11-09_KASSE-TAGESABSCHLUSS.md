@@ -29,12 +29,23 @@ BookLedger Basic nachgezogen (eigener PR).
   dem Firmenprofil, über 250 € Hinweis auf vollständige Rechnung; gedruckt wird nur das Blatt.
 - Weg zur Shop-Übernahme als Kasten auf derselben Seite. `sw.js` v291.
 
+**Nachtrag (Klaus' Fragen am selben Tag: Bonpflicht, Quittungen, „Spende von Oma“):**
+- **Quittungen werden aufbewahrt, nicht gebucht:** eine in der App gedruckte Quittung wird als PDF-Beleg abgelegt (Datensatz
+  `quittung`, verschlüsselt); im Tagesabschluss gibt es „Quittungen aus dem Block“ für Fotos der Durchschläge. Beim Festschreiben
+  hängen alle Quittungen des Tages an der Einnahme-Buchung. Zeile „Heute in der App ausgestellt: n, Summe“; übersteigen die Quittungen
+  die Einnahme → Hinweis. Drucken zeichnet die Seite nicht neu (ein angefangener Abschluss bleibt stehen).
+- **Nachfrage bei auffällig hoher Einnahme** (`einnahmeAuffaellig`): mit ≥ 3 früheren Tagen „mehr als das Doppelte des Medians und
+  ≥ 100 € darüber“, sonst „über 1.000 €“ (gewählt, nicht gemessen). Dann „War Privatgeld dabei?“ → „Ja – als Privateinlage eintragen“
+  oder „Nein, stimmt so“; vorher kein Festschreiben, auch der Store lehnt ab. Antwort am Abschluss vermerkt. Kleine Beträge
+  (200 € an einem 350-€-Tag) fängt keine Statistik – dafür bleibt das Feld „Privat eingelegt“.
+
 ## Proben (wahrheitsgemäß)
 
-- `node tests/run.mjs` **2685 bestanden · 0 fehlgeschlagen** (neu Abschnitt „Tagesabschluss“, 30 Zeilen).
-- `tests/smoke_tagesabschluss.mjs` **30 grün** (echter Tresor, Festschreiben mit Hash-Kette, Foto-Beleg, Verschlüsselung, Lücken,
+- `node tests/run.mjs` **2695 bestanden · 0 fehlgeschlagen** (Abschnitt „Tagesabschluss“, 40 Zeilen).
+- `tests/smoke_tagesabschluss.mjs` **43 grün** (dreimal hintereinander; Nachtrag: Quittung als Beleg, Durchschläge, Nachfrage) (echter Tresor, Festschreiben mit Hash-Kette, Foto-Beleg, Verschlüsselung, Lücken,
   Quittung, 360 px). Gegenprobe in Wegwerf-Kopien: 6 Sabotagen (Bank vergessen, nicht festgeschrieben, Foto fehlt, Satz kennt Bank
-  nicht, Druck ohne Quittungsklasse, zweiter Abschluss erlaubt) – **6/6 gefangen**.
+  nicht, Druck ohne Quittungsklasse, zweiter Abschluss erlaubt) – **6/6 gefangen**; Nachtrag 5 weitere (Store prüft Bestätigung nicht,
+  keine Nachfrage, Quittung nicht abgelegt, nicht verknüpft, Neuzeichnen nach Quittung) – **5/5 gefangen**.
 - `smoke_design` 92 · `smoke_umbau4` 23 grün. `smoke_ohne_web` 26/2 ROT – **auf main genauso** (Tresorordner-Übernahme, unberührt).
 
 ## Grenzen / nicht geprüft
@@ -45,7 +56,10 @@ BookLedger Basic nachgezogen (eigener PR).
 - Ruhetag nur Sonntag fest; „zu“-Tage liegen im localStorage des Geräts, nicht im Tresor.
 - Die Tageseinnahme wird mit einem Satz (19 % oder 7 %) gerechnet; gemischte Sätze an einem Tag nicht.
 - Übergabe Fassung 2 aus Alis-Moderaum (Tagessummen Karte/Online, über den Tresor) nicht gebaut.
-- Rechtliche Einschätzung (offene Ladenkasse, Zählprotokoll, Kleinbetragsrechnung): mit dem Steuerberater bestätigen.
+- Rechtliche Einschätzung (offene Ladenkasse, Zählprotokoll, Kleinbetragsrechnung): mit dem Steuerberater bestätigen –
+  besonders: Gutscheine über die Karten-Kasse (zählen wie Bargeld), Barverkauf „nur Bestand“ in der Warenwirtschaft.
+- Eine Quittung über 250 € wird gedruckt und abgelegt (mit Hinweis), ist aber keine ausreichende Rechnung für Firmenkunden.
+- Privat („Bargeld zählen“ im Haushaltsbuch) ist besprochen, nicht gebaut – gehört zu Bauplan Schritt 2.
 
 ## Stundennachweis
 
