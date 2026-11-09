@@ -1,6 +1,14 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
-## Neuester Stand: Startseite für Betriebe (0.1.12), 9. November 2026
+## Neuester Stand: alles gemergt, Verbund-Karte in allen Pro-Apps, 9. November 2026 (Abend)
+
+Veröffentlicht und unabhängig geprüft: BookLedgerPro Android 0.1.12 (`d879c646…3d0`) und Windows 0.1.12 (family-projekt.de),
+Familienakte 2.28.50 (APK `a0a80591…1612`, Setup `53f36d40…170f`; ⚠ Windows nicht auf dem Update-Server), Private Brain Pro 1.0.46
+(APK `e2e84deb…e353`, Setup `87ed55a4…c7e6`). Nicht erneut auslösen. Die Vorschau-Hilfe „Pro-App-Verbund“ (Karte aus `assets/pro-verbund.html`)
+ist gemergt in BLP #459–#461, Basic #44, PB #132, WPP #69, Familienakte #146 – noch in keiner Fassung veröffentlicht, nicht am Gerät.
+Abschluss `BRIEF_ABSCHLUSS_2026-11-09_VEROEFFENTLICHUNG-UND-VERBUNDKARTE.md` (dort der Startauftrag).
+
+## Stand: Startseite für Betriebe (0.1.12), 9. November 2026
 
 Klaus: „sieht eher aus wie … ein Haushaltsbuch … ich sehe gar nicht, dass da … etwas für kleine Unternehmen mit 19 % [ist]“.
 Oben auf der Übersicht (außer Privat) drei Kacheln: **Umsatzsteuer** des laufenden Voranmeldungszeitraums mit „fällig am“ (10. des Folgemonats;
