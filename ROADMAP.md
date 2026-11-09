@@ -176,3 +176,4 @@ Plan: `docs/design/BAUPLAN-NEUAUSRICHTUNG-2026-11-09.md`.
 - [ ] 8.1 Ausmisten und Aufräumen · [ ] 8.2 Eingang + Geldkarte · [ ] 8.3 Kasse per Sprache, Steuer-Rücklage
 - [ ] 8.4 Zahl → Beleg, Prüfungsmappe, Fristen · [ ] 8.5 Regel-Paket + Ausfüllhilfe · [ ] 8.6 Bank Stufe 1/2
 - [ ] 8.7 ELSTER-Versand (Windows) · [ ] 8.8 „Frag dein Geld“ mit Private Brain Pro
+- [ ] 8.9 Postausgang ohne Tresor (alle Pro-Apps) · [ ] 8.10 Tresor-Abgleich Tablet ⇄ Rechner im Mycel-Netz

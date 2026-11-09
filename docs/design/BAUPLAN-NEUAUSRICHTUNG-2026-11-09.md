@@ -53,9 +53,11 @@ keinen Postausgang. Familienakte und Workflow PDF Pro nicht geprüft.
 - Ab 7 Tagen ohne Tresor eine deutliche Warnung (die Daten liegen nur auf diesem Gerät).
 - Zwischen den Apps auf **einem** Gerät gehen Geldkarten notfalls direkt (Android-Übergabe), damit die Buchung nicht auf
   den Tresor warten muss; der Tresor bekommt sie nachher trotzdem.
-- Offen (F6): Wie kommt ein Tablet-Postausgang auf die Festplatte am Rechner, wenn Tablet und Rechner nie denselben
-  Speicher sehen? Vorschlag: SD-Karte/USB-Stick als Tresor, der mal im Tablet, mal am Rechner steckt; oder später ein
-  Abgleich im eigenen Netz (Mycel) zwischen beiden Geräten.
+- **Entschieden (Klaus 2026-11-09, F6):** zuerst **USB-Stick / SD-Karte zum Umstecken** als Tresor (mal im Tablet,
+  mal am Rechner; der Postausgang leert sich beim Einstecken von selbst). **Danach fest im Plan: Abgleich im eigenen
+  Mycel-Netz** zwischen Tablet und Rechner (Klaus: „sehr bequem“) – Schritt 9 in Abschnitt 7. Grundzüge: nur Geräte mit
+  demselben Chefcode/Tresor, Ende-zu-Ende verschlüsselt (die Tresor-Dateien sind es schon), nur Neues, nie löschen,
+  Konflikt = beide Fassungen behalten; der USB-Stick bleibt als Rückfallweg.
 
 ## 2. Was BookLedgerPro anders macht als herkömmliche Buchhaltung
 
@@ -206,6 +208,7 @@ im Echtbetrieb sperren.
 6. Bank Stufe 1 und 2, Übergabe Alinas Moderaum Fassung 2 – 2–3 Sitzungen
 7. ELSTER-Versand über Windows (nach Registrierung) – eigener Abschnitt
 8. „Frag dein Geld“ mit Private Brain Pro (M5) – 1–2 Sitzungen
+9. **Tresor-Abgleich Tablet ⇄ Rechner im eigenen Mycel-Netz** (F6, Klaus' Wunsch) – eigener Abschnitt, alle Pro-Apps
 
 ## 8. Ja/Nein-Liste für Klaus
 
@@ -223,7 +226,7 @@ Offene Fragen:
 - ~~F2~~ **entschieden:** Bargeld wird angenommen.
 - **F3** Betreut eine Person mehrere Betriebe auf einem Gerät (dann bleibt „mehrere Betriebe“), oder hat jeder Betrieb sein eigenes Gerät?
 - **F4** ELSTER-Herstellerregistrierung jetzt beantragen?
-- **F6** Tablet ↔ Rechner: ein Tresor-Speicher, der umgesteckt wird, oder Abgleich im eigenen Netz? (Abschnitt 1b)
+- ~~F6~~ **entschieden:** erst USB-Stick zum Umstecken, danach Abgleich im Mycel-Netz (Abschnitt 1b, Schritt 9).
 - **F5** Private Brain Pro: nur „Frag dein Geld“, oder auch Notizen → Fristen?
 
 ## 9. Startauftrag zum Einfügen
