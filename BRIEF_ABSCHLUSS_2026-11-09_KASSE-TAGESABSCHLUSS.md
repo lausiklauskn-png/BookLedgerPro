@@ -39,6 +39,29 @@ BookLedger Basic nachgezogen (eigener PR).
   oder „Nein, stimmt so“; vorher kein Festschreiben, auch der Store lehnt ab. Antwort am Abschluss vermerkt. Kleine Beträge
   (200 € an einem 350-€-Tag) fängt keine Statistik – dafür bleibt das Feld „Privat eingelegt“.
 
+## Zweiter Teil (Klaus' Abhak-Liste, alles Ja außer K4; Freibrief „nicht mehr nachfragen“)
+
+- **K2 Abschluss stornieren**: Knopf in „Letzte Abschlüsse“, Rückfrage im Kasten, je Buchung eine festgeschriebene Gegenbuchung
+  (`store.storno`), Abschluss als `tagesabschluss-storniert` aufbewahrt, Tag wieder offen.
+- **K3 Ruhetage** zum Ankreuzen (`settings.kasseRuhetage`), „zu“-Tage jetzt in den verschlüsselten Einstellungen (`kasseGeschlossen`).
+- **J3 Ausmisten**: Schalter „Profi-Funktionen“ (ab Werk aus, Berater immer an, im Modus Privat nicht gezeigt): Mitarbeiter, Lohn,
+  Nachkalkulation, Kostenstellen, Bilanz-Wahl (wer bilanziert, behält sie). Nichts gelöscht. 48 alte Briefe → `docs/archiv/briefe/`.
+- **Brücken** (Prüfung durch zwei Helfer, Befund unten): BookLedgerPro sucht jetzt **nach Bedeutung in den Fächern der anderen Pro-Apps**
+  (`src/ui/tresorFund.js`), jede Zeile sagt „in Meine Familienakte“ usw.; Funde im gemeinsamen Format lassen sich **nur zum Lesen** öffnen;
+  `FAECHER` kennt alle neun Fächer. Probe `tests/smoke_tresorfund.mjs` 13, Gegenprobe 2/2.
+- **J5**: monatliche Erinnerung an die ELSTER-Herstellerregistrierung (geplante Aufgabe, jeden 1., 18:47 Uhr).
+- Version **0.1.10** (Android Code 11, Windows gleich), `sw.js` v292.
+
+### Befund Brücken (Code gelesen, nicht am Gerät)
+- Tresor-Paket in BookLedgerPro, Familienakte, Private Brain Pro, Workflow PDF Pro byte-gleich (Pin `066498d`), neun Fächer.
+- Familienakte schrieb eine **leere Kurzfassung** ins Tresor-Verzeichnis (nur Dateiname suchbar) und **antwortet nicht im Mycel** →
+  in der Familienakte nachgebaut (eigener PR dort).
+- Private Brain Pro → Familienakte: über Android-Teilen geht die ganze .eml mit Anhängen (für jeden Nutzer); über den Tresor kam nur
+  eine .txt → in Private Brain Pro „An Familienakte“ mit der Roh-.eml (eigener PR dort). Familienakte las Anhänge nur auf oberster
+  MIME-Ebene und ohne kodierte Dateinamen → dort repariert.
+- Mycel tauscht nie Dateien, nur Zeilen (Titel · Datum · Betrag, im eigenen Netz kurzer Ausschnitt) mit Trefferwert; Dateien gehen
+  über den Tresorordner (Übergabefächer) oder Android-Teilen.
+
 ## Proben (wahrheitsgemäß)
 
 - `node tests/run.mjs` **2695 bestanden · 0 fehlgeschlagen** (Abschnitt „Tagesabschluss“, 40 Zeilen).
