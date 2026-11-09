@@ -134,6 +134,7 @@ import { buildBelegQuery, belegKontierung } from '../src/ai/belegRichter.js';
 import { encodingFor, buildSpeechRequest, parseTranscript, speechFehlerHinweis, browserSpeechSupported, policyEngines, pickEngine, SPEECH_ENGINES, SPEECH_POLICIES } from '../src/ai/speech.js';
 import { verifySporeObject } from '../tools/verify_remote_spore.mjs';
 import { dashboardKennzahlen, jahrPeriode } from '../src/domain/summary.js';
+import { startKacheln, ustFaelligkeit, normalizeRuecklageProzent } from '../src/domain/startKacheln.js';
 import { buildVisionRequest, parseVisionText } from '../src/ai/vision.js';
 import { buildMistralOcrRequest, parseMistralOcrText, MISTRAL_OCR_MODEL } from '../src/ai/mistralOcr.js';
 import { buildClassifyMessages, parseClassify, resolveKategorie } from '../src/ai/mistral.js';
@@ -1616,6 +1617,29 @@ await section('Dashboard-Kennzahlen (Jahresfilter)', () => {
   ok('2 festgeschrieben in 2026', k.festgeschrieben === 2);
   ok('1 Entwurf', k.entwuerfe === 1);
   ok('jahrPeriode korrekt', jahrPeriode(2026).von === '2026-01-01' && jahrPeriode(2026).bis === '2026-12-31');
+});
+
+await section('Startseite für Betriebe: Umsatzsteuer, Rücklage (Klaus 2026-11-09)', () => {
+  const idx = indexFromSeed();
+  const buchungen = [
+    { seq: 1, datum: '2026-03-01', zeilen: [{ konto: '1200', seite: 'S', betrag: 23800 }, { konto: '8400', seite: 'H', betrag: 20000 }, { konto: '1776', seite: 'H', betrag: 3800 }] },
+    { seq: 2, datum: '2026-04-01', zeilen: [{ konto: '4930', seite: 'S', betrag: 10000 }, { konto: '1576', seite: 'S', betrag: 1900 }, { konto: '1200', seite: 'H', betrag: 11900 }] },
+    { seq: 3, datum: '2026-05-02', zeilen: [{ konto: '1200', seite: 'S', betrag: 11900 }, { konto: '8400', seite: 'H', betrag: 10000 }, { konto: '1776', seite: 'H', betrag: 1900 }] },
+  ];
+  const q = startKacheln(buchungen, idx, '2026-05-15', { ustAn: true, vaZeitraum: 'vierteljaehrlich' });
+  ok('Quartal Q2: Zahllast nur April–Juni (1900 USt − 1900 VSt = 0)', q.ust.label === 'Q2 2026' && q.ust.zahllastCent === 0);
+  ok('Q2 fällig am 10. Juli', q.ust.faelligAm === '2026-07-10');
+  const m = startKacheln(buchungen, idx, '2026-03-20', { ustAn: true, vaZeitraum: 'monatlich' });
+  ok('Monat März: Zahllast 3800, fällig 10. April', m.ust.zahllastCent === 3800 && m.ust.faelligAm === '2026-04-10');
+  const v = startKacheln(buchungen, idx, '2026-04-20', { ustAn: true, vaZeitraum: 'monatlich' });
+  ok('Monat April: Vorsteuer-Überhang = Erstattung', v.ust.zahllastCent === -1900 && v.ust.erstattung);
+  ok('Dauerfristverlängerung: ein Monat später', ustFaelligkeit('2026-06-30', true) === '2026-08-10' && ustFaelligkeit('2026-12-31') === '2027-01-10');
+  ok('jährlich: kein Fälligkeitsdatum', startKacheln(buchungen, idx, '2026-05-15', { ustAn: true, vaZeitraum: 'jaehrlich' }).ust.faelligAm === null);
+  ok('ohne USt (Kleinunternehmer/Privat): keine USt-Kachel', startKacheln(buchungen, idx, '2026-05-15', { ustAn: false }).ust === null);
+  // Gewinn 2026: 30000 Ertrag − 10000 Aufwand = 20000 → 25 % = 5000; Zahllast März
+  ok('Rücklage: 25 % vom Gewinn + offene USt', m.ruecklage.gewinnCent === 20000 && m.ruecklage.estCent === 5000 && m.ruecklage.summeCent === 8800);
+  ok('Rücklage: Satz einstellbar, Unsinn → 25', startKacheln(buchungen, idx, '2026-03-20', { ruecklageProzent: 30 }).ruecklage.estCent === 6000 && normalizeRuecklageProzent('x') === 25 && normalizeRuecklageProzent(90) === 25);
+  ok('Verlust: keine Einkommensteuer-Rücklage', startKacheln([buchungen[1]], idx, '2026-05-15', {}).ruecklage.estCent === 0);
 });
 
 // ===== EU-KI: Google Vision (OCR) + Mistral (Kontierung) =====
@@ -7365,7 +7389,7 @@ await section('Pro-Umbau 13 (Klaus 2026-10-30): Chefcode-Ausschnitt nur im eigen
     ok('App-Paket lädt pro-ueberall.css/.js und pro-chefcode.js', ['pro-ueberall.js', 'pro-ueberall.css', 'pro-chefcode.js'].every((n) => pw.includes("'" + n + "'")));
     const gr = _readSpore(new URL('../android/app/build.gradle', import.meta.url), 'utf8');
     const tc = JSON.parse(_readSpore(new URL('../windows/src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
-    ok('Version 0.1.11 · Code 12 (Android), Windows gleich', /versionCode 12\b/.test(gr) && /versionName "0\.1\.11"/.test(gr) && tc.version === '0.1.11');
+    ok('Version 0.1.12 · Code 13 (Android), Windows gleich', /versionCode 13\b/.test(gr) && /versionName "0\.1\.12"/.test(gr) && tc.version === '0.1.12');
   }
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
   const keys = [...new Set([...nw.matchAll(/t\('(net\.ausschnitt[A-Za-z]*)'\)/g)].map((x) => x[1]))];

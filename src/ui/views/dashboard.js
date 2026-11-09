@@ -4,7 +4,9 @@ import { el, mount } from '../dom.js';
 import { t } from '../i18n.js';
 import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js';
 import { navigate, getSettings, updateSettings } from '../../state.js';
-import { zeigeFeature, FEATURE, zeigeAnsicht } from '../../domain/nutzungsmodus.js';
+import { zeigeFeature, FEATURE, zeigeAnsicht, istUnternehmermodus } from '../../domain/nutzungsmodus.js';
+import { startKacheln, normalizeRuecklageProzent } from '../../domain/startKacheln.js';
+import { getTagesabschluss } from '../../domain/tagesabschluss-store.js';
 import { getMandantId } from '../../core/vault.js';
 import { loadAccounts, listBuchungen, verifyAuditChain } from '../../domain/store.js';
 import { listBelege } from '../../domain/documents.js';
@@ -34,11 +36,52 @@ export async function mountDashboard(host) {
   const idx = {};
   for (const k of konten) idx[k.nummer] = k;
   const k = dashboardKennzahlen(buchungen, idx, jahr, wjBeginn);
+  // Startseite für Betriebe (Klaus 2026-11-09): Umsatzsteuer · Rücklage · Kasse heute — oben, nur außerhalb von Privat.
+  const betrieb = istUnternehmermodus(s);
+  const sk = betrieb ? startKacheln(buchungen, idx, heute, { ustAn: zeigeFeature(s, FEATURE.UMSATZSTEUER),
+    vaZeitraum: s.vaZeitraum, wjBeginn, ruecklageProzent: s.ruecklageProzent }) : null;
+  const zeigeKasse = betrieb && zeigeAnsicht(s, 'kassenbuch');
+  const kasseHeute = zeigeKasse ? await getTagesabschluss(heute).catch(() => null) : null;
 
   const kpi = (label, value, cls) => el('div', { class: 'kpi ' + (cls || '') }, [
     el('div', { class: 'kpi-value', text: value }),
     el('div', { class: 'kpi-label', text: label }),
   ]);
+
+  const datumDe = (iso) => iso ? iso.split('-').reverse().join('.') : '';
+  // Kachel statt Knopf (role=button): ein großes Feld, keine 32-px-Knopfregel; Enter/Leertaste wie ein Tipp.
+  const kachel = (label, value, unter, cls, attrs, onClick) => {
+    const node = el('div', { role: 'button', tabindex: '0', class: 'kpi start-kachel ' + (cls || ''), ...attrs, onClick }, [
+      el('div', { class: 'kpi-value', text: value }),
+      el('div', { class: 'kpi-label', text: label }),
+      unter ? el('div', { class: 'kpi-label small', text: unter }) : null,
+    ]);
+    node.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } });
+    return node;
+  };
+  const betriebKacheln = () => {
+    if (!sk) return null;
+    const ust = sk.ust;
+    const r = sk.ruecklage;
+    return el('div', { class: 'kpi-grid start-kacheln', 'data-start-kacheln': '' }, [
+      ust ? kachel(
+        ust.erstattung ? t('start.ustErstattung').replace('{zeitraum}', ust.label) : t('start.ust').replace('{zeitraum}', ust.label),
+        formatEuro(Math.abs(ust.zahllastCent)),
+        ust.faelligAm ? t('start.ustFaellig').replace('{datum}', datumDe(ust.faelligAm)) : t('start.ustJahr'),
+        ust.erstattung ? 'kpi-pos' : '', { 'data-start-ust': '' }, () => navigate('reports')) : null,
+      kachel(t('start.ruecklage'), formatEuro(r.summeCent),
+        t('start.ruecklageUnter').replace('{prozent}', String(r.prozent)), '', { 'data-start-ruecklage': '', title: t('start.ruecklageTitel') },
+        async () => {
+          const ein = window.prompt(t('start.ruecklageFrage'), String(r.prozent));
+          if (ein == null) return;
+          await updateSettings({ ruecklageProzent: normalizeRuecklageProzent(String(ein).replace(',', '.')) });
+          mountDashboard(host);
+        }),
+      zeigeKasse ? kachel(t('start.kasseHeute'), kasseHeute ? t('start.kasseErledigt') : t('start.kasseOffen'),
+        kasseHeute ? formatEuro(kasseHeute.einnahmeCent) : t('start.kasseZaehlen'), kasseHeute ? 'kpi-pos' : '',
+        { 'data-start-kasse': kasseHeute ? 'erledigt' : 'offen' }, () => navigate('kassenbuch')) : null,
+    ]);
+  };
 
   // Überfällige FORDERUNGEN (Mahnwesen) auf einen Blick — Spiegel zur Verbindlichkeiten-
   // KPI, aber aus Gläubigersicht (dokumentierte Dashboard-Intention A1: „Kennzahl
@@ -241,6 +284,7 @@ export async function mountDashboard(host) {
   mount(host, el('section', { class: 'view' }, [
     // Startseite ohne „Willkommen“ und ohne Werbesatz (Leitfaden § 4, Klaus 2026-10-28); das Geschäftsjahr steht in der Kopfleiste.
     el('div', { class: 'dash-head' }, [el('h1', { text: t('nav.dashboard') })]),
+    betriebKacheln(),
 
     // R6/P2: USt-Zahllast-KPI nur bei USt-Ausweis; Kunden/Aufträge-KPIs nur, wenn die
     // jeweilige Ansicht im Nutzungskontext sichtbar ist (Privat blendet beide aus).

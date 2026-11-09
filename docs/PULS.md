@@ -1,6 +1,15 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
-## Neuester Stand: 0.1.10 veröffentlicht, „Buchhaltung“ statt „Mandant“ (0.1.11), 9. November 2026
+## Neuester Stand: Startseite für Betriebe (0.1.12), 9. November 2026
+
+Klaus: „sieht eher aus wie … ein Haushaltsbuch … ich sehe gar nicht, dass da … etwas für kleine Unternehmen mit 19 % [ist]“.
+Oben auf der Übersicht (außer Privat) drei Kacheln: **Umsatzsteuer** des laufenden Voranmeldungszeitraums mit „fällig am“ (10. des Folgemonats;
+jährlich ohne Datum; Vorsteuer-Überhang als Erstattung), **Rücklage für Steuern** (offene USt + Faustregel 25 % vom Gewinn, Tipp ändert den Satz,
+`ruecklageProzent`), **Kasse heute** offen/gezählt. Reine Rechnung `src/domain/startKacheln.js`. Proben `run.mjs` 2712/0 (+10),
+`tests/smoke_startseite.mjs` 9 (auch: Modus „privat“ bleibt nach Sperren/Neuladen), Gegenprobe 2/2. Windows **0.1.11** veröffentlicht
+(Lauf 42668993914); Android 0.1.11 nicht (Lauf brach ab, weil die main-Prüfung noch lief) — kommt mit 0.1.12.
+
+## Stand: 0.1.10 veröffentlicht, „Buchhaltung“ statt „Mandant“ (0.1.11), 9. November 2026
 
 **0.1.10 veröffentlicht (Klaus' Wort „als APK, PWA … und Windows“):** Quelle main `005c1c5` (#456).
 Android: Lauf 42665280711 grün, [APK 0.1.10](https://github.com/lausiklauskn-png/BookLedgerPro/releases/download/v0.1.10/BookLedgerPro-0.1.10.apk),
