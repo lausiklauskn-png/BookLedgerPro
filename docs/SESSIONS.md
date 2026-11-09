@@ -1,5 +1,12 @@
 # Sitzungs-Log
 
+## 2026-11-09 — Planung Neuausrichtung (nichts gebaut)
+
+**Was getan:** Analyse BookLedgerPro gegen herkömmliche Buchhaltungs-Apps; Bauplan mit Klaus erarbeitet
+(`docs/design/BAUPLAN-NEUAUSRICHTUNG-2026-11-09.md`, PR #455); Alis-Moderaum (Kasse) und Familienakte gelesen.
+**Stand:** Weg (c) offene Ladenkasse, USB-Stick zuerst, Mycel-Abgleich später entschieden; J3–J6, F3–F5 offen.
+**Nächstes:** `BRIEF_SITZUNG_2026-11-09_NACH-PLANUNG.md`. **Offen/ungeprüft:** nichts ausgeführt, nur gelesen.
+
 ## 2026-11-03/04 — Android 0.1.9 veröffentlicht
 
 **Was getan:** #449 und #450 (0.1.9, Code 10) gemergt, `android-release.yml` Lauf 41742187280 grün, APK von GitHub unabhängig
