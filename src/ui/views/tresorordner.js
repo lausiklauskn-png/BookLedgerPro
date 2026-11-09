@@ -177,7 +177,7 @@ async function uebernehmen(fach, e) { return uebernehmenViele([{ fach, eintrag: 
 
 // 4 · Erst alle Quellen lesen, anschließend je Original dauerhaft speichern und erst dann quittieren.
 // Ein späterer Fehler lässt schon gespeicherte Belege bestehen; stabile Kennungen machen den erneuten Versuch sicher.
-async function uebernehmenViele(liste) {
+async function uebernehmenViele(liste, { weiter = true } = {}) {
   const b = brueckeVon(), dateien = [], z = await b.zustand();
   if (!z?.offen || !z.kennung) throw new Error('Bitte den zugehörigen Pro-Tresor verbinden und entsperren.');
   for (const x of liste) {
@@ -202,7 +202,8 @@ async function uebernehmenViele(liste) {
     else await b.markieren(x.fach, x.eintrag.id);
   }
   _wahl.clear();
-  navigate('documents');
+  if (weiter) navigate('documents');
+  return liste.length;
 }
 
 // 3 · „In ‹App› öffnen“: startet die andere Pro-App (feste Liste in Java), übergeben wird nichts.
@@ -367,4 +368,45 @@ export async function neuImTresorordner() {
     }
     return neueEintraege(faecher).length;
   } catch { return 0; }
+}
+
+// ---- Eingang automatisch übernehmen (Klaus 2026-11-09: „Ja, bau das mit dem automatischen Übernehmen ein“) -----------
+// Nur das Fach „Eingang-BookLedgerPro“ — dort legen Workflow PDF Pro, Private Brain Pro und Familienakte ab, was ausdrücklich
+// an BookLedgerPro geht. Fremde Fächer (z. B. die Akten der Familienakte) werden nie von selbst übernommen. Derselbe Weg
+// wie „Übernehmen“ von Hand: lesen, Prüfsumme, dauerhaft speichern, dann quittieren. Übernommen wird als Beleg, gebucht
+// wird nichts (der Buchungsvorschlag kommt wie immer).
+export const EINGANG_FACH = 'eingang-bookledgerpro';
+const APP_NAMEN = { 'workflow-pdf-pro': 'Workflow PDF Pro', 'private-brain': 'Private Brain Pro', familienakte: 'Familienakte', 'private-brain-v3': 'Private Brain V3' };
+export function quelleName(e) {
+  let q = e && e.schreiber;
+  try { const v = JSON.parse((e && e.auszug) || ''); if (v && v.quelle) q = v.quelle; } catch { /* kein Vertrag */ }
+  return APP_NAMEN[q] || q || '';
+}
+
+/** Neue, noch nicht übernommene Einträge im Eingang von BookLedgerPro. [] ohne Brücke, gesperrt oder bei Fehler. */
+export async function eingangNeu() {
+  const b = brueckeVon(); if (!b) return [];
+  try {
+    const z = await b.zustand(); if (!z || !z.offen) return [];
+    const f = FAECHER.find((x) => x.fach === EINGANG_FACH);
+    const r = await b.verzeichnis(EINGANG_FACH);
+    return neueEintraege([{ ...f, eintraege: r.eintraege || [], marken: new Set(r.marken || []) }]);
+  } catch { return []; }
+}
+
+let _eingangLaeuft = false;
+/** Übernimmt alle neuen Einträge des Eingangs als Belege. Gibt die Zahl zurück (0, wenn nichts oder schon ein Lauf läuft). */
+export async function eingangUebernehmen() {
+  if (_eingangLaeuft) return 0;
+  _eingangLaeuft = true;
+  try {
+    const neu = await eingangNeu();
+    return neu.length ? await uebernehmenViele(neu, { weiter: false }) : 0;
+  } finally { _eingangLaeuft = false; }
+}
+
+/** Mit Einstellung „eingangAutomatisch“: übernimmt beim Öffnen von selbst. Wirft nie (Fehler → 0, der Hinweis bleibt). */
+export async function eingangAutomatisch() {
+  if (!getSettings().eingangAutomatisch) return 0;
+  try { return await eingangUebernehmen(); } catch { return 0; }
 }

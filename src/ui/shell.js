@@ -1074,6 +1074,12 @@ function tresorAblageSection() {
         const neu = el('p', { class: 'small', 'data-ta-neu': '' });
         tresor.push(neu);
         neuImTresorordner().then((n) => { if (n) neu.textContent = t('tresor.neuHinweis').replace('{n}', String(n)); }).catch(() => {});
+        // Klaus 2026-11-09: Belege aus dem Eingang (von den anderen Pro-Apps) von selbst übernehmen. Ab Werk aus.
+        tresor.push(el('label', { class: 'check-row', 'data-ta-eingang-auto': '' }, [
+          el('input', { type: 'checkbox', ...(getSettings().eingangAutomatisch ? { checked: '' } : {}),
+            onChange: (e) => updateSettings({ eingangAutomatisch: e.target.checked }).catch(() => {}) }),
+          el('span', { text: t('tresor.eingangAutoSchalter') }),
+        ]));
         knoepfe.push(knopf(t('tresor.jetztSichern'), tun(async () => { await b.sichern(); }), false, 'data-ta-sichern'));
         knoepfe.push(knopf(t('ta.sperren'), tun(() => b.sperren(false)), false, 'data-ta-sperren'));
       }

@@ -1035,3 +1035,11 @@ input[type="password"], input[type="text"], input[type="number"], input[type="da
 .siegel-knopf .siegel-mini { display: inline-flex; width: 20px; justify-content: center; flex: none; }
 .siegel-knopf .siegel-wappen svg { width: 20px; height: 20px; }
 .siegel-knopf[data-stufe="verified-match"] .siegel-wappen { filter: drop-shadow(0 0 3px #e8b92366); }
+
+/* Startseite für Betriebe (Klaus 2026-11-09): Kacheln sind Knöpfe, sehen aber aus wie die übrigen Kennzahlen. */
+.start-kacheln { margin-bottom: .8rem; }
+.start-kachel { text-align: left; cursor: pointer; font: inherit; color: inherit; width: 100%; }
+.start-kachel:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 2px; }
+/* Häkchen mit Satz daneben (Eingang automatisch übernehmen, Klaus 2026-11-09). */
+.check-row { display: flex; gap: .5rem; align-items: flex-start; margin: .4rem 0; font-size: .9rem; }
+.check-row input { margin-top: .2rem; flex: none; }
