@@ -16,6 +16,22 @@ Klaus' Antworten). **Noch nichts davon ist gebaut.** Jeder Schritt braucht Klaus
 Grenze zur Familienakte (Klaus' Wort): **Familienakte = Dokumente, Verträge, Erledigen (Brief, Aufgabe, Frist).
 BookLedgerPro = Geld und Steuer.** Ein gemeinsamer Tresor, zwei Werkzeuge, nichts doppelt.
 
+## 1a. Einfachheits-Regel (Klaus 2026-11-09, verbindlich für alle Schritte)
+
+**Ein Foto, sonst nichts.** Der Nutzer tut im Normalfall genau eine Sache: den Beleg fotografieren. Danach läuft die
+Kette ohne weiteren Tipp:
+
+1. **Foto / Belegscan** (Kamera-Knopf in der Familienakte – ein Einstieg, nicht drei).
+2. **Workflow PDF** erkennt die Form (Kassenbon, Rechnung, Gehaltsabrechnung, Bescheid …), richtet aus, liest den Text.
+3. **Gespeichert wird beides:** das Original-Foto und das erkannte PDF, einmal, im Tresor.
+4. **Familienakte** legt es an der passenden Stelle ab (Bereich, Vorgang, Person).
+5. **BookLedgerPro** übernimmt über die Geldkarte und trägt es ins **Haushaltsbuch** ein (Betrieb: Buchung mit Vorsteuer).
+6. Rückmeldung als **eine Zeile**: „23,40 € Lebensmittel gebucht ✓ · ändern · rückgängig“.
+
+Fragen nur, wenn die Kette unsicher ist (Beleg unlesbar, Betrieb oder privat unklar, neuer Händler ohne Kategorie) –
+dann **eine** Frage mit vorbelegter Antwort, nie ein Formular. Jede Frage, die einmal beantwortet ist, wird für denselben
+Absender gemerkt. Maß für jeden Bau-Schritt: Wie viele Tipps braucht ein gewöhnlicher Kassenbon? Ziel 0 nach dem Foto.
+
 ## 2. Was BookLedgerPro anders macht als herkömmliche Buchhaltung
 
 Herkömmlich: „Auf welches Konto buchst du das?“ – BookLedgerPro: **„Was ist passiert?“** Die Buchung entsteht nebenbei.
