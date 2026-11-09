@@ -101,6 +101,17 @@ Mit Bargeld im echten Laden darf sie so nicht laufen. Kartenzahlung über SumUp 
 - (c) **Offene Ladenkasse:** Bargeld nicht elektronisch erfassen, sondern täglicher Zählbericht in BookLedgerPro (M1);
   die Kasse in der Warenwirtschaft nur für Bestand und Kartenzahlung. Am wenigsten Bau, mehr Handarbeit am Abend.
 
+**Entschieden (Klaus 2026-11-09): Bargeld wird angenommen, Weg (c) offene Ladenkasse.** Schritte:
+- Alis-Moderaum `kasse.html`: Zahlart „Bar“ entfernen; an ihrer Stelle der Satz „Bargeld in die Kassenlade, abends
+  zählen (BookLedgerPro → Tagesabschluss)“. Die Kasse bleibt für Karte (SumUp), Online und Bestand. Barverkäufe
+  senken den Bestand weiter über „Warenausgang“ ohne Preis/Zahlart (nur Lager, keine Kassenaufzeichnung).
+- Alis-Moderaum: „Alles zurücksetzen“ im Echtbetrieb sperren; Übergabe Fassung 2 mit Tagessummen Karte/Online.
+- BookLedgerPro: Tagesabschluss (M1) als erster Baustein von „Kasse & Shop“ – Anfangsbestand, gezählter Endbestand,
+  Ausgaben, Bankeinzahlung, Privatentnahme/-einlage → Tageseinnahme rückgerechnet, USt 19 % herausgerechnet,
+  Foto des Zählprotokolls, festgeschrieben; Lücken-Tage werden gemeldet; Quittungsvorlage zum Ausdrucken für den
+  Quittungsblock (Pflichtangaben Kleinbetragsrechnung).
+- Mit dem Steuerberater bestätigen: Kasse nur für Karte zählt nicht als elektronische Kasse mit Bargeld.
+
 **Unabhängig vom Weg (Vorschlag):** Übergabe Fassung 2 mit **Tagessummen je Zahlart** (bar/karte/online) und Bon-Spanne;
 Übergabe über den **Tresor** (Fach `Eingang-BookLedgerPro`) statt URL, damit sie in der App ankommt; „Alles zurücksetzen“
 im Echtbetrieb sperren.
@@ -142,8 +153,8 @@ im Echtbetrieb sperren.
 | J6 | Bank in Stufen, FinTS erst später entscheiden | |
 
 Offene Fragen:
-- **F1** Kasse Alinas Moderaum: Weg (a), (b) oder (c)? Vorher mit dem Steuerberater klären.
-- **F2** Nimmt Alinas Moderaum im Laden Bargeld an, oder nur Karte/online? (Ohne Bargeld wird F1 deutlich kleiner.)
+- ~~F1~~ **entschieden:** Weg (c) offene Ladenkasse (Klaus 2026-11-09).
+- ~~F2~~ **entschieden:** Bargeld wird angenommen.
 - **F3** Betreut eine Person mehrere Betriebe auf einem Gerät (dann bleibt „mehrere Betriebe“), oder hat jeder Betrieb sein eigenes Gerät?
 - **F4** ELSTER-Herstellerregistrierung jetzt beantragen?
 - **F5** Private Brain Pro: nur „Frag dein Geld“, oder auch Notizen → Fristen?
@@ -159,5 +170,5 @@ Shop-Buchung, alte Angebotsansicht hinter „Profi“ oder entfernen (Daten nie 
 und mit Sicherung), Nachkalkulation nach Calculate verweisen; Briefe nach docs/archiv/.
 Proben: node tests/run.mjs, smoke_design, smoke_ohne_web; Basic nachziehen.
 Nicht: nichts veröffentlichen ohne Klaus' Wort, keine Daten löschen, kein Release erneut auslösen,
-Alis-Moderaum-Kasse nicht ändern, bevor F1 entschieden ist.
+Alis-Moderaum-Kasse nur nach Abschnitt 5 „Entschieden“ ändern (Weg c).
 ```
