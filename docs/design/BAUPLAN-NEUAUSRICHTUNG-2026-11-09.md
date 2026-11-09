@@ -64,6 +64,21 @@ Tagesabschluss); bis dahin ist die Buchung sichtbar und korrigierbar. Privat-ste
 Haushalt nur ins Haushaltsbuch. Befund: die Familienakte kennt heute Aufgaben, Fristen und „erledigt“, aber keine
 Zahlart und keinen Betrag – beides kommt mit der Geldkarte dazu.
 
+**Klaus' zweiter Weg (2026-11-09): Kassenbon, schon bezahlt.** Im Laden bezahlt → Bon fotografieren → Workflow PDF
+macht daraus ein durchsuchbares PDF → Familienakte legt ab → Geldkarte sofort `stand: bezahlt` (Zahlart vom Bon:
+bar/Karte, sonst eine Frage) → BookLedgerPro bucht automatisch: Betrag, USt-Sätze und Händler vom Bon, Kategorie
+(Lebensmittel, Tanken, Drogerie …) aus früheren Bons desselben Händlers. In der Familienakte erscheint danach eine Zeile
+„BookLedgerPro: 23,40 € Lebensmittel gebucht ✓ · ändern · rückgängig“ – kein zusätzlicher Knopf nötig. Betrieb: Vorsteuer
+wird abgezogen; privat: nur Haushaltsbuch bzw. Steuerposten.
+
+**Einnahmen auf demselben Weg:** Gehaltsabrechnung, Rentenbescheid, Überweisung von jemandem → Familienakte legt ab →
+Geldkarte `richtung: einnahme` → BookLedgerPro verbucht Netto als Einnahme, Brutto/Lohnsteuer merkt sich die Anlage N.
+Wiederkehrende Einnahmen und Fixkosten (Gehalt, Rente, Miete, Versicherungen) werden als **erwartet** vorgemerkt.
+
+**„Was bleibt übrig?“ (M2 auch privat):** Startseite zeigt je Monat: Einnahmen − Ausgaben = übrig, und darunter
+„noch zu erwarten bis Monatsende“ (Fixkosten aus Verträgen, erwartete Einnahmen) → „voraussichtlich übrig am 30.“.
+Besonders geschützte Dokumente der Familienakte (Gesundheit) geben nur Betrag und Kategorie weiter, keine Inhalte.
+
 Datei `<dokument>.geldkarte.json` (Fassung 1, Vorschlag):
 
 ```json
