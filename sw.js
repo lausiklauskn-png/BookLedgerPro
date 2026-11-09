@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v294';
+const CACHE_VERSION = 'v295';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -49,6 +49,9 @@ const CORE_ASSETS = [
   './src/ui/strich.js',
   './src/ui/proAppGeben.js',
   './src/ui/woLiegtWas.js',
+  // Vorschau-Hilfe „Pro-App-Verbund“ (Klaus 2026-11-09): Karte byte-gleich gepinnt (assets/pro-verbund.herkunft.json).
+  './src/ui/verbundKarte.js',
+  './assets/pro-verbund.html',
   './src/ui/belegVorschau.js',
   './src/ui/schlank.js',
   './src/ui/kopfTitel.js',
