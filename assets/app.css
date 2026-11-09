@@ -1043,3 +1043,17 @@ input[type="password"], input[type="text"], input[type="number"], input[type="da
 /* Häkchen mit Satz daneben (Eingang automatisch übernehmen, Klaus 2026-11-09). */
 .check-row { display: flex; gap: .5rem; align-items: flex-start; margin: .4rem 0; font-size: .9rem; }
 .check-row input { margin-top: .2rem; flex: none; }
+
+/* Vorschau-Hilfe „Pro-App-Verbund“ (Klaus 2026-11-09): Karte im Vollbild-Rahmen über der App, nie als zweites Fenster. */
+.verbund-overlay {
+  position: fixed; inset: 0; z-index: 120;
+  display: flex; flex-direction: column;
+  background: var(--surface); color: var(--text);
+}
+.verbund-kopf {
+  display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+  padding: .35rem .8rem; border-bottom: 1px solid var(--border);
+  padding-top: max(.35rem, env(safe-area-inset-top));
+}
+.verbund-titel { font-size: .95rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.verbund-rahmen { flex: 1 1 auto; width: 100%; border: 0; background: #fff; }

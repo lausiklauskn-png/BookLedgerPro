@@ -7504,5 +7504,31 @@ await section('Tagesabschluss offene Ladenkasse (Klaus 2026-11-09, Weg c)', asyn
   ok('i18n DE/EN: alle ' + benutzt.length + ' tagab-Sätze je zweimal', benutzt.length > 30 && benutzt.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
 });
 
+await section('Pro-App-Verbund (Klaus 2026-11-09): Karte als Vorschau-Hilfe, byte-gleich gepinnt', async () => {
+  const { createHash } = await import('node:crypto');
+  const { readFileSync, existsSync } = await import('node:fs');
+  const u = (f) => new URL('../' + f, import.meta.url);
+  ok('assets/pro-verbund.html vorhanden', existsSync(u('assets/pro-verbund.html')));
+  const roh = readFileSync(u('assets/pro-verbund.html'));
+  const pin = JSON.parse(readFileSync(u('assets/pro-verbund.herkunft.json'), 'utf8'));
+  ok('SHA-256 gleich dem Pin (assets/pro-verbund.herkunft.json)', createHash('sha256').update(roh).digest('hex') === pin.sha256 && pin.datei === 'assets/pro-verbund.html' && pin.quelle === 'lausiklauskn-png/BookLedgerPro');
+  const html = roh.toString('utf8');
+  const fremd = [...html.matchAll(/(?:src|href)\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]).filter((x) => !x.startsWith('#'));
+  const netz = [...html.matchAll(/https?:\/\/[^\s"'<>)]+/g)].map((m) => m[0]).filter((x) => !/^http:\/\/www\.w3\.org\//.test(x));
+  ok('Karte ohne externe Skripte/Stile/Links (nur xmlns)', fremd.length === 0 && netz.length === 0 && !/<script[^>]+src=/i.test(html) && !/@import|url\(\s*["']?https?:/i.test(html), [...fremd, ...netz].join(' '));
+  ok('Karte trägt #graph', /id="graph"/.test(html));
+  const sw = readFileSync(u('sw.js'), 'utf8');
+  ok('sw.js: Karte und Einstieg im Vorrat, Cache ≥ v295', sw.includes("'./assets/pro-verbund.html'") && sw.includes("'./src/ui/verbundKarte.js'") && Number(sw.match(/CACHE_VERSION = 'v(\d+)'/)[1]) >= 295);
+  const vk = readFileSync(u('src/ui/verbundKarte.js'), 'utf8');
+  ok('Einstieg öffnet einen Rahmen (iframe), kein neues Fenster', /el\('iframe'/.test(vk) && !/window\.open\(/.test(vk) && /popstate/.test(vk));
+  const an = readFileSync(u('src/ui/views/anleitung.js'), 'utf8'), sh = readFileSync(u('src/ui/shell.js'), 'utf8');
+  ok('Einstieg in der Anleitung und unter „Über“', /verbundKasten\(\)/.test(an) && /aboutContent\(\), verbundKasten\(\)/.test(sh));
+  const i18 = readFileSync(u('src/ui/i18n.js'), 'utf8');
+  const keys = [...new Set([...vk.matchAll(/t\('(verbund\.[\w.]+)'\)/g)].map((m) => m[1]))];
+  ok('i18n DE/EN: alle ' + keys.length + ' verbund-Sätze je zweimal', keys.length === 4 && keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
+  const werkzeug = readFileSync(u('tools/verbund-nachziehen.mjs'), 'utf8');
+  ok('Werkzeug zum Nachziehen schreibt Kopie und pro-verbund.herkunft.json', /--ziel/.test(werkzeug) && /--pfad/.test(werkzeug) && /pro-verbund\.herkunft\.json/.test(werkzeug));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);
