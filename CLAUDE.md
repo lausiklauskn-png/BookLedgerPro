@@ -2,6 +2,11 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**Kasse & Tagesabschluss (Klaus 2026-11-09, Weg c offene Ladenkasse):** Ansicht `kassenbuch` heißt „Kasse & Shop“: Tagesabschluss
+(`src/domain/tagesabschluss.js` rein, `tagesabschluss-store.js`, `src/ui/views/tagesabschluss.js`; i18n-Präfix `tagab.` – `ta.` ist „Tresor & Ablage“),
+Quittungsvorlage, Weg zur Shop-Übernahme. Proben `run.mjs` „Tagesabschluss“, `tests/smoke_tagesabschluss.mjs` 30. Keine TSE, kein Bargeld in einer Kasse.
+Bauplan: `docs/design/BAUPLAN-NEUAUSRICHTUNG-2026-11-09.md` (J3–J6 warten auf Klaus' Ja). Stand: `BRIEF_ABSCHLUSS_2026-11-09_KASSE-TAGESABSCHLUSS.md`.
+
 **Tresor-Plan (Klaus 2026-11-03: „Ja zum Plan“):** „Speichern unter“ hinterlässt keine 0-Byte-Dateien mehr
 (`BlpFilesPlugin`: Inhalt im Zwischenspeicher, Löschen bei Fehler), fragt beim Speichern in den Tresorordner nach; „Tresorordner anlegen“ nur nach
 Rückfrage, nie im Verwaltungs-/Fachordner; Hilfe „Wo liegt was?“ (`src/ui/woLiegtWas.js`). Proben `smoke_tresorplan` 11, `test-native` 62. **Android 0.1.9 veröffentlicht** (Lauf 41742187280, SHA-256 `8d7f340f…1250`, nicht erneut auslösen). Stand: `docs/PULS.md`.

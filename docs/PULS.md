@@ -1,6 +1,14 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
-## Neuester Stand: Bauplan Neuausrichtung, 9. November 2026 (nichts gebaut)
+## Neuester Stand: Kasse & Tagesabschluss, 9. November 2026 (nicht veröffentlicht)
+
+Weg (c) gebaut: „Kasse & Shop“ mit Tagesabschluss (gezählter Bestand → Tageseinnahme zurückgerechnet, USt 19 % heraus, Foto,
+festgeschrieben, fehlende Tage, Eingabe per Sprache) und Quittungsvorlage; Alis-Moderaum-Kasse ohne „Bar“ (#84). Klaus: F3 ja,
+F4 später, F5 „BLP-Fragen“ nur für den Chef; J3–J6 Empfehlung „alle Ja“, sein Ja steht aus. Proben `run.mjs` 2685/0,
+`smoke_tagesabschluss` 30 (Gegenprobe 6/6). Abschluss `BRIEF_ABSCHLUSS_2026-11-09_KASSE-TAGESABSCHLUSS.md`;
+**nächste Sitzung:** `BRIEF_SITZUNG_2026-11-09_NACH-KASSE.md`.
+
+## Stand: Bauplan Neuausrichtung, 9. November 2026 (nichts gebaut)
 
 Analyse mit Klaus: BookLedgerPro wird „Geld und Steuer für kleine Betriebe und Familien“ (Tomy, Alinas Moderaum,
 Perfect Skin; privat Anlage N), keine Profi-Werkzeuge. Geldkarte als Brücke zur Familienakte, Kasse per Sprache,

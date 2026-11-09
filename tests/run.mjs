@@ -7395,5 +7395,61 @@ await section('Tresor-Plan 2026-11-03: falscher Ordner, Wo liegt was?, Speichern
   ok('Hilfe nennt Fach „BookLedgerPro“ mit Sicherung/Belege, Eingang und den Menüweg', /„BookLedgerPro“.*„Sicherung“.*„Belege“.*„Eingang-BookLedgerPro“/.test(t('wlw.app')) && /Tresor & Ablage/.test(t('wlw.weg')));
 });
 
+await section('Tagesabschluss offene Ladenkasse (Klaus 2026-11-09, Weg c)', async () => {
+  const T = await import('../src/domain/tagesabschluss.js');
+  const { istAusgeglichen } = await import('../src/domain/journal.js');
+  // Rückrechnung: 612 gezählt, 200 Anfang, 20 Ausgabe, 300 Bank, 50 privat → 782 Einnahme
+  const e = { anfangCent: 20000, endCent: 61200, ausgaben: [{ betragCent: 2000, text: 'Kaffee' }], bankCent: 30000, entnahmeCent: 5000 };
+  const r = T.rueckrechnung(e);
+  ok('Rückrechnung: Einnahme = End − Anfang + Ausgaben + Bank + Entnahme', r.einnahmeCent === 78200 && !r.fehler.length);
+  ok('USt 19 % herausgerechnet (78200 → 65714 + 12486)', r.nettoCent === 65714 && r.ustCent === 12486 && r.nettoCent + r.ustCent === r.einnahmeCent);
+  ok('Privateinlage mindert die Einnahme', T.rueckrechnung({ ...e, einlageCent: 10000 }).einnahmeCent === 68200);
+  ok('schon gebuchte Kassenbewegung des Tages wird abgezogen (+ Zufluss)', T.rueckrechnung({ ...e, gebuchtCent: 1000 }).einnahmeCent === 77200);
+  ok('schon gebuchte Barausgabe (− Abfluss) wird nicht doppelt gezählt', T.rueckrechnung({ anfangCent: 10000, endCent: 9000, gebuchtCent: -1000 }).einnahmeCent === 0);
+  const fb = T.rueckrechnung({ anfangCent: 50000, endCent: 40000 });
+  ok('Kassenfehlbetrag wird gemeldet, nicht gebucht', fb.fehler.length === 1 && /Kassenfehlbetrag/.test(fb.fehler[0]));
+  let warf = false; try { T.tagesabschlussBuchungen('2026-11-09', { anfangCent: 50000, endCent: 40000 }); } catch { warf = true; }
+  ok('Buchungen bei Fehlbetrag: Abbruch mit Grund', warf);
+  ok('ohne gezählten Endbestand: Fehler', T.rueckrechnung({ anfangCent: 0 }).fehler.some((f) => /Endbestand fehlt/.test(f)));
+  ok('7 % möglich', T.rueckrechnung({ anfangCent: 0, endCent: 10700, ustSatz: 7 }).ustCent === 700);
+  const bs = T.tagesabschlussBuchungen('2026-11-09', { ...e, ausgaben: [{ betragCent: 2000, text: 'Kaffee' }, { betragCent: 1190, text: 'Papier', ustSatz: 19 }] });
+  ok('Buchungen: Einnahme, 2 Ausgaben, Bank, Entnahme', bs.map((b) => b.art).join(',') === 'einnahme,ausgabe,ausgabe,bank,entnahme');
+  ok('jede Buchung ausgeglichen und am Kassenkonto 1000', bs.every((b) => istAusgeglichen(b.zeilen) && b.zeilen.some((z) => z.konto === '1000')));
+  const ein = bs[0].zeilen;
+  ok('Einnahme: S 1000 brutto · H 8400 netto · H 1776 USt', ein[0].konto === '1000' && ein[0].seite === 'S' && ein.some((z) => z.konto === '8400' && z.seite === 'H') && ein.some((z) => z.konto === '1776' && z.seite === 'H'));
+  ok('Ausgabe mit Beleg 19 %: Vorsteuer 1576 im Soll', bs[2].zeilen.some((z) => z.konto === '1576' && z.seite === 'S' && z.betrag === 190));
+  ok('Ausgabe ohne Beleg: keine Vorsteuer', !bs[1].zeilen.some((z) => z.konto === '1576'));
+  ok('Bank S 1200 / H 1000, Entnahme S 1800 / H 1000', bs[3].zeilen[0].konto === '1200' && bs[4].zeilen[0].konto === '1800' && bs[4].zeilen[1].konto === '1000');
+  const neu = T.tagesabschlussBuchungen('2026-11-09', { anfangCent: 0, endCent: 5000, einlageCent: 5000 });
+  ok('nur Einlage: S 1000 / H 1890, keine Einnahme-Buchung', neu.length === 1 && neu[0].art === 'einlage' && neu[0].zeilen[0].konto === '1000' && neu[0].zeilen[1].konto === '1890');
+  // Fehlende Tage
+  ok('fehlende Tage: Lücken, Sonntag ausgenommen', JSON.stringify(T.fehlendeTage(['2026-11-02', '2026-11-04'], { bis: '2026-11-09' })) === JSON.stringify(['2026-11-03', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-09']));
+  ok('fehlende Tage: geschlossene Tage zählen nicht', !T.fehlendeTage(['2026-11-02'], { bis: '2026-11-04', geschlossen: ['2026-11-03'] }).includes('2026-11-03'));
+  ok('fehlende Tage: ohne Abschluss und ohne „seit“ keine Meldung', T.fehlendeTage([], { bis: '2026-11-09' }).length === 0);
+  // Sprache → Felder
+  const f = T.satzZuFeldern('Bestand 612 Euro, 20 Euro Kaffee ausgegeben, 300 zur Bank, 50 privat entnommen');
+  ok('Satz → Endbestand, Ausgabe mit Text, Bank, Entnahme', f.endCent === 61200 && f.ausgaben.length === 1 && f.ausgaben[0].betragCent === 2000 && f.ausgaben[0].text === 'Kaffee' && f.bankCent === 30000 && f.entnahmeCent === 5000 && !f.unklar.length);
+  const g = T.satzZuFeldern('Endbestand 1.234,50 € und 12,80 für Briefmarken bezahlt. 100 privat eingelegt, irgendwas 5');
+  ok('Satz: Tausenderpunkt, Komma, Einlage', g.endCent === 123450 && g.ausgaben[0].betragCent === 1280 && g.einlageCent === 10000);
+  ok('Satz: Unklares wird gezeigt, nicht geraten', g.unklar.length === 1 && g.unklar[0] === 'irgendwas 5');
+  ok('Satz: zweiter Bestand ist unklar statt überschrieben', T.satzZuFeldern('Bestand 100, Bestand 200').unklar.length === 1);
+  // Quittung
+  const q = { aussteller: 'Muster Boutique', anschrift: 'Musterweg 1, 12345 Musterstadt', datum: '2026-11-09', leistung: '1 Seidentuch', bruttoCent: 4900, ustSatz: 19 };
+  ok('Quittung: Pflichtangaben vollständig', T.quittungPruefen(q).ok && T.quittungPruefen(q).ust.ust === 782);
+  ok('Quittung: fehlender Name/Anschrift wird genannt', T.quittungPruefen({ ...q, aussteller: '', anschrift: '' }).fehlt.length === 2);
+  const gross = T.quittungPruefen({ ...q, bruttoCent: 30000 });
+  ok('Quittung über 250 €: nicht ok, Hinweis auf vollständige Rechnung', !gross.ok && /250/.test(gross.hinweise[0]));
+  // Verdrahtung
+  const kv = _readSpore(new URL('../src/ui/views/kassenbuch.js', import.meta.url), 'utf8');
+  ok('Kasse & Shop zeigt Tagesabschluss, Quittung und den Weg zur Shop-Übernahme', /tagesabschlussKarte\(/.test(kv) && /quittungKarte\(\)/.test(kv) && /navigate\('shopbuchung'\)/.test(kv));
+  const st = _readSpore(new URL('../src/domain/tagesabschluss-store.js', import.meta.url), 'utf8');
+  ok('Store: erst prüfen (validateBuchung), dann schreiben; zweiter Abschluss je Tag abgewiesen', st.indexOf('validateBuchung({') < st.indexOf('saveBeleg(opt.foto') && /schon einen festgeschriebenen Tagesabschluss/.test(st));
+  const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
+  ok('sw.js: drei neue Dateien im Vorrat, Cache ≥ v291', ["'./src/domain/tagesabschluss.js'", "'./src/domain/tagesabschluss-store.js'", "'./src/ui/views/tagesabschluss.js'"].every((x) => sw.includes(x)) && Number(sw.match(/CACHE_VERSION = 'v(\d+)'/)[1]) >= 291);
+  const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
+  const benutzt = [...new Set([..._readSpore(new URL('../src/ui/views/tagesabschluss.js', import.meta.url), 'utf8').matchAll(/t\('(tagab\.[\w.]+)'\)/g)].map((m) => m[1]))];
+  ok('i18n DE/EN: alle ' + benutzt.length + ' tagab-Sätze je zweimal', benutzt.length > 30 && benutzt.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);

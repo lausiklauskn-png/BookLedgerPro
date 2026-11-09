@@ -1,7 +1,9 @@
 # Bauplan: Neuausrichtung BookLedgerPro (2026-11-09)
 
 Grundlage: Gespräch mit Klaus am 2026-11-09 (Analyse der App, Vergleich mit herkömmlichen Buchhaltungs-Apps,
-Klaus' Antworten). **Noch nichts davon ist gebaut.** Jeder Schritt braucht Klaus' Ja in der Ja/Nein-Liste unten.
+Klaus' Antworten). Jeder Schritt braucht Klaus' Ja in der Ja/Nein-Liste unten.
+**Gebaut (2026-11-09, zweite Sitzung):** Weg (c) – Alis-Moderaum-Kasse ohne „Bar“ (PR #84 dort) und in BookLedgerPro
+„Kasse & Shop“ mit Tagesabschluss und Quittungsvorlage (Abschnitt 5, M1). Sonst nichts.
 
 ## 1. Wofür BookLedgerPro da ist
 
@@ -216,18 +218,23 @@ im Echtbetrieb sperren.
 |---|---|---|
 | J1 | Ausrichtung Abschnitt 1 und Umfang Abschnitt 3 so übernehmen | |
 | J2 | Geldkarte nach Abschnitt 4 als gemeinsames Format (BLP + Familienakte) | |
-| J3 | Mit Schritt 1 (Ausmisten) beginnen | |
-| J4 | Regel-Paket statt KI-Raten für Gesetzesänderungen | |
-| J5 | ELSTER-Versand über die Windows-Fassung, Android über den Tresor | |
-| J6 | Bank in Stufen, FinTS erst später entscheiden | |
+| J3 | Mit Schritt 1 (Ausmisten) beginnen | offen – Empfehlung Claude: **Ja** |
+| J4 | Regel-Paket statt KI-Raten für Gesetzesänderungen | offen – Empfehlung Claude: **Ja** |
+| J5 | ELSTER-Versand über die Windows-Fassung, Android über den Tresor | offen – Empfehlung Claude: **Ja** (wegen F4 „später“ zuerst nur Ausfüllhilfe) |
+| J6 | Bank in Stufen, FinTS erst später entscheiden | offen – Empfehlung Claude: **Ja** |
+
+Klaus hat am 2026-11-09 zu J3–J6 gefragt „Was wäre deine Entscheidung?“ – die Empfehlung steht oben, **sein Ja steht noch aus**.
 
 Offene Fragen:
 - ~~F1~~ **entschieden:** Weg (c) offene Ladenkasse (Klaus 2026-11-09).
 - ~~F2~~ **entschieden:** Bargeld wird angenommen.
-- **F3** Betreut eine Person mehrere Betriebe auf einem Gerät (dann bleibt „mehrere Betriebe“), oder hat jeder Betrieb sein eigenes Gerät?
-- **F4** ELSTER-Herstellerregistrierung jetzt beantragen?
+- ~~F3~~ **entschieden (Klaus 2026-11-09):** ja, eine Person führt mehrere Betriebe auf einem Gerät – „mehrere Betriebe“ bleibt.
+- ~~F4~~ **entschieden:** ELSTER-Herstellerregistrierung **später**; bis dahin Ausfüllhilfe.
 - ~~F6~~ **entschieden:** erst USB-Stick zum Umstecken, danach Abgleich im Mycel-Netz (Abschnitt 1b, Schritt 9).
-- **F5** Private Brain Pro: nur „Frag dein Geld“, oder auch Notizen → Fristen?
+- ~~F5~~ **entschieden:** nur Fragen ans Geld, keine Notizen → Fristen. Arbeitstitel **„BLP-Fragen“**, und **nur der Chef fragt**
+  (Klaus: „Chef fragt dein Geld … ich bin mir nicht sicher, ob das besser ist“): Geldfragen beantwortet BookLedgerPro nur einem Gerät,
+  das mit der Chef-PIN entsperrt ist (Baustein `pro-chefcode.js`, Umbau 14 A). Private Brain Pro liest nur, bucht nichts.
+  Später möglich (nicht entschieden): Notiz → Frist nur als **Vorschlag** im BLP-Eingang mit einem Tipp. Name noch offen.
 
 ## 9. Startauftrag zum Einfügen
 
