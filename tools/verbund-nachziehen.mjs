@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const QUELLE = 'assets/pro-verbund.html';
-const STAND = '2026-11-09';
+const STAND = '2026-11-10';
 
 function arg(name) {
   const i = process.argv.indexOf(name);
