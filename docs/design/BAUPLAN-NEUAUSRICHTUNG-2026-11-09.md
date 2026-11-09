@@ -36,8 +36,10 @@ Herkömmlich: „Auf welches Konto buchst du das?“ – BookLedgerPro: **„Was
 - **Bleibt:** Belege, Eingang, Rechnungen/Angebote, Kunden, **Kassenbuch**, Bank, USt-VA, EÜR, DATEV-Übergabe an den
   Steuerberater, mehrere Betriebe (nur wenn eine Person mehrere Betriebe führt – Frage F3).
 - **Wandert:** Nachkalkulation → Workflow Calculate / Needs (Klaus' Wort); BookLedgerPro liefert nur die Ist-Zahlen zurück.
-- **Geht oder kommt hinter „Profi“:** Lohn und Mitarbeiter, Bilanz, Kostenstellen, Shop-Buchung (ersetzt durch die
-  Übergabe aus Alinas Moderaum), alte Angebotsansicht, „Anderen antworten“ aus der Buchhaltung ins Netz.
+- **Bleibt und wird ausgebaut:** Shop-Buchung (`shopbuchung.js`) – sie ist der Empfänger der Übergabe aus Alinas Moderaum
+  (Korrektur 2026-11-09, vorher fälschlich unter „geht“); künftig „Kasse & Shop“ zusammen mit dem Kassenbuch.
+- **Geht oder kommt hinter „Profi“:** Lohn und Mitarbeiter, Bilanz, Kostenstellen, alte Angebotsansicht,
+  „Anderen antworten“ aus der Buchhaltung ins Netz.
 - **Aufräumen:** Briefe aus dem Hauptordner nach `docs/archiv/`, CLAUDE.md auf eine Seite, `documents.js` (1.867 Zeilen)
   und `shell.js` (1.481) aufteilen.
 
@@ -66,20 +68,42 @@ gebucht); „strittig“ hält Mahnfrist und Buchung an; Korrektur = neue Karte 
 `dokumentSha256` und meldet, wenn das Dokument verschwindet oder sich ändert (Aufbewahrungspflicht). Wiederkehrende
 Verträge der Familienakte erzeugen erwartete Karten im Voraus.
 
-## 5. Alinas Moderaum (Repo `Alis-Moderaum`), Befund 2026-11-09
+## 5. Alinas Moderaum (Repo `Alis-Moderaum`), Befund 2026-11-09 (Code gelesen, nicht ausgeführt)
 
-- Boutique-Shop + Warenwirtschaft (`warehouse.html`, IndexedDB `alm_warehouse`) + **virtuelle Kasse** (`kasse.html`,
-  `kasse-core.js`: Bar, Karte über SumUp, Bon mit 19 % USt).
-- Übergabe an BookLedgerPro existiert: „An Buchhaltung übergeben“ → `?uebernahme=` mit `art: "buchhaltung-summen"`
-  (Summen eines Zeitraums, Entwürfe zum Bestätigen).
-- **⚠ Rechtlich zu klären (Frage F1):** Eine Kasse, die Barverkäufe elektronisch erfasst, ist nach meinem Kenntnisstand
-  ein elektronisches Aufzeichnungssystem im Sinne der Kassensicherungsverordnung – dann braucht sie eine zertifizierte
-  TSE und muss dem Finanzamt gemeldet werden. Das ist mit dem Steuerberater zu bestätigen. Wege:
-  (a) SumUp-Kassensystem mit TSE für den Verkauf, BookLedgerPro liest dessen Tagesabschluss/Export;
-  (b) Cloud-TSE eines Anbieters in `kasse.html` einbinden (laufende Kosten);
-  (c) offene Ladenkasse: keine elektronische Barerfassung, nur täglicher Zählbericht in BookLedgerPro (M1).
-- Für das Kassenbuch braucht BookLedgerPro **Tagessummen getrennt nach Bar und Karte**; heute kommen Zeitraumsummen.
-  Vorschlag: Vertrag `buchhaltung-summen` Fassung 2 mit Tageszeilen.
+**Aufbau:** Boutique-Shop; dahinter (versteckter Zugang) die Warenwirtschaft `warehouse.html` (IndexedDB `alm_warehouse`,
+Stores `articles`/`movements`/`meta`) mit eingebauter **Kasse** (`kasse.html` + `kasse-core.js`: Bar, Karte über SumUp,
+Bon mit 19 % USt, Parken von Bons).
+
+**Wohin die Kasse schreibt:** nur in die Warenwirtschaft. `verkaufBuchen` senkt den Bestand und legt eine Bewegung
+„Verkauf“ an. **Nichts geht von selbst an BookLedgerPro.** Erst der Knopf „An Buchhaltung übergeben“ in der Warenwirtschaft
+schickt **eine Summe je Zeitraum** (Umsatz brutto = Verkäufe − Retouren, Wareneinkauf) als `?uebernahme=`
+(`art: "buchhaltung-summen"`) an `https://lausiklauskn-png.github.io/BookLedgerPro/`; dort entstehen in der Ansicht
+Shop-Buchung Entwürfe zum Bestätigen. Es fehlen: einzelne Bons, Trennung Bar/Karte, Tagessummen, Zahlart.
+
+**Weg-Fehler:** Die Adresse ist die Web-Fassung. Die Android-App BookLedgerPro hat dafür keinen App-Link
+(`AndroidManifest.xml`), die Übergabe landet also im Browser und nicht in der App mit dem Tresor.
+
+**Kassen-Vorschriften (Einschätzung, mit Steuerberater bestätigen):** Die Regeln sind deutsch, nicht EU
+(§ 146a AO, Kassensicherungsverordnung). Eine Registrierkassenpflicht gibt es nicht; wer aber eine elektronische Kasse
+benutzt, muss sie absichern. Die Kasse erfüllt das heute **nicht**:
+- keine zertifizierte TSE (technische Sicherheitseinrichtung), keine Signatur je Bon;
+- Bon-Nummer ist ein Zähler im `localStorage` (löschbar, je Gerät neu);
+- Bewegungen sind löschbar („Alles zurücksetzen“ leert `movements`), Daten unverschlüsselt im Browser;
+- kein Export nach DSFinV-K (Pflichtformat für die Kassen-Nachschau), keine Kassenmeldung ans Finanzamt;
+- Bon enthält nicht alle Pflichtangaben eines TSE-Bons (Transaktionsnummer, Signatur, Start/Ende).
+Mit Bargeld im echten Laden darf sie so nicht laufen. Kartenzahlung über SumUp ist davon getrennt zu sehen.
+
+**Wege (F1):**
+- (a) **SumUp-Kassensystem mit TSE** für den Verkauf (laufende Kosten), die Warenwirtschaft bleibt für Lager/Shop,
+  BookLedgerPro liest den Tagesabschluss bzw. DSFinV-K-Export von SumUp.
+- (b) **Cloud-TSE** (z. B. eines zertifizierten Anbieters) in `kasse.html` einbinden + DSFinV-K-Export + unveränderbares
+  Kassenjournal + Kassenmeldung. Größter Bau, laufende TSE-Kosten, danach eigene Kasse rechtssicher.
+- (c) **Offene Ladenkasse:** Bargeld nicht elektronisch erfassen, sondern täglicher Zählbericht in BookLedgerPro (M1);
+  die Kasse in der Warenwirtschaft nur für Bestand und Kartenzahlung. Am wenigsten Bau, mehr Handarbeit am Abend.
+
+**Unabhängig vom Weg (Vorschlag):** Übergabe Fassung 2 mit **Tagessummen je Zahlart** (bar/karte/online) und Bon-Spanne;
+Übergabe über den **Tresor** (Fach `Eingang-BookLedgerPro`) statt URL, damit sie in der App ankommt; „Alles zurücksetzen“
+im Echtbetrieb sperren.
 
 ## 6. ELSTER, Gesetze, Bank, Fristen
 
@@ -119,7 +143,7 @@ Verträge der Familienakte erzeugen erwartete Karten im Voraus.
 
 Offene Fragen:
 - **F1** Kasse Alinas Moderaum: Weg (a), (b) oder (c)? Vorher mit dem Steuerberater klären.
-- **F2** Führt Alinas Moderaum Bargeld in der Kasse, oder nur Karte?
+- **F2** Nimmt Alinas Moderaum im Laden Bargeld an, oder nur Karte/online? (Ohne Bargeld wird F1 deutlich kleiner.)
 - **F3** Betreut eine Person mehrere Betriebe auf einem Gerät (dann bleibt „mehrere Betriebe“), oder hat jeder Betrieb sein eigenes Gerät?
 - **F4** ELSTER-Herstellerregistrierung jetzt beantragen?
 - **F5** Private Brain Pro: nur „Frag dein Geld“, oder auch Notizen → Fristen?
