@@ -1,6 +1,18 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
-## Neuester Stand: Kasse & Tagesabschluss, 9. November 2026 (nicht veröffentlicht)
+## Neuester Stand: 0.1.10 veröffentlicht, „Buchhaltung“ statt „Mandant“ (0.1.11), 9. November 2026
+
+**0.1.10 veröffentlicht (Klaus' Wort „als APK, PWA … und Windows“):** Quelle main `005c1c5` (#456).
+Android: Lauf 42665280711 grün, [APK 0.1.10](https://github.com/lausiklauskn-png/BookLedgerPro/releases/download/v0.1.10/BookLedgerPro-0.1.10.apk),
+28.398.026 B, SHA-256 `3895b99009a6292e08f42ea04634eac02e67c0179ce421554a01216c147bb78e` (unabhängig geladen, gleich). Windows: Lauf 42665286675 grün,
+`https://family-projekt.de/updates/bookledgerpro/BookLedgerPro-Windows-0.1.10-x64-setup.exe` (im Lauf von außen geprüft; aus dem Behälter 403).
+PWA = Basic über Pages. Nicht erneut auslösen.
+**Danach (Klaus: „neuer Mandant … überflüssig“, „im Privaten … Haushaltsführung“):** das Wort heißt jetzt **Buchhaltung**
+(„Alis Moderaum“, „Perfect Skin Beauty“, „Haushalt“); das Startbild zeigt kein „+ Neuer Mandant“ mehr, eine weitere Buchhaltung legt man in den
+Einstellungen an („Buchhaltungen auf diesem Gerät“, in jedem Modus); Wechseln oben im Kopf erst ab zwei. Version 0.1.11/Code 12, `sw.js` v293.
+Probe `tests/smoke_buchhaltungen.mjs` 9 (Gegenprobe gegen main: 2 ROT).
+
+## Stand: Kasse & Tagesabschluss, 9. November 2026 (nicht veröffentlicht)
 
 Weg (c) gebaut: „Kasse & Shop“ mit Tagesabschluss (gezählter Bestand → Tageseinnahme zurückgerechnet, USt 19 % heraus, Foto,
 festgeschrieben, fehlende Tage, Eingabe per Sprache, Nachfrage bei auffällig hoher Einnahme) und Quittungsvorlage (Kopie als Beleg,

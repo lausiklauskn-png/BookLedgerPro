@@ -889,6 +889,12 @@ function mandantenSection() {
       el('div', { class: 'setting-label', text: t('settings.mandanten') }),
       el('p', { class: 'muted small', text: t('settings.mandantenHint') }),
       el('div', { class: 'mandant-admin' }, rows),
+      // Klaus 2026-11-09: „Neuer Mandant“ stand auf dem Startbild — jetzt hier. Sperrt und öffnet die Anlage.
+      el('button', { class: 'btn btn-sm', type: 'button', 'data-weiterer-betrieb': '', text: t('mandant.weiterer'),
+        onClick: () => {
+          try { sessionStorage.setItem('blpr_weiterer_betrieb', '1'); } catch { /* ohne Merker: normales Startbild */ }
+          sperren();
+        } }),
     );
   };
   render();

@@ -8,6 +8,8 @@ Quittungsvorlage (gedruckte Quittung → PDF-Beleg, Durchschläge im Abschluss, 
 (Privatgeld?), Weg zur Shop-Übernahme. Proben `run.mjs` „Tagesabschluss“, `tests/smoke_tagesabschluss.mjs` 43. Keine TSE, kein Bargeld in einer Kasse.
 Bauplan: `docs/design/BAUPLAN-NEUAUSRICHTUNG-2026-11-09.md`. **Ältere Briefe liegen seit 2026-11-09 in `docs/archiv/briefe/`** (Namen unten im Text gelten dort). Stand: `BRIEF_ABSCHLUSS_2026-11-09_KASSE-TAGESABSCHLUSS.md`.
 
+**Buchhaltung statt Mandant (Klaus 2026-11-09):** sichtbar heißt ein Mandant „Buchhaltung“ (Laden, zweiter Laden, Haushalt); kein „+ Neuer Mandant“ auf dem Startbild, Anlegen nur in den Einstellungen (Merker `blpr_weiterer_betrieb` → `showLockScreen` öffnet die Anlage), in jedem Modus. Code-Namen (`mandant.*`, Registry) bleiben. Probe `smoke_buchhaltungen` 9. **0.1.10 veröffentlicht** (Android `3895b990…b78e`, Windows eigener Server), nicht erneut auslösen; 0.1.11 vorbereitet.
+
 **Tresor-Plan (Klaus 2026-11-03: „Ja zum Plan“):** „Speichern unter“ hinterlässt keine 0-Byte-Dateien mehr
 (`BlpFilesPlugin`: Inhalt im Zwischenspeicher, Löschen bei Fehler), fragt beim Speichern in den Tresorordner nach; „Tresorordner anlegen“ nur nach
 Rückfrage, nie im Verwaltungs-/Fachordner; Hilfe „Wo liegt was?“ (`src/ui/woLiegtWas.js`). Proben `smoke_tresorplan` 11, `test-native` 62. **Android 0.1.9 veröffentlicht** (Lauf 41742187280, SHA-256 `8d7f340f…1250`, nicht erneut auslösen). Stand: `docs/PULS.md`.

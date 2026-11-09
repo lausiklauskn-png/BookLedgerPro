@@ -141,7 +141,7 @@ export const FEATURE = Object.freeze({
   KOSTENSTELLEN: 'kostenstellen',   // Kostenstellen-Auswertung
   VERBINDLICHKEITEN: 'verbindlichkeiten', // Kreditoren-OP / Eingangsrechnungen auf Ziel
   BERATER_EXPORT: 'beraterExport',  // DATEV-EXTF / GDPdU / Übergabe-Berichte
-  MANDANTEN: 'mandanten',           // Mandantenwechsel / -verwaltung
+  MANDANTEN: 'mandanten',           // Buchhaltung wechseln / verwalten — in jedem Modus (Klaus 2026-11-09: Laden, zweiter Laden, Haushalt)
   JOURNAL: 'journal',               // Soll/Haben-Buchen (Privat: nein)
 });
 
@@ -150,11 +150,11 @@ export const FEATURE_LISTE = Object.freeze(Object.values(FEATURE));
 const FEATURE_AUSGEBLENDET = Object.freeze({
   privat: new Set([
     FEATURE.UMSATZSTEUER, FEATURE.RECHNUNGEN, FEATURE.MAHNWESEN, FEATURE.ANLAGEN, FEATURE.MITARBEITER,
-    FEATURE.KOSTENSTELLEN, FEATURE.VERBINDLICHKEITEN, FEATURE.BERATER_EXPORT, FEATURE.MANDANTEN, FEATURE.JOURNAL,
+    FEATURE.KOSTENSTELLEN, FEATURE.VERBINDLICHKEITEN, FEATURE.BERATER_EXPORT, FEATURE.JOURNAL,
   ]),
   // § 19: kein USt-Ausweis, keine Voranmeldung, keine Zahllast; keine Mitarbeiter/Kostenstellen (F, Tabelle).
-  kleinunternehmer: new Set([FEATURE.UMSATZSTEUER, FEATURE.MITARBEITER, FEATURE.KOSTENSTELLEN, FEATURE.BERATER_EXPORT, FEATURE.MANDANTEN]),
-  selbststaendig: new Set([FEATURE.BERATER_EXPORT, FEATURE.MANDANTEN]),
+  kleinunternehmer: new Set([FEATURE.UMSATZSTEUER, FEATURE.MITARBEITER, FEATURE.KOSTENSTELLEN, FEATURE.BERATER_EXPORT]),
+  selbststaendig: new Set([FEATURE.BERATER_EXPORT]),
   berater: new Set([]),
   verein: new Set([FEATURE.RECHNUNGEN, FEATURE.MAHNWESEN, FEATURE.MITARBEITER]),
 });
@@ -177,12 +177,11 @@ export const EINSTELLUNG_LISTE = Object.freeze(Object.values(EINSTELLUNG));
 
 const EINSTELLUNG_AUSGEBLENDET = Object.freeze({
   privat: new Set([EINSTELLUNG.KLEINUNTERNEHMER, EINSTELLUNG.GEWINNERMITTLUNG, EINSTELLUNG.RECHNUNGSSTELLE,
-    EINSTELLUNG.FIRMA, EINSTELLUNG.DATEV, EINSTELLUNG.GESCHAEFTSJAHR, EINSTELLUNG.PARTNER, EINSTELLUNG.BUCHUNGSSPERRE,
-    EINSTELLUNG.MANDANTEN]),
+    EINSTELLUNG.FIRMA, EINSTELLUNG.DATEV, EINSTELLUNG.GESCHAEFTSJAHR, EINSTELLUNG.PARTNER, EINSTELLUNG.BUCHUNGSSPERRE]),
   // § 19 ist im Modus fest (kein eigener Schalter); EÜR ist die Regel; DATEV/Mandanten sind Berater-Sache.
-  kleinunternehmer: new Set([EINSTELLUNG.KLEINUNTERNEHMER, EINSTELLUNG.GEWINNERMITTLUNG, EINSTELLUNG.DATEV, EINSTELLUNG.MANDANTEN]),
+  kleinunternehmer: new Set([EINSTELLUNG.KLEINUNTERNEHMER, EINSTELLUNG.GEWINNERMITTLUNG, EINSTELLUNG.DATEV]),
   // Regelbesteuert ist im Modus fest; DATEV/Mandanten sind Berater-Sache.
-  selbststaendig: new Set([EINSTELLUNG.KLEINUNTERNEHMER, EINSTELLUNG.DATEV, EINSTELLUNG.MANDANTEN]),
+  selbststaendig: new Set([EINSTELLUNG.KLEINUNTERNEHMER, EINSTELLUNG.DATEV]),
   berater: new Set([]),
   verein: new Set([EINSTELLUNG.RECHNUNGSSTELLE, EINSTELLUNG.DATEV]),
 });
