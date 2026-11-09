@@ -170,3 +170,9 @@ Grundlage: `docs/design/SAMMLUNG-DESIGN-2026-10-26.md`, Brief `docs/BRIEF_NACHFO
       Kopfleiste, Tresorordner 1→2→4→3 — 2026-10-28, PR #386, `BRIEF_ABSCHLUSS_2026-10-28_PRO-UMBAU-2.md`; am Gerät ungeprüft
 - [x] 7.8 Pro-Umbau 3: Belegliste für Hunderte, Bedeutungs-Schalter an der Suche, Strichgrafiken, Leistengriff (2026-10-28; ⚠ nicht am Tablet)
 - [ ] 7.6 Danach Unternehmer-Modi; PWA-Klon **BookLedger Basic** (`BookLedger-Basic`, DB-Endung `bookledgerbasic`, D10 entschieden 2026-10-26)
+
+## ☐ Phase 8 — Neuausrichtung (geplant 2026-11-09, wartet auf Klaus' Ja/Nein)
+Plan: `docs/design/BAUPLAN-NEUAUSRICHTUNG-2026-11-09.md`.
+- [ ] 8.1 Ausmisten und Aufräumen · [ ] 8.2 Eingang + Geldkarte · [ ] 8.3 Kasse per Sprache, Steuer-Rücklage
+- [ ] 8.4 Zahl → Beleg, Prüfungsmappe, Fristen · [ ] 8.5 Regel-Paket + Ausfüllhilfe · [ ] 8.6 Bank Stufe 1/2
+- [ ] 8.7 ELSTER-Versand (Windows) · [ ] 8.8 „Frag dein Geld“ mit Private Brain Pro

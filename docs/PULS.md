@@ -1,6 +1,13 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
-## Neuester Stand: Android-Testfassung 0.1.9 veröffentlicht, 3./4. November 2026
+## Neuester Stand: Bauplan Neuausrichtung, 9. November 2026 (nichts gebaut)
+
+Analyse mit Klaus: BookLedgerPro wird „Geld und Steuer für kleine Betriebe und Familien“ (Tomy, Alinas Moderaum,
+Perfect Skin; privat Anlage N), keine Profi-Werkzeuge. Geldkarte als Brücke zur Familienakte, Kasse per Sprache,
+Steuer-Rücklage, Regel-Paket je Jahr, ELSTER über Windows. ⚠ Kasse in Alis-Moderaum: TSE-Pflicht mit Steuerberater klären.
+Plan mit Ja/Nein-Liste und Startauftrag: `docs/design/BAUPLAN-NEUAUSRICHTUNG-2026-11-09.md`. **Nächstes:** Klaus' Ja/Nein.
+
+## Stand: Android-Testfassung 0.1.9 veröffentlicht, 3./4. November 2026
 
 Klaus' Wort („Ja zu 1 und 2“: zusammenführen und Test-Versionen fürs Tablet). Tresor-Plan #449 und Version #450 auf main,
 Quelle `476385606b7113d2e8bae79f9a498052941b48be`. Lauf `android-release.yml` 41742187280 grün (Signatur, Emulator, GitHub,
