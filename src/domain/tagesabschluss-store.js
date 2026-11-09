@@ -4,8 +4,8 @@
 // sind festgeschrieben (seq + Hash-Kette) und der Abschluss ist nicht mehr änderbar — Korrektur nur per
 // Storno der Buchungen (GoBD), nie Löschen.
 
-import { encPut, encGet, encList, neueId } from './encstore.js';
-import { saveEntwurf, festschreiben, accountIndex, ensureSeedKonten, listBuchungen } from './store.js';
+import { encPut, encGet, encList, encDel, neueId } from './encstore.js';
+import { saveEntwurf, festschreiben, storno, getBuchung, accountIndex, ensureSeedKonten, listBuchungen } from './store.js';
 import { validateBuchung } from './journal.js';
 import { saveBeleg, linkBeleg } from './documents.js';
 import { rueckrechnung, tagesabschlussBuchungen, benoetigteKontenTA, KONTEN_TA, einnahmeAuffaellig, quittungenSumme } from './tagesabschluss.js';
@@ -125,4 +125,32 @@ export async function tagesabschlussFestschreiben(eingabe, opt = {}) {
   };
   await encPut(rec);
   return rec;
+}
+
+// ---- Abschluss stornieren (Klaus 2026-11-09, K2: „Ja“) ----------------------------------------------------------
+// Jede Buchung des Abschlusses bekommt eine festgeschriebene Gegenbuchung (store.storno, Datum heute) — nichts wird
+// gelöscht. Der Abschluss wird als „storniert“ aufbewahrt (eigener Datensatz mit Zeitpunkt und Grund), der Tag ist
+// danach wieder offen und kann neu gezählt werden. Zählprotokoll und Quittungen bleiben als Belege erhalten.
+
+export async function listStornierteAbschluesse(datum) {
+  const alle = await encList('tagesabschluss-storniert');
+  return datum ? alle.filter((a) => a.datum === datum) : alle;
+}
+
+/** @returns {Promise<{datum, stornoIds:string[]}>} */
+export async function tagesabschlussStornieren(datum, grund = '') {
+  const rec = await getTagesabschluss(datum);
+  if (!rec) throw new Error(`Für ${datum} gibt es keinen festgeschriebenen Tagesabschluss.`);
+  const stornoIds = [];
+  for (const bid of rec.buchungIds || []) {
+    const b = await getBuchung(bid);
+    if (!b || b.storniertDurch) continue;          // schon storniert (z. B. von Hand unter „Buchungen“)
+    const s = await storno(bid);
+    stornoIds.push(s.id);
+  }
+  const archiv = { ...rec, id: neueId('tagesabschluss-storniert'), type: 'tagesabschluss-storniert',
+    storniertAm: new Date().toISOString(), stornoIds, grund: String(grund || '').slice(0, 300) };
+  await encPut(archiv);
+  await encDel(rec.id);
+  return { datum, stornoIds };
 }

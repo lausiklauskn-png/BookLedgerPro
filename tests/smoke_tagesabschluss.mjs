@@ -28,7 +28,7 @@ const PROBE = `<!doctype html><html lang="de"><head><meta charset="utf-8"><link 
 <script>window.__drucke = []; window.print = () => { window.__drucke.push(document.documentElement.classList.contains('druck-quittung')); };</script>
 <script type="module">
 import { setupVault } from './src/core/vault.js';
-import { hydrateSettings, updateSettings } from './src/state.js';
+import { hydrateSettings, updateSettings, getSettings } from './src/state.js';
 import { setAnfangsbestand } from './src/domain/anfangsbestand-store.js';
 import { mountKassenbuch } from './src/ui/views/kassenbuch.js';
 import * as store from './src/domain/store.js';
@@ -36,7 +36,7 @@ import * as docs from './src/domain/documents.js';
 import * as tas from './src/domain/tagesabschluss-store.js';
 import { mitMikrofon } from './src/ui/mikro.js';
 import { recAll } from './src/core/db.js';
-window.__p = { store, docs, tas, mitMikrofon, recAll, updateSettings, mountKassenbuch };
+window.__p = { store, docs, tas, mitMikrofon, recAll, updateSettings, getSettings, mountKassenbuch };
 await setupVault('probe-passwort-123');
 await hydrateSettings();
 const d = new Date();
@@ -250,6 +250,45 @@ try {
   ok('Abschluss mit Bestätigung festgeschrieben, Antwort vermerkt', qf.da && qf.auff && qf.auff.antwort === 'kein-privatgeld' && qf.einnahme === 150000, JSON.stringify(qf));
   ok('2 Durchschläge + 1 App-Quittung als Belege an der Einnahme-Buchung', qf.ids === 3 && qf.durch === 2 && qf.alleVerknuepft && qf.q.anzahl === 1 && qf.q.durchschlaege === 2, JSON.stringify(qf));
   ok('Quittungen nicht gebucht: nur die Einnahme-Buchung an dem Tag', qf.buchungen === 1, String(qf.buchungen));
+
+  console.log('— I. Ruhetage und Abschluss stornieren —');
+  await page.evaluate(() => window.__p.mountKassenbuch(document.getElementById('app')));
+  await page.waitForSelector('[data-tagesabschluss]');
+  const vorR = await page.evaluate(() => Number(document.querySelector('[data-ta-fehlend]')?.dataset.taFehlend || 0));
+  await page.evaluate(() => { document.querySelector('[data-ta-ruhetage]').open = true; });
+  const tagWeg = await page.evaluate(() => { const b = document.querySelector('[data-ta-fehlt]'); return b ? new Date(b.dataset.taFehlt + 'T12:00:00').getDay() : null; });
+  if (tagWeg != null) {
+    await page.click(`[data-ta-ruhetag="${tagWeg}"]`);
+    await page.waitForTimeout(800);
+    await page.waitForSelector('[data-tagesabschluss]');
+    const nachR = await page.evaluate(() => Number(document.querySelector('[data-ta-fehlend]')?.dataset.taFehlend || 0));
+    const gemerkt = await page.evaluate((w) => (window.__p.getSettings().kasseRuhetage || []).includes(w), tagWeg);
+    ok('Ruhetag angekreuzt: weniger fehlende Tage, in den Einstellungen gemerkt', nachR < vorR && gemerkt, `${vorR} → ${nachR}`);
+  } else ok('Ruhetag angekreuzt (kein fehlender Tag zum Prüfen)', false, 'keine Lücke');
+  const heute = await page.evaluate(() => window.__heute);
+  await page.evaluate(() => { const d = document.querySelector('[data-tagesabschluss] details:last-of-type'); if (d) d.open = true; });
+  await page.click(`[data-ta-storno="${heute}"]`);
+  ok('Stornieren fragt erst nach', await page.isVisible(`[data-ta-storno-ja="${heute}"]`));
+  await page.click(`[data-ta-storno-ja="${heute}"]`);
+  await page.waitForFunction((h) => /Storniert/.test(document.querySelector(`[data-ta-storno-meldung="${h}"]`)?.textContent || ''), heute, { timeout: 15000 }).catch(() => {});
+  const st = await page.evaluate(async (h) => {
+    const { store, tas } = window.__p;
+    const bs = await store.listBuchungen();
+    const tag = bs.filter((b) => b.datum === h && !b.stornoVon && /Tagesabschluss|Barausgabe|Bankeinzahlung|Privatentnahme/.test(b.beschreibung));
+    const storni = bs.filter((b) => b.stornoVon && tag.some((x) => x.id === b.stornoVon));
+    return { offen: !(await tas.getTagesabschluss(h)), archiv: (await tas.listStornierteAbschluesse(h)).length,
+      alleStorniert: tag.length === 4 && tag.every((b) => b.status === 'storniert'), storni: storni.length,
+      kette: await store.verifyAuditChain() };
+  }, heute);
+  ok('alle 4 Buchungen des Tages storniert, 4 Gegenbuchungen, Kette intakt', st.alleStorniert && st.storni === 4 && st.kette && st.kette.ok === true, JSON.stringify(st));
+  ok('Tag wieder offen, alter Abschluss als „storniert“ aufbewahrt', st.offen && st.archiv === 1, JSON.stringify(st));
+  await page.waitForTimeout(800);
+  await page.waitForSelector('[data-tagesabschluss]');
+  await page.evaluate((h) => { const d = document.querySelector('[data-ta-datum]'); d.value = h; d.dispatchEvent(new Event('change')); }, heute);
+  await page.waitForTimeout(400);
+  await page.fill('[data-ta-end]', '612,00');
+  await page.waitForTimeout(200);
+  ok('nach dem Storno: Anfangsbestand wieder 200 €, derselbe Tag neu zählbar', await page.evaluate(() => !document.querySelector('[data-ta-schon]') && !!document.querySelector('[data-ta-einnahme]')));
 
   console.log('— G. schmal (360 px) —');
   await page.setViewportSize({ width: 360, height: 800 });

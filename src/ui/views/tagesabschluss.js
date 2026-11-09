@@ -8,25 +8,33 @@
 
 import { el } from '../dom.js';
 import { t } from '../i18n.js';
-import { getSettings } from '../../state.js';
+import { getSettings, updateSettings } from '../../state.js';
 import { formatEuro, formatCents, parseEuroToCents } from '../../domain/money.js';
 import { rueckrechnung, tagesabschlussBuchungen, satzZuFeldern, fehlendeTage, quittungPruefen, ustHeraus,
   einnahmeAuffaellig, quittungenSumme, quittungenPruefen, quittungPdfBauen } from '../../domain/tagesabschluss.js';
-import { listTagesabschluesse, kassenStandFuer, tagesabschlussFestschreiben, listQuittungen, quittungAblegen } from '../../domain/tagesabschluss-store.js';
+import { listTagesabschluesse, kassenStandFuer, tagesabschlussFestschreiben, listQuittungen, quittungAblegen, tagesabschlussStornieren } from '../../domain/tagesabschluss-store.js';
 import { pdfLibLaden } from '../../core/scanPdf.js';
 
 const heuteIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const gesternIso = () => { const d = new Date(); d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const cent = (v) => { const c = parseEuroToCents(v); return Number.isFinite(c) ? c : 0; };
+// Ruhetage und geschlossene Tage (Klaus 2026-11-09, K3): in den verschlüsselten Einstellungen, nicht nur im Gerät.
+// Ältere „zu“-Markierungen aus dem Gerätespeicher werden beim Lesen mitgenommen.
 const GESCHLOSSEN_KEY = 'blpr_kasse_geschlossen';
+const WOCHENTAGE = [1, 2, 3, 4, 5, 6, 0];
+export function ruhetageLesen() { const r = getSettings().kasseRuhetage; return Array.isArray(r) ? r.filter((x) => Number.isInteger(x) && x >= 0 && x <= 6) : [0]; }
 
-function geschlossenLesen() { try { return JSON.parse(localStorage.getItem(GESCHLOSSEN_KEY) || '[]'); } catch { return []; } }
-function geschlossenMerken(liste) { try { localStorage.setItem(GESCHLOSSEN_KEY, JSON.stringify(liste.slice(-400))); } catch { /* ohne Speicher */ } }
+function geschlossenLesen() {
+  let alt = []; try { alt = JSON.parse(localStorage.getItem(GESCHLOSSEN_KEY) || '[]'); } catch { /* ohne Speicher */ }
+  const neu = getSettings().kasseGeschlossen;
+  return [...new Set([...(Array.isArray(neu) ? neu : []), ...(Array.isArray(alt) ? alt : [])])];
+}
+async function geschlossenMerken(liste) { await updateSettings({ kasseGeschlossen: [...new Set(liste)].sort().slice(-400) }, { still: true }); }
 
 /** Karte „Tagesabschluss“. `neuZeichnen` wird nach dem Festschreiben gerufen. */
 export async function tagesabschlussKarte(neuZeichnen) {
   const abschluesse = await listTagesabschluesse();
-  const fehlen = fehlendeTage(abschluesse.map((a) => a.datum), { bis: gesternIso(), geschlossen: geschlossenLesen() });
+  const fehlen = fehlendeTage(abschluesse.map((a) => a.datum), { bis: gesternIso(), geschlossen: geschlossenLesen(), ruhetage: ruhetageLesen() });
   const box = el('div', { class: 'card', 'data-tagesabschluss': '' });
   let datum = fehlen[0] || heuteIso();
   if (abschluesse.some((a) => a.datum === datum)) datum = heuteIso();
@@ -185,7 +193,8 @@ export async function tagesabschlussKarte(neuZeichnen) {
     ergebnis,
     el('div', { class: 'btn-row' }, [festKnopf]),
     meldung,
-    abschluesse.length ? letzteAbschluesse(abschluesse) : null,
+    ruhetageZeile(neuZeichnen),
+    abschluesse.length ? letzteAbschluesse(abschluesse, neuZeichnen) : null,
   );
   await standLaden();
   // Nach einer gedruckten Quittung nur die Quittungs-Zeile auffrischen – nie neu zeichnen (sonst gingen Eingaben verloren).
@@ -200,24 +209,65 @@ function fehlendeZeile(fehlen, waehlen, neuZeichnen) {
     ...zeige.map((d) => el('span', { style: 'display:inline-flex;gap:.2rem;margin:.1rem .4rem .1rem 0' }, [
       el('button', { class: 'btn btn-sm', type: 'button', text: d, 'data-ta-fehlt': d, onClick: () => waehlen(d) }),
       el('button', { class: 'btn btn-sm', type: 'button', text: t('tagab.geschlossen'), 'data-ta-zu': d, title: t('tagab.geschlossenTitel'),
-        onClick: () => { geschlossenMerken([...geschlossenLesen(), d]); if (neuZeichnen) neuZeichnen(); } }),
+        onClick: async () => { await geschlossenMerken([...geschlossenLesen(), d]); if (neuZeichnen) neuZeichnen(); } }),
     ])),
   ]);
 }
 
-function letzteAbschluesse(liste) {
+function ruhetageZeile(neuZeichnen) {
+  const an = new Set(ruhetageLesen());
+  const namen = t('tagab.wochentage').split(',');
+  return el('details', { class: 'small', 'data-ta-ruhetage': [...an].sort().join(',') }, [
+    el('summary', { text: t('tagab.ruhetage') + ': ' + (WOCHENTAGE.filter((w) => an.has(w)).map((w) => namen[(w + 6) % 7]).join(', ') || t('tagab.keine')) }),
+    el('div', { class: 'btn-row' }, WOCHENTAGE.map((w) => {
+      const box = el('input', { type: 'checkbox', 'data-ta-ruhetag': String(w) });
+      box.checked = an.has(w);
+      box.addEventListener('change', async () => {
+        const neu = new Set(ruhetageLesen()); if (box.checked) neu.add(w); else neu.delete(w);
+        await updateSettings({ kasseRuhetage: [...neu].sort() }, { still: true });
+        if (neuZeichnen) neuZeichnen();
+      });
+      return el('label', { style: 'display:inline-flex;gap:.25rem;align-items:center' }, [box, namen[(w + 6) % 7]]);
+    })),
+    el('p', { class: 'muted small', text: t('tagab.ruhetageErklaer') }),
+  ]);
+}
+
+function stornoZelle(a, neuZeichnen) {
+  const zelle = el('td', { class: 'small' });
+  const start = el('button', { class: 'btn btn-sm', type: 'button', text: t('tagab.storno'), 'data-ta-storno': a.datum });
+  start.addEventListener('click', () => {
+    const meldung = el('span', { class: 'small', 'data-ta-storno-meldung': a.datum });
+    const ja = el('button', { class: 'btn btn-sm btn-danger', type: 'button', text: t('tagab.stornoJa'), 'data-ta-storno-ja': a.datum });
+    const nein = el('button', { class: 'btn btn-sm', type: 'button', text: t('tagab.stornoNein'), onClick: () => zelle.replaceChildren(start) });
+    ja.addEventListener('click', async () => {
+      ja.disabled = true; nein.disabled = true;
+      try {
+        const r = await tagesabschlussStornieren(a.datum, 'Von Hand in „Kasse & Shop“');
+        meldung.textContent = t('tagab.stornoFertig').replace('{n}', r.stornoIds.length);
+        if (neuZeichnen) setTimeout(neuZeichnen, 600);
+      } catch (err) { meldung.textContent = String(err && err.message || err); nein.disabled = false; }
+    });
+    zelle.replaceChildren(el('span', { text: t('tagab.stornoFrage') + ' ' }), ja, nein, meldung);
+  });
+  zelle.appendChild(start);
+  return zelle;
+}
+
+function letzteAbschluesse(liste, neuZeichnen) {
   const rows = liste.slice(-10).reverse().map((a) => el('tr', { 'data-ta-zeile': a.datum }, [
     el('td', { class: 'mono small', text: a.datum }),
     el('td', { class: 'num', text: formatEuro(a.endCent) }),
     el('td', { class: 'num', text: formatEuro(a.einnahmeCent) }),
     el('td', { class: 'num', text: formatEuro(a.ustCent) }),
     el('td', { class: 'small', text: a.belegId ? t('tagab.mitFoto') : '—' }),
+    stornoZelle(a, neuZeichnen),
   ]));
   return el('details', { class: 'small' }, [
     el('summary', { text: t('tagab.letzte') }),
     el('table', { class: 'table' }, [
       el('thead', {}, el('tr', {}, [el('th', { text: t('tagab.datum') }), el('th', { class: 'num', text: t('tagab.end') }),
-        el('th', { class: 'num', text: t('tagab.einnahme') }), el('th', { class: 'num', text: 'USt' }), el('th', { text: t('tagab.foto') })])),
+        el('th', { class: 'num', text: t('tagab.einnahme') }), el('th', { class: 'num', text: 'USt' }), el('th', { text: t('tagab.foto') }), el('th', { text: '' })])),
       el('tbody', {}, rows),
     ]),
   ]);

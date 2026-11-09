@@ -7458,6 +7458,10 @@ await section('Tagesabschluss offene Ladenkasse (Klaus 2026-11-09, Weg c)', asyn
   ok('Store: ohne Bestätigung kein Abschluss bei auffälliger Einnahme', /if \(auff\.auffaellig && !opt\.auffaelligBestaetigt\)/.test(stq));
   ok('Store: Quittungen werden verknüpft, nicht gebucht (kein saveEntwurf für Quittungen)', /linkBeleg\(bid, einnahmeId\)/.test(stq) && !/quittung[^\n]*saveEntwurf/.test(stq));
   ok('Ansicht: gedruckte Quittung wird als Beleg abgelegt', /quittungAblegen\(q, bytes\)/.test(tvq));
+  // Abschluss stornieren (K2) und Ruhetage (K3)
+  const stS = _readSpore(new URL('../src/domain/tagesabschluss-store.js', import.meta.url), 'utf8');
+  ok('Storno: Gegenbuchung über store.storno, Abschluss archiviert (nicht gelöscht ohne Kopie)', /await storno\(bid\)/.test(stS) && stS.indexOf("type: 'tagesabschluss-storniert'") > 0 && stS.indexOf('await encPut(archiv)') < stS.indexOf('await encDel(rec.id)'));
+  ok('Ruhetage: Montag zusätzlich frei', !T.fehlendeTage(['2026-11-02'], { bis: '2026-11-09', ruhetage: [0, 1] }).includes('2026-11-09') && T.fehlendeTage(['2026-11-02'], { bis: '2026-11-09', ruhetage: [] }).includes('2026-11-08'));
   // Verdrahtung
   const kv = _readSpore(new URL('../src/ui/views/kassenbuch.js', import.meta.url), 'utf8');
   ok('Kasse & Shop zeigt Tagesabschluss, Quittung und den Weg zur Shop-Übernahme', /tagesabschlussKarte\(/.test(kv) && /quittungKarte\(/.test(kv) && /navigate\('shopbuchung'\)/.test(kv));
