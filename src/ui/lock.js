@@ -36,6 +36,16 @@ import {
  * Bestandsnutzer. Die reine Entscheidungs-/Sortierlogik liegt node-getestet in
  * `domain/mandanten.js`; die Tresor-Umschaltung kapselt `core/mandantenStore.js`.
  */
+// Merker aus den Einstellungen: nach dem Sperren gleich „Weiteren Betrieb anlegen“ zeigen (einmalig).
+export const WEITERER_BETRIEB_MERKER = 'blpr_weiterer_betrieb';
+function weitererBetriebGewuenscht() {
+  try {
+    const ja = sessionStorage.getItem(WEITERER_BETRIEB_MERKER) === '1';
+    sessionStorage.removeItem(WEITERER_BETRIEB_MERKER);
+    return ja;
+  } catch { return false; }
+}
+
 export async function showLockScreen(container) {
   const registry = await ladeRegistry();
   return new Promise((resolve) => {
@@ -44,13 +54,21 @@ export async function showLockScreen(container) {
     // weitermacht, wo man war. Ein klarer Rückweg führt zurück zur echten Welt.
     if (aktiverSandbox(registry)) {
       renderSandboxEinstieg(container, resolve, registry);
+    } else if (weitererBetriebGewuenscht()) {
+      // Aus den Einstellungen „+ Weiteren Betrieb anlegen“ (Klaus 2026-11-09): direkt in die Anlage,
+      // „Zurück“ führt zum gewohnten Startbild.
+      renderNeuerMandant(container, resolve, () => {
+        if (brauchtMandantenAuswahl(registry)) renderMandantenAuswahl(container, resolve);
+        else enterAktivenMandant(container, resolve, {});
+      });
     } else if (brauchtMandantenAuswahl(registry)) {
       renderMandantenAuswahl(container, resolve);
     } else {
       // 0 Mandanten (frische Installation) oder genau 1 (Bestand): auf der aktiven DB
-      // entweder entsperren oder onboarden. Bei 1 registriertem Mandanten kann von hier
-      // aus auch ein weiterer angelegt werden (Bootstrap bis zum Shell-Trigger in M3).
-      enterAktivenMandant(container, resolve, { kannHinzufuegen: registry.mandanten.length > 0 });
+      // entweder entsperren oder onboarden. Einen weiteren Betrieb legt man in den Einstellungen an
+      // („Betriebe auf diesem Gerät“) — auf dem Startbild stand „+ Neuer Mandant“, das war für fast
+      // alle überflüssig (Klaus 2026-11-09).
+      enterAktivenMandant(container, resolve, {});
     }
   });
 }

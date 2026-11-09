@@ -5205,22 +5205,23 @@ await section('Modus: NAV-Ansichten-Gating', () => {
 await section('Modus: fachliche Feature-Gates und Einstellungs-Abschnitte', () => {
   ok('FEATURE_LISTE vollständig', FEATURE_LISTE.length === 10 && FEATURE_LISTE.includes(FEATURE.MANDANTEN) && FEATURE_LISTE.includes(FEATURE.JOURNAL));
   ok('Berater: alle Features', FEATURE_LISTE.every((f) => zeigeFeature({ nutzungsmodus: 'berater' }, f)));
-  ok('Selbstständig mit Profi: alles außer Berater-Export/Mandanten', FEATURE_LISTE.every((f) => zeigeFeature({ nutzungsmodus: 'selbststaendig', profiFunktionen: true }, f) === (f !== FEATURE.BERATER_EXPORT && f !== FEATURE.MANDANTEN)));
+  ok('Selbstständig mit Profi: alles außer Berater-Export', FEATURE_LISTE.every((f) => zeigeFeature({ nutzungsmodus: 'selbststaendig', profiFunktionen: true }, f) === (f !== FEATURE.BERATER_EXPORT)));
   ok('Selbstständig ohne Profi: auch ohne Mitarbeiter und Kostenstellen', !zeigeFeature({ nutzungsmodus: 'selbststaendig' }, FEATURE.MITARBEITER) && !zeigeFeature({ nutzungsmodus: 'selbststaendig' }, FEATURE.KOSTENSTELLEN) && zeigeFeature({ nutzungsmodus: 'selbststaendig' }, FEATURE.UMSATZSTEUER));
   ok('Bilanz-Wahl: nur mit Profi, außer man bilanziert schon', !zeigeEinstellung({ nutzungsmodus: 'selbststaendig' }, EINSTELLUNG.GEWINNERMITTLUNG) && zeigeEinstellung({ nutzungsmodus: 'selbststaendig', gewinnermittlung: 'bilanz' }, EINSTELLUNG.GEWINNERMITTLUNG) && zeigeEinstellung({ nutzungsmodus: 'selbststaendig', profiFunktionen: true }, EINSTELLUNG.GEWINNERMITTLUNG));
   ok('Kleinunternehmer: keine USt, keine Mitarbeiter/Kostenstellen', !zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.UMSATZSTEUER) &&
     !zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.MITARBEITER) && !zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.KOSTENSTELLEN) &&
     zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.RECHNUNGEN) && zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.JOURNAL));
-  ok('Privat: kein Feature', FEATURE_LISTE.every((f) => !zeigeFeature({ nutzungsmodus: 'privat' }, f)));
+  ok('Privat: kein Feature außer „Buchhaltung wechseln“', FEATURE_LISTE.every((f) => zeigeFeature({ nutzungsmodus: 'privat' }, f) === (f === FEATURE.MANDANTEN)));
+  ok('Buchhaltung wechseln/verwalten in jedem Modus (Klaus 2026-11-09)', ['privat', 'kleinunternehmer', 'selbststaendig', 'berater'].every((m) => zeigeFeature({ nutzungsmodus: m }, FEATURE.MANDANTEN) && zeigeEinstellung({ nutzungsmodus: m }, EINSTELLUNG.MANDANTEN)));
   ok('Verein (Altwert): USt an, Rechnungen/Mahnwesen/Mitarbeiter aus', zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.UMSATZSTEUER) &&
     !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.RECHNUNGEN) && !zeigeFeature({ nutzungsmodus: 'verein' }, FEATURE.MITARBEITER));
   // Einstellungen (F1/F3)
-  ok('Privat: Firma, DATEV, Rechnungsstelle, § 19, Gewinnermittlung, Wirtschaftsjahr, Sperre, Mandanten weg',
+  ok('Privat: Firma, DATEV, Rechnungsstelle, § 19, Gewinnermittlung, Wirtschaftsjahr, Sperre weg',
     [EINSTELLUNG.FIRMA, EINSTELLUNG.DATEV, EINSTELLUNG.RECHNUNGSSTELLE, EINSTELLUNG.KLEINUNTERNEHMER, EINSTELLUNG.GEWINNERMITTLUNG,
-      EINSTELLUNG.GESCHAEFTSJAHR, EINSTELLUNG.BUCHUNGSSPERRE, EINSTELLUNG.MANDANTEN].every((a) => !zeigeEinstellung({ nutzungsmodus: 'privat' }, a)));
+      EINSTELLUNG.GESCHAEFTSJAHR, EINSTELLUNG.BUCHUNGSSPERRE].every((a) => !zeigeEinstellung({ nutzungsmodus: 'privat' }, a)));
   ok('Privat: KI und Datenschutz bleiben', zeigeEinstellung({ nutzungsmodus: 'privat' }, EINSTELLUNG.KI) && zeigeEinstellung({ nutzungsmodus: 'privat' }, EINSTELLUNG.DATENSCHUTZ));
   ok('Kleinunternehmer: § 19-Schalter weg (im Modus fest), Firma bleibt', !zeigeEinstellung({ nutzungsmodus: 'kleinunternehmer' }, EINSTELLUNG.KLEINUNTERNEHMER) && zeigeEinstellung({ nutzungsmodus: 'kleinunternehmer' }, EINSTELLUNG.FIRMA));
-  ok('Selbstständig: § 19/DATEV/Mandanten weg, Rechnungsstelle bleibt', !zeigeEinstellung({ nutzungsmodus: 'selbststaendig' }, EINSTELLUNG.DATEV) && zeigeEinstellung({ nutzungsmodus: 'selbststaendig' }, EINSTELLUNG.RECHNUNGSSTELLE));
+  ok('Selbstständig: § 19/DATEV weg, Rechnungsstelle bleibt', !zeigeEinstellung({ nutzungsmodus: 'selbststaendig' }, EINSTELLUNG.DATEV) && zeigeEinstellung({ nutzungsmodus: 'selbststaendig' }, EINSTELLUNG.RECHNUNGSSTELLE));
   ok('Berater: alles', EINSTELLUNG_LISTE.every((a) => zeigeEinstellung({ nutzungsmodus: 'berater' }, a)));
   ok('F3 „Alle Einstellungen zeigen" hebt das Ausblenden auf', EINSTELLUNG_LISTE.every((a) => zeigeEinstellung({ nutzungsmodus: 'privat', alleEinstellungen: true }, a)));
   ok('F3-Schalter nur, wo etwas ausgeblendet ist', hatAusgeblendeteEinstellungen({ nutzungsmodus: 'privat' }) && !hatAusgeblendeteEinstellungen({ nutzungsmodus: 'berater' }));
@@ -7364,7 +7365,7 @@ await section('Pro-Umbau 13 (Klaus 2026-10-30): Chefcode-Ausschnitt nur im eigen
     ok('App-Paket lädt pro-ueberall.css/.js und pro-chefcode.js', ['pro-ueberall.js', 'pro-ueberall.css', 'pro-chefcode.js'].every((n) => pw.includes("'" + n + "'")));
     const gr = _readSpore(new URL('../android/app/build.gradle', import.meta.url), 'utf8');
     const tc = JSON.parse(_readSpore(new URL('../windows/src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
-    ok('Version 0.1.10 · Code 11 (Android), Windows gleich', /versionCode 11\b/.test(gr) && /versionName "0\.1\.10"/.test(gr) && tc.version === '0.1.10');
+    ok('Version 0.1.11 · Code 12 (Android), Windows gleich', /versionCode 12\b/.test(gr) && /versionName "0\.1\.11"/.test(gr) && tc.version === '0.1.11');
   }
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
   const keys = [...new Set([...nw.matchAll(/t\('(net\.ausschnitt[A-Za-z]*)'\)/g)].map((x) => x[1]))];
