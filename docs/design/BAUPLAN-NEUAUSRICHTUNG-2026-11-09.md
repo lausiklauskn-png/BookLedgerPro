@@ -218,12 +218,14 @@ im Echtbetrieb sperren.
 |---|---|---|
 | J1 | Ausrichtung Abschnitt 1 und Umfang Abschnitt 3 so übernehmen | |
 | J2 | Geldkarte nach Abschnitt 4 als gemeinsames Format (BLP + Familienakte) | |
-| J3 | Mit Schritt 1 (Ausmisten) beginnen | offen – Empfehlung Claude: **Ja** |
-| J4 | Regel-Paket statt KI-Raten für Gesetzesänderungen | offen – Empfehlung Claude: **Ja** |
-| J5 | ELSTER-Versand über die Windows-Fassung, Android über den Tresor | offen – Empfehlung Claude: **Ja** (wegen F4 „später“ zuerst nur Ausfüllhilfe) |
-| J6 | Bank in Stufen, FinTS erst später entscheiden | offen – Empfehlung Claude: **Ja** |
+| J3 | Mit Schritt 1 (Ausmisten) beginnen | **Ja** (Klaus 2026-11-09, Abhak-Liste) |
+| J4 | Regel-Paket statt KI-Raten für Gesetzesänderungen | **Ja** (Klaus 2026-11-09, Abhak-Liste) |
+| J5 | ELSTER-Versand über die Windows-Fassung, Android über den Tresor | **Ja** (Klaus 2026-11-09, Abhak-Liste) (wegen F4 „später“ zuerst nur Ausfüllhilfe) |
+| J6 | Bank in Stufen, FinTS erst später entscheiden | **Ja** (Klaus 2026-11-09, Abhak-Liste) |
 
-Klaus hat am 2026-11-09 zu J3–J6 gefragt „Was wäre deine Entscheidung?“ – die Empfehlung steht oben, **sein Ja steht noch aus**.
+Klaus hat J3–J6 am 2026-11-09 in der Abhak-Liste (`docs/design/abhaken-2026-11-09.html`) mit Ja beantwortet. Zu J5: monatliche
+Erinnerung an die ELSTER-Herstellerregistrierung ist eingerichtet (jeden 1., 18:47 Uhr). J3 ist gebaut: Schalter „Profi-Funktionen“
+(Lohn/Mitarbeiter, Nachkalkulation, Kostenstellen, Bilanz-Wahl), alte Briefe in `docs/archiv/briefe/`.
 
 Offene Fragen:
 - ~~F1~~ **entschieden:** Weg (c) offene Ladenkasse (Klaus 2026-11-09).
@@ -231,7 +233,7 @@ Offene Fragen:
 - ~~F3~~ **entschieden (Klaus 2026-11-09):** ja, eine Person führt mehrere Betriebe auf einem Gerät – „mehrere Betriebe“ bleibt.
 - ~~F4~~ **entschieden:** ELSTER-Herstellerregistrierung **später**; bis dahin Ausfüllhilfe.
 - ~~F6~~ **entschieden:** erst USB-Stick zum Umstecken, danach Abgleich im Mycel-Netz (Abschnitt 1b, Schritt 9).
-- ~~F5~~ **entschieden:** nur Fragen ans Geld, keine Notizen → Fristen. Arbeitstitel **„BLP-Fragen“**, und **nur der Chef fragt**
+- ~~F5~~ **entschieden:** nur Fragen ans Geld, keine Notizen → Fristen. Name **„Frag die Kasse“** (Klaus 2026-11-09, Abhak-Liste), und **nur der Chef fragt**
   (Klaus: „Chef fragt dein Geld … ich bin mir nicht sicher, ob das besser ist“): Geldfragen beantwortet BookLedgerPro nur einem Gerät,
   das mit der Chef-PIN entsperrt ist (Baustein `pro-chefcode.js`, Umbau 14 A). Private Brain Pro liest nur, bucht nichts.
   Später möglich (nicht entschieden): Notiz → Frist nur als **Vorschlag** im BLP-Eingang mit einem Tipp. Name noch offen.
@@ -249,3 +251,26 @@ Proben: node tests/run.mjs, smoke_design, smoke_ohne_web; Basic nachziehen.
 Nicht: nichts veröffentlichen ohne Klaus' Wort, keine Daten löschen, kein Release erneut auslösen,
 Alis-Moderaum-Kasse nur nach Abschnitt 5 „Entschieden“ ändern (Weg c).
 ```
+
+## 10. Entscheidungen aus der Abhak-Liste (Klaus 2026-11-09, Freibrief „selbstständig nach Logik und Nutzerfreundlichkeit“)
+
+| Nr | Antwort | Umsetzung |
+|---|---|---|
+| K1 | Ja, gleich veröffentlichen | PRs zusammenführen, Android/Windows 0.1.10, Basic (PWA) nachgezogen |
+| K2 | Ja | Knopf „Stornieren“ am Abschluss: Gegenbuchungen, Tag wieder offen, Abschluss als „storniert“ aufbewahrt |
+| K3 | Ja | Ruhetage zum Ankreuzen, „zu“-Tage in den verschlüsselten Einstellungen |
+| K4 | Nein | Quittung über 250 € wird mit Hinweis gedruckt, nicht gesperrt |
+| K5 | Ja | Grenzen der Privatgeld-Nachfrage bleiben; nach einigen Wochen echter Abschlüsse nachschärfen |
+| K6 | Ja | Frageliste für den Steuerberater (unten) |
+| P1 | Ja | „Bargeld zählen“ für den Modus Privat in Schritt 2 (Eingang + Geldkarte) aufgenommen |
+
+### Frageliste für den Steuerberater (K6)
+1. Reicht die offene Ladenkasse mit täglichem Zählprotokoll für Alinas Moderaum?
+2. Ist die Kasse nur für Karte (SumUp) keine elektronische Kasse mit Bargeld, also ohne TSE erlaubt?
+3. Werden Gutscheine über diese Kasse angenommen? (Gutscheine zählen wie Bargeld.)
+4. Ist es in Ordnung, dass Barverkäufe in der Warenwirtschaft nur den Bestand senken, ohne Preis?
+5. Ab welchem Betrag müssen Geschenke (z. B. von Oma) dem Finanzamt gemeldet werden?
+
+### „Bargeld zählen“ (Modus Privat, P1, in Schritt 2)
+Geldbörse/Haushaltskasse ab und zu zählen, auch per Sprache. Gebucht wird nur die Lücke als „Bar ausgegeben, ohne Beleg“ —
+ohne Steuer, ohne Festschreiben, ohne „Tag fehlt“. Mehr Geld als erwartet → Frage „Woher? Geschenk · Rückzahlung · vergessene Abhebung“.

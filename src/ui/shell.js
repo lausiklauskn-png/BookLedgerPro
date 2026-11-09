@@ -775,7 +775,7 @@ function viewSettings() {
 
     // Profi-Funktionen (Klaus 2026-11-09, J3): Lohn/Mitarbeiter, Nachkalkulation, Kostenstellen, Bilanzierung.
     // Im Modus Berater immer an; ausgeblendet heißt nur: nicht im Menü — die Daten bleiben.
-    nutzungsmodusVon(s) === NUTZUNGSMODUS.BERATER ? null
+    (nutzungsmodusVon(s) === NUTZUNGSMODUS.BERATER || istPrivatmodus(s)) ? null
       : seg(t('settings.profi'), 'profiFunktionen',
           [['nein', t('common.no')], ['ja', t('common.yes')]], s.profiFunktionen ? 'ja' : 'nein',
           async (v) => { await updateSettings({ profiFunktionen: v === 'ja' }); paint(); }, t('settings.profi.hint')),

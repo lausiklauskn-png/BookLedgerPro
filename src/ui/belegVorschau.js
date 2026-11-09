@@ -16,7 +16,9 @@ const ZUERST = 3;
 const kb = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : (n / 1024).toFixed(1) + ' KB');
 
 /** Öffnet die Vorschau. loeschen: async () => true, wenn gelöscht (dieselbe Regel wie im ⋯-Menü). */
-export function belegVorschau(b, { loeschen, angaben = [] } = {}) {
+// Fremde Datei (Tresor, nur lesen, Klaus 2026-11-09): `quelle` = { bytes: async () => Uint8Array, text?: async () => string,
+// knoepfe?: Element[] } — dann werden weder Beleg-Bytes gelesen noch Löschen/Teilen gezeigt.
+export function belegVorschau(b, { loeschen, angaben = [], quelle = null } = {}) {
   document.querySelector('[data-beleg-vorschau]')?.closest('.modal-overlay')?.remove();
   const overlay = el('div', { class: 'modal-overlay', role: 'dialog', 'aria-modal': 'true', 'aria-label': b.name || '' });
   const flaeche = el('div', { class: 'vorschau-flaeche', 'data-vorschau-flaeche': '' }, [el('p', { class: 'muted small', text: t('docs.vorschau.laedt') })]);
@@ -40,8 +42,7 @@ export function belegVorschau(b, { loeschen, angaben = [] } = {}) {
     flaeche,
     textSlot,
     el('div', { class: 'btn-row vorschau-knoepfe' }, [
-      gebenKnopf(b, { imMenue: true }),
-      loeschKnopf,
+      ...(quelle ? (quelle.knoepfe || []) : [gebenKnopf(b, { imMenue: true }), loeschKnopf]),
       el('button', { class: 'btn btn-sm btn-primary', type: 'button', 'data-vorschau-zu': '', text: t('docs.vorschau.schliessen'), onClick: zu }),
     ]),
   ]);
@@ -51,7 +52,7 @@ export function belegVorschau(b, { loeschen, angaben = [] } = {}) {
   document.body.appendChild(overlay);
 
   const textZeigen = async (immer) => {
-    const text = await getBelegText(b.id).catch(() => '');
+    const text = quelle ? (quelle.text ? await quelle.text().catch(() => '') : '') : await getBelegText(b.id).catch(() => '');
     if (!text) { if (immer) textSlot.replaceChildren(el('p', { class: 'muted small', text: t('docs.vorschau.keine') })); return; }
     textSlot.replaceChildren(el('details', { class: 'vorschau-text', ...(immer ? { open: true } : {}) }, [
       el('summary', { class: 'small', text: t('docs.vorschau.text') }),
@@ -61,7 +62,7 @@ export function belegVorschau(b, { loeschen, angaben = [] } = {}) {
 
   (async () => {
     try {
-      const bytes = await getBelegBytes(b.id);
+      const bytes = quelle ? await quelle.bytes() : await getBelegBytes(b.id);
       if (!bytes) throw new Error('keine Bytes');
       const art = b.mediaType || '';
       if (art === 'application/pdf') {

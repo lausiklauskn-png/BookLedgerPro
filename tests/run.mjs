@@ -7180,7 +7180,7 @@ await section('Tresorordner (Schritt C/C2, Klaus 2026-10-27): Sicherung, Fällig
   ok('Ohne Suchwort: alles, neueste zuerst', to.eintraegeSuchen(faecher, '').map((x) => x.eintrag.id).join() === 'm,1');
   ok('Öffnen nur im gemeinsamen Format; Sicherung nur aus „Sicherung/“', to.oeffenbar(faecher[0].eintraege[0]) && !to.oeffenbar(faecher[1].eintraege[0]) && to.istSicherung({ verschluesselung: 'fpt1', verweis: 'Sicherung/a.fpt' }) && !to.istSicherung({ verschluesselung: 'fpt1', verweis: 'Belege/a.fpt' }));
   ok('Fehlertexte: falsches Passwort sagt „nichts verändert“, Unbekanntes nennt den Code', /nichts verändert/.test(to.fehlerText(new Error('TRESOR_PASSWORT_FALSCH'))) && /XYZ/.test(to.fehlerText('XYZ')));
-  ok('Fächer: fünf, eigenes und Eingang zuerst', to.FAECHER.length === 5 && to.FAECHER[0].eigen && to.FAECHER[1].eingang);
+  ok('Fächer: alle neun (auch Familienakte), eigenes und Eingang zuerst, jede mit App-Namen', to.FAECHER.length === 9 && to.FAECHER[0].eigen && to.FAECHER[1].eingang && to.FAECHER.some((f) => f.fach === 'familienakte' && f.app === 'Meine Familienakte') && to.FAECHER.every((f) => f.app));
   const sh = _readSpore(new URL('../src/ui/shell.js', import.meta.url), 'utf8');
   ok('Shell: Ansicht nur mit Brücke sichtbar (PWA ohne window.BLPNative.tresor zeigt sie nicht), Route verdrahtet', /k !== 'tresorordner' \|\| tresorordnerVerfuegbar\(\)/.test(sh) && /route === 'tresorordner'\) return void mountTresorordner\(content\)/.test(sh));
   const sw = _readSpore(new URL('../sw.js', import.meta.url), 'utf8');
@@ -7364,7 +7364,7 @@ await section('Pro-Umbau 13 (Klaus 2026-10-30): Chefcode-Ausschnitt nur im eigen
     ok('App-Paket lädt pro-ueberall.css/.js und pro-chefcode.js', ['pro-ueberall.js', 'pro-ueberall.css', 'pro-chefcode.js'].every((n) => pw.includes("'" + n + "'")));
     const gr = _readSpore(new URL('../android/app/build.gradle', import.meta.url), 'utf8');
     const tc = JSON.parse(_readSpore(new URL('../windows/src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
-    ok('Version 0.1.9 · Code 10 (Android), Windows gleich', /versionCode 10\b/.test(gr) && /versionName "0\.1\.9"/.test(gr) && tc.version === '0.1.9');
+    ok('Version 0.1.10 · Code 11 (Android), Windows gleich', /versionCode 11\b/.test(gr) && /versionName "0\.1\.10"/.test(gr) && tc.version === '0.1.10');
   }
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
   const keys = [...new Set([...nw.matchAll(/t\('(net\.ausschnitt[A-Za-z]*)'\)/g)].map((x) => x[1]))];
