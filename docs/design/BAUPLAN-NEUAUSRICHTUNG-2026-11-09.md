@@ -54,13 +54,23 @@ nur Haushalt) → Geldkarte neben dem Dokument im Tresor → BookLedgerPro-Einga
 offener Posten, Frist, Steuer-Rücklage → bezahlt (wo auch immer) → Kontoauszug bestätigt, Buchung festgeschrieben →
 Familienakte zeigt „gebucht ✓ · bezahlt am …“.
 
+**Klaus' Weg (2026-11-09): „Erledigt“ in der Familienakte bucht.** Überweisung gemacht (oder bar bezahlt) → in der
+Familienakte die Aufgabe „Rechnung bezahlen“ auf **erledigt** setzen, dabei eine Frage „Wie bezahlt? Überweisung · bar ·
+Lastschrift · Karte“ und das Datum (vorbelegt heute) → Geldkarte `stand: bezahlt`, `zahlart`, `bezahltAm` →
+BookLedgerPro bucht **automatisch**: bar = Ausgabe im Kassenbuch (zählt beim Tagesabschluss mit), Überweisung/Lastschrift/
+Karte = Bank. Automatisch heißt: ohne Tipp, wenn Betrag, Betrieb und Konto klar sind (Konto aus früheren Rechnungen
+desselben Absenders); sonst einmal im Eingang bestätigen. Festgeschrieben wird nach dem Kontoauszug-Abgleich (bar: beim
+Tagesabschluss); bis dahin ist die Buchung sichtbar und korrigierbar. Privat-steuerliche Karten werden zum Steuerposten,
+Haushalt nur ins Haushaltsbuch. Befund: die Familienakte kennt heute Aufgaben, Fristen und „erledigt“, aber keine
+Zahlart und keinen Betrag – beides kommt mit der Geldkarte dazu.
+
 Datei `<dokument>.geldkarte.json` (Fassung 1, Vorschlag):
 
 ```json
 { "art": "geldkarte", "fassung": 1, "kennung": "uuid", "dokument": "relativer Pfad im Tresor", "dokumentSha256": "…",
   "zuordnung": "betrieb|privat-steuer|haushalt", "betrieb": "alinas-moderaum", "richtung": "ausgabe|einnahme",
   "absender": "…", "betragCent": 119000, "ustCent": 19000, "faellig": "2026-11-15",
-  "stand": "offen|strittig|bezahlt|gebucht", "bezahltAm": null, "ersetzt": null, "geaendertVon": "familienakte|bookledgerpro" }
+  "stand": "offen|strittig|bezahlt|gebucht", "bezahltAm": null, "zahlart": "ueberweisung|bar|lastschrift|karte|null", "ersetzt": null, "geaendertVon": "familienakte|bookledgerpro" }
 ```
 
 Regeln: jede App schreibt nur ihre Felder (Familienakte: Dokument, Zuordnung, strittig; BookLedgerPro: Betrag, USt,
