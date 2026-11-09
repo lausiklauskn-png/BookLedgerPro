@@ -1,5 +1,12 @@
 # Sitzungs-Log
 
+## 2026-11-09 (Abend) — Veröffentlichungen, Buchhaltung, Startseite, Verbund-Karte
+
+**Was getan:** #456–#461 (0.1.10–0.1.12, Buchhaltung statt Mandant, Startseite für Betriebe, Eingang übernehmen, Verbund-Karte);
+Karte auch in Basic #44, PB #132, WPP #69, Familienakte #146; BLP 0.1.12, FA 2.28.50, PB 1.0.46 veröffentlicht und per SHA-256 geprüft.
+**Stand:** alles gemergt. **Nächstes:** Startauftrag in `BRIEF_ABSCHLUSS_2026-11-09_VEROEFFENTLICHUNG-UND-VERBUNDKARTE.md`.
+**Offen/ungeprüft:** Tablet; Karte unter Windows (CSP) und echtes Android-Zurück; FA Windows 2.28.50 fehlt auf dem Update-Server.
+
 ## 2026-11-09 — Kasse & Tagesabschluss (Weg c)
 
 **Was getan:** Alis-Moderaum-Kasse ohne „Bar“ (#84); „Kasse & Shop“ mit Tagesabschluss, Sprache → Felder, fehlende Tage,
