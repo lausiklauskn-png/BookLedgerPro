@@ -32,6 +32,31 @@ Fragen nur, wenn die Kette unsicher ist (Beleg unlesbar, Betrieb oder privat unk
 dann **eine** Frage mit vorbelegter Antwort, nie ein Formular. Jede Frage, die einmal beantwortet ist, wird für denselben
 Absender gemerkt. Maß für jeden Bau-Schritt: Wie viele Tipps braucht ein gewöhnlicher Kassenbon? Ziel 0 nach dem Foto.
 
+## 1b. Ohne Tresor-Speicher unterwegs (Klaus 2026-11-09)
+
+Frage: Was passiert, wenn die SD-Karte bzw. Festplatte mit dem Tresor nicht da ist?
+
+**Befund BookLedgerPro heute (Code gelesen, nicht am Gerät):** Alles wird zuerst **in der App** gespeichert
+(verschlüsselt). Die Kopie in den Tresor (Sicherung `BookLedgerPro/Sicherung/`, Beleg-Originale `Belege/`) versucht die
+App beim Wechsel in den Hintergrund, alle 15 min und 20 s nach dem Start; ist der Ordner weg, kommt der Hinweis
+„Sicherung in den Tresorordner ging nicht …“ und beim nächsten Versuch mit Ordner wird nachgeholt (nur Neues, nichts
+doppelt). Es wartet also nichts verloren – aber: (1) der Hinweis wiederholt sich ohne Zahl, (2) man sieht nicht, wie viel
+wartet und seit wann, (3) Übergaben an andere Apps (Geldkarte, Eingang-Fächer) brauchen den Ordner und haben noch
+keinen Postausgang. Familienakte und Workflow PDF Pro nicht geprüft.
+
+**Regel für alle Pro-Apps (Vorschlag):**
+- Foto, PDF, Ablage und Buchung funktionieren **immer**, auch ohne Tresor – gespeichert verschlüsselt in der App.
+- Was in den Tresor gehört (Original, PDF, Geldkarte, Sicherung), kommt in einen **Postausgang**; eine Zeile statt
+  Wiederholungs-Hinweis: „Tresor nicht verbunden · 7 Belege warten seit 2 Tagen“.
+- Sobald der Tresor da ist (SD-Karte steckt, Festplatte am Rechner), wird der Postausgang **von selbst** geleert, in der
+  richtigen Reihenfolge; danach „Alles im Tresor ✓“.
+- Ab 7 Tagen ohne Tresor eine deutliche Warnung (die Daten liegen nur auf diesem Gerät).
+- Zwischen den Apps auf **einem** Gerät gehen Geldkarten notfalls direkt (Android-Übergabe), damit die Buchung nicht auf
+  den Tresor warten muss; der Tresor bekommt sie nachher trotzdem.
+- Offen (F6): Wie kommt ein Tablet-Postausgang auf die Festplatte am Rechner, wenn Tablet und Rechner nie denselben
+  Speicher sehen? Vorschlag: SD-Karte/USB-Stick als Tresor, der mal im Tablet, mal am Rechner steckt; oder später ein
+  Abgleich im eigenen Netz (Mycel) zwischen beiden Geräten.
+
 ## 2. Was BookLedgerPro anders macht als herkömmliche Buchhaltung
 
 Herkömmlich: „Auf welches Konto buchst du das?“ – BookLedgerPro: **„Was ist passiert?“** Die Buchung entsteht nebenbei.
@@ -198,6 +223,7 @@ Offene Fragen:
 - ~~F2~~ **entschieden:** Bargeld wird angenommen.
 - **F3** Betreut eine Person mehrere Betriebe auf einem Gerät (dann bleibt „mehrere Betriebe“), oder hat jeder Betrieb sein eigenes Gerät?
 - **F4** ELSTER-Herstellerregistrierung jetzt beantragen?
+- **F6** Tablet ↔ Rechner: ein Tresor-Speicher, der umgesteckt wird, oder Abgleich im eigenen Netz? (Abschnitt 1b)
 - **F5** Private Brain Pro: nur „Frag dein Geld“, oder auch Notizen → Fristen?
 
 ## 9. Startauftrag zum Einfügen
