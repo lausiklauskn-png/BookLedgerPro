@@ -5,7 +5,9 @@
 Analyse mit Klaus: BookLedgerPro wird „Geld und Steuer für kleine Betriebe und Familien“ (Tomy, Alinas Moderaum,
 Perfect Skin; privat Anlage N), keine Profi-Werkzeuge. Geldkarte als Brücke zur Familienakte, Kasse per Sprache,
 Steuer-Rücklage, Regel-Paket je Jahr, ELSTER über Windows. ⚠ Kasse in Alis-Moderaum: TSE-Pflicht mit Steuerberater klären.
-Plan mit Ja/Nein-Liste und Startauftrag: `docs/design/BAUPLAN-NEUAUSRICHTUNG-2026-11-09.md`. **Nächstes:** Klaus' Ja/Nein.
+Plan: `docs/design/BAUPLAN-NEUAUSRICHTUNG-2026-11-09.md`. Entschieden: Kasse Weg (c) offene Ladenkasse, Bargeld ja; USB-Stick zuerst,
+Mycel-Abgleich später. Abschluss `BRIEF_ABSCHLUSS_2026-11-09_PLANUNG-NEUAUSRICHTUNG.md`; **nächste Sitzung:**
+`BRIEF_SITZUNG_2026-11-09_NACH-PLANUNG.md` (Kasse & Tagesabschluss).
 
 ## Stand: Android-Testfassung 0.1.9 veröffentlicht, 3./4. November 2026
 
