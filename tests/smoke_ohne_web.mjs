@@ -186,9 +186,10 @@ console.log('— D. Tresorordner-Ansicht 1 → 2 → 4 → 3 —');
   const { ctx, page, fehler } = await oeffnen('app');
   await page.evaluate(async () => { await window.Capacitor.Plugins.BlpTresor.entsperren({ merken: true }); });
   await page.evaluate(() => window.__probe.navigate('documents'));
-  const h = await page.waitForSelector('[data-belege-tresor-zeigen]', { timeout: 8000 }).then(() => true, () => false);
-  ok('1 · Belege: „Neu im Tresorordner: 3“ mit Knopf zum Tresorordner', h && /Neu im Tresorordner: 3/.test(await page.textContent('[data-belege-tresor-neu]')));
-  await page.click('[data-belege-tresor-zeigen]');
+  // Seit 2026-11-09: was im Eingang von BookLedgerPro liegt, steht als „3 neue Belege …“ mit „Alle übernehmen“ (smoke_eingang.mjs).
+  const h = await page.waitForSelector('[data-belege-eingang]', { timeout: 8000 }).then(() => true, () => false);
+  ok('1 · Belege: „3 neue Belege“ aus dem Eingang mit „Alle übernehmen“', h && (await page.getAttribute('[data-belege-eingang]', 'data-belege-eingang')) === '3' && !!(await page.$('[data-belege-eingang-uebernehmen]')));
+  await page.evaluate(() => window.__probe.navigate('tresorordner'));
   await page.waitForSelector('[data-tresor-neu]');
   ok('1 · Ansicht: Karte „Neu im Tresorordner: 3“ (fremdes Format und eigene Sicherung zählen nicht)', await page.getAttribute('[data-tresor-neu]', 'data-tresor-neu') === '3');
   await page.click('[data-tresor-alle-auf]');

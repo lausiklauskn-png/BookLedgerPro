@@ -176,13 +176,39 @@ function einordnenAnbieten(belege) {
 function neuImTresorHinweis() {
   if (typeof window === 'undefined' || !window.BLPNative || !window.BLPNative.tresor) return null;
   const platz = el('div', { 'data-belege-tresor-neu': '' });
-  import('./tresorordner.js').then((m) => m.neuImTresorordner()).then((n) => {
-    if (!n || !platz.isConnected) return;
-    platz.replaceChildren(el('div', { class: 'card btn-row', role: 'status' }, [
-      el('span', { text: t('tresor.neuHinweis').replace('{n}', String(n)) }),
-      el('button', { class: 'btn btn-primary', text: t('tresor.neuZeigen'), 'data-belege-tresor-zeigen': '', onClick: () => navigate('tresorordner') }),
+  // Klaus 2026-11-09: Belege aus dem Eingang (Workflow PDF Pro, Private Brain Pro …) mit einem Tipp oder von selbst übernehmen.
+  (async () => {
+    const m = await import('./tresorordner.js');
+    const auto = await m.eingangAutomatisch();
+    if (auto) {
+      // Die Liste neu zeichnen (die neuen Belege stehen oben) und kurz sagen, was passiert ist.
+      const { toast } = await import('../scanner.js');
+      toast(t('tresor.eingangAutoFertig').replace('{n}', String(auto)));
+      if (platz.isConnected) navigate('documents');
+      return;
+    }
+    const eingang = await m.eingangNeu();
+    const n = await m.neuImTresorordner();
+    if (!platz.isConnected) return;
+    const zeilen = [];
+    if (eingang.length) {
+      const quellen = [...new Set(eingang.map((x) => m.quelleName(x.eintrag)).filter(Boolean))].join(', ');
+      zeilen.push(el('div', { class: 'card btn-row', role: 'status', 'data-belege-eingang': String(eingang.length) }, [
+        el('span', { text: t(quellen ? 'tresor.eingangNeuVon' : 'tresor.eingangNeu').replace('{n}', String(eingang.length)).replace('{von}', quellen) }),
+        el('button', { class: 'btn btn-primary', text: t('tresor.eingangUebernehmen'), 'data-belege-eingang-uebernehmen': '', onClick: async (ev) => {
+          ev.currentTarget.disabled = true;
+          try { await m.eingangUebernehmen(); navigate('documents'); }
+          catch (e) { ev.currentTarget.disabled = false; ev.currentTarget.after(el('span', { class: 'small hint-error', text: String((e && e.message) || e) })); }
+        } }),
+      ]));
+    }
+    const rest = n - eingang.length;
+    if (rest > 0) zeilen.push(el('div', { class: 'card btn-row', role: 'status' }, [
+      el('span', { text: t('tresor.neuHinweis').replace('{n}', String(rest)) }),
+      el('button', { class: 'btn', text: t('tresor.neuZeigen'), 'data-belege-tresor-zeigen': '', onClick: () => navigate('tresorordner') }),
     ]));
-  }).catch(() => {});
+    platz.replaceChildren(...zeilen);
+  })().catch(() => {});
   return platz;
 }
 

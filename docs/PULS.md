@@ -8,6 +8,10 @@ jährlich ohne Datum; Vorsteuer-Überhang als Erstattung), **Rücklage für Steu
 `ruecklageProzent`), **Kasse heute** offen/gezählt. Reine Rechnung `src/domain/startKacheln.js`. Proben `run.mjs` 2712/0 (+10),
 `tests/smoke_startseite.mjs` 9 (auch: Modus „privat“ bleibt nach Sperren/Neuladen), Gegenprobe 2/2. Windows **0.1.11** veröffentlicht
 (Lauf 42668993914); Android 0.1.11 nicht (Lauf brach ab, weil die main-Prüfung noch lief) — kommt mit 0.1.12.
+**Eingang übernehmen** (Klaus: „Ja, bau das mit dem automatischen Übernehmen ein“): über den Belegen „N neue Belege von Workflow PDF Pro …“ mit
+„Alle übernehmen“; Schalter in Tresor & Ablage „Neue Belege aus dem Eingang automatisch übernehmen“ (`eingangAutomatisch`, ab Werk aus). Nur das Fach
+`eingang-bookledgerpro`, fremde Fächer nie von selbst; derselbe Weg wie von Hand (speichern, dann quittieren). Probe `tests/smoke_eingang.mjs` 10, Gegenprobe
+(alle fremden Fächer mitnehmen) 4 ROT. ⚠ Nicht am Gerät mit echtem Workflow PDF Pro.
 
 ## Stand: 0.1.10 veröffentlicht, „Buchhaltung“ statt „Mandant“ (0.1.11), 9. November 2026
 
