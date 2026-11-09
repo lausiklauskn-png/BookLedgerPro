@@ -22,7 +22,7 @@ Herkömmlich: „Auf welches Konto buchst du das?“ – BookLedgerPro: **„Was
 
 | # | Merkmal | Vorteil |
 |---|---|---|
-| M1 | **Kasse per Sprache und Foto** („Heute 412 € bar, 20 € Kaffee für den Laden“ + Foto des Zählzettels) | Kassenbuch wird täglich geführt, Lücken sieht man sofort |
+| M1 | **Tagesabschluss per Sprache und Foto** – abends, nicht beim Verkauf: Kasse zählen, sagen „Bestand 612 €, 20 € Kaffee ausgegeben, 300 € zur Bank“ + Foto des Zählzettels; BookLedgerPro rechnet die Tageseinnahme zurück (offene Ladenkasse). Beim Verkauf: Preise sind brutto (USt steckt drin), Quittung nur auf Wunsch, von Hand aus dem Quittungsblock | Kassenbuch wird täglich geführt, Lücken sieht man sofort |
 | M2 | **Steuer-Rücklage immer sichtbar** („2.340 € gehören dem Finanzamt, frei: 5.120 €“) | keine Nachzahlungs-Überraschung, die wichtigste Frage des Inhabers |
 | M3 | **Jede Zahl führt zum Beleg** (Tipp auf „USt März“ → Rechnungen → Foto), Prüfungsmappe auf Tipp | man versteht seine Zahlen; Betriebsprüfung ohne Angst |
 | M4 | **Geldkarte im Tresor** zwischen Familienakte und BookLedgerPro (Abschnitt 4) | Ablage und Buchhaltung verbunden, ohne doppelte Erfassung |
