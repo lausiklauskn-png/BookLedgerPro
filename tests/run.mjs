@@ -5180,8 +5180,11 @@ await section('Modus: NAV-Ansichten-Gating', () => {
     'payables', 'orders', 'angebote', 'calculate', 'needs', 'shopbuchung', 'nachkalkulation', 'customers', 'employees', 'lohn', 'reports', 'berichte',
     'network', 'sbkimsuche', 'safebox', 'legal', 'anleitung', 'selbsttest', 'about', 'settings'];
   ok('Berater: alle Ansichten sichtbar (alte BLP-Angebote nur mit angeboteAlt, Klaus 2026-10-26)', sichtbareAnsichten({ nutzungsmodus: 'berater', angeboteAlt: true }, NAV_KEYS).length === NAV_KEYS.length && sichtbareAnsichten({ nutzungsmodus: 'berater' }, NAV_KEYS).length === NAV_KEYS.length - 1);
-  ok('Selbstständig: alle Ansichten sichtbar', NAV_KEYS.every((k) => zeigeAnsicht({ nutzungsmodus: 'selbststaendig', angeboteAlt: true }, k)));
-  ok('Default (kein Modus) = voller Umfang', sichtbareAnsichten({ angeboteAlt: true }, NAV_KEYS).length === NAV_KEYS.length);
+  // Ausmisten (Klaus 2026-11-09, J3): Lohn/Mitarbeiter/Nachkalkulation nur mit „Profi-Funktionen“ (Berater immer).
+  ok('Selbstständig mit Profi: alle Ansichten sichtbar', NAV_KEYS.every((k) => zeigeAnsicht({ nutzungsmodus: 'selbststaendig', angeboteAlt: true, profiFunktionen: true }, k)));
+  ok('Selbstständig ohne Profi: Lohn, Mitarbeiter, Nachkalkulation weg, sonst alles', NAV_KEYS.every((k) => zeigeAnsicht({ nutzungsmodus: 'selbststaendig', angeboteAlt: true }, k) === !['employees', 'lohn', 'nachkalkulation'].includes(k)));
+  ok('Default (kein Modus) mit Profi = voller Umfang', sichtbareAnsichten({ angeboteAlt: true, profiFunktionen: true }, NAV_KEYS).length === NAV_KEYS.length);
+  ok('Profi aus: Kasse & Shop, Belege, Rechnungen bleiben', ['kassenbuch', 'documents', 'orders', 'shopbuchung', 'customers', 'reports'].every((k) => zeigeAnsicht({ nutzungsmodus: 'selbststaendig' }, k)));
   const klein = sichtbareAnsichten({ nutzungsmodus: 'kleinunternehmer' }, NAV_KEYS);
   ok('Kleinunternehmer: ohne Mitarbeiter/Lohn', !klein.includes('employees') && !klein.includes('lohn'));
   ok('Kleinunternehmer: Belege, Journal, Aufträge, Kunden, Auswertung bleiben', ['documents', 'journal', 'orders', 'customers', 'reports', 'calculate', 'needs'].every((k) => klein.includes(k)));
@@ -5202,7 +5205,9 @@ await section('Modus: NAV-Ansichten-Gating', () => {
 await section('Modus: fachliche Feature-Gates und Einstellungs-Abschnitte', () => {
   ok('FEATURE_LISTE vollständig', FEATURE_LISTE.length === 10 && FEATURE_LISTE.includes(FEATURE.MANDANTEN) && FEATURE_LISTE.includes(FEATURE.JOURNAL));
   ok('Berater: alle Features', FEATURE_LISTE.every((f) => zeigeFeature({ nutzungsmodus: 'berater' }, f)));
-  ok('Selbstständig: alles außer Berater-Export/Mandanten', FEATURE_LISTE.every((f) => zeigeFeature({ nutzungsmodus: 'selbststaendig' }, f) === (f !== FEATURE.BERATER_EXPORT && f !== FEATURE.MANDANTEN)));
+  ok('Selbstständig mit Profi: alles außer Berater-Export/Mandanten', FEATURE_LISTE.every((f) => zeigeFeature({ nutzungsmodus: 'selbststaendig', profiFunktionen: true }, f) === (f !== FEATURE.BERATER_EXPORT && f !== FEATURE.MANDANTEN)));
+  ok('Selbstständig ohne Profi: auch ohne Mitarbeiter und Kostenstellen', !zeigeFeature({ nutzungsmodus: 'selbststaendig' }, FEATURE.MITARBEITER) && !zeigeFeature({ nutzungsmodus: 'selbststaendig' }, FEATURE.KOSTENSTELLEN) && zeigeFeature({ nutzungsmodus: 'selbststaendig' }, FEATURE.UMSATZSTEUER));
+  ok('Bilanz-Wahl: nur mit Profi, außer man bilanziert schon', !zeigeEinstellung({ nutzungsmodus: 'selbststaendig' }, EINSTELLUNG.GEWINNERMITTLUNG) && zeigeEinstellung({ nutzungsmodus: 'selbststaendig', gewinnermittlung: 'bilanz' }, EINSTELLUNG.GEWINNERMITTLUNG) && zeigeEinstellung({ nutzungsmodus: 'selbststaendig', profiFunktionen: true }, EINSTELLUNG.GEWINNERMITTLUNG));
   ok('Kleinunternehmer: keine USt, keine Mitarbeiter/Kostenstellen', !zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.UMSATZSTEUER) &&
     !zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.MITARBEITER) && !zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.KOSTENSTELLEN) &&
     zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.RECHNUNGEN) && zeigeFeature({ nutzungsmodus: 'kleinunternehmer' }, FEATURE.JOURNAL));
