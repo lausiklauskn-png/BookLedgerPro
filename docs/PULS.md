@@ -1,6 +1,12 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
-## Stand: Kontierung trainiert, 12. November 2026 (Entwurfs-PR, nicht veröffentlicht)
+## Stand: Belegleser Datum/Steuersatz, 12. November 2026 abends (Entwurfs-PR, nicht veröffentlicht)
+
+Kontierung ist gemergt (#465, Basic #46). Jetzt `src/ai/extract.js`: Datum mit Monatsnamen und Wertung nach dem Wort davor, Steuersatz
+mit zwei Sätzen, Versicherungsteuer und „steuerfrei“. Blindtest alt (zweiter Stapel): Datum 73 %, Steuersatz 69 %. Nachweis für neu folgt
+aus einem dritten Stapel mit drei Einordnern (Datei-Organizer `docs/PRUEFSTAPEL-BLP-REGELN.md`, Punkte 18–22). Proben `run.mjs` 2780/0.
+
+## Stand: Kontierung trainiert, 12. November 2026 (gemergt #465)
 
 Klaus: „Ja, fang mit BookLedgerPro an“. Der Kontovorschlag ohne KI (`src/ai/categorize.js`) kennt jetzt die üblichen Belegarten eines
 kleinen Betriebs und nutzt den Firmennamen aus dem Firmenprofil, um Ausgangsrechnungen zu erkennen. Blindtest alt (main `a705ed5`,

@@ -1,5 +1,15 @@
 # Sitzungs-Log
 
+## 2026-11-12 (Abend) — Belegleser: Datum und Steuersatz trainiert
+
+**Was getan:** #465 gemergt (Kontierung; Nachweis mit drei unabhängigen Einordnern, einer davon Codex, Fleiss' Kappa 0,98), Basic #46
+nachgezogen. `src/ai/extract.js`: Datum liest ausgeschriebene und abgekürzte Monate, wertet jedes Datum nach dem, was davor steht
+(Rechnungsdatum/„vom“ hoch; Fälligkeit, Lieferung, Zeitraum, Eintritt niedrig), `findeDaten` neu; Steuersatz erkennt „19,00 %“,
+nimmt bei zwei Sätzen den mit dem größeren Betrag, lässt Versicherungsteuer/Skonto/Rabatt aus, 0 bei ausdrücklich steuerfrei.
+`run.mjs` 2780/0 (+31), Gegenprobe von Hand 9/9 (drei Wächter zuerst blind und ersetzt; eine Regel ohne messbare Wirkung entfernt). `sw.js` v298.
+**Stand:** Entwurfs-PR, nichts veröffentlicht. **Nächstes:** dritter Blindtest (neuer Stapel, drei Einordner) – Zahlen in den PR.
+**Offen/ungeprüft:** kein Gerät, keine echten Belege; an den zwei verbrauchten Stapeln Datum 239/240, Steuersatz 225/232 – Trainingswert.
+
 ## 2026-11-12 — Kontierung trainiert (Belegarten eines kleinen Betriebs)
 
 **Was getan:** `src/ai/categorize.js` neu: rund 30 Belegarten nach SKR03 mit gezählten Treffern statt fünf Regeln; Wareneingang und
