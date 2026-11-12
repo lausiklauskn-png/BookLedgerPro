@@ -1,5 +1,13 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
+## Stand: Kontierung trainiert, 12. November 2026 (Entwurfs-PR, nicht veröffentlicht)
+
+Klaus: „Ja, fang mit BookLedgerPro an“. Der Kontovorschlag ohne KI (`src/ai/categorize.js`) kennt jetzt die üblichen Belegarten eines
+kleinen Betriebs und nutzt den Firmennamen aus dem Firmenprofil, um Ausgangsrechnungen zu erkennen. Blindtest alt (main `a705ed5`,
+120 fremde Belege): Konto 8 %, Richtung 84 %, Betrag 100 %, Datum 81 %. Der Nachweis für die neue Fassung kommt aus einem zweiten,
+neuen Stapel (Regeln und Zahlen im Repo Datei-Organizer, `docs/PRUEFSTAPEL-BLP-REGELN.md`, `ergebnisse/`). Proben `run.mjs` 2749/0.
+**Nächste Schritte:** Ergebnis des zweiten Blindtests in den PR; nach dem Merge Basic nachziehen; Datum (81 %) ist die nächste Lücke in `extract.js`.
+
 ## Neuester Stand: alles gemergt, Verbund-Karte in allen Pro-Apps, 9. November 2026 (Abend)
 
 Veröffentlicht und unabhängig geprüft: BookLedgerPro Android 0.1.12 (`d879c646…3d0`) und Windows 0.1.12 (family-projekt.de),

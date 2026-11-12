@@ -1,5 +1,16 @@
 # Sitzungs-Log
 
+## 2026-11-12 — Kontierung trainiert (Belegarten eines kleinen Betriebs)
+
+**Was getan:** `src/ai/categorize.js` neu: rund 30 Belegarten nach SKR03 mit gezählten Treffern statt fünf Regeln; Wareneingang und
+Erlöse nach Steuersatz; Anschaffungen (GWG-Grenze 800 € netto); Lohnabrechnung; eigener Firmenname im Briefkopf → Ausgangsrechnung
+(`istEigenerBeleg`, aus `settings.firma.name`, durchgereicht über `mistral.categorize` und zwei Stellen in `documents.js`); jeder
+Vorschlag nennt `grund`. Anlass: Blindtest an 120 fremden Belegen (Datei-Organizer `docs/PRUEFSTAPEL-BLP-REGELN.md`), alte Fassung
+8 % richtige Konten. `run.mjs` 2749/0 (+28), Gegenprobe von Hand 4/4 (zwei Wächter waren zuerst blind und sind ersetzt). `sw.js` v297.
+**Stand:** Zweig mit Entwurfs-PR, nichts veröffentlicht. **Nächstes:** zweiter Blindtest (alt ⟷ neu, neuer Stapel); Basic nachziehen nach dem Merge.
+**Offen/ungeprüft:** kein Gerät, nicht mit echten Belegen; Wert am ersten Stapel (78 % ohne, 92,5 % mit Firmennamen) ist ein
+Trainingswert, kein Nachweis; „Rechnung mit Positionen ohne Belegart → 3400“ ist eine unsichere Annahme (Sicherheit 0,4).
+
 ## 2026-11-09 (Abend) — Veröffentlichungen, Buchhaltung, Startseite, Verbund-Karte
 
 **Was getan:** #456–#461 (0.1.10–0.1.12, Buchhaltung statt Mandant, Startseite für Betriebe, Eingang übernehmen, Verbund-Karte);
