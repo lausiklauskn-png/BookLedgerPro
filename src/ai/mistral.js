@@ -108,7 +108,7 @@ export async function categorize(text, kontoIndex, opts = {}) {
       if (kat) return kat;
     } catch { /* Fallback unten */ }
   }
-  return { ...heuristicCategorize(text), quelle: 'heuristik' };
+  return { ...heuristicCategorize(text, { eigenerName: opts.eigenerName }), quelle: 'heuristik' };
 }
 
 /** Minimaler Verbindungstest. @returns {Promise<{ok:boolean, message:string}>} */

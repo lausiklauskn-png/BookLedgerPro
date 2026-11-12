@@ -567,6 +567,46 @@ await section('Entwurf bearbeiten: Formular aus Buchung rekonstruieren', () => {
   ok('ohne USt: Soll 4980 / Haben 1200 / 0 %', ohneUst.sollKonto === '4980' && ohneUst.habenKonto === '1200' && ohneUst.ustSatz === 0 && ohneUst.bruttoCent === 5000);
 });
 
+await section('Kontierung: Belegarten eines kleinen Betriebs (Training 2026-11-12)', async () => {
+  const { istEigenerBeleg } = await import('../src/ai/categorize.js');
+  const faelle = [
+    ['Tankquittung → 4530', 'Tankstelle Nordring\nSäule 3 Diesel 41,20 Liter\nSumme 68,90 EUR\n19 % MwSt', '4530', 'ausgabe'],
+    ['Kfz-Versicherung → 4540 (nicht 4360)', 'Küstenland Versicherung AG\nKfz-Versicherung Beitragsrechnung\nVollkasko, Schadenfreiheitsklasse 12', '4540', 'ausgabe'],
+    ['Betriebshaftpflicht → 4360', 'Küstenland Versicherung AG\nBetriebshaftpflicht, Versicherungsschein 4711\nVersicherungsbeitrag 2027', '4360', 'ausgabe'],
+    ['Ladenmiete → 4210', 'Hausverwaltung Deichblick\nMiete Ladenlokal Dezember\nKaltmiete 900,00', '4210', 'ausgabe'],
+    ['Telefon mit Router-Miete → 4920', 'Netzwerk Nord GmbH\nInternet und Festnetz Flat 39,90\nRouter-Miete 4,95', '4920', 'ausgabe'],
+    ['Stromabschlag → 4240', 'Stadtwerke Fördestadt\nStrom Abschlag November\nZählernummer 123, 410 kWh', '4240', 'ausgabe'],
+    ['Steuerberater → 4955', 'Kanzlei Sanddorn\nFinanzbuchhaltung Oktober, Lohnbuchhaltung\nSteuerberatung', '4955', 'ausgabe'],
+    ['Kartenterminal → 4970', 'Zahlwerk GmbH\nMonatsabrechnung Terminalmiete\nTransaktionsentgelt girocard, Disagio', '4970', 'ausgabe'],
+    ['Bewirtung → 4650', 'Gasthaus Zur Schleuse\nBewirtungsbeleg, Anlass der Bewirtung: Lieferantengespräch\nTisch 4, Trinkgeld', '4650', 'ausgabe'],
+    ['Porto → 4910', 'Postfiliale 12\n10 Briefmarken, Einschreiben\nPorto 14,50', '4910', 'ausgabe'],
+    ['Lohnabrechnung mit eigenem Briefkopf bleibt Ausgabe 4120', 'Blumenhaus Seerose\nLohnabrechnung März\nGesamtbrutto 2.100,00 Lohnsteuer 150,00 Auszahlungsbetrag 1.600,00', '4120', 'ausgabe', 'Blumenhaus Seerose'],
+    ['Lebensmittel 7 % → Wareneingang 3300', 'Frischegroßhandel Wattkorn\nLieferschein 88\n20 kg Mehl, 5 Karton Eier\n7 % USt 4,10', '3300', 'ausgabe'],
+    ['Rechnung mit Positionen ohne Belegart → 3400, unsicher', 'Lieferfix GmbH\nPos Bezeichnung Menge Einzel Gesamt\n1 Schleifenband 10 2,00 20,00\n19 % USt', '3400', 'ausgabe'],
+    ['Anschaffung bis 800 € netto → GWG 0480', 'Elektro Brise\nRechnung\n1 Kühlvitrine 699,00\nNettobetrag                    699,00\n19 % USt', '0480', 'ausgabe'],
+    ['Anschaffung über 800 € netto → 0410', 'Ladenbau Tide\nRechnung\n1 Theke Eiche\nNettobetrag 2.400,00\n19 % USt', '0410', 'ausgabe'],
+    ['eigener Briefkopf, 7 % → 8300', 'Blumenhaus Seerose\nInh. Erika Muster\n\nHotel Strandhafer\n\nRechnung 12 Sträuße\n7 % USt', '8300', 'einnahme', 'Blumenhaus Seerose'],
+    ['eigener Briefkopf, 19 % → 8400', 'Blumenhaus Seerose\n\nHotel Strandhafer\n\nRechnung Dekoration Saal\n19 % USt', '8400', 'einnahme', 'Blumenhaus Seerose'],
+    ['Provision → 8500', 'Blumenhaus Seerose\n\nFleurnetz GmbH\nProvisionsabrechnung Oktober\n19 % USt', '8500', 'einnahme', 'Blumenhaus Seerose'],
+    ['nichts erkennbar → 4980', 'Zettel ohne Inhalt', '4980', 'ausgabe'],
+  ];
+  for (const [name, text, konto, richtung, eigen] of faelle) {
+    const k = categorize(text, eigen ? { eigenerName: eigen } : {});
+    ok(name + ` (ist ${k.konto}/${k.richtung})`, k.konto === konto && k.richtung === richtung);
+  }
+  ok('jedes vorgeschlagene Konto steht im Kontenrahmen', faelle.every(([, text, , , eigen]) => !!indexFromSeed()[categorize(text, eigen ? { eigenerName: eigen } : {}).konto]));
+  ok('jeder Vorschlag nennt seinen Grund', faelle.every(([, text]) => typeof categorize(text).grund === 'string' && categorize(text).grund.length > 3));
+  ok('unsicherer Vorschlag hat kleinere Sicherheit als ein klarer', categorize(faelle[12][1]).confidence < categorize(faelle[0][1]).confidence);
+  // Gegenrichtung: der eigene Name im EMPFÄNGER-Block macht aus einer Eingangsrechnung keine Einnahme
+  const eingang = 'Verpackung Brandung GmbH\nHafenstr. 1\n\nBlumenhaus Seerose\nInh. Erika Muster\n\nRechnung\n1 Papier Bogen 100 Stück 18,90\n19 % USt';
+  ok('eigener Name nur im Empfängerfeld → keine Ausgangsrechnung', istEigenerBeleg(eingang, 'Blumenhaus Seerose') === false && categorize(eingang, { eigenerName: 'Blumenhaus Seerose' }).richtung === 'ausgabe');
+  ok('„Händler: <eigener Name>“ zählt nicht als Briefkopf', istEigenerBeleg('Händler: Blumenhaus Seerose\nAbrechnung', 'Blumenhaus Seerose') === false);
+  ok('zu kurzer oder leerer Firmenname wird nie als Treffer gewertet', istEigenerBeleg('AB\nRechnung', 'AB') === false && istEigenerBeleg('Rechnung', '') === false);
+  ok('ohne Firmennamen bleibt der ausdrückliche Hinweis („Unsere Leistung“) Einnahme', categorize('Honorar für Beratung\nUnsere Leistung\n19 % USt').richtung === 'einnahme');
+  ok('Wortanfang: „Untermieterin“ trifft „Miete“ nicht', categorize('Brief der Untermieterin').konto !== '4210');
+  ok('einzeiliger Briefkopf des Lieferanten: der Empfänger darunter zählt nicht', istEigenerBeleg('Verpackung Brandung GmbH\n\nBlumenhaus Seerose\nInh. Erika Muster\n\nRechnung', 'Blumenhaus Seerose') === false);
+});
+
 await section('Vorschlag: Spielraum statt Haken (Warnung statt Blockade)', () => {
   const ex = extractFromText('Bürobedarf\nGesamtbetrag: 119,00 EUR\n19 % MwSt');
   const kat = categorize('Bürobedarf Toner');

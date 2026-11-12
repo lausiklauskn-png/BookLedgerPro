@@ -256,7 +256,7 @@ function schnellerfassung() {
       out.replaceChildren();
       const ex = extractFromText(ta.value);
       const frei = await kiTextFreigabe(ta.value);
-      const kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal });
+      const kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal, eigenerName: getSettings().firma?.name });
       const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
       if (!res.ok) { out.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
       if (frei.hinweis) out.appendChild(el('p', { class: 'hinweis small', text: frei.hinweis }));
@@ -1597,7 +1597,7 @@ async function textZuVorschlag(b, text, hinweis) {
   const frei = await kiTextFreigabe(text);
   const arbeit = arbeitsAnzeige(t('beleg.arbeitKontierung'));
   let kat;
-  try { kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal }); }   // Mistral EU, sonst Heuristik
+  try { kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal, eigenerName: getSettings().firma?.name }); }   // Mistral EU, sonst Heuristik
   finally { arbeit.weg(); }
   const res = buildVorschlag(ex, kat, _idx);
   if (!res.ok) { alert(res.fehler); await repaint(); return; }
