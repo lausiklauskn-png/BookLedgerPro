@@ -7,7 +7,6 @@ import { parseEuroToCents } from '../domain/money.js';
 
 const BETRAG_RE = /\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}/g;
 const SUMMEN_KEYWORDS = /(gesamt|summe|rechnungsbetrag|zu\s*zahlen|zahlbetrag|brutto|endbetrag|total)/i;
-const DATUM_KEYWORDS = /(datum|rechnungsdatum|belegdatum|date)/i;
 
 /** Findet alle deutschen Geldbeträge mit Zeilenkontext. */
 function findeBetraege(text) {
@@ -36,30 +35,82 @@ function findeBrutto(text) {
   return { cents: max.cents, viaKeyword: false };
 }
 
-/** Normalisiert ein Datum (DD.MM.YYYY, DD.MM.YY, YYYY-MM-DD) zu YYYY-MM-DD. */
-function normDatum(s) {
-  let m = s.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  m = s.match(/\b(\d{1,2})\.(\d{1,2})\.(\d{2,4})\b/);
-  if (m) {
-    let [_, d, mo, y] = m;
-    if (y.length === 2) y = (Number(y) > 70 ? '19' : '20') + y;
-    return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-  }
-  return null;
+const MONATE = { januar: 1, jan: 1, februar: 2, feb: 2, 'märz': 3, maerz: 3, mrz: 3, 'mär': 3, april: 4, apr: 4, mai: 5, juni: 6, jun: 6, juli: 7, jul: 7, august: 8, aug: 8, september: 9, sept: 9, sep: 9, oktober: 10, okt: 10, november: 11, nov: 11, dezember: 12, dez: 12 };
+const MONAT_RE = Object.keys(MONATE).sort((x, y) => y.length - x.length).join('|');
+// Alle Schreibweisen eines Datums: 2026-03-08 · 8.3.2026 · 08.03.26 · 8. März 2026 · 8. Mrz. 26
+const DATUM_RE = new RegExp(`(?<![\\d.])(?:(\\d{4})-(\\d{2})-(\\d{2})|(\\d{1,2})\\.\\s?(\\d{1,2})\\.\\s?(\\d{4}|\\d{2})|(\\d{1,2})\\.?\\s?(${MONAT_RE})\\.?\\s?(\\d{4}|\\d{2}))(?![\\d])`, 'gi');
+// Was unmittelbar vor einem Datum steht, sagt, was es ist.
+const DATUM_BELEG = /(rechnungsdatum|belegdatum|ausstellungsdatum|bondatum|abrechnungsdatum|ausgestellt am|erstellt am|ausführung am|ausgeführt am|buchungstag|(?:^|\s)datum|(?:rechnung|gutschrift|quittung|beleg|bescheid|abrechnung|mahnung|nachtrag)\b[^\n]{0,40}\bvom|(?:^|\s)den)\W*$/i;
+const DATUM_ANDERES = /(fällig|zahlbar|bis zum|bis|spätestens|liefer\w*|leistungs\w*|zeitraum|termin|eintritt|übergabe|abholung|anreise|abreise|geb\.|geboren|gültig\w*|valuta|wertstellung|beginn|ablauf|ende|von|–|-|vereinbarung vom|vertrag vom|bestellung vom|auftrag vom|schreiben vom|angebot vom|kündigung zum|zum|ab|seit|am)\W*$/i;
+
+function datumAus(m) {
+  let y, mo, d;
+  if (m[1]) [y, mo, d] = [m[1], Number(m[2]), Number(m[3])];
+  else if (m[4]) [d, mo, y] = [Number(m[4]), Number(m[5]), m[6]];
+  else [d, mo, y] = [Number(m[7]), MONATE[m[8].toLowerCase()], m[9]];
+  if (y.length === 2) y = (Number(y) > 70 ? '19' : '20') + y;
+  if (!(mo >= 1 && mo <= 12 && d >= 1 && d <= 31)) return null;
+  return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+/** Alle Daten im Text mit einer Wertung: Belegdatum hoch, Fälligkeit/Lieferung/Zeitraum niedrig; bei Gleichstand gewinnt das erste. */
+export function findeDaten(text) {
+  const out = [];
+  const zeilen = text.split(/\r?\n/);
+  zeilen.forEach((zeile, nr) => {
+    DATUM_RE.lastIndex = 0;
+    let m, ende = 0;
+    while ((m = DATUM_RE.exec(zeile))) {
+      const iso = datumAus(m);
+      const davor = zeile.slice(ende, m.index);
+      ende = m.index + m[0].length;
+      if (!iso) continue;
+      let wert = 0;
+      if (DATUM_BELEG.test(davor)) wert += 10;
+      else if (DATUM_ANDERES.test(davor)) wert -= 6;
+      if (/zeitraum|von\b.*\bbis|\d\s*[–-]\s*$/i.test(davor) || /^\s*(?:[–-]|bis)\s*\d/.test(zeile.slice(ende))) wert -= 6;   // Teil einer Spanne
+      out.push({ iso, wert, zeile: nr });
+    }
+  });
+  return out;
 }
 
 function findeDatum(text) {
-  for (const zeile of text.split(/\r?\n/)) {
-    if (DATUM_KEYWORDS.test(zeile)) { const d = normDatum(zeile); if (d) return d; }
-  }
-  return normDatum(text); // erstes plausibles Datum irgendwo
+  const alle = findeDaten(text);
+  if (!alle.length) return null;
+  return alle.reduce((a, b) => (b.wert > a.wert ? b : a)).iso;
 }
 
+const SATZ_RE = /(?<![\d,.])(19|7)(?:[.,]0{1,2})?\s?%/g;
+const BETRAG_IN_ZEILE = /\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}/g;
+// Prozentangaben, die kein Umsatzsteuersatz sind
+const KEIN_UST_SATZ = /(versicherungs?teuer|skonto|rabatt|nachlass|zins|abzugsfähig|anteil|disagio|provision von|provisionssatz)/i;
+const STEUERFREI = /(umsatzsteuerfrei|steuerfrei|steuerbefreit|nicht\s+(?:umsatz)?steuerbar|unterliegt\s+nicht\s+der\s+umsatzsteuer|keine\s+umsatzsteuer|ohne\s+umsatzsteuer|kein\s+ausweis\s+der\s+umsatzsteuer|kleinunternehmer|§\s*19\s*ustg|§\s*4\s*nr|reverse[\s-]?charge|steuerschuldnerschaft|(?<![\d,.])0\s*%\s*(mwst|ust|umsatzsteuer))/i;
+
+/** USt-Satz des Belegs: 19 oder 7 (bei zwei Sätzen der mit dem größeren Betrag), 0 bei ausdrücklich steuerfrei, sonst null. */
 function findeUstSatz(text) {
-  if (/19\s*%/.test(text)) return 19;
-  if (/\b7\s*%/.test(text)) return 7;
-  if (/(steuerfrei|kleinunternehmer|§\s*19|0\s*%\s*(mwst|ust))/i.test(text)) return 0;
+  const summe = { 19: 0, 7: 0 }, zahl = { 19: 0, 7: 0 };
+  for (const zeile of text.split(/\r?\n/)) {
+    if (KEIN_UST_SATZ.test(zeile)) continue;
+    const treffer = [...zeile.matchAll(SATZ_RE)];
+    treffer.forEach((m, i) => {
+      const satz = Number(m[1]);
+      zahl[satz]++;
+      const bis = i + 1 < treffer.length ? treffer[i + 1].index : zeile.length;
+      const von = i > 0 ? treffer[i - 1].index + treffer[i - 1][0].length : 0;
+      const danach = zeile.slice(m.index + m[0].length, bis).match(BETRAG_IN_ZEILE);
+      const betraege = danach || zeile.slice(von, m.index).match(BETRAG_IN_ZEILE) || [];
+      summe[satz] += betraege.reduce((s, b) => Math.max(s, parseEuroToCents(b) || 0), 0);
+    });
+  }
+  if (zahl[19] || zahl[7]) {
+    if (zahl[19] && zahl[7]) {
+      if (summe[19] !== summe[7]) return summe[19] > summe[7] ? 19 : 7;
+      return zahl[7] > zahl[19] ? 7 : 19;
+    }
+    return zahl[19] ? 19 : 7;
+  }
+  if (STEUERFREI.test(text)) return 0;
   return null;
 }
 

@@ -567,6 +567,43 @@ await section('Entwurf bearbeiten: Formular aus Buchung rekonstruieren', () => {
   ok('ohne USt: Soll 4980 / Haben 1200 / 0 %', ohneUst.sollKonto === '4980' && ohneUst.habenKonto === '1200' && ohneUst.ustSatz === 0 && ohneUst.bruttoCent === 5000);
 });
 
+await section('Belegleser: Datum und Steuersatz (Training 2026-11-12)', async () => {
+  const { findeDaten } = await import('../src/ai/extract.js');
+  const d = (t) => extractFromText(t).datum, u = (t) => extractFromText(t).ustSatz;
+  ok('ausgeschriebener Monat: „Rechnung 41 vom 12. Februar 2026“', d('Hof Seerose\nRechnung 41 vom 12. Februar 2026\nSumme 10,00') === '2026-02-12');
+  ok('abgekürzter Monat und zweistelliges Jahr: „3. Mrz. 26“', d('Belegdatum 3. Mrz. 26') === '2026-03-03');
+  ok('Monat ohne Punkt nach dem Tag: „Datum: 24 März 2026“', d('Datum: 24 März 2026') === '2026-03-24');
+  ok('Rechnungsdatum schlägt Fälligkeit, auch wenn sie später steht', d('Rechnungsdatum: 03.02.2026\nZahlbar bis 17.02.2026 ohne Abzug') === '2026-02-03');
+  ok('Rechnungsdatum schlägt ein früher stehendes Lieferdatum', d('Lieferdatum: 01.02.2026\nRechnungsdatum: 03.02.2026') === '2026-02-03');
+  ok('Datum mit Monatsnamen schlägt den Termin in Ziffern darunter', d('Rechnung L-7 vom 8. Oktober 2026\nTermin 22.10.2026') === '2026-10-08');
+  ok('Abrechnungszeitraum ist nicht das Belegdatum', d('Entgeltabrechnung               31. März 2026\nAbrechnungszeitraum: 01.01.2026 – 31.03.2026') === '2026-03-31');
+  ok('Eintrittsdatum auf der Lohnabrechnung zählt nicht', d('Lohnabrechnung Juli 2026     erstellt am 29. Juli 2026\nEintritt 01.04.2021') === '2026-07-29');
+  ok('„Vereinbarung vom …“ ist nicht das Belegdatum', d('Rechnungsdatum: 28. März 2026\nProvision gem. Vereinbarung vom 03.01.2026') === '2026-03-28');
+  ok('Rechnungsdatum schlägt ein früher stehendes Datum ohne Stichwort', d('Auftragsbestätigung 14.01.2026\nRechnungsdatum: 03.02.2026') === '2026-02-03');
+  ok('Fälligkeit zuerst, Datum ohne Stichwort danach: das zweite gilt', d('Fällig 17.02.2026\nKiosk am Deich 03.02.2026') === '2026-02-03');
+  ok('zwei Daten ohne Stichwort: das erste gilt', d('Kiosk am Deich 14.06.2026\nDruck 15.06.2026') === '2026-06-14');
+  ok('nur ein Datum ohne Stichwort wird trotzdem genommen', d('Kiosk am Deich\n14.06.2026 10:31\nSumme 3,20') === '2026-06-14');
+  ok('ISO-Datum bleibt lesbar', d('Datum 2026-06-14') === '2026-06-14');
+  ok('unmögliches Datum wird übergangen', d('Datum 41.13.2026\nBelegdatum 02.01.2026') === '2026-01-02');
+  ok('kein Datum → null', d('Zettel ohne Zahl') === null);
+  ok('eine Rechnungsnummer „2026-0041“ ist kein Datum', d('Rechnung 2026-0041\nSumme 5,00') === null);
+  ok('findeDaten liefert jedes Datum mit Wertung', findeDaten('Rechnungsdatum 03.02.2026\nfällig 17.02.2026').length === 2);
+
+  ok('„Umsatzsteuer 19,00 %“ → 19', u('Summe netto 100,00\nUmsatzsteuer 19,00 %: 19,00') === 19);
+  ok('„A 19,00%“ auf dem Tankbon → 19', u('A 19,00%  Netto 50,00  MwSt 9,50  Brutto 59,50') === 19);
+  ok('nur 7 % → 7', u('Umsatzsteuer 7,00 %: 15,57') === 7);
+  ok('zwei Sätze: der mit dem größeren Betrag (7)', u('A=19%  Netto 26,05  MwSt 4,95  Brutto 31,00\nB= 7%  Netto 52,52  MwSt 3,68  Brutto 56,20') === 7);
+  ok('zwei Sätze: der mit dem größeren Betrag (19)', u('A=19%  Netto 80,00  MwSt 15,20  Brutto 95,20\nB= 7%  Netto 10,00  MwSt 0,70  Brutto 10,70') === 19);
+  ok('Sätze hinter den Positionen: Hotel 96,00 (7 %) vor Frühstück 14,00 (19 %)', u('1 Übernachtung   96,00   (7 %)\n1 Frühstück   14,00   (19 %)') === 7);
+  ok('Versicherungsteuer 19 % ist keine Umsatzsteuer → 0', u('Versicherungsteuer 19 %   97,28 EUR\nVersicherungsleistungen sind umsatzsteuerfrei (§ 4 Nr. 10 UStG).') === 0);
+  ok('„unterliegt nicht der Umsatzsteuer“ → 0', u('Der Beitrag unterliegt nicht der Umsatzsteuer.') === 0);
+  ok('Kleinunternehmer → 0', u('Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.') === 0);
+  ok('„2 % Skonto“ und „17 %“ sind kein Steuersatz', u('Bei Zahlung in 10 Tagen 2 % Skonto\nRabatt 17 %') === null);
+  ok('„7 % Skonto“ zählt nicht als ermäßigter Satz', u('Umsatzsteuer 19 %: 19,00\n7 % Skonto bei Sofortzahlung 8,33') === 19);
+  ok('ohne Angabe → null', u('Zettel ohne Inhalt') === null);
+  ok('Betrag bleibt: Summenzeile gewinnt', extractFromText('Position 400,00\nGesamtbetrag: 119,00 EUR').betragBrutto === 11900);
+});
+
 await section('Kontierung: Belegarten eines kleinen Betriebs (Training 2026-11-12)', async () => {
   const { istEigenerBeleg } = await import('../src/ai/categorize.js');
   const faelle = [
