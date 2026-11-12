@@ -567,6 +567,54 @@ await section('Entwurf bearbeiten: Formular aus Buchung rekonstruieren', () => {
   ok('ohne USt: Soll 4980 / Haben 1200 / 0 %', ohneUst.sollKonto === '4980' && ohneUst.habenKonto === '1200' && ohneUst.ustSatz === 0 && ohneUst.bruttoCent === 5000);
 });
 
+await section('Kontovorschlag: gelerntes Wortmodell neben den Regeln (2026-11-12)', async () => {
+  const { woerter, merkmale, vorhersage, kombiniere, kontoVorschlag, ladeKontoModell, MODELL_SCHWELLE } = await import('../src/ai/kontoModell.js');
+  const { KONTO_MODELL, KONTO_MODELL_SHA } = await import('../src/ai/kontoModellDaten.js');
+  const { createHash } = await import('node:crypto');
+  const quelle = _readSpore(new URL('../src/ai/kontoModellDaten.js', import.meta.url), 'utf8');
+  const json = quelle.slice(quelle.indexOf('export const KONTO_MODELL = ') + 'export const KONTO_MODELL = '.length, quelle.lastIndexOf(';'));
+  ok('Modell-Daten sind unverändert (SHA der Quelle stimmt)', createHash('sha256').update(json).digest('hex') === KONTO_MODELL_SHA);
+  ok('Modell kennt 38 Konten, jedes steht im Kontenrahmen', KONTO_MODELL.konten.length === 38 && KONTO_MODELL.konten.every((k) => !!indexFromSeed()[k]));
+  ok('Modell ist sparsam abgelegt (Fassung 2, Paare aus Kontoindex und Gewicht)', KONTO_MODELL.fassung === 2 && Object.values(KONTO_MODELL.gewichte).every((g) => g.length % 2 === 0 && g.length > 0));
+  ok('Modell enthält keine Ziffern in den Merkmalen (keine Beträge, Nummern, IBAN)', Object.keys(KONTO_MODELL.gewichte).every((f) => !/\d/.test(f.replace(/^§satz\d+$/, ''))));
+  ok('Schwelle ist die abgestimmte (2)', MODELL_SCHWELLE === 2);
+
+  ok('Wörter: klein, ab drei Buchstaben, ohne Zahlen und Füllwörter', JSON.stringify(woerter('Die Rechnung Nr. 4711 über 3 kg Mehl')) === JSON.stringify(['rechnung', 'mehl']));
+  ok('der eigene Betriebsname zählt nicht als Wort', !woerter('Blumenhaus Seerose\nRechnung', 'Blumenhaus Seerose').includes('seerose'));
+  ok('Merkmale tragen Wortpaare und den Steuersatz', merkmale('Diesel getankt 19 %').includes('diesel getankt') && merkmale('Diesel getankt 19 %').includes('§satz19'));
+
+  const m = (k, abstand, merk = 5) => ({ konto: k, zweites: '4980', abstand, merkmale: merk, grund: [] });
+  const r = (k, richtung = 'ausgabe') => ({ konto: k, richtung, confidence: 0.7, label: 'x', art: 'aufwand' });
+  ok('Modell gilt ab der Schwelle', kombiniere(r('4930'), m('4910', 2)).konto === '4910');
+  ok('unter der Schwelle gelten die Regeln', kombiniere(r('4930'), m('4910', 1.9)).konto === '4930');
+  ok('Regeln ohne Hinweis (4980): dann doch das Modell, auch unter der Schwelle', kombiniere(r('4980'), m('4910', 1)).konto === '4910');
+  ok('… aber nicht aus einem Zufallswort (Abstand unter 1)', kombiniere(r('4980'), m('4910', 0.9)).konto === '4980');
+  ok('Modell ohne ein einziges bekanntes Wort zählt nie', kombiniere(r('4980'), m('4910', 0, 0)).konto === '4980');
+  ok('eigener Beleg bleibt Einnahme, auch wenn das Modell ein Aufwandskonto meint', kombiniere(r('8400', 'einnahme'), m('4930', 9), { eigen: true, nameBekannt: true }).konto === '8400');
+  ok('fremder Beleg wird nie zum Erlös, wenn der Firmenname bekannt ist', kombiniere(r('3400'), m('8400', 9), { eigen: false, nameBekannt: true }).konto === '3400');
+  ok('ohne hinterlegten Firmennamen darf das Modell einen Erlös vorschlagen', kombiniere(r('3400'), m('8400', 9)).konto === '8400');
+  ok('Modell-Erlös trägt die Richtung Einnahme, Aufwand die Richtung Ausgabe', kombiniere(r('4980'), m('8300', 9)).richtung === 'einnahme' && kombiniere(r('4980'), m('4910', 9)).richtung === 'ausgabe');
+
+  const modell = await ladeKontoModell();
+  const tank = vorhersage(modell, merkmale('Tankstelle Nordring\nSuper E10 38,2 Liter\nZapfsäule 4\n19 % MwSt'));
+  ok(`Tankbon → 4530 mit deutlichem Abstand (ist ${tank.konto}, ${tank.abstand.toFixed(1)})`, tank.konto === '4530' && tank.abstand >= MODELL_SCHWELLE);
+  ok('Vorhersage nennt bis zu drei Wörter als Grund', tank.grund.length >= 1 && tank.grund.length <= 3);
+  ok('Text ohne bekanntes Wort: Abstand 0, nichts erfunden', vorhersage(modell, merkmale('qqqq jjjj vvvv')).abstand === 0);
+
+  const v = await kontoVorschlag('Steuerkanzlei Wattblick\nHonorar Finanzbuchhaltung Oktober\nLohnabrechnungen 3 Stück\n19 % USt');
+  ok(`Kanzleirechnung → Buchführungskosten (ist ${v.konto})`, v.konto === '4955' && v.richtung === 'ausgabe');
+  ok('Vorschlag trägt Konto, Art, Bezeichnung, Richtung, Sicherheit, Grund und Herkunft', ['konto', 'art', 'label', 'richtung', 'confidence', 'grund', 'herkunft'].every((f) => v[f] !== undefined && v[f] !== ''));
+  const leer = await kontoVorschlag('Zettel ohne Inhalt');
+  ok(`ein Zufallswort macht keinen Vorschlag: Sammelkonto, niedrige Sicherheit (ist ${leer.konto})`, leer.konto === '4980' && leer.confidence <= 0.4);
+  const eigen = await kontoVorschlag('Blumenhaus Seerose\n\nHotel Strandhafer\n\nRechnung Dekoration Saal, Papier, Toner\n19 % USt', { eigenerName: 'Blumenhaus Seerose' });
+  ok(`eigener Briefkopf bleibt Erlös (ist ${eigen.konto})`, ['8400', '8300', '8500', '8120', '8125'].includes(eigen.konto) && eigen.richtung === 'einnahme');
+  const buch = buildVorschlag(extractFromText('Tankstelle\nSumme 59,50 EUR\n19 % MwSt'), await kontoVorschlag('Tankstelle Nordring\nDiesel 35 Liter\nSumme 59,50 EUR\n19 % MwSt'), indexFromSeed());
+  ok('aus dem Vorschlag entsteht ein Buchungsvorschlag', buch.ok === true);
+  const { categorize: kiCat } = await import('../src/ai/mistral.js');
+  const ohneKi = await kiCat('Tankstelle Nordring\nDiesel 35 Liter\nZapfsäule 2\n19 % MwSt', indexFromSeed(), { nurLokal: true });
+  ok('ohne Mistral nutzt die Kontierung Regeln UND Modell (Quelle „heuristik“, Herkunft genannt)', ohneKi.quelle === 'heuristik' && ohneKi.konto === '4530' && typeof ohneKi.herkunft === 'string' && ohneKi.herkunft.length > 0);
+});
+
 await section('Belegleser: Datum und Steuersatz (Training 2026-11-12)', async () => {
   const { findeDaten } = await import('../src/ai/extract.js');
   const d = (t) => extractFromText(t).datum, u = (t) => extractFromText(t).ustSatz;

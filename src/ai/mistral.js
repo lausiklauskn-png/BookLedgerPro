@@ -108,7 +108,11 @@ export async function categorize(text, kontoIndex, opts = {}) {
       if (kat) return kat;
     } catch { /* Fallback unten */ }
   }
-  return { ...heuristicCategorize(text, { eigenerName: opts.eigenerName }), quelle: 'heuristik' };
+  // Ohne Mistral: Regeln und gelerntes Wortmodell zusammen (rechnet auf dem Gerät, nichts geht hinaus).
+  try {
+    const { kontoVorschlag } = await import('./kontoModell.js');
+    return { ...(await kontoVorschlag(text, { eigenerName: opts.eigenerName })), quelle: 'heuristik' };
+  } catch { return { ...heuristicCategorize(text, { eigenerName: opts.eigenerName }), quelle: 'heuristik' }; }
 }
 
 /** Minimaler Verbindungstest. @returns {Promise<{ok:boolean, message:string}>} */
