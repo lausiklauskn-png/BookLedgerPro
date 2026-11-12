@@ -1,5 +1,17 @@
 # Sitzungs-Log
 
+## 2026-11-12 (spät) — Kontovorschlag mit gelerntem Wortmodell
+
+**Was getan:** #466 gemergt (Datum/Steuersatz, Nachweis am dritten Stapel), Basic #47 nachgezogen. Neu `src/ai/kontoModell.js` und
+`src/ai/kontoModellDaten.js` (294 KB, nicht von Hand ändern): kleines Naive-Bayes-Wortmodell, gelernt aus 1600 erfundenen Belegen acht
+verschiedener Gewerbe (Lehrdaten und Lernwerkzeug im Repo Datei-Organizer). `kontoVorschlag` = Regeln aus `categorize.js` + Modell:
+Briefkopf entscheidet die Richtung, Modell gilt ab Abstand 2 (bzw. 1, wenn die Regeln nur das Sammelkonto kennen). `mistral.categorize`
+nutzt es als Rückfall ohne KI. Kein Sprachmodell, nichts verlässt das Gerät. `run.mjs` 2806/0 (+26), Gegenprobe 8/8 (ein Wächter zuerst
+blind und ersetzt). `sw.js` v299.
+**Stand:** Entwurfs-PR, nichts veröffentlicht. **Nächstes:** vierter Blindtest (neues Gewerbe, drei Einordner) – Zahlen in den PR.
+**Offen/ungeprüft:** kein Gerät, keine echten Belege; Abstimmwerte an verbrauchten Stapeln (Regeln 139/166 → mit Modell 186/198 von 239)
+sind kein Nachweis; Lehrdaten und Prüfstapel stammen beide von KI-Agenten; die Lehrer sind sich in Grenzfällen uneins (z. B. Autowäsche 4500/4530).
+
 ## 2026-11-12 (Abend) — Belegleser: Datum und Steuersatz trainiert
 
 **Was getan:** #465 gemergt (Kontierung; Nachweis mit drei unabhängigen Einordnern, einer davon Codex, Fleiss' Kappa 0,98), Basic #46

@@ -1,6 +1,14 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
-## Stand: Belegleser Datum/Steuersatz, 12. November 2026 abends (Entwurfs-PR, nicht veröffentlicht)
+## Stand: Kontovorschlag mit gelerntem Wortmodell, 12. November 2026 spät (Entwurfs-PR, nicht veröffentlicht)
+
+Datum/Steuersatz sind gemergt (#466, Basic #47). Neu: `src/ai/kontoModell.js` + `kontoModellDaten.js` – ein kleines Wortmodell (294 KB),
+gelernt aus 1600 erfundenen Belegen, arbeitet neben den Regeln; `mistral.categorize` nutzt es ohne KI. Abstimmwerte an den verbrauchten
+Stapeln 2+3: Regeln 139 (ohne Firmennamen) / 166 (mit) von 239, mit Modell 186 / 198. Nachweis folgt aus einem vierten Stapel
+(Datei-Organizer `docs/PRUEFSTAPEL-BLP-REGELN.md`, Punkte 23–29a). Proben `run.mjs` 2806/0.
+**Nächste Schritte:** Ergebnis des vierten Blindtests in den PR; danach Basic nachziehen; Gegenlauf durch Codex (Auftrag 002).
+
+## Stand: Belegleser Datum/Steuersatz, 12. November 2026 abends (gemergt #466)
 
 Kontierung ist gemergt (#465, Basic #46). Jetzt `src/ai/extract.js`: Datum mit Monatsnamen und Wertung nach dem Wort davor, Steuersatz
 mit zwei Sätzen, Versicherungsteuer und „steuerfrei“. Blindtest alt (zweiter Stapel): Datum 73 %, Steuersatz 69 %. Nachweis für neu folgt
