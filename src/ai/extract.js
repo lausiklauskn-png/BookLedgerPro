@@ -6,6 +6,7 @@
 import { parseEuroToCents } from '../domain/money.js';
 import { erkenneAbsender, absenderAusGruss } from '../vendor/sortierkern/erkennen.js';
 import { nummerAb } from '../domain/auszugText.js';
+import { vorschauAn } from '../domain/vorschau.js';
 
 const BETRAG_RE = /\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}/g;
 const SUMMEN_KEYWORDS = /(gesamt|summe|rechnungsbetrag|zu\s*zahlen|zahlbetrag|brutto|endbetrag|total)/i;
@@ -221,7 +222,7 @@ export function extractFromText(text) {
   const datum = findeDatum(safe);
   const ustSatz = findeUstSatz(safe);
   const vendor = findeVendor(safe);
-  const rechnungsnummer = findeRechnungsnummer(safe);
+  const rechnungsnummer = vorschauAn('rechnungsnummer') ? findeRechnungsnummer(safe) : null;
 
   let confidence = 0;
   if (brutto.cents != null) confidence += brutto.viaKeyword ? 0.5 : 0.25;

@@ -19,6 +19,7 @@
 import { parseEuroToCents } from './money.js';
 import { erkenneBankformat } from './bankimport.js';
 import { istAuszugText, leseAuszugText } from './auszugText.js';
+import { vorschauAn } from './vorschau.js';
 
 // ---- gemeinsame Format-Helfer ----------------------------------------------
 
@@ -286,7 +287,7 @@ export function validiereBankauszug(text) {
   const format = erkenneBankformat(text);
   if (format === 'MT940') return validiereMT940(text);
   if (format === 'CAMT') return validiereCAMT(text);
-  if (istAuszugText(text)) {
+  if (vorschauAn('auszugText') && istAuszugText(text)) {
     // Text eines Auszugs hat kein Schema: statt Feldprüfung die Saldo-Gegenrechnung des Lesers als Hinweis.
     const r = leseAuszugText(text);
     const unsicher = r.umsaetze.filter((u) => u.unsicher).length;

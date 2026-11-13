@@ -2,6 +2,7 @@
 // Belegordner mit ERWARTUNG.json (dateien[].{datei, rechnungsnummer}). Vergleich ohne Leerzeichen, Groß/Klein egal.
 // richtig = gleich; falsch = eine Nummer, die nicht dem Soll entspricht (auch wenn das Soll leer ist); leer = keine Nummer,
 // obwohl das Soll eine hat. Aufruf: node tools/messen-rechnungsnummer.mjs <ordner> [--fehler]
+globalThis.__BLP_VORSCHAU = { auszugText: true, rechnungsnummer: true }; // Messung: Vorschau-Funktionen an (src/domain/vorschau.js)
 import { readFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { extractFromText } from '../src/ai/extract.js';

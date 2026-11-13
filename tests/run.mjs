@@ -1,3 +1,5 @@
+// Vorschau-Funktionen (src/domain/vorschau.js) sind ab Werk aus; die Proben prüfen sie eingeschaltet, der Abschnitt „Schalter“ prüft „aus“.
+globalThis.__BLP_VORSCHAU = { auszugText: true, rechnungsnummer: true };
 // tests/run.mjs — Node-Smoke-Test reiner Logik (kein Browser nötig).
 // Prüft Krypto-Roundtrip und GF(256)-Shamir-Wiederherstellung.
 // Lauf: `node tests/run.mjs` (Node >= 18; nutzt globalThis.crypto, btoa/atob).
@@ -7861,6 +7863,17 @@ await section('Kontoregeln Vermietung und Hausdienste (Punkt 6a, 13.11.2026)', a
   ok('Schornsteinfeger → 4260', categorize('Schornsteinfegermeister Muster\nRechnung 2026-1\nKehrarbeiten und Feuerstättenschau').konto === '4260');
   ok('Haus- und Grundeigentümerverein → 4380', categorize('Haus- und Grundeigentümerverein Musterstadt e.V.\nJahresbeitrag 2026 81,00 EUR').konto === '4380');
   ok('Wärmemessdienst → 4980', categorize('Wärmemess Abrechnungsdienst GmbH\nRechnung\nAblesung und Heizkostenverteilung 2025').konto === '4980');
+});
+
+await section('Schalter: Kontoauszug als Text und Rechnungsnummer ab Werk aus', async () => {
+  const { parseBankauszug } = await import('../src/domain/bankimport.js'); const { extractFromText } = await import('../src/ai/extract.js'); const { validiereBankauszug } = await import('../src/domain/bankschema.js');
+  const auszug = 'Musterbank eG KONTOAUSZUG Nr. 1/2026\nalter Kontostand vom 31.12.2025 1.000,00 H\n02.01. 02.01. Lastschrift Stadtwerke Muster 50,00 S\nneuer Kontostand vom 31.01.2026 950,00 H';
+  const merk = globalThis.__BLP_VORSCHAU; globalThis.__BLP_VORSCHAU = { auszugText: false, rechnungsnummer: false };
+  try {
+    ok('aus: Text-Auszug wird nicht gelesen (Format unbekannt)', parseBankauszug(auszug).format === null && validiereBankauszug(auszug).format !== 'text');
+    ok('aus: keine Rechnungsnummer', extractFromText('Malerbetrieb Muster\nRechnung Nr. RE-2026-17\nSumme 119,00 EUR').rechnungsnummer === null);
+  } finally { globalThis.__BLP_VORSCHAU = merk; }
+  ok('an: Rechnungsnummer gelesen', extractFromText('Malerbetrieb Muster\nRechnung Nr. RE-2026-17\nSumme 119,00 EUR').rechnungsnummer === 'RE-2026-17');
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

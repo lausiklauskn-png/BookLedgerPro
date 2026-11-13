@@ -3,6 +3,7 @@
 // Je Umsatz „vollständig richtig“ = Tag (Buchung oder Wert) + Betrag mit Vorzeichen + Gegenpartei (normalisiert, eine enthält die andere;
 // ist die Soll-Gegenpartei leer, zählt nur Tag und Betrag). Je Auszug: Saldo stimmt (Leser) und Saldo stimmt mit dem Soll.
 // Aufruf: node tools/messen-auszugtext.mjs <stapel>/bank [--fehler] [--json datei]
+globalThis.__BLP_VORSCHAU = { auszugText: true, rechnungsnummer: true }; // Messung: Vorschau-Funktionen an (src/domain/vorschau.js)
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { leseAuszugText } from '../src/domain/auszugText.js';

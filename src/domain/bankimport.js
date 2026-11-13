@@ -15,6 +15,7 @@
 
 import { parseEuroToCents } from './money.js';
 import { istAuszugText, leseAuszugText } from './auszugText.js';
+import { vorschauAn } from './vorschau.js';
 
 // YYMMDD → YYYY-MM-DD (Jahrhundert 20xx; MT940 nutzt 2-stellige Jahre).
 function jahrDatum(yymmdd) {
@@ -226,7 +227,7 @@ export function parseBankauszug(text) {
   const format = erkenneBankformat(text);
   if (format === 'CAMT') return { format, ...parseCAMT(text) };
   if (format === 'MT940') return { format, ...parseMT940(text) };
-  if (istAuszugText(text)) return leseAuszugText(text);
+  if (vorschauAn('auszugText') && istAuszugText(text)) return leseAuszugText(text);
   return { format: null, konto: '', saldoStartCent: null, saldoEndeCent: null, umsaetze: [] };
 }
 

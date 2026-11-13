@@ -192,6 +192,7 @@ const CORE_ASSETS = [
   './src/domain/zugferd.js',
   './src/domain/bankimport.js',
   './src/domain/auszugText.js',
+  './src/domain/vorschau.js',
   './src/domain/bankschema.js',
   './src/domain/zahlungsabgleich.js',
   './src/domain/skonto.js',
