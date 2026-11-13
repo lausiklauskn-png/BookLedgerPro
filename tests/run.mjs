@@ -7668,5 +7668,14 @@ await section('Sortier-Kern (Aussteller aus dem Datei-Organizer, byte-gleich mit
   ok('sw.js hält die Kern-Dateien vor', sw.includes("'./src/vendor/sortierkern/erkennen.js'") && sw.includes("'./src/vendor/sortierkern/kategorien.js'"));
 });
 
+await section('Kontoregeln Vermietung und Hausdienste (Punkt 6a, 13.11.2026)', async () => {
+  const { categorize } = await import('../src/ai/categorize.js');
+  ok('Hauswart/Winterdienst → 4250', categorize('Hauswartservice Muster\nRechnung Nr. 5\nWinterdienst Januar 80,00 EUR').konto === '4250');
+  ok('Rohrreinigung im Notdienst → 4260', categorize('Rohrfrei Muster 24-h-Notdienst\nRechnung 12\nRohrreinigung Küche, Arbeitszeit 1 Std.').konto === '4260');
+  ok('Schornsteinfeger → 4260', categorize('Schornsteinfegermeister Muster\nRechnung 2026-1\nKehrarbeiten und Feuerstättenschau').konto === '4260');
+  ok('Haus- und Grundeigentümerverein → 4380', categorize('Haus- und Grundeigentümerverein Musterstadt e.V.\nJahresbeitrag 2026 81,00 EUR').konto === '4380');
+  ok('Wärmemessdienst → 4980', categorize('Wärmemess Abrechnungsdienst GmbH\nRechnung\nAblesung und Heizkostenverteilung 2025').konto === '4980');
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);
