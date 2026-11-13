@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v301';
+const CACHE_VERSION = 'v302';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -55,6 +55,7 @@ const CORE_ASSETS = [
   './src/ui/belegVorschau.js',
   './src/ui/schlank.js',
   './src/ui/kopfTitel.js',
+  './src/ui/updateFahne.js',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
   './assets/icons/maskable-512.png',
@@ -329,6 +330,9 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return; // nur eigene Assets
+  // Update-Fähnchen (0.1.18, src/ui/updateFahne.js): version.json nennt die Fassung auf dem Server — NIE aus dem Vorrat,
+  // sonst vergliche die Seite ihre Nummer mit einer alten Kopie und das Fähnchen käme nie. Ohne respondWith geht es ans Netz.
+  if (url.pathname.endsWith('/version.json') && !url.pathname.includes('/apps/')) return;
 
   if (url.pathname.includes('/apps/') && !url.pathname.endsWith('/HERKUNFT.json')) {
     // Eingebettete App: Vorrat zuerst (offline), im Hintergrund frisch; ihre index.html (der Rahmen navigiert) netz-zuerst.

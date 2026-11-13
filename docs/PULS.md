@@ -1,5 +1,14 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
+## Stand: 0.1.18 Update-Fähnchen, 13. November 2026 (Zweig `claude/update-faehnchen`, Entwurfs-PR, nicht veröffentlicht)
+
+Neben der Version im Kopf erscheint von selbst ein Fähnchen, sobald ein Update bereitsteht (`src/ui/updateFahne.js`): App über die vorhandene Brücke
+(`BLPNative.updates.pruefen()`, still), PWA/Basic über `version.json` neben der Seite (nie aus dem Vorrat). Tipp = der vorhandene Weg (App: Fenster mit
+„Laden und installieren“; PWA: neuer Worker, neu laden). Android Code 19, Windows gleich, `sw.js` v302. Gemessen: `run.mjs` 2897 bestanden, 0 fehlgeschlagen ·
+`smoke_updatefahne` 34 grün · `smoke_design` 92 · `smoke_befunde9` 170 · `test-native` 62; von Hand 7 Sabotagen in einer Kopie, jede rot.
+`smoke_ohne_web` 26 grün · 2 ROT wie auf main (Übernehmen im Tresorordner, unberührt). ⚠ Nicht am Gerät, kein echter Update-Server, kein echter
+Worker-Wechsel; Basic noch nicht nachgezogen. Nächste Schritte: Klaus' Sichttest, dann mergen, Basic nachziehen (`version.json` reist mit).
+
 ## Stand: 0.1.15 veröffentlicht, 13. November 2026 (Klaus' Auftrag vom 12.11. abends: Downloads bis 8 Uhr)
 
 **BookLedgerPro 0.1.15** (Android Code 16, Windows gleich; main `79673c7`, #465–#468): trainierte Belegerkennung (Kontoregeln, Datum/Steuersatz,

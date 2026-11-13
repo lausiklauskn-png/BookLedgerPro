@@ -12,7 +12,7 @@ deren GitHub-Releases von außen nicht lesbar sind (Private Brain Pro liest GitH
 | Hochladen | GitHub-Lauf „Windows-Update veröffentlichen“ (nur von Hand, Feld „ja“) | rsync mit Schlüssel `…_UPLOAD_KEY`; der darf auf dem Server **nur** in `/srv/family-project/updates` schreiben (`rrsync`, `restrict`). Server-Kennung im Lauf fest. |
 | Unterschrift | GitHub-Geheimnis `…_SIGNING_KEY` (Ed25519) | die Feed-Datei wird unterschrieben; der Lauf prüft die Unterschrift gegen den **in der App eingebauten** öffentlichen Schlüssel, bevor er hochlädt. |
 | App | z. B. `windows/engine/src/DesktopUpdates.java` | holt `aktuell-<plattform>.json` + `.sig`, glaubt nur der Unterschrift, nimmt nur eine **neuere** Version, baut die Setup-Adresse selbst (feste Basis + geprüfter Name), prüft Größe und SHA-256, startet das Setup und schließt sich. |
-| Bedienung | „Über“ (Leitfaden § 6) | „Auf Updates prüfen“ → „Du verwendest die aktuelle Version …“ oder „Neu: … (du hast …)“ + ein farbiger Knopf „Laden und installieren“ mit MB-Stand. Nichts startet von selbst. |
+| Bedienung | „Über“ (Leitfaden § 6) | „Auf Updates prüfen“ → „Du verwendest die aktuelle Version …“ oder „Neu: … (du hast …)“ + ein farbiger Knopf „Laden und installieren“ mit MB-Stand. Laden und Installieren starten nie von selbst. Seit 0.1.18 fragt die App still (Start, Zurückholen, stündlich) über dieselbe Brücke und zeigt bei einem Update ein Fähnchen neben der Version im Kopf (`src/ui/updateFahne.js`); Tipp = dieses Fenster. |
 
 `aktuell-windows.json` (Format 1; Android gleich mit Abschnitt `android` und `versionCode`):
 

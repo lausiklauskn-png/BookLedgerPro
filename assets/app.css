@@ -976,6 +976,13 @@ input[type="password"], input[type="text"], input[type="number"], input[type="da
 .kopf-version { font: inherit; font-size: .68rem; line-height: 1.1; color: var(--accent-strong, var(--accent)); background: none; border: 0; padding: 0 1px;
   cursor: pointer; text-decoration: underline; text-underline-offset: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .kopf-version:hover { color: var(--accent); }
+/* Update-Fähnchen neben der Version (0.1.18): erscheint von selbst, wenn ein Update bereitsteht. Flach, eine Zeile. */
+.kopf-zeile2 { display: inline-flex; align-items: center; gap: .3rem; min-width: 0; }
+.kopf-zeile2:empty { display: none; }
+.update-fahne { font: inherit; font-size: .64rem; font-weight: 700; line-height: 1.2; color: var(--on-accent); background: var(--accent-btn); border: 0;
+  border-radius: 2px 7px 7px 2px; padding: 1px 6px 1px 5px; cursor: pointer; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.update-fahne:hover { background: var(--accent-btn-hover); }
+.update-fahne[hidden] { display: none; }
 .update-popover { left: .9rem; right: auto; }
 .update-popover .version-zeile { margin: 0; }
 /* Mikrofon und Sprachmarke IM Feld, rechts (Klaus 2026-10-29 spät: „nie eine neue Zeile anfangen“). */

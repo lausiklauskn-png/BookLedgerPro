@@ -112,6 +112,7 @@ import { mountAnleitung } from './views/anleitung.js';
 import { verbundKasten } from './verbundKarte.js';
 import { schluesselAbgleichSection } from './schluesselabgleich.js';
 import { aboutContent, appNativ, appVersion, updateZeile, versionZeile } from './intro.js';
+import { updateFahne } from './updateFahne.js';
 import { getAiConfig, saveAiConfig, MISTRAL_MODELS } from '../ai/aiConfig.js';
 import { testVision } from '../ai/vision.js';
 import { testMistral } from '../ai/mistral.js';
@@ -253,7 +254,9 @@ function header(s) {
     el('button', { class: 'kopf-sicherung', id: 'kopf-sicherung', type: 'button', hidden: true, onClick: sicherungTipp }, [icon('blp-rettung')]),
     el('div', { class: 'brand' }, [MycelMark(28),
       // Klaus 2026-10-29 spät: „BookLedgerPro etwas höher und darunter rechts die Versionsnummer, die dann zu einem Update-Link wird“.
-      el('span', { class: 'brand-stapel' }, [el('span', { class: 'brand-name', text: t('app.name') }), kopfVersion()]),
+      // 0.1.18 (Klaus 2026-11-13): daneben das Update-Fähnchen — erscheint von selbst, sobald ein Update bereitsteht (updateFahne.js).
+      el('span', { class: 'brand-stapel' }, [el('span', { class: 'brand-name', text: t('app.name') }),
+        el('span', { class: 'kopf-zeile2' }, [updateFahne((anker) => updatePopover(anker)), kopfVersion()])]),
       // Seitentitel klein im Kopf (kopfTitel.js) statt groß über dem Inhalt.
       el('span', { class: 'kopf-titel', 'data-kopf-titel': '', hidden: true })]),
     // Installieren OBEN in der Kopfleiste (Klaus 2026-10-18: „in den Einstellungen vermutet keiner,
@@ -392,7 +395,7 @@ function kopfVersion() {
 
 function updatePopover(anker) {
   const alt = document.querySelector('.update-popover');
-  if (alt) { alt.remove(); return; }
+  if (alt) { alt.remove(); if (!anker.hasAttribute('data-update-fahne')) return; }   // das Fähnchen öffnet immer (ein Tipp = der Update-Weg)
   const nativ = appNativ(), kopf = document.querySelector('.app-header');
   if (!nativ || !kopf) return;
   const zeile = versionZeile();
@@ -405,7 +408,7 @@ function updatePopover(anker) {
   document.addEventListener('click', schliessen, true);
   document.addEventListener('keydown', onKey);
   kopf.append(pop);
-  // Der Tipp auf die Version IST die Frage nach Updates: gleich prüfen (nie von selbst beim Start, Leitfaden § 6).
+  // Der Tipp auf die Version IST die Frage nach Updates: gleich prüfen (das stille Fragen dazu macht seit 0.1.18 updateFahne.js).
   const pruefen = pop.querySelector('[data-update-pruefen]');
   if (pruefen) pruefen.click();
 }

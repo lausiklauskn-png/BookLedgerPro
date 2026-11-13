@@ -117,7 +117,8 @@ export function versionZeile() {
 }
 
 // „Auf Updates prüfen“ (Leitfaden § 6, Klaus 2026-10-28): vom eigenen Server, nur mit gültiger Unterschrift (prüft die Hülle).
-// Erst auf Tipp, nie von selbst. Ein farbiger Knopf erst, wenn es etwas Neues gibt.
+// Dieser Knopf prüft auf Tipp. Seit 0.1.18 fragt zusätzlich updateFahne.js still (Start, Zurückholen, stündlich) und zeigt ein Fähnchen
+// im Kopf; geladen und installiert wird weiter nur auf Tipp. Ein farbiger Knopf erst, wenn es etwas Neues gibt.
 export function updateZeile(u) {
   const status = el('p', { class: 'muted small', role: 'status', 'data-update-status': '' });
   const knopf = el('button', { class: 'btn btn-sm', type: 'button', 'data-update-pruefen': '', text: t('upd.pruefen') });

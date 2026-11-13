@@ -2,6 +2,15 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**0.1.18 (Klaus 13.11., Freibrief; Zweig `claude/update-faehnchen`, nicht veröffentlicht): Update-Fähnchen.** Neben der Version im Kopf erscheint von selbst
+ein Fähnchen, sobald ein Update bereitsteht (`src/ui/updateFahne.js`, im Kopf über `shell.js`); still gefragt wird beim Start, beim Zurückholen der App
+(frühestens nach 5 min) und stündlich. Aktuell oder ohne Netz: kein Fähnchen, keine Meldung. **App:** dieselbe Brücke wie „Auf Updates prüfen“
+(`BLPNative.updates.pruefen()`, zeigt keinen Dialog, lädt nichts), Fähnchen „Update X.Y.Z“, Tipp = das vorhandene Fenster mit „Laden und installieren“.
+**PWA/Basic:** `version.json` neben der Seite (`sw.js` bedient sie nie aus dem Vorrat), verglichen wird die Vorrats-Nummer; Tipp = neuen Worker holen, neu laden.
+⚠ **Drei Stellen, eine Nummer:** `CACHE_VERSION` (sw.js) = `FASSUNG` (updateFahne.js) = `cache` (version.json) – `tests/run.mjs` hält sie zusammen; `version` dort = App-Fassung.
+⚠ Tafel-Evolution, benannt: bis 0.1.17 galt „nie von selbst prüfen“ (Leitfaden § 6) – gefragt wird jetzt still, geladen/installiert weiter nur auf Tipp.
+Proben `run.mjs` „Update-Fähnchen“ · `tests/smoke_updatefahne.mjs` (Brücke und version.json gestellt). `sw.js` v302. ⚠ Nicht am Gerät, kein echter Update-Server, kein echter Worker-Wechsel.
+
 **0.1.17 (Klaus 13.11., Freibrief):** Rechnungsnummer im Belegleser ab Werk an – mit dem dritten Einordner (Codex, Auftrag 012) an „Vermieter 2“ 34 richtig, 1 falsch, 8 leer von 50 (2 % falsch, Grenze 5 %; vorläufig mit zwei Einordnern 5,6 %). Kontoauszug als Text bleibt hinter dem Vorschau-Schalter, Kontoregeln Vermietung weiter nicht gesichert (Konto 22 → 24 von 48, n. s.).
 
 **0.1.16 (Klaus 13.11., Freibrief; Datei-Organizer `docs/PRUEFSTAPEL-VERMIETER-2-REGELN.md`):** Aussteller aus dem Sortier-Kern des
