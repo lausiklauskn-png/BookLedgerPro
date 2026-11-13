@@ -1,5 +1,11 @@
 # Sitzungs-Log
 
+## 2026-11-13 (Nacht) — 0.1.15 ausgegeben
+
+**Was getan:** #467 (Wortmodell) und #468 (Version 0.1.15) gemergt; Android und Windows von `main` `79673c7` ausgegeben (Android-SHA-256
+`2daa6e3c…b312`, öffentlich nachgerechnet). **Stand:** veröffentlicht, nicht erneut auslösen. **Nächstes:** Klaus prüft an echten Belegen.
+**Offen/ungeprüft:** Windows-Datei aus dem Behälter nicht erreichbar; kein Gerät; an fremden Belegarten (Kreuztest) nur 58–60 % Konto.
+
 ## 2026-11-12 (spät) — Kontovorschlag mit gelerntem Wortmodell
 
 **Was getan:** #466 gemergt (Datum/Steuersatz, Nachweis am dritten Stapel), Basic #47 nachgezogen. Neu `src/ai/kontoModell.js` und

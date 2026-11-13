@@ -1,5 +1,14 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
+## Stand: 0.1.15 veröffentlicht, 13. November 2026 (Klaus' Auftrag vom 12.11. abends: Downloads bis 8 Uhr)
+
+**BookLedgerPro 0.1.15** (Android Code 16, Windows gleich; main `79673c7`, #465–#468): trainierte Belegerkennung (Kontoregeln, Datum/Steuersatz,
+Wortmodell). Android: Lauf 43354150612, Release `v0.1.15`, `BookLedgerPro-0.1.15.apk`, SHA-256
+`2daa6e3c18475bdf3c3cc757bd5d32de43009e31936a8c211730b5a58f4bb312` (öffentlicher Download aus dem Behälter nachgerechnet, gleich).
+Windows: Lauf 43353049559 erfolgreich (eigener Server family-projekt.de); aus dem Behälter nicht nachprüfbar (403), Prüfsumme hier nicht gelesen.
+**Nicht erneut auslösen.** Nachweis der Erkennung am vierten Stapel (drei Einordner): Konto 53 → 75 % ohne, 66 → 79 % mit Firmennamen; an Belegen
+eines anderen Systems nur 58–60 %. ⚠ Nicht am Gerät, keine echten Belege. Nächste freie Fassung 0.1.16.
+
 ## Stand: Kontovorschlag mit gelerntem Wortmodell, 12. November 2026 spät (Entwurfs-PR, nicht veröffentlicht)
 
 Datum/Steuersatz sind gemergt (#466, Basic #47). Neu: `src/ai/kontoModell.js` + `kontoModellDaten.js` – ein kleines Wortmodell (294 KB),
