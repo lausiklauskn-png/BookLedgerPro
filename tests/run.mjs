@@ -7702,7 +7702,7 @@ await section('Pro-Umbau 13 (Klaus 2026-10-30): Chefcode-Ausschnitt nur im eigen
     ok('App-Paket lädt pro-ueberall.css/.js und pro-chefcode.js', ['pro-ueberall.js', 'pro-ueberall.css', 'pro-chefcode.js'].every((n) => pw.includes("'" + n + "'")));
     const gr = _readSpore(new URL('../android/app/build.gradle', import.meta.url), 'utf8');
     const tc = JSON.parse(_readSpore(new URL('../windows/src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
-    ok('Version 0.1.17 · Code 18 (Android), Windows gleich', /versionCode 18\b/.test(gr) && /versionName "0\.1\.17"/.test(gr) && tc.version === '0.1.17');
+    ok('Version 0.1.18 · Code 19 (Android), Windows gleich', /versionCode 19\b/.test(gr) && /versionName "0\.1\.18"/.test(gr) && tc.version === '0.1.18');
   }
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
   const keys = [...new Set([...nw.matchAll(/t\('(net\.ausschnitt[A-Za-z]*)'\)/g)].map((x) => x[1]))];
@@ -7865,6 +7865,55 @@ await section('Schalter: Kontoauszug als Text ab Werk aus, Rechnungsnummer immer
     ok('Rechnungsnummer auch ohne Vorschau gelesen (seit 0.1.17)', extractFromText('Malerbetrieb Muster\nRechnung Nr. RE-2026-17\nSumme 119,00 EUR').rechnungsnummer === 'RE-2026-17');
   } finally { globalThis.__BLP_VORSCHAU = merk; }
   ok('an: Rechnungsnummer gelesen', extractFromText('Malerbetrieb Muster\nRechnung Nr. RE-2026-17\nSumme 119,00 EUR').rechnungsnummer === 'RE-2026-17');
+});
+
+await section('Update-Fähnchen (0.1.18): still prüfen, Fähnchen nur bei neuerer Fassung, ohne Netz still', async () => {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const u = (f) => new URL('../' + f, import.meta.url);
+  const F = await import('../src/ui/updateFahne.js');
+  // Vorrats-Nummer: neuer / gleich / älter / Unsinn
+  ok('fassungNeuer: v302 → v303 ja; gleich, älter, Unsinn nein', F.fassungNeuer('v302', 'v303') && F.fassungNeuer('v99', 'v100') && !F.fassungNeuer('v302', 'v302') && !F.fassungNeuer('v302', 'v301')
+    && !F.fassungNeuer('v302', '') && !F.fassungNeuer('v302', null) && !F.fassungNeuer('v302', '303') && !F.fassungNeuer('', 'v303') && !F.fassungNeuer('v302', 'v303a'));
+  // App: gestellte Brücke
+  let fragen = 0;
+  const bruecke = (antwort) => ({ pruefen: async () => { fragen++; if (antwort instanceof Error) throw antwort; return antwort; }, installieren: async () => { throw new Error('darf beim stillen Prüfen nie laufen'); } });
+  ok('App, gleiche Fassung: kein Angebot', (await F.pruefeStill({ updates: bruecke({ aktuell: true, version: '0.1.18' }) })) === null && fragen === 1);
+  const an = await F.pruefeStill({ updates: bruecke({ neu: '0.1.19', installiert: '0.1.18', groesse: 5 << 20 }) });
+  ok('App, neuere Fassung: Angebot mit der Nummer', !!an && an.art === 'app' && an.neu === '0.1.19');
+  ok('App, Server nicht erreichbar: still kein Angebot (wirft nicht)', (await F.pruefeStill({ updates: bruecke(Object.assign(new Error('UPDATE_NICHT_ERREICHBAR'), { code: 'UPDATE_NICHT_ERREICHBAR' })) })) === null);
+  ok('App, Unsinn von der Brücke: kein Angebot', (await F.pruefeStill({ updates: bruecke({ neu: 17 }) })) === null && (await F.pruefeStill({ updates: bruecke(null) })) === null && (await F.pruefeStill({ updates: bruecke({ neu: '' }) })) === null);
+  // PWA: gestellter Abruf
+  let gerufen = null;
+  const abruf = (antwort) => async (adresse, opt) => { gerufen = { adresse, opt }; if (antwort instanceof Error) throw antwort; return antwort; };
+  const json = (o, ok2 = true) => ({ ok: ok2, json: async () => o });
+  ok('PWA, gleiche Fassung: kein Angebot', (await F.pruefeStill({ abruf: abruf(json({ version: '0.1.18', cache: 'v302' })), eigene: 'v302' })) === null);
+  ok('PWA fragt version.json neben der Seite, nie aus dem Browser-Zwischenspeicher', gerufen && gerufen.adresse === './version.json' && gerufen.opt && gerufen.opt.cache === 'no-store');
+  const pn = await F.pruefeStill({ abruf: abruf(json({ version: '0.1.19', cache: 'v303' })), eigene: 'v302' });
+  ok('PWA, neuere Fassung: Angebot', !!pn && pn.art === 'pwa' && pn.fassung === 'v303' && pn.version === '0.1.19');
+  ok('PWA, Server älter als die Seite: kein Angebot', (await F.pruefeStill({ abruf: abruf(json({ cache: 'v301' })), eigene: 'v302' })) === null);
+  ok('PWA ohne Netz (Abruf wirft): still kein Angebot', (await F.pruefeStill({ abruf: abruf(new TypeError('Failed to fetch')), eigene: 'v302' })) === null);
+  ok('PWA, 404 oder kaputtes JSON: kein Angebot', (await F.pruefeStill({ abruf: abruf(json({ cache: 'v999' }, false)), eigene: 'v302' })) === null
+    && (await F.pruefeStill({ abruf: abruf({ ok: true, json: async () => { throw new SyntaxError('x'); } }), eigene: 'v302' })) === null
+    && (await F.pruefeStill({ abruf: abruf(json(null)), eigene: 'v302' })) === null);
+  ok('weder Brücke noch Abruf: kein Angebot', (await F.pruefeStill({})) === null);
+  // Drei Stellen, eine Nummer — sonst käme das Fähnchen nie oder bliebe für immer
+  const sw = readFileSync(u('sw.js'), 'utf8'), vj = JSON.parse(readFileSync(u('version.json'), 'utf8'));
+  const cv = (sw.match(/const CACHE_VERSION = '(v\d+)';/) || [])[1];
+  ok('CACHE_VERSION (sw.js) = FASSUNG (updateFahne.js) = cache (version.json): ' + cv, !!cv && cv === F.FASSUNG && cv === vj.cache);
+  if (existsSync(u('windows/src-tauri/tauri.conf.json'))) {   // Basic hat keine App-Teile
+    ok('version.json nennt die App-Fassung', vj.version === JSON.parse(readFileSync(u('windows/src-tauri/tauri.conf.json'), 'utf8')).version);
+  }
+  ok('sw.js bedient version.json nie aus dem Vorrat (Ausstieg VOR jedem respondWith für GET) und hält sie nicht vor',
+    /if \(url\.pathname\.endsWith\('\/version\.json'\) && !url\.pathname\.includes\('\/apps\/'\)\) return;/.test(sw)
+    && sw.indexOf("endsWith('/version.json')") < sw.indexOf("url.pathname.includes('/apps/') && !url.pathname.endsWith('/HERKUNFT.json')")
+    && !/'\.\/version\.json'/.test(sw));
+  ok('sw.js hält updateFahne.js vor', sw.includes("'./src/ui/updateFahne.js'"));
+  const sh = readFileSync(u('src/ui/shell.js'), 'utf8'), uf = readFileSync(u('src/ui/updateFahne.js'), 'utf8');
+  ok('Kopf: Fähnchen neben der Version, Tipp in der App = das vorhandene Update-Fenster', /updateFahne\(\(anker\) => updatePopover\(anker\)\), kopfVersion\(\)/.test(sh));
+  ok('still prüfen: Start, Zurückholen (visibilitychange), stündlich; ohne Netz gar nicht erst', /setTimeout\(los, 1500\)/.test(uf) && /addEventListener\('visibilitychange'/.test(uf) && /setInterval\([^]*?STUENDLICH_MS\)/.test(uf) && F.STUENDLICH_MS === 3600000 && /navigator\.onLine === false/.test(uf));
+  ok('stilles Prüfen lädt und installiert nie (kein installieren() in updateFahne.js)', !/\.installieren\(/.test(uf));
+  const i18 = readFileSync(u('src/ui/i18n.js'), 'utf8');
+  ok('i18n DE/EN: fünf Fähnchen-Sätze je zweimal', ['upd.fahne', 'upd.fahnePwa', 'upd.fahneLaedt', 'upd.fahneTitel', 'upd.fahneTitelPwa'].every((k) => (i18.match(new RegExp("'" + k.replace('.', '\\.') + "':", 'g')) || []).length === 2));
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);

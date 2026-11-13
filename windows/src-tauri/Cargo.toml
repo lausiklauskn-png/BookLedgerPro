@@ -1,6 +1,6 @@
 [package]
 name = "bookledgerpro"
-version = "0.1.17"
+version = "0.1.18"
 description = "BookLedgerPro für Windows"
 edition = "2021"
 publish = false
