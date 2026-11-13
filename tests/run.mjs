@@ -7655,5 +7655,18 @@ await section('Pro-App-Verbund (Klaus 2026-11-09): Karte als Vorschau-Hilfe, byt
   ok('Werkzeug zum Nachziehen schreibt Kopie und pro-verbund.herkunft.json', /--ziel/.test(werkzeug) && /--pfad/.test(werkzeug) && /pro-verbund\.herkunft\.json/.test(werkzeug));
 });
 
+await section('Sortier-Kern (Aussteller aus dem Datei-Organizer, byte-gleich mit Pin)', async () => {
+  const { readFileSync, existsSync } = await import('node:fs'); const { createHash } = await import('node:crypto');
+  const u = (f) => new URL('../' + f, import.meta.url);
+  const pin = JSON.parse(readFileSync(u('src/vendor/sortierkern/HERKUNFT.json'), 'utf8'));
+  ok('Pin nennt Commit und zwei Dateien', /^[0-9a-f]{40}$/.test(pin.commit) && Object.keys(pin.dateien).length === 2);
+  ok('erkennen.js und kategorien.js gleich dem Pin', Object.entries(pin.dateien).every(([f, h]) => existsSync(u('src/vendor/sortierkern/' + f)) && createHash('sha256').update(readFileSync(u('src/vendor/sortierkern/' + f))).digest('hex') === h));
+  const { extractFromText } = await import('../src/ai/extract.js');
+  ok('Aussteller aus dem Briefkopf statt erster Zeile', extractFromText('RECHNUNG\nMalerbetrieb Kowalski GmbH\nHauptstr. 1 · 12345 Musterstadt\n\nRechnung Nr. 12\nSumme 119,00 EUR').vendor === 'Malerbetrieb Kowalski GmbH');
+  ok('ohne erkennbaren Kopf: alter Weg (erste Zeile)', typeof extractFromText('Bäckerei Sonne\n2 Brötchen 1,20').vendor === 'string');
+  const sw = readFileSync(u('sw.js'), 'utf8');
+  ok('sw.js hält die Kern-Dateien vor', sw.includes("'./src/vendor/sortierkern/erkennen.js'") && sw.includes("'./src/vendor/sortierkern/kategorien.js'"));
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);

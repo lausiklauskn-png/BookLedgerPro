@@ -4,6 +4,7 @@
 // Dieses Modul kennt keine KI — nur robuste Regex-Heuristik.
 
 import { parseEuroToCents } from '../domain/money.js';
+import { erkenneAbsender, absenderAusGruss } from '../vendor/sortierkern/erkennen.js';
 
 const BETRAG_RE = /\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}/g;
 const SUMMEN_KEYWORDS = /(gesamt|summe|rechnungsbetrag|zu\s*zahlen|zahlbetrag|brutto|endbetrag|total)/i;
@@ -114,7 +115,17 @@ function findeUstSatz(text) {
   return null;
 }
 
+// Aussteller: zuerst der Sortier-Kern des Datei-Organizers (Briefkopf, Rechtsform, Grußzeile; gemessen an fremden Belegen
+// 44 % → 84–96 %), sonst wie bisher die erste Zeile mit Buchstaben. Kern byte-gleich mit Pin (src/vendor/sortierkern/).
 function findeVendor(text) {
+  try {
+    const k = erkenneAbsender(text.slice(0, 1500)) || absenderAusGruss(text);
+    if (k && k.wert && k.wert !== 'unbekannt') return String(k.wert).slice(0, 80);
+  } catch { /* Kern nicht lesbar: alter Weg */ }
+  return ersteZeile(text);
+}
+
+function ersteZeile(text) {
   for (const zeile of text.split(/\r?\n/)) {
     const t = zeile.trim();
     if (t.length < 3) continue;
