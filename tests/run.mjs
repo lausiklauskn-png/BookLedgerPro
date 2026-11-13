@@ -7702,7 +7702,7 @@ await section('Pro-Umbau 13 (Klaus 2026-10-30): Chefcode-Ausschnitt nur im eigen
     ok('App-Paket lädt pro-ueberall.css/.js und pro-chefcode.js', ['pro-ueberall.js', 'pro-ueberall.css', 'pro-chefcode.js'].every((n) => pw.includes("'" + n + "'")));
     const gr = _readSpore(new URL('../android/app/build.gradle', import.meta.url), 'utf8');
     const tc = JSON.parse(_readSpore(new URL('../windows/src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
-    ok('Version 0.1.16 · Code 17 (Android), Windows gleich', /versionCode 17\b/.test(gr) && /versionName "0\.1\.16"/.test(gr) && tc.version === '0.1.16');
+    ok('Version 0.1.17 · Code 18 (Android), Windows gleich', /versionCode 18\b/.test(gr) && /versionName "0\.1\.17"/.test(gr) && tc.version === '0.1.17');
   }
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
   const keys = [...new Set([...nw.matchAll(/t\('(net\.ausschnitt[A-Za-z]*)'\)/g)].map((x) => x[1]))];
@@ -7856,13 +7856,13 @@ await section('Sortier-Kern (Aussteller aus dem Datei-Organizer, byte-gleich mit
   ok('sw.js hält die Kern-Dateien vor', sw.includes("'./src/vendor/sortierkern/erkennen.js'") && sw.includes("'./src/vendor/sortierkern/kategorien.js'"));
 });
 
-await section('Schalter: Kontoauszug als Text und Rechnungsnummer ab Werk aus', async () => {
+await section('Schalter: Kontoauszug als Text ab Werk aus, Rechnungsnummer immer an', async () => {
   const { parseBankauszug } = await import('../src/domain/bankimport.js'); const { extractFromText } = await import('../src/ai/extract.js'); const { validiereBankauszug } = await import('../src/domain/bankschema.js');
   const auszug = 'Musterbank eG KONTOAUSZUG Nr. 1/2026\nalter Kontostand vom 31.12.2025 1.000,00 H\n02.01. 02.01. Lastschrift Stadtwerke Muster 50,00 S\nneuer Kontostand vom 31.01.2026 950,00 H';
   const merk = globalThis.__BLP_VORSCHAU; globalThis.__BLP_VORSCHAU = { auszugText: false, rechnungsnummer: false };
   try {
     ok('aus: Text-Auszug wird nicht gelesen (Format unbekannt)', parseBankauszug(auszug).format === null && validiereBankauszug(auszug).format !== 'text');
-    ok('aus: keine Rechnungsnummer', extractFromText('Malerbetrieb Muster\nRechnung Nr. RE-2026-17\nSumme 119,00 EUR').rechnungsnummer === null);
+    ok('Rechnungsnummer auch ohne Vorschau gelesen (seit 0.1.17)', extractFromText('Malerbetrieb Muster\nRechnung Nr. RE-2026-17\nSumme 119,00 EUR').rechnungsnummer === 'RE-2026-17');
   } finally { globalThis.__BLP_VORSCHAU = merk; }
   ok('an: Rechnungsnummer gelesen', extractFromText('Malerbetrieb Muster\nRechnung Nr. RE-2026-17\nSumme 119,00 EUR').rechnungsnummer === 'RE-2026-17');
 });

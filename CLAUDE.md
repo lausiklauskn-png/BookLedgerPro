@@ -2,6 +2,8 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**0.1.17 (Klaus 13.11., Freibrief):** Rechnungsnummer im Belegleser ab Werk an – mit dem dritten Einordner (Codex, Auftrag 012) an „Vermieter 2“ 34 richtig, 1 falsch, 8 leer von 50 (2 % falsch, Grenze 5 %; vorläufig mit zwei Einordnern 5,6 %). Kontoauszug als Text bleibt hinter dem Vorschau-Schalter, Kontoregeln Vermietung weiter nicht gesichert (Konto 22 → 24 von 48, n. s.).
+
 **0.1.16 (Klaus 13.11., Freibrief; Datei-Organizer `docs/PRUEFSTAPEL-VERMIETER-2-REGELN.md`):** Aussteller aus dem Sortier-Kern des
 Datei-Organizers (`src/vendor/sortierkern/`, byte-gleich mit Pin, nur über `tools/sortierkern-nachziehen.mjs`; Probe „Sortier-Kern“). Hinter dem
 Vorschau-Schalter (`src/domain/vorschau.js`, ab Werk aus): Kontoauszug als PDF-Text/Texterkennung → Umsätze (`src/domain/auszugText.js`, Saldo-
