@@ -2,6 +2,12 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**0.1.16 (Klaus 13.11., Freibrief; Datei-Organizer `docs/PRUEFSTAPEL-VERMIETER-2-REGELN.md`):** Aussteller aus dem Sortier-Kern des
+Datei-Organizers (`src/vendor/sortierkern/`, byte-gleich mit Pin, nur über `tools/sortierkern-nachziehen.mjs`; Probe „Sortier-Kern“). Hinter dem
+Vorschau-Schalter (`src/domain/vorschau.js`, ab Werk aus): Kontoauszug als PDF-Text/Texterkennung → Umsätze (`src/domain/auszugText.js`, Saldo-
+Gegenrechnung) und Rechnungsnummer im Belegleser – an „Vermieter 2“ knapp unter der vorab gesetzten Grenze (89 % statt 90 %; 5,6 % statt 5 % falsch).
+Kontoregeln für Vermietung nicht gesichert besser → auf Zweig `claude/kontoregeln-vermietung`, nicht ausgegeben.
+
 **Belegerkennung trainiert (Klaus 2026-11-12/13):** Kontoregeln (`src/ai/categorize.js`, #465), Datum und Steuersatz (`src/ai/extract.js`, #466),
 gelerntes Wortmodell neben den Regeln (`src/ai/kontoModell.js`, Daten `kontoModellDaten.js` erzeugt im Repo Datei-Organizer – nie von Hand, #467).
 Kein Sprachmodell, nichts verlässt das Gerät. Nachweis an fremden Stapeln mit drei Einordnern (darunter Codex): Konto 53 → 75 % ohne, 66 → 79 % mit

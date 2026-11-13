@@ -4,6 +4,9 @@
 // Dieses Modul kennt keine KI — nur robuste Regex-Heuristik.
 
 import { parseEuroToCents } from '../domain/money.js';
+import { erkenneAbsender, absenderAusGruss } from '../vendor/sortierkern/erkennen.js';
+import { nummerAb } from '../domain/auszugText.js';
+import { vorschauAn } from '../domain/vorschau.js';
 
 const BETRAG_RE = /\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}/g;
 const SUMMEN_KEYWORDS = /(gesamt|summe|rechnungsbetrag|zu\s*zahlen|zahlbetrag|brutto|endbetrag|total)/i;
@@ -114,7 +117,17 @@ function findeUstSatz(text) {
   return null;
 }
 
+// Aussteller: zuerst der Sortier-Kern des Datei-Organizers (Briefkopf, Rechtsform, Grußzeile; gemessen an fremden Belegen
+// 44 % → 84–96 %), sonst wie bisher die erste Zeile mit Buchstaben. Kern byte-gleich mit Pin (src/vendor/sortierkern/).
 function findeVendor(text) {
+  try {
+    const k = erkenneAbsender(text.slice(0, 1500)) || absenderAusGruss(text);
+    if (k && k.wert && k.wert !== 'unbekannt') return String(k.wert).slice(0, 80);
+  } catch { /* Kern nicht lesbar: alter Weg */ }
+  return ersteZeile(text);
+}
+
+function ersteZeile(text) {
   for (const zeile of text.split(/\r?\n/)) {
     const t = zeile.trim();
     if (t.length < 3) continue;
@@ -126,9 +139,82 @@ function findeVendor(text) {
   return null;
 }
 
+// Rechnungs-/Beleg-/Invoice-Nummer: nur hinter einer ausdrücklichen Bezeichnung. Gewicht 3 = „…nummer/Nr.“,
+// 2 = Rechnungsart mit Nummer („Rechnung AZ-250518“, „Beitragsrechnung B-2025-0417“). Kunden-, Vertrags-, Auftrags-,
+// Steuer-, Mandats- und Mitgliedsnummern haben eigene Bezeichnungen und werden darum nie genommen.
+const RNR_MARKE = [
+  { w: 3, re: /(?<![A-Za-zÄÖÜäöüß-])(?:rechnungs-?\s?(?:nummer|nr\.?)|rechnung\s?-?\s?nr\.?|rg\.?\s?-?\s?nr\.?|re\.?\s?-?\s?nr\.?|beleg-?\s?(?:nummer|nr\.?)|gutschrifts?-?\s?(?:nummer|nr\.?)|invoice\s?(?:no\.?|number|nr\.?|#)|rechnung\s?#)(?:\s?\/\s?[A-Za-zäöü.-]+)?/gi },
+  { w: 3, re: /(?<![A-Za-zÄÖÜäöüß-])(?:quittungs?-?\s?(?:nummer|nr\.?))/gi },
+  { w: 2, re: /(?<![A-Za-zÄÖÜäöüß-])(?:(?:beitrags|schluss|abschlags|teil|jahres|sammel|gebühren|gebuehren|honorar|korrektur|storno)?rechnung|gutschrift|invoice|(?:gebühren|gebuehren)?quittung)(?![A-Za-zäöüß])/gi },
+];
+// Steht davor „zu/aus/abzüglich …“, ist es der Verweis auf einen ANDEREN Beleg.
+const RNR_VERWEIS = /(?:\bzu|\bzur|\bzum|\baus|abzgl\.?|abzüglich|abzueglich|bezüglich|bezueglich|betr\.?|betreff|gemäß|gemaess|laut|\blt\.?|siehe|ersetzt|storniert)\s*$/i;
+// Kurzer Vorsatz mit Leerzeichen vor der Nummer: „R 26-014“, „RE 2026 0087“, „Rg 2026-031“.
+const RNR_VORSATZ = /^([A-Z][A-Za-z]{0,2})\s(?=\d)/;
+const KEIN_VORSATZ = /^(?:nr|no|kd|eur|vom|von|für|zum|zur|am|im|per|mai|jan|feb|mär|apr|jun|jul|aug|sep|okt|nov|dez|q)$/i;
+
+function nummerHier(zeile, ab) {
+  const rest = zeile.slice(ab);
+  const v = rest.match(RNR_VORSATZ);
+  if (v && !KEIN_VORSATZ.test(v[1])) {
+    const n = nummerAb(zeile, ab + v[0].length);
+    if (n) return { n: `${v[1]} ${n}`, ende: ab + v[0].length + n.length };
+  }
+  const n = nummerAb(zeile, ab);
+  return n ? { n, ende: ab + n.length } : null;
+}
+
+function findeRechnungsnummer(text) {
+  const zeilen = text.split(/\r?\n/);
+  const funde = [];
+  zeilen.forEach((zeile, nr) => {
+    for (const { w, re } of RNR_MARKE) {
+      re.lastIndex = 0;
+      let m;
+      while ((m = re.exec(zeile))) {
+        if (RNR_VERWEIS.test(zeile.slice(0, m.index))) continue;
+        const ab = m.index + m[0].length;
+        const rest = zeile.slice(ab);
+        // „Rechnung / Quittung Nr. 25-0719“, „Beitragsrechnung Nr. BR-7741902“, „QUITTUNG      Nr. 3/2026“
+        const vorlauf = rest.match(/^\s{0,3}(?:\/\s?[A-Za-zÄÖÜäöü]+\s?)?(?:\s{0,60}(?:nr|no|nummer)\.?\s?)?[:.#]?\s{0,12}/i)[0];
+        const hier = nummerHier(zeile, ab + vorlauf.length);
+        let nrText = hier ? hier.n : '';
+        if (hier && /^,\d{2}\b/.test(zeile.slice(hier.ende))) nrText = '';                // ein Betrag („Rechnung: 3.960,00“)
+        // Bezeichnung am Zeilenende, Nummer darunter (Tabellenkopf „Rechnungsnummer   Datum“ / Wert in der nächsten Zeile).
+        if (!nrText && w === 3 && /^\s*[:.]?\s*$/.test(rest) && zeilen[nr + 1] != null) {
+          const naechste = zeilen[nr + 1];
+          const start = naechste.search(/\S/);
+          if (start >= 0) nrText = nummerAb(naechste, start);
+        }
+        if (!nrText && w === 3 && /^\s{2,}[A-Za-zÄÖÜäöü]/.test(rest)) {
+          // Tabellenkopf mit mehreren Bezeichnungen: Nummer in der nächsten Zeile unter der Spalte.
+          const naechste = zeilen[nr + 1] || '';
+          const spalte = m.index;
+          const teil = naechste.slice(Math.max(0, spalte - 2));
+          const start = teil.search(/\S/);
+          if (start >= 0 && start <= 4) nrText = nummerAb(teil, start);
+        }
+        if (!nrText) continue;
+        const n = nrText.trim().replace(/[-\/.,;:]+$/, '');
+        if ((n.match(/\d/g) || []).length < 3) continue;
+        if (/^\d{1,2}\.\d{1,2}\.(\d{2,4})?$/.test(n) || /^(19|20)\d{2}$/.test(n)) continue;   // Datum oder nur ein Jahr
+        if (/^\d{1,3}(?:\.\d{3})*(?:,\d{2})?$/.test(n) && /[.,]/.test(n)) continue;        // ein Betrag
+        if (/^[A-Za-z]+\s(19|20)\d{2}$/.test(n)) continue;                                // „Mai 2026“
+        funde.push({ n, w, nr });
+      }
+    }
+  });
+  if (!funde.length) return null;
+  const besteW = Math.max(...funde.map((f) => f.w));
+  const kandidaten = [...new Set(funde.filter((f) => f.w === besteW).map((f) => f.n.replace(/\s/g, '').toUpperCase()))];
+  if (kandidaten.length !== 1) return null;                 // widersprüchlich → lieber leer als falsch
+  return funde.find((f) => f.w === besteW).n;
+}
+
 /**
  * Extrahiert Felder aus Beleg-Text.
- * @returns {{betragBrutto:?number, datum:?string, ustSatz:?number, vendor:?string, confidence:number}}
+ * `rechnungsnummer` nur, wenn sie ausdrücklich als Rechnungs-/Beleg-/Invoice-Nummer bezeichnet ist (sonst null).
+ * @returns {{betragBrutto:?number, datum:?string, ustSatz:?number, vendor:?string, rechnungsnummer:?string, confidence:number}}
  */
 export function extractFromText(text) {
   const safe = String(text || '');
@@ -136,6 +222,7 @@ export function extractFromText(text) {
   const datum = findeDatum(safe);
   const ustSatz = findeUstSatz(safe);
   const vendor = findeVendor(safe);
+  const rechnungsnummer = vorschauAn('rechnungsnummer') ? findeRechnungsnummer(safe) : null;
 
   let confidence = 0;
   if (brutto.cents != null) confidence += brutto.viaKeyword ? 0.5 : 0.25;
@@ -144,5 +231,5 @@ export function extractFromText(text) {
   if (vendor) confidence += 0.1;
   confidence = Math.min(1, Math.round(confidence * 100) / 100);
 
-  return { betragBrutto: brutto.cents, datum, ustSatz, vendor, confidence };
+  return { betragBrutto: brutto.cents, datum, ustSatz, vendor, rechnungsnummer, confidence };
 }

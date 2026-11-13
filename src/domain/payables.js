@@ -213,7 +213,7 @@ export function verbindlichkeitenSummen(angereichertePosten = []) {
  * abgeleitet; ist kein gültiger Satz erkannt, wird konservativ 0 % angenommen (keine
  * Vorsteuer geltend gemacht). Es wird KEIN `bruttoCent` gesetzt — die Positionen treiben den
  * Betrag, damit Buchung und gespeicherter Brutto deckungsgleich bleiben.
- * @param {{betragBrutto?:?number, datum?:?string, ustSatz?:?number, vendor?:?string, confidence?:number}} ex
+ * @param {{betragBrutto?:?number, datum?:?string, ustSatz?:?number, vendor?:?string, rechnungsnummer?:?string, confidence?:number}} ex
  * @param {{aufwandKonto?:string, zahlungszielTage?:number, rechnungsnr?:string, quelle?:string}} [opts]
  * @returns {{kreditor, rechnungsnr, datum, positionen, zahlungszielTage, quelle, confidence}}
  */
@@ -226,7 +226,7 @@ export function extraktionZuEingangsrechnung(ex = {}, opts = {}) {
   const positionen = netto != null ? [{ nettoCent: netto, ustSatz: satz, aufwandKonto }] : [];
   return {
     kreditor: (ex.vendor || '').trim(),
-    rechnungsnr: opts.rechnungsnr || ex.rechnungsnr || '',
+    rechnungsnr: opts.rechnungsnr || ex.rechnungsnr || ex.rechnungsnummer || '',
     datum: ex.datum || '',
     positionen,
     zahlungszielTage: opts.zahlungszielTage != null ? opts.zahlungszielTage : null,

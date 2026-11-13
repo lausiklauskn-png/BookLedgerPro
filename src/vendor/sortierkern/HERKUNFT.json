@@ -1,0 +1,9 @@
+{
+ "quelle": "Datei-Organizer kern-js/",
+ "werkzeug": "tools/sortierkern-nachziehen.mjs",
+ "commit": "4fa3f9d8e24f95292997fff890e9db4f3241e369",
+ "dateien": {
+  "erkennen.js": "c969b01a11346013230f346b99f6aa0960d0f2a027038b301aa9caf33d99e08c",
+  "kategorien.js": "0f22e721b36a3241e49ce485a0d639e1ac72159e449f7b0fed3d7d0dc983efd1"
+ }
+}

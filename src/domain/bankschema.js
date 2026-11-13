@@ -18,6 +18,8 @@
 
 import { parseEuroToCents } from './money.js';
 import { erkenneBankformat } from './bankimport.js';
+import { istAuszugText, leseAuszugText } from './auszugText.js';
+import { vorschauAn } from './vorschau.js';
 
 // ---- gemeinsame Format-Helfer ----------------------------------------------
 
@@ -285,5 +287,13 @@ export function validiereBankauszug(text) {
   const format = erkenneBankformat(text);
   if (format === 'MT940') return validiereMT940(text);
   if (format === 'CAMT') return validiereCAMT(text);
+  if (vorschauAn('auszugText') && istAuszugText(text)) {
+    // Text eines Auszugs hat kein Schema: statt Feldprüfung die Saldo-Gegenrechnung des Lesers als Hinweis.
+    const r = leseAuszugText(text);
+    const unsicher = r.umsaetze.filter((u) => u.unsicher).length;
+    const warnungen = [{ code: 'text-auszug', detail: r.saldoStimmt ? 'aus Text gelesen, Saldo gegengerechnet' : 'aus Text gelesen, Saldo-Gegenrechnung stimmt nicht' }];
+    if (unsicher) warnungen.push({ code: 'unsichere-umsaetze', detail: `${unsicher} von ${r.umsaetze.length} Umsätzen unsicher gelesen – bitte prüfen` });
+    return { ok: true, format: 'text', fehler: [], warnungen, anzahlUmsaetze: r.umsaetze.length };
+  }
   return { ok: false, format: null, fehler: [{ code: 'format-unbekannt' }], warnungen: [], anzahlUmsaetze: 0 };
 }
