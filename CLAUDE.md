@@ -2,6 +2,12 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**Belegerkennung trainiert (Klaus 2026-11-12/13):** Kontoregeln (`src/ai/categorize.js`, #465), Datum und Steuersatz (`src/ai/extract.js`, #466),
+gelerntes Wortmodell neben den Regeln (`src/ai/kontoModell.js`, Daten `kontoModellDaten.js` erzeugt im Repo Datei-Organizer – nie von Hand, #467).
+Kein Sprachmodell, nichts verlässt das Gerät. Nachweis an fremden Stapeln mit drei Einordnern (darunter Codex): Konto 53 → 75 % ohne, 66 → 79 % mit
+Firmennamen, Datum 73 → 97 %, Steuersatz 66 → 96 %; an Belegen eines anderen Systems (Kreuztest) nur 58–60 %. Prüfregeln der Gruppe:
+Datei-Organizer `docs/PRUEFREGELN-GRUPPE.md`. **0.1.15** (Android Code 16, Windows gleich) dafür vorbereitet; ob ausgegeben, steht in `docs/PULS.md`.
+
 **Kasse & Tagesabschluss (Klaus 2026-11-09, Weg c offene Ladenkasse):** Ansicht `kassenbuch` heißt „Kasse & Shop“: Tagesabschluss
 (`src/domain/tagesabschluss.js` rein, `tagesabschluss-store.js`, `src/ui/views/tagesabschluss.js`; i18n-Präfix `tagab.` – `ta.` ist „Tresor & Ablage“),
 Quittungsvorlage (gedruckte Quittung → PDF-Beleg, Durchschläge im Abschluss, nie gebucht), Nachfrage bei auffällig hoher Einnahme
