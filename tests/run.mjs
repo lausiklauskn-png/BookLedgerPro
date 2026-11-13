@@ -7702,7 +7702,7 @@ await section('Pro-Umbau 13 (Klaus 2026-10-30): Chefcode-Ausschnitt nur im eigen
     ok('App-Paket lädt pro-ueberall.css/.js und pro-chefcode.js', ['pro-ueberall.js', 'pro-ueberall.css', 'pro-chefcode.js'].every((n) => pw.includes("'" + n + "'")));
     const gr = _readSpore(new URL('../android/app/build.gradle', import.meta.url), 'utf8');
     const tc = JSON.parse(_readSpore(new URL('../windows/src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
-    ok('Version 0.1.15 · Code 16 (Android), Windows gleich', /versionCode 16\b/.test(gr) && /versionName "0\.1\.15"/.test(gr) && tc.version === '0.1.15');
+    ok('Version 0.1.16 · Code 17 (Android), Windows gleich', /versionCode 17\b/.test(gr) && /versionName "0\.1\.16"/.test(gr) && tc.version === '0.1.16');
   }
   const i18 = _readSpore(new URL('../src/ui/i18n.js', import.meta.url), 'utf8');
   const keys = [...new Set([...nw.matchAll(/t\('(net\.ausschnitt[A-Za-z]*)'\)/g)].map((x) => x[1]))];
