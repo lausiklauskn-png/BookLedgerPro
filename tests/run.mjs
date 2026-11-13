@@ -153,6 +153,7 @@ import { baueXRechnungCII, splitAdresse, xRechnungDateiname } from '../src/domai
 import { parseEingangsrechnung, eingangsrechnungExtraktion, erkenneFormat } from '../src/domain/erechnungLesen.js';
 import { parseMT940, umsatzExtraktion, parseCAMT, parseBankauszug, erkenneBankformat, pruefeBankauszug } from '../src/domain/bankimport.js';
 import { validiereMT940, validiereCAMT, validiereBankauszug } from '../src/domain/bankschema.js';
+import { leseAuszugText, istAuszugText, rechnungsnummernAusZweck } from '../src/domain/auszugText.js';
 import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen, findeSammelzuordnung, verteileSammelzahlung, sammelBuchungZeilen } from '../src/domain/zahlungsabgleich.js';
 import { skontoSplit, skontoBuchungZeilen, skontoEntwurf, skontoSaetze, SKONTO_KONTEN } from '../src/domain/skonto.js';
 import {
@@ -2332,6 +2333,158 @@ await section('Bankschema: validiereBankauszug — Format-Weiche', () => {
     return !v.ok && v.format === null && v.fehler.some((f) => f.code === 'format-unbekannt');
   })());
   ok('CAMT-Weiche', validiereBankauszug('<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><Stmt><Ntry></Ntry></Stmt></Document>').format === 'CAMT');
+});
+
+// ===== Kontoauszug als Text (PDF-Text oder Texterkennung) → Umsätze =====
+// Erfundene Auszüge in drei Aufbauten: (A) S/H-Kennzeichen, TT.MM., Seitenumbruch mit Übertrag;
+// (B) getrennte Soll-/Haben-Spalten, TT.MM.JJJJ, Valuta vor dem Buchungstag nicht nötig;
+// (C) Vorzeichen, TT.MM.JJ, Gegenpartei in der Umsatzzeile, Texterkennungsfehler O statt 0.
+const AUSZUG_A = [
+  'Musterbank eG                         Kontoauszug Nr. 4/2026   Blatt 1 von 2',
+  'IBAN DE12 5001 0517 0648 4898 90',
+  'Zeitraum 01.04.2026 bis 30.04.2026',
+  'Bu-Tag Wert   Vorgang / Verwendungszweck                     Betrag EUR',
+  '              alter Kontostand vom 31.03.2026                 1.000,00 H',
+  '01.04. 01.04. SEPA-Lastschrift                                   119,00 S',
+  '              Elektro Kunz GmbH',
+  '              RE 2026-0123 Kd-Nr 4711',
+  '              MANDAT M-77',
+  '02.04. 03.04. Gutschrift                                       1.190,00 H',
+  '              Muster AG',
+  '              Rechnung 4711 danke',
+  '              Übertrag auf Blatt 2                            2.071,00 H',
+  'Musterbank eG · Vorstand: A. Beispiel · HRB 1234',
+  'Kontoauszug Nr. 4/2026   Blatt 2 von 2',
+  'Bu-Tag Wert   Vorgang / Verwendungszweck                     Betrag EUR',
+  '              Übertrag von Blatt 1                            2.071,00 H',
+  '03.04. 03.04. Kartenzahlung girocard                              45,50 S',
+  '              BAECKEREI KORN//STADT',
+  '              03.04. 08.15 GIROCARD KARTE 1',
+  '              neuer Kontostand vom 30.04.2026                 2.025,50 H',
+  'Bitte prüfen Sie den Auszug. Einwendungen sind unverzüglich zu erheben.',
+].join('\n');
+const AUSZUG_B = [
+  'Sparkasse Beispielstadt            Kontoauszug 7/2026',
+  'Konto 1234567890  IBAN DE89 3704 0044 0532 0130 00',
+  'Buchungstag  Valuta      Erläuterung                          Soll EUR      Haben EUR',
+  'Kontostand am 30.06.2026                                                     2.500,00',
+  '03.07.2026   03.07.2026  Lastschrift Stadtwerke Beispiel         85,00',
+  '                         Abschlag Juli Vertrag 778899',
+  '05.07.2026   04.07.2026  Kunde Meier                                         595,00',
+  '                         Rg.Nr. 2026/17 Mandatsref XYZ',
+  '15.07.2026   15.07.2026  Buero Schmidt                         1250,00',
+  '                         Rechnung Nr. R-889 Kassenzeichen 5.0417.221',
+  'Kontostand am 31.07.2026                                                     1.760,00',
+].join('\n');
+const AUSZUG_C = [
+  'Girokonto  IBAN: DE02 1203 0000 0000 2020 51',
+  'Kontoauszug Februar 2026',
+  'Buchung   Buchungstext / Verwendungszweck                    Betrag (EUR)',
+  'Alter Saldo                                                      1.2OO,00',
+  '02.02.26  Lastschrift Telefon AG                                   -39,99',
+  '          Invoice No. INV-2026-551 Kundennummer 99887',
+  '05.02.26  Gutschrift Firma Beispiel GmbH                          +2500,00',
+  '          Gehalt Februar',
+  '10.02.26  Kartenzahlung Tankstelle Nord                            60,50-',
+  'Neuer Saldo                                                      3.599,51',
+].join('\n');
+
+await section('Auszug als Text (A): S/H, TT.MM., mehrzeiliger Zweck, Übertrag zwischen zwei Blättern', () => {
+  const r = leseAuszugText(AUSZUG_A);
+  ok('Format text, Konto aus der IBAN', r.format === 'text' && r.konto === 'DE12500105170648489890');
+  ok('Salden 1.000,00 H → 2.025,50 H', r.saldoStartCent === 100000 && r.saldoEndeCent === 202550);
+  ok('drei Umsätze (Übertrag, Fußzeile, Kopf von Blatt 2 und Kartenzeile sind keine)', r.umsaetze.length === 3, String(r.umsaetze.length));
+  const [a, b, c] = r.umsaetze;
+  ok('Lastschrift: Ausgabe 119,00, Datum mit Jahr aus dem Zeitraum', a.richtung === 'ausgabe' && a.betragCent === 11900 && a.valuta === '2026-04-01');
+  ok('Gegenpartei = erste Folgezeile, Zweck = Rest (mehrzeilig)', a.gegen === 'Elektro Kunz GmbH' && a.zweck === 'RE 2026-0123 Kd-Nr 4711 MANDAT M-77');
+  ok('Rechnungsnummer aus „RE 2026-0123“, Kundennummer nicht', a.rechnungsnummern.length === 1 && a.rechnungsnummern[0] === '2026-0123', JSON.stringify(a.rechnungsnummern));
+  ok('Gutschrift: Einnahme, Buchung 02.04., Wert 03.04.', b.richtung === 'einnahme' && b.betragCent === 119000 && b.buchung === '2026-04-02' && b.valuta === '2026-04-03');
+  ok('Zweck der letzten Zeile vor dem Übertrag ohne Fußzeile', b.zweck === 'Rechnung 4711 danke');
+  ok('Kartenzahlung nach dem Seitenwechsel, Uhrzeitzeile bleibt Zweck', c.betragCent === 4550 && c.gegen === 'BAECKEREI KORN//STADT' && /08\.15 GIROCARD/.test(c.zweck));
+  ok('Saldo stimmt, nichts unsicher', r.saldoStimmt === true && r.umsaetze.every((u) => !u.unsicher) && r.warnungen.length === 0);
+});
+
+await section('Auszug als Text (B): getrennte Soll-/Haben-Spalten, TT.MM.JJJJ, Gegenpartei in der Umsatzzeile', () => {
+  const r = leseAuszugText(AUSZUG_B);
+  ok('drei Umsätze, Saldo stimmt', r.umsaetze.length === 3 && r.saldoStimmt, JSON.stringify(r.warnungen));
+  ok('Richtung aus der Spalte (Soll/Haben), auch ohne Buchungsart', r.umsaetze.map((u) => u.richtung).join() === 'ausgabe,einnahme,ausgabe');
+  ok('Betrag ohne Tausenderpunkt (1250,00)', r.umsaetze[2].betragCent === 125000);
+  ok('Gegenpartei aus der Umsatzzeile, Buchungsart abgetrennt', r.umsaetze[0].gegen === 'Stadtwerke Beispiel' && r.umsaetze[1].gegen === 'Kunde Meier');
+  ok('Rechnungsnummern: Rg.Nr. 2026/17 und R-889; Vertrag und Kassenzeichen nicht',
+    r.umsaetze[0].rechnungsnummern.length === 0 && r.umsaetze[1].rechnungsnummern[0] === '2026/17' && r.umsaetze[2].rechnungsnummern.join() === 'R-889');
+  // Dieselbe Seite nach der Texterkennung: Leerraum weg, Spalten weg → Richtung aus Buchungsart und Gegenrechnung.
+  const gequetscht = AUSZUG_B.split('\n').map((z) => z.replace(/\s+/g, ' ').trim()).join('\n')
+    .replace('Kunde Meier', 'Gutschrift Kunde Meier').replace('Buero Schmidt', 'Überweisung Buero Schmidt');
+  const q = leseAuszugText(gequetscht);
+  ok('ohne Spalten: Richtung über Buchungsart, Saldo stimmt', q.saldoStimmt && q.umsaetze.map((u) => u.richtung).join() === 'ausgabe,einnahme,ausgabe');
+  const ohneArt = leseAuszugText(AUSZUG_B.split('\n').map((z) => z.replace(/\s+/g, ' ').trim()).join('\n'));
+  ok('ohne Spalten und ohne Buchungsart: die Gegenrechnung wählt die Richtung, Zeilen bleiben unsicher markiert',
+    ohneArt.saldoStimmt && ohneArt.umsaetze.map((u) => u.richtung).join() === 'ausgabe,einnahme,ausgabe'
+    && ohneArt.umsaetze.filter((u) => u.unsicher).length >= 1, JSON.stringify(ohneArt.umsaetze.map((u) => [u.richtung, u.grund])));
+});
+
+await section('Auszug als Text (C): Vorzeichen vorn/hinten, TT.MM.JJ, O statt 0', () => {
+  const r = leseAuszugText(AUSZUG_C);
+  ok('Anfangssaldo trotz „1.2OO,00“', r.saldoStartCent === 120000);
+  ok('drei Umsätze mit Jahr 2026', r.umsaetze.length === 3 && r.umsaetze.every((u) => u.valuta.startsWith('2026-02-')));
+  ok('„-39,99“ Ausgabe, „+2500,00“ Einnahme, „60,50-“ Ausgabe',
+    r.umsaetze.map((u) => `${u.richtung}:${u.betragCent}`).join() === 'ausgabe:3999,einnahme:250000,ausgabe:6050');
+  ok('Invoice No. als Rechnungsnummer, Kundennummer nicht', r.umsaetze[0].rechnungsnummern.join() === 'INV-2026-551');
+  ok('Saldo stimmt', r.saldoStimmt === true);
+});
+
+await section('Auszug als Text: Gegenrechnung, unsichere Zeilen, nichts still verworfen', () => {
+  const falsch = leseAuszugText(AUSZUG_A.replace('2.025,50 H', '2.035,50 H'));
+  ok('Endsaldo passt nicht → saldoStimmt false, alle unsicher mit Grund', !falsch.saldoStimmt && falsch.umsaetze.length === 3
+    && falsch.umsaetze.every((u) => u.unsicher && /Saldo-Gegenrechnung stimmt nicht/.test(u.grund)));
+  ok('Warnung saldo-differenz mit Differenz 10,00', falsch.warnungen.some((w) => w.code === 'saldo-differenz' && w.differenzCent === 1000));
+  const verlesen = leseAuszugText(AUSZUG_A.replace('119,00 S', '1l9,0O5'));
+  ok('verlesenes Kennzeichen („…,0O5“) → Lesart 119,00 S, Zeile unsicher, Rest sicher',
+    verlesen.saldoStimmt && verlesen.umsaetze[0].betragCent === 11900 && verlesen.umsaetze[0].richtung === 'ausgabe'
+    && verlesen.umsaetze[0].unsicher && !verlesen.umsaetze[1].unsicher, JSON.stringify(verlesen.umsaetze[0]));
+  const kaputt = leseAuszugText(AUSZUG_A.replace('119,00 S', '1x9#0q'));
+  ok('ganz verlesener Betrag: aus der Gegenrechnung errechnet und als unsicher markiert',
+    kaputt.umsaetze.length === 3 && kaputt.umsaetze[0].betragCent === 11900 && kaputt.umsaetze[0].unsicher
+    && /errechnet/.test(kaputt.umsaetze[0].grund), JSON.stringify(kaputt.umsaetze[0]));
+  const zwei = leseAuszugText(AUSZUG_A.replace('119,00 S', '1x9#0q').replace('45,50 S', '4#5;5q'));
+  ok('zwei unleserliche Beträge bei einer Gleichung: keine Erfindung, Zeilen bleiben mit betragCent null',
+    zwei.umsaetze.length === 3 && !zwei.saldoStimmt && zwei.umsaetze[0].betragCent === null && zwei.umsaetze.every((u) => u.unsicher));
+  const ohneSaldo = leseAuszugText(AUSZUG_A.replace(/.*Kontostand.*\n?/g, ''));
+  ok('ohne Salden: keine Gegenrechnung → alle unsicher, Warnung saldo-fehlt', !ohneSaldo.saldoStimmt
+    && ohneSaldo.umsaetze.every((u) => u.unsicher) && ohneSaldo.warnungen.some((w) => w.code === 'saldo-fehlt'));
+  const summen = AUSZUG_A.replace('Bitte prüfen', 'Summe Belastungen: 164,50 S  Summe Gutschriften: 1.190,00 H  Posten: 4\nBitte prüfen');
+  const s = leseAuszugText(summen);
+  ok('Summenzeile ist kein Umsatz; „Posten: 4“ ≠ 3 gelesen → Warnung', s.umsaetze.length === 3 && s.saldoStimmt
+    && s.warnungen.some((w) => w.code === 'anzahl-abweichend' && w.erwartet === 4 && w.gelesen === 3));
+});
+
+await section('Auszug als Text: Rechnungsnummern im Verwendungszweck', () => {
+  const f = (z, r) => rechnungsnummernAusZweck(z, r ? { richtung: r } : {}).join('|');
+  ok('„RE 2026-0123“', f('RE 2026-0123 Danke') === '2026-0123');
+  ok('„Rg.Nr. 4711/26“', f('Zahlung Rg.Nr. 4711/26') === '4711/26');
+  ok('„Rechnung 4711“', f('Rechnung 4711 vom 3.2.') === '4711');
+  ok('„RE-2025-0489 u. RE-2025-0502“ (zwei, ohne Doppel)', f('RE-2025-0489 u. RE-2025-0502 Wartung') === 'RE-2025-0489|RE-2025-0502');
+  ok('Kundennummer, Mandat, Vertrag, Kassenzeichen, IBAN sind keine',
+    f('KD 77004129 MANDAT SW-2044170-01 VERTRAG AK-V-2025-039 Kassenzeichen 5.0417.221 IBAN DE89370400440532013000', 'ausgabe') === '');
+  ok('Kürzel-Jahr-Nummer nur bei Ausgaben', f('AK-26-1049 FEBRUAR 2026', 'ausgabe') === 'AK-26-1049' && f('PV-26-0441726 PFLEGEGELD', 'einnahme') === '');
+  ok('Datum nach „Rechnung“ ist keine Nummer', f('Rechnung 12.03.2026') === '');
+});
+
+await section('Auszug als Text: Weiche in parseBankauszug, Schema-Hinweis, Zahlungsabgleich unverändert', () => {
+  ok('istAuszugText: Text ja, MT940/CAMT/Prosa nein', istAuszugText(AUSZUG_A) && !istAuszugText(':20:X\n:25:DE12\n:61:2406030603D5,00NMSC')
+    && !istAuszugText('weder noch') && !istAuszugText('Liebe Grüße vom 03.04. mit 12,00 EUR'));
+  const p = parseBankauszug(AUSZUG_B);
+  ok('parseBankauszug: drittes Format „text“', p.format === 'text' && p.umsaetze.length === 3);
+  ok('MT940 bleibt MT940, Unbekanntes bleibt null', parseBankauszug(':25:DE12\n:61:2406030603D5,00NMSC\n:86:166?20Test').format === 'MT940' && parseBankauszug('weder noch').format === null);
+  ok('pruefeBankauszug rechnet auch den Text-Auszug gegen', pruefeBankauszug(p).ok && pruefeBankauszug(parseBankauszug(AUSZUG_A.replace('2.025,50 H', '2.035,50 H'))).warnungen.some((w) => w.code === 'saldo-differenz'));
+  const v = validiereBankauszug(AUSZUG_A);
+  ok('validiereBankauszug: kein roter Formatfehler, Hinweis „aus Text gelesen“', v.ok && v.format === 'text' && v.fehler.length === 0 && v.warnungen.some((w) => w.code === 'text-auszug'));
+  const vu = validiereBankauszug(AUSZUG_A.replace('119,00 S', '1l9,0O5'));
+  ok('validiereBankauszug nennt unsichere Umsätze', vu.warnungen.some((w) => w.code === 'unsichere-umsaetze' && /1 von 3/.test(w.detail)));
+  const posten = [{ id: 'p1', betragCent: 59500, datum: '2026-07-01', referenz: '2026/17', name: 'Meier', richtung: 'einnahme' }];
+  const t = findeOffenePosten(p.umsaetze[1], posten);
+  ok('Zahlungsabgleich findet die Rechnung zum Text-Umsatz (Betrag, Richtung, Nummer im Zweck)', t && t.posten.id === 'p1' && t.score > 4, JSON.stringify(t));
+  ok('umsatzExtraktion nimmt den Text-Umsatz wie einen MT940-Umsatz', umsatzExtraktion(p.umsaetze[0]).betragBrutto === 8500 && umsatzExtraktion(p.umsaetze[0]).richtung === 'ausgabe');
 });
 
 // ===== R5: NER — PII-Erkennung über die Anker hinaus =====
