@@ -128,7 +128,7 @@ const RE_KENN = String.raw`(?:rechnungs?(?:-?\s?(?:nummer|nr)\.?)?|rechn\.?|rg\.
 const KENN_RE = new RegExp(String.raw`(?<![A-Za-zÄÖÜäöüß])${RE_KENN}(?:\s?(?:nr|no|nummer)\.?)?\s?[:.#]?\s?(?=[A-Z]{0,4}-?\d)`, 'gi');
 // Die Nummer selbst (Groß-/Kleinschreibung zählt): Ziffern, Bindestriche, Schrägstriche, kurze Buchstabenteile
 // („RE-2025-0102“, „2025-Q4-017“, „26-ER-0081447“, „2026/17“, „2026 0087“).
-const NR_RE = /(?:[A-Z]{1,4}-?)?\d[\dA-Z]*(?:[-\/.](?=[\dA-Z]*\d|[A-Z]{1,3}[-\/]\d)[\dA-Z]+)*(?:\s\d{3,}(?![\d,.]))?/y;
+const NR_RE = /(?:[A-Z]{1,4}-?)?\d[\dA-Z]*(?:[-\/.](?=[\dA-Z]*\d|[A-Z]{1,3}[-\/]\d)[\dA-Z]+)*(?:\s\d{2,}(?=\s|$)|\s\d{3,}(?![\d,.]))*/y;
 // Nummern mit Rechnungs-Vorsatz ohne Kennwort: RE-2025-0102, AR-2025-0231, SR-2026-164, GS-2025-0031.
 const RE_VORSATZ = /(?<![A-Za-z0-9-])((?:RE|RG|AR|SR|GS|TR)-\d{2,4}[-\/]\d{2,}[\dA-Z-]*)/g;
 // Übliche Belegnummer aus Kürzel, Jahr und laufender Nummer: AK-25-1047, ZM-2026-01877, B-2025-0417.

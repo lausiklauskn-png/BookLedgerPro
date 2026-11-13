@@ -73,6 +73,8 @@ export function buildVorschlag(extracted, kategorie, accountIndex, opts = {}) {
       ustSatz: steuerKonto ? satz : 0,
       richtung: kategorie.richtung,
       gegenkonto, sachkonto,
+      // Rechnungsnummer aus dem Beleg (extract), nur durchgereicht — für den Zahlungsabgleich, nicht angezeigt.
+      rechnungsnummer: extracted.rechnungsnummer || null,
       fehler, warnungen,
       confidence: Math.round(((extracted.confidence + kategorie.confidence) / 2) * 100) / 100,
     },

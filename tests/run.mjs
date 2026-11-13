@@ -539,6 +539,39 @@ await section('Extraktion: leerer/unklarer Text', () => {
   ok('ohne Betrag kein Vorschlag', res.ok === false);
 });
 
+await section('Belegleser: Rechnungsnummer nur, wenn ausdrücklich bezeichnet (Training 2026-11-13)', () => {
+  const nr = (text) => extractFromText(text).rechnungsnummer;
+  ok('„Rechnungsnummer: RE-2026-0123“', nr('Elektro Kunz GmbH\nRechnungsnummer: RE-2026-0123\nBetrag 119,00 EUR') === 'RE-2026-0123');
+  ok('„Rechnung Nr. 4711“ neben dem Datum', nr('Rechnung Nr. 4711                      Datum: 03.04.2026') === '4711');
+  ok('„Rg.-Nr. 575/26“', nr('Rg.-Nr. 575/26') === '575/26');
+  ok('„Invoice No. INV-2026-551“', nr('INVOICE\nInvoice No. INV-2026-551\nTotal 39,99') === 'INV-2026-551');
+  ok('„Rechnung R 26-014“ (Vorsatz mit Leerzeichen)', nr('Rechnung R 26-014                30.01.2026') === 'R 26-014');
+  ok('„Rechnung / Quittung Nr. 25-0719“', nr('Rechnung / Quittung Nr. 25-0719          01.07.2025') === '25-0719');
+  ok('„Beitragsrechnung Nr. BR-7741902“', nr('Beitragsrechnung Nr. BR-7741902') === 'BR-7741902');
+  ok('Nummer in Gruppen („900 441 2070 03“)', nr('Kundennummer 4412070000   Rechnungsnummer 900 441 2070 03') === '900 441 2070 03');
+  ok('Tabellenkopf, Nummer in der Zeile darunter', nr('Rechnungsnummer   Rechnungsdatum\n7700412958        24.10.2025') === '7700412958');
+  ok('Verweis „zu Schlussrechnung …“ zählt nicht, die eigene Gutschrift-Nummer schon',
+    nr('Gutschrift GS-2025-0031 (Rechnungskorrektur)\nzu Schlussrechnung RE-2025-0417 vom 08.08.2025') === 'GS-2025-0031');
+  ok('Kunden-, Vertrags-, Auftrags-, Steuer-, Mandatsnummer allein → null',
+    nr('Kundennummer 77 004 129\nVertragskonto 204 417 0-01\nAuftrag AB-2026-0297\nSt.-Nr. 000/104/40417\nMandat SW-2044170-01\nBetrag 34,00') === null);
+  ok('„Rechnungsdatum“/„Rechnungsbetrag“ sind keine Nummer', nr('Rechnungsdatum 24.10.2025\nRechnungsbetrag 42,95 EUR') === null);
+  ok('Betrag hinter „Rechnung:“ ist keine Nummer', nr('Lohnanteil der Rechnung: 3.960,00 EUR netto') === null);
+  ok('zwei verschiedene gleich starke Nummern → lieber leer', nr('Rechnungsnummer 4711\nRechnungsnummer 4812') === null);
+  ok('„Rechnung Mai 2026“ ist keine Nummer', nr('Rechnung Mai 2026\nBetrag 12,00') === null);
+  ok('Feld ist immer da (null ohne Nummer)', 'rechnungsnummer' in extractFromText('Hallo, dies ist kein Beleg.'));
+  // Weiterreichen: Buchungsvorschlag und Eingangsrechnung tragen die Nummer, der Zahlungsabgleich trifft sie im Zweck.
+  const text = 'Elektro Kunz GmbH\nRechnungsnummer: RE-2026-0123\nDatum 01.04.2026\nGesamtbetrag 119,00 EUR\nMwSt 19 %';
+  const ex = extractFromText(text);
+  const res = buildVorschlag(ex, categorize(text), indexFromSeed());
+  ok('buildVorschlag reicht rechnungsnummer durch', res.ok && res.vorschlag.rechnungsnummer === 'RE-2026-0123');
+  const er = { id: 'er1', ...extraktionZuEingangsrechnung(ex) };
+  ok('Eingangsrechnung aus der Extraktion hat rechnungsnr', er.rechnungsnr === 'RE-2026-0123');
+  const posten = offeneVerbindlichkeiten([er]);
+  const umsatz = { valuta: '2026-04-10', betragCent: 11900, richtung: 'ausgabe', zweck: 'RE-2026-0123 Danke', gegen: 'Elektro Kunz GmbH' };
+  const t = findeOffenePosten(umsatz, posten);
+  ok('Zahlungsabgleich: Referenz aus dem Beleg trifft den Bank-Zweck', posten[0].referenz === 'RE-2026-0123' && t && t.posten.id === 'er1' && t.score >= 4);
+});
+
 await section('Entwurf bearbeiten: Formular aus Buchung rekonstruieren', () => {
   const idx = indexFromSeed();
   const ausgabe = formularAusBuchung({
