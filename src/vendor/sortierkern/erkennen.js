@@ -181,6 +181,35 @@ function istTitel(s) {
 }
 const GEBIET = /^(stadt|gemeinde|markt|landkreis|kreis|land|freistaat|magistrat|kreisverwaltung|stadtverwaltung|verbandsgemeinde|amt)\b|^\S*(amt|gericht|präsidium|ministerium|behörde)\b/i;
 const EIGENE_STELLE = /^(amt\b|klinik|institut|eigenbetrieb|fachbereich|fakultät|zentrum)/i;
+const RAND_WORT = /^(an|am|im|in|zu|zum|zur|der|die|das|den|dem|des|dr|st|von|vom|und|bei|für|auf|aus|mit|per|ab|ob|so|da|wo|du|er|es|wir|ihr|sie)$/i;
+const RECHTSFORM_KURZ = /^(ag|kg|se|ug|eg|ev|ek|kgaa|ohg|mbh|gbr|sa|ab|as|oy|bv|nv|ltd|inc|llc|plc|spa|srl|eu|de)$/i;
+function ocrRand(zeile) {
+  if (/^\s*\[/.test(zeile)) return zeile;
+  const zeichen = (zeile.match(/[^\p{L}\d\s]/gu) || []).length, buchst = (zeile.match(/\p{L}/gu) || []).length;
+  if (zeichen >= 3 && buchst < zeichen) return "";
+  let s = zeile.replace(/^[^\p{L}\d"„(]+/u, "").replace(/^\d[a-z]?\s+(?=\p{L})/u, "");
+  if (/^[A-ZÄÖÜ]{2}\s+/.test(s) && GEBIET.test(s.replace(/^\S+\s+/, ""))) s = s.replace(/^\S+\s+/, "");
+  let wortRest = false;
+  for (let k = 0; k < 2; k++) {
+    const m = s.match(/^((?:[a-zäöü]{1,3}|[A-ZÄÖÜ][a-zäöü]?)[\]|)}>]?)\s+(?=[A-ZÄÖÜ][\wäöüß-]{2,})/);
+    if (!m || RAND_WORT.test(m[1])) break;
+    s = s.slice(m[0].length);
+    wortRest = true;
+  }
+  if (wortRest && !/\s/.test(s.trim())) return "";
+  for (let k = 0; k < 3; k++) {
+    const m = s.match(/\s+([a-zäöü]{1,2}|[A-ZÄÖÜ][a-zäöü]?|[A-ZÄÖÜ]{2}|\d|[a-z]\d|[|\]}=—–_~»«*]+|\((?:ex|e|x)\))\s*$/);
+    if (!m || RECHTSFORM_KURZ.test(m[1])) break;
+    if (/\d/.test(m[1]) && !(GEBIET.test(s) || RECHTSFORM.test(s))) break;
+    s = s.slice(0, m.index);
+  }
+  return s.replace(/\s+[|\]}]+\s*$/, "").trim();
+}
+const OBERFLAECHE = /^(?:\S{1,3}\s+)?zeichen\b|^(vorname|nachname|name|versicherungsschein|vorgangs)\b|^(posteingang|mitteilungen|benachrichtigungen|nachrichten|neue nachricht|startseite|übersicht|menü|einstellungen|zurück|suche|profil|mein konto|meine daten|kassenbon|digitaler kassenbon|ihr schreiben|ihre nachricht|ihre anfrage|ihr antrag|unser zeichen|ihr zeichen)\b/i;
+const KEIN_ABSENDER = (n) => {
+  const worte = n.split(/\s+/), kurz = worte.filter((x) => /^\p{L}{1,2}$/u.test(x) && !RECHTSFORM_KURZ.test(x) && !/^(dr|st|am|an|im|in|zu|zum|zur)$/i.test(x)).length;
+  return /^[A-ZÄÖÜ][\wäöüß.-]*(straße|strasse|str\.|weg|platz|ring|allee|gasse|damm|chaussee|ufer|steig|pfad)\s*\d/i.test(n) || /^postfach\b/i.test(n) || !/\p{L}{3}/u.test(n) || OBERFLAECHE.test(n) || /\bi{2,}\b|(?<![\p{L}])(\p{L})\1{2,}(?![\p{L}])/iu.test(n) || worte.length >= 3 && kurz * 2 >= worte.length;
+};
 function nameAusZeile(zeile, fuss = false) {
   const spalten = zeile.trim().split(/\s{2,}|\t+/).map((s2) => s2.trim()).filter(Boolean);
   const ETIKETT = /^(arbeitgeber|absender|von|aussteller|verkäufer|verkäuferin|vermieter|vermieterin|auftragnehmer|anbieter|lieferant|firma)\s*:\s*/i;
@@ -212,7 +241,7 @@ const istMailKopf = (zeilen) => {
 function erkenneAbsender(kopf) {
   const alle = kopf.split(/\r?\n/).map((z) => z.trim()).filter(Boolean);
   if (istMailKopf(alle)) return void 0;
-  const zeilen = alle.filter((z) => !TITEL.test(z)).slice(0, 18);
+  const zeilen = alle.map(ocrRand).filter((z) => z && !TITEL.test(z)).slice(0, 18);
   let i = 0;
   while (i < zeilen.length && i < 6) {
     const z = zeilen[i];
@@ -222,7 +251,7 @@ function erkenneAbsender(kopf) {
       continue;
     }
     const n = nameAusZeile(z);
-    if (n && namensartig(n) && !istTitel(n) && !KEIN_NAME.test(n)) {
+    if (n && namensartig(n) && !istTitel(n) && !KEIN_NAME.test(n) && !KEIN_ABSENDER(n)) {
       const firma = FIRMA.test(n);
       const spur = ADRESS_SPUR.test(z.slice(Math.min(z.length, n.length))) || zeilen.slice(i + 1, i + 4).some((x) => ADRESS_SPUR.test(x) && !EMPFAENGER_ZEILE.test(x));
       if (firma) return w(n, i === 0 || spur, i === 0 ? "Briefkopf oben" : "Briefkopf oben (nach der \xDCberschrift)");
@@ -242,7 +271,7 @@ function erkenneAbsender(kopf) {
   for (const roh of zeilen.slice(0, 6)) {
     if (ANREDE_ZEILE.test(roh)) break;
     const z = nameAusZeile(roh);
-    if (z && FIRMA.test(z) && z.length <= 70 && !EMPFAENGER_ZEILE.test(roh) && !istTitel(z) && namensartig(z)) return w(z, false, "Zeile mit Firmenmerkmal im Kopf");
+    if (z && FIRMA.test(z) && z.length <= 70 && !EMPFAENGER_ZEILE.test(roh) && !istTitel(z) && namensartig(z) && !KEIN_ABSENDER(z)) return w(z, false, "Zeile mit Firmenmerkmal im Kopf");
   }
   return void 0;
 }
@@ -423,7 +452,7 @@ function erkenneFrist(text, dokumentDatum, datumSicher = true) {
   return void 0;
 }
 function erkenneBetrag(text) {
-  const t = text.replace(/\s+/g, " ");
+  const t = text.replace(/\s+/g, " ").replace(/zwischen\s?summe[^0-9]{0,30}\d{1,3}(?:\.\d{3})*,\d{2}/gi, " ");
   const genannt = t.match(/(?:gesamtbetrag|rechnungsbetrag|zu zahlen|betrag|summe|offener betrag)[^0-9]{0,30}(\d{1,3}(?:\.\d{3})*,\d{2})\s?(?:€|eur)/i) || t.match(/(?:summe|gesamt|total|zu zahlen)\s*(?:eur|€)?\s*:?\s*(\d{1,3}(?:\.\d{3})*,\d{2})(?!\d)/i);
   if (genannt) return w(`${genannt[1]} \u20AC`, true, `\u201E${genannt[0].trim()}\u201C`);
   const alle = [...t.matchAll(/(\d{1,3}(?:\.\d{3})*,\d{2})\s?(?:€|eur)\b/gi)].map((m) => m[1]);
@@ -453,5 +482,6 @@ export {
   erkenneSchriftstueck,
   isoDatum,
   kennzeichenImText,
-  nameAusZeile
+  nameAusZeile,
+  ocrRand
 };
