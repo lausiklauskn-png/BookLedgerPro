@@ -27,10 +27,17 @@
       wartung: { freistunden: 4, wochen: 8, pauschaleCent: null } }, lsJson(LS.einst, {})),
     tabellen: null, mdOpts: { stunden: true, euro: false }, antwort: null, meldung: null,
   };
+  /* Neue Vorgabe-Bausteine (z. B. U2, 2026-11-13) kommen zu gespeicherten Tabellen dazu — eigene Zahlen bleiben unberührt. */
+  function fehlendeDazu(eigene, vorgabe) {
+    var da = {}; eigene.forEach(function (b) { da[b.id] = 1; });
+    var out = eigene.slice(), neuIdx = out.findIndex(function (b) { return b.id === "neu"; });
+    vorgabe.forEach(function (b) { if (!da[b.id]) { if (neuIdx >= 0) out.splice(neuIdx++, 0, F.kopie(b)); else out.push(F.kopie(b)); } });
+    return out;
+  }
   function tabellenLaden() {
     var t = lsJson(LS.tab, null);
     S.tabellen = {
-      bausteine: t && Array.isArray(t.bausteine) ? t.bausteine : F.kopie(WN.BAUSTEINE),
+      bausteine: t && Array.isArray(t.bausteine) ? fehlendeDazu(t.bausteine, WN.BAUSTEINE) : F.kopie(WN.BAUSTEINE),
       faktoren: t && Array.isArray(t.faktoren) ? t.faktoren : F.kopie(WN.FAKTOREN),
       markt: t && Array.isArray(t.markt) ? t.markt : F.kopie(WN.MARKT),
     };
@@ -248,7 +255,26 @@
         var ids = WN.beispiel.liste().map(function (b) { return b.id; }), n = 0;
         ids.reduce(function (pr, id) { return pr.then(function () { return beispielLaden(id).then(function (r) { if (r) n++; }); }); }, Promise.resolve())
           .then(function () { melde(n + " " + t("Beispiele geladen,") + " " + (ids.length - n) + " " + t("waren schon da."), ""); });
-      }, "", { id: pre + "-alle" })];
+      }, "", { id: pre + "-alle" }),
+      /* Ausschalten (Klaus 2026-11-14: Beispiele „an- und ausschalten“ zum Testen): nimmt NUR Beispiel-Vorgänge weg (v.beispiel),
+         nie eigene und nie Kopien („Als Vorlage kopieren“ löscht die Marke). Wieder „Laden“ legt das Beispiel frisch an. */
+      knopf(t("Entfernen"), function () {
+        var n = beispieleWeg([wahl.value]);
+        melde(n ? t("Beispiel entfernt.") : t("Dieses Beispiel ist nicht geladen."), "");
+      }, "", { id: pre + "-weg" }),
+      knopf(t("Alle Beispiele entfernen"), function () {
+        if (!S.vorgaenge.some(function (x) { return WN.beispiel.bidVon(x); })) { melde(t("Es ist kein Beispiel geladen."), ""); return; }
+        if (!confirm(t("Alle Beispiel-Vorgänge entfernen? Eigene Vorgänge und Kopien bleiben."))) return;
+        var n = beispieleWeg(null);
+        melde(n + " " + t("Beispiele entfernt."), "");
+      }, "klein gefahr", { id: pre + "-alle-weg" })];
+  }
+  function beispieleWeg(ids) {
+    var weg = S.vorgaenge.filter(function (x) { var b = WN.beispiel.bidVon(x); return b && (!ids || ids.indexOf(b) >= 0); });
+    weg.forEach(function (x) { dbDel(x.id); if (S.aktiv === x.id) S.aktiv = null; });
+    S.vorgaenge = S.vorgaenge.filter(function (x) { return weg.indexOf(x) < 0; });
+    if (weg.length) zeichne();
+    return weg.length;
   }
   function zVorgaenge(main, v) {
     main.append(h("div", { class: "karte held", "data-held": "" },
@@ -597,10 +623,62 @@
         karte.append(h("div", { class: "zeile" }, inp, knopf("＋", dazu, "klein", { "data-dazu": String(b.nr), "aria-label": t("Eintrag hinzufügen") })));
       }
     }
+    anhaengen(karte, rahmenBlock(v, f, b, ro));
     karte.append(h("label", { class: "feld", style: "margin-top:8px" }, "🔒 " + t("Interne Notiz (erscheint nie im Kundenausdruck)"),
       h("textarea", { value: roh.notiz || "", disabled: ro, "data-key": "notiz-" + b.nr, "data-notiz": String(b.nr), rows: 2,
         oninput: function (e) { roh.notiz = e.target.value; merken(v); } })));
     return karte;
+  }
+
+  /* Rahmen (Klaus 2026-11-13, Ja zu F1–F4, F6): Geräte und offline (10), eigene Programme (12), Datenort und Sicherung (13),
+     Budget und „nicht gewünscht“ (15). Wahl per Chip; nichts ist vorbelegt — was nicht gefragt wurde, bleibt leer. */
+  function rahmenBlock(v, f, b, ro) {
+    var felder = WN.RAHMEN_FELDER.filter(function (k) { return WN.RAHMEN[k].bereich === b.nr; });
+    if (!felder.length && b.nr !== 15) return null;
+    var RA = WN.rahmen, ra = RA.von(f.protokoll), box = h("div", { class: "rahmen-block", "data-rahmen-block": String(b.nr) });
+    felder.forEach(function (k) {
+      var def = WN.RAHMEN[k], wert = ra[k];
+      var band = h("div", { class: "band", style: "margin:4px 0" }, h("span", { class: "gedaempft klein", text: nm(def.frage) + (def.mehrfach ? " (" + t("mehrere möglich") + ")" : "") }));
+      def.wahl.forEach(function (w) {
+        var an = Array.isArray(wert) ? wert.indexOf(w.id) >= 0 : wert === w.id;
+        band.append(h("button", { type: "button", class: "btn chip klein" + (an ? " on" : ""), disabled: ro, "data-rahmen": k + ":" + w.id, "aria-pressed": String(an),
+          text: (an ? "✓ " : "") + nm(w.name), onclick: function () { RA.umschalten(f.protokoll, k, w.id); merken(v); zeichne(); } }));
+      });
+      box.append(band);
+      if (k === "eigene") box.append(h("input", { placeholder: t("Welche eigenen Programme? (z. B. Buchhaltung, Ablage)"), value: ra.eigeneText || "", disabled: ro, "data-key": "rahmen-eigene", "data-rahmen-text": "eigene",
+        oninput: function (e) { RA.sicher(f.protokoll).eigeneText = e.target.value; merken(v); } }));
+    });
+    if (b.nr === 15) {
+      /* Budget (Klaus 2026-11-13): einmalig und/oder Monatsrate über eine Laufzeit, die den Kaufpreis abgilt; Wartung kann darin stecken. */
+      var bfeld = function (key, label, schritt, attr) {
+        var a = { type: "number", min: "0", step: schritt, class: "kurz", value: ra[key] == null ? "" : ra[key], disabled: ro, "data-key": "rahmen-" + key,
+          onchange: function (e) { RA.sicher(f.protokoll)[key] = zahl(e.target.value); merken(v); zeichne(); } };
+        a[attr] = "";
+        return h("label", { class: "feld", style: "flex:0 1 170px" }, label, h("input", a));
+      };
+      box.append(h("div", { class: "gedaempft klein", text: "🔒 " + t("Budget-Rahmen (Angabe des Kunden, nur intern) — einmalig, als Monatsrate oder beides") }),
+        h("div", { class: "zeile" },
+          bfeld("budgetEuro", t("einmalig gesamt €"), "100", "data-rahmen-budget"),
+          bfeld("budgetMonatEuro", t("Rate je Monat €"), "10", "data-rahmen-budget-monat"),
+          bfeld("budgetMonate", t("Laufzeit in Monaten"), "1", "data-rahmen-budget-monate"),
+          h("label", { class: "schalter" }, h("input", { type: "checkbox", checked: !!ra.budgetWartung, disabled: ro, "data-key": "rahmen-budgetWartung", "data-rahmen-budget-wartung": "",
+            onchange: function (e) { RA.sicher(f.protokoll).budgetWartung = e.target.checked; merken(v); zeichne(); } }), t("Wartung in der Rate enthalten"))));
+      box.append(h("h4", { style: "margin:8px 0 4px", text: t("Nicht gewünscht — was die Lösung ausdrücklich NICHT tun soll") }));
+      RA.nicht(f.protokoll).forEach(function (e) {
+        box.append(h("div", { class: "eintrag" + (e.sichtbar ? "" : " intern"), "data-nicht": e.id },
+          h("span", { class: "badge kennung", text: e.id }),
+          h("input", { class: "text", value: e.text, disabled: ro, "data-key": "t-" + e.id, oninput: function (ev) { e.text = ev.target.value; merken(v); } }),
+          ro ? h("span") : knopf("✕", function () { f.protokoll.nicht = f.protokoll.nicht.filter(function (x) { return x !== e; }); merken(v); zeichne(); }, "klein gefahr", { "aria-label": t("Eintrag entfernen"), "data-nicht-weg": e.id }),
+          h("div", { class: "mehr" }, sichtSchalter(e, ro, "s-" + e.id, v))));
+      });
+      if (!ro) {
+        var ni = h("input", { placeholder: t("z. B. keine Daten in einer fremden Cloud"), "data-key": "nicht-neu", "data-nicht-neu": "", style: "flex:1 1 220px" });
+        var nd = function () { if (!ni.value.trim()) return; RA.nichtNeu(v, f.protokoll, ni.value); ni.value = ""; merken(v); zeichne(); var n2 = document.querySelector("[data-nicht-neu]"); if (n2) n2.focus(); };
+        ni.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); nd(); } });
+        box.append(h("div", { class: "zeile" }, ni, knopf("＋", nd, "klein", { "data-nicht-dazu": "", "aria-label": t("Eintrag hinzufügen") })));
+      }
+    }
+    return box;
   }
 
   function eintragZeile(v, f, b, e, ro) {
@@ -614,10 +692,24 @@
       merken(v); zeichne();
     }, "klein gefahr", { "aria-label": t("Eintrag entfernen"), "data-weg": e.id }));
     var mehr = h("div", { class: "mehr" });
+    if (b.nr === 6) {
+      var hs = h("span", { class: "seg", "data-handeln": e.id, title: t("Soll die Lösung vorschlagen oder selbst handeln?") });
+      WN.HANDELN.forEach(function (w) {
+        hs.append(h("button", { type: "button", class: e.handeln === w.id ? "on" : "", disabled: ro, text: nm(w.name), "data-handeln-wahl": w.id,
+          onclick: function () { e.handeln = e.handeln === w.id ? "" : w.id; merken(v); zeichne(); } }));
+      });
+      mehr.append(hs);
+    }
     if (b.nr === 3) mehr.append(t("Anzahl"), zaehler(e.anzahl || 0, ro, function (n) { e.anzahl = Math.max(0, n); merken(v); zeichne(); }, "anz-" + e.id));
     if (b.nr === 18) {
       mehr.append(h("input", { class: "mittel", placeholder: t("wer klärt"), value: e.wer || "", disabled: ro, "data-key": "wer-" + e.id, oninput: function (ev) { e.wer = ev.target.value; merken(v); } }),
-        h("input", { type: "date", value: e.bis || "", disabled: ro, "data-key": "bis-" + e.id, onchange: function (ev) { e.bis = ev.target.value; merken(v); } }));
+        h("input", { type: "date", value: e.bis || "", disabled: ro, "data-key": "bis-" + e.id, onchange: function (ev) { e.bis = ev.target.value; merken(v); } }),
+        /* Klaus 2026-11-14: abhaken statt löschen — Datum und Antwort bleiben in der Fassung stehen */
+        h("button", { type: "button", class: e.geklaert ? "klein on" : "klein", disabled: ro, "data-geklaert": e.id, "aria-pressed": e.geklaert ? "true" : "false",
+          text: e.geklaert ? "✓ " + t("geklärt") + " " + datumText(e.geklaert) : "✓ " + t("geklärt?"),
+          onclick: function () { if (e.geklaert) { delete e.geklaert; delete e.antwort; } else e.geklaert = F.heute(); merken(v); zeichne(); } }));
+      if (e.geklaert) mehr.append(h("input", { class: "lang", placeholder: t("Antwort"), value: e.antwort || "", disabled: ro, "data-key": "antwort-" + e.id, "data-antwort": e.id,
+        oninput: function (ev) { e.antwort = ev.target.value; merken(v); } }));
     }
     mehr.append(sichtSchalter(e, ro, "s-" + e.id, v));
     if (!e.sichtbar) mehr.append(h("span", { class: "intern-satz", text: t("erscheint nicht im Kundenausdruck") }));
@@ -660,7 +752,7 @@
     /* Vorschläge aus Stufe 1 — schreiben nie zurück */
     var regeln = [[/schnittstelle|austausch|datev|kasse|buchhaltung.*(?:übergeben|exportieren)/i, "schnitt"], [/lager|bestand|warenwirtschaft/i, "lager"],
       [/buchhaltung|rechnung/i, "rechnung"], [/dokument|scan|pdf|formular/i, "scan"], [/altbestand|übernehmen|alte daten|excel/i, "altdaten"],
-      [/internetseite|webseite|homepage|website/i, "seite"], [/termin|auftr[aä]g|zeit/i, "auftrag"], [/notiz|liste/i, "liste"]];
+      [/internetseite|webseite|homepage|website/i, "seite"], [/abgleich|synchron|mehrere geräte|küche|tablet.*(?:pc|büro)/i, "abgleich"], [/termin|auftr[aä]g|zeit/i, "auftrag"], [/notiz|liste/i, "liste"]];
     var schon = {}; (f.umfang.bausteine || []).forEach(function (b) { if (b.katalog) schon[b.katalog] = 1; });
     var gedeckt = {}; (f.umfang.bausteine || []).forEach(function (b) { (b.deckt || []).forEach(function (id) { gedeckt[id] = 1; }); });
     var out = {};
@@ -725,6 +817,23 @@
     });
     if (ungedeckt.length) gew.append(h("div", { class: "hinweis warn", "data-ungedeckt": ungedeckt.map(function (e) { return e.id; }).join(",") },
       ungedeckt.map(function (e) { return e.id; }).join(", ") + " " + t("ist noch nicht abgedeckt.")));
+    /* U1 (Klaus 2026-11-13): nicht schlüssig — Muss ohne Baustein, Baustein zeigt auf einen Bedarf, den es nicht mehr gibt. */
+    var sl = WN.rahmen.schluessig(f);
+    if (!sl.ok) gew.append(h("div", { class: "hinweis warn", "data-schluessig": "nein" },
+      [sl.mussOhne.length ? sl.mussOhne.join(", ") + " (" + t("Muss") + ") " + t("hat keinen Baustein.") : "",
+        sl.verwaist.map(function (x) { return x.baustein + " " + t("deckt") + " " + x.bedarf + ", " + t("den es nicht mehr gibt."); }).join(" ")].filter(Boolean).join(" · ")));
+    /* F6: Budget-Rahmen des Kunden gegen die Schätzung (nur intern) */
+    var bu = WN.rahmen.budget(f, s, S.einst.zeitraum);
+    if (bu && bu.ueber) gew.append(h("div", { class: "hinweis warn", "data-budget-ueber": "" },
+      t("Die Schätzung") + " (" + euroG(bu.kostenVon) + "–" + euroG(bu.kostenBis) + " " + t("netto") + ") " + t("liegt über dem Budget-Rahmen des Kunden") + " (" + euroG(bu.budgetCent) +
+      (bu.monatCent ? " = " + (bu.einmalCent ? euroG(bu.einmalCent) + " + " : "") + euroG(bu.monatCent) + " × " + bu.monate + " " + t("Monate") + (bu.laufzeitGeschaetzt ? " (" + t("Laufzeit angenommen") + ")" : "") : "") + "). " +
+      (bu.wartung ? t("Die Rate enthält auch Wartung — für den Bau bleibt weniger.") + " " : "") + t("Grenzlinie prüfen oder mit dem Kunden sprechen.")));
+    WN.rahmen.hinweise(f).forEach(function (x) {
+      gew.append(h("div", { class: "hinweis warn", "data-rahmen-hinweis": x.art },
+        x.art === "abgleich" ? t("Mehrere Geräte gewählt, aber kein Baustein „Abgleich zwischen Geräten“.")
+          : x.art === "ki-ort" ? x.bausteine.join(", ") + ": " + t("Faktor KI, aber nicht erfragt, wo die KI laufen darf (Bereich 14).")
+          : x.bausteine.join(", ") + ": " + t("Faktor KI, obwohl der Kunde keine KI will.")));
+    });
     /* Zuschläge */
     var fa = u.firmenanpassung = u.firmenanpassung || { von: 0, bis: 0 };
     gew.append(h("h3", { style: "margin-top:12px", text: t("Zuschläge") }),
@@ -1712,11 +1821,20 @@
           txt += ": " + teile.join(", ") + " (" + t("Angabe des Kunden") + ")";
         }
         if (e.sterne) txt += " — ★ " + std(e.sterne.schnitt) + " (" + e.sterne.anzahl + " " + t("Bewertungen der Mitarbeiter") + ")";
-        if (x.nr === 18 && (e.wer || e.bis)) txt += " — " + [e.wer ? t("klärt") + " " + e.wer : "", e.bis ? t("bis") + " " + datumText(e.bis) : ""].filter(Boolean).join(" ");
+        if (e.handeln) txt += " — " + WN.rahmen.name("handeln", e.handeln, S.lang);
+        if (x.nr === 18 && e.geklaert) txt += " — ✓ " + t("geklärt") + " " + datumText(e.geklaert) + (e.antwort ? ": " + e.antwort : "");
+        else if (x.nr === 18 && (e.wer || e.bis)) txt += " — " + [e.wer ? t("klärt") + " " + e.wer : "", e.bis ? t("bis") + " " + datumText(e.bis) : ""].filter(Boolean).join(" ");
         ul.append(h("li", null, h("span", { class: "kenn", text: e.id }), " ", txt));
       });
       b.append(ul);
     });
+    if ((d.rahmen && d.rahmen.length) || (d.nicht && d.nicht.length)) {
+      b.append(h("h2", { "data-blatt-rahmen": "", text: t("Rahmen") }));
+      var ur = h("ul");
+      (d.rahmen || []).forEach(function (r) { ur.append(h("li", null, h("b", { text: nm(WN.RAHMEN[r.feld].frage) + " " }), r.text)); });
+      (d.nicht || []).forEach(function (e) { ur.append(h("li", null, h("span", { class: "kenn", text: e.id }), " " + t("Nicht gewünscht") + ": " + e.text)); });
+      b.append(ur);
+    }
     if (d.erklaerungVom) b.append(h("p", { class: "klein", "data-erklaerung-satz": "", text: t("Es gilt die Verschwiegenheits- und Datenschutzerklärung vom") + " " + datumText(d.erklaerungVom) + "." }));
     b.append(h("p", { class: "klein", style: "margin-top:18px", text: t("Bestätigt durch") + ":" }));
     b.append(unterschriften(t("Auftraggeber"), t("Auftragnehmer")));
@@ -1740,7 +1858,7 @@
         var txt = e.text || "";
         if (def.art === "prio") txt += ": " + (e.prio ? nm(WN.PRIO_NAME[e.prio]) : "–");
         else if (def.art === "nutzen") { var u = e.nutzen || {}; txt += ": " + [u.stundenMonat != null && u.stundenMonat !== "" ? std(u.stundenMonat) + " h/" + t("Monat") : "", u.euroMonat != null && u.euroMonat !== "" ? euroG(u.euroMonat * 100) + "/" + t("Monat") : "", u.text || ""].filter(Boolean).join(", "); }
-        else { if (def.nr === 3) txt += " — " + (e.anzahl || 0); if (def.nr === 18) txt += " — " + [e.wer, datumText(e.bis)].filter(Boolean).join(" "); }
+        else { if (def.nr === 3) txt += " — " + (e.anzahl || 0); if (def.nr === 18) txt += " — " + (e.geklaert ? "✓ " + t("geklärt") + " " + datumText(e.geklaert) + (e.antwort ? ": " + e.antwort : "") : [e.wer, datumText(e.bis)].filter(Boolean).join(" ")); }
         ul.append(h("li", null, h("span", { class: "kenn", text: e.id }), " ", txt, e.sichtbar === false ? " · 🔒 " + t("nur intern") : ""));
       });
       if (roh.notiz) ul.append(h("li", null, h("i", { text: "🔒 " + t("Notiz") + ": " + roh.notiz })));

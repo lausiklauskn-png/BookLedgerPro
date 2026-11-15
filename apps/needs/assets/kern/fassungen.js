@@ -69,7 +69,7 @@
   function gleich(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
   function eintragKern(e) {
     var k = { text: e.text };
-    ["anzahl", "prio", "nutzen", "wer", "bis"].forEach(function (n) { if (e[n] !== undefined) k[n] = e[n]; });
+    ["anzahl", "prio", "nutzen", "wer", "bis", "geklaert", "antwort"].forEach(function (n) { if (e[n] !== undefined) k[n] = e[n]; });
     return k;
   }
   function bausteinKern(b) {

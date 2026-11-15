@@ -69,7 +69,50 @@
      Jedes Beispiel liegt in assets/daten/beispiel-*.js und meldet sich hier an.
      Kundendaten der Beispiele sind ERFUNDEN (.example), kein echter Personenname. */
   var LISTE = [{ id: "boutique", name: { de: "Boutique (Testfall)", en: "Boutique (test case)" }, bauen: boutique, quelle: "erfunden" }];
-  function registrieren(b) { LISTE = LISTE.filter(function (x) { return x.id !== b.id; }).concat([b]); }
+  /* Rahmen (Klaus 2026-11-14): die Beispiele aus den fertigen Apps tragen die neuen Fragen (Geräte, Datenort, Sicherung, eigene
+     Programme, KI, „Nicht gewünscht“, vorschlagen/selbst) — in jeder Fassung gleich; sonst stünde dort nur „noch nicht erfragt“.
+     Angabe je Beispiel: rahmen {feld: wert}, nicht [Text], handeln [[Muster, "vorschlagen"|"selbst"|"egal"]]. */
+  function rahmenAnwenden(b, v) {
+    if (!b.rahmen && !b.nicht && !b.handeln && !b.muss) return v;
+    /* Muss-Sätze (Bereich 8) aus der Rückwärtsprüfung K3: was den Bau-Agenten fehlte, steht jetzt so im Bedarf,
+       wie ein Kunde es sagen würde — nur in der letzten Fassung (dort ist es vereinbart). */
+    if (b.muss && v.fassungen && v.fassungen.length) {
+      var letzte = v.fassungen[v.fassungen.length - 1];
+      b.muss.forEach(function (t) { WN.bedarf.eintragNeu(v, letzte.protokoll, 8, t); });
+    }
+    var nichtE = null; /* eine Kennung N-nn je Punkt, in allen Fassungen dieselbe */
+    (v.fassungen || []).forEach(function (f) {
+      var p = f.protokoll;
+      if (b.rahmen) {
+        var r = WN.rahmen.sicher(p);
+        Object.keys(b.rahmen).forEach(function (k) { var w = b.rahmen[k]; r[k] = Array.isArray(w) ? w.slice() : w; });
+      }
+      if (b.nicht) {
+        if (!nichtE) nichtE = b.nicht.map(function (t) { return WN.rahmen.nichtNeu(v, p, t); });
+        else { WN.rahmen.sicher(p); nichtE.forEach(function (e) { p.nicht.push(JSON.parse(JSON.stringify(e))); }); }
+      }
+      /* Rückwärtsprüfung K3 (2026-11-14): eine offene Frage, deren Frist vor dem Datum der Fassung liegt, war bis dahin
+         geklärt — sonst stünde sie in F4 noch mit einer Frist aus F1 da (8 von 14 Bau-Agenten hielten das für einen Widerspruch).
+         Seit Klaus' Ja (14.11.) wird sie abgehakt (geklärt am Tag ihrer Frist), nicht mehr entfernt. */
+      if (f.datum) {
+        var o = p.bereiche && p.bereiche[18];
+        if (o && Array.isArray(o.eintraege)) o.eintraege.forEach(function (e) { if (e.bis && e.bis < f.datum && !e.geklaert) e.geklaert = e.bis; });
+      }
+      (b.handeln || []).forEach(function (h) {
+        var re = new RegExp(h[0], "i");
+        WN.bedarf.bedarfe(p).forEach(function (e) { if (!e.handeln && re.test(e.text)) e.handeln = h[1]; });
+      });
+    });
+    return v;
+  }
+  function registrieren(b) {
+    if (b.rahmen || b.nicht || b.handeln || b.muss) {
+      var roh = b.bauen;
+      b = Object.assign({}, b, { bauen: function () { return rahmenAnwenden(b, roh.apply(null, arguments)); } });
+    }
+    var i = LISTE.map(function (x) { return x.id; }).indexOf(b.id);
+    if (i >= 0) LISTE[i] = b; else LISTE.push(b); /* ersetzen an derselben Stelle: die Reihenfolge der Auswahl bleibt */
+  }
   /* Ein gespeicherter Vorgang gehört zu welchem Beispiel? Ältere Boutique-Vorgänge tragen noch kein bid. */
   function bidVon(v) { return v && v.beispiel ? (v.bid || (v.titel === "Internetseite für ein Modegeschäft" ? "boutique" : "")) : ""; }
   function hilfen(v) {
@@ -88,5 +131,12 @@
     };
   }
 
-  WN.beispiel = { boutique: boutique, registrieren: registrieren, liste: function () { return LISTE.slice(); }, bidVon: bidVon, hilfen: hilfen };
+  /* Angaben zum Rahmen nachträglich an ein schon registriertes Beispiel hängen (Datei beispiel-rahmen.js, nach allen Beispielen geladen). */
+  function rahmenSetzen(id, angaben) {
+    var b = LISTE.filter(function (x) { return x.id === id; })[0];
+    if (!b) return false;
+    registrieren(Object.assign({}, b, angaben, { bauen: b.bauen }));
+    return true;
+  }
+  WN.beispiel = { boutique: boutique, registrieren: registrieren, rahmenSetzen: rahmenSetzen, liste: function () { return LISTE.slice(); }, bidVon: bidVon, hilfen: hilfen };
 })(typeof window !== "undefined" ? window : globalThis);

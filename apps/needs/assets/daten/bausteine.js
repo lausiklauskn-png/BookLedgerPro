@@ -39,6 +39,19 @@
       "nachgesehen 2026-10-07 (45617d6): Kimboard — Fragen und Notizen anpinnen, nach Bedeutung sortiert"),
     b("suche", "Daten durchsuchen (offline)", "Search data (offline)", "Company Brain", 0.4, [10, 16], [20, 34], [40, 70], true,
       "nachgesehen 2026-10-07 (20cfc95): Company Brain — Namens- und Bedeutungssuche; das Modell läuft lokal, wenn es im Repo liegt, sonst kommt es von Hugging Face (modules/03_embedding.js)"),
+    /* U2 (Klaus 2026-11-13, nach dem Rückwärtstest): für diese vier gab es keinen Baustein, sie landeten unter „neu“ ohne Vorlage.
+       Spannen geschätzt, Vorlagen aus den CLAUDE.md der Apps (2026-11-13), nicht im Code nachgezählt. */
+    b("plattform", "Fassung als Android-/Windows-App", "Android/Windows app version", "Familienakte, BookLedgerPro, Workflow PDF Pro (Android-Hülle, Windows-Hülle)", 0.5, [8, 14], [16, 28], [32, 56], false,
+      "Schätzung; Vorlage laut CLAUDE.md der drei Apps (Android-APK und Windows-Installer ausgegeben), Hüllen nicht im Code nachgezählt"),
+    b("tresor", "Verschlüsselte Ablage mit Sicherung", "Encrypted storage with backup", "Pro-Tresor (Workflow PDF Pro), Vollsicherung der Familienakte", 0.5, [8, 14], [16, 28], [32, 56], false,
+      "Schätzung; Vorlage laut CLAUDE.md: gemeinsamer Tresorordner mit Passwort, verschlüsselte Vollsicherung an einen zweiten Ort"),
+    b("kalender", "Kalender und Erinnerung", "Calendar and reminders", "Familienakte (Kalender, Glocke)", 0.5, [6, 10], [12, 20], [24, 40], false,
+      "Schätzung; Vorlage laut CLAUDE.md der Familienakte: Termine, Fristen, Android-Benachrichtigung, Google/Microsoft-Kalender"),
+    b("postfach", "Postfach lesen und Entwürfe schreiben", "Read mailbox and draft replies", "Private Brain Pro, Familienakte (E-Mail-Wege)", 0.4, [8, 14], [16, 28], [32, 56], false,
+      "Schätzung; Vorlage laut CLAUDE.md: Mails und Anlagen lesen, Entwürfe statt selbst versenden"),
+    /* Klaus 2026-11-13: „Heute ist das Standard … Tablet im Restaurant, die Daten gehen sofort in die Küche.“ */
+    b("abgleich", "Abgleich zwischen Geräten (Handy/Tablet ↔ PC/Küche)", "Sync between devices (phone/tablet ↔ PC/kitchen)", "Familienakte (Abgleich im eigenen Netz, Koppeln per Code), Kim-sync (Raum-Code über eigene Relais)", 0.4, [10, 16], [20, 34], [40, 70], false,
+      "Schätzung; Vorlage laut CLAUDE.md: Familienakte NetzDienst (WLAN/LAN, Port 48200/48201), Kim-sync (Relais). Server-Faktor wählen, wenn ein eigener Server dazwischen steht"),
     b("schnitt", "Schnittstelle zu fremdem System", "Interface to another system", "", 0, [6, 12], [14, 26], [30, 60]),
     b("altdaten", "Datenübernahme aus Altbestand", "Data migration", "", 0, [4, 8], [10, 18], [20, 40]),
     b("lizenz", "Freischaltung / Lizenz", "Licence / activation", "", 0, [4, 8], [8, 14], [14, 24], false,
