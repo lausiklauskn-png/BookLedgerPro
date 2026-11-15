@@ -83,7 +83,7 @@
     "needs": {
       "repo": "lausiklauskn-png/Workflow-Needs",
       "name": "Workflow Needs",
-      "commit": "ed096b1cbb15b9a2f70e5fe3637d7ae1e2a6e574",
+      "commit": "22cb62eb1add177f33078bb407aacd5477a4fc2e",
       "ordner": "apps/needs",
       "dateien": {
         "THIRD_PARTY.md": "c8fa26cec873ef228282608bf61ed573f91e6ff4fdde39947e7ee38c0d23ada4",
