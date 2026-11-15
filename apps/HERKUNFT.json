@@ -3,7 +3,7 @@
     "calculate": {
       "repo": "lausiklauskn-png/Workflow-Calculate",
       "name": "Workflow Calculate",
-      "commit": "7ba175cbdc05b3ec95a8be0cf213c103576a5069",
+      "commit": "70d1c066bcb60562ada4550fe3e7499b1a5007e8",
       "ordner": "apps/calculate",
       "dateien": {
         "assets/app.css": "69bcd7c25d39e1608f098c36d7d7218fd6356d0f8734281c5ddf3c3deffa4d95",
