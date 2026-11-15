@@ -22,7 +22,7 @@ export const APPS = {
 };
 // Nicht kopiert: Entwicklung (tests, tools, docs, .github, package*), Repo-Papiere, der eigene Service Worker.
 // Seit 2026-11-15 tragen Needs/Calculate eigene Pro-Apps (Android/Windows): deren Hüllen gehören nicht in BLP.
-const AUSGENOMMEN_ORDNER = new Set(['.git', 'node_modules', 'tests', 'tools', 'docs', '.github', 'android', 'windows', 'native', 'signing']);
+const AUSGENOMMEN_ORDNER = new Set(['.git', 'node_modules', 'tests', 'tools', 'docs', '.github', 'android', 'windows', 'native', 'signing', 'www']);
 const AUSGENOMMEN_DATEI = new Set(['package.json', 'package-lock.json', 'README.md', 'CLAUDE.md', 'AGENTS.md', 'sw.js', '.gitignore', '.gitattributes', 'capacitor.config.json']);
 
 const sha = (buf) => createHash('sha256').update(buf).digest('hex');
