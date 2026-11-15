@@ -35,7 +35,8 @@
     var o = { id: String(e.id), text: String(e.text || "") };
     if (nr === 6 && sterne && sterne[e.id]) o.sterne = { schnitt: sterne[e.id].schnitt, anzahl: sterne[e.id].anzahl };
     if (nr === 3) o.anzahl = Number(e.anzahl) || 0;
-    if (nr === 18) { o.wer = String(e.wer || ""); o.bis = String(e.bis || ""); }
+    if (nr === 6 && e.handeln) o.handeln = String(e.handeln);
+    if (nr === 18) { o.wer = String(e.wer || ""); o.bis = String(e.bis || ""); if (e.geklaert) { o.geklaert = String(e.geklaert); o.antwort = String(e.antwort || ""); } }
     return o;
   }
 
@@ -64,7 +65,17 @@
       if (eintraege.length) bereiche.push({ nr: b.nr, eintraege: eintraege });
     });
     WN.BEREICHE.forEach(function (b) { if (String(f.protokoll.bereiche[b.nr].notiz || "").trim()) aus++; });
-    return { art: "protokoll", firma: firmaExtern(firma), kunde: kundeExtern(v), vorgang: v.id,
+    /* Rahmen (2026-11-13): Angaben des Kunden zu Geräten, Datenort, Sicherung, eigenen Programmen und was nicht gewünscht ist —
+       je nur, wenn der zugehörige Bereich freigegeben ist. Der Budget-Rahmen geht NIE aufs Kundenblatt (Stufe 1 ohne Preis). */
+    var RA = WN.rahmen, ra = RA.von(f.protokoll), rahmen = [];
+    WN.RAHMEN_FELDER.forEach(function (k) {
+      if (!f.protokoll.bereiche[WN.RAHMEN[k].bereich].sichtbar) return;
+      var txt = RA.liste(ra, k, "de");
+      if (k === "eigene" && String(ra.eigeneText || "").trim()) txt = [txt, String(ra.eigeneText).trim()].filter(Boolean).join("; ");
+      if (txt) rahmen.push({ feld: k, text: txt });
+    });
+    var nicht = f.protokoll.bereiche[15].sichtbar ? RA.nicht(f.protokoll).filter(function (e) { return e.sichtbar; }).map(function (e) { return { id: e.id, text: String(e.text || "") }; }) : [];
+    return { art: "protokoll", rahmen: rahmen, nicht: nicht, firma: firmaExtern(firma), kunde: kundeExtern(v), vorgang: v.id,
       titel: String(v.titel || ""), fassung: f.nr, datum: f.datum, unterschrieben: f.unterschrieben || "",
       bereiche: bereiche, ausgeblendet: aus,
       erklaerungVom: v.erklaerung && v.erklaerung.aktiviert ? String(v.erklaerung.aktiviert) : "" };

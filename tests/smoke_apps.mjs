@@ -116,7 +116,9 @@ try {
   await page.click('[data-apps-offline]');
   await warte(() => /Offline bereit: \d+ Dateien/.test(document.querySelector('[data-apps-offline-stand]').textContent), null, 60000);
   const vorrat = await page.evaluate(async () => { const hat = await caches.has('blpr-apps'); const n = hat ? (await (await caches.open('blpr-apps')).keys()).length : 0; return { hat, n, text: document.querySelector('[data-apps-offline-stand]').textContent }; });
-  ok('„Offline bereitlegen" legt alle Needs-Dateien in den Vorrat blpr-apps (aus HERKUNFT.json)', vorrat.hat && vorrat.n >= 60 && /Offline bereit: 6\d Dateien/.test(vorrat.text), JSON.stringify(vorrat));
+  // Zahl aus HERKUNFT.json, nicht festgenagelt (Needs wuchs am 2026-11-15 von 6x auf 82 Dateien)
+  const needsZahl = Object.keys(JSON.parse(await readFile(join(WURZEL, 'apps/HERKUNFT.json'), 'utf8')).apps.needs.dateien).length;
+  ok('„Offline bereitlegen" legt alle Needs-Dateien in den Vorrat blpr-apps (aus HERKUNFT.json: ' + needsZahl + ')', vorrat.hat && needsZahl > 50 && vorrat.n >= needsZahl && vorrat.text.includes('Offline bereit: ' + needsZahl + ' Dateien'), JSON.stringify(vorrat));
   // Vollbild
   await page.click('[data-apps-vollbild]');
   ok('Vollbild: Rahmen liegt über der ganzen Seite, das Fenster folgt', await page.evaluate(() => { const r = document.querySelector('.app-rahmen'); const b = r.getBoundingClientRect(); const f = document.querySelector('iframe[data-app-frame="needs"]').getBoundingClientRect(); return r.classList.contains('vollbild') && Math.round(b.width) === window.innerWidth && Math.round(b.height) === window.innerHeight && f.width > window.innerWidth - 20 && f.height > window.innerHeight * 0.8; }));

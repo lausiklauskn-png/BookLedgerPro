@@ -29,7 +29,27 @@
       if (w.length >= 2) { values.push({ value: w, type: "KUNDE" }); seed[f.token] = w; }
     });
     namenListe(v.weitereNamen).forEach(function (n) { values.push({ value: n, type: "NAME" }); });
-    return { values: values, seed: seed };
+    return { values: values, seed: seed, teile: namensteile(v) };
+  }
+  /* Rückwärtstest 2026-11-13: der Vorname des Ansprechpartners stand allein im Freitext („klärt Sabine“) und ging
+     im Klartext hinaus, obwohl der Kopf „verdeckt: ja“ sagt. Jeder Namensteil (ab 3 Buchstaben, ohne Anrede) wird
+     deshalb als GANZES WORT durch den Platzhalter des Ansprechpartners ersetzt. Nicht über Modul 25: dessen letzte
+     Sicherung sucht Klartext als Teilzeichenkette, und ein Nachname wie „Beispiel“ steckt auch in „Beispielwert“ –
+     das hielt den ganzen Bauauftrag an (gefunden an einem neuen Beispiel, 2026-11-13). */
+  function namensteile(v) {
+    var teile = [];
+    String((v.kunde && v.kunde.ansprechpartner) || "").split(/[\s,]+/).forEach(function (t) {
+      t = t.replace(/^[^\p{L}]+|[^\p{L}-]+$/gu, "");
+      if (t.length >= 3 && !/^(Herr|Frau|Dr|Prof)$/i.test(t) && teile.indexOf(t) < 0) teile.push(t);
+    });
+    return teile;
+  }
+  function teileErsetzen(t, teile) {
+    teile.forEach(function (n) {
+      var esc = n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      t = t.replace(new RegExp("(^|[^\\p{L}])" + esc + "(?![\\p{L}])", "gu"), "$1⟦KUNDE-2⟧");
+    });
+    return t;
   }
   function zuordnungVon(v) {
     var b = bekannte(v), map = {};
@@ -49,7 +69,7 @@
         if (!t || v.eigenesVorhaben) return t;
         var r = P.pseudonymize(t, { values: b.values, map: map });
         Object.keys(r.map).forEach(function (k) { map[k] = r.map[k]; });
-        return r.text;
+        return teileErsetzen(r.text, b.teile);
       },
       map: function () { return map; },
       values: b.values,
@@ -85,12 +105,42 @@
     var name = function (b) { return V.text(R.bausteinName(b, tabellen, "de")); };
     var L = [];
     L.push("---", "art: bauauftrag", "format: 1", "vorgang: " + v.id, "fassung: " + neu.nr,
-      "vorher: " + (alt ? alt.nr : "-"), "datum: " + opts.datum, 'kunde: "⟦KUNDE-1⟧"',
+      "vorher: " + (alt ? alt.nr : "-"), "fassungsdatum: " + (neu.datum || opts.datum), "datum: " + opts.datum, 'kunde: "⟦KUNDE-1⟧"',
       "verdeckt: " + (v.eigenesVorhaben ? "nein" : "ja"), "stunden: " + (opts.stunden ? "ja" : "nein"),
-      "euro: " + (opts.euro ? "ja" : "nein"), 'repo: "Workflow-Needs"', "---", "");
+      "euro: " + (opts.euro ? "ja" : "nein"), 'repo: "Workflow-Needs"  # Werkzeug, das den Auftrag erzeugt hat — nicht das Ziel', "---", "");
     L.push("# Bauauftrag · Fassung " + neu.nr + (alt ? " (vorher " + alt.nr + ")" : ""), "");
     if (neu.anlass || neu.von) L.push("**Anlass:** " + (V.text(neu.anlass) || "–") + "  ·  **von:** " + ({ kunde: "Kunde", betrieb: "Betrieb", bau: "Befund beim Bau" }[neu.von] || "–"), "");
     if (v.titel) L.push("**Vorhaben:** " + V.text(v.titel), "");
+    /* A5 (Klaus 2026-11-13): ohne Vorgänger ist der Auftrag ein Gesamtauftrag — auch bei Fassung 4. */
+    if (!alt) L.push("**Gesamtauftrag:** keine frühere Fassung in diesem Auftrag — alles unter „Zu tun“ ist neu zu bauen. Das Datum der Fassung steht im Kopf (`fassungsdatum`), `datum` ist der Tag der Erzeugung.", "");
+
+    /* A1 · Rahmen (Klaus 2026-11-13): Geräte, Datenort, Sicherung, Zusammenspiel, vorschlagen/selbst, nicht bauen — ganz oben,
+       weil Bau-Agenten nach „Zu tun“ bauen und verstreute Angaben in Bereich 10–15 als Beiwerk lasen. */
+    L.push("## Rahmen");
+    var RA = WN.rahmen, ra = RA.von(neu.protokoll);
+    var rz = [];
+    if (RA.liste(ra, "geraete", "de")) rz.push("- Geräte: " + RA.liste(ra, "geraete", "de"));
+    if (ra.offline) rz.push("- Ohne Internet: " + RA.name("offline", ra.offline, "de"));
+    if (ra.abgleich) rz.push("- Abgleich zwischen Geräten: " + RA.name("abgleich", ra.abgleich, "de"));
+    if (RA.liste(ra, "datenort", "de")) rz.push("- Daten liegen: " + RA.liste(ra, "datenort", "de"));
+    if (RA.liste(ra, "sicherung", "de")) rz.push("- Sicherung: " + RA.liste(ra, "sicherung", "de"));
+    var eig = [RA.liste(ra, "eigene", "de"), V.text(String(ra.eigeneText || "").trim())].filter(Boolean).join("; ");
+    if (eig) rz.push("- Eigene Programme: " + eig);
+    if (ra.ki) rz.push("- KI: " + RA.name("ki", ra.ki, "de"));
+    var hand = { vorschlagen: [], selbst: [], egal: [] };
+    WN.bedarf.bedarfe(neu.protokoll).forEach(function (e) { if (e.handeln && hand[e.handeln]) hand[e.handeln].push(e.id); });
+    if (hand.vorschlagen.length) rz.push("- Schlägt vor, der Kunde bestätigt: " + hand.vorschlagen.join(", "));
+    if (hand.selbst.length) rz.push("- Darf selbst handeln: " + hand.selbst.join(", "));
+    if (opts.euro) {
+      var bt = [];
+      if (Number(ra.budgetEuro) > 0) bt.push(euroG(Math.round(Number(ra.budgetEuro) * 100)) + " einmalig");
+      if (Number(ra.budgetMonatEuro) > 0) bt.push(euroG(Math.round(Number(ra.budgetMonatEuro) * 100)) + " im Monat" + (Number(ra.budgetMonate) > 0 ? " über " + ra.budgetMonate + " Monate" : "") + " (Rate, gilt den Kaufpreis ab" + (ra.budgetWartung ? ", Wartung inbegriffen" : "") + ")");
+      if (bt.length) rz.push("- Budget-Rahmen des Kunden: " + bt.join(" + "));
+    }
+    var nb = RA.nicht(neu.protokoll);
+    if (nb.length) rz.push("- Nicht bauen: " + nb.map(function (e) { return e.id + " " + V.text(e.text); }).join(" · "));
+    if (!rz.length) rz.push("- noch nicht erfragt (Bereich 10, 12, 13, 15) — Geräte, Datenort und Sicherung beim Kunden klären, nicht annehmen");
+    L.push.apply(L, rz); L.push("");
 
     /* Zu tun */
     L.push("## Zu tun (für die Sitzung)");
@@ -129,6 +179,29 @@
     }
     L.push("");
 
+    /* A2 + A3 (Klaus 2026-11-13): je Baustein Vorlage, Wiederverwendung, Faktoren und die Abnahme aus Bereich 8. */
+    var b8 = neu.protokoll.bereiche[8].eintraege, je = [], b8gedeckt = {};
+    (neu.umfang.bausteine || []).forEach(function (b, i) {
+      var z = sn.zeilen[i], teile = [];
+      (z.weg || []).forEach(function (w) {
+        if (w.art === "wv") teile.push("Vorlage " + (w.quelle ? V.text(w.quelle) : "–") + " (" + Math.round(w.anteil * 100) + " % wiederverwendet)");
+        if (w.art === "faktoren") teile.push("Faktoren " + w.ids.map(function (id) { var fk = R.faktorVon ? R.faktorVon(tabellen, id) : null; return fk ? fk.name.de + " ×" + String(fk.mal).replace(".", ",") : id; }).join(", "));
+        if (w.art === "manuell" && opts.stunden) teile.push("Stunden von Hand gesetzt");
+      });
+      var ab = b8.filter(function (e) { return (b.deckt || []).indexOf(e.id) >= 0; });
+      ab.forEach(function (e) { b8gedeckt[e.id] = 1; });
+      if (!teile.length && !ab.length) return;
+      je.push("- " + b.id + (teile.length ? " · " + teile.join(" · ") : ""));
+      ab.forEach(function (e) { je.push("  - Abnahme " + e.id + ": " + V.text(e.text)); });
+    });
+    var b8offen = b8.filter(function (e) { return !b8gedeckt[e.id]; });
+    if (je.length || b8offen.length) {
+      L.push("### Je Baustein: Vorlage und Abnahme");
+      L.push.apply(L, je);
+      if (b8offen.length) { L.push("- ohne Baustein (trotzdem abnehmen):"); b8offen.forEach(function (e) { L.push("  - " + e.id + ": " + V.text(e.text)); }); }
+      L.push("");
+    }
+
     /* Bedarfsprotokoll – Änderungen */
     L.push("## Bedarfsprotokoll – Änderungen");
     var n0 = 0;
@@ -148,7 +221,10 @@
 
     /* Offene Punkte */
     L.push("## Offene Punkte");
-    var off = neu.protokoll.bereiche[18].eintraege;
+    /* Klaus 2026-11-14: eine offene Frage lässt sich als „geklärt“ abhaken (Datum, Antwort) — sie steht dann nicht mehr hier,
+       sondern unter „Geklärt“ mit ihrer Antwort. */
+    var alleO = neu.protokoll.bereiche[18].eintraege;
+    var off = alleO.filter(function (e) { return !e.geklaert; }), klar = alleO.filter(function (e) { return !!e.geklaert; });
     if (!off.length) L.push("- keine");
     off.forEach(function (e) {
       var wer = [e.wer ? "klärt " + V.text(e.wer) : "", e.bis ? "bis " + e.bis : ""].filter(Boolean).join(" ");
@@ -156,6 +232,11 @@
     });
     vg.bausteine.forEach(function (x) { if (x.aktion === "NOCH NICHT GESCHÄTZT") L.push("- " + x.id + " " + name(x.neu) + ": noch nicht geschätzt — offene Frage an Klaus"); });
     L.push("");
+    if (klar.length) {
+      L.push("### Geklärt (keine offene Frage mehr)");
+      klar.forEach(function (e) { L.push("- " + e.id + ": " + V.text(e.text) + " — geklärt " + e.geklaert + (e.antwort ? ": " + V.text(e.antwort) : "")); });
+      L.push("");
+    }
 
     /* Summe */
     L.push("## Summe");
@@ -165,6 +246,10 @@
     var gl = kn.grenze >= 0 ? (kn.grenze > 0 ? "nach " + kn.zeilen[kn.grenze - 1].id : "vor " + kn.zeilen[0].id) : "keine";
     sz.push("Kosten-Nutzen: Grenzlinie " + gl);
     L.push(sz.join(" · "), "");
+    /* Rückwärtstest 2026-11-13: alle Bau-Agenten rechneten die Zeilen nach und fanden die Summe „falsch“ —
+       sie enthält Zuschläge, die nirgends standen. */
+    if (opts.stunden) L.push("Die Summe enthält zusätzlich zu den Zeilen: " + (sn.firmenanpassung.bis ? "Anpassung an den Betrieb " + spanneH(sn.firmenanpassung.von, sn.firmenanpassung.bis) + " h, " : "") + "Abstimmung " + zahlH(sn.abstimmung.pct) + " % (" + spanneH(sn.abstimmung.von, sn.abstimmung.bis) + " h), Puffer " + zahlH(sn.puffer.pct) + " % (" + spanneH(sn.puffer.von, sn.puffer.bis) + " h)" + (sn.gewaehrleistung.stunden ? ", Fehlerbehebung nach Abnahme " + zahlH(sn.gewaehrleistung.stunden) + " h" : "") + ".", "");
+    if (kn.grenze >= 0) L.push("Unter der Grenzlinie steht, was mehr kostet, als es im Zeitraum nutzt — der Kunde entscheidet es einzeln, auch wenn dort ein Muss steht.", "");
 
     /* Rechtsblätter und Sterne (Stufe 3): nur ja/nein und Zahlen — keine Unterschriften,
        keine Namen der Mitarbeiter (Kundendaten). */
@@ -182,7 +267,8 @@
     L.push("");
 
     /* Vollständiger Stand: lesbar UND als JSON zum Wiedereinlesen */
-    L.push("## Vollständiger Stand (zum Nachschlagen)");
+    /* A4 (Klaus 2026-11-13): nur noch als JSON — vorher stand jeder Bedarf dreimal im Auftrag. */
+    L.push("## Vollständiger Stand (zum Einlesen)");
     var stand = { bedarf: [], bausteine: [] };
     WN.bedarf.alleEintraege(neu.protokoll).forEach(function (x) {
       var e = x.e, o = { id: e.id, nr: x.nr, text: V.text(e.text), sichtbar: !!e.sichtbar };
@@ -190,18 +276,22 @@
       if (e.prio !== undefined) o.prio = e.prio;
       if (e.nutzen) { o.nutzen = { stundenMonat: e.nutzen.stundenMonat, text: V.text(e.nutzen.text || "") }; if (opts.euro) o.nutzen.euroMonat = e.nutzen.euroMonat; }
       if (e.wer !== undefined) { o.wer = V.text(e.wer); o.bis = e.bis; }
+      if (e.geklaert) { o.geklaert = e.geklaert; if (e.antwort) o.antwort = V.text(e.antwort); }
+      if (e.handeln) o.handeln = e.handeln;
       stand.bedarf.push(o);
-      L.push("- " + e.id + " [Bereich " + x.nr + (e.sichtbar ? "" : ", nur intern") + "]: " + o.text + (e.prio ? " (" + prioWort(e.prio) + ")" : ""));
     });
+    stand.rahmen = { eigeneText: V.text(ra.eigeneText || "") };
+    WN.RAHMEN_FELDER.forEach(function (k) { stand.rahmen[k] = ra[k]; });
+    if (opts.euro) ["budgetEuro", "budgetMonatEuro", "budgetMonate", "budgetWartung"].forEach(function (k) { stand.rahmen[k] = ra[k]; });
+    stand.nicht = nb.map(function (e) { return { id: e.id, text: V.text(e.text), sichtbar: !!e.sichtbar }; });
     (neu.umfang.bausteine || []).forEach(function (b, i) {
       var z = sn.zeilen[i];
       var o = { id: b.id, katalog: b.katalog || null, name: b.name ? V.text(b.name) : "", menge: b.menge, groesse: b.groesse || null,
         faktoren: (b.faktoren || []).slice(), deckt: (b.deckt || []).slice(), ermaessigt: !!b.ermaessigt };
       if (opts.stunden && b.manuell) o.manuell = b.manuell;
       stand.bausteine.push(o);
-      L.push("- " + b.id + ": " + name(b) + (z.menge !== 1 ? " ×" + zahlH(z.menge) : "") + " · " + (z.geschaetzt ? (b.groesse || "von Hand").replace("gross", "groß") + (opts.stunden ? " · " + spanneH(z.von, z.bis) + " h" : "") : "noch nicht geschätzt") + " · deckt " + ((b.deckt || []).join(", ") || "–"));
     });
-    L.push("", "```json", JSON.stringify(stand), "```", "");
+    L.push("```json", JSON.stringify(stand), "```", "");
     var md = L.join("\n");
 
     if (!v.eigenesVorhaben) {
@@ -272,9 +362,26 @@
       if (o.prio !== undefined) e.prio = o.prio;
       if (o.nutzen) e.nutzen = { stundenMonat: o.nutzen.stundenMonat, euroMonat: o.nutzen.euroMonat !== undefined ? o.nutzen.euroMonat : (alt.nutzen ? alt.nutzen.euroMonat : null), text: auf(o.nutzen.text || "") };
       if (o.wer !== undefined) { e.wer = auf(o.wer); e.bis = o.bis; }
+      if (o.geklaert) { e.geklaert = String(o.geklaert); if (o.antwort) e.antwort = auf(o.antwort); }
+      if (o.handeln) e.handeln = o.handeln;
       if (f.protokoll.bereiche[o.nr]) f.protokoll.bereiche[o.nr].eintraege.push(e);
       zaehlerNach(v, o.id);
     });
+    /* Rahmen und „nicht gewünscht“ (seit 2026-11-13); fehlen sie im Stand, bleibt der Rahmen der Basis. */
+    var raAlt = WN.rahmen.von(basis.protokoll);
+    if (stand.rahmen) {
+      var ra = WN.rahmen.sicher(f.protokoll);
+      WN.RAHMEN_FELDER.forEach(function (k) {
+        if (WN.RAHMEN[k].mehrfach) ra[k] = Array.isArray(stand.rahmen[k]) ? stand.rahmen[k].slice() : [];
+        else ra[k] = typeof stand.rahmen[k] === "string" ? stand.rahmen[k] : "";
+      });
+      ra.eigeneText = auf(stand.rahmen.eigeneText || "");
+      ["budgetEuro", "budgetMonatEuro", "budgetMonate", "budgetWartung"].forEach(function (k) { ra[k] = stand.rahmen[k] !== undefined ? stand.rahmen[k] : raAlt[k]; });
+    } else if (basis.protokoll.rahmen) f.protokoll.rahmen = WN.fassungen.kopie(basis.protokoll.rahmen);
+    if (Array.isArray(stand.nicht)) {
+      WN.rahmen.sicher(f.protokoll);
+      f.protokoll.nicht = stand.nicht.map(function (n) { zaehlerNach(v, n.id); return { id: n.id, text: auf(n.text), sichtbar: !!n.sichtbar }; });
+    } else if (basis.protokoll.nicht) f.protokoll.nicht = WN.fassungen.kopie(basis.protokoll.nicht);
     var alteB = {};
     (basis.umfang.bausteine || []).forEach(function (b) { alteB[b.id] = b; });
     f.umfang.bausteine = stand.bausteine.map(function (o) {
@@ -291,7 +398,7 @@
     return { fassung: f, unbekannt: unbekannt };
   }
   function zaehlerNach(v, id) {
-    var m = /^([BKO])-(\d+)$/.exec(id || "");
+    var m = /^([BKON])-(\d+)$/.exec(id || "");
     if (!m) return;
     v.zaehler = v.zaehler || {};
     v.zaehler[m[1]] = Math.max(v.zaehler[m[1]] || 0, Number(m[2]));
