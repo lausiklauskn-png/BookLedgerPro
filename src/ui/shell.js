@@ -110,6 +110,7 @@ import { mountDashboard } from './views/dashboard.js';
 import { wirtschaftsjahrVon } from '../domain/geschaeftsjahr.js';
 import { mountAnleitung } from './views/anleitung.js';
 import { verbundKasten } from './verbundKarte.js';
+import { discoveryKasten } from './discoveryKarte.js';
 import { schluesselAbgleichSection } from './schluesselabgleich.js';
 import { aboutContent, appNativ, appVersion, updateZeile, versionZeile } from './intro.js';
 import { updateFahne } from './updateFahne.js';
@@ -608,7 +609,7 @@ function renderRoute() {
   if (route === 'employees') return void mountEmployees(content);
   if (route === 'lohn') return void mountLohn(content);
   if (route === 'legal') return void mountLegal(content);
-  if (route === 'about') return mount(content, el('section', { class: 'view' }, [aboutContent(), verbundKasten()]));
+  if (route === 'about') return mount(content, el('section', { class: 'view' }, [aboutContent(), verbundKasten(), discoveryKasten()]));
   if (route === 'anleitung') return void mountAnleitung(content);
   if (route === 'network') return void mountNetwork(content);
   if (route === 'sbkimsuche') return void mountSbkimSuche(content);

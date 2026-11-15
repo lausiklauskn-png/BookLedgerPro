@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v304';
+const CACHE_VERSION = 'v305';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -32,7 +32,13 @@ const GETEILT_VORRAT = 'blpr-geteilt';
 /* Eingebettete Apps (Workflow Calculate/Needs, Klaus 2026-10-26): eigener Vorrat, nicht in der Schale (8 MB), beim Oeffnen
  * oder ueber „Offline bereitlegen" gefuellt; ueberlebt ein neues CACHE_VERSION. Name = APPS_VORRAT in src/ui/views/apps.js. */
 const APPS_VORRAT = 'blpr-apps';
-const BLEIBT = [GETEILT_VORRAT, APPS_VORRAT];
+/* Hilfe-Seite „Discovery“ (Klaus 2026-11-15; assets/discovery/, byte-gleich aus dem Datei-Organizer, Pin HERKUNFT.json dort):
+ * 6 MB mit Film und 13 Tonspuren — nicht in der Schale. Eigener Vorrat, gefuellt beim Abruf (und still beim ersten Oeffnen,
+ * src/ui/discoveryKarte.js). Der Name traegt den Quell-Commit des Pins (tests/run.mjs haelt beides zusammen): gleicher Pin =
+ * gleiche Bytes, also Vorrat zuerst ohne Nachladen; ein neuer Pin gibt einen neuen Vorrat, der alte wird beim Aktivieren
+ * weggeraeumt. Ueberlebt ein neues CACHE_VERSION. */
+const DISCOVERY_VORRAT = 'blpr-discovery-c251510';
+const BLEIBT = [GETEILT_VORRAT, APPS_VORRAT, DISCOVERY_VORRAT];
 
 const CORE_ASSETS = [
   './',
@@ -52,6 +58,9 @@ const CORE_ASSETS = [
   // Vorschau-Hilfe „Pro-App-Verbund“ (Klaus 2026-11-09): Karte byte-gleich gepinnt (assets/pro-verbund.herkunft.json).
   './src/ui/verbundKarte.js',
   './assets/pro-verbund.html',
+  // Hilfe-Seite „Discovery“ (Klaus 2026-11-15): nur Einstieg und Pin in der Schale; Seite, Film, Ton im DISCOVERY_VORRAT.
+  './src/ui/discoveryKarte.js',
+  './assets/discovery/HERKUNFT.json',
   './src/ui/belegVorschau.js',
   './src/ui/schlank.js',
   './src/ui/kopfTitel.js',
@@ -334,6 +343,11 @@ self.addEventListener('fetch', (event) => {
   // sonst vergliche die Seite ihre Nummer mit einer alten Kopie und das Fähnchen käme nie. Ohne respondWith geht es ans Netz.
   if (url.pathname.endsWith('/version.json') && !url.pathname.includes('/apps/')) return;
 
+  if (url.pathname.includes('/assets/discovery/') && !url.pathname.endsWith('/HERKUNFT.json')) {
+    event.respondWith(discoveryAntwort(event));
+    return;
+  }
+
   if (url.pathname.includes('/apps/') && !url.pathname.endsWith('/HERKUNFT.json')) {
     // Eingebettete App: Vorrat zuerst (offline), im Hintergrund frisch; ihre index.html (der Rahmen navigiert) netz-zuerst.
     event.respondWith(
@@ -366,6 +380,54 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+/* Discovery: Vorrat zuerst. Film und Ton fragen Browser in Stuecken ab (Range) — ein 206 laesst sich nicht ablegen, und ein
+ * ganzes 200 auf eine Stueck-Anfrage spult nicht. Darum liegt immer die GANZE Datei im Vorrat, und Stuecke werden daraus
+ * geschnitten. Fehlt sie noch: Stueck-Anfragen gehen ans Netz durch (der Film startet sofort), die ganze Datei kommt
+ * daneben in den Vorrat; alles andere wartet auf die ganze Datei. */
+const _discoveryLaeuft = new Map();
+function discoveryHolen(adresse) {
+  if (!_discoveryLaeuft.has(adresse)) {
+    _discoveryLaeuft.set(adresse, (async () => {
+      try {
+        const res = await fetch(adresse);
+        if (res && res.status === 200) { const c = await caches.open(DISCOVERY_VORRAT); await c.put(adresse, res.clone()); }
+        return res;
+      } catch (_) { return null; } finally { _discoveryLaeuft.delete(adresse); }
+    })());
+  }
+  return _discoveryLaeuft.get(adresse);
+}
+async function discoveryAntwort(event) {
+  const request = event.request;
+  const adresse = request.url.split('#')[0].split('?')[0];
+  const bereich = request.headers.get('range');
+  const cache = await caches.open(DISCOVERY_VORRAT);
+  let voll = await cache.match(adresse);
+  if (!voll) {
+    if (bereich) {
+      event.waitUntil(discoveryHolen(adresse));
+      return fetch(request).catch(() => new Response('', { status: 504 }));
+    }
+    const res = await discoveryHolen(adresse);
+    if (!res) return new Response('', { status: 504 });
+    if (res.status !== 200) return res;
+    voll = (await cache.match(adresse)) || res;
+  }
+  if (!bereich) return voll;
+  const buf = await voll.arrayBuffer();
+  const g = buf.byteLength;
+  const m = /^bytes=(\d*)-(\d*)$/.exec(bereich.trim());
+  let a = -1, e = -1;
+  if (m && (m[1] !== '' || m[2] !== '')) {
+    if (m[1] === '') { a = Math.max(0, g - Number(m[2])); e = g - 1; }
+    else { a = Number(m[1]); e = m[2] === '' ? g - 1 : Math.min(Number(m[2]), g - 1); }
+  }
+  if (a < 0 || a >= g || a > e) return new Response('', { status: 416, headers: { 'Content-Range': 'bytes */' + g } });
+  return new Response(buf.slice(a, e + 1), { status: 206, statusText: 'Partial Content', headers: {
+    'Content-Type': voll.headers.get('Content-Type') || 'application/octet-stream',
+    'Content-Range': 'bytes ' + a + '-' + e + '/' + g, 'Content-Length': String(e - a + 1), 'Accept-Ranges': 'bytes' } });
+}
 
 async function teilenEmpfangen(r) {
   let n = 0;

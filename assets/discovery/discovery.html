@@ -1,0 +1,1509 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discovery – so lernte der Sortier-Kern</title>
+<style>
+:root{
+  --bg:#f3eee4;--flaeche:#fffaf1;--flaeche2:#f8f1e3;--tinte:#1c2333;--leise:#586174;--linie:#dbd0bd;
+  --akzent:#17725c;--akzent-hell:#d8efe6;--lern:#b25a12;--lern-hell:#f8e3c8;--warn:#9a5a00;--warn-hell:#fbe9c4;
+  --schlecht:#b0352d;--alt:#8b93a3;--schatten:0 10px 30px rgba(60,45,20,.12);
+  --c-planer:#d49a00;--c-absender:#2f7de1;--c-fallen:#e0453c;--c-einordner:#1fa971;--c-setzer:#8a5cf0;--c-autoren:#e8801a;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b101b;--flaeche:#131a2a;--flaeche2:#182136;--tinte:#e9edf6;--leise:#9ca8bf;--linie:#28334d;
+    --akzent:#5fd8b2;--akzent-hell:#12362e;--lern:#f2a654;--lern-hell:#3a2a14;--warn:#f0b955;--warn-hell:#3a2e12;
+    --schlecht:#ff8a80;--alt:#77839b;--schatten:0 10px 30px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b101b;--flaeche:#131a2a;--flaeche2:#182136;--tinte:#e9edf6;--leise:#9ca8bf;--linie:#28334d;
+  --akzent:#5fd8b2;--akzent-hell:#12362e;--lern:#f2a654;--lern-hell:#3a2a14;--warn:#f0b955;--warn-hell:#3a2e12;
+  --schlecht:#ff8a80;--alt:#77839b;--schatten:0 10px 30px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tinte);font:16px/1.5 var(--sans);overflow-x:hidden}
+h1,h2,h3,h4{font-family:var(--serif);line-height:1.15;margin:0;text-wrap:balance}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--akzent);outline-offset:2px}
+.rand{max-width:1240px;margin:0 auto;padding:0 16px}
+.zahl{font-variant-numeric:tabular-nums}
+
+/* Kopf */
+.kopf{padding:22px 0 10px}
+.kopf small{letter-spacing:.14em;text-transform:uppercase;font-size:12px;color:var(--leise)}
+.kopf h1{font-size:clamp(28px,5vw,52px);font-weight:700;margin:6px 0 8px}
+.kopf h1 em{font-style:italic;color:var(--akzent)}
+.kopf p{color:var(--leise);max-width:62ch}
+.kacheln{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0 4px}
+.kachel{background:var(--flaeche);border:1px solid var(--linie);border-radius:14px;padding:12px 14px}
+.kachel b{display:block;font:700 clamp(26px,4.4vw,40px)/1 var(--serif);font-variant-numeric:tabular-nums}
+.kachel span{display:block;font-size:13px;color:var(--leise);margin-top:4px}
+@media (max-width:720px){.kacheln{grid-template-columns:repeat(2,1fr)}}
+
+/* Zeitstrahl */
+.strahl{display:flex;gap:6px;overflow-x:auto;padding:10px 0;scrollbar-width:thin}
+.strahl button{flex:0 0 auto;display:flex;align-items:center;gap:8px;background:var(--flaeche);border:1px solid var(--linie);border-radius:999px;padding:6px 12px 6px 6px;font-size:14px;white-space:nowrap}
+.strahl button i{font-style:normal;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--flaeche2);border:1px solid var(--linie);font-size:12px;font-weight:700}
+.strahl button[aria-current="step"]{background:var(--tinte);color:var(--bg);border-color:var(--tinte)}
+.strahl button[aria-current="step"] i{background:var(--akzent);color:#fff;border-color:transparent}
+
+/* Bühne */
+.buehne{position:relative;height:min(76vh,760px);min-height:440px;border-radius:20px;overflow:hidden;border:1px solid var(--linie);
+  background:radial-gradient(120% 90% at 50% 100%,#f6dcae 0%,#cfe6ee 45%,#a9cfe6 100%);transition:background 1s}
+.buehne[data-licht="abend"]{background:radial-gradient(120% 90% at 50% 100%,#5b3a55 0%,#1d2247 45%,#080c1c 100%)}
+.buehne canvas#szene{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y;cursor:grab}
+.buehne canvas#szene.zieht{cursor:grabbing}.buehne canvas#szene.zeigt{cursor:pointer}
+.schilder{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+.schild{position:absolute;left:0;top:0;transform:translate(-50%,-100%);pointer-events:auto;background:none;border:0;padding:2px 4px;cursor:pointer;
+  font-size:15px;font-weight:800;letter-spacing:.01em;white-space:nowrap;will-change:transform;color:#fffdf6;
+  /* Schrift als 3D-Körper: dunkle Kante nach unten rechts gestapelt, darunter ein weicher Schatten */
+  text-shadow:0 1px 0 #2a3a55,1px 2px 0 #26354e,1px 3px 0 #223048,2px 4px 0 #1e2b41,2px 5px 0 #1a263a,0 0 2px rgba(10,16,30,.9),3px 8px 10px rgba(10,16,30,.45)}
+.schild small{font-weight:700;font-size:.72em;opacity:.92;margin-left:6px}
+.schild.lern{color:#ffd9a0;text-shadow:0 1px 0 #8a4a12,1px 2px 0 #7e4310,1px 3px 0 #723c0e,2px 4px 0 #66350c,2px 5px 0 #5a2e0a,0 0 2px rgba(40,18,0,.9),3px 8px 10px rgba(40,18,0,.45)}
+.schild:hover,.schild:focus-visible{color:#fff;filter:brightness(1.15)}
+.schild.gewaehlt{color:#8ff0cf;text-shadow:0 1px 0 #0f5a48,1px 2px 0 #0d5142,1px 3px 0 #0b483b,2px 4px 0 #093f34,2px 5px 0 #07362d,0 0 2px rgba(0,30,22,.9),3px 8px 10px rgba(0,30,22,.5)}
+.schild{transition:opacity .25s}.schild.verdeckt{opacity:0;pointer-events:none}
+@media (max-width:620px){.schild{font-size:13px;padding:2px 3px}.schild small{display:none}}
+.knoepfe{position:absolute;left:10px;bottom:10px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 20px);z-index:3}
+.knoepfe button,.oben button{background:var(--flaeche);border:1px solid var(--linie);border-radius:10px;min-width:38px;height:38px;padding:0 10px;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.knoepfe button[aria-pressed="true"],.oben button[aria-pressed="true"]{background:var(--akzent);color:#fff;border-color:transparent}
+:root[data-theme="dark"] .knoepfe button[aria-pressed="true"],:root[data-theme="dark"] .oben button[aria-pressed="true"]{color:#06231b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .knoepfe button[aria-pressed="true"],:root:not([data-theme="light"]) .oben button[aria-pressed="true"]{color:#06231b}}
+.oben{position:absolute;left:10px;top:10px;right:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start;z-index:3;pointer-events:none}
+.oben>*{pointer-events:auto}
+.oben .fuehr{background:var(--tinte);color:var(--bg);border-color:var(--tinte)}
+.zeichen{background:var(--flaeche);border:1px solid var(--linie);border-radius:10px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.zeichen summary{cursor:pointer;height:36px;display:flex;align-items:center;padding:0 10px;font-weight:600;font-size:14px;list-style:none}
+.zeichen summary::-webkit-details-marker{display:none}
+.zeichen ul{list-style:none;margin:0;padding:0 10px 8px;display:grid;gap:3px}
+.punkt{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+.tipp[hidden]{display:none!important}
+.tipp{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#fff;font-size:12.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;transition:opacity .6s;pointer-events:none;z-index:2}
+.tipp.weg{opacity:0}
+.untertitel{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(700px,calc(100% - 24px));box-shadow:0 8px 30px rgba(0,0,0,.45);background:rgba(10,14,28,.86);color:#fff;border-radius:14px;padding:10px 14px;font-size:15px;line-height:1.4;z-index:4;display:none}
+.untertitel.an{display:block;z-index:50}
+.untertitel .ut-k{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.untertitel .ut-k button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:4px 12px;font-size:13.5px;font-weight:600}
+.ik{width:1em;height:1em;vertical-align:-.13em;margin-right:.4em;flex:none}
+.untertitel b{display:block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:2px}
+
+/* Karte */
+.karte{position:absolute;right:10px;top:10px;bottom:10px;width:min(380px,calc(100% - 20px));background:var(--flaeche);border:1px solid var(--linie);border-radius:16px;box-shadow:var(--schatten);
+  padding:16px 16px 20px;overflow:auto;z-index:5;transform:translateX(calc(100% + 20px));transition:transform .35s cubic-bezier(.2,.8,.2,1);visibility:hidden}
+.karte.offen{transform:none;visibility:visible}
+.karte .zu{position:sticky;top:0;float:right;width:34px;height:34px;border-radius:50%;border:1px solid var(--linie);background:var(--flaeche2);font-size:18px;line-height:1;z-index:1}
+.karte h3{font-size:24px;margin:4px 0 4px}
+.karte h4{font:700 12px/1.2 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--leise);margin:16px 0 6px}
+.karte .marke{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--akzent-hell);color:var(--akzent)}
+.karte .marke.lern{background:var(--lern-hell);color:var(--lern)}
+.karte p{color:var(--leise);font-size:14.5px}
+.karte ul{margin:0;padding-left:18px;font-size:14.5px}
+.karte li{margin:2px 0}
+.raster{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0 0}
+.raster div{background:var(--flaeche2);border-radius:10px;padding:8px}
+.raster b{display:block;font:700 22px/1 var(--serif);font-variant-numeric:tabular-nums}
+.raster span{font-size:11.5px;color:var(--leise);line-height:1.2;display:block;margin-top:3px}
+.rollen{list-style:none!important;padding:0!important}
+.rollen li{display:grid;grid-template-columns:auto 1fr auto;gap:2px 6px;align-items:baseline;padding:5px 6px;border-radius:8px}
+.rollen li b{font-variant-numeric:tabular-nums}
+.rollen li small{grid-column:2/4;color:var(--leise);font-size:12.5px}
+.rollen li.blink{background:var(--akzent-hell)}
+.karte .weiter{margin-top:14px;width:100%;background:var(--akzent);color:#fff;border:0;border-radius:10px;padding:10px;font-weight:700}
+.karte details{margin-top:6px}.karte summary{cursor:pointer;font-size:14px;font-weight:600}
+@media (max-width:720px){
+  .buehne{height:72vh;border-radius:16px}
+  .karte{left:0;right:0;top:auto;bottom:0;width:auto;max-height:62%;border-radius:16px 16px 0 0;transform:translateY(calc(100% + 20px))}
+  .raster b{font-size:19px}
+}
+
+/* 2D-Ersatz */
+.ersatz{position:absolute;inset:0;display:none}
+.ersatz svg{width:100%;height:100%}
+.buehne.zwei-d .ersatz{display:block}.buehne.zwei-d canvas#szene,.buehne.zwei-d .schilder,.buehne.zwei-d .nur3d{display:none}
+.ersatz .knoten{cursor:pointer}
+.ersatz .knoten:focus-visible{outline:none}.ersatz .knoten:focus-visible .ring,.ersatz .knoten:hover .ring{stroke:#fff;stroke-width:3}
+.ersatz .knoten.gewaehlt .ring{stroke:#ffd166;stroke-width:5}
+.ersatz text{font:600 13px var(--sans);fill:#1c2333;paint-order:stroke;stroke:rgba(255,250,241,.85);stroke-width:4px}
+.buehne[data-licht="abend"] .ersatz text{fill:#eef2fa;stroke:rgba(8,12,28,.8)}
+.ersatz .holz{stroke:#6b4a2f;fill:none;stroke-linecap:round}
+.buehne[data-licht="abend"] .ersatz .holz{stroke:#8a6a52}
+.ersatz .funke{animation:puls 2.4s ease-in-out infinite}
+@keyframes puls{50%{opacity:.35}}
+
+/* Abschnitte */
+section{padding:44px 0 0}
+section>.rand>h2{font-size:clamp(24px,3.6vw,36px);margin-bottom:6px}
+section>.rand>p.vor{color:var(--leise);max-width:68ch;margin-bottom:18px}
+.kasten{background:var(--flaeche);border:1px solid var(--linie);border-radius:18px;padding:18px}
+.zwei{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:860px){.zwei{grid-template-columns:1fr}}
+.zwei>:only-child{grid-column:1/-1}
+
+/* Schleife */
+.schleife{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:center}
+@media (max-width:860px){.schleife{grid-template-columns:1fr}}
+.schleife svg{width:100%;height:auto;display:block}
+.schleife .st circle{fill:var(--flaeche2);stroke:var(--linie);stroke-width:2;transition:fill .3s,stroke .3s}
+.schleife .st text{font:700 13px var(--sans);fill:var(--tinte);text-anchor:middle}
+.schleife .st .nr{font:700 12px var(--sans);fill:var(--leise)}
+.schleife .st{cursor:pointer}
+.schleife .st.an circle{fill:var(--akzent);stroke:var(--akzent)}
+.schleife .st.an text{fill:#fff}
+.schleife .bahn{fill:none;stroke:var(--linie);stroke-width:3;stroke-dasharray:2 9;stroke-linecap:round}
+.schleife .aus{fill:none;stroke:var(--lern);stroke-width:3;stroke-linecap:round}
+.schleife .ausT{font:700 12px var(--sans);fill:var(--lern)}
+.schleife .lauf{fill:var(--lern)}
+#schleifeBild{position:relative;min-width:0}
+.schleife{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)}
+@media (max-width:860px){.schleife{grid-template-columns:1fr}}
+canvas.kugeln{display:block;width:100%;touch-action:pan-y;cursor:grab;-webkit-tap-highlight-color:transparent}
+canvas.kugeln.zeigt{cursor:pointer}
+.kreis-wahl{display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap}
+.kreis-wahl button{font:inherit;font-size:13.5px;font-weight:600;padding:7px 14px;border-radius:999px;border:1px solid var(--linie,#8aa);background:transparent;color:inherit;cursor:pointer}
+.kreis-wahl button[aria-pressed="true"]{background:#167a5f;border-color:#167a5f;color:#fff}
+.kreis-film{position:relative}.kreis-film[hidden],#schleifeBild[hidden]{display:none!important}
+.kreis-film video{display:block;width:100%;height:auto;border-radius:14px;background:#141a2c}
+.kreis-film .lade{position:absolute;left:12px;right:12px;bottom:54px;height:22px;border-radius:999px;background:rgba(0,0,0,.6);overflow:hidden;pointer-events:none}
+.kreis-film .lade[hidden]{display:none}.kreis-film .lade i{position:absolute;left:0;top:0;bottom:0;width:0;background:#2fbf95;transition:width .3s}
+.kreis-film .lade span{position:relative;display:block;text-align:center;font:600 12.5px/22px system-ui;color:#fff}
+.kugel-tipp{font-size:12.5px;color:var(--leise);text-align:center;margin-top:2px}
+.schrittwahl{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.schrittwahl button{display:flex;align-items:center;gap:6px;background:var(--flaeche2);border:1px solid var(--linie);border-radius:999px;padding:4px 11px 4px 4px;font-size:13.5px;font-weight:600}
+.schrittwahl button i{font-style:normal;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--flaeche);border:1px solid var(--linie);font-size:12px}
+.schrittwahl button[aria-pressed="true"]{background:var(--tinte);color:var(--bg);border-color:var(--tinte)}
+.schrittwahl button[aria-pressed="true"] i{background:var(--akzent);color:#fff;border-color:transparent}
+.schritt-text{min-height:130px}
+.schritt-text h3{font-size:22px;margin-bottom:6px}
+.schritt-text p{color:var(--leise)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:13px;font-weight:600;border:1px solid var(--linie);border-radius:999px;padding:3px 10px;background:var(--flaeche2)}
+.bausteine{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+@media (max-width:860px){.bausteine{grid-template-columns:1fr}}
+.baustein{border:1px solid var(--akzent);background:var(--akzent-hell);border-radius:14px;padding:12px}
+.baustein b{display:block;font-family:var(--serif);font-size:17px}
+.baustein span{font-size:14px}
+.versuche{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:6px}
+.versuche li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--linie);border-radius:12px;padding:8px 12px;background:var(--flaeche)}
+.versuche li.weg{opacity:.78}
+.versuche li.weg .n{text-decoration:line-through;text-decoration-color:var(--alt)}
+.versuche .e{font-size:14px;color:var(--leise);text-align:right}
+.stempel{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:6px;border:2px solid currentColor}
+.stempel.ja{color:var(--akzent)}.stempel.nein{color:var(--alt)}
+@media (max-width:560px){.versuche li{grid-template-columns:auto 1fr}.versuche .e{grid-column:1/3;text-align:left}}
+
+/* Kino */
+.kino{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){.kino{grid-template-columns:1fr}}
+.leinwand{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--linie);background:#101425;aspect-ratio:16/9}
+.leinwand canvas{width:100%;height:100%;display:block}
+.kino-links{display:grid;gap:8px;align-content:start;min-width:0}
+.kino .spruch{background:var(--flaeche);border:1px solid var(--linie);border-left:4px solid var(--lern);border-radius:12px;padding:10px 14px;font-size:16px;line-height:1.45;min-height:46px}
+.leinwand .bildzeile{position:absolute;left:8px;right:8px;bottom:8px;background:rgba(0,0,0,.62);color:#fff;border-radius:10px;padding:5px 10px;font-size:14px;text-align:center;pointer-events:none}
+.kino-seite{display:grid;gap:10px;align-content:start;min-width:0}
+.tonkasten{background:var(--flaeche);border:1px solid var(--linie);border-radius:12px;padding:10px 12px;display:grid;gap:10px}
+.tonkasten .reihe{display:flex;gap:8px;flex-wrap:wrap}
+.tonkasten .reihe button,.stimme button{display:inline-flex;align-items:center;background:var(--flaeche2);border:1px solid var(--linie);border-radius:10px;height:38px;padding:0 12px;font-size:14px;font-weight:600}
+.tonkasten .reihe button[aria-pressed="true"]{background:var(--akzent);color:#fff;border-color:transparent}
+:root[data-theme="dark"] .tonkasten .reihe button[aria-pressed="true"]{color:#06231b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tonkasten .reihe button[aria-pressed="true"]{color:#06231b}}
+.stimme{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.stimme label{display:flex;align-items:center;gap:6px;font-weight:600;flex:1 1 200px;min-width:0}
+.stimme select{flex:1;min-width:0;max-width:100%;height:38px;border-radius:10px;border:1px solid var(--linie);background:var(--flaeche2);color:var(--tinte);font:inherit;padding:0 8px}
+.stimme small{flex:1 1 100%;color:var(--leise);font-size:12.5px;line-height:1.35}
+.stimmwahl label span{display:none}
+.stimmwahl .stimme{padding:0 10px 10px;width:min(300px,calc(100vw - 60px))}
+.oben button{display:inline-flex;align-items:center}
+.leinwand .gross{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,14,28,.35);border:0;color:#fff;font:700 18px var(--sans)}
+.leinwand .gross span{display:inline-flex;align-items:center;background:var(--lern);color:#fff;padding:10px 18px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.leinwand .balken{position:absolute;left:0;top:0;height:4px;background:var(--lern);width:0}
+.kapitel{display:grid;gap:8px;align-content:start}
+.kapitel button{text-align:left;background:var(--flaeche);border:1px solid var(--linie);border-radius:12px;padding:10px 12px}
+.kapitel button b{display:block;font-family:var(--serif);font-size:17px}
+.kapitel button span{font-size:13.5px;color:var(--leise)}
+.kapitel button[aria-pressed="true"]{border-color:var(--lern);background:var(--lern-hell)}
+
+/* Ergebnisse */
+.runde{margin-top:14px}
+.runde>header{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;margin-bottom:12px}
+.runde>header h3{font-size:24px}
+.runde>header span{color:var(--leise)}
+.haupt{background:var(--flaeche2);border-radius:14px;padding:14px}
+.haupt-kopf{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.haupt-kopf b{font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--leise)}
+.siegel{font-size:13px;font-weight:800;padding:3px 10px;border-radius:999px}
+.siegel.ok{background:var(--akzent-hell);color:var(--akzent)}
+.siegel.offen{background:var(--warn-hell);color:var(--warn);border:1px dashed currentColor}
+.gz{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin:8px 0 2px;font-family:var(--serif)}
+.gz .a{font-size:22px;color:var(--alt)}.gz .n{font-size:34px;font-weight:700}.gz .d{font:700 15px var(--sans);color:var(--akzent)}
+.haupt.offen .gz .d{color:var(--warn)}
+.spanne{width:100%;height:auto;display:block;margin-top:4px}
+.spanne .achse{stroke:var(--linie);stroke-width:2}
+.spanne .null{stroke:var(--tinte);stroke-width:2}
+.spanne text{font:600 10px var(--sans);fill:var(--leise);text-anchor:middle}
+.spanne .b{fill:var(--akzent);opacity:.35;transform-box:fill-box;transform-origin:left;transform:scaleX(0);transition:transform 1.1s cubic-bezier(.2,.8,.2,1)}
+.spanne .p{fill:var(--akzent);opacity:0;transition:opacity .4s 1s}
+.haupt.offen .spanne .b,.haupt.offen .spanne .p{fill:var(--warn)}
+.sichtbar .spanne .b{transform:none}.sichtbar .spanne .p{opacity:1}
+.haupt small{display:block;color:var(--leise);font-size:13.5px;margin-top:4px}
+.felder{margin-top:10px}
+.felder h4{font:700 13px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--leise);margin-bottom:6px}
+.feld{display:grid;grid-template-columns:70px 1fr 112px;gap:8px;align-items:center;padding:5px 0;font-size:14px}
+.feld .spur{position:relative;height:14px;--a:0%;--n:0%}
+.feld .spur::before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;background:var(--linie);border-radius:2px}
+.feld .spur i{position:absolute;top:2px;width:10px;height:10px;border-radius:50%;margin-left:-5px}
+.feld .spur .pa{left:var(--a);background:var(--alt)}
+.feld .spur .pn{left:var(--a);background:var(--akzent);transition:left 1.1s cubic-bezier(.2,.8,.2,1) .15s}
+.feld .spur .st{position:absolute;top:5px;height:4px;left:var(--a);width:0;background:var(--akzent);opacity:.5;border-radius:2px;transition:width 1.1s cubic-bezier(.2,.8,.2,1) .15s,left 1.1s cubic-bezier(.2,.8,.2,1) .15s}
+.sichtbar .feld .spur .pn{left:var(--n)}
+.sichtbar .feld .spur .st{left:min(var(--a),var(--n));width:max(calc(var(--n) - var(--a)),calc(var(--a) - var(--n)))}
+.feld.ab .spur .pn,.feld.ab .spur .st{background:var(--schlecht)}
+.feld.gl .spur .pn{background:var(--alt)}
+.feld .w{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.feld .w s{text-decoration:none;color:var(--alt)}
+.feld.ab .w b{color:var(--schlecht)}
+.skala{font-size:12px;color:var(--leise);margin-top:4px}
+.zusatz{margin-top:10px;padding:10px 12px;border-left:4px solid var(--akzent);background:var(--flaeche2);border-radius:0 10px 10px 0;font-size:14.5px}
+.einig .feld{grid-template-columns:70px 1fr 64px}
+.einig .spur .st{background:var(--akzent);opacity:.6}
+.grenzen{margin:0;padding-left:20px}
+.grenzen li{margin:6px 0}
+footer{padding:36px 0 48px;color:var(--leise);font-size:13.5px}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition-duration:.01ms!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+<header class="kopf"><div class="rand">
+  <small>Datei-Organizer · Sortier-Kern</small>
+  <h1>Vier erfundene Städte. <em>Ein Kern, der daraus lernt.</em></h1>
+  <p>So wurde der Sortier-Kern geprüft und besser gemacht: Agenten bauen Städte, Ämter schreiben Briefe, Einordner ordnen ein. Der Kern rät, wird berichtigt und lernt. Alles hier ist erfunden – die Zahlen sind gemessen.</p>
+  <div class="kacheln" id="kacheln"></div>
+  <nav class="strahl" id="strahl" aria-label="Ablauf"></nav>
+</div></header>
+
+<main>
+<div class="rand">
+  <div class="buehne" id="buehne" data-licht="tag">
+    <canvas id="szene" title="Ziehen = drehen · Rad oder zwei Finger = näher · Antippen = Zahlen" tabindex="0" aria-label="3D-Baum mit den vier Welten. Pfeiltasten drehen, Plus und Minus zoomen."></canvas>
+    <div class="schilder" id="schilder"></div>
+    <div class="ersatz" id="ersatz"></div>
+    <div class="oben">
+      <button class="fuehr" id="bFuehrung" aria-pressed="false">Führung starten</button>
+      <button id="bTon" data-ton aria-pressed="true">Ton an</button>
+      <details class="zeichen stimmwahl"><summary>Stimme</summary><div class="stimme" data-stimme></div></details>
+      <button id="bLicht" class="nur3d">Abend</button>
+      <details class="zeichen" id="zeichen"><summary>Zeichen</summary><ul id="zeichenListe"></ul></details>
+    </div>
+    <div class="tipp nur3d" id="tipp" hidden>Ziehen = drehen · Rad oder zwei Finger = näher · Antippen = Zahlen</div>
+    <div class="untertitel" id="untertitel" aria-live="polite"></div>
+    <div class="knoepfe nur3d">
+      <button id="bMinus" aria-label="Weiter weg">−</button>
+      <button id="bPlus" aria-label="Näher heran">+</button>
+      <button id="bAlles">Übersicht</button>
+      <button id="bKreis" aria-pressed="true">Kreisen</button>
+    </div>
+    <aside class="karte" id="karte" aria-live="polite"><button class="zu" id="karteZu" aria-label="Karte schließen">×</button><div id="karteInhalt"></div></aside>
+  </div>
+</div>
+
+<section id="training"><div class="rand">
+  <h2>So lernt der Kern: raten → Korrektur → lernen</h2>
+  <p class="vor">Der Kern liest ein Schriftstück und rät. Die Einordner sagen, was richtig ist. Gelernt wird nur dort, wo der Kern falsch lag. Erst am Ende wird gemessen – einmal, an einer fremden Stadt.</p>
+  <div class="kasten">
+    <div class="schleife">
+      <div id="schleifeBild"></div>
+      <div>
+        <div class="schrittwahl" id="schrittwahl" role="group" aria-label="Schritt wählen"></div>
+        <div class="schritt-text" id="schleifeText" aria-live="polite"></div>
+        <div class="chips" id="schleifeFelder"></div>
+      </div>
+    </div>
+    <h3 style="margin-top:22px;font-size:20px">Was gelernt wurde – und was wieder flog</h3>
+    <p style="color:var(--leise)">Jeder Versuch wurde reihum geprüft. Nur was wirklich half, blieb.</p>
+    <div class="bausteine" id="bausteine"></div>
+    <ul class="versuche" id="versuche"></ul>
+  </div>
+</div></section>
+
+<section id="kino"><div class="rand">
+  <h2>Kurzfilme aus den Test-Welten</h2>
+  <p class="vor">Drei kleine gezeichnete Szenen mit Musik, Geräuschen und Sprecher. Zum Schmunzeln – die Zahlen darin sind trotzdem echt.</p>
+  <div class="kino">
+    <div class="kino-links"><div class="leinwand">
+      <canvas id="film" width="960" height="540" aria-label="Gezeichneter Kurzfilm"></canvas>
+      <div class="balken" id="filmBalken"></div>
+      <div class="bildzeile" id="filmZeile"></div>
+      <button class="gross" id="filmStart" aria-label="Film abspielen"><span>Film abspielen</span></button>
+    </div>
+    <div class="spruch" id="filmSpruch" aria-live="polite"></div></div>
+    <div class="kino-seite">
+      <div class="kapitel" id="kapitel"></div>
+      <div class="tonkasten">
+        <div class="reihe"><button type="button" id="filmPause" aria-pressed="false">Start</button><button type="button" id="filmTon" data-ton aria-pressed="true">Ton an</button></div>
+        <div class="stimme" data-stimme></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section id="ergebnis"><div class="rand">
+  <h2>Was herauskam</h2>
+  <p class="vor">Drei Runden, jede an einer Stadt, die der Kern vorher nie gesehen hat. „Vorher“ ist der alte Kern, „nachher“ der neue. „Gesichert“ heißt: Die ganze Spanne liegt über null. Dann ist es kein Zufall.</p>
+  <div id="runden"></div>
+  <div class="zwei" style="margin-top:14px">
+    <div class="kasten" id="einig"></div>
+    <div class="kasten" id="akte"></div>
+    <div class="kasten" id="luecken"></div>
+    <div class="kasten" id="grenzen"></div>
+  </div>
+</div></section>
+</main>
+<footer><div class="rand" id="fuss"></div></footer>
+
+<script>
+/* Leichte Ansicht (ohne 3D) und Fehleranzeige – für langsamere Geräte. */
+(function(){var ls=function(k){try{return localStorage.getItem(k)}catch(e){return null}};
+window.LEICHT=/[?&]2d=1/.test(location.search)||location.hash==='#2d'||(ls('tw-leicht')==='1'&&location.hash!=='#3d');
+window.MOBIL=matchMedia('(pointer:coarse)').matches||/Android|iPhone|iPad/.test(navigator.userAgent);
+/* Segmente (Klaus 15.11.): am Tablet/Handy ist immer nur EINE 3D-Fläche geladen. Die andere gibt ihre Grafik frei
+   und wird bei Bedarf (in Sicht oder angetippt) nachgeladen – so bleibt alles in 3D, ohne das Gerät zu überfordern. */
+window.Segmente=(function(){var L=[],einzeln=window.MOBIL&&!window.LEICHT,halte=0;
+function finde(n){for(var i=0;i<L.length;i++)if(L[i].name===n)return L[i];return null}
+function decke(g,an,text){if(!g.decke){var d=document.createElement('button');d.type='button';d.setAttribute('data-segment-laden',g.name);
+d.style.cssText='position:absolute;inset:0;z-index:5;display:none;place-items:center;border:0;border-radius:inherit;font:600 16px system-ui;color:#fff;background:rgba(16,32,48,.72);cursor:pointer';
+if(getComputedStyle(g.el).position==='static')g.el.style.position='relative';g.el.appendChild(d);d.onclick=function(){halte=Date.now()+8000;vor(g.name)};g.decke=d}
+g.decke.textContent=text||'Antippen: 3D-Ansicht laden';g.decke.style.display=an?'grid':'none'}
+function aus(g){if(g.aus)return;g.aus=true;if(g.renderer){g.gewollt=true;try{g.renderer.forceContextLoss()}catch(e){}}decke(g,true)}
+function an(g){if(!g.aus)return;g.aus=false;
+if(g.lade){var l=g.lade;g.lade=null;decke(g,true,'3D-Ansicht lädt …');setTimeout(function(){try{l()}catch(e){decke(g,true,'3D-Ansicht ging nicht: '+(e&&e.message||e));g.aus=true;return}decke(g,false)},60);return}
+if(g.renderer){try{g.renderer.forceContextRestore()}catch(e){}}decke(g,false)}
+function vor(name){if(!einzeln)return;L.forEach(function(g){if(g.name!==name)aus(g)});var g=finde(name);if(g)an(g)}
+function sicht(g){var r=g.el.getBoundingClientRect();return Math.max(0,Math.min(r.bottom,innerHeight)-Math.max(r.top,0))}
+/* Ein Schiedsrichter statt mehrerer Beobachter: an ist die Fläche, von der am meisten zu sehen ist (mit Abstand, damit nichts hin- und herspringt). */
+function fern(g){var r=g.el.getBoundingClientRect();return Math.abs((r.top+r.bottom)/2-innerHeight/2)}
+function waehle(){if(!einzeln||Date.now()<halte||!L.length)return;var akt=null,best=null,bf=1e9;L.forEach(function(g){if(!g.aus)akt=g;if(sicht(g)<80)return;var f=fern(g);if(f<bf){bf=f;best=g}});
+if(!best)return;if(!akt){vor(best.name);return}if(best!==akt&&(sicht(akt)<80||bf<fern(akt)-60))vor(best.name)}
+function melde(name,el,renderer){var g=finde(name);if(g){g.renderer=renderer}else{g={name:name,el:el,renderer:renderer,aus:false};L.push(g)}
+if(renderer&&renderer.domElement)renderer.domElement.addEventListener('webglcontextlost',function(){if(!g.gewollt){g.aus=true;decke(g,true)}g.gewollt=false});return g}
+function spaeter(name,el,lade){var g={name:name,el:el,renderer:null,lade:lade,aus:true};L.push(g);decke(g,true);return g}
+if(einzeln){addEventListener('scroll',waehle,{passive:true});addEventListener('resize',waehle);setInterval(waehle,700)}
+return{melde:melde,spaeter:spaeter,vor:vor,einzeln:einzeln,stand:function(){return L.map(function(g){return g.name+':'+(g.aus?'aus':'an')})}}})();
+var fehler=[];function zeig(t){fehler.push(t);var b=document.getElementById('tw-fehler');if(!b){b=document.createElement('div');b.id='tw-fehler';b.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;background:#7a1f16;color:#fff;font:13px/1.4 system-ui;padding:10px 12px;border-radius:10px;max-height:40vh;overflow:auto';(document.body||document.documentElement).appendChild(b)}
+b.textContent='Fehler auf der Seite (bitte Bildschirmfoto schicken): '+fehler.slice(-3).join(' | ')}
+window.addEventListener('error',function(e){if(e.message)zeig(e.message+' @'+(e.lineno||''))});
+window.addEventListener('unhandledrejection',function(e){zeig(String(e.reason&&e.reason.message||e.reason))});
+document.addEventListener('DOMContentLoaded',function(){if(!window.EINZELDATEI&&window.top===window){var r=document.createElement('a');r.href='./';r.textContent='‹ Zurück';r.onclick=function(e){if(document.referrer&&history.length>1){e.preventDefault();history.back()}};r.setAttribute('data-zurueck','');r.style.cssText='position:fixed;left:10px;top:10px;z-index:9998;font:600 13px system-ui;padding:8px 12px;border-radius:999px;border:1px solid #8aa;background:#102030;color:#fff;opacity:.9;text-decoration:none';document.body.appendChild(r);}var k=document.createElement('button');k.type='button';k.textContent=window.LEICHT?'3D-Ansicht einschalten':'Leichte Ansicht (ohne 3D)';
+k.style.cssText='position:fixed;right:10px;top:10px;z-index:9998;font:600 13px system-ui;padding:8px 12px;border-radius:999px;border:1px solid #8aa;background:#102030;color:#fff;opacity:.9';
+k.onclick=function(){var neu=!window.LEICHT;try{localStorage.setItem('tw-leicht',neu?'1':'0')}catch(e){}try{location.hash=neu?'#2d':'#3d'}catch(e){}setTimeout(function(){location.reload()},50)};document.body.appendChild(k);
+})})();
+</script>
+<script src="discovery-three.min.js"></script><!-- three.js r128 (MIT), liegt bei: läuft auch ohne Netz und in den Apps -->
+<script>
+'use strict';
+const D = {"auftrag":"Klaus 14./15.11.2026: rekursive Verbesserung des Sortier-Kerns im Datei-Organizer – raten → Korrektur → lernen; Agenten recherchieren im Internet; eigene Welten (Städte mit Ämtern, die Briefe schreiben); ehrliche Gegenprobe; danach in die Familienakte.","recherche":{"agenten":8,"aufbau":"6 Themen-Agenten mit Internet + 1 Zusammenfassung + 1 Gegenprüfung der Quellen","themen":["Rekursive Selbstverbesserung (Brill, aktives Lernen, schwache Aufsicht)","Simulierte Welten und Agenten-Städte","Leichte Klassifikation und Feldauslesen","Ehrlich prüfen (Leckage, Testsatz-Abnutzung)","Lernen aus Korrekturen","Öffentliche Vorlagen als Aufbau (Bescheid, XRechnung, DIN 5008)"],"kernaussagen":["Fehlergetriebenes Lernen nach Brill passt am besten zu ‚raten–korrigieren–lernen‘","Nie aus eigenen Urteilen lernen (Bestätigungsverzerrung)","Nachweis nur an einer fremden, unabhängig gebauten Welt, einmal","‚Einfach → schwer‘ bringt kaum Genauigkeit; besser gezielt eingebaute Fehler"]},"welten":[{"name":"Lernstadt „Beispielhafen“","rolle":"Lernen (mit 60 bewusst schweren Fallen)","art":"Hafenstadt im Norden, ca. 50–100 Tsd. Einw. (geschätzt)","stuecke":240,"agenten":{"planer":1,"absender_gruppen":4,"fallen_autor":1,"einordner":0,"setzer":0},"haushalte":6,"personen":21,"stellen":51,"ereignisse":73,"beispiel_stellen":["Finanzamt Beispielhafen","Stadt Beispielhafen – Bürgeramt","Stadt Beispielhafen – Steueramt (Grundsteuer, Hundesteuer)","Stadt Beispielhafen – Standesamt","Stadt Beispielhafen – Bauordnungsamt","Landkreis Beispielland – Kfz-Zulassungsstelle","Landkreis Beispielland – Sozialamt / Pflege","Familienkasse Beispielnord"],"beispiel_ereignisse":["Lohnsteuerbescheinigung 2025 und Lohnabrechnung Januar mit Tariferhöhung","Sturz im Bad, Krankenhausaufenthalt, Entlassbrief","Umsatzsteuer-Voranmeldung Dezember, Belege an Steuerbüro","Semesterbeitrag Sommersemester und Rückmeldung","Baugenehmigung erteilt, Gebührenbescheid","Weiterbewilligungsantrag Bürgergeld, Nachweise angefordert"]},{"name":"Prüfstadt „Musterbach“","rolle":"Nachweis Runde 1, danach Lernmaterial","art":"ländliche Kleinstadt im Süden, ca. 5–15 Tsd. Einw.","stuecke":200,"agenten":{"planer":1,"absender_gruppen":4,"einordner":6,"setzer":1},"codes":103,"formen":"111 Scan · 89 Foto · gut 66/mittel 63/schlecht 71","haushalte":6,"personen":20,"stellen":50,"ereignisse":73,"beispiel_stellen":["Finanzamt Beispielkreis","Gemeindeverwaltung Musterbach","Landratsamt Beispielkreis – Kfz-Zulassung","Landratsamt Beispielkreis – Sozialamt","Landratsamt Beispielkreis – Bauamt","Familienkasse Beispielregion","Agentur für Arbeit Beispielkreis","Jobcenter Beispielkreis"],"beispiel_ereignisse":["Jahresabrechnung Strom und Wasser 2025 mit neuen Abschlägen","Sturz zu Hause, Krankenhausaufenthalt","Antrag Unterhaltsvorschuss und Kinderzuschlag","Beitragsbescheid Rundfunkbeitrag für die WG-Wohnung","Umsatzsteuer-Voranmeldung Dezember und Jahresmeldung Minijob","Grundsteuerbescheid für das Baugrundstück"]},{"name":"Welt 3 „Beispielstadt-Nord“","rolle":"Nachweis Runde 2, danach Lernmaterial","art":"Großstadt mit Stadtteilen, > 300 Tsd. Einw.","stuecke":200,"agenten":{"planer":1,"absender_gruppen":4,"einordner":6,"setzer":1},"codes":69,"formen":"110 Scan · 90 Foto · je ein Drittel gut/mittel/schlecht","haushalte":6,"personen":20,"stellen":59,"ereignisse":72,"beispiel_stellen":["Bezirksamt Beispielstadt-Nord – Bürgeramt","Bezirksamt Beispielstadt-Nord – Gewerbeamt","Ausländerbehörde Beispielstadt-Nord","Jugendamt Beispielstadt-Nord","Elterngeldstelle Beispielstadt-Nord","Finanzamt Beispielstadt-Nord","Hauptzollamt Beispielstadt","Jobcenter Beispielstadt-Nord"],"beispiel_ereignisse":["Aufenthaltserlaubnis läuft im März ab – Einladung zur Verlängerung mit Terminvorgabe","Elterngeld-Bescheid für Mila (Partnerschaftsbonus abgelehnt, Teilbetrag bewilligt)","Jahresabrechnung Pflegedienst und neuer Pflegevertrag mit Preisanpassung","Umsatzsteuer-Voranmeldung Dezember versäumt – Erinnerung mit Verspätungszuschlag angedroht","Beitragsrechnung Kfz-Versicherung für Wohnmobil und Motorrad (Saisonkennzeichen)","Lohnabrechnung Minijob und Mitteilung zur Rentenversicherungspflicht (Befreiungsantrag)"]},{"name":"Welt 4 „Musterhausen am Rhein“","rolle":"Nachweis Runde 3 + Wiederholung","art":"Mittelstadt im Westen, viel digitale Post, ca. 30–80 Tsd. Einw.","stuecke":200,"agenten":{"planer":1,"absender_gruppen":4,"einordner":6,"setzer":1},"codes":77,"formen":"100 Scan · 100 Foto · gut 67/mittel 72/schlecht 61","haushalte":6,"personen":21,"stellen":51,"ereignisse":73,"beispiel_stellen":["Finanzamt Musterhausen-Beispiel","Stadtverwaltung Musterhausen – Bürgerkonto","Stadtkasse Musterhausen (Grundbesitzabgaben)","Bürgerbüro Musterhausen (Meldewesen)","Standesamt Musterhausen","Kreisverwaltung Beispielkreis – Zulassungsstelle","Kreisverwaltung Beispielkreis – Pflegestützpunkt und Wohngeld","Familienkasse Beispielregion"],"beispiel_ereignisse":["Grundbesitzabgabenbescheid 2026 für das Haus","Jahresabrechnung Ladestrom und neue Abschläge","Nebenkostenabrechnung 2025 an die Mieterin der Einliegerwohnung","Rentenanpassung und Mitteilung zur Krankenversicherung der Rentner","Vertragsverlängerung Glasfaser mit neuem Tarif","Mutterschutzbescheinigung und Mutterschaftsgeld beantragt"]},{"name":"Lücken-Material","rolle":"Lernmaterial seltene Post (Strafzettel, Anhörungsbogen, Gerichtsvollzieher, Zoll, Wahlen …)","stuecke":80,"agenten":{"autoren":2}}],"einordner_einigkeit_pruefstadt":{"Bereich":97.7,"Art":97,"Absender":94,"Person":94.3,"Frist":99.7},"bestand":{"erfundene_schriftstuecke_gesamt":"ca. 4.700","davon_neue_welten":920,"agenten_gesamt_diese_runde":"ca. 57"},"versuche_reihum":[{"name":"Brill-Regelschicht","ergebnis":"+0,25 Punkte – zu wenig","verworfen":true},{"name":"Regel/Modell-Zusammenspiel lernen","ergebnis":"0","verworfen":true},{"name":"Gelerntes Art-Modell (Perzeptron, Lage im Brief)","ergebnis":"Art 80,4 → 84,8 %","verworfen":false},{"name":"Perzeptron für Bereich","ergebnis":"85,0 gegen 85,3 – nicht besser","verworfen":true},{"name":"Gelernte Absender-Wahl","ergebnis":"Absender 81,9 → 84,1 %","verworfen":false},{"name":"Gelernte Frist-Wahl","ergebnis":"Frist 92,7 → 93,7 %","verworfen":false},{"name":"Art-Modell + Wortmodell kombiniert","ergebnis":"+0,05 – zu wenig","verworfen":true}],"runden":[{"runde":1,"welt":"Prüfstadt","text":{"alt":82.6,"neu":83.78,"diff":1.17,"spanne":[-0.1,2.29],"gesichert":false},"gesetzt":{"alt":67.66,"neu":70.22,"diff":2.56,"spanne":[1.01,4.1],"gesichert":true},"felder_text":{"Art":[74.5,80.5],"Bereich":[82,81],"Absender":[80,80.5],"Person":[85.4,85.4],"Frist":[92,92]}},{"runde":2,"welt":"Welt 3","haupt":{"alt":76.18,"neu":78.89,"diff":2.72,"spanne":[1.56,3.7],"gesichert":true},"gegen_bisheriges_vorgehen":{"diff":2.66,"gesichert":true},"felder_text":{"Art":[72,80],"Bereich":[78.5,80.5],"Absender":[79.4,81.4],"Person":[84.7,84.7],"Frist":[92,94.5]},"felder_gesetzt":{"Art":[66,73],"Bereich":[78,78.5],"Absender":[56.3,59.3],"Person":[73.4,73.4],"Frist":[82,83.5]}},{"runde":3,"welt":"Welt 4","wiederholung":{"alt":68.83,"neu":70.9,"diff":2.06,"spanne":[1.11,3.03],"gesichert":true},"runde3_gegen_runde2":{"diff":0},"felder_text":{"Art":[69,75],"Bereich":[75.5,78.5],"Absender":[74.2,75.8],"Person":[77.2,77.2],"Frist":[92.5,93.5]},"felder_gesetzt":{"Art":[55,58],"Bereich":[62.5,64],"Absender":[43.4,45.5],"Person":[59.1,59.1],"Frist":[79.5,81.5]}}],"familienakte":{"welt4":{"Bereich":[79,82.5],"Absender":[63.5,65]}},"luecken_kern":{"Art":[58.8,72.5],"Bereich":[57.5,65],"Frist":[93.8,93.8],"Person":[96.3,96.3]},"grenzen":["Alle Unterlagen, Einordner und Setzer sind Claude-Agenten – keine echten Briefe, kein Gerätetest","Absender aus schlechten Scans/Fotos bleibt schwach (Lesegüte ist die Grenze)","Paket: Art-Modell ca. 170 KB gepackt"]};
+const $ = (s, r) => (r || document).querySelector(s);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const RUHIG = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Zahl so zeigen, wie sie in der Datei steht (Komma statt Punkt, nichts gerundet)
+const fz = n => { let s = String(n); if (!s.includes('.')) s += '.0'; return s.replace('.', ',').replace('-', '−'); };
+const fd = n => (n > 0 ? '+' : '') + fz(n);
+const FELDER = ['Art', 'Bereich', 'Absender', 'Person', 'Frist'];
+
+/* ---------- Sprechtexte: je Szene ein Absatz. Genau diese Texte werden vertont (ton/<schluessel>.mp3) und als Untertitel gezeigt. ---------- */
+const SPRECHTEXTE = {
+  begruessung: "Willkommen in den Test-Welten. Hier siehst du, wie der Datei-Organizer sortieren gelernt hat.",
+  recherche: "Zuerst haben acht Agenten im Internet nachgeforscht: Wie lernt ein Programm aus Fehlern, ohne sich selbst zu belügen? Die Antwort: Regeln vorher festlegen. Und nur einmal messen, an einer fremden Welt.",
+  welten: "Dann haben wir Städte erfunden. Eine Hafenstadt, eine Kleinstadt, eine Großstadt und eine Stadt am Fluss. Mit Ämtern, Firmen und Familien, die einander Briefe schreiben. Rechnungen, Bescheide, Mahnungen. Und ja, auch Strafzettel.",
+  kreis_raten: "Jetzt der Kreislauf. Erste Kugel: Raten. Ein Brief fliegt hinein, und der Kern rät: Was ist das? Wer schreibt? Bis wann?",
+  kreis_soll: "Zweite Kugel: das Soll. Sechs Einordner sagen, was richtig ist. Grüner Haken, oder rotes Kreuz.",
+  kreis_lernen: "Dritte Kugel: Lernen. Nur wo der Kern danebenlag, verschieben sich die Gewichte. Wer richtig rät, lernt nichts.",
+  kreis_reihum: "Vierte Kugel: Reihum prüfen. Ein Stapel bleibt jedes Mal draußen. Hilft das Gelernte auch bei Neuem? Wenn nicht, fliegt der Versuch wieder raus.",
+  kreis_einfrieren: "Fünfte Kugel: Einfrieren. Jetzt ist Schluss mit Lernen. Nichts wird mehr verändert.",
+  kreis_messen: "Sechste Kugel: Messen. Einmal, an einer Stadt, die der Kern nie gesehen hat. Der Bereich stieg von neunundsiebzig auf über zweiundachtzig Prozent. Und das hielt auch in einer zweiten, fremden Welt.",
+  film_brieftraeger: "Der Briefträger. Er bringt Brief um Brief in die Stadt. Jeder Punkt ist ein Schriftstück.",
+  film_kern_raet: "Der Kern rät. Rechnung? Nein, Bescheid! Aha. Beim nächsten Mal weiß er es.",
+  film_strafzettel: "Der Strafzettel. Er flattert davon, aber der Kern fängt ihn ein. Absender: Ordnungsamt. Frist: zwei Wochen.",
+  schluss: "Und am Ende wandert alles in die Familienakte. Dort sortiert der Kern jetzt deine eigenen Unterlagen, auf deinem Gerät. Nichts verlässt es."
+};
+
+/* ---------- abgeleitete Angaben (nur aus der Datei) ---------- */
+const W = D.welten.map((w, i) => {
+  const m = /„(.+?)“/.exec(w.name);
+  const a = w.art || '';
+  const typ = !w.art ? 'luecke' : /Hafen/.test(a) ? 'hafen' : /Kleinstadt/.test(a) ? 'klein' : /Großstadt/.test(a) ? 'gross' : 'mittel';
+  const runde = D.runden.find(r => w.name.includes(r.welt));
+  return { i, id: 'w' + i, d: w, kurz: m ? m[1] : w.name, typ, runde, lern: /^Lernen/.test(w.rolle), nachweis: /^Nachweis/.test(w.rolle) };
+});
+const STAEDTE = W.filter(w => w.typ !== 'luecke');
+const ROLLEN = {
+  planer: ['Planer', 'denkt sich die Stadt aus: Haushalte, Ämter, Ereignisse', '--c-planer'],
+  absender_gruppen: ['Absender-Gruppen', 'schreiben die Briefe im Namen der Ämter und Firmen', '--c-absender'],
+  fallen_autor: ['Fallen-Autor', 'baut mit Absicht schwere Fälle ein', '--c-fallen'],
+  einordner: ['Einordner', 'ordnen jedes Stück ein, jeder für sich – daraus wird das Soll', '--c-einordner'],
+  setzer: ['Setzer', 'macht aus dem Text ein Bild wie Scan oder Foto', '--c-setzer'],
+  autoren: ['Autoren', 'schreiben seltene Post', '--c-autoren']
+};
+const RA_AUFGABE = i => i < D.recherche.themen.length ? D.recherche.themen[i] : (i === D.recherche.themen.length ? 'Zusammenfassung' : 'Gegenprüfung der Quellen');
+const ABLAUF = [
+  ['Recherche', 'recherche'], ['Regeln vorab', 'regeln'], ['Lernstadt', 'w0'], ['Runde 1', 'w1'], ['Runde 2', 'w2'], ['Runde 3 + Wiederholung', 'w3'], ['In die Familienakte', 'akte']
+];
+const BEHALTEN = D.versuche_reihum.filter(v => !v.verworfen), VERWORFEN = D.versuche_reihum.filter(v => v.verworfen);
+
+/* ---------- Karten ---------- */
+const liste = a => '<ul>' + a.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>';
+const pfeil = p => `<span class="zahl">${fz(p[0])} → <b>${fz(p[1])} %</b></span>`;
+function karteHtml(id) {
+  if (id === 'auftrag') return `<span class="marke">Wurzel</span><h3>Der Auftrag</h3><p>${esc(D.auftrag)}</p>
+    <h4>Bestand</h4><div class="raster"><div><b>${esc(D.bestand.erfundene_schriftstuecke_gesamt)}</b><span>erfundene Schriftstücke gesamt</span></div><div><b>${D.bestand.davon_neue_welten}</b><span>davon in den neuen Welten</span></div><div><b>${esc(D.bestand.agenten_gesamt_diese_runde)}</b><span>Agenten in dieser Runde</span></div></div>`;
+  if (id === 'recherche') return `<span class="marke">Stamm</span><h3>Recherche</h3><p>${D.recherche.agenten} Agenten: ${esc(D.recherche.aufbau)}.</p>
+    <h4>Themen</h4>${liste(D.recherche.themen)}<button class="weiter" data-geh="regeln">Was daraus wurde: die Regeln</button>`;
+  if (/^ra\d/.test(id)) { const i = +id.slice(2); return `<span class="marke">Recherche-Agent ${i + 1} von ${D.recherche.agenten}</span><h3>${esc(RA_AUFGABE(i))}</h3>
+    <p>${i < D.recherche.themen.length ? 'Dieser Agent hat im Internet zu diesem Thema gesucht.' : (i === D.recherche.themen.length ? 'Dieser Agent hat alle Funde zu einem Bericht gemacht.' : 'Dieser Agent hat nachgesehen, ob die Quellen stimmen.')}</p>
+    <button class="weiter" data-geh="recherche">Zur ganzen Recherche</button>`; }
+  if (id === 'regeln') return `<span class="marke">Vor dem ersten Brief</span><h3>Regeln vorab</h3><p>Bevor gemessen wurde, stand fest, wie gemessen wird. Das kam aus der Recherche:</p>${liste(D.recherche.kernaussagen)}
+    <button class="weiter" data-roll="training">Zur Lern-Schleife</button>`;
+  if (id === 'akte') { const f = D.familienakte.welt4; return `<span class="marke">Krone</span><h3>In die Familienakte</h3><p>Der neue Kern wurde in die Familienakte übernommen. Dort an Welt 4 gemessen:</p>
+    <ul>${Object.keys(f).map(k => `<li>${k}: ${pfeil(f[k])}</li>`).join('')}</ul>
+    <h4>Früchte am Baum</h4><p>${D.versuche_reihum.length} Versuche hängen an der Krone. ${BEHALTEN.length} blieben, ${VERWORFEN.length} wurden verworfen.</p><button class="weiter" data-geh="versuche">Die Versuche ansehen</button>`; }
+  if (id === 'versuche') return `<span class="marke">Reihum geprüft</span><h3>Die Versuche</h3><ul class="rollen">${D.versuche_reihum.map(v => `<li><span class="punkt" style="background:${v.verworfen ? 'var(--alt)' : 'var(--akzent)'}"></span><span>${esc(v.name)}</span><b>${v.verworfen ? 'verworfen' : 'behalten'}</b><small>${esc(v.ergebnis)}</small></li>`).join('')}</ul>
+    <button class="weiter" data-roll="training">Mehr zum Lernen</button>`;
+  const w = W.find(x => x.id === id); if (!w) return '';
+  const d = w.d, st = (v, t) => v == null ? '' : `<div><b>${v}</b><span>${t}</span></div>`;
+  let h = `<span class="marke${w.lern ? ' lern' : ''}">${esc(d.rolle)}</span><h3>${esc(d.name)}</h3>${d.art ? `<p>${esc(d.art)}</p>` : ''}
+    <div class="raster">${st(d.stuecke, 'Schriftstücke')}${st(d.haushalte, 'Haushalte')}${st(d.personen, 'Personen')}${st(d.stellen, 'Absender-Stellen')}${st(d.ereignisse, 'Ereignisse')}${st(d.codes, 'Codes (Barcode/QR)')}</div>`;
+  if (d.formen) h += `<h4>Formen</h4><p>${esc(d.formen)}</p>`;
+  h += `<h4>Agenten nach Rolle</h4><ul class="rollen">${Object.keys(d.agenten).map(k => { const r = ROLLEN[k] || [k, '', '--alt']; return `<li data-rolle="${k}"><span class="punkt" style="background:var(${r[2]})"></span><span>${r[0]}</span><b>${d.agenten[k]}</b><small>${r[1]}</small></li>`; }).join('')}</ul>`;
+  if (w.i === 1) h += `<h4>Einigkeit der Einordner</h4><ul>${Object.keys(D.einordner_einigkeit_pruefstadt).map(k => `<li>${k}: <b class="zahl">${fz(D.einordner_einigkeit_pruefstadt[k])} %</b></li>`).join('')}</ul>`;
+  if (w.typ === 'luecke') { const l = D.luecken_kern; h += `<h4>Kern am Lücken-Material</h4><ul>${Object.keys(l).map(k => `<li>${k}: ${pfeil(l[k])}</li>`).join('')}</ul>`; }
+  if (d.beispiel_stellen) h += `<details><summary>Beispiel-Stellen</summary>${liste(d.beispiel_stellen)}</details>`;
+  if (d.beispiel_ereignisse) h += `<details><summary>Beispiel-Ereignisse</summary>${liste(d.beispiel_ereignisse)}</details>`;
+  if (w.runde) h += `<button class="weiter" data-roll="runde${w.runde.runde}">Zum Ergebnis von Runde ${w.runde.runde}</button>`;
+  return h;
+}
+const App = { gewaehlt: null, hoerer: [], ton: null };
+const karte = $('#karte'), karteInhalt = $('#karteInhalt');
+App.open = function (id, opt) {
+  opt = opt || {};
+  const h = karteHtml(id); if (!h) return;
+  App.gewaehlt = id; karteInhalt.innerHTML = h; karte.classList.add('offen'); karte.scrollTop = 0;
+  if (opt.rolle) { const li = karteInhalt.querySelector(`[data-rolle="${opt.rolle}"]`); if (li) { li.classList.add('blink'); setTimeout(() => li.scrollIntoView({ block: 'nearest' }), 380); } }
+  document.querySelectorAll('#strahl button').forEach(b => b.dataset.id === id ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current'));
+  App.hoerer.forEach(f => f(id, opt));
+  if (App.ton && !opt.still) App.ton('klick');
+};
+App.close = function () { App.gewaehlt = null; karte.classList.remove('offen'); document.querySelectorAll('#strahl button').forEach(b => b.removeAttribute('aria-current')); App.hoerer.forEach(f => f(null, {})); };
+$('#karteZu').onclick = App.close;
+const rolleZu = id => { const z = document.getElementById(id); if (z) z.scrollIntoView({ behavior: RUHIG ? 'auto' : 'smooth', block: 'start' }); };
+karteInhalt.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.geh) App.open(b.dataset.geh); else if (b.dataset.roll) rolleZu(b.dataset.roll); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && App.gewaehlt) App.close(); });
+
+/* ---------- Kopf: Kacheln und Zeitstrahl ---------- */
+(function () {
+  const ag = /^(\D*)(\d+)$/.exec(D.bestand.agenten_gesamt_diese_runde) || ['', '', 0];
+  const eo = W.find(w => w.nachweis).d.agenten.einordner;
+  const k = [
+    [ag[1], +ag[2], 'Agenten in dieser Runde'],
+    ['', STAEDTE.length, 'erfundene Welten · dazu Lücken-Material'],
+    ['', D.bestand.davon_neue_welten, 'neue Schriftstücke · ' + D.bestand.erfundene_schriftstuecke_gesamt + ' erfundene insgesamt'],
+    ['', eo, 'Einordner je Nachweis-Welt']
+  ];
+  const box = $('#kacheln');
+  k.forEach(([vor, ziel, text]) => {
+    const e = el('div', 'kachel', `<b>${vor}<span class="z" style="display:inline;font:inherit;color:inherit;margin:0">${RUHIG ? ziel : 0}</span></b><span>${esc(text)}</span>`); box.appendChild(e);
+    if (RUHIG) return; const z = e.querySelector('.z'), t0 = performance.now() + 250, dauer = 1400;
+    (function lauf(t) { const p = Math.max(0, Math.min(1, (t - t0) / dauer)); z.textContent = Math.round(ziel * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(lauf); })(t0);
+  });
+  const s = $('#strahl');
+  ABLAUF.forEach(([name, id], i) => { const b = el('button', '', `<i>${i + 1}</i>${esc(name)}`); b.dataset.id = id; b.onclick = () => { App.open(id); if (matchMedia('(max-width:720px)').matches) $('#buehne').scrollIntoView({ behavior: RUHIG ? 'auto' : 'smooth', block: 'nearest' }); }; s.appendChild(b); });
+  const z = $('#zeichenListe');
+  Object.keys(ROLLEN).forEach(k => z.appendChild(el('li', '', `<span class="punkt" style="background:var(${ROLLEN[k][2]})"></span>${ROLLEN[k][0]}`)));
+  z.appendChild(el('li', '', '<span class="punkt" style="background:#fff;border:1px solid #888"></span>Schriftstück (1 Punkt = 1 Stück)'));
+  
+})();
+
+/* ---------- Lern-Schleife: sechs Glaskugeln (3D). Ohne WebGL: die flache Fassung ---------- */
+(function () {
+  const eg = D.einordner_einigkeit_pruefstadt, RU = D.runden, fa = D.familienakte.welt4;
+  const ST = [
+    ['Raten', 'Der Kern rät', 'Der Kern liest ein Schriftstück und rät: Welche Art ist es? Welcher Bereich? Wer ist der Absender? Gibt es eine Frist?', 55, 185],
+    ['Soll', 'Die Einordner liefern das Soll', `Die Einordner ordnen dasselbe Stück ein – jeder für sich, keiner schreibt ab. Aus ihren Antworten wird das Soll. In der Prüfstadt waren sie sich beim Bereich zu ${fz(eg.Bereich)} % einig, bei der Frist zu ${fz(eg.Frist)} %.`, 170, 70],
+    ['Lernen', 'Gelernt wird nur aus Fehlern', 'Stimmt der Tipp, passiert nichts. Liegt der Kern daneben, rückt er seine Gewichte ein Stück zurecht. Am Ende zählt der Durchschnitt aller Stände. Das heißt: gemitteltes Perzeptron.', 285, 185],
+    ['Reihum', 'Reihum prüfen', 'Ein Stapel bleibt jedes Mal draußen. An ihm zeigt sich, ob das Gelernte auch bei Neuem hilft. Dann ist der nächste Stapel dran. Hilft ein Versuch zu wenig, fliegt er wieder raus.', 170, 300],
+    ['Einfrieren', 'Einfrieren', 'Wenn feststeht, was bleibt, wird der Kern eingefroren. Ab jetzt wird nichts mehr gedreht.', 410, 300],
+    ['Messen', 'Einmal messen – an einer fremden Stadt', 'Erst jetzt kommt eine Stadt, die der Kern nie gesehen hat. Gemessen wird ein einziges Mal. So kann er sich nichts abschauen.', 410, 110]
+  ];
+  const KEYS = ['kreis_raten', 'kreis_soll', 'kreis_lernen', 'kreis_reihum', 'kreis_einfrieren', 'kreis_messen'];
+  const box = $('#schleifeBild'), text = $('#schleifeText'), wahl = $('#schrittwahl');
+  const FOLGE = [0, 1, 2, 3, 0, 1, 2, 3, 4, 5]; let pos = 0, pauseBis = 0, aktiv = 0, sicht = false, ansicht = null;
+  ST.forEach((s, i) => { const b = el('button', '', `<i>${i + 1}</i>${s[0]}`); b.setAttribute('aria-pressed', 'false'); b.onclick = () => zeig(i, true); wahl.appendChild(b); });
+  let zeig = function (i, vonHand, opt) {
+    aktiv = i; opt = opt || {};
+    text.innerHTML = `<h3>${i + 1}. ${ST[i][1]}</h3><p>${ST[i][2]}</p>`;
+    [...wahl.children].forEach((b, j) => b.setAttribute('aria-pressed', j === i));
+    if (vonHand) { pauseBis = Date.now() + (opt.lang ? 600000 : 14000); pos = FOLGE.indexOf(i); }
+    if (ansicht) ansicht.zeig(i, vonHand);
+    if (vonHand && !opt.still) { if (App.ton) App.ton('klick'); if (App.szene) App.szene(KEYS[i], `${i + 1}. ${ST[i][1]}`); }
+  }
+  App.kreis = { zeig: i => zeig(i, true, { lang: true, still: true }), frei() { pauseBis = Date.now() + 2500; }, stand: () => ({ aktiv, art: ansicht ? ansicht.art : '' }), vor(s) { if (ansicht && ansicht.vor) ansicht.vor(s); } };
+  $('#schleifeFelder').innerHTML = ['Art', 'Bereich', 'Absender', 'Frist'].map(f => `<span class="chip">${f}</span>`).join('');
+  if ('IntersectionObserver' in window) new IntersectionObserver(e => sicht = e[0].isIntersecting).observe(box); else sicht = true;
+
+  /* --- flache Fassung (Ersatz ohne 3D) --- */
+  function flach() {
+    let svg = `<svg viewBox="0 0 480 370" role="img" aria-label="Kreislauf: raten, Soll, lernen, reihum prüfen, dann einfrieren und einmal messen">
+   <defs><marker id="pf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs>
+   <circle class="bahn" cx="170" cy="185" r="115"/>
+   <path class="aus" d="M212 300H366" marker-end="url(#pf)"/><path class="aus" d="M410 256V156" marker-end="url(#pf)"/>
+   <text class="ausT" x="290" y="290" text-anchor="middle">wenn es reicht</text>
+   <text x="170" y="181" text-anchor="middle" style="font:700 15px var(--serif);fill:var(--tinte)">raten → Korrektur</text><text x="170" y="201" text-anchor="middle" style="font:700 15px var(--serif);fill:var(--tinte)">→ lernen</text>
+   <circle class="lauf" id="laeufer" r="9" cx="0" cy="0" style="transform:translate(55px,185px);transition:transform .9s cubic-bezier(.4,0,.2,1)"/>`;
+    ST.forEach((s, i) => { svg += `<g class="st" data-i="${i}" tabindex="0" role="button" aria-label="${s[1]}"><circle cx="${s[3]}" cy="${s[4]}" r="42"/><text class="nr" x="${s[3]}" y="${s[4] - 12}">${i + 1}</text><text x="${s[3]}" y="${s[4] + 8}">${s[0]}</text></g>`; });
+    box.innerHTML = svg + '</svg>';
+    const lf = $('#laeufer'), gs = [...box.querySelectorAll('.st')];
+    gs.forEach(g => { const f = () => zeig(+g.dataset.i, true); g.onclick = f; g.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f(); } }; });
+    if (!RUHIG) setInterval(() => { if (!sicht || Date.now() < pauseBis || document.hidden) return; pos = (pos + 1) % FOLGE.length; zeig(FOLGE[pos]); }, 3400);
+    return { art: '2d', zeig(i) { gs.forEach((g, j) => g.classList.toggle('an', j === i)); lf.style.transform = `translate(${ST[i][3]}px,${ST[i][4] - 52}px)`; } };
+  }
+
+  /* --- Glaskugeln --- */
+  function glas() {
+    if (window.LEICHT || !window.THREE) return null;
+    const T = THREE, cv = el('canvas', 'kugeln'); let renderer;
+    try { renderer = new T.WebGLRenderer({ canvas: cv, antialias: !window.MOBIL, alpha: true }); } catch (e) { return null; }
+    cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Sechs Glaskugeln im Kreislauf: Raten, Soll, Lernen, Reihum, Einfrieren, Messen. Die Schritte lassen sich auch über die Knöpfe daneben wählen.');
+    Segmente.melde('kugeln', box, renderer); box.appendChild(cv); cv.title = 'Ziehen = drehen · Kugel antippen = Schritt wählen';
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, window.MOBIL ? 1.5 : 2)); renderer.setClearColor(0x000000, 0);
+    const V = (x, y, z) => new T.Vector3(x, y, z), kl = (v, a, b) => Math.max(a, Math.min(b, v)), st = (t, a, b) => kl((t - a) / (b - a), 0, 1), weich = x => x * x * (3 - 2 * x);
+    const nah = (ist, soll, dt, r) => RUHIG ? soll : ist + (soll - ist) * (1 - Math.exp(-dt * r));
+    const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const scene = new T.Scene(), camera = new T.PerspectiveCamera(30, 1, .1, 100);
+    // Licht von allen Seiten (für die festen Körper im Inneren; das Glas rechnet seine Lichter selbst)
+    scene.add(new T.HemisphereLight(0xffffff, 0x5a6488, .95));
+    [[-4, 5, 6, .8], [5, 2, 4, .55], [0, -5, 3, .35], [0, 1, -6, .4]].forEach(l => { const d = new T.DirectionalLight(0xffffff, l[3]); d.position.set(l[0], l[1], l[2]); scene.add(d); });
+
+    /* Texturen */
+    function tex(w, h, mal) { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); mal(g, w, h); const t = new T.CanvasTexture(c); t.anisotropy = 4; t.userData = { c, g }; return t; }
+    const rund = (g, x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+    const passt = (g, s, gr, max, schrift) => { do { g.font = `700 ${gr}px ${schrift || 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'}`; gr -= 2; } while (g.measureText(s).width > max && gr > 10); };
+    const fleck = tex(128, 128, (g) => { const r = g.createRadialGradient(64, 64, 0, 64, 64, 64); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.3, 'rgba(255,255,255,.55)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); });
+    const blatt = tex(128, 128, (g) => { const r = g.createRadialGradient(64, 64, 0, 64, 64, 64); r.addColorStop(0, 'rgba(255,255,255,.95)'); r.addColorStop(.4, 'rgba(255,255,255,.4)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); g.fillStyle = '#fff'; g.strokeStyle = '#1c2333'; g.lineWidth = 4; rund(g, 42, 34, 44, 60, 5); g.fill(); g.stroke(); g.lineWidth = 3; [50, 62, 74].forEach(y => { g.beginPath(); g.moveTo(52, y); g.lineTo(y === 74 ? 68 : 76, y); g.stroke(); }); });
+    const inlay = (nr, name) => tex(512, 256, (g) => {
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      rund(g, 22, 106, 468, 128, 64); g.fillStyle = 'rgba(255,255,255,.13)'; g.fill(); g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 4; g.stroke();
+      g.shadowColor = 'rgba(0,0,0,.75)'; g.shadowBlur = 12; g.fillStyle = '#fff'; passt(g, name, 100, 420); g.fillText(name, 256, 173);
+      g.font = '700 44px system-ui,sans-serif'; g.fillStyle = 'rgba(255,255,255,.9)'; g.fillText(String(nr), 256, 72);
+      g.shadowBlur = 0; g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 3; g.beginPath(); g.arc(256, 70, 28, 0, 6.283); g.stroke();
+    });
+    const schild = name => { const s = new T.Sprite(new T.SpriteMaterial({ map: tex(256, 64, (g) => { rund(g, 3, 5, 250, 54, 27); g.fillStyle = 'rgba(255,255,255,.94)'; g.fill(); g.strokeStyle = 'rgba(20,28,50,.5)'; g.lineWidth = 3; g.stroke(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#1c2333'; passt(g, name, 38, 220); g.fillText(name, 128, 33); }), transparent: true, depthWrite: false })); s.renderOrder = 3; return s; };
+    const zeichen = art => { const f = { haken: '#35d08f', kreuz: '#ff5a4f', plus: '#ffe08a', minus: '#ffe08a', gleich: '#9ff0cf' }[art];
+      const s = new T.Sprite(new T.SpriteMaterial({ map: tex(128, 128, (g) => { const weg = () => { g.beginPath(); if (art === 'haken') { g.moveTo(26, 68); g.lineTo(54, 96); g.lineTo(104, 32); } else if (art === 'kreuz') { g.moveTo(30, 30); g.lineTo(98, 98); g.moveTo(98, 30); g.lineTo(30, 98); } else if (art === 'plus') { g.moveTo(64, 30); g.lineTo(64, 98); g.moveTo(30, 64); g.lineTo(98, 64); } else if (art === 'minus') { g.moveTo(30, 64); g.lineTo(98, 64); } else { g.moveTo(34, 50); g.lineTo(94, 50); g.moveTo(34, 78); g.lineTo(94, 78); } g.stroke(); }; g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = 'rgba(5,10,25,.8)'; g.lineWidth = 30; weg(); g.strokeStyle = f; g.lineWidth = 18; weg(); }), transparent: true, depthWrite: false })); s.renderOrder = 4; return s; };
+
+    /* Glas: vorne Rand- und Glanzlicht (mehrere Lichter rundum), hinten die getönte Rückwand */
+    const VS = 'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv = modelViewMatrix*vec4(position,1.0); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }';
+    const FS_VORN = `uniform vec3 uFarbe; uniform float uGlut; uniform float uFrost; varying vec3 vN; varying vec3 vV;
+      float gl(vec3 n, vec3 v, vec3 l, float h){ return pow(max(dot(n, normalize(l+v)), 0.0), h); }
+      void main(){ vec3 n = normalize(vN), v = normalize(vV); float f = pow(1.0 - max(dot(n,v), 0.0), 2.4);
+        float s = gl(n,v,normalize(vec3(-.55,.75,.6)),320.0) + .35*gl(n,v,normalize(vec3(-.55,.75,.6)),40.0) + .7*gl(n,v,normalize(vec3(.7,.5,.55)),220.0) + .22*gl(n,v,normalize(vec3(.1,-.85,.4)),60.0) + .25*gl(n,v,normalize(vec3(-.9,-.2,.35)),120.0) + .2*gl(n,v,normalize(vec3(.85,-.45,.3)),120.0);
+        float oben = smoothstep(.3,.98,n.y)*.14;
+        vec3 c = mix(uFarbe*(.8+uGlut*.7), vec3(1.0), clamp(f*.5+uGlut*.12, 0.0, 1.0));
+        c = mix(c, vec3(.86,.95,1.0), uFrost*.4);
+        float a = .04 + f*(.8+uGlut*.2) + oben + uFrost*(.08+f*.2);
+        gl_FragColor = vec4(c + vec3(s), clamp(a + s, 0.0, 1.0)); }`;
+    const FS_HINTEN = `uniform vec3 uFarbe; uniform float uGlut; uniform float uFrost; varying vec3 vN; varying vec3 vV;
+      void main(){ vec3 n = normalize(vN), v = normalize(vV); float f = pow(1.0 - abs(dot(n,v)), 1.6);
+        vec3 tief = uFarbe*.11 + vec3(.02,.03,.07);
+        vec3 c = mix(tief, uFarbe*(.9+uGlut*.5), clamp(f*.85 + uGlut*.07, 0.0, 1.0));
+        c += uFarbe*smoothstep(.25,1.0,-n.y)*.28;
+        c = mix(c, vec3(.5,.72,.9), uFrost*.35);
+        gl_FragColor = vec4(c, .92); }`;
+    const FARBE = [0x2f7de1, 0x1fa971, 0xe8801a, 0x8a5cf0, 0x58bdf0, 0xd49a00];
+    const geoK = new T.SphereGeometry(1, 48, 32);
+    const K = ST.map((s, i) => {
+      const g = new T.Group(), far = new T.Color(FARBE[i]);
+      const u = { uFarbe: { value: far }, uGlut: { value: 0 }, uFrost: { value: 0 } };
+      const hinten = new T.Mesh(geoK, new T.ShaderMaterial({ uniforms: u, vertexShader: VS, fragmentShader: FS_HINTEN, side: T.BackSide, transparent: true, depthWrite: false })); hinten.renderOrder = -1;
+      const vorn = new T.Mesh(geoK, new T.ShaderMaterial({ uniforms: u, vertexShader: VS, fragmentShader: FS_VORN, transparent: true, depthWrite: false })); vorn.renderOrder = 9; vorn.userData.i = i;
+      const halo = new T.Sprite(new T.SpriteMaterial({ map: fleck, color: far, transparent: true, opacity: 0, depthWrite: false, depthTest: false })); halo.scale.set(3.4, 3.4, 1); halo.renderOrder = -2;
+      const innen = new T.Group();
+      const name = new T.Sprite(new T.SpriteMaterial({ map: inlay(i + 1, s[0]), transparent: true, depthWrite: false })); name.scale.set(1.44, .72, 1); name.position.set(0, -.42, 0); name.renderOrder = 8.5;
+      g.add(halo, hinten, innen, name, vorn); scene.add(g);
+      return { i, g, u, innen, halo, vorn, a: 0, p: 1, t: 99, n: -1, richtig: true, gast: null, fest: false, glut: 0 };
+    });
+    const ANKER = [[0, .3], [0, .2], [0, .68], [0, .3], [0, .28], [-.5, .2]];
+
+    /* 1 Raten: Kandidaten wirbeln, einer wird gewählt */
+    (function (k) {
+      const tags = ['Rechnung', 'Bescheid', 'Mahnung', 'Vertrag'].map(n => { const s = schild(n); k.innen.add(s); return s; }); let rot = 0;
+      k.lauf = (zeit, dt) => {
+        const a = k.a, p = k.p; rot += dt * (.5 + 7 * a * (1 - weich(st(p, 0, .6))));
+        const q = a * weich(st(p, .55, .8)), w0 = k.richtig ? 1 : 0;
+        tags.forEach((s, j) => { const w = rot + j * 1.5708, m = j === w0 ? q : 0, gr = 1 + m * .55 - (j !== w0 ? q * .3 : 0);
+          s.position.set(Math.cos(w) * .5 * (1 - m), (.3 + Math.sin(w) * .1 + Math.sin(zeit * 1.3 + j) * .03) * (1 - m) + .3 * m, Math.sin(w) * .5 * (1 - m) + .3 * m);
+          s.scale.set(.64 * gr, .16 * gr, 1); s.material.opacity = j === w0 ? .8 + .2 * a : .8 - q * .65; });
+      };
+    })(K[0]);
+    /* 2 Soll: die Einordner-Lichter vergleichen, dann Haken oder Kreuz */
+    (function (k) {
+      const n = kl(W.find(w => w.nachweis).d.agenten.einordner, 3, 8), lg = new T.SphereGeometry(.055, 12, 8), lichter = [];
+      for (let j = 0; j < n; j++) { const m = new T.Mesh(lg, new T.MeshBasicMaterial({ color: 0x5fd8b2, transparent: true })); const x = (j - (n - 1) / 2) * .17; m.position.set(x, .64 - x * x * .6, 0); k.innen.add(m); lichter.push(m); }
+      const haken = zeichen('haken'), kreuz = zeichen('kreuz'); k.innen.add(haken, kreuz); haken.position.set(0, .2, .12); kreuz.position.set(0, .2, .12);
+      k.lauf = (zeit) => {
+        const a = k.a, p = k.p;
+        lichter.forEach((m, j) => { const an = a * st(p, j / n * .5, j / n * .5 + .08); m.material.opacity = .3 + .12 * Math.sin(zeit * 2 + j * 1.7) + an * .58; m.scale.setScalar(1 + an * .55 + (an > 0 && an < 1 ? .5 : 0)); m.material.color.set(an > .5 ? 0xf2fff9 : 0x5fd8b2); });
+        const q = a * st(p, .6, .7), z = k.richtig ? haken : kreuz; (k.richtig ? kreuz : haken).visible = false;
+        z.visible = q > .01; z.scale.setScalar(.5 * q * (1 + (1 - st(p, .7, .9)) * .4)); z.material.opacity = q;
+      };
+    })(K[1]);
+    /* 3 Lernen: nur bei einem Fehler rücken die Gewichte */
+    (function (k) {
+      let von = [.34, .5, .24, .42, .3], nach = von.slice(); const bars = [], geo = new T.BoxGeometry(.1, 1, .1);
+      for (let j = 0; j < 5; j++) { const m = new T.Mesh(geo, new T.MeshStandardMaterial({ color: 0xf6b060, emissive: 0xe8801a, emissiveIntensity: .35, roughness: .35 })); m.position.x = (j - 2) * .17; k.innen.add(m); bars.push(m); }
+      const boden = new T.Mesh(new T.BoxGeometry(.9, .02, .16), new T.MeshBasicMaterial({ color: 0xffe2bd })); boden.position.y = -.04; k.innen.add(boden);
+      const plus = zeichen('plus'), minus = zeichen('minus'), gleich = zeichen('gleich'); k.innen.add(plus, minus, gleich); let jp = 0, jm = 1;
+      k.start = () => { von = nach.slice(); if (k.richtig) return; let dp = -9, dm = 9;
+        nach = von.map((v, j) => { const d = ((j + k.n) % 2 ? 1 : -1) * (.1 + ((j * 7 + k.n * 3) % 5) * .04), z = kl(v + d, .12, .6); if (z - v > dp) { dp = z - v; jp = j; } if (z - v < dm) { dm = z - v; jm = j; } return z; }); };
+      k.lauf = (zeit) => {
+        const p = k.p, q = weich(st(p, .25, .75)), lernt = !k.richtig && k.a > .01 && q > 0 && q < 1;
+        bars.forEach((m, j) => { const h = von[j] + (nach[j] - von[j]) * q; m.scale.y = h; m.position.y = -.03 + h / 2; m.material.emissiveIntensity = .3 + (lernt && nach[j] !== von[j] ? Math.sin(q * Math.PI) * 1.1 : 0); });
+        plus.visible = minus.visible = lernt; const o = Math.sin(q * Math.PI);
+        plus.position.set((jp - 2) * .17, von[jp] + (nach[jp] - von[jp]) * q + .1, .1); minus.position.set((jm - 2) * .17, von[jm] + (nach[jm] - von[jm]) * q + .1, .1); plus.scale.setScalar(.16); minus.scale.setScalar(.16); plus.material.opacity = minus.material.opacity = o;
+        const r = k.richtig ? k.a * st(p, .25, .4) * (1 - st(p, .8, 1) * .6) : 0; gleich.visible = r > .01; gleich.position.set(0, .7, .1); gleich.scale.setScalar(.15); gleich.material.opacity = r * .9;
+      };
+    })(K[2]);
+    /* 4 Reihum: Stapel kreisen, einer bleibt draußen und leuchtet als Prüfstapel */
+    (function (k) {
+      const N = 5, stapel = [], g1 = new T.BoxGeometry(.2, .03, .15); let rot = 0;
+      for (let j = 0; j < N; j++) { const g = new T.Group(), m = new T.MeshStandardMaterial({ color: 0xcfc2fa, emissive: 0xffc94a, emissiveIntensity: 0, roughness: .5 }); for (let b = 0; b < 3; b++) { const s = new T.Mesh(g1, m); s.position.y = b * .042; s.rotation.y = (b - 1) * .14; g.add(s); } g.userData.m = m; k.innen.add(g); stapel.push(g); }
+      const schein = new T.Sprite(new T.SpriteMaterial({ map: fleck, color: 0xffd166, transparent: true, opacity: 0, depthWrite: false })); schein.renderOrder = 2; k.innen.add(schein);
+      k.lauf = (zeit, dt) => {
+        const a = k.a, p = k.p; rot += dt * (.45 + 2.4 * a * (1 - weich(st(p, 0, .5)))); const q = a * weich(st(p, .3, .6)), pr = ((k.n % N) + N) % N;
+        stapel.forEach((g, j) => { const w = rot + j * 6.283 / N, m = j === pr ? q : 0; g.position.set(Math.cos(w) * .46 * (1 - m), .06 + m * .5, Math.sin(w) * .46 * (1 - m)); g.rotation.y = -w * (1 - m) + zeit * .8 * m; g.scale.setScalar(1 + m * .35); g.userData.m.emissiveIntensity = m * (.9 + .25 * Math.sin(zeit * 5)); g.userData.m.color.set(j === pr || q < .05 ? 0xcfc2fa : 0x9d90cc); });
+        schein.position.set(0, .6, -.05); schein.scale.setScalar(.75 + .08 * Math.sin(zeit * 5)); schein.material.opacity = q * .75;
+      };
+    })(K[3]);
+    /* 5 Einfrieren: Frost zieht auf, Kristalle wachsen, die Bewegung bleibt stehen */
+    (function (k) {
+      const z = (function (s) { return () => (s = (s * 9301 + 49297) % 233280) / 233280; })(11);
+      const kern = new T.Mesh(new T.IcosahedronGeometry(.2, 0), new T.MeshStandardMaterial({ color: 0xcdeeff, emissive: 0x3aa0d8, emissiveIntensity: .5, flatShading: true, roughness: .25 })); kern.position.y = .28; k.innen.add(kern);
+      const monde = []; for (let j = 0; j < 6; j++) { const m = new T.Mesh(new T.SphereGeometry(.045, 10, 8), new T.MeshBasicMaterial({ color: 0xeaf9ff })); k.innen.add(m); monde.push(m); }
+      const krist = new T.Group(); krist.position.y = .28; k.innen.add(krist); const kg = new T.OctahedronGeometry(.06, 0), km = new T.MeshStandardMaterial({ color: 0xffffff, emissive: 0x9fdcff, emissiveIntensity: .55, flatShading: true, transparent: true, opacity: .9, roughness: .15 }), auf = V(0, 1, 0);
+      for (let j = 0; j < 11; j++) { const d = V(z() * 2 - 1, z() * 2 - 1, z() * 2 - 1).normalize(), m = new T.Mesh(kg, km), l = 2.5 + z() * 3; m.quaternion.setFromUnitVectors(auf, d); m.scale.set(1, l, 1); m.position.copy(d).multiplyScalar(.14 + l * .05); krist.add(m); }
+      const frostT = tex(1024, 512, (g, w, h) => {
+        g.lineCap = 'round'; const ast = (x, y, a, l, t) => { const x2 = x + Math.cos(a) * l, y2 = y + Math.sin(a) * l; g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke(); if (t > 0) for (let s = .35; s < 1; s += .3) { ast(x + (x2 - x) * s, y + (y2 - y) * s, a + 1.05, l * .38, t - 1); ast(x + (x2 - x) * s, y + (y2 - y) * s, a - 1.05, l * .38, t - 1); } };
+        for (let i = 0; i < 80; i++) { const x = z() * w, y = z() * h, l = 16 + z() * 44, a0 = z() * 6.283; g.strokeStyle = `rgba(255,255,255,${.35 + z() * .45})`; g.lineWidth = 1.2 + z() * 1.8; for (let b = 0; b < 6; b++) ast(x, y, a0 + b * 1.0472, l, 2); }
+        for (let i = 0; i < 1400; i++) { g.fillStyle = `rgba(255,255,255,${.2 + z() * .6})`; g.beginPath(); g.arc(z() * w, z() * h, .6 + z() * 1.8, 0, 6.283); g.fill(); }
+        [[0, 'rgba(255,255,255,.5)', .3], [h, 'rgba(255,255,255,.45)', .7]].forEach(([y0, f, bis]) => { const v = g.createLinearGradient(0, y0, 0, h * bis); v.addColorStop(0, f); v.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = v; g.fillRect(0, Math.min(y0, h * bis), w, h * .3); });
+      });
+      const frost = new T.Mesh(new T.SphereGeometry(1.004, 48, 32), new T.MeshBasicMaterial({ map: frostT, transparent: true, opacity: 0, depthWrite: false })); frost.renderOrder = 8; k.g.add(frost);
+      let w = 0, fr = 0;
+      k.lauf = (zeit, dt) => {
+        fr = nah(fr, k.fest ? 1 : 0, dt, k.fest ? 1.4 : .9); const tempo = (1 - fr) * (1 - fr); w += dt * tempo;
+        kern.rotation.set(w * .9, w * 1.3, 0); kern.material.emissiveIntensity = .5 * (1 - fr) + .15;
+        monde.forEach((m, j) => { const a = w * 1.6 + j * 1.047, r = .42; m.position.set(Math.cos(a) * r, .28 + Math.sin(a + j) * .16, Math.sin(a) * r); });
+        frost.material.opacity = fr * .7; frost.visible = fr > .01; k.u.uFrost.value = fr; krist.scale.setScalar(.001 + weich(fr)); krist.visible = fr > .02;
+      };
+    })(K[4]);
+    /* 6 Messen: der Balken füllt sich bis zum gemessenen Wert (Zahlen aus der Datei) */
+    (function (k) {
+      const M = [['Akte · Bereich', fa.Bereich[0], fa.Bereich[1]], ['Runde 1 · als Scan', RU[0].gesetzt.alt, RU[0].gesetzt.neu], ['Runde 2', RU[1].haupt.alt, RU[1].haupt.neu], ['Wiederholung', RU[2].wiederholung.alt, RU[2].wiederholung.neu]];
+      const B = 1.04, Y = .2, mk = (w, h, d, mat) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat); m.position.y = Y; k.innen.add(m); return m; };
+      mk(B + .05, .17, .04, new T.MeshBasicMaterial({ color: 0x0b1020, transparent: true, opacity: .7 })).position.z = -.03;
+      const fuell = mk(1, .11, .07, new T.MeshStandardMaterial({ color: 0xffd98a, emissive: 0xd49a00, emissiveIntensity: .55, roughness: .4 }));
+      const gewinn = mk(1, .11, .08, new T.MeshBasicMaterial({ color: 0x6ff0c4 })), marke = mk(.012, .22, .09, new T.MeshBasicMaterial({ color: 0xffffff }));
+      const tt = tex(512, 256, () => { }), anz = new T.Sprite(new T.SpriteMaterial({ map: tt, transparent: true, depthWrite: false })); anz.scale.set(1.08, .54, 1); anz.position.set(0, .56, .05); anz.renderOrder = 4; k.innen.add(anz); let zuletzt = '';
+      const schreib = (a, b) => { if (a + b === zuletzt) return; zuletzt = a + b; const g = tt.userData.g; g.clearRect(0, 0, 512, 256); g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(0,0,0,.8)'; g.shadowBlur = 10; g.fillStyle = 'rgba(255,255,255,.85)'; passt(g, a, 66, 480); g.fillText(a, 256, 78); g.fillStyle = '#fff'; passt(g, b, 108, 496); g.fillText(b, 256, 178); tt.needsUpdate = true; };
+      k.lauf = () => {
+        const m = M[Math.max(0, k.n) % M.length], p = k.a > .01 ? k.p : 1, wert = m[1] * weich(st(p, 0, .45)) + (m[2] - m[1]) * weich(st(p, .5, .85));
+        const fx = B * Math.min(wert, m[1]) / 100; fuell.scale.x = Math.max(.0001, fx); fuell.position.x = -B / 2 + fx / 2;
+        const gx = B * Math.max(0, wert - m[1]) / 100; gewinn.visible = gx > 0; gewinn.scale.x = Math.max(.0001, gx); gewinn.position.x = -B / 2 + B * m[1] / 100 + gx / 2; marke.position.x = -B / 2 + B * m[1] / 100;
+        schreib(m[0], p >= .85 ? `${fz(m[1])} → ${fz(m[2])} %` : wert.toFixed(1).replace('.', ',') + ' %');
+      };
+    })(K[5]);
+
+    /* Aufstellung, Wege, Beschriftung */
+    let hoch = false, PW = 9, PH = 6.8, mitte = V(0, 0, 0), mitteS = V(0, 0, 0), bw = 1, bh = 1; const wege = new T.Group(); scene.add(wege);
+    const ctr = []; // Stützpunkte der sechs Wege: 0→1, 1→2, 2→3, 3→0, 3→4, 4→5
+    const KANTEN = [[0, 1], [1, 2], [2, 3], [3, 0], [3, 4], [4, 5]];
+    const wegMat = new T.MeshBasicMaterial({ color: 0x888888 }), ausMat = new T.MeshBasicMaterial({ color: 0xb25a12 });
+    const schrift = (mal) => { const s = new T.Sprite(new T.SpriteMaterial({ map: tex(512, 256, () => { }), transparent: true, depthWrite: false })); s.userData.mal = mal; s.renderOrder = 7; scene.add(s); return s; };
+    const mitteT = schrift((g, f) => { g.fillStyle = f.tinte; g.font = '700 58px Fraunces,Georgia,serif'; g.fillText('raten → Korrektur', 256, 92); g.fillText('→ lernen', 256, 168); });
+    const ausT = schrift((g, f) => { g.fillStyle = f.lern; g.font = '700 54px system-ui,sans-serif'; g.fillText('wenn es reicht', 256, 128); });
+    function farben() {
+      const f = { tinte: css('--tinte') || '#1c2333', lern: css('--lern') || '#b25a12', leise: css('--alt') || '#8b93a3' };
+      wegMat.color.set(f.leise); ausMat.color.set(f.lern);
+      [mitteT, ausT].forEach(s => { const g = s.material.map.userData.g; g.clearRect(0, 0, 512, 256); g.textAlign = 'center'; g.textBaseline = 'middle'; s.userData.mal(g, f); s.material.map.needsUpdate = true; });
+    }
+    function ordne() {
+      const w = box.clientWidth || 300; hoch = w < 520;
+      const P = hoch ? [[-1.3, 2.7], [1.3, 2.7], [1.3, 0], [-1.3, 0], [-1.3, -2.7], [1.3, -2.7]] : [[-3.5, 0], [-1.6, 1.9], [.3, 0], [-1.6, -1.9], [2.9, -1.9], [2.9, .75]];
+      K.forEach((k, i) => k.g.position.set(P[i][0], P[i][1], hoch ? 0 : [0, -.25, 0, .25, .1, -.1][i]));
+      mitteS = hoch ? V(0, 1.35, 0) : V(-1.6, 0, 0); mitte = hoch ? V(0, 0, 0) : V(-.3, 0, 0); PW = hoch ? 5.3 : 9.0; PH = hoch ? 8.1 : 6.4;
+      bw = w; bh = Math.round(w * PH / PW); cv.style.height = bh + 'px'; renderer.setSize(bw, bh, false); camera.aspect = bw / bh; camera.updateProjectionMatrix();
+      while (wege.children.length) { const m = wege.children.pop(); m.geometry.dispose(); }
+      KANTEN.forEach(([a, b], n) => {
+        const pa = K[a].g.position, pb = K[b].g.position, c = pa.clone().lerp(pb, .5); if (n < 4) c.add(c.clone().sub(mitteS).setLength(hoch ? .45 : 1.05)); ctr[n] = c;
+        const kv = new T.QuadraticBezierCurve3(pa, c, pb), pts = []; for (let i = 0; i <= 40; i++) { const q = kv.getPoint(i / 40); if (q.distanceTo(pa) > 1.16 && q.distanceTo(pb) > 1.3) pts.push(q); }
+        if (pts.length < 2) return; const mat = n < 4 ? wegMat : ausMat;
+        wege.add(new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts), 20, n < 4 ? .022 : .03, 6), mat));
+        const sp = new T.Mesh(new T.ConeGeometry(n < 4 ? .08 : .1, .24, 10), mat), e = pts[pts.length - 1], r = e.clone().sub(pts[pts.length - 2]).normalize(); sp.position.copy(e).addScaledVector(r, .1); sp.quaternion.setFromUnitVectors(V(0, 1, 0), r); wege.add(sp);
+      });
+      mitteT.position.copy(mitteS); mitteT.scale.set(hoch ? 1.4 : 1.45, hoch ? .7 : .725, 1);
+      const m34 = K[3].g.position.clone().lerp(K[4].g.position, .5); ausT.position.set(m34.x + (hoch ? 1.15 : 0), m34.y + (hoch ? 0 : .32), 0); ausT.scale.set(hoch ? 1.5 : 1.7, hoch ? .75 : .85, 1);
+    }
+
+    /* Schriftstücke: fliegen von Kugel zu Kugel und lösen innen etwas aus */
+    const FLUG = 1.2, INNEN = 3.1, WIRK = 2.5, KLANG = ['wirbel', null, null, 'schritt', 'eis', 'steig'];
+    const ziel = i => K[i].g.position.clone().add(V(ANKER[i][0], ANKER[i][1], 0));
+    const punkte = [0, 1, 2].map(n => { const s = new T.Sprite(new T.SpriteMaterial({ map: blatt, color: 0xffffff, transparent: true, depthWrite: false, depthTest: false })); const gr = n ? .34 : .46; s.scale.set(gr, gr, 1); s.renderOrder = 10; scene.add(s); return { s, haupt: !n, ort: null, nach: 0, phase: 'flug', t: 0, kurve: null, richtig: false, hell: 1 }; });
+    const haupt = punkte[0];
+    function verlass(d) { if (d.ort != null && K[d.ort].gast === d) K[d.ort].gast = null; }
+    function flieg(d, z, neu) {
+      verlass(d); const frisch = neu || !d.da, vonOrt = d.phase === 'innen' ? d.ort : null, b = ziel(z), a = frisch ? b.clone().add(V(hoch ? -1.1 : -1.9, 1.5, .5)) : d.s.position.clone();
+      const n = frisch || vonOrt == null ? -1 : KANTEN.findIndex(e => e[0] === vonOrt && e[1] === z), c = n >= 0 ? ctr[n].clone() : a.clone().lerp(b, .5).add(V(0, 0, .9));
+      d.kurve = new T.QuadraticBezierCurve3(a, c, b); d.phase = 'flug'; d.t = 0; d.nach = z; d.neu = frisch; d.ort = null; d.da = true;
+    }
+    function ankunft(d, i, nochmal) {
+      d.ort = i; d.phase = 'innen'; d.t = 0; const k = K[i];
+      if (i === 0 && !nochmal) d.richtig = d.haupt ? pos >= 4 : Math.random() < .5;
+      if (k.gast && k.gast !== d && k.gast.haupt) return;
+      k.gast = d; k.richtig = d.richtig; k.n++; k.t = 0; if (k.start) k.start(); if (i === 4 && d.haupt) k.fest = true;
+      if (d.haupt && sicht && App.ton) { const n = i === 1 ? (d.richtig ? 'richtig' : 'falsch') : i === 2 ? (d.richtig ? null : 'lern') : KLANG[i]; if (n) setTimeout(() => App.ton(n), i === 1 ? 1500 : i === 2 ? 600 : 0); }
+    }
+    function weiter(d) {
+      if (!d.haupt) return flieg(d, (d.ort + 1) % 4);
+      if (Date.now() < pauseBis) { d.richtig = !d.richtig; return ankunft(d, d.ort, true); }
+      pos = (pos + 1) % FOLGE.length; const z = FOLGE[pos]; if (pos === 0) K[4].fest = false; flieg(d, z, pos === 0); zeig(z);
+    }
+    const weiss = new T.Color(0xffffff), gruen = new T.Color(0x7dffc0), rot = new T.Color(0xff8a80);
+    function punktLauf(d, dt) {
+      if (!d.haupt && K[4].fest) { d.hell = nah(d.hell, .25, dt, 3); d.s.material.opacity = d.hell; return; }   // eingefroren: nichts wandert mehr
+      d.t += dt;
+      if (d.phase === 'flug') { const u = Math.min(1, d.t / FLUG); d.s.position.copy(d.kurve.getPoint(weich(u))); d.hell = d.neu ? u : nah(d.hell, 1, dt, 6); if (u >= 1) ankunft(d, d.nach); }
+      else { const i = d.ort; d.s.position.copy(ziel(i)); d.hell = 1 - .88 * st(d.t, .25, .8) * (1 - st(d.t, INNEN - .4, INNEN));
+        if (i === 0) d.s.material.color.copy(weiss); else if (i === 1 && d.t > WIRK * .62) d.s.material.color.copy(d.richtig ? gruen : rot); else if (i === 2 && d.t > WIRK * .8) d.s.material.color.copy(weiss);
+        if (d.t >= INNEN) weiter(d); }
+      d.s.material.opacity = d.hell * (d.haupt ? 1 : .8);
+    }
+
+    /* Kamera: leicht drehbar, kreist sanft */
+    let zeit = 0, gYaw = 0, gPit = .06, yaw = 0, pit = .06; const ray = new T.Raycaster(), maus = new T.Vector2();
+    function kamera(dt) {
+      yaw = nah(yaw, gYaw + (RUHIG ? 0 : Math.sin(zeit * .32) * (hoch ? .16 : .22)), dt, 5); pit = nah(pit, gPit + (RUHIG ? 0 : Math.sin(zeit * .23) * .05), dt, 5);
+      const tn = Math.tan(15 * Math.PI / 180), d = Math.max(PH / 2 / tn, PW / 2 / (tn * camera.aspect)) * (hoch ? 1.03 : 1.09);
+      camera.position.set(mitte.x + Math.sin(yaw) * Math.cos(pit) * d, mitte.y + Math.sin(pit) * d, Math.cos(yaw) * Math.cos(pit) * d); camera.lookAt(mitte);
+    }
+    function kugeln(dt) {
+      K.forEach(k => { k.t += dt; k.p = RUHIG ? 1 : kl(k.t / WIRK, 0, 1); k.a = nah(k.a, k.gast ? 1 : 0, dt, 5); const an = k.i === aktiv ? 1 : 0;
+        k.glut = nah(k.glut, an, dt, 5); k.u.uGlut.value = k.glut * .75 + k.a * .25; k.g.scale.setScalar(1 + k.glut * (hoch ? .08 : .15)); k.halo.material.opacity = k.glut * .5; k.lauf(zeit, dt); });
+    }
+    function male(dt) { zeit += dt; punkte.forEach(d => punktLauf(d, dt)); kugeln(dt); kamera(dt); renderer.render(scene, camera); }
+    function stand() { // ohne Bewegung: ein fertiges Standbild des gewählten Schritts
+      K.forEach(k => { k.gast = k.i === aktiv ? haupt : null; k.t = 99; k.richtig = k.i === 2 ? false : true; if (k.n < 0) k.n = 0; }); K[4].fest = aktiv >= 4;
+      punkte.forEach(d => { d.s.visible = d.haupt; }); haupt.s.position.copy(ziel(aktiv)); haupt.s.material.opacity = .12; kugeln(0); kamera(0); renderer.render(scene, camera);
+    }
+    const treffer = e => { const r = cv.getBoundingClientRect(); maus.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(maus, camera); const h = ray.intersectObjects(K.map(k => k.vorn), false); return h.length ? h[0].object.userData.i : -1; };
+    let zug = null;
+    cv.addEventListener('pointerdown', e => { zug = { x: e.clientX, y: e.clientY, weg: 0, t: performance.now() }; try { cv.setPointerCapture(e.pointerId); } catch (x) { } });
+    cv.addEventListener('pointermove', e => {
+      if (!zug) { if (e.pointerType === 'mouse') cv.classList.toggle('zeigt', treffer(e) >= 0); return; }
+      const dx = e.clientX - zug.x, dy = e.clientY - zug.y; zug.x = e.clientX; zug.y = e.clientY; zug.weg += Math.abs(dx) + Math.abs(dy);
+      gYaw = kl(gYaw - dx * .004, -.45, .45); if (e.pointerType !== 'touch') gPit = kl(gPit + dy * .003, -.25, .3); if (RUHIG) stand();
+    });
+    cv.addEventListener('pointerup', e => { const z = zug; zug = null; if (z && z.weg < 8 && performance.now() - z.t < 700) { const i = treffer(e); if (i >= 0) zeig(i, true); } });
+    cv.addEventListener('pointercancel', () => { zug = null; });
+    ordne(); farben(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { farben(); if (RUHIG) stand(); });
+    new ResizeObserver(() => { const alt = hoch; ordne(); if (alt !== hoch) punkte.forEach(d => { if (d.phase === 'flug') { d.s.position.copy(ziel(d.nach)); ankunft(d, d.nach, true); } }); if (RUHIG) stand(); }).observe(box);
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { farben(); if (RUHIG) stand(); });
+    new MutationObserver(() => { farben(); if (RUHIG) stand(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    // Start: das Hauptstück fliegt zur ersten Kugel, zwei weitere sind schon unterwegs
+    flieg(haupt, 0, true); [1, 3].forEach((i, n) => { const d = punkte[n + 1]; d.s.position.copy(ziel(i)); d.da = true; d.richtig = n === 0; ankunft(d, i, true); });
+    if (!RUHIG) { let zuletzt = performance.now(); (function bild(jetzt) { requestAnimationFrame(bild); if (!sicht || document.hidden) { zuletzt = jetzt; return; } const dt = Math.min(.05, (jetzt - zuletzt) / 1000); zuletzt = jetzt; male(dt); })(zuletzt); }
+    return { art: '3d', zeig(i, vonHand) { if (RUHIG) return stand(); if (vonHand) { if (i < 4) K[4].fest = false; if (haupt.ort !== i || haupt.phase === 'flug') flieg(haupt, i); else ankunft(haupt, i, true); } }, vor(s) { for (let n = Math.round(s * 30); n > 0; n--) male(1 / 30); } };
+  }
+
+  /* Film statt 3D (Klaus 15.11.): derselbe Kreislauf als fertiger Film mit Sprecher – Vorgabe auf Tablet und Handy,
+     am Rechner zur Wahl. Die 3D-Kugeln laden auf langsamen Geräten erst, wenn man sie ausdrücklich wählt. */
+  const FILM = { zeiten: [0, 11.07, 20.9, 30.43, 42.17, 49.63], adr: window.DISCOVERY_FILM || 'discovery-kreislauf.mp4', bild: window.DISCOVERY_BILD || 'discovery-kreislauf.jpg' };
+  const merk = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  let filmArt = window.LEICHT ? false : (merk('tw-kreis') ? merk('tw-kreis') === 'film' : !!window.MOBIL), video = null, kugelnDa = false, tourBis = -1;
+  const wahlF = el('div', 'kreis-wahl'), bF = el('button', '', 'Als Film'), b3 = el('button', '', 'Interaktiv in 3D'), filmBox = el('div', 'kreis-film');
+  bF.type = b3.type = 'button'; bF.setAttribute('data-kreis-film', ''); b3.setAttribute('data-kreis-3d', ''); wahlF.append(bF, b3); box.before(wahlF, filmBox);
+  function ladeKugeln() {
+    if (kugelnDa) return; kugelnDa = true;
+    if (Segmente.einzeln && window.THREE) { box.style.minHeight = '320px'; Segmente.spaeter('kugeln', box, () => { ansicht = glas() || flach(); box.style.minHeight = ''; zeig(aktiv); }); Segmente.vor('kugeln'); }
+    else { ansicht = glas() || flach(); zeig(aktiv); }
+  }
+  function baueFilm() {
+    if (video) return;
+    filmBox.innerHTML = `<video playsinline controls preload="none" poster="${FILM.bild}" src="${FILM.adr}" aria-label="Film: der Kreislauf raten, Soll, lernen, reihum prüfen, einfrieren, messen – mit Sprecher"></video><div class="lade" hidden><i></i><span>Film lädt …</span></div>`;
+    video = filmBox.querySelector('video'); const lade = filmBox.querySelector('.lade'), strich = lade.querySelector('i'), wort = lade.querySelector('span');
+    const stand = () => { let e = 0; try { if (video.buffered.length) e = video.buffered.end(video.buffered.length - 1); } catch (x) { } const a = video.duration ? Math.min(1, e / video.duration) : 0; strich.style.width = (a * 100).toFixed(0) + '%'; wort.textContent = 'Film lädt … ' + (a * 100).toFixed(0) + ' %'; };
+    const zeigLade = an => { lade.hidden = !an; if (an) stand(); };
+    video.addEventListener('loadstart', () => zeigLade(true)); video.addEventListener('waiting', () => zeigLade(true)); video.addEventListener('progress', stand);
+    ['canplay', 'playing', 'canplaythrough'].forEach(n => video.addEventListener(n, () => zeigLade(false)));
+    video.addEventListener('error', () => { lade.hidden = false; wort.textContent = 'Der Film ließ sich nicht laden.'; });
+    video.addEventListener('play', () => { if (tourBis < 0) video.muted = false; });
+    video.addEventListener('timeupdate', () => {
+      const t = video.currentTime; if (tourBis >= 0 && t >= tourBis) { video.pause(); tourBis = -1; }
+      let i = 0; FILM.zeiten.forEach((z, k) => { if (t >= z - .05) i = k; }); if (i !== aktiv) zeig(i, false, { vomFilm: true });
+    });
+  }
+  function setzArt(film, merken) {
+    filmArt = film; bF.setAttribute('aria-pressed', film); b3.setAttribute('aria-pressed', !film); filmBox.hidden = !film; box.hidden = film;
+    if (merken) { try { localStorage.setItem('tw-kreis', film ? 'film' : '3d'); } catch (e) { } }
+    if (film) { baueFilm(); } else { if (video) video.pause(); ladeKugeln(); }
+  }
+  bF.onclick = () => setzArt(true, true); b3.onclick = () => setzArt(false, true);
+  App.kreisFilm = { an: () => filmArt, video: () => video };
+  /* Führung und Schritt-Knöpfe im Film-Modus: der Film springt stumm zum Schritt und läuft bis zu dessen Ende mit. */
+  const zeigAlt = zeig; zeig = function (i, vonHand, opt) {
+    zeigAlt(i, vonHand, opt);
+    if (filmArt && video && vonHand && !(opt && opt.vomFilm)) { const bis = FILM.zeiten[i + 1] || 1e9; try { video.muted = true; video.currentTime = FILM.zeiten[i] + .02; tourBis = bis - .05; const pr = video.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } }
+  };
+  if (window.LEICHT) { wahlF.hidden = true; filmBox.hidden = true; ansicht = flach(); kugelnDa = true; zeig(0); }
+  else if (true) {
+    zeig(0); setzArt(filmArt, false);
+  }
+  $('#bausteine').innerHTML = BEHALTEN.map(v => `<div class="baustein"><b>${esc(v.name)}</b><span>${esc(v.ergebnis)}</span></div>`).join('');
+  $('#versuche').innerHTML = D.versuche_reihum.map(v => `<li class="${v.verworfen ? 'weg' : ''}"><span class="stempel ${v.verworfen ? 'nein' : 'ja'}">${v.verworfen ? 'verworfen' : 'behalten'}</span><span class="n">${esc(v.name)}</span><span class="e zahl">${esc(v.ergebnis)}</span></li>`).join('');
+})();
+
+/* ---------- Ergebnisse ---------- */
+(function () {
+  const SK = [40, 100], pr = v => ((v - SK[0]) / (SK[1] - SK[0]) * 100) + '%';
+  function haupt(titel, h) {
+    const x = v => 10 + (v + 1) / 6 * 280;
+    let t = ''; for (let i = 0; i <= 5; i++) t += `<text x="${x(i)}" y="34">${i === 0 ? '0' : '+' + i}</text>`;
+    return `<div class="haupt${h.gesichert ? '' : ' offen'}"><div class="haupt-kopf"><b>${titel}</b><span class="siegel ${h.gesichert ? 'ok' : 'offen'}">${h.gesichert ? '✓ gesichert' : '✗ nicht gesichert'}</span></div>
+     <div class="gz zahl"><span class="a">${fz(h.alt)} %</span><span>→</span><span class="n">${fz(h.neu)} %</span><span class="d">${fd(h.diff)} Punkte</span></div>
+     <svg class="spanne" viewBox="0 0 300 38" role="img" aria-label="Spanne von ${fd(h.spanne[0])} bis ${fd(h.spanne[1])} Punkte"><line class="achse" x1="10" x2="290" y1="14" y2="14"/><line class="null" x1="${x(0)}" x2="${x(0)}" y1="3" y2="25"/>
+     <rect class="b" x="${x(h.spanne[0])}" y="8" width="${x(h.spanne[1]) - x(h.spanne[0])}" height="12" rx="6"/><circle class="p" cx="${x(h.diff)}" cy="14" r="5"/>${t}</svg>
+     <small>Spanne: ${fd(h.spanne[0])} bis ${fd(h.spanne[1])} Punkte. ${h.gesichert ? 'Sie liegt ganz über null.' : 'Sie reicht bis unter null. Der Gewinn kann hier auch Zufall sein.'}</small></div>`;
+  }
+  function feldZeile(name, p, extra) {
+    const k = p[1] > p[0] ? '' : p[1] < p[0] ? ' ab' : ' gl', z = p[1] > p[0] ? '▲' : p[1] < p[0] ? '▼' : '=';
+    return `<div class="feld${k}"><span>${name}</span><div class="spur" style="--a:${pr(p[0])};--n:${pr(p[1])}"><span class="st"></span><i class="pa"></i><i class="pn"></i></div><span class="w"><s>${fz(p[0])}</s> → <b>${fz(p[1])}</b> ${z}</span></div>`;
+  }
+  const felder = (titel, f) => f ? `<div class="felder"><h4>${titel}</h4>${FELDER.filter(k => f[k]).map(k => feldZeile(k, f[k])).join('')}<div class="skala">Skala ${SK[0]} bis ${SK[1]} % · grau = vorher · farbig = nachher · ▲ besser · = gleich · ▼ schlechter</div></div>` : '';
+  let h = '';
+  D.runden.forEach(r => {
+    const w = W.find(x => x.runde === r);
+    h += `<article class="kasten runde" id="runde${r.runde}"><header><h3>Runde ${r.runde}</h3><span>gemessen an: ${esc(w.d.name)} · ${w.d.stuecke} Schriftstücke</span></header><div class="zwei">`;
+    if (r.text) h += haupt('Als Text', r.text);
+    if (r.gesetzt) h += haupt('Als Scan oder Foto', r.gesetzt);
+    if (r.haupt) h += haupt('Hauptzahl', r.haupt);
+    if (r.wiederholung) h += haupt('Wiederholung', r.wiederholung);
+    if (r.gegen_bisheriges_vorgehen) h += `<div><div class="zusatz">Gegen das bisherige Vorgehen: <b class="zahl">${fd(r.gegen_bisheriges_vorgehen.diff)} Punkte</b> – ${r.gegen_bisheriges_vorgehen.gesichert ? '✓ gesichert' : '✗ nicht gesichert'}.</div></div>`;
+    if (r.runde3_gegen_runde2) h += `<div><div class="zusatz" style="border-color:var(--alt)">Runde 3 gegen Runde 2: <b class="zahl">${fz(r.runde3_gegen_runde2.diff)} Punkte</b> Unterschied. Die dritte Runde brachte hier nichts obendrauf.</div></div>`;
+    h += `</div><div class="zwei">${felder('Felder · als Text', r.felder_text)}${felder('Felder · als Scan oder Foto', r.felder_gesetzt)}</div></article>`;
+  });
+  $('#runden').innerHTML = h;
+  const eg = D.einordner_einigkeit_pruefstadt, pe = v => ((v - 90) / 10 * 100) + '%';
+  $('#einig').innerHTML = `<h3>Einigkeit der Einordner</h3><p style="color:var(--leise);margin:4px 0 10px">Prüfstadt: So oft kamen die Einordner zum selben Ergebnis.</p><div class="einig">${Object.keys(eg).map(k => `<div class="feld"><span>${k}</span><div class="spur" style="--a:0%;--n:${pe(eg[k])}"><span class="st"></span><i class="pn"></i></div><span class="w"><b>${fz(eg[k])} %</b></span></div>`).join('')}<div class="skala">Skala 90 bis 100 %</div></div>`;
+  const fa = D.familienakte.welt4;
+  $('#akte').innerHTML = `<h3>In der Familienakte</h3><p style="color:var(--leise);margin:4px 0 10px">Der neue Kern, eingebaut in die Familienakte, gemessen an Welt 4.</p>${felder('Vorher → nachher', fa)}`;
+  $('#luecken').innerHTML = `<h3>Lücken-Material</h3><p style="color:var(--leise);margin:4px 0 10px">${esc(W[W.length - 1].d.rolle)} · ${W[W.length - 1].d.stuecke} Stücke.</p>${felder('Kern am Lücken-Material', D.luecken_kern)}`;
+  $('#grenzen').innerHTML = `<h3>Grenzen – ehrlich gesagt</h3><ul class="grenzen">${D.grenzen.map(g => '<li>' + esc(g) + '</li>').join('')}</ul>`;
+  $('#fuss').textContent = 'Alle Zahlen stammen aus der Messdatei. Alle Namen, Städte und Schriftstücke sind erfunden.';
+  const ziele = document.querySelectorAll('#ergebnis .haupt,#ergebnis .felder,#ergebnis .einig');
+  if ('IntersectionObserver' in window && !RUHIG) { const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('sichtbar'); io.unobserve(e.target); } }), { threshold: .25 }); ziele.forEach(z => io.observe(z)); }
+  else ziele.forEach(z => z.classList.add('sichtbar'));
+})();
+
+/* ---------- 3D-Szene ---------- */
+const Szene = { ok: false, fokus() { }, licht() { }, lichtArt: 'tag' };
+(function () {
+  const buehne = $('#buehne'), canvas = $('#szene');
+  const dunkel = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
+  Szene.lichtArt = dunkel() ? 'abend' : 'tag'; buehne.dataset.licht = Szene.lichtArt;
+  let renderer = null;
+  try {
+    if (window.LEICHT || !window.THREE) throw 0;
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: !window.MOBIL, alpha: true });
+  } catch (e) { renderer = null; }
+  if (!renderer) { buehne.classList.add('zwei-d'); return; }
+  Szene.ok = true; Segmente.melde('baum', buehne, renderer);
+  const T = THREE, V = (x, y, z) => new T.Vector3(x, y, z);
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, window.MOBIL ? 1.5 : 2));
+  renderer.outputEncoding = T.sRGBEncoding;
+  renderer.shadowMap.enabled = !window.MOBIL; renderer.shadowMap.type = T.PCFSoftShadowMap;
+  const scene = new T.Scene(); scene.fog = new T.Fog(0xcfe6ee, 45, 130);
+  const camera = new T.PerspectiveCamera(45, 1, .1, 400);
+  const hemi = new T.HemisphereLight(0xffffff, 0x8a7a60, .75); scene.add(hemi);
+  const sonne = new T.DirectionalLight(0xfff2d6, 1.0); sonne.position.set(-18, 34, 14); sonne.castShadow = true;
+  const ms = innerWidth < 720 ? 1024 : 2048; sonne.shadow.mapSize.set(ms, ms);
+  Object.assign(sonne.shadow.camera, { left: -22, right: 22, top: 24, bottom: -20, near: 1, far: 90 }); sonne.shadow.bias = -0.0015; scene.add(sonne);
+  const gegen = new T.DirectionalLight(0x88aaff, .25); gegen.position.set(15, 8, -18); scene.add(gegen);
+
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const FARBE = { planer: css('--c-planer'), absender_gruppen: css('--c-absender'), fallen_autor: css('--c-fallen'), einordner: css('--c-einordner'), setzer: css('--c-setzer'), autoren: css('--c-autoren') };
+  function rng(s) { return function () { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  // weicher Lichtfleck als Textur
+  const fleck = (function () { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.35, 'rgba(255,255,255,.55)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new T.CanvasTexture(c); })();
+  const halos = [], picks = [], ORT = {}, schilder = [];
+  const pickMat = new T.MeshBasicMaterial({ visible: false });
+  const sichtR = new T.Raycaster(), sichtV = new T.Vector3(); let bildNr = 0;
+  function pick(geo, eltern, pos, id, opt) { const m = new T.Mesh(geo, pickMat); m.position.copy(pos); m.userData = { id, opt }; eltern.add(m); picks.push(m); return m; }
+  function lampe(farbe, gr) {
+    const g = new T.Group(), k = new T.Mesh(new T.SphereGeometry(gr, 14, 10), new T.MeshBasicMaterial({ color: farbe }));
+    const h = new T.Sprite(new T.SpriteMaterial({ map: fleck, color: farbe, transparent: true, depthWrite: false })); h.scale.setScalar(gr * 7);
+    g.add(k, h); halos.push(h); return g;
+  }
+  const flach = (farbe, o) => new T.MeshStandardMaterial(Object.assign({ color: farbe, flatShading: true, roughness: .9, metalness: 0 }, o || {}));
+  const schatten = m => { m.castShadow = true; m.receiveShadow = true; return m; };
+
+  /* Baum */
+  const holz = flach(0x7a5536), KRONE_Y = 15.2;
+  const stammK = new T.CatmullRomCurve3([V(0, -.2, 0), V(.35, 2, .2), V(-.25, 5, -.15), V(0, 8, 0), V(.1, 12, 0), V(0, KRONE_Y, 0)]);
+  const stamm = (function () { // Stamm wird nach oben dünner
+    const g = new T.TubeGeometry(stammK, 60, 1, 9, false), p = g.attributes.position, fr = g.parameters.tubularSegments + 1, rs = g.parameters.radialSegments + 1;
+    for (let i = 0; i < fr; i++) { const t = i / (fr - 1), c = stammK.getPointAt(t), r = .62 - .44 * t; for (let j = 0; j < rs; j++) { const k = i * rs + j; p.setXYZ(k, c.x + (p.getX(k) - c.x) * r, c.y + (p.getY(k) - c.y) * r, c.z + (p.getZ(k) - c.z) * r); } }
+    g.computeVertexNormals(); return schatten(new T.Mesh(g, holz));
+  })(); scene.add(stamm);
+  for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283 + .4, k = new T.QuadraticBezierCurve3(V(0, .9, 0), V(Math.cos(a) * 1.4, .1, Math.sin(a) * 1.4), V(Math.cos(a) * 3, -.7, Math.sin(a) * 3)); scene.add(schatten(new T.Mesh(new T.TubeGeometry(k, 10, .2, 6), holz))); }
+  const boden = new T.Mesh(new T.CylinderGeometry(4.2, 5, .8, 24), flach(0x6f8f55)); boden.position.y = -.9; boden.receiveShadow = true; scene.add(boden);
+  const wurzel = new T.Mesh(new T.OctahedronGeometry(.6), new T.MeshStandardMaterial({ color: 0xffd166, emissive: 0xffa200, emissiveIntensity: .7, flatShading: true })); wurzel.position.set(1.9, .5, 1.6); scene.add(wurzel);
+  pick(new T.SphereGeometry(1, 8, 6), scene, wurzel.position, 'auftrag'); ORT.auftrag = { p: V(1, 1, 1), d: 16 };
+  // Recherche: Lichter steigen am Stamm auf
+  const rl = []; for (let i = 0; i < D.recherche.agenten; i++) { const l = lampe(i < D.recherche.themen.length ? 0xffd166 : (i === D.recherche.themen.length ? 0x8fd3ff : 0xff9db0), .16); scene.add(l); rl.push(l); pick(new T.SphereGeometry(.5, 8, 6), l, V(0, 0, 0), 'ra' + i); }
+  pick(new T.CylinderGeometry(.9, .9, 2.4, 8), scene, V(0, 1.8, 0), 'recherche'); ORT.recherche = { p: V(0, 2, 0), d: 15 };
+  for (let i = 0; i < D.recherche.agenten; i++) ORT['ra' + i] = ORT.recherche;
+  const tor = new T.Mesh(new T.TorusGeometry(1.15, .09, 8, 40), new T.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff0b0, emissiveIntensity: .6 })); tor.rotation.x = Math.PI / 2; tor.position.set(-.1, 3.4, 0); scene.add(tor);
+  pick(new T.CylinderGeometry(1.3, 1.3, .7, 10), scene, tor.position, 'regeln'); ORT.regeln = { p: V(0, 3.4, 0), d: 13 };
+  // Krone: Familienakte und die Versuche als Früchte
+  const krone = new T.Group(); krone.position.set(0, KRONE_Y, 0); scene.add(krone);
+  const kern = new T.Mesh(new T.IcosahedronGeometry(.8, 0), new T.MeshStandardMaterial({ color: 0x4fd6a8, emissive: 0x1fa971, emissiveIntensity: .55, flatShading: true })); kern.castShadow = true; krone.add(kern);
+  const kh = new T.Sprite(new T.SpriteMaterial({ map: fleck, color: 0x5fe0a8, transparent: true, depthWrite: false })); kh.scale.setScalar(5); krone.add(kh); halos.push(kh);
+  const fruechte = new T.Group(); krone.add(fruechte);
+  D.versuche_reihum.forEach((v, i) => { const a = i / D.versuche_reihum.length * 6.283, f = v.verworfen ? new T.Mesh(new T.SphereGeometry(.2, 10, 8), flach(0x8b93a3)) : lampe(0x35d08f, .26); f.position.set(Math.cos(a) * 1.9, v.verworfen ? -.35 : .15, Math.sin(a) * 1.9); fruechte.add(f); pick(new T.SphereGeometry(.45, 8, 6), f, V(0, 0, 0), 'versuche'); });
+  pick(new T.SphereGeometry(1.1, 8, 6), krone, V(0, 0, 0), 'akte'); ORT.akte = { p: V(0, KRONE_Y, 0), d: 13 }; ORT.versuche = ORT.akte;
+
+  /* Inseln */
+  const POS = [[-10.5, 7, 5], [-6.5, 10.6, -8], [8, 12.6, -6.5], [10.5, 8.6, 6], [1.2, 5.4, 9.6]];
+  const RAD = { hafen: 3.4, klein: 2.6, gross: 4.3, mittel: 3.4, luecke: 1.5 };
+  const PAL = { hafen: [0xd9773c, 0xe9a35b, 0xc45a32, 0xf2c58a, 0xb8532b], klein: [0xf1ede4, 0xe2d6c2, 0xd8c9a8, 0xfaf6ee], gross: [0x8fa3bd, 0xb7c4d6, 0x6d829e, 0xdfe6ee, 0x9db4c9], mittel: [0xdfe3e8, 0xc3ccd6, 0xaab8c6, 0xf2f4f6] };
+  const stadtMats = [], wasserMats = [];
+  const kisten = new T.BoxGeometry(1, 1, 1); kisten.translate(0, .5, 0);
+  const dachG = new T.ConeGeometry(.74, 1, 4); dachG.rotateY(Math.PI / 4); dachG.translate(0, .5, 0);
+  const baumG = new T.ConeGeometry(.5, 1, 6); baumG.translate(0, .5, 0);
+  const dummy = new T.Object3D(), farbe = new T.Color();
+  function instanzen(geo, mat, liste, eltern) {
+    if (!liste.length) return; const m = new T.InstancedMesh(geo, mat, liste.length);
+    liste.forEach((b, i) => { dummy.position.set(b.x, b.y || 0, b.z); dummy.rotation.set(0, b.r || 0, 0); dummy.scale.set(b.w, b.h, b.d || b.w); dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix); m.setColorAt(i, farbe.set(b.c)); });
+    m.castShadow = true; m.receiveShadow = true; eltern.add(m); return m;
+  }
+  const partikel = []; // {src,dst,n}
+  const inseln = W.map(w => {
+    const r = RAD[w.typ], g = new T.Group(), z = rng(11 + w.i * 97), p = V(...POS[w.i]); g.position.copy(p); scene.add(g);
+    const grund = w.lern ? 0xd9a35a : w.typ === 'luecke' ? 0x9a8fb8 : 0x7fa86a;
+    const top = new T.Mesh(new T.CylinderGeometry(r, r * .93, .5, 28), flach(grund)); top.position.y = -.25; top.receiveShadow = true; top.castShadow = true; g.add(top);
+    const fels = new T.Mesh(new T.ConeGeometry(r * .93, r * .8, 9), flach(w.lern ? 0x8a5a36 : 0x6b6257)); fels.rotation.x = Math.PI; fels.position.y = -.5 - r * .4; fels.castShadow = true; g.add(fels);
+    const spitze = V(p.x, p.y - .5 - r * .8, p.z), sy = Math.max(3.9, spitze.y - 1.6);
+    const ast = new T.QuadraticBezierCurve3(stammK.getPointAt(Math.min(.95, (sy + .2) / (KRONE_Y + .2))), V(p.x * .55, sy - .4, p.z * .55), spitze);
+    scene.add(schatten(new T.Mesh(new T.TubeGeometry(ast, 24, w.typ === 'luecke' ? .1 : .2, 7), holz)));
+    // Häuser
+    const haus = [], dach = [], baum = [], frei = (x, zz) => true; let maxH = .6;
+    const mat = flach(0xffffff, { emissive: 0xffb347, emissiveIntensity: 0 }); stadtMats.push(mat);
+    function setze(n, mind, darf, mach) { let v = 0; const pts = []; while (pts.length < n && v++ < n * 40) { const a = z() * 6.283, d = Math.sqrt(z()) * r * .84, x = Math.cos(a) * d, zz = Math.sin(a) * d; if (!darf(x, zz, d)) continue; if (pts.some(q => Math.hypot(q[0] - x, q[1] - zz) < mind)) continue; pts.push([x, zz]); mach(x, zz, d); } }
+    const pal = PAL[w.typ] || [0xffffff], pf = () => pal[Math.floor(z() * pal.length)];
+    const add = (x, zz, bw, h, mitDach) => { haus.push({ x, z: zz, w: bw, d: bw * (.8 + z() * .5), h, r: z() * 6.283, c: pf() }); maxH = Math.max(maxH, h + (mitDach ? .3 : 0)); if (mitDach) dach.push({ x, z: zz, y: h, w: bw * 1.05, d: bw * 1.05, h: .32, r: haus[haus.length - 1].r, c: w.lern ? 0x7a3b1e : 0xa5493a }); };
+    if (w.typ === 'klein') {
+      setze(16, .75, (x, zz, d) => d > .8, (x, zz) => add(x, zz, .42 + z() * .14, .32 + z() * .22, true));
+      add(0, 0, .42, 1.5, true); setze(12, .5, (x, zz, d) => d > .7, (x, zz) => baum.push({ x, z: zz, w: .32, h: .5 + z() * .3, c: 0x3f8f52 }));
+    } else if (w.typ === 'gross') {
+      const vt = [[-1.5, -1], [1.4, -1.2], [.2, 1.6], [-1.8, 1.4]];
+      setze(62, .62, () => true, (x, zz) => { const nah = Math.min(...vt.map(c => Math.hypot(c[0] - x, c[1] - zz))); add(x, zz, .4 + z() * .22, .5 + Math.pow(Math.max(0, 1 - nah / 2.2), 1.4) * 3.1 * (.55 + z() * .45), false); });
+    } else if (w.typ === 'hafen') {
+      const bx = r * .52, br = r * .5; const wm = new T.MeshStandardMaterial({ color: 0x3d8fc4, roughness: .3, metalness: .1 }); wasserMats.push(wm);
+      const becken = new T.Mesh(new T.CircleGeometry(br, 24), wm); becken.rotation.x = -Math.PI / 2; becken.position.set(bx, .02, 0); becken.receiveShadow = true; g.add(becken);
+      setze(34, .66, (x, zz) => Math.hypot(x - bx, zz) > br + .3, (x, zz) => add(x, zz, .42 + z() * .2, .4 + z() * 1.1, z() < .3));
+      [[bx - br * .75, -.9], [bx - br * .8, .8]].forEach(([x, zz]) => { haus.push({ x, z: zz, w: .14, d: .14, h: 1.7, c: 0xe0453c }); haus.push({ x: x + .35, z: zz, y: 1.55, w: .9, d: .12, h: .12, c: 0xe0453c }); });
+      [[bx + .3, .5, .4], [bx + .2, -.7, 2]].forEach(([x, zz, rr]) => { haus.push({ x, z: zz, y: .03, w: .9, d: .32, h: .2, r: rr, c: 0x2b3a55 }); haus.push({ x, z: zz, y: .23, w: .3, d: .22, h: .22, r: rr, c: 0xffffff }); });
+      maxH = Math.max(maxH, 1.8);
+    } else if (w.typ === 'mittel') {
+      const fz0 = r * .22, wm = new T.MeshStandardMaterial({ color: 0x3d8fc4, roughness: .3, metalness: .1 }); wasserMats.push(wm);
+      const fl = new T.Mesh(new T.PlaneGeometry(2 * Math.sqrt(r * r - fz0 * fz0) * .97, .7), wm); fl.rotation.x = -Math.PI / 2; fl.position.set(0, .02, fz0); fl.receiveShadow = true; g.add(fl);
+      haus.push({ x: -.3, z: fz0, y: .1, w: .35, d: 1.1, h: .08, c: 0x8a8f99 });
+      setze(30, .68, (x, zz) => Math.abs(zz - fz0) > .7, (x, zz) => add(x, zz, .42 + z() * .18, .4 + z() * .9, z() < .5));
+      setze(8, .5, (x, zz) => Math.abs(zz - fz0) > .6, (x, zz) => baum.push({ x, z: zz, w: .3, h: .5 + z() * .3, c: 0x3f8f52 }));
+    } else { for (let i = 0; i < 7; i++) haus.push({ x: (z() - .5) * .9, z: (z() - .5) * .9, y: i * .07, w: .7, d: .45, h: .06, r: z() * 3, c: i % 3 ? 0xfffaf0 : 0xffe08a }); maxH = .6; }
+    instanzen(kisten, mat, haus, g); instanzen(dachG, mat, dach, g); instanzen(baumG, flach(0xffffff), baum, g);
+    // Agenten als Lichter
+    const H = maxH + 1.5, lichter = [], ag = w.d.agenten, quellen = [], ziele = [];
+    const rolle = (k, n, ort) => { for (let i = 0; i < n; i++) { const l = lampe(FARBE[k], k === 'einordner' ? .2 : .17), o = ort(i, n); l.position.copy(o); l.userData = { y: o.y, ph: z() * 6.283 }; g.add(l); lichter.push(l); pick(new T.SphereGeometry(.42, 8, 6), l, V(0, 0, 0), w.id, { rolle: k }); if (k === 'einordner') ziele.push(o); if (k === 'absender_gruppen' || k === 'autoren') quellen.push(o); } };
+    const mastM = flach(0x4a5568);
+    rolle('absender_gruppen', ag.absender_gruppen || 0, (i, n) => { const a = i / n * 6.283 + .6, x = Math.cos(a) * r * .9, zz = Math.sin(a) * r * .9; const m = new T.Mesh(new T.CylinderGeometry(.05, .07, 1.3, 6), mastM); m.position.set(x, .65, zz); m.castShadow = true; g.add(m); return V(x, 1.42, zz); });
+    rolle('einordner', ag.einordner || 0, (i, n) => { const a = i / n * 6.283; return V(Math.cos(a) * r * .42, H, Math.sin(a) * r * .42); });
+    rolle('planer', ag.planer || 0, () => V(0, H + 1, 0));
+    rolle('setzer', ag.setzer || 0, () => V(r * .72, H - .5, -r * .3));
+    rolle('fallen_autor', ag.fallen_autor || 0, () => V(-r * .72, H - .5, r * .3));
+    rolle('autoren', ag.autoren || 0, (i, n) => V(i ? .9 : -.9, 1.5, 0));
+    if (!ziele.length) { ziele.push(V(0, w.typ === 'luecke' ? .6 : H - .3, 0)); if (w.typ !== 'luecke') { const s = lampe(0xffe9b0, .22); s.position.copy(ziele[0]); g.add(s); } }
+    partikel.push({ n: w.d.stuecke, quellen: quellen.map(q => q.clone().add(p)), ziele: ziele.map(q => q.clone().add(p)) });
+    pick(new T.CylinderGeometry(r, r, maxH + .8, 12), g, V(0, (maxH + .3) / 2, 0), w.id);
+    ORT[w.id] = { p: p.clone().add(V(0, 1, 0)), d: r * 3.2 + 7 };
+    schilder.push({ id: w.id, p: p.clone().add(V(0, H + 1.2, 0)), text: esc(w.kurz) + (w.lern ? '<small>Lernstadt</small>' : w.runde ? `<small>Runde ${w.runde.runde}</small>` : ''), kl: w.lern ? 'lern' : '' });
+    return { g, r, lichter, w };
+  });
+  schilder.push({ id: 'auftrag', p: V(1.9, 1.4, 1.6), text: 'Auftrag' }, { id: 'recherche', p: V(-1.3, 2.3, 0), text: `Recherche<small>${D.recherche.agenten} Agenten</small>` }, { id: 'regeln', p: V(1.5, 4.2, 0), text: 'Regeln vorab' }, { id: 'akte', p: V(0, KRONE_Y + 1.6, 0), text: 'Familienakte' });
+  const sBox = $('#schilder');
+  schilder.forEach(s => { const b = el('button', 'schild ' + (s.kl || ''), s.text); b.onclick = () => App.open(s.id); sBox.appendChild(b); s.el = b; });
+
+  /* Schriftstücke: 1 Punkt = 1 Stück */
+  const N = partikel.reduce((a, b) => a + b.n, 0), pa = new Float32Array(N * 3), src = new Float32Array(N * 3), mid = new Float32Array(N * 3), dst = new Float32Array(N * 3), ph = new Float32Array(N), sp = new Float32Array(N);
+  (function () { const z = rng(5); let k = 0; partikel.forEach(P => { for (let i = 0; i < P.n; i++, k++) { const a = P.quellen[i % P.quellen.length], b = P.ziele[Math.floor(z() * P.ziele.length)]; src.set([a.x, a.y, a.z], k * 3); dst.set([b.x, b.y, b.z], k * 3); mid.set([(a.x + b.x) / 2 + (z() - .5) * 1.4, Math.max(a.y, b.y) + .6 + z() * 1.6, (a.z + b.z) / 2 + (z() - .5) * 1.4], k * 3); ph[k] = z(); sp[k] = .05 + z() * .07; } }); })();
+  const pg = new T.BufferGeometry(); pg.setAttribute('position', new T.BufferAttribute(pa, 3));
+  const pm = new T.PointsMaterial({ map: fleck, size: .34, transparent: true, depthWrite: false, sizeAttenuation: true });
+  const punkte = new T.Points(pg, pm); punkte.frustumCulled = false; scene.add(punkte);
+  function briefe(t) { for (let k = 0; k < N; k++) { const u = (t * sp[k] + ph[k]) % 1, v = 1 - u, a = v * v, b = 2 * v * u, c = u * u, j = k * 3; pa[j] = a * src[j] + b * mid[j] + c * dst[j]; pa[j + 1] = a * src[j + 1] + b * mid[j + 1] + c * dst[j + 1]; pa[j + 2] = a * src[j + 2] + b * mid[j + 2] + c * dst[j + 2]; } pg.attributes.position.needsUpdate = true; }
+  // Sterne
+  const sg = new T.BufferGeometry(), sa = new Float32Array(900); (function () { const z = rng(3); for (let i = 0; i < 300; i++) { const a = z() * 6.283, e = z() * 1.2 + .1, d = 150; sa.set([Math.cos(a) * Math.cos(e) * d, Math.sin(e) * d - 10, Math.sin(a) * Math.cos(e) * d], i * 3); } })();
+  sg.setAttribute('position', new T.BufferAttribute(sa, 3)); const sterne = new T.Points(sg, new T.PointsMaterial({ map: fleck, size: 1.6, transparent: true, depthWrite: false, fog: false, color: 0xffffff })); scene.add(sterne);
+  const ring = new T.Mesh(new T.TorusGeometry(1, .014, 8, 72), new T.MeshBasicMaterial({ color: 0xffffff })); ring.rotation.x = Math.PI / 2; ring.visible = false; scene.add(ring);
+
+  /* Licht: Tag oder Abend */
+  Szene.licht = function (art) {
+    Szene.lichtArt = art; buehne.dataset.licht = art; const ab = art === 'abend';
+    scene.fog.color.set(ab ? 0x1a1f42 : 0xcfe6ee);
+    hemi.intensity = ab ? .34 : .78; hemi.color.set(ab ? 0x8090d0 : 0xffffff); hemi.groundColor.set(ab ? 0x2a2038 : 0x8a7a60);
+    sonne.intensity = ab ? .5 : 1.0; sonne.color.set(ab ? 0xffa56b : 0xfff2d6); sonne.position.set(ab ? -30 : -18, ab ? 16 : 34, ab ? 10 : 14);
+    gegen.intensity = ab ? .35 : .2;
+    halos.forEach(h => { h.material.blending = ab ? T.AdditiveBlending : T.NormalBlending; h.material.opacity = ab ? .9 : .45; h.material.needsUpdate = true; });
+    pm.blending = ab ? T.AdditiveBlending : T.NormalBlending; pm.color.set(ab ? 0xffe9c0 : 0xffffff); pm.opacity = ab ? .95 : 1; pm.needsUpdate = true;
+    stadtMats.forEach(m => m.emissiveIntensity = ab ? .14 : 0); wasserMats.forEach(m => m.color.set(ab ? 0x24507f : 0x3d8fc4));
+    sterne.visible = ab; ring.material.color.set(ab ? 0xffffff : 0x1c2333);
+    $('#bLicht').textContent = ab ? 'Tag' : 'Abend';
+  };
+  Szene.licht(Szene.lichtArt);
+  if (innerWidth > 1100) $('#zeichen').open = true;
+  $('#bLicht').onclick = () => { Szene.licht(Szene.lichtArt === 'abend' ? 'tag' : 'abend'); if (App.ton) App.ton('klick'); };
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => Szene.licht(dunkel() ? 'abend' : 'tag'));
+  new MutationObserver(() => Szene.licht(dunkel() ? 'abend' : 'tag')).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  /* Kamera: selbst gebaut (Ziehen = drehen, Rad/zwei Finger = zoomen) */
+  const MITTE = V(0, 7.6, 0); let bw = 1, bh = 1;
+  const cam = { az: .6, pol: 1.25, d: 40, ziel: MITTE.clone(), gAz: .6, gPol: 1.25, gD: 40, gZiel: MITTE.clone(), ox: 0, oy: 0 };
+  let kreisen = !RUHIG; const bKreis = $('#bKreis');
+  const setKreisen = v => { kreisen = v && !RUHIG; bKreis.setAttribute('aria-pressed', kreisen); };
+  setKreisen(kreisen);
+  const weit = () => { const t = Math.tan(22.5 * Math.PI / 180); return Math.max(15 / (t * (bw / bh)), 10.5 / t) * 1.08; };
+  const DMIN = 6, dmax = () => weit() * 1.5;
+  function groesse() { bw = buehne.clientWidth; bh = buehne.clientHeight; renderer.setSize(bw, bh, false); camera.aspect = bw / bh; camera.updateProjectionMatrix(); if (!App.gewaehlt) cam.gD = weit(); }
+  new ResizeObserver(groesse).observe(buehne); groesse(); cam.d = cam.gD = weit();
+  Szene.fokus = function (id) {
+    const o = id && ORT[id]; schilder.forEach(s => s.el.classList.toggle('gewaehlt', s.id === id));
+    const ins = inseln.find(x => x.w.id === id); ring.visible = !!ins; if (ins) { ring.position.copy(ins.g.position); ring.position.y -= .02; ring.scale.set(ins.r * 1.12, ins.r * 1.12, 1); }
+    if (o) { cam.gZiel.copy(o.p); cam.gD = o.d * (bw < 720 ? 1.25 : 1); cam.gPol = 1.12; if (id !== 'akte' && id !== 'versuche' && Math.hypot(o.p.x, o.p.z) > 2) { let a = Math.atan2(o.p.x, o.p.z); while (a - cam.gAz > Math.PI) a -= 6.283; while (a - cam.gAz < -Math.PI) a += 6.283; cam.gAz = a; } setKreisen(false); }
+    else { cam.gZiel.copy(MITTE); cam.gD = weit(); cam.gPol = 1.25; }
+  };
+  App.hoerer.push(Szene.fokus);
+  const tipp = $('#tipp'), eingriff = () => { setKreisen(false); tipp.classList.add('weg'); };
+  const zeiger = new Map(); let start = null, pinch = 0;
+  canvas.addEventListener('pointerdown', e => { zeiger.set(e.pointerId, [e.clientX, e.clientY]); start = { x: e.clientX, y: e.clientY, t: performance.now(), weg: 0 }; if (zeiger.size === 2) { const p = [...zeiger.values()]; pinch = Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]); } try { canvas.setPointerCapture(e.pointerId); } catch (x) { } canvas.classList.add('zieht'); });
+  canvas.addEventListener('pointermove', e => {
+    const a = zeiger.get(e.pointerId); if (!a) { if (e.pointerType === 'mouse') canvas.classList.toggle('zeigt', !!treffer(e)); return; }
+    const dx = e.clientX - a[0], dy = e.clientY - a[1]; zeiger.set(e.pointerId, [e.clientX, e.clientY]); if (start) start.weg += Math.abs(dx) + Math.abs(dy);
+    if (zeiger.size === 1) { if (start && start.weg > 6) eingriff(); cam.gAz -= dx * .006; if (e.pointerType !== 'touch') cam.gPol = Math.max(.35, Math.min(1.5, cam.gPol - dy * .005)); }
+    else if (zeiger.size === 2) { const p = [...zeiger.values()], d = Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]); if (pinch) cam.gD = Math.max(DMIN, Math.min(dmax(), cam.gD * pinch / d)); pinch = d; cam.gPol = Math.max(.35, Math.min(1.5, cam.gPol - dy * .0025)); eingriff(); }
+  });
+  const los = e => { zeiger.delete(e.pointerId); canvas.classList.remove('zieht'); if (zeiger.size < 2) pinch = 0; };
+  canvas.addEventListener('pointerup', e => { const s = start; los(e); if (s && s.weg < 8 && performance.now() - s.t < 600) { const t = treffer(e); if (t) App.open(t.id, t.opt); else if (App.gewaehlt) App.close(); } });
+  canvas.addEventListener('pointercancel', los);
+  canvas.addEventListener('wheel', e => { const n = Math.max(DMIN, Math.min(dmax(), cam.gD * Math.exp(e.deltaY * .0012))); if (n === cam.gD) return; e.preventDefault(); cam.gD = n; eingriff(); }, { passive: false });
+  canvas.addEventListener('keydown', e => { const k = e.key; if (k === 'ArrowLeft') cam.gAz -= .15; else if (k === 'ArrowRight') cam.gAz += .15; else if (k === 'ArrowUp') cam.gPol = Math.max(.35, cam.gPol - .08); else if (k === 'ArrowDown') cam.gPol = Math.min(1.5, cam.gPol + .08); else if (k === '+') cam.gD = Math.max(DMIN, cam.gD * .85); else if (k === '-') cam.gD = Math.min(dmax(), cam.gD * 1.18); else return; e.preventDefault(); eingriff(); });
+  $('#bPlus').onclick = () => { cam.gD = Math.max(DMIN, cam.gD * .8); eingriff(); };
+  $('#bMinus').onclick = () => { cam.gD = Math.min(dmax(), cam.gD * 1.25); eingriff(); };
+  $('#bAlles').onclick = () => { App.close(); Szene.fokus(null); };
+  bKreis.onclick = () => setKreisen(!kreisen);
+  const strahl = new T.Raycaster(), maus = new T.Vector2();
+  function treffer(e) { const r = canvas.getBoundingClientRect(); maus.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); strahl.setFromCamera(maus, camera); const h = strahl.intersectObjects(picks, false); return h.length ? h[0].object.userData : null; }
+  Szene.pruefOrt = id => { const s = schilder.find(x => x.id === id); return s ? s.el.getBoundingClientRect() : null; };
+
+  /* Schleife */
+  let zeit = RUHIG ? 20 : 0, zuletzt = performance.now(), sichtbar = true; const v3 = V(0, 0, 0);
+  if ('IntersectionObserver' in window) new IntersectionObserver(e => sichtbar = e[0].isIntersecting).observe(buehne);
+  function bild(jetzt) {
+    requestAnimationFrame(bild); if (!sichtbar || document.hidden) { zuletzt = jetzt; return; }
+    const dt = Math.min(.05, (jetzt - zuletzt) / 1000); zuletzt = jetzt; if (!RUHIG) zeit += dt;
+    if (kreisen) cam.gAz += dt * .09;
+    const k = RUHIG ? 1 : 1 - Math.exp(-dt * 3.2);
+    cam.az += (cam.gAz - cam.az) * k; cam.pol += (cam.gPol - cam.pol) * k; cam.d += (cam.gD - cam.d) * k; cam.ziel.lerp(cam.gZiel, k);
+    const schmal = bw < 720, offen = !!App.gewaehlt, gx = offen && !schmal ? Math.min(380, bw - 20) / 2 : 0, gy = offen && schmal ? bh * .28 : 0;
+    cam.ox += (gx - cam.ox) * k; cam.oy += (gy - cam.oy) * k;
+    if (Math.abs(cam.ox) > .5 || Math.abs(cam.oy) > .5) camera.setViewOffset(bw, bh, cam.ox, cam.oy, bw, bh); else camera.clearViewOffset();
+    const s = Math.sin(cam.pol);
+    camera.position.set(cam.ziel.x + cam.d * s * Math.sin(cam.az), cam.ziel.y + cam.d * Math.cos(cam.pol), cam.ziel.z + cam.d * s * Math.cos(cam.az)); camera.lookAt(cam.ziel);
+    rl.forEach((l, i) => { const u = (zeit * .09 + i / rl.length) % 1, a = zeit * .7 + i * 6.283 / rl.length, c = stammK.getPointAt(.03 + u * .19); l.position.set(c.x + Math.cos(a) * .95, c.y, c.z + Math.sin(a) * .95); });
+    inseln.forEach(I => I.lichter.forEach(l => l.position.y = l.userData.y + Math.sin(zeit * 1.3 + l.userData.ph) * .09));
+    fruechte.rotation.y = zeit * .15; kern.rotation.y = zeit * .4; wurzel.rotation.y = zeit * .6; tor.rotation.z = zeit * .3;
+    if (ring.visible && !RUHIG) { const p = 1 + Math.sin(zeit * 3) * .03, r0 = inseln.find(x => x.w.id === App.gewaehlt); if (r0) ring.scale.set(r0.r * 1.12 * p, r0.r * 1.12 * p, 1); }
+    briefe(zeit);
+    renderer.render(scene, camera);
+    /* Schrift steht nicht mehr immer vorn: liegt eine andere Stadt zwischen Kamera und Schild, blendet es sich aus. */
+    if ((bildNr = (bildNr + 1) % 4) === 0) schilder.forEach(sc => { sichtR.set(camera.position, sichtV.copy(sc.p).sub(camera.position).normalize()); sichtR.far = camera.position.distanceTo(sc.p) - .4; const zu = sichtR.intersectObjects(picks).some(h => h.object.userData.id !== sc.id); if (zu !== !!sc.zu) { sc.zu = zu; sc.el.classList.toggle('verdeckt', zu); } });
+    schilder.forEach(sc => { v3.copy(sc.p).project(camera); const da = v3.z < 1 && Math.abs(v3.x) < 1.1 && Math.abs(v3.y) < 1.1; sc.el.style.display = da ? '' : 'none'; if (da) { sc.el.style.transform = `translate(-50%,${sc.unten ? '0' : '-100%'}) translate(${((v3.x + 1) / 2 * bw).toFixed(1)}px,${((1 - v3.y) / 2 * bh).toFixed(1)}px)`; sc.el.style.zIndex = Math.round((1 - v3.z) * 10000); } });
+  }
+  requestAnimationFrame(bild);
+})();
+
+/* ---------- 2D-Ersatz (wenn 3D nicht geht) ---------- */
+(function () {
+  if (Szene.ok) return;
+  const P = [[150, 330], [200, 150], [520, 120], [570, 320], [450, 440]], GR = { hafen: 44, klein: 32, gross: 56, mittel: 44, luecke: 20 };
+  let s = `<svg viewBox="0 0 720 560" role="group" aria-label="Baum mit den vier Welten"><path class="holz" stroke-width="22" d="M360 530C350 400 372 300 360 90"/>`;
+  W.forEach(w => { const [x, y] = P[w.i]; s += `<path class="holz" stroke-width="${w.typ === 'luecke' ? 5 : 9}" d="M360 ${Math.min(470, y + 110)}Q${(360 + x) / 2} ${y + 90} ${x} ${y + GR[w.typ] * .6}"/>`; });
+  const kn = (id, x, y, inhalt, name) => `<g class="knoten" data-id="${id}" tabindex="0" role="button" aria-label="${esc(name)}">${inhalt}<text x="${x}" y="${y}" text-anchor="middle">${esc(name)}</text></g>`;
+  W.forEach(w => {
+    const [x, y] = P[w.i], r = GR[w.typ], z = (function (s) { return () => (s = (s * 9301 + 49297) % 233280) / 233280; })(7 + w.i);
+    let h = `<ellipse class="ring" cx="${x}" cy="${y}" rx="${r}" ry="${r * .42}" fill="${w.lern ? '#d9a35a' : w.typ === 'luecke' ? '#9a8fb8' : '#7fa86a'}" stroke="rgba(0,0,0,.25)"/>`;
+    const n = { hafen: 9, klein: 5, gross: 13, mittel: 9, luecke: 0 }[w.typ];
+    for (let i = 0; i < n; i++) { const bx = x - r * .75 + i * (r * 1.5 / n), bh = (w.typ === 'gross' ? 16 + z() * 44 : w.typ === 'klein' ? 8 + z() * 8 : 10 + z() * 22); h += `<rect x="${bx}" y="${y - bh}" width="${r * 1.3 / n}" height="${bh}" fill="${w.lern ? '#d9773c' : '#aab8c6'}" stroke="rgba(0,0,0,.3)"/>`; }
+    if (w.typ === 'luecke') h += `<rect x="${x - 10}" y="${y - 12}" width="20" height="13" fill="#fffaf0" stroke="#555" transform="rotate(-12 ${x} ${y})"/>`;
+    const ne = w.d.agenten.einordner || 0; for (let i = 0; i < ne; i++) h += `<circle class="funke" style="animation-delay:${i * .3}s" cx="${x - (ne - 1) * 6 + i * 12}" cy="${y - (w.typ === 'gross' ? 72 : 44)}" r="4" fill="var(--c-einordner)"/>`;
+    s += kn(w.id, x, y + r * .42 + 18, h, w.kurz + (w.lern ? ' · Lernstadt' : w.runde ? ' · Runde ' + w.runde.runde : ''));
+  });
+  let rd = ''; for (let i = 0; i < D.recherche.agenten; i++) rd += `<circle class="funke" style="animation-delay:${i * .25}s" cx="${340 + (i % 2) * 40}" cy="${500 - i * 9}" r="5" fill="#ffd166" stroke="#7a5536"/>`;
+  s += kn('recherche', 285, 470, `<rect class="ring" x="325" y="425" width="70" height="90" fill="transparent"/>` + rd, `Recherche · ${D.recherche.agenten} Agenten`);
+  s += kn('regeln', 440, 400, `<ellipse class="ring" cx="361" cy="396" rx="26" ry="8" fill="none" stroke="#fff0b0" stroke-width="5"/>`, 'Regeln vorab');
+  s += kn('auftrag', 360, 552, `<path class="ring" d="M360 508l14 16-14 16-14-16z" fill="#ffd166" stroke="#7a5536"/>`, 'Auftrag');
+  let fr = ''; D.versuche_reihum.forEach((v, i) => { const a = Math.PI + i / (D.versuche_reihum.length - 1) * Math.PI; fr += `<circle cx="${360 + Math.cos(a) * 46}" cy="${78 + Math.sin(a) * 30}" r="${v.verworfen ? 5 : 8}" fill="${v.verworfen ? '#8b93a3' : '#35d08f'}"/>`; });
+  s += kn('akte', 360, 36, `<circle class="ring" cx="360" cy="78" r="20" fill="#4fd6a8" stroke="rgba(0,0,0,.3)"/>` + fr, 'Familienakte');
+  const box = $('#ersatz'); box.innerHTML = s + '</svg>';
+  Szene.fokus = id => box.querySelectorAll('.knoten').forEach(g => g.classList.toggle('gewaehlt', g.dataset.id === id || (id === 'versuche' && g.dataset.id === 'akte') || (/^ra/.test(id || '') && g.dataset.id === 'recherche')));
+  App.hoerer.push(Szene.fokus);
+  box.querySelectorAll('.knoten').forEach(g => { const f = () => App.open(g.dataset.id); g.onclick = f; g.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f(); } }; });
+})();
+
+/* ---------- Ton: Musik und Geräusche, alles im Browser erzeugt. Beginnt erst nach einem Tipp. ---------- */
+const IK = {
+  spiel: '<svg class="ik" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/></svg>',
+  pause: '<svg class="ik" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z" fill="currentColor"/></svg>',
+  halt: '<svg class="ik" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5h9v9h-9z" fill="currentColor"/></svg>',
+  ton: '<svg class="ik" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.2h2.4L8 3.2v9.6L4.4 9.8H2z"/><path d="M10.6 5.6a3.4 3.4 0 010 4.8M12.6 3.8a6 6 0 010 8.4"/></svg>',
+  stumm: '<svg class="ik" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.2h2.4L8 3.2v9.6L4.4 9.8H2z"/><path d="M10.8 6l3.6 4M14.4 6l-3.6 4"/></svg>'
+};
+App.tonHoerer = [];
+const Ton = (function () {
+  let ctx = null, aus = null, mus = null, hall = null, an = false, wunsch = null, takt = 0, naechst = 0, uhr = null;
+  const AKK = [[146.83, 220, 293.66, 369.99], [123.47, 185, 246.94, 293.66], [98, 196, 246.94, 293.66], [110, 164.81, 220, 277.18]];
+  const PENTA = [293.66, 329.63, 369.99, 440, 493.88, 587.33, 659.25, 739.99];
+  function ton(f, t, dauer, art, laut, ziel, an_) {
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = art; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(laut, t + (an_ || .01)); g.gain.exponentialRampToValueAtTime(.0001, t + dauer);
+    o.connect(g); g.connect(ziel || aus); o.start(t); o.stop(t + dauer + .05); return o;
+  }
+  function rausch(t, dauer, laut, freq) {
+    const n = Math.floor(ctx.sampleRate * dauer), b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); s.buffer = b; f.type = 'bandpass'; f.frequency.value = freq; g.gain.value = laut; s.connect(f); f.connect(g); g.connect(aus); s.start(t);
+  }
+  function musik() {
+    if (!an) return; const jetzt = ctx.currentTime;
+    while (naechst < jetzt + .6) {
+      const a = AKK[takt % AKK.length], t = naechst;
+      a.forEach((f, i) => { ton(f, t, 6.4, i ? 'sine' : 'triangle', .035, hall, 2.2); ton(f * 1.003, t, 6.4, 'sine', .02, hall, 2.6); });
+      for (let i = 0; i < 4; i++) if (Math.random() < .7) ton(PENTA[Math.floor(Math.random() * PENTA.length)], t + i * 1.5 + Math.random() * .4, 1.6, 'triangle', .03, hall);
+      naechst += 6; takt++;
+    }
+  }
+  function start() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false; ctx = new AC();
+      aus = ctx.createGain(); aus.gain.value = 0; aus.connect(ctx.destination);
+      mus = ctx.createGain(); mus.gain.value = 1; mus.connect(aus);   // Musik-Schiene: wird leiser, solange gesprochen wird
+      const tp = ctx.createBiquadFilter(); tp.type = 'lowpass'; tp.frequency.value = 1500;
+      const echo = ctx.createDelay(1), rueck = ctx.createGain(); echo.delayTime.value = .42; rueck.gain.value = .35;
+      hall = ctx.createGain(); hall.connect(tp); tp.connect(mus); tp.connect(echo); echo.connect(rueck); rueck.connect(echo); echo.connect(mus);
+    }
+    ctx.resume(); an = true; naechst = ctx.currentTime + .1; aus.gain.cancelScheduledValues(ctx.currentTime); aus.gain.linearRampToValueAtTime(.8, ctx.currentTime + 1.2);
+    clearInterval(uhr); uhr = setInterval(musik, 200); musik(); return true;
+  }
+  function stopp() { an = false; clearInterval(uhr); if (ctx) { aus.gain.cancelScheduledValues(ctx.currentTime); aus.gain.linearRampToValueAtTime(0, ctx.currentTime + .4); setTimeout(() => { if (!an) ctx.suspend(); }, 600); } }
+  function spiel(name) {
+    if (!an || !ctx) return; const t = ctx.currentTime + .01;
+    if (name === 'klick') { ton(660, t, .12, 'sine', .12); ton(990, t + .05, .14, 'sine', .08); }
+    else if (name === 'brief') { rausch(t, .12, .12, 3200); ton(1320, t + .02, .1, 'sine', .04); }
+    else if (name === 'schritt') rausch(t, .05, .08, 500);
+    else if (name === 'falsch') { ton(196, t, .28, 'sawtooth', .07); ton(155.56, t + .22, .45, 'sawtooth', .07); }
+    else if (name === 'aha') [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => ton(f, t + i * .09, .5, 'triangle', .1));
+    else if (name === 'richtig') { ton(783.99, t, .15, 'sine', .1); ton(1046.5, t + .1, .35, 'sine', .1); }
+    else if (name === 'wind') { rausch(t, .9, .1, 700); rausch(t + .3, .7, .07, 1200); }
+    else if (name === 'hops') { const o = ton(300, t, .25, 'sine', .1); o.frequency.exponentialRampToValueAtTime(700, t + .2); }
+    else if (name === 'wirbel') for (let i = 0; i < 7; i++) ton(520 + i * 95 + Math.random() * 40, t + i * .14, .12, 'triangle', .05);   // Kandidaten wirbeln
+    else if (name === 'lern') [392, 349.23, 440].forEach((f, i) => { const o = ton(f, t + i * .22, .3, 'square', .035); o.frequency.linearRampToValueAtTime(f * (i % 2 ? .9 : 1.12), t + i * .22 + .25); });   // Gewichte rücken
+    else if (name === 'eis') { [1567.98, 2093, 2637, 3136].forEach((f, i) => ton(f, t + i * .13, 1.4, 'sine', .04, hall)); rausch(t, .8, .04, 6000); }   // Frost
+    else if (name === 'steig') { const o = ton(220, t, 2.1, 'triangle', .07); o.frequency.exponentialRampToValueAtTime(660, t + 1.9); ton(880, t + 2, .5, 'sine', .09); }   // Messbalken füllt sich
+  }
+  function setz(v) {
+    if (v) { if (!start()) { document.querySelectorAll('[data-ton]').forEach(b => { b.textContent = 'Kein Ton möglich'; }); return false; } } else if (an) stopp();
+    zeigAn(); App.tonHoerer.forEach(f => f(an)); return an;
+  }
+  function zeigAn() { const soll = wunsch !== false; document.querySelectorAll('[data-ton]').forEach(b => { b.setAttribute('aria-pressed', soll); b.innerHTML = (soll ? IK.ton + 'Ton an' : IK.stumm + 'Ton aus'); }); }
+  document.querySelectorAll('[data-ton]').forEach(b => { b.onclick = () => { wunsch = wunsch === false; setz(wunsch); if (an) spiel('klick'); }; });
+  zeigAn();
+  App.ton = spiel;
+  // leises Briefgeräusch, solange die Szene zu sehen ist
+  setInterval(() => { if (an && !document.hidden && $('#buehne').getBoundingClientRect().bottom > 100 && Math.random() < .5) spiel('brief'); }, 2600);
+  return {
+    spiel, an: () => an,
+    bereit() { if (!an && wunsch !== false) setz(true); return an; },   // nach einem Tipp auf Start: Ton an, außer er wurde abgeschaltet
+    leiser(v) { if (ctx && mus) { mus.gain.cancelScheduledValues(ctx.currentTime); mus.gain.setTargetAtTime(v ? .2 : 1, ctx.currentTime, .25); } }
+  };
+})();
+
+/* ---------- Sprecher: fertige Tonspur je Szene – oder, solange sie fehlt, die beste Stimme des Geräts ----------
+   Tonspuren: je Szene eine Datei neben der Seite, ton/<schluessel>.mp3 (Schlüssel = Namen in SPRECHTEXTE).
+   Ist die Datei da, wird sie gespielt und die Animation richtet sich nach ihrer Länge. Fehlt sie, spricht die Browserstimme.
+   Statt Dateien geht auch: vor diesem Skript  window.TONSPUREN = { begruessung: 'data:audio/mpeg;base64,…', … }  setzen. */
+const TON_ORDNER = 'discovery-ton/', TON_ENDUNG = '.mp3';
+const TONSPUREN = window.TONSPUREN || {};
+const Sprecher = (function () {
+  const sy = window.speechSynthesis || null; let liste = [], wahl = '', lauf = 0, wd = null, audio = null, offen = null, halten = [];
+  const spur = {}, hosts = [];
+  try { wahl = localStorage.getItem('tw-stimme') || ''; } catch (e) { }
+  // Güte einer Stimme: natürliche Online-/Neural-Stimmen zuerst, eSpeak und „compact“ zuletzt
+  function note(v) {
+    let n = 0; const s = v.name + ' ' + (v.voiceURI || '');
+    if (/^de[-_]DE/i.test(v.lang)) n += 6;
+    if (/natural|neural|online/i.test(s)) n += 50; if (/google/i.test(s)) n += 40; if (/premium|enhanced|erweitert|siri/i.test(s)) n += 35;
+    if (/espeak|compact|eloquence|speech[- ]?dispatcher|pico/i.test(s)) n -= 60; if (!v.localService) n += 3;
+    return n;
+  }
+  function lade() {
+    const alle = sy ? sy.getVoices() : [], de = alle.filter(v => /^de/i.test(v.lang));
+    liste = de.sort((a, b) => note(b) - note(a)); hosts.forEach(fuell);
+  }
+  const beste = () => liste.find(v => v.voiceURI === wahl) || liste[0] || null;
+  function fuell(h) {
+    const sel = h.querySelector('select'), hin = h.querySelector('small'), b = h.querySelector('button');
+    sel.innerHTML = ''; sel.disabled = b.disabled = !liste.length;
+    if (!liste.length) { sel.appendChild(new Option(sy ? 'Keine deutsche Stimme gefunden' : 'Dieses Gerät kann nicht vorlesen', '')); hin.textContent = 'Ohne Stimme laufen Musik, Geräusche und Untertitel. Fertige Tonspuren werden trotzdem gespielt.'; return; }
+    sel.appendChild(new Option('Automatisch: ' + liste[0].name, ''));
+    liste.forEach(v => sel.appendChild(new Option(v.name + (note(v) >= 35 ? ' · klingt natürlicher' : note(v) < 0 ? ' · einfache Stimme' : ''), v.voiceURI)));
+    sel.value = liste.some(v => v.voiceURI === wahl) ? wahl : '';
+    hin.textContent = note(beste()) >= 35 ? 'Die Stimme kommt von deinem Gerät. Fertige Tonspuren ersetzen sie, sobald sie da sind.' : 'Auf diesem Gerät gibt es nur eine einfache Stimme. Natürlicher klingt es in Edge oder Chrome – oder später mit den fertigen Tonspuren.';
+  }
+  function bedienung(h) {
+    h.innerHTML = '<label><span>Stimme</span> <select aria-label="Stimme wählen"></select></label><button type="button">' + IK.spiel + 'Hörprobe</button><small></small>';
+    h.querySelector('select').onchange = e => { wahl = e.target.value; try { localStorage.setItem('tw-stimme', wahl); } catch (x) { } hosts.forEach(fuell); };
+    h.querySelector('button').onclick = () => sag('begruessung', { nurStimme: true });
+    hosts.push(h); fuell(h);
+  }
+  const saetze = t => (t.match(/[^.!?:]+[.!?:]+[“”"]?/g) || [t]).map(s => s.trim()).filter(Boolean);
+  const lesezeit = key => 1.2 + (SPRECHTEXTE[key] || '').length * .075 + saetze(SPRECHTEXTE[key] || '').length * .3;
+  // Gibt es eine fertige Tonspur für diese Szene? (einmal je Schlüssel nachsehen)
+  function spurHolen(key) {
+    if (spur[key]) return spur[key];
+    const adr = TONSPUREN[key] || (/^(https?|file):$/.test(location.protocol) && TON_ORDNER ? TON_ORDNER + key + TON_ENDUNG : '');
+    return spur[key] = !adr ? Promise.resolve(null) : new Promise(ja => {
+      const a = new Audio(); let fertig = false; const ende = v => { if (!fertig) { fertig = true; ja(v); } };
+      a.preload = 'auto'; a.addEventListener('loadedmetadata', () => ende(a)); a.addEventListener('error', () => ende(null)); setTimeout(() => ende(null), 2500); a.src = adr;
+    });
+  }
+  function schluss(meins, o, still) { if (meins !== lauf) return; lauf++; clearTimeout(wd); audio = null; offen = null; halten = []; Ton.leiser(false); if (!still && o.fertig) o.fertig(); }
+  function stopp(still) { const o = offen, m = lauf; if (sy) sy.cancel(); if (audio) audio.pause(); if (o) schluss(m, o, still); else { lauf++; clearTimeout(wd); Ton.leiser(false); } }
+  function sprich(meins, o, ss, ab) {
+    const v = beste(); offen.ss = ss; offen.idx = ab; const teil = ++offen.teil; halten = [];
+    ss.slice(ab).forEach((s, j) => {
+      const u = new SpeechSynthesisUtterance(s); u.voice = v; u.lang = v.lang; u.rate = .92; u.pitch = 1;
+      u.onstart = () => { if (meins === lauf && offen && offen.teil === teil) offen.idx = ab + j; };
+      if (ab + j === ss.length - 1) u.onend = () => { if (offen && offen.teil === teil) schluss(meins, o); };
+      halten.push(u); sy.speak(u);
+    });
+  }
+  /* sag(schluessel, { start(dauerSekunden, istTonspur), fertig() }) */
+  function sag(key, o) {
+    o = o || {}; stopp(); const meins = ++lauf, text = SPRECHTEXTE[key] || ''; offen = { o, teil: 0, pause: false };
+    (o.nurStimme ? Promise.resolve(null) : spurHolen(key)).then(a => {
+      if (meins !== lauf) return;
+      const stimme = () => {
+        if (!sy || !beste()) { if (o.start) o.start(0, false); wd = setTimeout(() => schluss(meins, o), lesezeit(key) * 1000); return; }   // keine Stimme: stumm, Untertitel bleibt so lange stehen
+        const d = lesezeit(key); Ton.leiser(true); if (o.start) o.start(d, false);
+        setTimeout(() => { if (meins === lauf) sprich(meins, o, saetze(text), 0); }, 80);
+        wd = setTimeout(() => schluss(meins, o), d * 1700 + 5000);   // falls der Browser das Ende nicht meldet
+      };
+      if (!a) return stimme();
+      audio = a; try { a.currentTime = 0; } catch (e) { } Ton.leiser(true); a.onended = () => schluss(meins, o);
+      if (o.start) o.start(isFinite(a.duration) ? a.duration : lesezeit(key), true);
+      a.play().catch(() => { if (meins === lauf) { audio = null; spur[key] = Promise.resolve(null); stimme(); } });
+    });
+  }
+  function pause() { if (!offen || offen.pause) return; offen.pause = true; clearTimeout(wd); if (audio) audio.pause(); else if (sy && offen.ss) { offen.teil++; sy.cancel(); } }
+  function weiter() { if (!offen || !offen.pause) return; offen.pause = false; const meins = lauf, o = offen.o; if (audio) audio.play().catch(() => schluss(meins, o)); else if (sy && offen.ss && beste()) { sprich(meins, o, offen.ss, offen.idx || 0); wd = setTimeout(() => schluss(meins, o), 60000); } else schluss(meins, o); }
+  if (sy) { lade(); if (sy.addEventListener) sy.addEventListener('voiceschanged', lade); else sy.onvoiceschanged = lade; setTimeout(lade, 800); }
+  addEventListener('pagehide', () => stopp(true));
+  document.querySelectorAll('[data-stimme]').forEach(bedienung);
+  return { sag, stopp, pause, weiter, lesezeit, stimmen: () => liste.map(v => v.name), note };
+})();
+App.tonHoerer.push(an => { if (!an) Sprecher.stopp(); });
+
+/* ---------- Untertitel-Leiste (unten am Bildschirm): zeigt den Text, der gerade gesprochen wird ---------- */
+const Unter = (function () {
+  const e = $('#untertitel'); document.body.appendChild(e);
+  e.innerHTML = '<b></b><span></span><div class="ut-k"><button type="button" data-w>Weiter</button><button type="button" data-h>' + IK.halt + 'Anhalten</button></div>';
+  const [kopf, txt, knopf] = e.children; let weiter = null, halt = null;
+  knopf.children[0].onclick = () => weiter && weiter(); knopf.children[1].onclick = () => halt && halt();
+  return {
+    zeig(titel, text, w, h) { kopf.textContent = titel; txt.textContent = text; weiter = w || null; halt = h || (() => { Sprecher.stopp(true); Unter.weg(); }); knopf.children[0].style.display = w ? '' : 'none'; knopf.children[1].innerHTML = w ? IK.halt + 'Anhalten' : 'Schließen'; e.classList.add('an'); },
+    weg() { e.classList.remove('an'); }
+  };
+})();
+// Eine einzelne Szene (z. B. Tipp auf eine Kugel): nur wenn der Ton an ist
+App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.sag(key, { fertig: () => Unter.weg() }); Unter.zeig(titel, SPRECHTEXTE[key]); };
+
+/* ---------- Führung: Begrüßung, Recherche, Welten, die sechs Kugeln, Schluss ---------- */
+(function () {
+  const sanft = { behavior: RUHIG ? 'auto' : 'smooth', block: 'center' };
+  const zurBuehne = () => $('#buehne').scrollIntoView(sanft), zumKreis = () => $('#schleifeBild').scrollIntoView(sanft);
+  const KREIS = [['kreis_raten', 'Raten'], ['kreis_soll', 'Soll'], ['kreis_lernen', 'Lernen'], ['kreis_reihum', 'Reihum'], ['kreis_einfrieren', 'Einfrieren'], ['kreis_messen', 'Messen']];
+  const SCHRITTE = [
+    ['begruessung', 'Willkommen', () => { zurBuehne(); if (App.gewaehlt) App.close(); Szene.fokus(null); }],
+    ['recherche', 'Recherche', () => { zurBuehne(); if (App.gewaehlt) App.close(); Szene.fokus('recherche'); }],
+    ['welten', 'Die Welten', () => { zurBuehne(); if (App.gewaehlt) App.close(); Szene.fokus(null); }]
+  ].concat(KREIS.map(([k, n], i) => [k, `Kreislauf · ${i + 1} ${n}`, () => { zumKreis(); App.kreis.zeig(i); }]), [
+    ['schluss', 'Familienakte', () => { zurBuehne(); if (App.gewaehlt) App.close(); Szene.fokus('akte'); }]
+  ]);
+  const b = $('#bFuehrung'); let i = -1, uhr = null, lauf = 0;
+  function schritt(n) {
+    clearTimeout(uhr); const meins = ++lauf;
+    if (n >= SCHRITTE.length) return ende();
+    i = n; const [key, titel, tun] = SCHRITTE[n], text = SPRECHTEXTE[key], t0 = Date.now();
+    Sprecher.stopp();
+    Unter.zeig(`Führung · ${n + 1} von ${SCHRITTE.length} · ${titel}`, text, () => schritt(i + 1), ende); tun();
+    const weiter = () => { if (meins !== lauf) return; clearTimeout(uhr); uhr = setTimeout(() => { if (meins === lauf) schritt(n + 1); }, Math.max(900, 2600 - (Date.now() - t0))); };
+    if (Ton.an()) Sprecher.sag(key, { fertig: weiter }); else { Sprecher.stopp(true); uhr = setTimeout(weiter, Sprecher.lesezeit(key) * 1000 + 1500); }
+  }
+  function ende() { lauf++; clearTimeout(uhr); Sprecher.stopp(true); i = -1; App.tour = false; Unter.weg(); App.kreis.frei(); b.setAttribute('aria-pressed', 'false'); b.innerHTML = IK.spiel + 'Führung starten'; }
+  b.innerHTML = IK.spiel + 'Führung starten';
+  b.onclick = () => { if (i >= 0) return ende(); Ton.bereit(); App.tour = true; b.setAttribute('aria-pressed', 'true'); b.innerHTML = IK.halt + 'Führung anhalten'; $('#tipp').classList.add('weg'); schritt(0); };
+  App.tonHoerer.push(an => { if (i >= 0) schritt(i); });   // Ton während der Führung umgeschaltet: Schritt neu ansetzen (mit oder ohne Stimme)
+})();
+
+/* ---------- Kurzfilme (gezeichnet) ---------- */
+(function () {
+  const cv = $('#film'), c = cv.getContext('2d'), BW = 960, BH = 540;
+  const kl = (v, a, b) => Math.max(a, Math.min(b, v)), st = (t, a, b) => kl((t - a) / (b - a), 0, 1), weich = x => x * x * (3 - 2 * x);
+  const rr = (x, y, w, h, r, f, s) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); if (f) { c.fillStyle = f; c.fill(); } if (s) { c.strokeStyle = s; c.lineWidth = 3; c.stroke(); } };
+  const kreis = (x, y, r, f, s) => { c.beginPath(); c.arc(x, y, r, 0, 6.283); if (f) { c.fillStyle = f; c.fill(); } if (s) { c.strokeStyle = s; c.lineWidth = 3; c.stroke(); } };
+  const txt = (s, x, y, gr, f, aus) => { c.font = `700 ${gr}px system-ui,sans-serif`; c.textAlign = aus || 'center'; c.textBaseline = 'middle'; c.fillStyle = f || '#1c2333'; c.fillText(s, x, y); };
+  function himmel(o, u, bod) { const g = c.createLinearGradient(0, 0, 0, BH); g.addColorStop(0, o); g.addColorStop(1, u); c.fillStyle = g; c.fillRect(0, 0, BW, BH); c.fillStyle = bod; c.fillRect(0, 410, BW, 130); c.fillStyle = 'rgba(255,255,255,.7)'; [[120, 80], [520, 50], [800, 110]].forEach(([x, y]) => { kreis(x, y, 26, c.fillStyle); kreis(x + 30, y + 6, 20, c.fillStyle); kreis(x - 28, y + 8, 18, c.fillStyle); }); }
+  function brief(x, y, dreh, gr, f) { c.save(); c.translate(x, y); c.rotate(dreh || 0); c.scale(gr || 1, gr || 1); rr(-22, -14, 44, 28, 3, f || '#fffaf0', '#1c2333'); c.beginPath(); c.moveTo(-22, -14); c.lineTo(0, 4); c.lineTo(22, -14); c.stroke(); c.restore(); }
+  function blase(x, y, s, f) { c.font = '700 24px system-ui,sans-serif'; const b = c.measureText(s).width + 32; rr(x - b / 2, y - 26, b, 52, 18, '#fff', '#1c2333'); c.beginPath(); c.moveTo(x - 12, y + 25); c.lineTo(x - 22, y + 46); c.lineTo(x + 6, y + 25); c.fillStyle = '#fff'; c.fill(); c.stroke(); c.fillRect(x - 13, y + 21, 20, 6); txt(s, x, y, 24, f); }
+  function kern(x, y, laune, t, lauf) { // der Kern: ein kleiner Kasten mit Antenne
+    const hu = lauf ? Math.abs(Math.sin(t * 9)) * 8 : Math.sin(t * 2) * 2, wack = laune === 'falsch' ? Math.sin(t * 40) * 5 : 0; c.save(); c.translate(x + wack, y - hu);
+    c.strokeStyle = '#1c2333'; c.lineWidth = 6; c.lineCap = 'round'; const b = lauf ? Math.sin(t * 9) * 14 : 0; c.beginPath(); c.moveTo(-18, 48); c.lineTo(-18 - b, 78); c.moveTo(18, 48); c.lineTo(18 + b, 78); c.stroke();
+    c.beginPath(); c.moveTo(0, -52); c.lineTo(0, -78); c.stroke(); if (laune === 'aha') { kreis(0, -86, 26, 'rgba(255,220,90,.45)'); }
+    kreis(0, -86, 11, laune === 'aha' ? '#ffd23f' : '#9aa6bd', '#1c2333');
+    rr(-52, -52, 104, 104, 20, laune === 'falsch' ? '#f6b3ad' : '#5fd8b2', '#1c2333');
+    const bl = Math.sin(t * 1.7) > .97 ? 1 : 9; c.fillStyle = '#fff'; c.beginPath(); c.ellipse(-20, -12, 11, bl === 1 ? 2 : 13, 0, 0, 6.283); c.ellipse(20, -12, 11, bl === 1 ? 2 : 13, 0, 0, 6.283); c.fill(); c.stroke();
+    const px = laune === 'denkt' ? 4 : 0, py = laune === 'denkt' ? -4 : 0; if (bl !== 1) { kreis(-20 + px, -12 + py, 5, '#1c2333'); kreis(20 + px, -12 + py, 5, '#1c2333'); }
+    c.beginPath(); c.lineWidth = 4; if (laune === 'aha' || laune === 'froh') c.arc(0, 14, 18, .15, Math.PI - .15); else if (laune === 'falsch') c.arc(0, 34, 16, Math.PI + .3, -0.3); else { c.moveTo(-12, 24); c.lineTo(12, 24); } c.stroke(); c.restore();
+  }
+  function bote(x, y, t, geht) { // Briefträger-Agent
+    const b = geht ? Math.sin(t * 10) * 16 : 0, hu = geht ? Math.abs(Math.sin(t * 10)) * 6 : 0; c.save(); c.translate(x, y - hu); c.strokeStyle = '#1c2333'; c.lineWidth = 6; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(-12, 40); c.lineTo(-12 - b, 76); c.moveTo(12, 40); c.lineTo(12 + b, 76); c.stroke();
+    rr(-34, -30, 68, 76, 26, '#2f7de1', '#1c2333'); kreis(0, -52, 26, '#ffd9b0', '#1c2333'); rr(-30, -84, 60, 22, 8, '#1b4f9c', '#1c2333'); rr(-6, -66, 46, 9, 4, '#1b4f9c', '#1c2333');
+    kreis(8, -52, 3.5, '#1c2333'); kreis(20, -52, 3.5, '#1c2333'); c.beginPath(); c.lineWidth = 3; c.arc(14, -44, 8, .2, 2.6); c.stroke();
+    rr(-52, -6, 40, 44, 8, '#b8732e', '#1c2333'); brief(-32, -12, -.2, .7); brief(-26, -16, .15, .7); c.restore();
+  }
+  function pult(x, y, farbe, zeichen, t) { // Einordner am Pult
+    kreis(x, y - 62, 17, farbe, '#1c2333'); rr(x - 20, y - 46, 40, 40, 12, farbe, '#1c2333'); kreis(x - 6, y - 64, 2.5, '#1c2333'); kreis(x + 6, y - 64, 2.5, '#1c2333'); rr(x - 34, y - 16, 68, 14, 4, '#8a6a4a', '#1c2333'); rr(x - 28, y - 2, 8, 30, 2, '#8a6a4a'); rr(x + 20, y - 2, 8, 30, 2, '#8a6a4a');
+    if (zeichen) { const h = zeichen === '?' ? Math.sin(t * 8) * 3 : 0; rr(x - 22, y - 128 + h, 44, 38, 8, zeichen === '✓' ? '#d8efe6' : '#fff', '#1c2333'); txt(zeichen, x, y - 108 + h, 26, zeichen === '✓' ? '#17725c' : zeichen === '?' ? '#b0352d' : '#586174'); c.strokeStyle = '#1c2333'; c.beginPath(); c.moveTo(x, y - 90 + h); c.lineTo(x, y - 80); c.stroke(); }
+  }
+  const NE = W[1].d.agenten.einordner, FARB = ['#1fa971', '#35c08a', '#5fd8b2', '#1fa971', '#35c08a', '#5fd8b2', '#1fa971', '#35c08a'];
+  const kurzEreignis = (W[1].d.beispiel_ereignisse.find(e => /bescheid/i.test(e)) || W[1].d.beispiel_ereignisse[0]).split(' ')[0];
+  const FILME = [
+    { key: 'film_brieftraeger', titel: 'Der Briefträger-Agent', unter: 'Post für die Einordner', dauer: 15,
+      spruch: [[0, `Post für ${W[1].kurz}! ${W[1].d.stuecke} Schriftstücke warten.`], [3.4, 'Der Briefträger-Agent bringt jedem Einordner dasselbe Stück.'], [7.4, 'Jeder ordnet für sich ein. Abschreiben gilt nicht.'], [11.4, 'Aus ihren Antworten wird das Soll.']],
+      klang: [[.2, 'klick'], [11.6, 'richtig'], [13, 'aha']].concat(Array.from({ length: NE }, (_, i) => [2.4 + i * 1.3, 'hops']), Array.from({ length: Math.floor((NE * 1.3 + .6) / .32) }, (_, i) => [1.4 + i * .32, 'schritt']), Array.from({ length: NE }, (_, i) => [2.9 + i * 1.3, 'brief'])),
+      bild(t) {
+        himmel('#9fd0ee', '#e9f4dc', '#7fa86a'); rr(20, 250, 150, 160, 6, '#e2d6c2', '#1c2333'); c.fillStyle = '#a5493a'; c.beginPath(); c.moveTo(10, 250); c.lineTo(95, 196); c.lineTo(180, 250); c.closePath(); c.fill(); c.stroke(); rr(72, 340, 46, 70, 4, '#7a5536', '#1c2333');
+        rr(28, 268, 134, 30, 4, '#fff', '#1c2333'); c.font = '700 12px system-ui,sans-serif'; const amt = W[1].d.beispiel_stellen[1]; txt(amt.length > 20 ? amt.split(' ')[0] : amt, 95, 283, 12);
+        const x0 = 240, dx = (BW - 400) / Math.max(1, NE - 1), bx = 120 + st(t, 1.4, 1.4 + NE * 1.3 + .6) * (BW - 180);
+        for (let i = 0; i < NE; i++) { const ti = 2.4 + i * 1.3, zweifler = i === Math.floor(NE / 2), z = t < ti + .5 ? null : (t < ti + (zweifler ? 4.2 : 1.6) ? (zweifler ? '?' : '…') : '✓'); pult(x0 + i * dx, 404, FARB[i], z, t); if (t > ti + .5 && t < 11.4) brief(x0 + i * dx, 382, 0, .6); if (t > ti && t <= ti + .5) { const u = (t - ti) / .5; brief(bx - 30 + (x0 + i * dx - bx + 30) * u, 330 - Math.sin(u * 3.14) * 70 + u * 52, u * 6, .7); } }
+        if (t > 11.4) { const u = weich(st(t, 11.4, 13)); for (let i = 0; i < NE; i++) brief(x0 + i * dx + (BW / 2 - x0 - i * dx) * u, 382 - u * 262, u * 3.14 * 2, .6); if (u >= 1) { rr(BW / 2 - 90, 86, 180, 68, 14, '#fff', '#17725c'); txt('Das Soll ✓', BW / 2, 120, 30, '#17725c'); } }
+        bote(bx, 334, t, t > 1.4 && t < 1.4 + NE * 1.3 + .6);
+      } },
+    { key: 'film_kern_raet', titel: 'Der Kern rät', unter: 'raten → Korrektur → aha', dauer: 17.5,
+      spruch: [[0, 'Ein Brief kommt. Der Kern rät.'], [4, '„Bestimmt eine Rechnung!“'], [6.6, 'Daneben. Das Soll der Einordner sagt: Bescheid.'], [9.2, 'Aha! Gelernt wird nur aus Fehlern.'], [11.8, 'Nächster Brief – diesmal sitzt es.'], [14.4, 'Richtig geraten heißt: nichts ändern. Nur Fehler machen ihn schlauer.']],
+      klang: [[.3, 'brief'], [1.9, 'wirbel'], [6.6, 'falsch'], [9.2, 'aha'], [9.6, 'lern'], [11.9, 'brief'], [12.4, 'wirbel'], [13.4, 'richtig']],
+      bild(t) {
+        himmel('#2a2f5a', '#5b3a55', '#3a3550'); c.fillStyle = 'rgba(255,255,255,.08)'; c.fillRect(0, 404, BW, 6);
+        const laune = t < 1.6 ? 'ruhig' : t < 6.6 ? 'denkt' : t < 9.2 ? 'falsch' : t < 11.8 ? 'aha' : t < 13.4 ? 'denkt' : 'froh';
+        kern(300, 330, laune, t);
+        const zwei = t >= 11.8, u = weich(st(t, zwei ? 11.8 : 0, zwei ? 12.8 : 1.4)), lx = 1040 - u * 480, weg = zwei ? 0 : weich(st(t, 10.6, 11.6));
+        c.save(); c.globalAlpha = 1 - weg; brief(lx, 300 - weg * 80, Math.sin(t * 2) * .05, 2.4); txt(kurzEreignis, lx, 372 - weg * 80, 19, '#fff'); c.restore();
+        if (t > 1.8 && t < 4) blase(330, 190, '. '.repeat(1 + Math.floor((t * 2) % 3)).trim() || '.');
+        if (t >= 4 && t < 9.2) blase(340, 190, 'Art: Rechnung?', '#1c2333');
+        if (t >= 6.6 && t < 10.4) { const s = 1 + (1 - st(t, 6.6, 6.9)) * 1.5; c.save(); c.translate(lx, 296); c.scale(s, s); c.strokeStyle = '#ff5a4f'; c.lineWidth = 12; c.lineCap = 'round'; c.beginPath(); c.moveTo(-34, -34); c.lineTo(34, 34); c.moveTo(34, -34); c.lineTo(-34, 34); c.stroke(); c.restore();
+          const e = weich(st(t, 6.9, 7.6)); pult(BW + 60 - e * 180, 404, '#1fa971', null, t); rr(BW + 60 - e * 180 - 86, 232, 172, 46, 10, '#d8efe6', '#17725c'); txt('Soll: Bescheid', BW + 60 - e * 180, 255, 22, '#17725c'); }
+        if (t >= 9.2 && t < 11.8) { blase(330, 180, 'Aha!', '#b25a12'); for (let i = 0; i < 6; i++) { const v = ((t - 9.2) * .6 + i / 6) % 1; txt(i % 2 ? '+' : '−', 470 - v * 150 + Math.sin(i * 3) * 30, 220 + Math.sin(v * 3.14) * -60 + i * 12, 26, `rgba(255,210,63,${1 - v})`); } }
+        if (t >= 13.4) { blase(340, 190, 'Bescheid!', '#17725c'); const s = 1 + (1 - st(t, 13.4, 13.7)) * 1.5; c.save(); c.translate(lx, 296); c.scale(s, s); c.strokeStyle = '#35d08f'; c.lineWidth = 12; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); c.moveTo(-36, 0); c.lineTo(-10, 28); c.lineTo(38, -30); c.stroke(); c.restore(); }
+      } },
+    { key: 'film_strafzettel', titel: 'Der Strafzettel flattert', unter: 'Seltene Post einfangen', dauer: 14.5,
+      spruch: [[0, 'Seltene Post ist schwer. Zum Beispiel: ein Strafzettel.'], [3, 'Hui! So etwas kommt im Alltag kaum vor.'], [6.6, `Darum gab es ${W[4].d.stuecke} Stücke Lücken-Material zum Üben.`], [10.2, 'Gefangen!'], [11.8, `Art am Lücken-Material: ${fz(D.luecken_kern.Art[0])} → ${fz(D.luecken_kern.Art[1])} %.`]],
+      klang: [[2.2, 'wind'], [5, 'wind'], [7.2, 'hops'], [8.4, 'wind'], [10.2, 'aha']],
+      bild(t) {
+        himmel('#f3b27a', '#fbe6c4', '#8a8f99'); c.fillStyle = '#fff'; for (let i = 0; i < 9; i++) c.fillRect(i * 120 - (t * 30 % 120), 470, 60, 8);
+        c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = 3; for (let i = 0; i < 5; i++) { const x = (t * 260 + i * 230) % (BW + 200) - 100, y = 110 + i * 55; c.beginPath(); c.moveTo(x, y); c.bezierCurveTo(x + 30, y - 14, x + 60, y + 14, x + 90, y); c.stroke(); }
+        rr(40, 330, 210, 60, 16, '#e0453c', '#1c2333'); rr(78, 290, 124, 48, 14, '#e0453c', '#1c2333'); rr(92, 300, 44, 30, 6, '#cfe6ee', '#1c2333'); rr(144, 300, 44, 30, 6, '#cfe6ee', '#1c2333'); kreis(92, 392, 20, '#1c2333'); kreis(200, 392, 20, '#1c2333'); kreis(92, 392, 8, '#9aa6bd'); kreis(200, 392, 8, '#9aa6bd');
+        const fang = 10.2; let zx, zy, zr;
+        if (t < 2.2) { zx = 196; zy = 312 + Math.sin(t * 14) * (t > 1.2 ? 3 : 0); zr = -.3 + (t > 1.2 ? Math.sin(t * 20) * .12 : 0); }
+        else { const u = st(t, 2.2, fang); zx = 196 + u * 520 + Math.sin(u * 14) * 60; zy = 312 - Math.sin(u * 3.14) * 170 + Math.sin(u * 22) * 28; zr = Math.sin(t * 7) * .9; }
+        const kx = t < 3 ? 1040 : t < fang ? 1040 - weich(st(t, 3, 4.5)) * 300 + (zx - 640) * weich(st(t, 4.5, fang)) * .9 : zx + 96, spr = t > 7.2 && t < 8.1 ? Math.sin((t - 7.2) / .9 * 3.14) * 90 : 0;
+        if (t >= fang) { zx = kx - 96; zy = 250; zr = 0; }
+        c.save(); c.translate(kx - 60, 300 - spr); c.strokeStyle = '#7a5536'; c.lineWidth = 6; c.lineCap = 'round'; c.beginPath(); c.moveTo(20, 30); c.lineTo(-36, -50); c.stroke(); c.strokeStyle = '#1c2333'; c.lineWidth = 3; c.beginPath(); c.ellipse(-36, -50 - 26, 30, 26, 0, 0, 6.283); c.stroke(); c.fillStyle = 'rgba(255,255,255,.3)'; c.fill(); c.restore();
+        kern(kx, 330 - spr, t >= fang ? 'aha' : t > 7.2 && t < 9 ? 'falsch' : 'denkt', t, t > 3 && t < fang);
+        c.save(); c.translate(zx, zy); c.rotate(zr); rr(-30, -19, 60, 38, 3, '#fff', '#1c2333'); rr(-30, -19, 60, 10, 2, '#2f7de1'); c.fillStyle = '#586174'; c.fillRect(-22, -2, 44, 3); c.fillRect(-22, 6, 30, 3); txt('€', 18, 9, 13, '#b0352d'); c.restore();
+        if (t >= fang && t < 11.8) blase(kx - 20, 150, 'Hab ihn!', '#17725c');
+      } }
+  ];
+  const kap = $('#kapitel'), spruch = $('#filmSpruch'), zeile = $('#filmZeile'), balken = $('#filmBalken'), startB = $('#filmStart'), pauseB = $('#filmPause');
+  let nr = 0, t = 0, laeuft = false, begonnen = false, zuletzt = 0, klangNr = 0, tempo = 1, gesagt = true, sprLauf = 0, dann = 0;
+  function mal() { const F = FILME[nr]; c.clearRect(0, 0, BW, BH); F.bild(t); let s = ''; F.spruch.forEach(([ab, tx]) => { if (t >= ab) s = tx; }); if (zeile.textContent !== s) zeile.textContent = s; zeile.style.display = s ? '' : 'none'; balken.style.width = (t / F.dauer * 100) + '%'; }
+  function knoepfe(gross) {
+    pauseB.innerHTML = laeuft ? IK.pause + 'Pause' : IK.spiel + (begonnen ? 'Weiter' : 'Start'); pauseB.setAttribute('aria-pressed', laeuft);
+    startB.style.display = laeuft ? 'none' : ''; if (gross) startB.firstElementChild.innerHTML = IK.spiel + gross;
+  }
+  function standbild() { t = FILME[nr].dauer * .42; mal(); zeile.style.display = 'none'; spruch.textContent = FILME[nr].titel + ' – ' + FILME[nr].unter; balken.style.width = '0'; }
+  function tick(jetzt) {
+    if (!laeuft) return; const F = FILME[nr];
+    if (RUHIG) { if (jetzt - zuletzt > 2300) { zuletzt = jetzt; const zeiten = F.spruch.map(s => s[0] + .9).concat([F.dauer - .2]); const i = zeiten.findIndex(z => z > t + .01); if (i < 0) { if (gesagt) return fertig(); } else { t = zeiten[i]; mal(); } } }
+    else {
+      t += Math.min(.05, (jetzt - zuletzt) / 1000) * tempo; zuletzt = jetzt; while (klangNr < F.klang.length && F.klang[klangNr][0] <= t) Ton.spiel(F.klang[klangNr++][1]);
+      if (t >= F.dauer) { t = F.dauer; mal(); if (gesagt) return fertig(); }   // das Bild wartet, bis zu Ende gesprochen ist
+      else mal();
+    }
+    requestAnimationFrame(tick);
+  }
+  // Der Absatz des Films wird gesprochen; ist er länger als der Film, läuft der Film entsprechend langsamer
+  function sprich() {
+    const F = FILME[nr], meins = ++sprLauf; tempo = 1; if (!Ton.an()) { gesagt = true; return; } gesagt = false;
+    Sprecher.sag(F.key, { start: d => { if (meins === sprLauf && d > 0) tempo = Math.max(.4, Math.min(1, (F.dauer - Math.max(0, t)) / (d + .3))); }, fertig: () => { if (meins === sprLauf) { gesagt = true; tempo = 1; } } });
+  }
+  function fertig() { if (nr < FILME.length - 1) return spiele(nr + 1);   // lückenlos: der nächste Film schließt ohne Halt und ohne Knopf an
+    laeuft = begonnen = false; dann = 0; knoepfe('Noch einmal von vorn'); }
+  function spiele(n) {
+    Ton.bereit(); nr = n; t = RUHIG ? -1 : 0; klangNr = 0; FILME[nr].klang.sort((a, b) => a[0] - b[0]); laeuft = begonnen = true; zuletzt = RUHIG ? -9999 : performance.now();
+    spruch.textContent = SPRECHTEXTE[FILME[nr].key]; [...kap.children].forEach((b, i) => b.setAttribute('aria-pressed', i === nr)); knoepfe(); sprich(); requestAnimationFrame(tick);
+  }
+  function halt() { laeuft = false; Sprecher.pause(); knoepfe('Weiter'); }
+  function weiter() { laeuft = true; zuletzt = RUHIG ? -9999 : performance.now(); Sprecher.weiter(); knoepfe(); requestAnimationFrame(tick); }
+  const schalt = () => { if (laeuft) halt(); else if (begonnen) weiter(); else spiele(dann); };
+  FILME.forEach((F, i) => { const b = el('button', '', `<b>${esc(F.titel)}</b><span>${esc(F.unter)}</span>`); b.setAttribute('aria-pressed', i === 0); b.onclick = () => spiele(i); kap.appendChild(b); });
+  startB.onclick = schalt; pauseB.onclick = schalt; cv.onclick = schalt;
+  App.tonHoerer.push(an => { if (!an) { sprLauf++; gesagt = true; tempo = 1; } });
+  standbild(); knoepfe('Film abspielen');
+})();
+
+</script>
+</body>
+</html>

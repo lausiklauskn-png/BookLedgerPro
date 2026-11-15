@@ -1,0 +1,24 @@
+{
+ "quelle": "Datei-Organizer src/public/",
+ "werkzeug": "tools/discovery-nachziehen.mjs",
+ "commit": "c25151082d7621fe1b72cac294bc9960b22460c1",
+ "dateien": {
+  "discovery.html": "7f76c06ad0172e16cd10b5c5fde1a92daf547d0e0978854e36bf0bdef32a7591",
+  "discovery-three.min.js": "9274bbcec8d96168626c732b5d31c775aa8cfb7eaa0599bec0c175908a2c1ce2",
+  "discovery-kreislauf.mp4": "7894c2ffb02044e4f358d900e2212bc108dd6379aade3498a8720f023f1ee1a0",
+  "discovery-kreislauf.jpg": "a1cada634b0a9c21f506e83a1bda99af5bec37ca88a03aca974e28630296ae70",
+  "discovery-ton/begruessung.mp3": "719f07877a9fd495ef34f8973025c56e362f9bd326eb23725f0de8601d1a8483",
+  "discovery-ton/film_brieftraeger.mp3": "0222f4ae8b9949692e26b180d1f384413f58be547736be211096bbf456abd752",
+  "discovery-ton/film_kern_raet.mp3": "e63efccab883f98dccc723c9c13f04fa516de2e6f056f4f1a3d93e7e5b0595ef",
+  "discovery-ton/film_strafzettel.mp3": "38fc8544e08b3713081b320eadb168a253b661cec326980ff14f8aa434f214c2",
+  "discovery-ton/kreis_einfrieren.mp3": "3654815b0aab83b57527784e02d09ac926135ab4faefc5a73851a13de0312afa",
+  "discovery-ton/kreis_lernen.mp3": "97cd6fa260a4aa05b469ea078e7835f5417cc6eb1121d8103cad8ead347ce81f",
+  "discovery-ton/kreis_messen.mp3": "39e52903ad07f8237a192b7e5b12fa5023abdb1eda7c6fdb86efd6f351ceffd7",
+  "discovery-ton/kreis_raten.mp3": "07ea0fa3a938f736c59bf6efeee8e26661cf4273bf8800865221dd93e350ec94",
+  "discovery-ton/kreis_reihum.mp3": "683cd3dc447ccbc3b9f91ec44c8e4d6201fbb5067a4c91345742243578c00342",
+  "discovery-ton/kreis_soll.mp3": "8adc0f6ae7ac8e27dad7506ff25a4c6e1f3c4ec34de0a67c184705d5c746228c",
+  "discovery-ton/recherche.mp3": "05730a1f331a722e6ec31a6616936aaa8ba4785315135dcbb0e53aa59d95e9a4",
+  "discovery-ton/schluss.mp3": "f37cbde329e5e95824e6521501742e30f4abdf8166b8f0343ef47fe21326d068",
+  "discovery-ton/welten.mp3": "19d1f43127b2ff293910292df3999598bad6f3879921f3d0679bd1ff37acd129"
+ }
+}
