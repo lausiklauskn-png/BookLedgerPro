@@ -8,6 +8,9 @@ mit Schließen/Esc/Zurück); i18n `discovery.*` DE/EN; `sw.js` v305 mit eigenem 
 ganzen Datei, überlebt den Versionswechsel) – `FASSUNG` und `version.json` mitgezogen. `run.mjs` 2911/0 (+14; zwei alte Zeilen und eine in
 `smoke_teilen` lasen `BLEIBT = [GETEILT_VORRAT, APPS_VORRAT]` wörtlich und sind auf die längere Liste angepasst), `smoke_discovery` 42 grün,
 Gegenprobe in einer Wegwerf-Kopie 2/2 (ohne Kasten 2 ROT, ohne Worker-Zweig 7 ROT).
+**Nachtrag am selben Tag:** Seite auf den Endstand des Datei-Organizers nachgezogen (Pin `5497e25`; geändert nur `discovery.html`, Film/Bild/Ton/three.js
+byte-gleich wie zuvor), Werkzeug mit `--commit` (pinnt einen genannten Commit nur bei gleichen Bytes), Vorrat `blpr-discovery-5497e25`, `sw.js` v306.
+`run.mjs` 2911/0, `smoke_discovery` 42 grün ohne Änderung an der Probe.
 **Stand:** Entwurfs-PR, nicht gemergt, nichts veröffentlicht, App-Fassung 0.1.18 unverändert. **Nächstes:** Klaus' Blick; Basic nach dem Merge neu pinnen.
 **Offen/ungeprüft:** kein Gerät, kein Android-/Windows-Bau (Film/Ton/3D in der WebView, Paket +6,2 MB); „Leichte Ansicht“ der Seite lädt im Rahmen
 neu und legt dabei eigene Verlaufseinträge an (Zurück braucht dann mehr als einen Tipp, „Schließen“ geht immer); die Seite spricht nur Deutsch.

@@ -3,6 +3,7 @@
 // 3D-Baum, Lern-Kreislauf, Kurzfilme, 13 Tonspuren; Klaus 2026-11-15: „Da wo der Sortierkern drin ist, Discovery nachziehen“)
 // byte-gleich mit Pin nach assets/discovery/ holen. Quelle: Datei-Organizer src/public/. Nie von Hand ändern.
 //   node tools/discovery-nachziehen.mjs --quelle ../Datei-Organizer      (nachziehen)
+//   node tools/discovery-nachziehen.mjs --quelle ../Datei-Organizer --commit <Hash>   (diesen Quell-Commit pinnen; nur bei gleichen Bytes)
 //   node tools/discovery-nachziehen.mjs --pruefen                         (nur Pins prüfen; Ausgabe 1 bei Abweichung)
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -38,7 +39,16 @@ const liste = [...FEST, ...readdirSync(join(von, TON)).filter((f) => f.endsWith(
 // Nur ein sauberer Quellstand wird gepinnt: der Commit muss die kopierten Bytes wirklich beschreiben.
 const schmutz = execFileSync('git', ['-C', quelle, 'status', '--porcelain', '--', ...liste.map((f) => QUELL_ORDNER + '/' + f)], { encoding: 'utf8' }).trim();
 if (schmutz) { console.error('Quelle hat ungesicherte Änderungen an der Discovery:\n' + schmutz); process.exit(1); }
-const commit = execFileSync('git', ['-C', quelle, 'log', '-1', '--format=%H', '--', ...liste.map((f) => QUELL_ORDNER + '/' + f)], { encoding: 'utf8' }).trim();
+// Gepinnt wird ohne Angabe der letzte Commit, der die Discovery-Dateien berührt hat. Mit --commit <Hash> (z. B. der Stand von
+// main, wenn der Klon auf einem Zweig darüber steht) gilt der genannte – aber nur, wenn die Dateien dort Byte für Byte dieselben sind.
+const pfade = liste.map((f) => QUELL_ORDNER + '/' + f);
+let commit = execFileSync('git', ['-C', quelle, 'log', '-1', '--format=%H', '--', ...pfade], { encoding: 'utf8' }).trim();
+if (arg('--commit')) {
+  const genannt = execFileSync('git', ['-C', quelle, 'rev-parse', '--verify', arg('--commit') + '^{commit}'], { encoding: 'utf8' }).trim();
+  try { execFileSync('git', ['-C', quelle, 'diff', '--quiet', genannt, '--', ...pfade], { stdio: 'ignore' }); }
+  catch { console.error(`Die Discovery-Dateien im Klon sind nicht die von ${genannt.slice(0, 7)} – nichts gepinnt.`); process.exit(1); }
+  commit = genannt;
+}
 rmSync(ZIEL, { recursive: true, force: true });
 mkdirSync(join(ZIEL, TON), { recursive: true });
 const dateien = {};

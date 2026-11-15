@@ -1,9 +1,9 @@
 {
  "quelle": "Datei-Organizer src/public/",
  "werkzeug": "tools/discovery-nachziehen.mjs",
- "commit": "c25151082d7621fe1b72cac294bc9960b22460c1",
+ "commit": "5497e251b05ad2f6a94c4168e93cedb21564355f",
  "dateien": {
-  "discovery.html": "7f76c06ad0172e16cd10b5c5fde1a92daf547d0e0978854e36bf0bdef32a7591",
+  "discovery.html": "831562ff1659a7806564b160484292462e2c844ea67330f80e2e71685a3ede01",
   "discovery-three.min.js": "9274bbcec8d96168626c732b5d31c775aa8cfb7eaa0599bec0c175908a2c1ce2",
   "discovery-kreislauf.mp4": "7894c2ffb02044e4f358d900e2212bc108dd6379aade3498a8720f023f1ee1a0",
   "discovery-kreislauf.jpg": "a1cada634b0a9c21f506e83a1bda99af5bec37ca88a03aca974e28630296ae70",
