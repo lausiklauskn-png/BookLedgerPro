@@ -2,6 +2,16 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**Discovery in der Hilfe (Klaus 15.11.: „Da wo der Sortierkern drin ist, Discovery/Button nachziehen“ – mit einbauen, Knopf in der Anleitung und unter „Über“
+neben der Verbund-Karte; Zweig `claude/discovery-hilfe`, Entwurfs-PR, nicht veröffentlicht, App-Fassung bleibt 0.1.18):** Die Seite „so wurde der Sortier-Kern
+trainiert“ des Datei-Organizers liegt **byte-gleich** unter `assets/discovery/` (Seite, three.js r128, Film, Bild, 13 Tonspuren; Pin `HERKUNFT.json` @ `213c81b` (16.11.: Stand nach Datei-Organizer 0.4.10 – 43 Dateien, rund 59 MB, mit Film bei „Führung starten“, neuer Kiosk-Szene, Untertiteln, Zugabe-Murmel; Vorrat `blpr-discovery-213c81b`; **App-Paket dadurch rund 53 MB größer als mit dem alten Stand**); vorher `5497e25` – Endstand 15.11. mit Film im Stadt-Rahmen, Untertitel-Knopf, Leistungsprüfung der 3D-Kugeln, Kurzfilmen wie ein Video;
+nur über `node tools/discovery-nachziehen.mjs --quelle ../Datei-Organizer [--commit <Hash>]`, `--pruefen`; **nie von Hand ändern**). Kasten `discoveryKasten()` und Vollbild-Rahmen
+`discoveryOeffnen()` in `src/ui/discoveryKarte.js` (wie `verbundKarte.js`: iframe, Schließen, Esc, Zurück-Taste; i18n `discovery.*` DE/EN, Seite selbst nur Deutsch).
+`sw.js` v306: nur Einstieg und Pin in der Schale; Seite, Film und Ton im eigenen Vorrat `blpr-discovery-<Pin-Commit>` (bleibt beim Versionswechsel; ⚠ **bei neuem
+Pin den Namen in `sw.js` mitziehen** – `run.mjs` hält beides zusammen), gefüllt beim Abruf und still beim ersten Öffnen; Stück-Anfragen (Range) von Film/Ton
+schneidet der Worker aus der ganzen Datei. App-Paket (Android/Windows) nimmt den Ordner über `assets/` mit (+6,2 MB). Proben `run.mjs` „Discovery“ (+14) ·
+`tests/smoke_discovery.mjs` 42 (echter Worker) · Gegenprobe 2/2. ⚠ Nicht am Gerät: 3D/Film/Ton in der Android-WebView und unter Windows, Paketgröße der APK.
+
 **0.1.18 (Klaus 13.11., Freibrief; Zweig `claude/update-faehnchen`, nicht veröffentlicht): Update-Fähnchen.** Neben der Version im Kopf erscheint von selbst
 ein Fähnchen, sobald ein Update bereitsteht (`src/ui/updateFahne.js`, im Kopf über `shell.js`); still gefragt wird beim Start, beim Zurückholen der App
 (frühestens nach 5 min) und stündlich. Aktuell oder ohne Netz: kein Fähnchen, keine Meldung. **App:** dieselbe Brücke wie „Auf Updates prüfen“

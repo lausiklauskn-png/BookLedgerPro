@@ -1,5 +1,16 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
+## Stand: Discovery in der Hilfe, 15. November 2026 (Entwurfs-PR `claude/discovery-hilfe`, nicht veröffentlicht)
+
+Klaus 15.11.: „Da wo der Sortierkern drin ist, Discovery/Button nachziehen“ – mit einbauen, Knopf in der Anleitung und unter „Über“ neben der
+Verbund-Karte. Die Seite des Datei-Organizers liegt byte-gleich unter `assets/discovery/` (17 Dateien, 6,2 MB, Pin @ `5497e25` – am 15.11. vom ersten Einbau `c251510` auf den Endstand der Seite nachgezogen, nur `discovery.html` anders;
+`tools/discovery-nachziehen.mjs`, neu mit `--commit`); Einstieg `src/ui/discoveryKarte.js` (Vollbild-Rahmen wie die Verbund-Karte). `sw.js` v306: eigener Vorrat
+`blpr-discovery-5497e25`, gefüllt beim Abruf; Film und Ton nicht im Pflicht-Vorrat. App-Fassung unverändert 0.1.18, nächste freie Fassung weiter **0.1.19**.
+Geprüft: `run.mjs` 2911/0 · `smoke_discovery` 42 · `smoke_design` 92 · `smoke_verbund` 17 · `smoke_updatefahne` 34 · `smoke_teilen` 26 · `smoke_apps` 22 ·
+`test-native` 62 · Gegenprobe 2/2.
+**Nächste Schritte:** Klaus sieht den PR an; nach dem Merge Basic neu auf Pro-main pinnen (Basic-PR zeigt auf den Pro-Zweig); mit der nächsten Fassung
+ausgeben. ⚠ Nicht am Gerät (3D, Film, Ton in Android-WebView/Windows; Größe der APK +6,2 MB); kein Android-/Windows-Bau in der Sitzung.
+
 ## Stand: 0.1.16, 0.1.17, 0.1.18 veröffentlicht, 13. November 2026 (Klaus' Freibrief vom 13.11.)
 
 | Fassung | Inhalt | Android (Lauf, SHA-256 der APK) | Windows (Lauf) |

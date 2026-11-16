@@ -110,6 +110,7 @@ import { mountDashboard } from './views/dashboard.js';
 import { wirtschaftsjahrVon } from '../domain/geschaeftsjahr.js';
 import { mountAnleitung } from './views/anleitung.js';
 import { verbundKasten } from './verbundKarte.js';
+import { discoveryKasten, discoveryOeffnen } from './discoveryKarte.js';
 import { schluesselAbgleichSection } from './schluesselabgleich.js';
 import { aboutContent, appNativ, appVersion, updateZeile, versionZeile } from './intro.js';
 import { updateFahne } from './updateFahne.js';
@@ -279,6 +280,12 @@ function header(s) {
       // Dezenter Aktualisieren-Knopf: leert SW-Registrierungen + Cache-Storage und lädt neu
       // (Hard-Reload-Ersatz für Klaus' Tablet, wo Service-Worker + HTTP-Cache hartnäckig sind).
       geschaeftsjahrKopf(s),
+      // Discovery (Klaus 2026-11-15: „sichtbar als Button oben in der Navi-Leiste“, „mit dem Fernrohr“ – wie im Datei-Organizer):
+      // öffnet denselben Vollbild-Rahmen wie die Kästen in der Anleitung und unter „Über“ (discoveryKarte.js).
+      el('button', {
+        class: 'btn btn-ghost btn-sm btn-icon discovery-knopf', type: 'button', title: t('discovery.titel'), 'aria-label': t('discovery.titel'),
+        'data-discovery-knopf': '', 'aria-haspopup': 'dialog', onClick: () => discoveryOeffnen(),
+      }, [icon('blp-fernrohr')]),
       // Thema (Klaus 2026-10-26): Palette-Knopf in der Kopfleiste, dieselbe Wahl wie in den Einstellungen.
       el('button', {
         class: 'btn btn-ghost btn-sm btn-icon thema-knopf', title: t('app.themeTitle'), 'aria-label': t('app.themeTitle'),
@@ -608,7 +615,7 @@ function renderRoute() {
   if (route === 'employees') return void mountEmployees(content);
   if (route === 'lohn') return void mountLohn(content);
   if (route === 'legal') return void mountLegal(content);
-  if (route === 'about') return mount(content, el('section', { class: 'view' }, [aboutContent(), verbundKasten()]));
+  if (route === 'about') return mount(content, el('section', { class: 'view' }, [aboutContent(), verbundKasten(), discoveryKasten()]));
   if (route === 'anleitung') return void mountAnleitung(content);
   if (route === 'network') return void mountNetwork(content);
   if (route === 'sbkimsuche') return void mountSbkimSuche(content);

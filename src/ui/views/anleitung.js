@@ -5,6 +5,7 @@
 import { el, mount } from '../dom.js';
 import { t, istProApp } from '../i18n.js';
 import { verbundKasten } from '../verbundKarte.js';
+import { discoveryKasten } from '../discoveryKarte.js';
 
 let _host = null;
 
@@ -19,6 +20,8 @@ export function mountAnleitung(host) {
     installCard(),
     // Vorschau-Hilfe „Pro-App-Verbund“ (Klaus 2026-11-09): Karte der Wege zwischen den Pro-Apps, im Vollbild-Rahmen.
     verbundKasten(),
+    // „Discovery“ (Klaus 2026-11-15): so wurde der Sortier-Kern trainiert – Seite des Datei-Organizers, byte-gleich, im selben Rahmen.
+    discoveryKasten(),
     schritteCard(),
     resetCard(),
   ]));

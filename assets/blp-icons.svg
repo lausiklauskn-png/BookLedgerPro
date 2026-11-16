@@ -54,5 +54,6 @@
   <symbol id="blp-schluessel" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3M14 9l2 2"/></symbol>
   <symbol id="blp-reinigen" viewBox="0 0 24 24"><path d="M4 20h16M6 20l2-9h8l2 9M10 11V5a2 2 0 0 1 4 0v6"/></symbol>
   <symbol id="blp-punkt" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor"/></symbol>
+  <symbol id="blp-fernrohr" viewBox="0 0 24 24"><path d="m3 11 12-6 2.5 5-12 6zM15 5l3-1.5 3 6-3.5 1.5M11.5 13.2 8 21M11.5 13.2 15 21"/></symbol>
   <symbol id="blp-rettung" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/></symbol>
 </svg>
