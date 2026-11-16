@@ -1,10 +1,14 @@
 // tests/smoke_discovery.mjs — Hilfe-Seite „Discovery“ (Klaus 2026-11-15: „Da wo der Sortierkern drin ist, Discovery nachziehen“).
 // Echter Browser:
 //   A  Anleitung mit dem Kasten direkt nach der Verbund-Karte, Tipp öffnet den Vollbild-Rahmen, die Seite lädt im Rahmen
-//      (SPRECHTEXTE mit 13 Einträgen, kein Rückweg-Knopf der Seite), jede Tonspur und der Film sind abrufbar,
+//      (SPRECHTEXTE mit 15 Einträgen, kein Rückweg-Knopf der Seite), jede Tonspur und jeder Film sind abrufbar,
 //      „Schließen“, Zurück-Taste und Esc schließen, keine Seitenfehler.
 //   B  echter sw.js: Abruf legt die ganze Datei in den Discovery-Vorrat, Stücke (Range) kommen als 206 aus dem Vorrat,
-//      ohne Server läuft Abgerufenes weiter, Film und Ton stehen nicht im Pflicht-Vorrat.
+//      ohne Server läuft Abgerufenes weiter, Filme, Bilder und Ton stehen nicht im Pflicht-Vorrat; jede gepinnte Datei
+//      (alle Filme und Bilder) geht denselben Weg.
+//   C  echte Shell: Fernrohr-Knopf in der Kopfleiste (Klaus 2026-11-15: „sichtbar als Button oben in der Navi-Leiste“),
+//      Strichsymbol, Name in title/aria-label, ≤ 32 px, im Fenster bei 320–1366 px und 200 % Schrift, öffnet denselben
+//      Rahmen, bleibt nach dem Neuzeichnen der Kopfleiste.
 // Rückgabe: 0 grün · 1 ROT · 2 nicht lauffähig.
 // Gegenprobe: BH_WURZEL=<Kopie ohne discoveryKasten() bzw. ohne den Discovery-Zweig in sw.js> node tests/smoke_discovery.mjs → ROT.
 
@@ -25,7 +29,9 @@ let gruen = 0, rot = 0;
 const ok = (name, cond, info) => { if (cond) { gruen++; console.log('  ✓ ' + name); } else { rot++; console.log('  ✗ ROT: ' + name + (info ? '  — ' + info : '')); } };
 
 const PIN = JSON.parse(readFileSync(join(WURZEL, 'assets/discovery/HERKUNFT.json'), 'utf8'));
-const TON = Object.keys(PIN.dateien).filter((f) => f.startsWith('discovery-ton/'));
+const ALLE = Object.keys(PIN.dateien);
+const TON = ALLE.filter((f) => f.startsWith('discovery-ton/'));
+const FILME = ALLE.filter((f) => f.endsWith('.mp4'));
 
 const PROBE = `<!doctype html><html lang="de"><head><meta charset="utf-8"><link rel="stylesheet" href="./assets/tokens.css"><link rel="stylesheet" href="./assets/app.css"></head>
 <body><div id="app"></div>
@@ -37,6 +43,24 @@ mountAnleitung(document.getElementById('app'));
 window.__bereit = true;
 </script></body></html>`;
 
+const SHELL = `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="./assets/tokens.css"><link rel="stylesheet" href="./assets/app.css"></head>
+<body><div id="app-root"></div><script type="module">
+import { setupVault } from './src/core/vault.js';
+import { hydrateSettings, updateSettings } from './src/state.js';
+import { applyGemerktesThema } from './src/ui/theme.js';
+import { ensureAccountsSeeded } from './src/domain/store.js';
+import { ensureKostenstellenSeeded } from './src/domain/crm-store.js';
+import { renderShell } from './src/ui/shell.js';
+applyGemerktesThema();
+await setupVault('probe-passwort-123');
+await hydrateSettings();
+await ensureAccountsSeeded(); await ensureKostenstellenSeeded();
+renderShell(document.getElementById('app-root'), { onLock: () => {} });
+window.__probe = { updateSettings };
+window.__bereit = true;
+</script></body></html>`;
+
 const TYP = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.json': 'application/json', '.webmanifest': 'application/manifest+json',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.wasm': 'application/wasm', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg' };
 let discoveryAus = false;                       // Teil B: „Server kennt die Discovery nicht mehr“ (wie offline)
@@ -44,6 +68,7 @@ const gesehen = [];                             // Discovery-Anfragen am Server:
 const server = createServer(async (req, res) => {
   const pfad = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (pfad === '/__probe.html') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(PROBE); }
+  if (pfad === '/__shell.html') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(SHELL); }
   if (pfad === '/__leer.html' || pfad === '/' || pfad === '/index.html') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end('<!doctype html><meta charset="utf-8"><body></body>'); }
   if (pfad.startsWith('/assets/discovery/') && !pfad.endsWith('HERKUNFT.json')) {
     gesehen.push([pfad, req.headers.range || '']);
@@ -95,15 +120,19 @@ try {
     const frame = await (await page.$('[data-discovery-rahmen]')).contentFrame();
     await frame.waitForFunction(() => { try { return typeof SPRECHTEXTE === 'object' && document.readyState === 'complete'; } catch { return false; } });
     const schluessel = await frame.evaluate(() => Object.keys(SPRECHTEXTE));
-    ok('Seite lädt im Rahmen: SPRECHTEXTE mit 13 Einträgen', schluessel.length === 13 && schluessel.every((k) => typeof k === 'string'), schluessel.length + ': ' + schluessel.join(' '));
+    ok('Seite lädt im Rahmen: SPRECHTEXTE mit 15 Einträgen', schluessel.length === 15 && schluessel.every((k) => typeof k === 'string'), schluessel.length + ': ' + schluessel.join(' '));
     ok('three.js liegt bei und ist geladen', await frame.evaluate(() => typeof THREE === 'object' && !!THREE.REVISION));
     ok('im Rahmen zeigt die Seite keinen eigenen Rückweg-Knopf', await frame.evaluate(() => !document.querySelector('[data-zurueck]')));
     const ton = await frame.evaluate(async (ks) => { const aus = []; for (const k of ks) { const r = await fetch('discovery-ton/' + k + '.mp3'); const b = await r.arrayBuffer(); aus.push([k, r.status, r.headers.get('content-type'), b.byteLength]); } return aus; }, schluessel);
-    ok('alle 13 Tonspuren neben der Seite abrufbar (je Sprechtext eine)', ton.length === 13 && ton.every((x) => x[1] === 200 && /audio/.test(x[2]) && x[3] > 10000), JSON.stringify(ton.filter((x) => x[1] !== 200)));
+    ok('alle 15 Tonspuren neben der Seite abrufbar (je Sprechtext eine)', ton.length === 15 && ton.every((x) => x[1] === 200 && /audio/.test(x[2]) && x[3] > 10000), JSON.stringify(ton.filter((x) => x[1] !== 200)));
     const spielt = await frame.evaluate((k) => new Promise((fertig) => { const a = new Audio('discovery-ton/' + k + '.mp3'); a.preload = 'auto'; a.addEventListener('loadedmetadata', () => fertig(a.duration)); a.addEventListener('error', () => fertig(-1)); setTimeout(() => fertig(-2), 8000); }), schluessel[0]);
     ok('eine Tonspur lässt sich als Ton laden (Dauer > 1 s)', spielt > 1, String(spielt));
     const film = await frame.evaluate(async () => { const r = await fetch('discovery-kreislauf.mp4', { headers: { Range: 'bytes=0-1023' } }); return [r.status, (await r.arrayBuffer()).byteLength]; });
     ok('Film neben der Seite abrufbar (Stück-Anfrage)', film[0] === 206 && film[1] === 1024, JSON.stringify(film));
+    const filme = await frame.evaluate(async (fs) => { const aus = []; for (const f of fs) { const r = await fetch(f, { headers: { Range: 'bytes=0-255' } }); aus.push([f, r.status, r.headers.get('content-type'), (await r.arrayBuffer()).byteLength]); } return aus; }, FILME);
+    ok('alle ' + FILME.length + ' Filme neben der Seite abrufbar (Stück-Anfrage, video/mp4)', FILME.length === 16 && filme.every((x) => x[1] === 206 && /video/.test(x[2]) && x[3] === 256), JSON.stringify(filme.filter((x) => x[1] !== 206)));
+    const genannt = await frame.evaluate(() => [...new Set([...document.documentElement.outerHTML.matchAll(/['"`(=]((?:discovery-ton\/)?discovery[\w-]*\.(?:mp4|jpg|mp3|js))\b/g)].map((m) => m[1]))]);
+    ok('jede in der Seite genannte Datei liegt im Pin', genannt.length >= 20 && genannt.every((f) => ALLE.includes(f)), genannt.filter((f) => !ALLE.includes(f)).join(' '));
     await page.click('[data-discovery-zu]');
     await page.waitForFunction(() => !document.querySelector('[data-discovery]'));
     ok('„Schließen“ schließt den Rahmen und baut den Verlaufseintrag ab', await page.evaluate((l) => history.length >= l && !(history.state && history.state.blpDiscovery), laenge));
@@ -176,7 +205,65 @@ try {
   await frame.waitForFunction(() => { try { return typeof SPRECHTEXTE === 'object' && typeof THREE === 'object'; } catch { return false; } });
   ok('ohne Server: die Seite öffnet im Rahmen aus dem Vorrat', true);
   discoveryAus = false;
+  // Jede gepinnte Datei (alle Filme, Bilder, Ton, Seite) geht denselben Weg: Abruf → ganze Datei im Discovery-Vorrat, nichts in der Schale.
+  const alle = await page.evaluate(async (fs) => { const aus = []; for (const f of fs) { const r = await fetch('./assets/discovery/' + f); aus.push([f, r.status, (await r.arrayBuffer()).byteLength]); } return aus; }, ALLE);
+  const drin = await imVorrat();
+  const schale2 = await page.evaluate(async () => { const n = (await caches.keys()).find((k) => /-shell-/.test(k)); return (await (await caches.open(n)).keys()).map((r) => new URL(r.url).pathname); });
+  ok('alle ' + ALLE.length + ' gepinnten Dateien landen beim Abruf im Discovery-Vorrat, keine in der Schale', ALLE.length === 42 && alle.every((x) => x[1] === 200 && x[2] > 0) && ALLE.every((f) => drin.includes(f)) && drin.length === ALLE.length
+    && !schale2.some((p) => p.startsWith('/assets/discovery/') && !p.endsWith('HERKUNFT.json')), JSON.stringify(ALLE.filter((f) => !drin.includes(f))));
+  discoveryAus = true; gesehen.length = 0;
+  const neu = await page.evaluate(async () => {
+    const a = await fetch('./assets/discovery/discovery-stadt-finale.mp4', { headers: { Range: 'bytes=500-1499' } }), b = await fetch('./assets/discovery/discovery-runden.jpg');
+    return [a.status, (await a.arrayBuffer()).byteLength, a.headers.get('content-type'), b.status];
+  });
+  ok('ohne Server: neuer Film (Stück, 206) und neues Bild kommen aus dem Vorrat', neu[0] === 206 && neu[1] === 1000 && /video/.test(neu[2]) && neu[3] === 200 && gesehen.length === 0, JSON.stringify(neu));
+  discoveryAus = false;
   await ctx.close();
+
+  console.log('— C. Echte Shell: Fernrohr-Knopf in der Kopfleiste —');
+  const fehlerC = [];
+  for (const [breite, schrift] of [[1366, 100], [1024, 100], [768, 100], [390, 100], [320, 100], [320, 200], [1366, 200]]) {
+    const ctxC = await browser.newContext({ viewport: { width: breite, height: 800 }, serviceWorkers: 'block' });
+    const p = await ctxC.newPage();
+    p.setDefaultTimeout(20000);
+    p.on('pageerror', (e) => fehlerC.push(String(e.message || e)));
+    await p.goto(`${BASIS}/__shell.html`);
+    await p.waitForFunction(() => window.__bereit === true);
+    if (schrift !== 100) await p.evaluate((s) => { document.documentElement.style.fontSize = s + '%'; }, schrift);
+    await p.waitForSelector('#blp-fernrohr', { state: 'attached' });
+    const m = await p.evaluate(() => {
+      const k = document.querySelector('.app-header .header-right [data-discovery-knopf]'); if (!k) return null;
+      const r = k.getBoundingClientRect(), h = document.querySelector('.app-header').getBoundingClientRect(), s = k.querySelector('svg.ic').getBoundingClientRect();
+      const u = k.querySelector('svg.ic use');
+      return { l: r.left, r: r.right, h: r.height, w: r.width, oben: r.top >= h.top - .5 && r.bottom <= h.bottom + .5, vw: document.documentElement.clientWidth, sw: document.documentElement.scrollWidth,
+        title: k.title, aria: k.getAttribute('aria-label'), text: k.textContent, href: u && u.getAttribute('href'), sym: !!document.getElementById('blp-fernrohr'), sb: s.width, n: document.querySelectorAll('[data-discovery-knopf]').length,
+        sichtbar: getComputedStyle(k).display !== 'none' && getComputedStyle(k).visibility !== 'hidden' && r.width > 0 };
+    });
+    const marke = `${breite} px · ${schrift} %`;
+    ok(`${marke}: Knopf in der Kopfleiste sichtbar, Fernrohr-Strichsymbol, Name „Discovery“ in title und aria-label, kein Emoji`, !!m && m.sichtbar && m.n === 1 && m.oben && m.href === '#blp-fernrohr' && m.sym && m.sb > 8 && m.title === 'Discovery' && m.aria === 'Discovery' && !/\p{Extended_Pictographic}/u.test(m.text), JSON.stringify(m));
+    ok(`${marke}: Knopf ≤ 32 px hoch, im Fenster, Seite läuft nicht waagerecht über`, !!m && m.h <= 32.5 && m.l >= 0 && m.r <= m.vw + .5 && m.sw <= m.vw + 1, JSON.stringify(m));
+    if (m) {
+      await p.click('[data-discovery-knopf]');
+      await p.waitForSelector('[data-discovery-rahmen]');
+      const fr = await (await p.$('[data-discovery-rahmen]')).contentFrame();
+      await fr.waitForFunction(() => { try { return typeof SPRECHTEXTE === 'object'; } catch { return false; } });
+      ok(`${marke}: Tipp öffnet den Vollbild-Rahmen mit der Seite, kein neues Fenster`, ctxC.pages().length === 1 && await p.evaluate(() => { const r = document.querySelector('[data-discovery]').getBoundingClientRect(); return r.left === 0 && r.top === 0 && Math.abs(r.width - innerWidth) < 1; }));
+      await p.click('[data-discovery-zu]');
+      await p.waitForFunction(() => !document.querySelector('[data-discovery]'));
+      if (breite === 1366 && schrift === 100) {
+        // paint() baut die Kopfleiste bei jedem Neuzeichnen neu: der Knopf muss danach wieder da sein und wirken.
+        await p.evaluate(() => { document.querySelector('[data-discovery-knopf]').dataset.alt = '1'; return window.__probe.updateSettings({ themeFarbe: 'petrol' }); });
+        await p.waitForFunction(() => { const k = document.querySelector('[data-discovery-knopf]'); return k && !k.dataset.alt; });
+        await p.click('[data-discovery-knopf]');
+        await p.waitForSelector('[data-discovery-rahmen]');
+        await p.keyboard.press('Escape');
+        await p.waitForFunction(() => !document.querySelector('[data-discovery]'));
+        ok('nach dem Neuzeichnen der Kopfleiste: genau ein Knopf, öffnet weiter', await p.evaluate(() => document.querySelectorAll('[data-discovery-knopf]').length === 1));
+      }
+    }
+    await ctxC.close();
+  }
+  ok('keine Fehler auf der Seite (Shell mit Knopf)', fehlerC.length === 0, fehlerC.join(' | '));
 } catch (e) {
   ok('Probe lief durch', false, String(e && e.message || e) + ' · ' + fehler.join(' | '));
 } finally {

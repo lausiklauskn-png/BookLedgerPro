@@ -167,6 +167,43 @@ section>.rand>p.vor{color:var(--leise);max-width:68ch;margin-bottom:18px}
 canvas.kugeln{display:block;width:100%;touch-action:pan-y;cursor:grab;-webkit-tap-highlight-color:transparent}
 canvas.kugeln.zeigt{cursor:pointer}
 .kreis-links{min-width:0}
+.stadt-film{position:absolute;inset:0;z-index:2;border-radius:inherit;overflow:hidden;background:#0b1020;color:#fff}
+.stadt-film[hidden]{display:none}
+.buehne.mit-stadtfilm .oben>button,.buehne.mit-stadtfilm .oben details,.buehne.mit-stadtfilm .oben summary{background:none!important;border-color:transparent!important;box-shadow:none;color:rgba(255,255,255,.8)!important;font-weight:300;letter-spacing:.06em;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.buehne.mit-stadtfilm .oben>button[aria-pressed="true"]{color:#fff!important;text-shadow:0 0 12px rgba(255,255,255,.85),0 1px 4px rgba(0,0,0,.8)}
+.buehne.mit-stadtfilm .knoepfe,.buehne.mit-stadtfilm .tipp,.buehne.mit-stadtfilm .schilder,.buehne.mit-stadtfilm #bLicht,.buehne.mit-stadtfilm #zeichen{display:none}
+.sf-bilder,.sf-szene{position:absolute;inset:0}
+.sf-szene{opacity:0;transition:opacity 1.1s ease}
+.sf-szene.an{opacity:1}
+.sf-szene img,.sf-szene video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sf-szene.an img{animation:sfFahrt 10s ease-out forwards}
+.sf-szene:nth-child(even).an img{animation-name:sfFahrt2}
+@keyframes sfFahrt{from{transform:scale(1.16) translate(2%,2%)}to{transform:scale(1.02) translate(0,0)}}
+@keyframes sfFahrt2{from{transform:scale(1.04) translate(-1%,0)}to{transform:scale(1.18) translate(1.5%,-2%)}}
+@media (prefers-reduced-motion:reduce){.sf-szene.an img{animation:none}.sf-punkt{animation:none!important}}
+.stadt-film::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,10,24,.5),transparent 30%,transparent 60%,rgba(6,10,24,.72));pointer-events:none}
+.sf-punkte{position:absolute;inset:0;z-index:1;pointer-events:none}
+.sf-punkt{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;color:#fff;font:700 13px var(--sans);cursor:pointer;padding:6px;pointer-events:auto;animation:sfAuf .7s ease both,sfSchweb 3.2s ease-in-out infinite alternate;text-shadow:0 1px 4px #000}
+.sf-punkt i{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,var(--f) 55%);box-shadow:0 0 0 4px rgba(255,255,255,.25),0 0 22px 6px var(--f)}
+.sf-punkt span{white-space:nowrap;font:300 clamp(13px,1.7vw,18px) var(--sans);letter-spacing:.08em;color:rgba(255,255,255,.92);text-shadow:0 0 10px var(--f),0 1px 3px rgba(0,0,0,.75);mix-blend-mode:screen}
+.sf-punkt:hover i,.sf-punkt:focus-visible i{box-shadow:0 0 0 6px rgba(255,255,255,.5),0 0 30px 10px var(--f)}
+@keyframes sfAuf{from{opacity:0;margin-top:40px}to{opacity:1;margin-top:0}}
+@keyframes sfSchweb{from{translate:0 -4px}to{translate:0 5px}}
+.sf-titel{position:absolute;left:0;right:0;top:14%;z-index:1;text-align:center;perspective:800px;pointer-events:none}
+.sf-titel b{display:inline-block;white-space:nowrap;font:200 clamp(24px,6.2vw,68px) var(--sans);letter-spacing:.34em;margin-right:-.34em;text-transform:uppercase;color:rgba(255,255,255,.86);text-shadow:0 0 28px rgba(255,255,255,.35),0 2px 14px rgba(0,0,20,.45);transform-origin:50% 100%;animation:sfSchrift 7s cubic-bezier(.2,.7,.2,1) both}
+.sf-titel span{display:block;margin-top:.5em;font:300 clamp(10px,1.4vw,14px) var(--sans);letter-spacing:.38em;text-transform:uppercase;color:rgba(255,255,255,.8);text-shadow:0 1px 6px rgba(0,0,20,.7);animation:sfSchrift2 7s ease both}
+@keyframes sfSchrift{from{opacity:0;letter-spacing:.8em;transform:rotateX(38deg) translateY(26px) scale(1.12)}18%{opacity:.9}to{opacity:.86;letter-spacing:.34em;transform:rotateX(12deg) translateY(0) scale(1)}}
+@keyframes sfSchrift2{from,22%{opacity:0;letter-spacing:.9em}to{opacity:.85;letter-spacing:.38em}}
+@media (prefers-reduced-motion:reduce){.sf-titel b,.sf-titel span{animation:none}}
+.sf-wahl{position:absolute;right:12px;bottom:12px;z-index:1;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:42%}
+.sf-wahl button,.sf-leiste button{background:none;color:rgba(255,255,255,.72);border:0;padding:6px 8px;font:300 14px var(--sans);letter-spacing:.08em;cursor:pointer;text-shadow:0 1px 4px rgba(0,0,0,.8);transition:color .3s,text-shadow .3s}
+.sf-wahl button:hover,.sf-leiste button:hover,.sf-wahl button:focus-visible,.sf-leiste button:focus-visible{color:#fff;text-shadow:0 0 12px rgba(255,255,255,.8),0 1px 4px rgba(0,0,0,.8)}
+.sf-wahl button[aria-pressed="true"]{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.9),0 1px 4px rgba(0,0,0,.8)}
+.sf-leiste{position:absolute;left:12px;right:12px;bottom:12px;z-index:1;display:flex;gap:8px;align-items:center}
+.sf-leiste .sf-spiel{width:36px;height:36px;padding:0;display:grid;place-items:center;font-size:0;opacity:.85}
+.sf-spiel svg{width:18px;height:18px;margin:0}
+.sf-3d{margin-left:0}
+#karteInhalt li.sf-hell{outline:2px solid var(--akzent);border-radius:8px}
 .buehnen-film{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:rgba(12,16,30,.94);border-radius:inherit;padding:58px 12px 12px}
 .buehnen-film[hidden]{display:none}
 .buehnen-film video{position:absolute;left:12px;right:12px;top:58px;bottom:64px;width:calc(100% - 24px);height:calc(100% - 122px);object-fit:contain;display:block}
@@ -211,6 +248,10 @@ canvas.kugeln.zeigt{cursor:pointer}
 @media (max-width:860px){.kino{grid-template-columns:1fr}}
 .leinwand{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--linie);background:#101425;aspect-ratio:16/9}
 .leinwand canvas{width:100%;height:100%;display:block}
+#kurzgeschichte{padding-top:8px}
+#kurzgeschichte[hidden]{display:none}
+.leinwand.kurzfilm{max-width:960px;margin:0 auto}
+.leinwand video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#101425;cursor:pointer}
 .kino-links{display:grid;gap:8px;align-content:start;min-width:0}
 .kino .spruch{background:var(--flaeche);border:1px solid var(--linie);border-left:4px solid var(--lern);border-radius:12px;padding:10px 14px;font-size:16px;line-height:1.45;min-height:46px}
 .leinwand .bildzeile{position:absolute;left:8px;right:8px;bottom:8px;background:rgba(0,0,0,.62);color:#fff;border-radius:10px;padding:5px 10px;font-size:14px;text-align:center;pointer-events:none}
@@ -318,6 +359,7 @@ footer{padding:36px 0 48px;color:var(--leise);font-size:13.5px}
       <button id="bUnter" aria-pressed="false" title="Untertitel: den gesprochenen Text unten mitlesen">Untertitel</button>
       <button id="bWeiter" hidden title="Zum nächsten Schritt der Führung">Weiter</button>
       <details class="zeichen stimmwahl"><summary>Stimme</summary><div class="stimme" data-stimme></div></details>
+      <button id="bStadtfilm" title="Die vier Städte als kleiner Film, mit den Punkten zum Antippen">Stadtfilm</button>
       <button id="bLicht" class="nur3d">Abend</button>
       <details class="zeichen" id="zeichen"><summary>Zeichen</summary><ul id="zeichenListe"></ul></details>
     </div>
@@ -332,6 +374,12 @@ footer{padding:36px 0 48px;color:var(--leise);font-size:13.5px}
     <aside class="karte" id="karte" aria-live="polite"><button class="zu" id="karteZu" aria-label="Karte schließen">×</button><div id="karteInhalt"></div></aside>
   </div>
 </div>
+
+<section id="kurzgeschichte" aria-label="Die Geschichte in Kurzform"><div class="rand">
+  <div class="leinwand kurzfilm"><video id="kurzVideo" controls playsinline preload="none" poster="discovery-kurzgeschichte.jpg" src="discovery-kurzgeschichte.mp4" aria-label="Die Geschichte in 43 Sekunden: Flug am Baum, Landung in der Stadt, Familienakte"></video></div>
+  <div class="leinwand kurzfilm" style="margin-top:14px"><video id="rundenVideo" controls playsinline preload="none" poster="discovery-runden.jpg" src="discovery-runden.mp4" aria-label="Runde für Runde in einer knappen Minute: immer neue Städte, der Kern wird besser, danach lernt die App mit den eigenen Unterlagen"></video></div>
+</div></section>
+<script>if (window.EINZELDATEI) document.getElementById('kurzgeschichte').hidden = true;</script>
 
 <section id="training"><div class="rand">
   <h2>So lernt der Kern: raten → Korrektur → lernen</h2>
@@ -356,6 +404,7 @@ footer{padding:36px 0 48px;color:var(--leise);font-size:13.5px}
   <div class="kino">
     <div class="kino-links"><div class="leinwand">
       <canvas id="film" width="960" height="540" aria-label="Gezeichneter Kurzfilm"></canvas>
+      <video id="filmVideo" muted playsinline preload="metadata" hidden aria-label="Kurzfilm"></video>
       <div class="balken" id="filmBalken"></div>
       <div class="bildzeile" id="filmZeile"></div>
       <button class="gross" id="filmStart" aria-label="Film abspielen"><span>Film abspielen</span></button>
@@ -439,17 +488,19 @@ const FELDER = ['Art', 'Bereich', 'Absender', 'Person', 'Frist'];
 const SPRECHTEXTE = {
   begruessung: "Willkommen in den Test-Welten. Hier siehst du, wie der Datei-Organizer sortieren gelernt hat.",
   recherche: "Zuerst haben acht Agenten im Internet nachgeforscht: Wie lernt ein Programm aus Fehlern, ohne sich selbst zu belügen? Die Antwort: Regeln vorher festlegen. Und nur einmal messen, an einer fremden Welt.",
-  welten: "Dann haben wir Städte erfunden. Eine Hafenstadt, eine Kleinstadt, eine Großstadt und eine Stadt am Fluss. Mit Ämtern, Firmen und Familien, die einander Briefe schreiben. Rechnungen, Bescheide, Mahnungen. Und ja, auch Strafzettel.",
+  welten: "Wir haben Städte erfunden. Eine Hafenstadt, eine Kleinstadt, eine Großstadt und eine Stadt am Fluss. Mit Ämtern, Firmen und Familien, die einander Briefe schreiben. Rechnungen, Bescheide, Mahnungen. Und ja, auch Strafzettel. Die fängt der Kern ein und ordnet sie richtig zu.",
   kreis_raten: "Jetzt der Kreislauf. Erste Kugel: Raten. Ein Brief fliegt hinein, und der Kern rät: Was ist das? Wer schreibt? Bis wann?",
   kreis_soll: "Zweite Kugel: das Soll. Sechs Einordner sagen, was richtig ist. Grüner Haken, oder rotes Kreuz.",
   kreis_lernen: "Dritte Kugel: Lernen. Nur wo der Kern danebenlag, verschieben sich die Gewichte. Wer richtig rät, lernt nichts.",
   kreis_reihum: "Vierte Kugel: Reihum prüfen. Ein Stapel bleibt jedes Mal draußen. Hilft das Gelernte auch bei Neuem? Wenn nicht, fliegt der Versuch wieder raus.",
   kreis_einfrieren: "Fünfte Kugel: Einfrieren. Jetzt ist Schluss mit Lernen. Nichts wird mehr verändert.",
   kreis_messen: "Sechste Kugel: Messen. Einmal, an einer Stadt, die der Kern nie gesehen hat. Der Bereich stieg von neunundsiebzig auf über zweiundachtzig Prozent. Und das hielt auch in einer zweiten, fremden Welt.",
+  stadt_agenten: "Dann kamen die Agenten. Sie teilen sich auf die vier Städte auf. Über jeder Stadt schweben leuchtende Punkte: Jeder Punkt war eine Aufgabe für einen Agenten.",
+  stadt_punkte: "In jeder Stadt dasselbe: Einer plant die Stadt. Andere schreiben die Briefe. Einer baut Fallen ein. Und die Einordner sagen, was richtig ist. Tippe einen Punkt an, dann siehst du, was dort getan wurde.",
   film_brieftraeger: "Der Briefträger. Er bringt Brief um Brief in die Stadt. Jeder Punkt ist ein Schriftstück.",
   film_kern_raet: "Der Kern rät. Rechnung? Nein, Bescheid! Aha. Beim nächsten Mal weiß er es.",
   film_strafzettel: "Der Strafzettel. Er flattert davon, aber der Kern fängt ihn ein. Absender: Ordnungsamt. Frist: zwei Wochen.",
-  schluss: "Und am Ende wandert alles in die Familienakte. Dort sortiert der Kern jetzt deine eigenen Unterlagen, auf deinem Gerät. Nichts verlässt es."
+  schluss: "Aus vier Städten kommt alles wieder zusammen. Und am Ende wandert alles in die Familienakte. Dort sortiert der Kern jetzt deine eigenen Unterlagen, auf deinem Gerät. Nichts verlässt es."
 };
 
 /* ---------- abgeleitete Angaben (nur aus der Datei) ---------- */
@@ -1414,11 +1465,13 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
   const zurBuehne = () => $('#buehne').scrollIntoView(sanft), zumKreis = () => $('#schleifeBild').scrollIntoView(sanft);
   const KREIS = [['kreis_raten', 'Raten'], ['kreis_soll', 'Soll'], ['kreis_lernen', 'Lernen'], ['kreis_reihum', 'Reihum'], ['kreis_einfrieren', 'Einfrieren'], ['kreis_messen', 'Messen']];
   const SCHRITTE = [
-    ['begruessung', 'Willkommen', () => { zurBuehne(); App.kreisBuehne.weg(); if (App.gewaehlt) App.close(); Szene.fokus(null); }],
-    ['recherche', 'Recherche', () => { zurBuehne(); App.kreisBuehne.weg(); if (App.gewaehlt) App.close(); Szene.fokus('recherche'); }],
-    ['welten', 'Die Welten', () => { zurBuehne(); App.kreisBuehne.weg(); if (App.gewaehlt) App.close(); Szene.fokus(null); }]
-  ].concat(KREIS.map(([k, n], i) => [k, `Kreislauf · ${i + 1} ${n}`, () => { zurBuehne(); if (App.gewaehlt) App.close(); App.kreisBuehne.zeig(i); App.kreis.zeig(i, { nurText: true }); }]), [
-    ['schluss', 'Familienakte', () => { zurBuehne(); App.kreisBuehne.weg(); if (App.gewaehlt) App.close(); Szene.fokus('akte'); }]
+    ['begruessung', 'Willkommen', () => { zurBuehne(); App.kreisBuehne.weg(); if (App.gewaehlt) App.close(); Szene.fokus(null); App.stadtFilm.zeig('baum'); }],
+    ['recherche', 'Recherche', () => { zurBuehne(); App.kreisBuehne.weg(); App.stadtFilm.weg(); if (App.gewaehlt) App.close(); Szene.fokus('recherche'); }],
+    ['welten', 'Die Welten', () => { zurBuehne(); App.kreisBuehne.weg(); if (App.gewaehlt) App.close(); Szene.fokus(null); App.stadtFilm.zeig('leben'); }],
+    ['stadt_agenten', 'Die Agenten', () => { zurBuehne(); App.kreisBuehne.weg(); App.stadtFilm.zeig('agenten'); }],
+    ['stadt_punkte', 'Die Aufgaben', () => { zurBuehne(); App.kreisBuehne.weg(); App.stadtFilm.zeig('punkte'); }]
+  ].concat(KREIS.map(([k, n], i) => [k, `Kreislauf · ${i + 1} ${n}`, () => { zurBuehne(); App.stadtFilm.weg(); if (App.gewaehlt) App.close(); App.kreisBuehne.zeig(i); App.kreis.zeig(i, { nurText: true }); }]), [
+    ['schluss', 'Familienakte', () => { zurBuehne(); App.kreisBuehne.weg(); App.stadtFilm.zeig('finale'); if (App.gewaehlt) App.close(); Szene.fokus('akte'); }]
   ]);
   const b = $('#bFuehrung'); let i = -1, uhr = null, lauf = 0;
   function schritt(n) {
@@ -1427,13 +1480,85 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
     i = n; const [key, titel, tun] = SCHRITTE[n], text = SPRECHTEXTE[key], t0 = Date.now();
     Sprecher.stopp();
     Unter.zeig(`Führung · ${n + 1} von ${SCHRITTE.length} · ${titel}`, text, () => schritt(i + 1), ende); tun();
-    const weiter = () => { if (meins !== lauf) return; clearTimeout(uhr); uhr = setTimeout(() => { if (meins === lauf) schritt(n + 1); }, Math.max(900, 2600 - (Date.now() - t0))); };
+    const weiter = () => App.stadtFilm.wartet(() => { if (meins !== lauf) return; clearTimeout(uhr); uhr = setTimeout(() => { if (meins === lauf) schritt(n + 1); }, Math.max(900, 2600 - (Date.now() - t0))); });
     if (Ton.an()) Sprecher.sag(key, { fertig: weiter }); else { Sprecher.stopp(true); uhr = setTimeout(weiter, Sprecher.lesezeit(key) * 1000 + 1500); }
   }
-  function ende() { lauf++; clearTimeout(uhr); Sprecher.stopp(true); i = -1; App.tour = false; App.kreisBuehne.weg(); Unter.weg(); App.kreis.frei(); b.setAttribute('aria-pressed', 'false'); b.innerHTML = IK.spiel + 'Führung starten'; }
+  function ende() { lauf++; clearTimeout(uhr); Sprecher.stopp(true); i = -1; App.tour = false; App.kreisBuehne.weg(); App.stadtFilm.weg(); Unter.weg(); App.kreis.frei(); b.setAttribute('aria-pressed', 'false'); b.innerHTML = IK.spiel + 'Führung starten'; }
   b.innerHTML = IK.spiel + 'Führung starten';
   b.onclick = () => { if (i >= 0) return ende(); Ton.bereit(); Sprecher.vorladen(); App.tour = true; b.setAttribute('aria-pressed', 'true'); b.innerHTML = IK.halt + 'Führung anhalten'; $('#tipp').classList.add('weg'); schritt(0); };
   App.tonHoerer.push(an => { if (i >= 0) schritt(i); });   // Ton während der Führung umgeschaltet: Schritt neu ansetzen (mit oder ohne Stimme)
+})();
+
+/* ---------- Stadtfilm: vier Städte in vier Bildwelten, darüber die Punkte = Aufgaben der Agenten (Klaus 15.11.) ---------- */
+(function () {
+  const ST = STAEDTE.slice(0, 4), BILD = window.DISCOVERY_STADTBILDER || ST.map((w, i) => `discovery-stadt-${i}.jpg`), VID = RUHIG ? [] : (window.DISCOVERY_STADTFILME || (window.EINZELDATEI ? [] : ST.map((w, i) => `discovery-stadt-${i}.mp4`)));
+  // Erzähl-Filme (Klaus 15.11.): Flug am Baum entlang durch die vier Städte, Landung der Murmeln in einer Stadt, Finale in der Familienakte.
+  const CLIPS = (RUHIG || window.EINZELDATEI) ? {} : Object.assign({ baum: 'discovery-stadt-baum.mp4', leben1: 'discovery-stadt-leben-1.mp4', leben2: 'discovery-stadt-leben-2.mp4', zettel: 'discovery-film-strafzettel.mp4', flug: 'discovery-stadt-flug.mp4', landung: 'discovery-stadt-landung.mp4', finale: 'discovery-stadt-finale.mp4' }, window.DISCOVERY_CLIPS || {});
+  const box = el('div', 'stadt-film'); box.hidden = true;
+  box.innerHTML = `<div class="sf-bilder">${ST.map((w, i) => `<div class="sf-szene" data-i="${i}"><img alt="" data-src="${BILD[i]}"></div>`).join('')}<div class="sf-szene sf-landung"></div></div>
+    <div class="sf-punkte"></div><div class="sf-titel"><b></b><span></span></div>
+    <div class="sf-wahl">${ST.map((w, i) => `<button type="button" data-i="${i}" aria-pressed="false">${esc(w.kurz)}</button>`).join('')}${CLIPS.finale ? '<button type="button" data-clip="finale" aria-pressed="false">Familienakte</button>' : ''}</div>
+    <div class="sf-leiste"><button type="button" class="sf-spiel" aria-label="Abspielen oder anhalten"></button><button type="button" class="sf-3d">Selbst erkunden: 3D-Ansicht</button></div>`;
+  $('#buehne').appendChild(box);
+  const landBox = box.querySelector('.sf-landung'); let landV = null, clipAn = null;
+  const szenen = [...box.querySelectorAll('.sf-szene:not(.sf-landung)')], pBox = box.querySelector('.sf-punkte'), tB = box.querySelector('.sf-titel b'), tS = box.querySelector('.sf-titel span'), spielB = box.querySelector('.sf-spiel');
+  let nr = 0, mitPunkten = false, laeuft = false, uhr = null, lauf = 0, geladen = false, folge = 0;
+  function laden() { if (geladen) return; geladen = true; szenen.forEach((z, i) => { const b = z.querySelector('img'); b.src = b.dataset.src; if (VID[i]) { const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'metadata'; v.onerror = () => v.remove(); v.src = VID[i]; z.appendChild(v); } }); }
+  function punkte(i) {
+    pBox.innerHTML = ''; if (!mitPunkten) return;
+    const a = ST[i].d.agenten, ks = Object.keys(a).filter(k => a[k] > 0);
+    ks.forEach((k, j) => { const r = ROLLEN[k] || [k, '', '--alt'], b = el('button', 'sf-punkt', `<i></i><span>${esc(r[0])} · ${a[k]}</span>`);
+      b.type = 'button'; b.style.setProperty('--f', `var(${r[2]})`); b.style.left = (ks.length > 1 ? 14 + 72 * j / (ks.length - 1) : 50) + '%'; b.style.top = (40 + (j % 2) * 11) + '%'; b.style.animationDelay = (j * .18) + 's,' + (j * .4) + 's';
+      b.title = r[1]; b.onclick = () => { halt(); App.open(ST[i].id); const li = document.querySelector(`#karteInhalt li[data-rolle="${k}"]`); if (li) { li.classList.add('sf-hell'); li.scrollIntoView({ block: 'nearest' }); } };
+      pBox.appendChild(b); });
+  }
+  function szene(i) {
+    nr = (i + ST.length) % ST.length; laden();
+    szenen.forEach((z, k) => { const an = k === nr; if (an && !z.classList.contains('an')) { const b = z.querySelector('img'); b.style.animation = 'none'; void b.offsetWidth; b.style.animation = ''; } z.classList.toggle('an', an); const v = z.querySelector('video'); if (v) { if (an && laeuft) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => { }); } else v.pause(); } });
+    box.querySelectorAll('.sf-wahl button').forEach(b => b.setAttribute('aria-pressed', b.dataset.i === String(nr)));
+    clipAn = null; landBox.classList.remove('an'); if (landV) landV.pause(); titel(ST[nr].kurz, (ST[nr].d.art || '').split(',')[0]); punkte(nr);
+  }
+  const warter = []; function frei() { warter.splice(0).forEach(f => f()); }
+  function titel(a, b) { [tB, tS].forEach(e => { e.style.animation = 'none'; void e.offsetWidth; e.style.animation = ''; }); tB.textContent = a; tB.style.fontSize = `clamp(16px, ${Math.min(6.2, 80 / (a.length * .94)).toFixed(2)}vw, 68px)`; tS.textContent = b; }
+  // spielt einen Erzähl-Film; danach `dann()` – ohne `dann` bleibt das letzte Bild stehen. Fehlt der Film, geht es gleich weiter (bzw. `sonst()`).
+  function clip(key, a, b, dann, sonst) {
+    const weiterOhne = () => { clipAn = null; landBox.classList.remove('an'); (sonst || dann || (() => { laeuft = false; knopf(); }))(); };
+    if (!CLIPS[key]) return weiterOhne();
+    if (!landV) { landV = document.createElement('video'); landV.muted = true; landV.playsInline = true; landV.preload = 'auto'; landBox.appendChild(landV); }
+    const meins = ++lauf; let aus = false;
+    const fertig = () => { if (aus) return; aus = true; if (meins !== lauf) return; if (dann) { clipAn = null; landBox.classList.remove('an'); dann(); } else { laeuft = false; knopf(); } if (!dann || !clipAn) frei(); };
+    landV.onended = fertig; landV.onerror = () => { if (aus) return; aus = true; CLIPS[key] = ''; if (meins === lauf) weiterOhne(); };
+    clipAn = key; laeuft = true; knopf(); pBox.innerHTML = ''; szenen.forEach(z => { z.classList.remove('an'); const v = z.querySelector('video'); if (v) v.pause(); }); landBox.classList.add('an');
+    box.querySelectorAll('.sf-wahl button').forEach(x => x.setAttribute('aria-pressed', x.dataset.clip === key)); titel(a, b);
+    try { if (landV.dataset.key !== key) { landV.dataset.key = key; landV.src = CLIPS[key]; } else landV.currentTime = 0; const pr = landV.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { landV.onerror(); }
+  }
+  function knopf() { spielB.innerHTML = laeuft ? IK.pause : IK.spiel; }
+  function takt(dauer, rest, dann) { clearTimeout(uhr); const meins = lauf; if (rest <= 0) { if (dann) dann(); return; } uhr = setTimeout(() => { if (meins !== lauf || !laeuft) return; szene(nr + 1); takt(dauer, rest - 1, dann); }, dauer); }
+  function halt() { frei(); laeuft = false; if (!clipAn) lauf++; clearTimeout(uhr); if (landV) landV.pause(); szenen.forEach(z => { const v = z.querySelector('video'); if (v) v.pause(); }); knopf(); }
+  function teil(punkteAn, dauer, dann) { mitPunkten = punkteAn; laeuft = true; lauf++; knopf(); szene(0); takt(dauer, ST.length - 1, () => { uhr = setTimeout(() => { if (dann) dann(); else { laeuft = false; knopf(); } }, dauer); }); }
+  function zeig(art) {
+    box.hidden = false; $('#buehne').classList.add('mit-stadtfilm'); $('#bStadtfilm').setAttribute('aria-pressed', 'true'); if (App.gewaehlt) App.close();
+    // Drehbuch (Klaus 15.11.): Baum → die Städte leben → die Murmeln teilen sich auf → Aufgaben in einer Stadt → Punkte → (Kugeln) → Finale
+    const baum = dann => clip('baum', 'Die Test-Welten', 'vier Städte an einem Baum', dann, dann || (() => weg()));
+    const leben = dann => clip('leben1', 'Die Städte leben', 'Ämter, Firmen, Familien', () => clip('leben2', 'Die Städte leben', 'Ämter, Firmen, Familien', () => clip('zettel', 'Seltene Post', 'ja, auch Strafzettel', dann, dann)), () => teil(false, 5000, dann));
+    const flug = dann => clip('flug', 'Die Agenten', 'sie teilen sich auf vier Städte auf', dann, dann);
+    const land = () => clip('landung', 'Die Aufgaben', 'jeder Punkt eine Aufgabe', () => teil(true, 4000));
+    if (art === 'baum') return baum(null);
+    if (art === 'leben') return leben(null);
+    if (art === 'agenten') return flug(null);
+    if (art === 'punkte') return land();
+    if (art === 'finale') return clip('finale', 'Familienakte', 'alles kommt zusammen', null, () => weg());
+    // allein abgespielt: jede Szene mit ihrem Sprechtext; weiter geht es erst, wenn Film UND Text zu Ende sind
+    Ton.bereit(); const meins = ++folge;
+    const mitText = (key, szeneFn, weiter) => { let offen = (Ton.an() && !App.tour) ? 2 : 1; const eins = () => { if (meins === folge && --offen === 0) weiter(); }; szeneFn(eins); if (offen === 2) Sprecher.sag(key, { fertig: eins }); };
+    mitText('welten', leben, () => mitText('stadt_agenten', flug, () => { land(); if (Ton.an() && !App.tour) Sprecher.sag('stadt_punkte', {}); }));
+  }
+  function weg() { if (box.hidden) return; folge++; clipAn = null; halt(); box.hidden = true; $('#buehne').classList.remove('mit-stadtfilm'); $('#bStadtfilm').setAttribute('aria-pressed', 'false'); }
+  spielB.onclick = () => { if (laeuft) { halt(); if (!App.tour) Sprecher.pause(); } else { laeuft = true; knopf(); if (!App.tour) Sprecher.weiter(); if (clipAn && landV) { const pr = landV.play(); if (pr && pr.catch) pr.catch(() => { }); } else { lauf++; takt(4000, 99); } } };
+  box.querySelectorAll('.sf-wahl button').forEach(b => b.onclick = () => { if (b.dataset.clip) { if (!App.tour) { Sprecher.stopp(true); if (Ton.an()) Sprecher.sag('schluss', {}); } return zeig('finale'); } clipAn = null; halt(); mitPunkten = true; szene(+b.dataset.i); });
+  box.querySelector('.sf-3d').onclick = () => { if (!App.tour) Sprecher.stopp(true); weg(); };
+  $('#bStadtfilm').onclick = () => { if (!box.hidden && !App.tour) { Sprecher.stopp(true); return weg(); } zeig('alles'); };
+  knopf(); App.stadtFilm = { zeig, weg, an: () => !box.hidden, wartet: f => { if (!box.hidden && clipAn && laeuft) warter.push(f); else f(); } };
 })();
 
 /* ---------- Kurzfilme (gezeichnet) ---------- */
@@ -1470,7 +1595,7 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
   const NE = W[1].d.agenten.einordner, FARB = ['#1fa971', '#35c08a', '#5fd8b2', '#1fa971', '#35c08a', '#5fd8b2', '#1fa971', '#35c08a'];
   const kurzEreignis = (W[1].d.beispiel_ereignisse.find(e => /bescheid/i.test(e)) || W[1].d.beispiel_ereignisse[0]).split(' ')[0];
   const FILME = [
-    { key: 'film_brieftraeger', titel: 'Der Briefträger-Agent', unter: 'Post für die Einordner', dauer: 15,
+    { key: 'film_brieftraeger', video: 'discovery-film-brieftraeger.mp4', bild0: 'discovery-film-brieftraeger.jpg', titel: 'Der Briefträger-Agent', unter: 'Post für die Einordner', dauer: 15,
       spruch: [[0, `Post für ${W[1].kurz}! ${W[1].d.stuecke} Schriftstücke warten.`], [3.4, 'Der Briefträger-Agent bringt jedem Einordner dasselbe Stück.'], [7.4, 'Jeder ordnet für sich ein. Abschreiben gilt nicht.'], [11.4, 'Aus ihren Antworten wird das Soll.']],
       klang: [[.2, 'klick'], [11.6, 'richtig'], [13, 'aha']].concat(Array.from({ length: NE }, (_, i) => [2.4 + i * 1.3, 'hops']), Array.from({ length: Math.floor((NE * 1.3 + .6) / .32) }, (_, i) => [1.4 + i * .32, 'schritt']), Array.from({ length: NE }, (_, i) => [2.9 + i * 1.3, 'brief'])),
       bild(t) {
@@ -1481,7 +1606,7 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
         if (t > 11.4) { const u = weich(st(t, 11.4, 13)); for (let i = 0; i < NE; i++) brief(x0 + i * dx + (BW / 2 - x0 - i * dx) * u, 382 - u * 262, u * 3.14 * 2, .6); if (u >= 1) { rr(BW / 2 - 90, 86, 180, 68, 14, '#fff', '#17725c'); txt('Das Soll ✓', BW / 2, 120, 30, '#17725c'); } }
         bote(bx, 360, t, t > 1.4 && t < 1.4 + NE * 1.3 + .6);
       } },
-    { key: 'film_kern_raet', titel: 'Der Kern rät', unter: 'raten → Korrektur → aha', dauer: 17.5,
+    { key: 'film_kern_raet', video: 'discovery-film-kern.mp4', titel: 'Der Kern rät', unter: 'raten → Korrektur → aha', dauer: 17.5,
       spruch: [[0, 'Ein Brief kommt. Der Kern rät.'], [4, '„Bestimmt eine Rechnung!“'], [6.6, 'Daneben. Das Soll der Einordner sagt: Bescheid.'], [9.2, 'Aha! Gelernt wird nur aus Fehlern.'], [11.8, 'Nächster Brief – diesmal sitzt es.'], [14.4, 'Richtig geraten heißt: nichts ändern. Nur Fehler machen ihn schlauer.']],
       klang: [[.3, 'brief'], [1.9, 'wirbel'], [6.6, 'falsch'], [9.2, 'aha'], [9.6, 'lern'], [11.9, 'brief'], [12.4, 'wirbel'], [13.4, 'richtig']],
       bild(t) {
@@ -1497,7 +1622,7 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
         if (t >= 9.2 && t < 11.8) { blase(330, 180, 'Aha!', '#b25a12'); for (let i = 0; i < 6; i++) { const v = ((t - 9.2) * .6 + i / 6) % 1; txt(i % 2 ? '+' : '−', 470 - v * 150 + Math.sin(i * 3) * 30, 220 + Math.sin(v * 3.14) * -60 + i * 12, 26, `rgba(255,210,63,${1 - v})`); } }
         if (t >= 13.4) { blase(340, 190, 'Bescheid!', '#17725c'); const s = 1 + (1 - st(t, 13.4, 13.7)) * 1.5; c.save(); c.translate(lx, 296); c.scale(s, s); c.strokeStyle = '#35d08f'; c.lineWidth = 12; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); c.moveTo(-36, 0); c.lineTo(-10, 28); c.lineTo(38, -30); c.stroke(); c.restore(); }
       } },
-    { key: 'film_strafzettel', titel: 'Der Strafzettel flattert', unter: 'Seltene Post einfangen', dauer: 14.5,
+    { key: 'film_strafzettel', video: 'discovery-film-strafzettel.mp4', titel: 'Der Strafzettel flattert', unter: 'Seltene Post einfangen', dauer: 14.5,
       spruch: [[0, 'Seltene Post ist schwer. Zum Beispiel: ein Strafzettel.'], [3, 'Hui! So etwas kommt im Alltag kaum vor.'], [6.6, `Darum gab es ${W[4].d.stuecke} Stücke Lücken-Material zum Üben.`], [10.2, 'Gefangen!'], [11.8, `Art am Lücken-Material: ${fz(D.luecken_kern.Art[0])} → ${fz(D.luecken_kern.Art[1])} %.`]],
       klang: [[2.2, 'wind'], [5, 'wind'], [7.2, 'hops'], [8.4, 'wind'], [10.2, 'aha']],
       bild(t) {
@@ -1517,14 +1642,26 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
   ];
   const kap = $('#kapitel'), spruch = $('#filmSpruch'), zeile = $('#filmZeile'), balken = $('#filmBalken'), startB = $('#filmStart'), pauseB = $('#filmPause');
   let nr = 0, t = 0, laeuft = false, begonnen = false, zuletzt = 0, klangNr = 0, tempo = 1, gesagt = true, sprLauf = 0, dann = 0;
-  function mal() { const F = FILME[nr]; c.clearRect(0, 0, BW, BH); F.bild(t); let s = ''; F.spruch.forEach(([ab, tx]) => { if (t >= ab) s = tx; }); if (zeile.textContent !== s) zeile.textContent = s; zeile.style.display = s ? '' : 'none'; balken.style.width = (t / F.dauer * 100) + '%'; }
+  // Kurzfilme als echtes Video (Higgsfield, 15.11.): liegt für einen Film eine Datei vor, läuft sie statt der Zeichnung; fehlt sie
+  // oder ist „weniger Bewegung“ gewünscht, bleibt die gezeichnete Fassung.
+  const vid = $('#filmVideo'), VF = window.DISCOVERY_FILME || {}, VB = window.DISCOVERY_FILMBILDER || {}, kaputt = {};
+  const filmAdr = F => (RUHIG || kaputt[F.key]) ? '' : (VF[F.key] || F.video || '');
+  const mitVideo = () => !vid.hidden;
+  function zeigVideo(F) { const a = filmAdr(F); if (!a) { vid.hidden = true; try { vid.pause(); } catch (e) { } return false; }
+    if (vid.dataset.key !== F.key) { vid.dataset.key = F.key; const b = VB[F.key] || F.bild0; if (b) vid.poster = b; else vid.removeAttribute('poster'); vid.src = a; }
+    vid.hidden = false; return true; }
+  vid.addEventListener('error', () => { const k = vid.dataset.key; if (k) kaputt[k] = true; vid.hidden = true; if (!laeuft) standbild(); });
+  function mal() { const F = FILME[nr];
+    if (mitVideo()) { zeile.style.display = 'none'; balken.style.width = (vid.duration ? Math.min(1, vid.currentTime / vid.duration) * 100 : 0) + '%'; return; }
+    c.clearRect(0, 0, BW, BH); F.bild(t); let s = ''; F.spruch.forEach(([ab, tx]) => { if (t >= ab) s = tx; }); if (zeile.textContent !== s) zeile.textContent = s; zeile.style.display = s ? '' : 'none'; balken.style.width = (t / F.dauer * 100) + '%'; }
   function knoepfe(gross) {
     pauseB.innerHTML = laeuft ? IK.pause + 'Pause' : IK.spiel + (begonnen ? 'Weiter' : 'Start'); pauseB.setAttribute('aria-pressed', laeuft);
     startB.style.display = laeuft ? 'none' : ''; if (gross) startB.firstElementChild.innerHTML = IK.spiel + gross;
   }
-  function standbild() { t = FILME[nr].dauer * .42; mal(); zeile.style.display = 'none'; spruch.textContent = FILME[nr].titel + ' – ' + FILME[nr].unter; balken.style.width = '0'; }
+  function standbild() { zeigVideo(FILME[nr]); t = FILME[nr].dauer * .42; mal(); zeile.style.display = 'none'; spruch.textContent = FILME[nr].titel + ' – ' + FILME[nr].unter; balken.style.width = '0'; }
   function tick(jetzt) {
     if (!laeuft) return; const F = FILME[nr];
+    if (mitVideo()) { mal(); if ((vid.ended || (vid.duration && vid.currentTime >= vid.duration - .05)) && gesagt) return fertig(); return requestAnimationFrame(tick); }
     if (RUHIG) { if (jetzt - zuletzt > 2300) { zuletzt = jetzt; const zeiten = F.spruch.map(s => s[0] + .9).concat([F.dauer - .2]); const i = zeiten.findIndex(z => z > t + .01); if (i < 0) { if (gesagt) return fertig(); } else { t = zeiten[i]; mal(); } } }
     else {
       t += Math.min(.05, (jetzt - zuletzt) / 1000) * tempo; zuletzt = jetzt; while (klangNr < F.klang.length && F.klang[klangNr][0] <= t) Ton.spiel(F.klang[klangNr++][1]);
@@ -1542,13 +1679,14 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
     laeuft = begonnen = false; dann = 0; knoepfe('Noch einmal von vorn'); }
   function spiele(n) {
     Ton.bereit(); nr = n; t = RUHIG ? -1 : 0; klangNr = 0; FILME[nr].klang.sort((a, b) => a[0] - b[0]); laeuft = begonnen = true; zuletzt = RUHIG ? -9999 : performance.now();
+    if (zeigVideo(FILME[nr])) { try { vid.currentTime = 0; const pr = vid.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } }
     spruch.textContent = SPRECHTEXTE[FILME[nr].key]; [...kap.children].forEach((b, i) => b.setAttribute('aria-pressed', i === nr)); knoepfe(); sprich(); requestAnimationFrame(tick);
   }
-  function halt() { laeuft = false; Sprecher.pause(); knoepfe('Weiter'); }
-  function weiter() { laeuft = true; zuletzt = RUHIG ? -9999 : performance.now(); Sprecher.weiter(); knoepfe(); requestAnimationFrame(tick); }
+  function halt() { laeuft = false; if (mitVideo()) vid.pause(); Sprecher.pause(); knoepfe('Weiter'); }
+  function weiter() { laeuft = true; if (mitVideo() && !vid.ended) { const pr = vid.play(); if (pr && pr.catch) pr.catch(() => { }); } zuletzt = RUHIG ? -9999 : performance.now(); Sprecher.weiter(); knoepfe(); requestAnimationFrame(tick); }
   const schalt = () => { if (laeuft) halt(); else if (begonnen) weiter(); else spiele(dann); };
   FILME.forEach((F, i) => { const b = el('button', '', `<b>${esc(F.titel)}</b><span>${esc(F.unter)}</span>`); b.setAttribute('aria-pressed', i === 0); b.onclick = () => spiele(i); kap.appendChild(b); });
-  startB.onclick = schalt; pauseB.onclick = schalt; cv.onclick = schalt;
+  startB.onclick = schalt; pauseB.onclick = schalt; cv.onclick = schalt; vid.onclick = schalt;
   App.tonHoerer.push(an => { if (!an) { sprLauf++; gesagt = true; tempo = 1; } });
   standbild(); knoepfe('Film abspielen');
 })();

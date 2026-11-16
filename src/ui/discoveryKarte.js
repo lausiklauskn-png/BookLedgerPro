@@ -1,6 +1,7 @@
 // src/ui/discoveryKarte.js — Hilfe-Seite „Discovery“ (Klaus 2026-11-15: „Da wo der Sortierkern drin ist, Discovery/Button
-// nachziehen“ · mit einbauen, Knopf in der Anleitung und unter „Über“ neben der Verbund-Karte). Die Seite zeigt, wie der
-// Sortier-Kern des Datei-Organizers trainiert wurde (3D-Baum, Lern-Kreislauf, Kurzfilme, 13 Tonspuren). Sie liegt
+// nachziehen“ · mit einbauen, Knopf in der Anleitung und unter „Über“ neben der Verbund-Karte · „sichtbar als Button oben in
+// der Navi-Leiste“, „mit dem Fernrohr“: Knopf in der Kopfleiste, shell.js). Die Seite zeigt, wie der Sortier-Kern des
+// Datei-Organizers trainiert wurde (3D-Baum, Lern-Kreislauf, Stadtfilm, Kurzfilme, Tonspuren; rund 49 MB). Sie liegt
 // byte-gleich unter assets/discovery/ (Pin assets/discovery/HERKUNFT.json, nur über tools/discovery-nachziehen.mjs) und
 // wird hier NICHT verändert. Sie lädt alles neben sich selbst, kein Netz.
 //
@@ -17,13 +18,14 @@ export const DISCOVERY_DATEI = DISCOVERY_ORDNER + 'discovery.html';
 let _offen = null;
 let _bereitgelegt = false;
 
-/** PWA: Film und Tonspuren liegen nicht in der Schale (6 MB). Beim ersten Öffnen holt die App sie still nacheinander —
+/** PWA: Filme und Tonspuren liegen nicht in der Schale (rund 49 MB). Beim ersten Öffnen holt die App sie still nacheinander —
  *  der Worker legt sie dabei in seinen Discovery-Vorrat, danach läuft die Seite ohne Netz. In den Apps (Android/Windows)
- *  liegen die Dateien im Paket; ohne Worker oder im Datensparmodus geschieht nichts. Fehler bleiben still. */
+ *  liegen die Dateien im Paket; ohne Worker, im Datensparmodus oder im Mobilfunknetz (soweit der Browser es nennt) geschieht
+ *  nichts — dort kommt nur in den Vorrat, was die Seite selbst abruft. Fehler bleiben still. */
 export async function discoveryBereitlegen({ abruf = (u) => fetch(u) } = {}) {
   if (_bereitgelegt) return 0;
   if (typeof navigator === 'undefined' || !navigator.serviceWorker || !navigator.serviceWorker.controller) return 0;
-  if (navigator.connection && navigator.connection.saveData) return 0;
+  if (navigator.connection && (navigator.connection.saveData || navigator.connection.type === 'cellular')) return 0;
   _bereitgelegt = true;
   let n = 0;
   try {

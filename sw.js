@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v306';
+const CACHE_VERSION = 'v307';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -33,11 +33,11 @@ const GETEILT_VORRAT = 'blpr-geteilt';
  * oder ueber „Offline bereitlegen" gefuellt; ueberlebt ein neues CACHE_VERSION. Name = APPS_VORRAT in src/ui/views/apps.js. */
 const APPS_VORRAT = 'blpr-apps';
 /* Hilfe-Seite „Discovery“ (Klaus 2026-11-15; assets/discovery/, byte-gleich aus dem Datei-Organizer, Pin HERKUNFT.json dort):
- * 6 MB mit Film und 13 Tonspuren — nicht in der Schale. Eigener Vorrat, gefuellt beim Abruf (und still beim ersten Oeffnen,
+ * rund 49 MB mit Filmen, Bildern und 15 Tonspuren — nicht in der Schale. Eigener Vorrat, gefuellt beim Abruf (und still beim ersten Oeffnen,
  * src/ui/discoveryKarte.js). Der Name traegt den Quell-Commit des Pins (tests/run.mjs haelt beides zusammen): gleicher Pin =
  * gleiche Bytes, also Vorrat zuerst ohne Nachladen; ein neuer Pin gibt einen neuen Vorrat, der alte wird beim Aktivieren
  * weggeraeumt. Ueberlebt ein neues CACHE_VERSION. */
-const DISCOVERY_VORRAT = 'blpr-discovery-5497e25';
+const DISCOVERY_VORRAT = 'blpr-discovery-c33e479';
 const BLEIBT = [GETEILT_VORRAT, APPS_VORRAT, DISCOVERY_VORRAT];
 
 const CORE_ASSETS = [

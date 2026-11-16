@@ -7851,29 +7851,39 @@ await section('Discovery (Klaus 2026-11-15): Hilfe-Seite des Datei-Organizers, b
   const pin = JSON.parse(readFileSync(u(O + 'HERKUNFT.json'), 'utf8'));
   const namen = Object.keys(pin.dateien);
   const ton = namen.filter((f) => /^discovery-ton\/[\w-]+\.mp3$/.test(f));
-  ok('Pin nennt Commit, Werkzeug und 17 Dateien (Seite, three.js, Film, Bild, 13 Tonspuren)', /^[0-9a-f]{40}$/.test(pin.commit) && pin.werkzeug === 'tools/discovery-nachziehen.mjs' && namen.length === 17 && ton.length === 13
-    && ['discovery.html', 'discovery-three.min.js', 'discovery-kreislauf.mp4', 'discovery-kreislauf.jpg'].every((f) => namen.includes(f)), namen.length + ' Dateien, ' + ton.length + ' Tonspuren');
+  const filme = namen.filter((f) => /^discovery-[\w-]+\.mp4$/.test(f));
+  ok('Pin nennt Commit, Werkzeug und alle Dateien (Seite, three.js, Filme, Bilder, 15 Tonspuren)', /^[0-9a-f]{40}$/.test(pin.commit) && pin.werkzeug === 'tools/discovery-nachziehen.mjs' && namen.length === 42 && ton.length === 15 && filme.length === 16
+    && namen.every((f) => f.startsWith('discovery'))
+    && ['discovery.html', 'discovery-three.min.js', 'discovery-kreislauf.mp4', 'discovery-kreislauf.jpg', 'discovery-kurzgeschichte.mp4', 'discovery-runden.mp4', 'discovery-stadt-finale.mp4'].every((f) => namen.includes(f)), namen.length + ' Dateien, ' + ton.length + ' Tonspuren, ' + filme.length + ' Filme');
   const falsch = namen.filter((f) => !existsSync(u(O + f)) || createHash('sha256').update(readFileSync(u(O + f))).digest('hex') !== pin.dateien[f]);
   ok('jede Datei gleich dem Pin (SHA-256)', falsch.length === 0, falsch.join(' '));
-  const da = [...readdirSync(u(O)).filter((f) => f !== 'HERKUNFT.json' && f !== 'discovery-ton'), ...readdirSync(u(O + 'discovery-ton')).map((f) => 'discovery-ton/' + f)];
+  const unter = (o, vor = '') => readdirSync(u(o), { withFileTypes: true }).flatMap((e) => e.isDirectory() ? unter(o + e.name + '/', vor + e.name + '/') : [vor + e.name]);
+  const da = unter(O).filter((f) => f !== 'HERKUNFT.json');
   ok('im Ordner liegt nichts außer dem Gepinnten', da.length === namen.length && da.every((f) => namen.includes(f)), da.filter((f) => !namen.includes(f)).join(' '));
   const html = readFileSync(u(O + 'discovery.html'), 'utf8');
   const quellen = [...html.matchAll(/<(?:script|link|img|video|audio|source|iframe)\b[^>]*?\s(?:src|href)\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]);
   ok('Seite lädt nur Dateien neben sich (kein Netz, kein absoluter Pfad)', quellen.length > 0 && quellen.every((q) => !/^(?:[a-z]+:)?\/\//i.test(q) && !q.startsWith('/') && !q.includes('..')) && !/@import|url\(\s*["']?https?:/i.test(html) && !/\b(?:fetch|importScripts)\(\s*["']https?:/i.test(html), quellen.join(' '));
   const texte = html.match(/const SPRECHTEXTE = \{([\s\S]*?)\n\};/);
   const schluessel = texte ? [...texte[1].matchAll(/^\s*([a-z_]+):/gm)].map((m) => m[1]) : [];
-  ok('SPRECHTEXTE: 13 Einträge, je einer mit Tonspur', schluessel.length === 13 && schluessel.every((k) => namen.includes('discovery-ton/' + k + '.mp3')), schluessel.length + ': ' + schluessel.join(' '));
+  ok('SPRECHTEXTE: 15 Einträge, je einer mit Tonspur', schluessel.length === 15 && schluessel.every((k) => namen.includes('discovery-ton/' + k + '.mp3')), schluessel.length + ': ' + schluessel.join(' '));
+  const genannt = [...new Set([...html.matchAll(/['"`(=]((?:discovery-ton\/)?discovery[\w-]*\.(?:mp4|jpg|mp3|js))\b/g)].map((m) => m[1]))];
+  ok('jede in der Seite genannte Datei (Filme, Bilder, three.js) liegt gepinnt daneben', genannt.length >= 15 && genannt.every((f) => namen.includes(f)), genannt.filter((f) => !namen.includes(f)).join(' '));
   ok('Seite zeigt im Rahmen keinen Rückweg-Knopf (window.top===window)', /window\.top===window/.test(html) && /‹ Zurück/.test(html));
   const sw = readFileSync(u('sw.js'), 'utf8');
   const vorrat = (sw.match(/const DISCOVERY_VORRAT = '([^']+)'/) || [])[1] || '';
   ok('sw.js: eigener Vorrat trägt den Pin-Commit, bleibt beim Versionswechsel', vorrat.endsWith('-discovery-' + pin.commit.slice(0, 7)) && /const BLEIBT = \[[^\]]*DISCOVERY_VORRAT[^\]]*\]/.test(sw), vorrat);
-  ok('sw.js: Einstieg und Pin in der Schale, Film/Ton/Seite nicht im Pflicht-Vorrat, Cache ≥ v305', sw.includes("'./src/ui/discoveryKarte.js'") && sw.includes("'./assets/discovery/HERKUNFT.json'")
-    && !/'\.\/assets\/discovery\/[^']*\.(?:mp4|mp3|html|js|jpg)'/.test(sw) && Number(sw.match(/CACHE_VERSION = 'v(\d+)'/)[1]) >= 305);
+  ok('sw.js: Einstieg und Pin in der Schale, Film/Ton/Seite nicht im Pflicht-Vorrat, Cache ≥ v307', sw.includes("'./src/ui/discoveryKarte.js'") && sw.includes("'./assets/discovery/HERKUNFT.json'")
+    && [...sw.matchAll(/'\.\/assets\/discovery\/([^']*)'/g)].every((m) => m[1] === 'HERKUNFT.json') && Number(sw.match(/CACHE_VERSION = 'v(\d+)'/)[1]) >= 307);
   ok('sw.js: Discovery-Abruf geht in den Vorrat, Stücke (Range) werden aus der ganzen Datei geschnitten', /includes\('\/assets\/discovery\/'\)/.test(sw) && /discoveryAntwort\(event\)/.test(sw) && /status: 206/.test(sw) && /Content-Range/.test(sw));
   const dk = readFileSync(u('src/ui/discoveryKarte.js'), 'utf8');
   ok('Einstieg öffnet einen Rahmen (iframe), kein neues Fenster', /el\('iframe'/.test(dk) && !/window\.open\(/.test(dk) && /popstate/.test(dk) && /'\.\/assets\/discovery\/'/.test(dk));
   const an = readFileSync(u('src/ui/views/anleitung.js'), 'utf8'), sh = readFileSync(u('src/ui/shell.js'), 'utf8');
   ok('Einstieg in der Anleitung und unter „Über“, je direkt nach der Verbund-Karte', /verbundKasten\(\),\s*(?:\/\/[^\n]*\n\s*)*discoveryKasten\(\)/.test(an) && /aboutContent\(\), verbundKasten\(\), discoveryKasten\(\)/.test(sh));
+  const kopfKnopf = (sh.match(/el\('button', \{[^}]*'data-discovery-knopf'[^}]*\}, \[icon\('([\w-]+)'\)\]\)/) || []);
+  ok('Knopf in der Kopfleiste (Klaus: „oben in der Navi-Leiste“, „mit dem Fernrohr“): Strichsymbol, Name in title und aria-label, öffnet den Rahmen',
+    kopfKnopf[1] === 'blp-fernrohr' && /title: t\('discovery\.titel'\)/.test(kopfKnopf[0]) && /'aria-label': t\('discovery\.titel'\)/.test(kopfKnopf[0]) && /onClick: \(\) => discoveryOeffnen\(\)/.test(kopfKnopf[0])
+    && !/\p{Extended_Pictographic}/u.test(kopfKnopf[0]) && sh.indexOf("'data-discovery-knopf'") > sh.indexOf("class: 'header-right'") && sh.indexOf("'data-discovery-knopf'") < sh.indexOf('function geschaeftsjahrKopf'), kopfKnopf[1]);
+  ok('Fernrohr-Symbol im eigenen Sprite (blp-icons.svg), nicht im PBP-Satz', /<symbol id="blp-fernrohr" viewBox="0 0 24 24">/.test(readFileSync(u('assets/blp-icons.svg'), 'utf8')) && !readFileSync(u('assets/pb-icons.svg'), 'utf8').includes('fernrohr'));
   const i18 = readFileSync(u('src/ui/i18n.js'), 'utf8');
   const keys = [...new Set([...dk.matchAll(/t\('(discovery\.[\w.]+)'\)/g)].map((m) => m[1]))];
   ok('i18n DE/EN: alle ' + keys.length + ' discovery-Sätze je zweimal, ohne Emoji', keys.length === 4 && keys.every((k) => (i18.match(new RegExp(`'${k.replace(/\./g, '\\.')}'`, 'g')) || []).length === 2)
