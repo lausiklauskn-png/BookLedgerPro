@@ -130,7 +130,7 @@ try {
     const film = await frame.evaluate(async () => { const r = await fetch('discovery-kreislauf.mp4', { headers: { Range: 'bytes=0-1023' } }); return [r.status, (await r.arrayBuffer()).byteLength]; });
     ok('Film neben der Seite abrufbar (Stück-Anfrage)', film[0] === 206 && film[1] === 1024, JSON.stringify(film));
     const filme = await frame.evaluate(async (fs) => { const aus = []; for (const f of fs) { const r = await fetch(f, { headers: { Range: 'bytes=0-255' } }); aus.push([f, r.status, r.headers.get('content-type'), (await r.arrayBuffer()).byteLength]); } return aus; }, FILME);
-    ok('alle ' + FILME.length + ' Filme neben der Seite abrufbar (Stück-Anfrage, video/mp4)', FILME.length === 16 && filme.every((x) => x[1] === 206 && /video/.test(x[2]) && x[3] === 256), JSON.stringify(filme.filter((x) => x[1] !== 206)));
+    ok('alle ' + FILME.length + ' Filme neben der Seite abrufbar (Stück-Anfrage, video/mp4)', FILME.length === 17 && filme.every((x) => x[1] === 206 && /video/.test(x[2]) && x[3] === 256), JSON.stringify(filme.filter((x) => x[1] !== 206)));
     const genannt = await frame.evaluate(() => [...new Set([...document.documentElement.outerHTML.matchAll(/['"`(=]((?:discovery-ton\/)?discovery[\w-]*\.(?:mp4|jpg|mp3|js))\b/g)].map((m) => m[1]))]);
     ok('jede in der Seite genannte Datei liegt im Pin', genannt.length >= 20 && genannt.every((f) => ALLE.includes(f)), genannt.filter((f) => !ALLE.includes(f)).join(' '));
     await page.click('[data-discovery-zu]');
@@ -209,7 +209,7 @@ try {
   const alle = await page.evaluate(async (fs) => { const aus = []; for (const f of fs) { const r = await fetch('./assets/discovery/' + f); aus.push([f, r.status, (await r.arrayBuffer()).byteLength]); } return aus; }, ALLE);
   const drin = await imVorrat();
   const schale2 = await page.evaluate(async () => { const n = (await caches.keys()).find((k) => /-shell-/.test(k)); return (await (await caches.open(n)).keys()).map((r) => new URL(r.url).pathname); });
-  ok('alle ' + ALLE.length + ' gepinnten Dateien landen beim Abruf im Discovery-Vorrat, keine in der Schale', ALLE.length === 42 && alle.every((x) => x[1] === 200 && x[2] > 0) && ALLE.every((f) => drin.includes(f)) && drin.length === ALLE.length
+  ok('alle ' + ALLE.length + ' gepinnten Dateien landen beim Abruf im Discovery-Vorrat, keine in der Schale', ALLE.length === 43 && alle.every((x) => x[1] === 200 && x[2] > 0) && ALLE.every((f) => drin.includes(f)) && drin.length === ALLE.length
     && !schale2.some((p) => p.startsWith('/assets/discovery/') && !p.endsWith('HERKUNFT.json')), JSON.stringify(ALLE.filter((f) => !drin.includes(f))));
   discoveryAus = true; gesehen.length = 0;
   const neu = await page.evaluate(async () => {

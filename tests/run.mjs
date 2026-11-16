@@ -7852,9 +7852,9 @@ await section('Discovery (Klaus 2026-11-15): Hilfe-Seite des Datei-Organizers, b
   const namen = Object.keys(pin.dateien);
   const ton = namen.filter((f) => /^discovery-ton\/[\w-]+\.mp3$/.test(f));
   const filme = namen.filter((f) => /^discovery-[\w-]+\.mp4$/.test(f));
-  ok('Pin nennt Commit, Werkzeug und alle Dateien (Seite, three.js, Filme, Bilder, 15 Tonspuren)', /^[0-9a-f]{40}$/.test(pin.commit) && pin.werkzeug === 'tools/discovery-nachziehen.mjs' && namen.length === 42 && ton.length === 15 && filme.length === 16
+  ok('Pin nennt Commit, Werkzeug und alle Dateien (Seite, three.js, Filme, Bilder, 15 Tonspuren)', /^[0-9a-f]{40}$/.test(pin.commit) && pin.werkzeug === 'tools/discovery-nachziehen.mjs' && namen.length === 43 && ton.length === 15 && filme.length === 17
     && namen.every((f) => f.startsWith('discovery'))
-    && ['discovery.html', 'discovery-three.min.js', 'discovery-kreislauf.mp4', 'discovery-kreislauf.jpg', 'discovery-kurzgeschichte.mp4', 'discovery-runden.mp4', 'discovery-stadt-finale.mp4'].every((f) => namen.includes(f)), namen.length + ' Dateien, ' + ton.length + ' Tonspuren, ' + filme.length + ' Filme');
+    && ['discovery.html', 'discovery-three.min.js', 'discovery-kreislauf.mp4', 'discovery-kreislauf.jpg', 'discovery-kurzgeschichte.mp4', 'discovery-geschichte.mp4', 'discovery-runden.mp4', 'discovery-stadt-finale.mp4'].every((f) => namen.includes(f)), namen.length + ' Dateien, ' + ton.length + ' Tonspuren, ' + filme.length + ' Filme');
   const falsch = namen.filter((f) => !existsSync(u(O + f)) || createHash('sha256').update(readFileSync(u(O + f))).digest('hex') !== pin.dateien[f]);
   ok('jede Datei gleich dem Pin (SHA-256)', falsch.length === 0, falsch.join(' '));
   const unter = (o, vor = '') => readdirSync(u(o), { withFileTypes: true }).flatMap((e) => e.isDirectory() ? unter(o + e.name + '/', vor + e.name + '/') : [vor + e.name]);

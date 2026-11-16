@@ -37,7 +37,7 @@ const APPS_VORRAT = 'blpr-apps';
  * src/ui/discoveryKarte.js). Der Name traegt den Quell-Commit des Pins (tests/run.mjs haelt beides zusammen): gleicher Pin =
  * gleiche Bytes, also Vorrat zuerst ohne Nachladen; ein neuer Pin gibt einen neuen Vorrat, der alte wird beim Aktivieren
  * weggeraeumt. Ueberlebt ein neues CACHE_VERSION. */
-const DISCOVERY_VORRAT = 'blpr-discovery-c33e479';
+const DISCOVERY_VORRAT = 'blpr-discovery-213c81b';
 const BLEIBT = [GETEILT_VORRAT, APPS_VORRAT, DISCOVERY_VORRAT];
 
 const CORE_ASSETS = [

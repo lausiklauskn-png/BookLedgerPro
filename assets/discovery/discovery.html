@@ -89,7 +89,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .untertitel{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(700px,calc(100% - 24px));box-shadow:0 8px 30px rgba(0,0,0,.45);background:rgba(10,14,28,.86);color:#fff;border-radius:14px;padding:10px 14px;font-size:15px;line-height:1.4;z-index:4;display:none}
 .untertitel.an{display:block;z-index:50}
 .untertitel.an.stumm{display:none}
-#bWeiter[hidden]{display:none}
+#bWeiter[hidden],#bStadtfilm[hidden]{display:none}
 .untertitel .ut-k{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 .untertitel .ut-k button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:4px 12px;font-size:13.5px;font-weight:600}
 .ik{width:1em;height:1em;vertical-align:-.13em;margin-right:.4em;flex:none}
@@ -175,8 +175,21 @@ canvas.kugeln.zeigt{cursor:pointer}
 .sf-bilder,.sf-szene{position:absolute;inset:0}
 .sf-szene{opacity:0;transition:opacity 1.1s ease}
 .sf-szene.an{opacity:1}
+/* Ein angehaltener Film darf nicht als schwarze Fläche über dem nächsten Bild liegen bleiben: Android zeichnet Videos zum Teil in einer
+   eigenen Ebene, die die Durchsichtigkeit nicht beachtet (Klaus 16.11.: nach „Führung anhalten“ schwarzes Bild mit Punkten). */
+.sf-szene:not(.an) video{visibility:hidden;transition:visibility 0s 1.1s}
+.sf-szene.an video{visibility:visible}
+/* Großes Video: Leiste des Browsers zum Anhalten und Spulen; die eigenen Leisten rücken darüber. */
+.stadt-film.gross .sf-wahl,.stadt-film.gross .sf-leiste{bottom:68px}
 .sf-szene img,.sf-szene video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .sf-szene.an img{animation:sfFahrt 10s ease-out forwards}
+.sf-szene.sf-start.an img{animation:sfAtmen 26s ease-in-out infinite alternate}
+@keyframes sfAtmen{from{transform:scale(1.02)}to{transform:scale(1.09) translate(0,-1%)}}
+.sf-ort span{font-size:clamp(13px,1.9vw,20px)}
+.sf-titel.fluechtig{animation:sfWeg 1.4s ease 4.6s forwards}
+@keyframes sfWeg{to{opacity:0}}
+.sf-hinweis{font:300 13px var(--sans);color:rgba(255,255,255,.85);text-shadow:0 1px 4px rgba(0,0,0,.8);margin-left:6px}
+.sf-hinweis[hidden]{display:none}
 .sf-szene:nth-child(even).an img{animation-name:sfFahrt2}
 @keyframes sfFahrt{from{transform:scale(1.16) translate(2%,2%)}to{transform:scale(1.02) translate(0,0)}}
 @keyframes sfFahrt2{from{transform:scale(1.04) translate(-1%,0)}to{transform:scale(1.18) translate(1.5%,-2%)}}
@@ -195,11 +208,16 @@ canvas.kugeln.zeigt{cursor:pointer}
 @keyframes sfSchrift{from{opacity:0;letter-spacing:.8em;transform:rotateX(38deg) translateY(26px) scale(1.12)}18%{opacity:.9}to{opacity:.86;letter-spacing:.34em;transform:rotateX(12deg) translateY(0) scale(1)}}
 @keyframes sfSchrift2{from,22%{opacity:0;letter-spacing:.9em}to{opacity:.85;letter-spacing:.38em}}
 @media (prefers-reduced-motion:reduce){.sf-titel b,.sf-titel span{animation:none}}
-.sf-wahl{position:absolute;right:12px;bottom:12px;z-index:1;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:42%}
+.sf-wahl{position:absolute;right:12px;bottom:12px;z-index:1;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:42%;transition:right .3s}
+/* Karte offen: die Stadtwahl rückt neben die Karte, sonst lässt sich keine andere Stadt mehr wählen (Klaus 16.11.) */
+.buehne.karte-offen .sf-wahl{right:calc(min(380px,100% - 20px) + 22px);max-width:calc(100% - min(380px,100% - 20px) - 190px)}
+@media (max-width:720px){.buehne.karte-offen .sf-wahl{right:12px;bottom:auto;top:46px;max-width:calc(100% - 24px)}}
 .sf-wahl button,.sf-leiste button{background:none;color:rgba(255,255,255,.72);border:0;padding:6px 8px;font:300 14px var(--sans);letter-spacing:.08em;cursor:pointer;text-shadow:0 1px 4px rgba(0,0,0,.8);transition:color .3s,text-shadow .3s}
 .sf-wahl button:hover,.sf-leiste button:hover,.sf-wahl button:focus-visible,.sf-leiste button:focus-visible{color:#fff;text-shadow:0 0 12px rgba(255,255,255,.8),0 1px 4px rgba(0,0,0,.8)}
 .sf-wahl button[aria-pressed="true"]{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.9),0 1px 4px rgba(0,0,0,.8)}
-.sf-leiste{position:absolute;left:12px;right:12px;bottom:12px;z-index:1;display:flex;gap:8px;align-items:center}
+/* nur so breit wie ihre Knöpfe: über die ganze Breite deckte sie die untere Zeile der Stadtwahl zu (Klaus 16.11.: „Musterhausen am Rhein“ ließ sich nicht antippen) */
+.sf-leiste{position:absolute;left:12px;bottom:12px;z-index:1;display:flex;gap:8px;align-items:center;pointer-events:none}
+.sf-leiste>*{pointer-events:auto}
 .sf-leiste .sf-spiel{width:36px;height:36px;padding:0;display:grid;place-items:center;font-size:0;opacity:.85}
 .sf-spiel svg{width:18px;height:18px;margin:0}
 .sf-3d{margin-left:0}
@@ -215,6 +233,19 @@ canvas.kugeln.zeigt{cursor:pointer}
 .kreis-wahl button[aria-pressed="true"]{background:#167a5f;border-color:#167a5f;color:#fff}
 .kreis-film{position:relative}.kreis-film[hidden],#schleifeBild[hidden]{display:none!important}
 .kreis-film video{display:block;width:100%;height:auto;border-radius:14px;background:#141a2c}
+/* Ladeanzeige (Klaus 16.11.): drei kreisende Murmeln, die Prozentzahl in der Mitte – eindeutig „es lädt noch“ */
+.film-lade{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:112px;height:112px;border-radius:50%;background:rgba(6,10,24,.66);box-shadow:0 0 0 1px rgba(255,255,255,.14),0 10px 30px rgba(0,0,0,.45);display:grid;place-items:center;pointer-events:none;z-index:3}
+.film-lade[hidden]{display:none}.film-lade i{display:none}
+.film-lade b{position:absolute;inset:0;animation:flDreh 1.5s linear infinite}
+.film-lade b u{position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px;border-radius:50%;box-shadow:inset -3px -4px 6px rgba(0,0,0,.35),inset 3px 3px 5px rgba(255,255,255,.55),0 0 10px rgba(255,255,255,.25)}
+.film-lade b u:nth-child(1){background:#2fd0c0;transform:rotate(0deg) translateY(-42px)}
+.film-lade b u:nth-child(2){background:#ffa53b;transform:rotate(120deg) translateY(-42px)}
+.film-lade b u:nth-child(3){background:#a274ff;transform:rotate(240deg) translateY(-42px)}
+.film-lade span{position:relative;text-align:center;font:600 19px/1.15 system-ui;color:#fff;letter-spacing:.02em;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+.film-lade span small{display:block;font:400 10.5px/1.3 system-ui;letter-spacing:.08em;opacity:.8;text-transform:uppercase}
+.film-lade.fehler{width:min(300px,80%);height:auto;border-radius:14px;padding:10px 14px}.film-lade.fehler b{display:none}.film-lade.fehler span{font:500 13px/1.35 system-ui}
+@keyframes flDreh{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.film-lade b{animation-duration:6s}}
 .kreis-film .lade{position:absolute;left:12px;right:12px;bottom:54px;height:22px;border-radius:999px;background:rgba(0,0,0,.6);overflow:hidden;pointer-events:none}
 .kreis-film .lade[hidden]{display:none}.kreis-film .lade i{position:absolute;left:0;top:0;bottom:0;width:0;background:#2fbf95;transition:width .3s}
 .kreis-film .lade span{position:relative;display:block;text-align:center;font:600 12.5px/22px system-ui;color:#fff}
@@ -250,6 +281,12 @@ canvas.kugeln.zeigt{cursor:pointer}
 .leinwand canvas{width:100%;height:100%;display:block}
 #kurzgeschichte{padding-top:8px}
 #kurzgeschichte[hidden]{display:none}
+.zugabe{margin-top:12px;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.zugabe #zugabeFilm{width:100%}.zugabe #zugabeFilm[hidden]{display:none}
+#zugabeKnopf{display:inline-flex;align-items:center;gap:9px;background:none;border:0;padding:4px 2px;color:var(--leise);font:500 13.5px var(--sans);cursor:pointer}
+#zugabeKnopf i{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#d9fff8 0,#49d6c4 34%,#178a86 72%,#0c4f57 100%);box-shadow:inset -4px -5px 8px rgba(0,0,0,.28),0 3px 10px rgba(0,0,0,.25);position:relative;flex:none;transition:transform .2s}
+#zugabeKnopf i::after{content:"";position:absolute;left:13px;top:10px;border-style:solid;border-width:7px 0 7px 11px;border-color:transparent transparent transparent #fff}
+#zugabeKnopf:hover i,#zugabeKnopf:focus-visible i{transform:scale(1.12)}#zugabeKnopf[aria-expanded="true"] i::after{left:11px;top:11px;width:12px;height:12px;border:0;background:#fff;border-radius:2px}
 .leinwand.kurzfilm{max-width:960px;margin:0 auto}
 .leinwand video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#101425;cursor:pointer}
 .kino-links{display:grid;gap:8px;align-content:start;min-width:0}
@@ -358,8 +395,7 @@ footer{padding:36px 0 48px;color:var(--leise);font-size:13.5px}
       <button id="bTon" data-ton aria-pressed="true">Ton an</button>
       <button id="bUnter" aria-pressed="false" title="Untertitel: den gesprochenen Text unten mitlesen">Untertitel</button>
       <button id="bWeiter" hidden title="Zum nächsten Schritt der Führung">Weiter</button>
-      <details class="zeichen stimmwahl"><summary>Stimme</summary><div class="stimme" data-stimme></div></details>
-      <button id="bStadtfilm" title="Die vier Städte als kleiner Film, mit den Punkten zum Antippen">Stadtfilm</button>
+      <button id="bStadtfilm" title="Zurück zur Film-Ansicht: das Bild mit den vier Städten, die Filme laufen erst auf Tipp">Film-Ansicht</button>
       <button id="bLicht" class="nur3d">Abend</button>
       <details class="zeichen" id="zeichen"><summary>Zeichen</summary><ul id="zeichenListe"></ul></details>
     </div>
@@ -375,9 +411,11 @@ footer{padding:36px 0 48px;color:var(--leise);font-size:13.5px}
   </div>
 </div>
 
-<section id="kurzgeschichte" aria-label="Die Geschichte in Kurzform"><div class="rand">
-  <div class="leinwand kurzfilm"><video id="kurzVideo" controls playsinline preload="none" poster="discovery-kurzgeschichte.jpg" src="discovery-kurzgeschichte.mp4" aria-label="Die Geschichte in 43 Sekunden: Flug am Baum, Landung in der Stadt, Familienakte"></video></div>
-  <div class="leinwand kurzfilm" style="margin-top:14px"><video id="rundenVideo" controls playsinline preload="none" poster="discovery-runden.jpg" src="discovery-runden.mp4" aria-label="Runde für Runde in einer knappen Minute: immer neue Städte, der Kern wird besser, danach lernt die App mit den eigenen Unterlagen"></video></div>
+<section id="kurzgeschichte" aria-label="Runde für Runde"><div class="rand">
+  <div class="leinwand kurzfilm"><video id="rundenVideo" controls playsinline preload="none" poster="discovery-runden.jpg" src="discovery-runden.mp4" aria-label="Runde für Runde in einer knappen Minute: immer neue Städte, der Kern wird besser, danach lernt die App mit den eigenen Unterlagen"></video></div>
+  <!-- Zugabe (Klaus 16.11.): die 43-Sekunden-Kurzform nur noch hinter einer kleinen Murmel, sie erzählt dieselbe Geschichte wie der Film oben. -->
+  <div class="zugabe"><button type="button" id="zugabeKnopf" aria-expanded="false" aria-controls="zugabeFilm" title="Zugabe: die Geschichte noch einmal in 43 Sekunden, nur mit den Murmeln"><i aria-hidden="true"></i><span>Zugabe · 43 Sekunden</span></button>
+    <div class="leinwand kurzfilm" id="zugabeFilm" hidden><video id="kurzVideo" controls playsinline preload="none" poster="discovery-kurzgeschichte.jpg" src="discovery-kurzgeschichte.mp4" aria-label="Zugabe: die Geschichte in 43 Sekunden: Flug am Baum, Landung in der Stadt, Familienakte"></video></div></div>
 </div></section>
 <script>if (window.EINZELDATEI) document.getElementById('kurzgeschichte').hidden = true;</script>
 
@@ -400,10 +438,10 @@ footer{padding:36px 0 48px;color:var(--leise);font-size:13.5px}
   </div>
 </div></section>
 
-<section id="kino" aria-label="Drei gezeichnete Kurzfilme"><div class="rand">
+<section id="kino" aria-label="Drei Kurzfilme"><div class="rand">
   <div class="kino">
     <div class="kino-links"><div class="leinwand">
-      <canvas id="film" width="960" height="540" aria-label="Gezeichneter Kurzfilm"></canvas>
+      <canvas id="film" width="960" height="540" hidden></canvas>
       <video id="filmVideo" muted playsinline preload="metadata" hidden aria-label="Kurzfilm"></video>
       <div class="balken" id="filmBalken"></div>
       <div class="bildzeile" id="filmZeile"></div>
@@ -488,7 +526,7 @@ const FELDER = ['Art', 'Bereich', 'Absender', 'Person', 'Frist'];
 const SPRECHTEXTE = {
   begruessung: "Willkommen in den Test-Welten. Hier siehst du, wie der Datei-Organizer sortieren gelernt hat.",
   recherche: "Zuerst haben acht Agenten im Internet nachgeforscht: Wie lernt ein Programm aus Fehlern, ohne sich selbst zu belügen? Die Antwort: Regeln vorher festlegen. Und nur einmal messen, an einer fremden Welt.",
-  welten: "Wir haben Städte erfunden. Eine Hafenstadt, eine Kleinstadt, eine Großstadt und eine Stadt am Fluss. Mit Ämtern, Firmen und Familien, die einander Briefe schreiben. Rechnungen, Bescheide, Mahnungen. Und ja, auch Strafzettel. Die fängt der Kern ein und ordnet sie richtig zu.",
+  welten: "Wir haben Städte erfunden. Eine Hafenstadt, eine Kleinstadt, eine Großstadt und eine Stadt am Fluss. Mit Ämtern, Firmen und Familien, die einander Briefe schreiben. Rechnungen, Bescheide, Mahnungen. Und ja, auch Strafzettel. Der Zettel fliegt weg. Den fängt der Kern ein und ordnet ihn richtig zu.",
   kreis_raten: "Jetzt der Kreislauf. Erste Kugel: Raten. Ein Brief fliegt hinein, und der Kern rät: Was ist das? Wer schreibt? Bis wann?",
   kreis_soll: "Zweite Kugel: das Soll. Sechs Einordner sagen, was richtig ist. Grüner Haken, oder rotes Kreuz.",
   kreis_lernen: "Dritte Kugel: Lernen. Nur wo der Kern danebenlag, verschieben sich die Gewichte. Wer richtig rät, lernt nichts.",
@@ -558,17 +596,28 @@ function karteHtml(id) {
   return h;
 }
 const App = { gewaehlt: null, hoerer: [], ton: null };
+/* Ladebalken für jeden Film (Klaus 15.11.): solange ein Film lädt oder nachlädt, steht mitten im Bild „Film lädt … N %“. */
+function ladeBalken(video, wirt) {
+  if (!video || video._lade) return; const l = el('div', 'film-lade', '<i></i><b><u></u><u></u><u></u></b><span></span>'); l.hidden = true; l.setAttribute('role', 'status'); video._lade = l; (wirt || video.parentNode).appendChild(l);
+  const strich = l.firstChild, wort = l.lastChild; let uhr = null;
+  const stand = () => { let e = 0; try { for (let i = 0; i < video.buffered.length; i++) e = Math.max(e, video.buffered.end(i)); } catch (x) { } const a = video.duration ? Math.min(1, e / video.duration) : 0; l.classList.remove('fehler'); wort.innerHTML = (a > 0 ? (a * 100).toFixed(0) + ' %' : '…') + '<small>Film lädt</small>'; l.setAttribute('aria-label', 'Film lädt' + (a > 0 ? ', ' + (a * 100).toFixed(0) + ' Prozent' : '')); };
+  const an = () => { clearTimeout(uhr); uhr = setTimeout(() => { if (!video.paused && video.readyState < 3 && !video.error) { l.hidden = false; stand(); } }, 350); }, aus = () => { clearTimeout(uhr); l.hidden = true; };
+  video.addEventListener('loadstart', an); video.addEventListener('waiting', an); video.addEventListener('play', an);   /* nur solange wirklich abgespielt werden soll – nicht schon am stehenden Vorschaubild */ video.addEventListener('progress', stand);
+  ['canplay', 'playing', 'canplaythrough', 'pause', 'emptied'].forEach(n => video.addEventListener(n, n === 'pause' || n === 'emptied' ? () => { if (video.readyState >= 3 || n === 'emptied') aus(); } : aus));
+  video.addEventListener('error', () => { clearTimeout(uhr); l.hidden = false; l.classList.add('fehler'); wort.textContent = 'Der Film ließ sich nicht laden.'; setTimeout(aus, 2500); });
+}
+
 const karte = $('#karte'), karteInhalt = $('#karteInhalt');
 App.open = function (id, opt) {
   opt = opt || {};
   const h = karteHtml(id); if (!h) return;
-  App.gewaehlt = id; karteInhalt.innerHTML = h; karte.classList.add('offen'); karte.scrollTop = 0;
+  App.gewaehlt = id; karteInhalt.innerHTML = h; karte.classList.add('offen'); $('#buehne').classList.add('karte-offen'); karte.scrollTop = 0;
   if (opt.rolle) { const li = karteInhalt.querySelector(`[data-rolle="${opt.rolle}"]`); if (li) { li.classList.add('blink'); setTimeout(() => li.scrollIntoView({ block: 'nearest' }), 380); } }
   document.querySelectorAll('#strahl button').forEach(b => b.dataset.id === id ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current'));
   App.hoerer.forEach(f => f(id, opt));
   if (App.ton && !opt.still) App.ton('klick');
 };
-App.close = function () { App.gewaehlt = null; karte.classList.remove('offen'); document.querySelectorAll('#strahl button').forEach(b => b.removeAttribute('aria-current')); App.hoerer.forEach(f => f(null, {})); };
+App.close = function () { App.gewaehlt = null; karte.classList.remove('offen'); $('#buehne').classList.remove('karte-offen'); document.querySelectorAll('#strahl button').forEach(b => b.removeAttribute('aria-current')); App.hoerer.forEach(f => f(null, {})); };
 $('#karteZu').onclick = App.close;
 const rolleZu = id => { const z = document.getElementById(id); if (z) z.scrollIntoView({ behavior: RUHIG ? 'auto' : 'smooth', block: 'start' }); };
 karteInhalt.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.geh) App.open(b.dataset.geh); else if (b.dataset.roll) rolleZu(b.dataset.roll); });
@@ -649,7 +698,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && App.gewaeh
     try { renderer = new T.WebGLRenderer({ canvas: cv, antialias: !window.MOBIL, alpha: true }); } catch (e) { return null; }
     cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Sechs Glaskugeln im Kreislauf: Raten, Soll, Lernen, Reihum, Einfrieren, Messen. Die Schritte lassen sich auch über die Knöpfe daneben wählen.');
     Segmente.melde('kugeln', box, renderer); box.appendChild(cv); cv.title = 'Ziehen = drehen · Kugel antippen = Schritt wählen';
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, window.MOBIL ? 1.5 : 2)); renderer.setClearColor(0x000000, 0);
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, window.MOBIL ? 1 : 2)); renderer.setClearColor(0x000000, 0);
     const V = (x, y, z) => new T.Vector3(x, y, z), kl = (v, a, b) => Math.max(a, Math.min(b, v)), st = (t, a, b) => kl((t - a) / (b - a), 0, 1), weich = x => x * x * (3 - 2 * x);
     const nah = (ist, soll, dt, r) => RUHIG ? soll : ist + (soll - ist) * (1 - Math.exp(-dt * r));
     const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -912,13 +961,8 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && App.gewaeh
   }
   function baueFilm() {
     if (video) return;
-    filmBox.innerHTML = `<video playsinline controls preload="none" poster="${FILM.bild}" src="${FILM.adr}" aria-label="Film: der Kreislauf raten, Soll, lernen, reihum prüfen, einfrieren, messen – mit Sprecher"></video><div class="lade" hidden><i></i><span>Film lädt …</span></div>`;
-    video = filmBox.querySelector('video'); const lade = filmBox.querySelector('.lade'), strich = lade.querySelector('i'), wort = lade.querySelector('span');
-    const stand = () => { let e = 0; try { if (video.buffered.length) e = video.buffered.end(video.buffered.length - 1); } catch (x) { } const a = video.duration ? Math.min(1, e / video.duration) : 0; strich.style.width = (a * 100).toFixed(0) + '%'; wort.textContent = 'Film lädt … ' + (a * 100).toFixed(0) + ' %'; };
-    const zeigLade = an => { lade.hidden = !an; if (an) stand(); };
-    video.addEventListener('loadstart', () => zeigLade(true)); video.addEventListener('waiting', () => zeigLade(true)); video.addEventListener('progress', stand);
-    ['canplay', 'playing', 'canplaythrough'].forEach(n => video.addEventListener(n, () => zeigLade(false)));
-    video.addEventListener('error', () => { lade.hidden = false; wort.textContent = 'Der Film ließ sich nicht laden.'; });
+    filmBox.innerHTML = `<video playsinline controls preload="none" poster="${FILM.bild}" src="${FILM.adr}" aria-label="Film: der Kreislauf raten, Soll, lernen, reihum prüfen, einfrieren, messen – mit Sprecher"></video>`;
+    video = filmBox.querySelector('video'); ladeBalken(video, filmBox);   // dieselbe Ladeanzeige wie überall (drei Murmeln mit Prozent), erst nach dem Start
     video.addEventListener('play', () => { if (tourBis < 0) video.muted = false; });
     video.addEventListener('timeupdate', () => {
       const t = video.currentTime; if (tourBis >= 0 && t >= tourBis) { video.pause(); tourBis = -1; }
@@ -949,7 +993,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && App.gewaeh
   App.kreisBuehne = {
     zeig(i) {
       if (window.LEICHT && !FILM.adr) return;
-      if (!bVideo) { bBox.innerHTML = `<video playsinline muted preload="metadata" poster="${FILM.bild}" src="${FILM.adr}" aria-label="Film: der Lern-Kreislauf in sechs Kugeln"></video>`; bVideo = bBox.querySelector('video'); bVideo.addEventListener('timeupdate', () => { if (bBis >= 0 && bVideo.currentTime >= bBis) bVideo.pause(); }); }
+      if (!bVideo) { bBox.innerHTML = `<video playsinline muted preload="metadata" poster="${FILM.bild}" src="${FILM.adr}" aria-label="Film: der Lern-Kreislauf in sechs Kugeln"></video>`; bVideo = bBox.querySelector('video'); ladeBalken(bVideo, bBox); bVideo.addEventListener('timeupdate', () => { if (bBis >= 0 && bVideo.currentTime >= bBis) bVideo.pause(); }); }
       bBox.hidden = false; bBis = (FILM.zeiten[i + 1] || 1e9) - .05;
       try { bVideo.muted = true; bVideo.currentTime = FILM.zeiten[i] + .02; const pr = bVideo.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { }
     },
@@ -1012,7 +1056,10 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && App.gewaeh
 
 /* ---------- 3D-Szene ---------- */
 const Szene = { ok: false, fokus() { }, licht() { }, lichtArt: 'tag' };
-(function () {
+/* Die 3D-Welt wird erst gebaut, wenn sie gebraucht wird (Klaus 15.11.: das Tablet stürzt bei 3D ab): ist die Film-Ansicht vorgewählt,
+   entsteht sie erst auf „In 3D erkunden“ – vorher belegt sie weder Grafikspeicher noch Rechenzeit. */
+App.baue3D = function () {
+  if (App._3dDa) return; App._3dDa = true;
   const buehne = $('#buehne'), canvas = $('#szene');
   const dunkel = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
   Szene.lichtArt = dunkel() ? 'abend' : 'tag'; buehne.dataset.licht = Szene.lichtArt;
@@ -1024,7 +1071,7 @@ const Szene = { ok: false, fokus() { }, licht() { }, lichtArt: 'tag' };
   if (!renderer) { buehne.classList.add('zwei-d'); return; }
   Szene.ok = true; Segmente.melde('baum', buehne, renderer);
   const T = THREE, V = (x, y, z) => new T.Vector3(x, y, z);
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, window.MOBIL ? 1.5 : 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, window.MOBIL ? 1 : 2));
   renderer.outputEncoding = T.sRGBEncoding;
   renderer.shadowMap.enabled = !window.MOBIL; renderer.shadowMap.type = T.PCFSoftShadowMap;
   const scene = new T.Scene(); scene.fog = new T.Fog(0xcfe6ee, 45, 130);
@@ -1223,7 +1270,7 @@ const Szene = { ok: false, fokus() { }, licht() { }, lichtArt: 'tag' };
   let zeit = RUHIG ? 20 : 0, zuletzt = performance.now(), sichtbar = true; const v3 = V(0, 0, 0);
   if ('IntersectionObserver' in window) new IntersectionObserver(e => sichtbar = e[0].isIntersecting).observe(buehne);
   function bild(jetzt) {
-    requestAnimationFrame(bild); if (!sichtbar || document.hidden) { zuletzt = jetzt; return; }
+    requestAnimationFrame(bild); if (!sichtbar || document.hidden || App.buehneRuht) { zuletzt = jetzt; return; }
     const dt = Math.min(.05, (jetzt - zuletzt) / 1000); zuletzt = jetzt; if (!RUHIG) zeit += dt;
     if (kreisen) cam.gAz += dt * .09;
     const k = RUHIG ? 1 : 1 - Math.exp(-dt * 3.2);
@@ -1244,7 +1291,10 @@ const Szene = { ok: false, fokus() { }, licht() { }, lichtArt: 'tag' };
     schilder.forEach(sc => { v3.copy(sc.p).project(camera); const da = v3.z < 1 && Math.abs(v3.x) < 1.1 && Math.abs(v3.y) < 1.1; sc.el.style.display = da ? '' : 'none'; if (da) { sc.el.style.transform = `translate(-50%,${sc.unten ? '0' : '-100%'}) translate(${((v3.x + 1) / 2 * bw).toFixed(1)}px,${((1 - v3.y) / 2 * bh).toFixed(1)}px)`; sc.el.style.zIndex = Math.round((1 - v3.z) * 10000); } });
   }
   requestAnimationFrame(bild);
-})();
+  if (Segmente.einzeln) Segmente.vor('baum');
+};
+App.filmZuerst = (function () { if (window.LEICHT) return false; let w = null, sch = null; try { w = localStorage.getItem('tw-buehne'); sch = localStorage.getItem('tw-buehne-schwach'); } catch (e) { } return w ? w === 'film' : sch === '1'; })();   /* Klaus 16.11.: auch am Tablet zuerst der drehbare 3D-Baum – abgestürzt waren die Kugeln unten bzw. beide 3D-Flächen zusammen, nicht der Baum. Die Messung (wacheB) schaltet bei zu langsamem Bild auf die Film-Ansicht. */
+if (!App.filmZuerst) App.baue3D();
 
 /* ---------- 2D-Ersatz (wenn 3D nicht geht) ---------- */
 (function () {
@@ -1296,15 +1346,8 @@ const Ton = (function () {
     const n = Math.floor(ctx.sampleRate * dauer), b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
     const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); s.buffer = b; f.type = 'bandpass'; f.frequency.value = freq; g.gain.value = laut; s.connect(f); f.connect(g); g.connect(aus); s.start(t);
   }
-  function musik() {
-    if (!an) return; const jetzt = ctx.currentTime;
-    while (naechst < jetzt + .6) {
-      const a = AKK[takt % AKK.length], t = naechst;
-      a.forEach((f, i) => { ton(f, t, 6.4, i ? 'sine' : 'triangle', .035, hall, 2.2); ton(f * 1.003, t, 6.4, 'sine', .02, hall, 2.6); });
-      for (let i = 0; i < 4; i++) if (Math.random() < .7) ton(PENTA[Math.floor(Math.random() * PENTA.length)], t + i * 1.5 + Math.random() * .4, 1.6, 'triangle', .03, hall);
-      naechst += 6; takt++;
-    }
-  }
+  /* Keine Hintergrundmusik mehr (Klaus 16.11.: das Klingeln im Hintergrund lenkt ab). Es bleiben Sprecher und kurze Geräusche. */
+  function musik() {}
   function start() {
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false; ctx = new AC();
@@ -1315,10 +1358,11 @@ const Ton = (function () {
       hall = ctx.createGain(); hall.connect(tp); tp.connect(mus); tp.connect(echo); echo.connect(rueck); rueck.connect(echo); echo.connect(mus);
     }
     ctx.resume(); an = true; naechst = ctx.currentTime + .1; aus.gain.cancelScheduledValues(ctx.currentTime); aus.gain.linearRampToValueAtTime(.8, ctx.currentTime + 1.2);
-    clearInterval(uhr); uhr = setInterval(musik, 200); musik(); return true;
+    clearInterval(uhr); return true;
   }
   function stopp() { an = false; clearInterval(uhr); if (ctx) { aus.gain.cancelScheduledValues(ctx.currentTime); aus.gain.linearRampToValueAtTime(0, ctx.currentTime + .4); setTimeout(() => { if (!an) ctx.suspend(); }, 600); } }
   function spiel(name) {
+    if (name !== 'klick') return;   /* Klaus 16.11.: Zischen, Rascheln und Klingeln stören – es bleibt nur der leise Klick beim Antippen */
     if (!an || !ctx) return; const t = ctx.currentTime + .01;
     if (name === 'klick') { ton(660, t, .12, 'sine', .12); ton(990, t + .05, .14, 'sine', .08); }
     else if (name === 'brief') { rausch(t, .12, .12, 3200); ton(1320, t + .02, .1, 'sine', .04); }
@@ -1341,8 +1385,7 @@ const Ton = (function () {
   document.querySelectorAll('[data-ton]').forEach(b => { b.onclick = () => { wunsch = wunsch === false; setz(wunsch); if (an) spiel('klick'); }; });
   zeigAn();
   App.ton = spiel;
-  // leises Briefgeräusch, solange die Szene zu sehen ist
-  setInterval(() => { if (an && !document.hidden && $('#buehne').getBoundingClientRect().bottom > 100 && Math.random() < .5) spiel('brief'); }, 2600);
+  // Kein wiederkehrendes Briefgeräusch mehr (Klaus 16.11.: das Zischen alle paar Sekunden stört und ergibt keinen Sinn).
   return {
     spiel, an: () => an,
     bereit() { if (!an && wunsch !== false) setz(true); return an; },   // nach einem Tipp auf Start: Ton an, außer er wurde abgeschaltet
@@ -1376,7 +1419,7 @@ const Sprecher = (function () {
   function fuell(h) {
     const sel = h.querySelector('select'), hin = h.querySelector('small'), b = h.querySelector('button');
     sel.innerHTML = ''; sel.disabled = b.disabled = !liste.length;
-    if (!liste.length) { sel.appendChild(new Option(sy ? 'Keine deutsche Stimme gefunden' : 'Dieses Gerät kann nicht vorlesen', '')); hin.textContent = 'Ohne Stimme laufen Musik, Geräusche und Untertitel. Fertige Tonspuren werden trotzdem gespielt.'; return; }
+    if (!liste.length) { sel.appendChild(new Option(sy ? 'Keine deutsche Stimme gefunden' : 'Dieses Gerät kann nicht vorlesen', '')); hin.textContent = 'Ohne Stimme laufen Untertitel. Fertige Tonspuren werden trotzdem gespielt.'; return; }
     sel.appendChild(new Option('Automatisch: ' + liste[0].name, ''));
     liste.forEach(v => sel.appendChild(new Option(v.name + (note(v) >= 35 ? ' · klingt natürlicher' : note(v) < 0 ? ' · einfache Stimme' : ''), v.voiceURI)));
     sel.value = liste.some(v => v.voiceURI === wahl) ? wahl : '';
@@ -1485,7 +1528,7 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
   }
   function ende() { lauf++; clearTimeout(uhr); Sprecher.stopp(true); i = -1; App.tour = false; App.kreisBuehne.weg(); App.stadtFilm.weg(); Unter.weg(); App.kreis.frei(); b.setAttribute('aria-pressed', 'false'); b.innerHTML = IK.spiel + 'Führung starten'; }
   b.innerHTML = IK.spiel + 'Führung starten';
-  b.onclick = () => { if (i >= 0) return ende(); Ton.bereit(); Sprecher.vorladen(); App.tour = true; b.setAttribute('aria-pressed', 'true'); b.innerHTML = IK.halt + 'Führung anhalten'; $('#tipp').classList.add('weg'); schritt(0); };
+  b.onclick = () => { if (i < 0 && App.stadtFilm.hatGross()) return App.stadtFilm.gross();   /* Klaus 16.11.: „Führung starten“ spielt oben den Film, in der 3D- wie in der Film-Ansicht; danach bleibt das Baum-Bild mit den antippbaren Städten */ if (i >= 0) return ende(); Ton.bereit(); Sprecher.vorladen(); App.tour = true; b.setAttribute('aria-pressed', 'true'); b.innerHTML = IK.halt + 'Führung anhalten'; $('#tipp').classList.add('weg'); schritt(0); };
   App.tonHoerer.push(an => { if (i >= 0) schritt(i); });   // Ton während der Führung umgeschaltet: Schritt neu ansetzen (mit oder ohne Stimme)
 })();
 
@@ -1493,17 +1536,23 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
 (function () {
   const ST = STAEDTE.slice(0, 4), BILD = window.DISCOVERY_STADTBILDER || ST.map((w, i) => `discovery-stadt-${i}.jpg`), VID = RUHIG ? [] : (window.DISCOVERY_STADTFILME || (window.EINZELDATEI ? [] : ST.map((w, i) => `discovery-stadt-${i}.mp4`)));
   // Erzähl-Filme (Klaus 15.11.): Flug am Baum entlang durch die vier Städte, Landung der Murmeln in einer Stadt, Finale in der Familienakte.
-  const CLIPS = (RUHIG || window.EINZELDATEI) ? {} : Object.assign({ baum: 'discovery-stadt-baum.mp4', leben1: 'discovery-stadt-leben-1.mp4', leben2: 'discovery-stadt-leben-2.mp4', zettel: 'discovery-film-strafzettel.mp4', flug: 'discovery-stadt-flug.mp4', landung: 'discovery-stadt-landung.mp4', finale: 'discovery-stadt-finale.mp4' }, window.DISCOVERY_CLIPS || {});
+  const CLIPS = (RUHIG || window.EINZELDATEI) ? {} : Object.assign({ gross: 'discovery-geschichte.mp4', baum: 'discovery-stadt-baum.mp4', leben1: 'discovery-stadt-leben-1.mp4', leben2: 'discovery-stadt-leben-2.mp4', zettel: 'discovery-film-strafzettel.mp4', flug: 'discovery-stadt-flug.mp4', landung: 'discovery-stadt-landung.mp4', finale: 'discovery-stadt-finale.mp4' }, window.DISCOVERY_CLIPS || {});
   const box = el('div', 'stadt-film'); box.hidden = true;
   box.innerHTML = `<div class="sf-bilder">${ST.map((w, i) => `<div class="sf-szene" data-i="${i}"><img alt="" data-src="${BILD[i]}"></div>`).join('')}<div class="sf-szene sf-landung"></div></div>
     <div class="sf-punkte"></div><div class="sf-titel"><b></b><span></span></div>
-    <div class="sf-wahl">${ST.map((w, i) => `<button type="button" data-i="${i}" aria-pressed="false">${esc(w.kurz)}</button>`).join('')}${CLIPS.finale ? '<button type="button" data-clip="finale" aria-pressed="false">Familienakte</button>' : ''}</div>
-    <div class="sf-leiste"><button type="button" class="sf-spiel" aria-label="Abspielen oder anhalten"></button><button type="button" class="sf-3d">Selbst erkunden: 3D-Ansicht</button></div>`;
-  $('#buehne').appendChild(box);
+    <div class="sf-wahl"><button type="button" data-start="1" aria-pressed="false">Übersicht</button>${ST.map((w, i) => `<button type="button" data-i="${i}" aria-pressed="false">${esc(w.kurz)}</button>`).join('')}${CLIPS.finale ? '<button type="button" data-clip="finale" aria-pressed="false">Familienakte</button>' : ''}</div>
+    <div class="sf-leiste"><button type="button" class="sf-spiel" aria-label="Abspielen oder anhalten"></button><button type="button" class="sf-3d">In 3D erkunden</button><span class="sf-hinweis" hidden></span></div>`;
+  $('#buehne').insertBefore(box, $('#buehne').querySelector('.buehnen-film'));   // unter dem Kugel-Film der Führung
   const landBox = box.querySelector('.sf-landung'); let landV = null, clipAn = null;
+  // Film-Ansicht (Klaus 15.11.): der Baum als Standbild ist der Hintergrund der Bühne, die Städte darin sind antippbar, die Erklärfilme laufen im
+  // selben Rahmen. Sie ersetzt die 3D-Ansicht, wenn das Gerät sie nicht flüssig schafft (gemessen), und ist am Tablet/Handy vorgewählt; 3D bleibt als Wahl.
+  const startBox = el('div', 'sf-szene sf-start'); startBox.innerHTML = `<img alt="" src="${window.DISCOVERY_STARTBILD || 'discovery-kurzgeschichte.jpg'}">`; box.querySelector('.sf-bilder').appendChild(startBox);
+  const ORTE = [[20, 66], [22, 25], [78, 25], [80, 66]], hinw = box.querySelector('.sf-hinweis');
+  const merkB = k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, setzM = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) { } };
+  let filmB = !!App.filmZuerst;
   const szenen = [...box.querySelectorAll('.sf-szene:not(.sf-landung)')], pBox = box.querySelector('.sf-punkte'), tB = box.querySelector('.sf-titel b'), tS = box.querySelector('.sf-titel span'), spielB = box.querySelector('.sf-spiel');
   let nr = 0, mitPunkten = false, laeuft = false, uhr = null, lauf = 0, geladen = false, folge = 0;
-  function laden() { if (geladen) return; geladen = true; szenen.forEach((z, i) => { const b = z.querySelector('img'); b.src = b.dataset.src; if (VID[i]) { const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'metadata'; v.onerror = () => v.remove(); v.src = VID[i]; z.appendChild(v); } }); }
+  function laden() { if (geladen) return; geladen = true; szenen.forEach((z, i) => { const b = z.querySelector('img'); b.src = b.dataset.src; if (VID[i]) { const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'metadata'; v.onerror = () => v.remove(); v.poster = b.dataset.src; v.src = VID[i]; z.appendChild(v); ladeBalken(v, z); } }); }
   function punkte(i) {
     pBox.innerHTML = ''; if (!mitPunkten) return;
     const a = ST[i].d.agenten, ks = Object.keys(a).filter(k => a[k] > 0);
@@ -1513,31 +1562,61 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
       pBox.appendChild(b); });
   }
   function szene(i) {
-    nr = (i + ST.length) % ST.length; laden();
+    nr = (i + ST.length) % ST.length; laden(); startBox.classList.remove('an'); if (clipAn === 'gross') { fKnopf(false); Unter.weg(); } box.classList.remove('gross');
     szenen.forEach((z, k) => { const an = k === nr; if (an && !z.classList.contains('an')) { const b = z.querySelector('img'); b.style.animation = 'none'; void b.offsetWidth; b.style.animation = ''; } z.classList.toggle('an', an); const v = z.querySelector('video'); if (v) { if (an && laeuft) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => { }); } else v.pause(); } });
     box.querySelectorAll('.sf-wahl button').forEach(b => b.setAttribute('aria-pressed', b.dataset.i === String(nr)));
     clipAn = null; landBox.classList.remove('an'); if (landV) landV.pause(); titel(ST[nr].kurz, (ST[nr].d.art || '').split(',')[0]); punkte(nr);
   }
   const warter = []; function frei() { warter.splice(0).forEach(f => f()); }
-  function titel(a, b) { [tB, tS].forEach(e => { e.style.animation = 'none'; void e.offsetWidth; e.style.animation = ''; }); tB.textContent = a; tB.style.fontSize = `clamp(16px, ${Math.min(6.2, 80 / (a.length * .94)).toFixed(2)}vw, 68px)`; tS.textContent = b; }
+  function titel(a, b) { tB.parentNode.classList.remove('fluechtig'); [tB, tS].forEach(e => { e.style.animation = 'none'; void e.offsetWidth; e.style.animation = ''; }); tB.textContent = a; tB.style.fontSize = `clamp(16px, ${Math.min(6.2, 80 / (a.length * .94)).toFixed(2)}vw, 68px)`; tS.textContent = b; }
   // spielt einen Erzähl-Film; danach `dann()` – ohne `dann` bleibt das letzte Bild stehen. Fehlt der Film, geht es gleich weiter (bzw. `sonst()`).
   function clip(key, a, b, dann, sonst) {
     const weiterOhne = () => { clipAn = null; landBox.classList.remove('an'); (sonst || dann || (() => { laeuft = false; knopf(); }))(); };
     if (!CLIPS[key]) return weiterOhne();
-    if (!landV) { landV = document.createElement('video'); landV.muted = true; landV.playsInline = true; landV.preload = 'auto'; landBox.appendChild(landV); }
+    if (!landV) { landV = document.createElement('video'); landV.muted = true; landV.playsInline = true; landV.preload = 'auto'; landBox.appendChild(landV); ladeBalken(landV, box); }
     const meins = ++lauf; let aus = false;
     const fertig = () => { if (aus) return; aus = true; if (meins !== lauf) return; if (dann) { clipAn = null; landBox.classList.remove('an'); dann(); } else { laeuft = false; knopf(); } if (!dann || !clipAn) frei(); };
     landV.onended = fertig; landV.onerror = () => { if (aus) return; aus = true; CLIPS[key] = ''; if (meins === lauf) weiterOhne(); };
-    clipAn = key; laeuft = true; knopf(); pBox.innerHTML = ''; szenen.forEach(z => { z.classList.remove('an'); const v = z.querySelector('video'); if (v) v.pause(); }); landBox.classList.add('an');
+    clipAn = key; laeuft = true; knopf(); pBox.innerHTML = ''; startBox.classList.remove('an'); szenen.forEach(z => { z.classList.remove('an'); const v = z.querySelector('video'); if (v) v.pause(); }); landBox.classList.add('an');
     box.querySelectorAll('.sf-wahl button').forEach(x => x.setAttribute('aria-pressed', x.dataset.clip === key)); titel(a, b);
+    landV.muted = key !== 'gross' || !Ton.an(); landV.controls = key === 'gross'; box.classList.toggle('gross', key === 'gross');
     try { if (landV.dataset.key !== key) { landV.dataset.key = key; landV.src = CLIPS[key]; } else landV.currentTime = 0; const pr = landV.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { landV.onerror(); }
   }
   function knopf() { spielB.innerHTML = laeuft ? IK.pause : IK.spiel; }
   function takt(dauer, rest, dann) { clearTimeout(uhr); const meins = lauf; if (rest <= 0) { if (dann) dann(); return; } uhr = setTimeout(() => { if (meins !== lauf || !laeuft) return; szene(nr + 1); takt(dauer, rest - 1, dann); }, dauer); }
   function halt() { frei(); laeuft = false; if (!clipAn) lauf++; clearTimeout(uhr); if (landV) landV.pause(); szenen.forEach(z => { const v = z.querySelector('video'); if (v) v.pause(); }); knopf(); }
   function teil(punkteAn, dauer, dann) { mitPunkten = punkteAn; laeuft = true; lauf++; knopf(); szene(0); takt(dauer, ST.length - 1, () => { uhr = setTimeout(() => { if (dann) dann(); else { laeuft = false; knopf(); } }, dauer); }); }
+  function auf() { box.hidden = false; App.buehneRuht = true; $('#buehne').classList.add('mit-stadtfilm'); }
+  // Führung in der Film-Ansicht (Klaus 15.11.): das große Video am Stück, mit Arthur; die Schritt-Führung bleibt der 3D-Ansicht.
+  const fKnopf = an => { const b = $('#bFuehrung'); b.setAttribute('aria-pressed', an ? 'true' : 'false'); b.innerHTML = (an ? IK.halt + 'Führung anhalten' : IK.spiel + 'Führung starten'); };
+  function gross() {
+    if (clipAn === 'gross' && !box.hidden) { return start(); }
+    if (!filmB) setzB(true, false);   // aus der 3D-Ansicht: der Film läuft im selben Rahmen, danach steht das Baum-Bild mit den Städten; „In 3D erkunden“ führt zurück
+    Ton.bereit(); Sprecher.stopp(true); auf(); if (App.gewaehlt) App.close(); fKnopf(true);
+    const zuEnde = () => { fKnopf(false); Unter.weg(); start(); };   // auch nach dem natürlichen Filmende: Knopf zurück auf „Führung starten“
+    clip('gross', '', '', zuEnde, zuEnde);
+    // Untertitel zum großen Video (Klaus 16.11.: der Knopf tat hier nichts): der Text des Abschnitts, der gerade gesprochen wird.
+    if (landV && !landV._ut) { landV._ut = true; landV.addEventListener('timeupdate', () => {
+      if (clipAn !== 'gross') return; const t = landV.currentTime; let i = -1; UT_GROSS.forEach((u, k) => { if (t >= u[0]) i = k; });
+      if (i !== utNr) { utNr = i; if (i < 0) Unter.weg(); else Unter.zeig(UT_GROSS[i][2], SPRECHTEXTE[UT_GROSS[i][1]], null, () => start()); } }); }
+    utNr = -2;
+  }
+  const UT_GROSS = [[0.4, 'begruessung', 'Willkommen'], [6.4, 'welten', 'Die Welten'], [32.3, 'stadt_agenten', 'Die Agenten'], [45.5, 'stadt_punkte', 'Die Aufgaben'], [61, 'schluss', 'Zum Schluss']]; let utNr = -2;
+  App.tonHoerer.push(an => { if (clipAn === 'gross' && landV) landV.muted = !an; });
+  function start() {
+    if (clipAn === 'gross') { fKnopf(false); Unter.weg(); } box.classList.remove('gross'); if (landV) landV.controls = false;
+    auf(); folge++; lauf++; clearTimeout(uhr); clipAn = null; laeuft = false; if (landV) landV.pause(); landBox.classList.remove('an');
+    szenen.forEach(z => { z.classList.remove('an'); const v = z.querySelector('video'); if (v) v.pause(); }); startBox.classList.add('an');
+    box.querySelectorAll('.sf-wahl button').forEach(x => x.setAttribute('aria-pressed', x.dataset.start === '1')); $('#bStadtfilm').setAttribute('aria-pressed', 'false');
+    titel('Die Test-Welten', 'antippen und entdecken'); void tB.offsetWidth; tB.parentNode.classList.add('fluechtig'); knopf(); pBox.innerHTML = '';
+    ORTE.forEach(([x, y], i) => { const b = el('button', 'sf-punkt sf-ort', `<i></i><span>${esc(ST[i].kurz)}</span>`); b.type = 'button'; b.style.setProperty('--f', '#ffd27a'); b.style.left = x + '%'; b.style.top = y + '%'; b.style.animationDelay = (i * .15) + 's,' + (i * .4) + 's';
+      b.onclick = () => { if (App.tour) return; Sprecher.stopp(true); mitPunkten = true; laeuft = true; lauf++; szene(i); knopf(); }; pBox.appendChild(b); });
+    if (CLIPS.finale) { const a = el('button', 'sf-punkt sf-ort', '<i></i><span>Familienakte</span>'); a.type = 'button'; a.style.setProperty('--f', '#ffb347'); a.style.left = '50%'; a.style.top = '47%'; a.style.animationDelay = '.6s,1.6s';
+      a.onclick = () => { if (App.tour) return; Sprecher.stopp(true); if (Ton.an()) Sprecher.sag('schluss', {}); zeig('finale'); }; pBox.appendChild(a); }
+  }
   function zeig(art) {
-    box.hidden = false; $('#buehne').classList.add('mit-stadtfilm'); $('#bStadtfilm').setAttribute('aria-pressed', 'true'); if (App.gewaehlt) App.close();
+    auf(); startBox.classList.remove('an'); $('#bStadtfilm').setAttribute('aria-pressed', 'true'); if (App.gewaehlt) App.close();
+    if (art === 'start') return start();
     // Drehbuch (Klaus 15.11.): Baum → die Städte leben → die Murmeln teilen sich auf → Aufgaben in einer Stadt → Punkte → (Kugeln) → Finale
     const baum = dann => clip('baum', 'Die Test-Welten', 'vier Städte an einem Baum', dann, dann || (() => weg()));
     const leben = dann => clip('leben1', 'Die Städte leben', 'Ämter, Firmen, Familien', () => clip('leben2', 'Die Städte leben', 'Ämter, Firmen, Familien', () => clip('zettel', 'Seltene Post', 'ja, auch Strafzettel', dann, dann)), () => teil(false, 5000, dann));
@@ -1553,12 +1632,23 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
     const mitText = (key, szeneFn, weiter) => { let offen = (Ton.an() && !App.tour) ? 2 : 1; const eins = () => { if (meins === folge && --offen === 0) weiter(); }; szeneFn(eins); if (offen === 2) Sprecher.sag(key, { fertig: eins }); };
     mitText('welten', leben, () => mitText('stadt_agenten', flug, () => { land(); if (Ton.an() && !App.tour) Sprecher.sag('stadt_punkte', {}); }));
   }
-  function weg() { if (box.hidden) return; folge++; clipAn = null; halt(); box.hidden = true; $('#buehne').classList.remove('mit-stadtfilm'); $('#bStadtfilm').setAttribute('aria-pressed', 'false'); }
-  spielB.onclick = () => { if (laeuft) { halt(); if (!App.tour) Sprecher.pause(); } else { laeuft = true; knopf(); if (!App.tour) Sprecher.weiter(); if (clipAn && landV) { const pr = landV.play(); if (pr && pr.catch) pr.catch(() => { }); } else { lauf++; takt(4000, 99); } } };
-  box.querySelectorAll('.sf-wahl button').forEach(b => b.onclick = () => { if (b.dataset.clip) { if (!App.tour) { Sprecher.stopp(true); if (Ton.an()) Sprecher.sag('schluss', {}); } return zeig('finale'); } clipAn = null; halt(); mitPunkten = true; szene(+b.dataset.i); });
-  box.querySelector('.sf-3d').onclick = () => { if (!App.tour) Sprecher.stopp(true); weg(); };
-  $('#bStadtfilm').onclick = () => { if (!box.hidden && !App.tour) { Sprecher.stopp(true); return weg(); } zeig('alles'); };
-  knopf(); App.stadtFilm = { zeig, weg, an: () => !box.hidden, wartet: f => { if (!box.hidden && clipAn && laeuft) warter.push(f); else f(); } };
+  function ganzWeg() { App.buehneRuht = false; if (box.hidden) return; folge++; clipAn = null; halt(); startBox.classList.remove('an'); box.hidden = true; $('#buehne').classList.remove('mit-stadtfilm'); $('#bStadtfilm').setAttribute('aria-pressed', 'false'); }
+  // In der Film-Ansicht heißt „weg“: zurück zum Startbild mit den antippbaren Städten; nur in der 3D-Ansicht gibt die Fläche die Bühne frei.
+  function weg() { if (filmB) { if (box.hidden || !startBox.classList.contains('an')) start(); } else ganzWeg(); }
+  function setzB(film, merken, grund) { filmB = film; $('#bStadtfilm').hidden = film;   /* Film-Ansicht: „Führung starten“ spielt schon die ganze Geschichte mit Ton – kein zweiter Knopf (Klaus 16.11.: Doppelung) */ if (merken) setzM('tw-buehne', film ? 'film' : '3d'); hinw.hidden = !grund; hinw.textContent = grund || ''; box.querySelector('.sf-3d').textContent = grund ? 'Trotzdem in 3D' : 'In 3D erkunden'; if (film) { if (!App.tour) start(); } else ganzWeg(); }
+  spielB.onclick = () => { if (startBox.classList.contains('an')) return zeig('alles'); if (laeuft) { halt(); if (!App.tour) Sprecher.pause(); } else { laeuft = true; knopf(); if (!App.tour) Sprecher.weiter(); if (clipAn && landV) { const pr = landV.play(); if (pr && pr.catch) pr.catch(() => { }); } else { lauf++; takt(4000, 99); } } };
+  box.querySelectorAll('.sf-wahl button:not([data-start])').forEach(b => b.onclick = () => { if (b.dataset.clip) { if (!App.tour) { Sprecher.stopp(true); if (Ton.an()) Sprecher.sag('schluss', {}); } return zeig('finale'); } clipAn = null; halt(); mitPunkten = true; laeuft = true; szene(+b.dataset.i); knopf(); });
+  box.querySelector('.sf-3d').onclick = () => { if (!App.tour) Sprecher.stopp(true); if (window.LEICHT) return ganzWeg(); App.baue3D(); setzM('tw-buehne-schwach', null); setzB(false, true); wacheB(); };
+  /* In der 3D-Ansicht führt dieser Knopf zurück zur Film-Ansicht (Klaus 16.11.: kein Rückweg; vorher sprang hier ein Film an). Es startet nichts von selbst. */
+  $('#bStadtfilm').onclick = () => { if (App.tour) return; Sprecher.stopp(true); setzB(true, true); };
+    // Leistungsprüfung der 3D-Bühne: Bildabstand messen; über 40 ms (unter 25 Bildern je Sekunde) übernimmt die Film-Ansicht.
+  const messeB = (dauer, fertig) => { const d = []; let z = 0, t0 = 0; const f = t => { if (!t0) t0 = t; if (z) d.push(t - z); z = t; if (t - t0 < dauer) requestAnimationFrame(f); else { d.sort((a, b) => a - b); fertig(d.length > 8 ? d[d.length >> 1] : 999); } }; requestAnimationFrame(f); };
+  const SCHWACH_B = 'Die 3D-Ansicht läuft auf diesem Gerät nicht flüssig – deshalb die Film-Ansicht.';
+  function wacheB() { if (window.LEICHT || RUHIG || !Szene.ok) return; setTimeout(() => { if (filmB || document.hidden || !box.hidden) return; messeB(2500, m => { if (filmB || !box.hidden) return; if (m > 40) { setzM('tw-buehne-schwach', '1'); setzB(true, false, SCHWACH_B); } }); }, 2000); }
+  $('#bStadtfilm').hidden = !!filmB;
+  if (filmB) { if (merkB('tw-buehne-schwach') === '1') setzB(true, false, SCHWACH_B); else start(); } else wacheB();
+  box.querySelectorAll('.sf-wahl button[data-start]').forEach(b => b.onclick = () => { if (!App.tour) Sprecher.stopp(true); start(); });
+  knopf(); App.stadtFilm = { zeig, weg, gross, hatGross: () => !!CLIPS.gross, an: () => !box.hidden, film: () => filmB, wartet: f => { if (!box.hidden && clipAn && laeuft) warter.push(f); else f(); } };
 })();
 
 /* ---------- Kurzfilme (gezeichnet) ---------- */
@@ -1644,13 +1734,15 @@ App.szene = function (key, titel) { if (App.tour || !Ton.an()) return; Sprecher.
   let nr = 0, t = 0, laeuft = false, begonnen = false, zuletzt = 0, klangNr = 0, tempo = 1, gesagt = true, sprLauf = 0, dann = 0;
   // Kurzfilme als echtes Video (Higgsfield, 15.11.): liegt für einen Film eine Datei vor, läuft sie statt der Zeichnung; fehlt sie
   // oder ist „weniger Bewegung“ gewünscht, bleibt die gezeichnete Fassung.
+  ladeBalken($('#filmVideo')); ['#kurzVideo', '#rundenVideo'].forEach(q => { const v = $(q); if (v) ladeBalken(v); });
+  (function () { const k = $('#zugabeKnopf'), f = $('#zugabeFilm'), v = $('#kurzVideo'); if (!k) return; k.onclick = () => { const auf = f.hidden; f.hidden = !auf; k.setAttribute('aria-expanded', auf); if (auf) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => { }); f.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } else v.pause(); }; })();
   const vid = $('#filmVideo'), VF = window.DISCOVERY_FILME || {}, VB = window.DISCOVERY_FILMBILDER || {}, kaputt = {};
-  const filmAdr = F => (RUHIG || kaputt[F.key]) ? '' : (VF[F.key] || F.video || '');
+  const filmAdr = F => VF[F.key] || F.video || '';   // die alten gezeichneten Fassungen werden nicht mehr gezeigt (Klaus 15.11.)
   const mitVideo = () => !vid.hidden;
   function zeigVideo(F) { const a = filmAdr(F); if (!a) { vid.hidden = true; try { vid.pause(); } catch (e) { } return false; }
     if (vid.dataset.key !== F.key) { vid.dataset.key = F.key; const b = VB[F.key] || F.bild0; if (b) vid.poster = b; else vid.removeAttribute('poster'); vid.src = a; }
     vid.hidden = false; return true; }
-  vid.addEventListener('error', () => { const k = vid.dataset.key; if (k) kaputt[k] = true; vid.hidden = true; if (!laeuft) standbild(); });
+  vid.addEventListener('error', () => { if (laeuft) halt(); });   // kein Rückfall auf die Zeichnung: der Ladebalken meldet den Fehler
   function mal() { const F = FILME[nr];
     if (mitVideo()) { zeile.style.display = 'none'; balken.style.width = (vid.duration ? Math.min(1, vid.currentTime / vid.duration) * 100 : 0) + '%'; return; }
     c.clearRect(0, 0, BW, BH); F.bild(t); let s = ''; F.spruch.forEach(([ab, tx]) => { if (t >= ab) s = tx; }); if (zeile.textContent !== s) zeile.textContent = s; zeile.style.display = s ? '' : 'none'; balken.style.width = (t / F.dauer * 100) + '%'; }
