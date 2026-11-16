@@ -13,7 +13,7 @@
  *           statische Assets -> stale-while-revalidate (frisch beim nächsten Load).
  */
 
-const CACHE_VERSION = 'v307';
+const CACHE_VERSION = 'v308';
 
 /* ⚠ NUR EIGENE VORRAETE AUFRAEUMEN — `caches` gehoert dem URSPRUNG, nicht dem
  * Pfad. Auf lausiklauskn-png.github.io liegen rund zwanzig Apps; ein Filter,
@@ -37,7 +37,7 @@ const APPS_VORRAT = 'blpr-apps';
  * src/ui/discoveryKarte.js). Der Name traegt den Quell-Commit des Pins (tests/run.mjs haelt beides zusammen): gleicher Pin =
  * gleiche Bytes, also Vorrat zuerst ohne Nachladen; ein neuer Pin gibt einen neuen Vorrat, der alte wird beim Aktivieren
  * weggeraeumt. Ueberlebt ein neues CACHE_VERSION. */
-const DISCOVERY_VORRAT = 'blpr-discovery-213c81b';
+const DISCOVERY_VORRAT = 'blpr-discovery-b3517cc';
 const BLEIBT = [GETEILT_VORRAT, APPS_VORRAT, DISCOVERY_VORRAT];
 
 const CORE_ASSETS = [
