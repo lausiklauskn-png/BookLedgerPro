@@ -10,6 +10,9 @@ import { parseEingangsrechnung, eingangsrechnungExtraktion } from '../../domain/
 import { extrahiereZugferdXml, kostPflichtfelder } from '../../domain/zugferd.js';
 import { parseBankauszug, umsatzExtraktion, pruefeBankauszug } from '../../domain/bankimport.js';
 import { validiereBankauszug } from '../../domain/bankschema.js';
+import { errateCsv, leseBankCsv, passtEinstellung, pruefeZuordnung, textAusBytes, istCsvText, DATUMSFORMEN } from '../../domain/bankCsv.js';
+import { xlsxZeilen } from '../../domain/xlsxZeilen.js';
+import { istPortemonnaieMonat, lesePortemonnaieMonat, monatsEntwuerfe } from '../../domain/portemonnaieImport.js';
 import { offenePosten, findeOffenePosten, findeKandidaten, zahlungsBuchungZeilen, findeSammelzuordnung, verteileSammelzahlung, sammelBuchungZeilen } from '../../domain/zahlungsabgleich.js';
 import { skontoEntwurf } from '../../domain/skonto.js';
 import { offeneVerbindlichkeiten, eingangsrechnungZeilen, extraktionZuEingangsrechnung, validateEingangsrechnung } from '../../domain/payables.js';
@@ -589,41 +592,123 @@ function bankSchemaHinweis(val) {
   return el('p', { class: 'muted small', text: t('docs.bankSchemaOk').replace('{format}', val.format || '—') });
 }
 
+// Zeigt die Umsätze eines gelesenen Auszugs (MT940, CAMT, CSV, Excel) mit Prüfung und Buchungsvorschlägen.
+async function auszugZeigen(out, parsed, schema) {
+  const { format, konto, umsaetze } = parsed;
+  if (schema) out.appendChild(bankSchemaHinweis(schema));
+  if (!umsaetze.length) { out.appendChild(el('p', { class: 'form-error', text: t('docs.bankNone') })); return; }
+  // Offene Posten für den Zahlungsabgleich laden: Forderungen (aus Aufträgen,
+  // richtung 'einnahme') + Verbindlichkeiten (Eingangsrechnungen, richtung 'ausgabe').
+  let posten = [];
+  try {
+    const [auftraege, kunden, eingang] = await Promise.all([listAuftraege(), listKunden(), listEingangsrechnungen()]);
+    const nameById = {}; for (const k of kunden) nameById[k.id] = k.name;
+    posten = [...offenePosten(auftraege, { nameById }), ...offeneVerbindlichkeiten(eingang)];
+  } catch { posten = []; }
+  out.appendChild(el('div', { class: 'muted small', text: `${format || '—'} · ${t('docs.bankAccount')}: ${konto || '—'} · ${umsaetze.length} ${t('docs.bankTxns')}` }));
+  // Plausibilitätsprüfung (Saldo-Abgleich / unvollständige Umsätze) als Hinweis.
+  const pruef = pruefeBankauszug(parsed);
+  const warn = pruef.warnungen.filter((w) => !(format === 'CSV' && w.code === 'format-unbekannt'));
+  if (warn.length) out.appendChild(bankPruefHinweis({ ...pruef, warnungen: warn }));
+  if (parsed.uebersprungen && parsed.uebersprungen.length) out.appendChild(el('p', { class: 'muted small', text: t('docs.csvUebersprungen').replace('{anzahl}', String(parsed.uebersprungen.length)) }));
+  for (const u of umsaetze) out.appendChild(umsatzRow(u, posten));
+}
+
+// CSV/Excel: Spalten zuordnen (Klaus 2026-11-18) — geraten, berichtigt, gemerkt (Einstellung `bankCsvZuordnungen`, je Kopfzeile).
+function csvZuordnungKarte(out, eingabe) {
+  const gemerkt = (getSettings().bankCsvZuordnungen || []).find((e) => passtEinstellung(e, eingabe));
+  const geraten = errateCsv(eingabe);
+  const e = JSON.parse(JSON.stringify(gemerkt || geraten.einstellung));
+  const kopf = geraten.kopf.length ? geraten.kopf : (geraten.beispiele[0] || []).map((_, i) => `${t('docs.csvSpalte')} ${i + 1}`);
+  const ziel = el('div', {});
+  const fehlerZeile = el('p', { class: 'form-error' });
+  const beispiel = el('p', { class: 'mono small muted' });
+  const vorschau = () => {
+    const r = leseBankCsv(eingabe, e);
+    const u = r.umsaetze[0];
+    beispiel.textContent = u ? `${u.valuta} · ${u.richtung === 'einnahme' ? '+' : '−'}${formatEuro(u.betragCent)} · ${(u.gegen || u.zweck || '').slice(0, 60)} (${r.umsaetze.length} ${t('docs.bankTxns')})` : '—';
+    fehlerZeile.textContent = pruefeZuordnung(e).map((c) => t('docs.csvFehler.' + c)).join(' · ');
+  };
+  const wahl = (feld) => {
+    const s = el('select', { 'data-csv-feld': feld, 'aria-label': t('docs.csvFeld.' + feld) },
+      [el('option', { value: '-1', text: '—' }), ...kopf.map((k, i) => el('option', { value: String(i), text: k || `${t('docs.csvSpalte')} ${i + 1}` }))]);
+    s.value = String(e.zuordnung[feld] ?? -1);
+    s.addEventListener('change', () => { e.zuordnung[feld] = Number(s.value); vorschau(); });
+    return el('label', { class: 'small' }, [el('span', { text: t('docs.csvFeld.' + feld) + ' ' }), s]);
+  };
+  const auswahl = (wert, liste, setzen, name) => {
+    const s = el('select', { 'aria-label': name }, liste.map((x) => el('option', { value: x, text: x })));
+    s.value = wert; s.addEventListener('change', () => { setzen(s.value); vorschau(); });
+    return el('label', { class: 'small' }, [el('span', { text: name + ' ' }), s]);
+  };
+  const einlesen = el('button', {
+    class: 'btn btn-primary btn-sm', type: 'button', 'data-csv-einlesen': '', text: t('docs.csvEinlesen'),
+    onClick: async () => {
+      if (pruefeZuordnung(e).length) { vorschau(); return; }
+      const liste = (getSettings().bankCsvZuordnungen || []).filter((x) => x.kennung !== e.kennung);
+      try { await updateSettings({ bankCsvZuordnungen: [e, ...liste].slice(0, 20) }, { still: true }); } catch { /* gemerkt wird nur, wenn der Tresor offen ist */ }
+      ziel.replaceChildren();
+      await auszugZeigen(ziel, leseBankCsv(eingabe, e), null);
+    },
+  });
+  vorschau();
+  out.appendChild(el('div', { class: 'csv-zuordnung', 'data-csv-zuordnung': gemerkt ? 'gemerkt' : 'geraten' }, [
+    el('p', { class: 'muted small', text: gemerkt ? t('docs.csvGemerkt') : t('docs.csvGeraten') }),
+    el('div', { class: 'btn-row' }, ['datum', 'betrag', 'soll', 'haben', 'sh', 'text', 'gegen', 'saldo'].map(wahl)),
+    el('div', { class: 'btn-row' }, [
+      auswahl(e.datumsform, DATUMSFORMEN, (v) => { e.datumsform = v; }, t('docs.csvDatumsform')),
+      auswahl(e.dezimal, [',', '.'], (v) => { e.dezimal = v; }, t('docs.csvDezimal')),
+    ]),
+    beispiel, fehlerZeile,
+    el('div', { class: 'btn-row' }, [einlesen]),
+    ziel,
+  ]));
+}
+
+// Portemonnaie-Monat aus der Privaten Akte (Klaus 2026-11-18): je Posten ein Entwurf, Kasse bzw. Bank als Geldkonto.
+function portemonnaieKarte(out, text) {
+  const g = lesePortemonnaieMonat(text);
+  if (!g.ok) { out.appendChild(el('p', { class: 'form-error', text: g.fehler.map((c) => t('docs.pmFehler.' + c)).join(' · ') })); return; }
+  out.appendChild(el('p', { class: 'muted small', 'data-pm-monat': g.monat, text: `${t('docs.pmTitel')} ${g.monat} · ` + g.faecher.map((f) => `${f.name}: ${f.posten.length}`).join(' · ') }));
+  if (g.warnungen.length) {
+    out.appendChild(el('div', { class: 'hinweis warn small' }, [el('span', { text: g.warnungen.map((w) => t('docs.pmWarn.' + w.code).replace('{fach}', w.fach || '').replace('{betrag}', w.differenzCent != null ? formatEuro(Math.abs(w.differenzCent)) : '')).join(' · ') })]));
+  }
+  const { entwuerfe, uebersprungen } = monatsEntwuerfe(g);
+  if (uebersprungen.length) out.appendChild(el('p', { class: 'muted small', text: t('docs.pmUmbuchungDoppelt').replace('{anzahl}', String(uebersprungen.length)) }));
+  for (const e of entwuerfe) {
+    if (e.art === 'umsatz') { out.appendChild(umsatzRow(e.umsatz, [], { gegenkonto: e.geldkonto, fach: e.fach })); continue; }
+    const slot = el('div', {});
+    out.appendChild(el('div', { class: 'bank-row', 'data-pm-umbuchung': '' }, [el('div', { class: 'btn-row' }, [
+      el('span', { class: 'mono small', text: `${e.datum} · ${e.fach} · ${formatEuro(e.posten.cent)} · ${e.beschreibung} (${e.zeilen[0].konto} ${t('docs.pmAn')} ${e.zeilen[1].konto})` }),
+      el('button', { class: 'btn btn-sm', type: 'button', text: t('docs.bankDraft'), onClick: async () => {
+        slot.replaceChildren();
+        try { await saveEntwurf({ datum: e.datum, beschreibung: e.beschreibung, zeilen: e.zeilen }); slot.appendChild(el('p', { class: 'muted small', text: t('docs.pmUmbuchungDone') })); }
+        catch (x) { slot.appendChild(el('p', { class: 'form-error', text: String(x.message || x) })); }
+      } }),
+    ]), slot]));
+  }
+}
+
 function bankImportKarte() {
   const out = el('div', { class: 'vorschlag-slot' });
   const btn = el('button', {
     class: 'btn', text: t('docs.bankImport'),
     onClick: async () => {
       out.replaceChildren();
-      const file = await pickFile('text/plain,application/xml,text/xml,.sta,.940,.txt,.mt940,.xml', null);
+      const file = await pickFile('text/plain,text/csv,application/json,application/xml,text/xml,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.sta,.940,.txt,.mt940,.xml,.csv,.json,.xlsx', null);
       if (!file) return;
       try {
-        const roh = await readFileText(file);
+        const bytes = await readFileBytes(file);
+        // Excel (.xlsx = ZIP): erst Zeilen, dann dieselbe Spalten-Zuordnung wie bei CSV.
+        if (bytes[0] === 0x50 && bytes[1] === 0x4b) { csvZuordnungKarte(out, (await xlsxZeilen(bytes)).zeilen); return; }
+        if (bytes[0] === 0xd0 && bytes[1] === 0xcf) { out.appendChild(el('p', { class: 'form-error', text: t('docs.xlsAlt') })); return; }
+        const roh = textAusBytes(bytes);
+        if (istPortemonnaieMonat(roh)) { portemonnaieKarte(out, roh); return; }
         const parsed = parseBankauszug(roh);
-        const { format, konto, umsaetze } = parsed;
+        if (!parsed.umsaetze.length && istCsvText(roh)) { csvZuordnungKarte(out, roh); return; }
         // Struktur-/Schema-Validierung (SWIFT-Feldformate / ISO-20022-Nachrichten-Struktur)
         // VOR den Umsätzen anzeigen — auch wenn keine Umsätze geparst wurden.
-        const schema = validiereBankauszug(roh);
-        if (!umsaetze.length) {
-          out.appendChild(bankSchemaHinweis(schema));
-          out.appendChild(el('p', { class: 'form-error', text: t('docs.bankNone') }));
-          return;
-        }
-        // Offene Posten für den Zahlungsabgleich laden: Forderungen (aus Aufträgen,
-        // richtung 'einnahme') + Verbindlichkeiten (Eingangsrechnungen, richtung 'ausgabe').
-        let posten = [];
-        try {
-          const [auftraege, kunden, eingang] = await Promise.all([listAuftraege(), listKunden(), listEingangsrechnungen()]);
-          const nameById = {}; for (const k of kunden) nameById[k.id] = k.name;
-          posten = [...offenePosten(auftraege, { nameById }), ...offeneVerbindlichkeiten(eingang)];
-        } catch { posten = []; }
-        out.appendChild(el('div', { class: 'muted small', text: `${format || '—'} · ${t('docs.bankAccount')}: ${konto || '—'} · ${umsaetze.length} ${t('docs.bankTxns')}` }));
-        // Struktur-/Schema-Validierung (Feldformate / Nachrichten-Struktur).
-        out.appendChild(bankSchemaHinweis(schema));
-        // Plausibilitätsprüfung (Saldo-Abgleich / unvollständige Umsätze) als Hinweis.
-        const pruef = pruefeBankauszug(parsed);
-        if (pruef.warnungen.length) out.appendChild(bankPruefHinweis(pruef));
-        for (const u of umsaetze) out.appendChild(umsatzRow(u, posten));
+        await auszugZeigen(out, parsed, validiereBankauszug(roh));
       } catch (e) { out.appendChild(el('p', { class: 'form-error', text: String(e.message || e) })); }
     },
   });
@@ -702,10 +787,10 @@ function sammelPanel(u, posten, vorschlag, slot) {
   return wrap;
 }
 
-function umsatzRow(u, posten = []) {
+function umsatzRow(u, posten = [], { gegenkonto = null, fach = '' } = {}) {
   const slot = el('div', {});
   const vz = (u.gegen || u.zweck || '').slice(0, 80);
-  const info = el('span', { class: 'mono small', text: `${u.valuta} · ${u.richtung === 'einnahme' ? '+' : '−'}${formatEuro(u.betragCent)} · ${vz}` });
+  const info = el('span', { class: 'mono small', text: `${u.valuta} · ${fach ? fach + ' · ' : ''}${u.richtung === 'einnahme' ? '+' : '−'}${formatEuro(u.betragCent)} · ${vz}` });
   const knoepfe = [info];
 
   // Zahlungsabgleich: passt der Umsatz exakt zu einem offenen Posten (Rechnung)?
@@ -801,7 +886,7 @@ function umsatzRow(u, posten = []) {
       const frei = await kiTextFreigabe(u.zweck || u.gegen || '');
       const kat = await categorizeAI(frei.kiText, _idx, { anker: await kiAnker(frei.kiText), nurLokal: frei.nurLokal });
       kat.richtung = u.richtung; // Kontoauszug bestimmt die Richtung verbindlich
-      const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer });
+      const res = buildVorschlag(ex, kat, _idx, { kleinunternehmer: getSettings().kleinunternehmer, ...(gegenkonto ? { gegenkonto } : {}) });
       if (!res.ok) { slot.appendChild(el('p', { class: 'form-error', text: res.fehler })); return; }
       if (frei.hinweis) slot.appendChild(el('p', { class: 'hinweis small', text: frei.hinweis }));
       // Der Zweck geht in Begründung und Richter nur bereinigt weiter (vorher nur u.zweck, ohne Gegenpartei).

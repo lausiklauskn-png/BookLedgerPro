@@ -7969,5 +7969,179 @@ await section('Update-Fähnchen (0.1.18): still prüfen, Fähnchen nur bei neuer
   ok('i18n DE/EN: fünf Fähnchen-Sätze je zweimal', ['upd.fahne', 'upd.fahnePwa', 'upd.fahneLaedt', 'upd.fahneTitel', 'upd.fahneTitelPwa'].every((k) => (i18.match(new RegExp("'" + k.replace('.', '\\.') + "':", 'g')) || []).length === 2));
 });
 
+// ---- Portemonnaie-Monat, Bank-CSV, Excel (Klaus 2026-11-18: Bank als zweites Fach im Portemonnaie der Akte) ----
+// Alle Dateien hier sind ERFUNDEN — Aufbau nach dem Muster gängiger Bank-Exporte, keine echten Kontodaten.
+await section('Bank-CSV: Spalten raten und einlesen (erfundene Dateien)', async () => {
+  const C = await import('../src/domain/bankCsv.js');
+  // Muster A: Sparkassen-artig — Semikolon, Anführung, Datum TT.MM.JJ, Betrag mit Vorzeichen und Komma, Vorspann fehlt
+  const a = [
+    '"Auftragskonto";"Buchungstag";"Valutadatum";"Buchungstext";"Verwendungszweck";"Beguenstigter/Zahlungspflichtiger";"Kontonummer/IBAN";"Betrag";"Waehrung"',
+    '"DE00123456780000001234";"30.11.26";"30.11.26";"LASTSCHRIFT";"Strom November; Kd 4711";"Beispiel Stadtwerke";"DE00999999990000000001";"-58,40";"EUR"',
+    '"DE00123456780000001234";"15.11.26";"15.11.26";"GUTSCHRIFT";"Gehalt 11/2026";"Musterfirma GmbH";"DE00999999990000000002";"2.345,67";"EUR"',
+    '"DE00123456780000001234";"02.11.26";"02.11.26";"BARGELDAUSZAHLUNG";"GA Beispielstr.";"";"";"-200,00";"EUR"',
+  ].join('\r\n');
+  const ra = C.errateCsv(a);
+  ok('A: Trennzeichen ;', ra.einstellung.trenner === ';');
+  ok('A: Kopfzeile 0, Datum TT.MM.JJ, Dezimal Komma', ra.einstellung.kopfzeile === 0 && ra.einstellung.datumsform === 'TT.MM.JJ' && ra.einstellung.dezimal === ',');
+  const za = ra.einstellung.zuordnung;
+  ok('A: Datum = Buchungstag, Valuta, Betrag, Zweck, Gegenseite, IBAN geraten', za.datum === 1 && za.valuta === 2 && za.betrag === 7 && za.text === 4 && za.gegen === 5 && za.iban === 0);
+  const la = C.leseBankCsv(a, ra.einstellung);
+  ok('A: drei Umsätze, nach Datum aufsteigend', la.umsaetze.length === 3 && la.umsaetze[0].valuta === '2026-11-02' && la.umsaetze[2].valuta === '2026-11-30');
+  ok('A: Gehalt = Einnahme 2.345,67, Strom = Ausgabe 58,40', la.umsaetze[1].richtung === 'einnahme' && la.umsaetze[1].betragCent === 234567 && la.umsaetze[2].richtung === 'ausgabe' && la.umsaetze[2].betragCent === 5840);
+  ok('A: eigenes Konto aus „Auftragskonto“, nicht die IBAN der Gegenseite', la.konto === 'DE00123456780000001234');
+  ok('A: Semikolon in Anführung bleibt im Zweck', la.umsaetze[2].zweck === 'Strom November; Kd 4711');
+    ok('A: dasselbe Modell wie parseBankauszug (valuta, betragCent, richtung, zweck, gegen)', ['valuta', 'betragCent', 'richtung', 'zweck', 'gegen'].every((k) => k in la.umsaetze[0]));
+
+  // Muster B: Direktbank-artig — Vorspann über der Kopfzeile, Datum TT.MM.JJJJ, Saldo-Spalte fehlt
+  const b = [
+    '"Kontonummer:";"DE00 1111 2222 3333 4444 55";',
+    '"Von:";"01.11.2026";', '"Bis:";"30.11.2026";', '"Kontostand vom 30.11.2026:";"1.234,50 EUR";', '',
+    '"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige*r";"Zahlungsempfänger*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag (€)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"',
+    '"28.11.26";"28.11.26";"Gebucht";"Ich";"Beispiel Versicherung AG";"Beitrag 12/26";"Ausgang";"DE00000000000000000003";"-31,20";"";"";""',
+    '"05.11.26";"05.11.26";"Gebucht";"Musterfrau, Erika";"Ich";"Rückzahlung Konzertkarte";"Eingang";"DE00000000000000000004";"45";"";"";""',
+  ].join('\n');
+  const rb = C.errateCsv(b);
+  ok('B: Kopfzeile hinter dem Vorspann gefunden (Zeile 5)', rb.einstellung.kopfzeile === 4 && rb.kopf[0] === 'Buchungsdatum');
+  const lb = C.leseBankCsv(b, rb.einstellung);
+  ok('B: zwei Umsätze, ganze Euro „45“ gelesen', lb.umsaetze.length === 2 && lb.umsaetze[0].betragCent === 4500 && lb.umsaetze[0].richtung === 'einnahme');
+  ok('B: Text = Verwendungszweck', lb.umsaetze[1].zweck === 'Beitrag 12/26');
+
+  // Muster C: Genossenschaftsbank-artig — Betrag ohne Vorzeichen, eigene Spalte S/H
+  const c = 'Buchungstag;Valuta;Auftraggeber/Zahlungsempfänger;Vorgang/Verwendungszweck;Umsatz;Soll/Haben\n03.11.2026;03.11.2026;Beispiel Markt;Kartenzahlung;23,99;S\n04.11.2026;04.11.2026;Muster Erika;Miete Garage;60,00;H\n';
+  const rc = C.errateCsv(c);
+  ok('C: Spalte Soll/Haben erkannt', rc.einstellung.zuordnung.sh === 5 && rc.einstellung.zuordnung.betrag === 4);
+  const lc = C.leseBankCsv(c, rc.einstellung);
+  ok('C: S = Ausgabe, H = Einnahme', lc.umsaetze[0].richtung === 'ausgabe' && lc.umsaetze[1].richtung === 'einnahme' && lc.umsaetze[1].betragCent === 6000);
+
+  // Muster D: getrennte Spalten Soll und Haben, Komma als Trenner, Punkt als Dezimal, ISO-Datum, Saldo
+  const d = 'Date,Description,Debit,Credit,Balance\n2026-11-01,Opening fee,1.50,,98.50\n2026-11-09,Refund shop,,12.00,110.50\n2026-11-20,"Groceries, weekly",30.25,,80.25\n';
+  const rd = C.errateCsv(d);
+  ok('D: Trenner Komma, Dezimal Punkt, Datum JJJJ-MM-TT', rd.einstellung.trenner === ',' && rd.einstellung.dezimal === '.' && rd.einstellung.datumsform === 'JJJJ-MM-TT');
+  ok('D: Soll und Haben getrennt, Saldo erkannt', rd.einstellung.zuordnung.soll === 2 && rd.einstellung.zuordnung.haben === 3 && rd.einstellung.zuordnung.saldo === 4 && rd.einstellung.zuordnung.betrag === -1);
+  const ld = C.leseBankCsv(d, rd.einstellung);
+  ok('D: Saldo Anfang 100,00 und Ende 80,25 aus der Saldo-Spalte', ld.saldoStartCent === 10000 && ld.saldoEndeCent === 8025);
+  ok('D: Komma in Anführung bleibt im Text', ld.umsaetze[2].zweck === 'Groceries, weekly' && ld.umsaetze[2].betragCent === 3025);
+  const { pruefeBankauszug } = await import('../src/domain/bankimport.js');
+  ok('D: pruefeBankauszug rechnet den Saldo gegen und findet keine Differenz', !pruefeBankauszug(ld).warnungen.some((w) => w.code === 'saldo-differenz'));
+
+  // Gemerkte Zuordnung, Prüfungen, Kleinigkeiten
+  ok('gemerkte Zuordnung passt zur selben Bank, nicht zu einer anderen', C.passtEinstellung(ra.einstellung, a) && !C.passtEinstellung(ra.einstellung, c));
+  ok('Zuordnung JSON-tauglich (am Konto gemerkt)', JSON.stringify(JSON.parse(JSON.stringify(ra.einstellung))) === JSON.stringify(ra.einstellung));
+  const ohne = { ...rc.einstellung, zuordnung: { ...rc.einstellung.zuordnung, datum: -1 } };
+  ok('ohne Datum: Fehler „datum-fehlt“, nichts eingelesen', C.pruefeZuordnung(ohne).includes('datum-fehlt') && C.leseBankCsv(c, ohne).umsaetze.length === 0);
+  ok('von Hand berichtigt: Text = Spalte 2 statt 3', C.leseBankCsv(c, { ...rc.einstellung, zuordnung: { ...rc.einstellung.zuordnung, text: 2 } }).umsaetze[0].zweck === 'Beispiel Markt');
+  ok('Beträge: „1.234,56“ „-42,90“ „42,90-“ „(5,00)“ „1,234.56“', C.betragLesen('1.234,56', ',') === 123456 && C.betragLesen('-42,90', ',') === -4290 && C.betragLesen('42,90-', ',') === -4290 && C.betragLesen('(5,00)', ',') === -500 && C.betragLesen('1,234.56', '.') === 123456);
+  ok('Datum: 31.02.2026 ungültig, 29.02.2028 gültig, MM/TT', C.datumLesen('31.02.2026', 'TT.MM.JJJJ') === '' && C.datumLesen('29.02.2028', 'TT.MM.JJJJ') === '2028-02-29' && C.datumLesen('11/30/2026', 'MM/TT/JJJJ') === '2026-11-30');
+  ok('Datumsform: 30/11/2026 → TT/MM, 11/30/2026 → MM/TT', C.errateDatumsform(['30/11/2026', '01/11/2026']) === 'TT/MM/JJJJ' && C.errateDatumsform(['11/30/2026', '11/01/2026']) === 'MM/TT/JJJJ');
+  const zeilenMitLeer = C.leseBankCsv(c + ';;Summe;;84,00;\n', rc.einstellung);
+  ok('Summenzeile ohne Datum wird übersprungen und genannt', zeilenMitLeer.umsaetze.length === 2 && zeilenMitLeer.uebersprungen.some((u) => u.grund === 'kein-datum'));
+  const k1 = C.umsatzSchluessel(la.umsaetze[2], 'DE00123456780000001234'), k2 = C.umsatzSchluessel({ ...la.umsaetze[2], zweck: ' Strom  November;  Kd 4711 ' }, 'DE00 1234 5678 0000 0012 34');
+  ok('Windows-1252 statt UTF-8: „Empfänger“ bleibt lesbar; UTF-8 mit BOM ebenso', C.textAusBytes(new Uint8Array([0x45, 0x6d, 0x70, 0x66, 0xe4, 0x6e, 0x67, 0x65, 0x72])) === 'Empfänger' && C.textAusBytes(new Uint8Array([0xef, 0xbb, 0xbf, 0xc3, 0xa4])) === 'ä');
+  ok('Tabelle erkannt, XML/JSON/MT940 nicht', C.istCsvText(a) && C.istCsvText(d) && !C.istCsvText('<Document/>') && !C.istCsvText('{"a":1}') && !C.istCsvText(':20:X\n:25:Y\n'));
+  ok('Doppelten-Schlüssel: gleicher Umsatz → gleicher Schlüssel, anderer Betrag → anderer', k1 === k2 && k1 !== C.umsatzSchluessel({ ...la.umsaetze[2], betragCent: 5841 }, 'DE00123456780000001234'));
+});
+
+// Kleiner ZIP-Bauer nur für die Probe (deflate-raw über CompressionStream, CRC nicht geprüft vom Leser → 0)
+async function probeZip(dateien) {
+  const enc = new TextEncoder(); const teile = []; const zentral = []; let off = 0;
+  const le = (n, b) => { const a = new Uint8Array(b); for (let i = 0; i < b; i++) a[i] = (n >>> (8 * i)) & 255; return a; };
+  for (const [name, text, roh] of dateien) {
+    const daten = enc.encode(text);
+    const pack = roh ? daten : new Uint8Array(await new Response(new Blob([daten]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());
+    const n = enc.encode(name), m = roh ? 0 : 8;
+    const kopf = [le(0x04034b50, 4), le(20, 2), le(0, 2), le(m, 2), le(0, 4), le(0, 4), le(pack.length, 4), le(daten.length, 4), le(n.length, 2), le(0, 2), n];
+    zentral.push([le(0x02014b50, 4), le(20, 2), le(20, 2), le(0, 2), le(m, 2), le(0, 4), le(0, 4), le(pack.length, 4), le(daten.length, 4), le(n.length, 2), le(0, 2), le(0, 2), le(0, 2), le(0, 2), le(0, 4), le(off, 4), n]);
+    for (const t of [...kopf, pack]) { teile.push(t); off += t.length; }
+  }
+  const zstart = off; let zl = 0;
+  for (const z of zentral) for (const t of z) { teile.push(t); zl += t.length; }
+  teile.push(le(0x06054b50, 4), le(0, 2), le(0, 2), le(dateien.length, 2), le(dateien.length, 2), le(zl, 4), le(zstart, 4), le(0, 2));
+  const alles = new Uint8Array(teile.reduce((s, t) => s + t.length, 0)); let p = 0;
+  for (const t of teile) { alles.set(t, p); p += t.length; }
+  return alles;
+}
+
+await section('Excel (.xlsx) → Zeilen → Bank-CSV-Leser (erfundene Mappe)', async () => {
+  const X = await import('../src/domain/xlsxZeilen.js');
+  const C = await import('../src/domain/bankCsv.js');
+  const mappe = await probeZip([
+    ['[Content_Types].xml', '<?xml version="1.0"?><Types/>'],
+    ['xl/workbook.xml', '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Umsätze" sheetId="1" r:id="rId1"/><sheet name="Info" sheetId="2" r:id="rId2"/></sheets></workbook>'],
+    ['xl/_rels/workbook.xml.rels', '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="ws" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="ws" Target="worksheets/sheet2.xml"/></Relationships>'],
+    ['xl/sharedStrings.xml', '<?xml version="1.0"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><si><t>Buchungstag</t></si><si><t>Verwendungszweck</t></si><si><t>Betrag</t></si><si><r><t>Miete </t></r><r><t>Dezember &amp; Nebenkosten</t></r></si><si><t>Erstattung</t></si></sst>'],
+    ['xl/styles.xml', '<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/></numFmts><cellXfs count="3"><xf numFmtId="0"/><xf numFmtId="14"/><xf numFmtId="164"/></cellXfs></styleSheet>'],
+    ['xl/worksheets/sheet1.xml', '<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+      + '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c></row>'
+      + '<row r="2"><c r="A2" s="1"><v>46326</v></c><c r="B2" t="s"><v>3</v></c><c r="C2"><v>-650.1</v></c></row>'
+      + '<row r="4"><c r="A4" s="2"><v>46329</v></c><c r="B4" t="inlineStr"><is><t>Gutschrift</t></is></c><c r="C4"><v>0.30000000000000004</v></c></row>'
+      + '<row r="5"><c r="A5" s="1"><v>46331</v></c><c r="B5" t="s"><v>4</v></c><c r="C5"><v>19.99</v></c></row>'
+      + '</sheetData></worksheet>'],
+    ['xl/worksheets/sheet2.xml', '<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="str"><v>nur Info</v></c></row></sheetData></worksheet>', true],
+  ]);
+  const r = await X.xlsxZeilen(mappe);
+  ok('Blätter gelesen, erstes gewählt', r.blaetter.join(',') === 'Umsätze,Info' && r.blatt === 'Umsätze');
+  ok('Kopf aus gemeinsamen Texten', r.zeilen[0].join('|') === 'Buchungstag|Verwendungszweck|Betrag');
+  ok('Datumszelle (Format 14 und eigenes dd/mm/yyyy) → JJJJ-MM-TT', r.zeilen[1][0] === '2026-10-31' && r.zeilen[2][0] === '2026-11-03');
+  ok('Rich Text zusammengesetzt, &amp; entschlüsselt', r.zeilen[1][1] === 'Miete Dezember & Nebenkosten');
+  ok('Zahlen mit Punkt, Fließkomma-Rest weg, leere Zeile 3 weg', r.zeilen[1][2] === '-650.1' && r.zeilen[2][2] === '0.3' && r.zeilen.length === 4);
+  ok('zweites Blatt per Name (ungepackter Eintrag)', (await X.xlsxZeilen(mappe, { blatt: 'Info' })).zeilen[0][0] === 'nur Info');
+  const ra = C.errateCsv(r.zeilen);
+  ok('dieselbe Zuordnung wie bei CSV: Datum JJJJ-MM-TT, Dezimal Punkt', ra.einstellung.datumsform === 'JJJJ-MM-TT' && ra.einstellung.dezimal === '.' && ra.einstellung.trenner === null);
+  const l = C.leseBankCsv(r.zeilen, ra.einstellung);
+  ok('drei Umsätze aus Excel, Miete = Ausgabe 650,10', l.umsaetze.length === 3 && l.umsaetze[0].betragCent === 65010 && l.umsaetze[0].richtung === 'ausgabe' && l.umsaetze[1].betragCent === 30);
+  let alt = '';
+  try { await X.xlsxZeilen(new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0, 0, 0, 0])); } catch (e) { alt = e.message; }
+  let kaputt = '';
+  try { await X.xlsxZeilen(new TextEncoder().encode('kein zip')); } catch (e) { kaputt = e.message; }
+  ok('alte .xls und Nicht-ZIP werden benannt abgelehnt', alt === 'alte-xls' && kaputt === 'keine-xlsx-datei');
+  ok('Excel-Seriennummer: 45658 = 2025-01-01, 1904-System', X.excelDatum(45658) === '2025-01-01' && X.excelDatum(0) === '' && X.excelDatum(1, true) === '1904-01-02');
+});
+
+await section('Portemonnaie-Monat Fassung 1: schreiben, lesen, Entwürfe (erfunden)', async () => {
+  const P = await import('../src/domain/portemonnaieImport.js');
+  const datei = P.baueMonatsdatei({
+    monat: '2026-11', erstellt: '2026-12-01T08:00:00.000Z',
+    faecher: [
+      { fach: 'bargeld', name: 'Bargeld', anfangCent: 5000, posten: [
+        { id: 'p1', datum: '2026-11-03', cent: 2950, richtung: 'aus', text: 'Einkauf', wofuer: 'Lebensmittel', beleg: 'Bon Beispielmarkt' },
+        { id: 'p2', datum: '2026-11-02', cent: 20000, richtung: 'ein', text: 'Barabhebung', vomKonto: true },
+        { id: 'p3', datum: '2026-10-31', cent: 100, richtung: 'aus', text: 'gehört in den Oktober' },
+      ] },
+      { fach: 'bank', name: 'Girokonto', bank: 'Beispielbank', iban: 'DE00 1234 5678 9012 3456 78', anfangCent: 150000, saldoAuszugCent: 125800, posten: [
+        { id: 'b1', datum: '2026-11-02', cent: 20000, richtung: 'aus', text: 'Barabhebung', zurKasse: true },
+        { id: 'b2', datum: '2026-11-15', cent: 4200, richtung: 'aus', text: 'Lastschrift', gegen: 'Beispiel Telefon' },
+      ] },
+    ],
+  });
+  ok('Art, Fassung, Monat, Quelle', datei.art === 'portemonnaie-monat' && datei.fassung === 1 && datei.monat === '2026-11' && datei.quelle === 'private-akte');
+  ok('IBAN nur mit den letzten vier Stellen in der Datei', datei.faecher[1].ibanEnde === '5678' && !JSON.stringify(datei).includes('DE00'));
+  ok('Posten aus dem Oktober bleibt draußen, Rest nach Datum', datei.faecher[0].posten.map((p) => p.id).join() === 'p2,p1');
+  ok('Ende gerechnet: Bargeld 50 + 200 − 29,50 = 220,50', datei.faecher[0].endeCent === 22050 && datei.faecher[1].endeCent === 125800);
+  const text = JSON.stringify(datei);
+  ok('Dateiname und Erkennung', P.monatsdateiName('2026-11') === 'portemonnaie-2026-11.json' && P.istPortemonnaieMonat(text) && !P.istPortemonnaieMonat('{"art":"x"}') && !P.istPortemonnaieMonat('kaputt'));
+  const g = P.lesePortemonnaieMonat(text);
+  ok('lesen: ok, zwei Fächer, keine Warnungen', g.ok && g.faecher.length === 2 && g.warnungen.length === 0);
+  const { entwuerfe, uebersprungen } = P.monatsEntwuerfe(g);
+  ok('Barabhebung EINMAL als Umbuchung Kasse an Bank, Bank-Seite übersprungen', entwuerfe.filter((e) => e.art === 'umbuchung').length === 1 && uebersprungen.length === 1 && uebersprungen[0].posten.id === 'b1');
+  const ub = entwuerfe.find((e) => e.art === 'umbuchung');
+  ok('Umbuchung: Soll 1000, Haben 1200, 200,00', ub.zeilen[0].konto === '1000' && ub.zeilen[0].seite === 'S' && ub.zeilen[1].konto === '1200' && ub.zeilen[0].betrag === 20000);
+  const einkauf = entwuerfe.find((e) => e.posten.id === 'p1'), tel = entwuerfe.find((e) => e.posten.id === 'b2');
+  ok('Einkauf: Geldkonto Kasse 1000, Ausgabe, Zweck mit „wofür“', einkauf.geldkonto === '1000' && einkauf.umsatz.richtung === 'ausgabe' && einkauf.umsatz.zweck === 'Einkauf · Lebensmittel');
+  ok('Lastschrift: Geldkonto Bank 1200, Gegenseite', tel.geldkonto === '1200' && tel.umsatz.gegen === 'Beispiel Telefon');
+  ok('nur Bank gewählt: Barabhebung dann von der Bank-Seite als Umbuchung', (() => { const r = P.monatsEntwuerfe(g, { faecher: ['Girokonto'] }); return r.entwuerfe.length === 2 && r.entwuerfe[0].art === 'umbuchung' && r.entwuerfe[0].zeilen[0].konto === '1000' && !r.uebersprungen.length; })());
+  ok('eigene Geldkonten (SKR04 1600/1800)', P.monatsEntwuerfe(g, { kasse: '1600', bank: '1800' }).entwuerfe.find((e) => e.art === 'umbuchung').zeilen.map((z) => z.konto).join() === '1600,1800');
+  const { umsatzExtraktion } = await import('../src/domain/bankimport.js');
+  ok('Umsatz passt in den vorhandenen Buchungsvorschlag (umsatzExtraktion)', umsatzExtraktion(einkauf.umsatz).betragBrutto === 2950 && umsatzExtraktion(einkauf.umsatz).datum === '2026-11-03');
+  // Fehler und Warnungen
+  ok('falsche Art, Fassung 2, kein JSON → nicht ok', !P.lesePortemonnaieMonat('{"art":"x","fassung":1,"monat":"2026-11"}').ok && P.lesePortemonnaieMonat({ ...datei, fassung: 2 }).fehler[0] === 'fassung-unbekannt' && P.lesePortemonnaieMonat('{').fehler[0] === 'kein-json');
+  const krumm = JSON.parse(text); krumm.faecher[0].endeCent = 99999; krumm.faecher[0].posten.push({ datum: '2026-11-04', cent: -5, richtung: 'aus' });
+  const gk = P.lesePortemonnaieMonat(krumm);
+  ok('Summe stimmt nicht und kaputter Posten: Warnungen, gelesen wird trotzdem', gk.ok && gk.warnungen.some((w) => w.code === 'summe-differenz') && gk.warnungen.some((w) => w.code === 'posten-unvollstaendig') && gk.faecher[0].posten.length === 2);
+  const auszug = JSON.parse(text); auszug.faecher[1].saldoAuszugCent = 125000;
+  ok('Saldo laut Auszug weicht ab: Warnung mit Differenz', P.lesePortemonnaieMonat(auszug).warnungen.some((w) => w.code === 'saldo-auszug-differenz' && w.differenzCent === -800));
+  let wurf = ''; try { P.baueMonatsdatei({ monat: '2026-13', faecher: [] }); } catch (e) { wurf = e.message; }
+  ok('Monat 2026-13 wird abgelehnt', wurf === 'monat-ungueltig');
+});
+
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
 process.exit(failed ? 1 : 0);
