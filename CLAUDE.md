@@ -11,6 +11,9 @@ JSON-Objekt gemerkt – hier in den Einstellungen `bankCsvZuordnungen` je Kopfze
 „Bankauszug einlesen“ nimmt jetzt auch CSV, .xlsx und `portemonnaie-JJJJ-MM.json`; Entwürfe mit Kasse 1000 bzw. Bank 1200 als Geldkonto, festgeschrieben nur auf Tipp.
 Proben `run.mjs` (drei Abschnitte, erfundene Dateien im Aufbau mehrerer Banken, selbst gebaute .xlsx) · `tests/smoke_bankcsv.mjs` 11 · Gegenprobe (Geldkonto
 nicht durchgereicht) rot. `sw.js` v309. ⚠ Nicht an echten Bankdateien, nicht am Gerät.
+**Nachtrag Fächerwahl (abgestimmt zwischen den beiden Sitzungen vom 18.11.):** hat die Monatsdatei mehrere Fächer mit Posten, steht je Fach ein Kästchen
+über der Liste (`[data-pm-fach]`, ab Werk alle an); `monatsEntwuerfe(g, { faecher })` rechnet nur die gewählten (Barabhebung dann von der gewählten Seite).
+`smoke_bankcsv` 15 (B2 neu) · Gegenprobe (Wahl nicht durchgereicht) 2 rot. `sw.js` v310.
 
 **Discovery in der Hilfe (Klaus 15.11.: „Da wo der Sortierkern drin ist, Discovery/Button nachziehen“ – mit einbauen, Knopf in der Anleitung und unter „Über“
 neben der Verbund-Karte; Zweig `claude/discovery-hilfe`, Entwurfs-PR, nicht veröffentlicht, App-Fassung bleibt 0.1.18):** Die Seite „so wurde der Sortier-Kern

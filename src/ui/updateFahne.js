@@ -21,7 +21,7 @@ import { t } from './i18n.js';
 import { appNativ } from './intro.js';
 
 /** Vorrats-Nummer dieser Schale. Bei jedem CACHE_VERSION-Bump mit erhöhen (sw.js, version.json, hier). */
-export const FASSUNG = 'v309';
+export const FASSUNG = 'v310';
 export const STUENDLICH_MS = 60 * 60 * 1000;
 /** Zurückholen der App fragt höchstens so oft (ein Fensterwechsel alle paar Sekunden soll nicht jedes Mal fragen). */
 export const RUHE_MS = 5 * 60 * 1000;
