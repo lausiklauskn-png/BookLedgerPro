@@ -2,6 +2,16 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**Bank-CSV, Excel, Portemonnaie-Monat (Klaus 18.11., Plan in Private-Akte `docs/PLAN_2026-11-18_PORTEMONNAIE-BANK-BOOKLEDGER.md` Abschnitt 6 B; Zweig `ccr-22eefaa0-k8wt64`):**
+drei reine Leser, build-frei, auch für Basic und die Private Akte (dort als Klon mit Pin): `src/domain/bankCsv.js` (Trennzeichen, Kopfzeile hinter Vorspann,
+Dezimalzeichen, Datumsform, Spalten Datum/Betrag oder Soll+Haben oder S/H-Kennung/Text/Gegenseite/Saldo/eigenes Konto **geraten**, berichtigt und als
+JSON-Objekt gemerkt – hier in den Einstellungen `bankCsvZuordnungen` je Kopfzeile, in der Akte am Konto; Windows-1252; Doppelten-Schlüssel `umsatzSchluessel`),
+`src/domain/xlsxZeilen.js` (.xlsx über `DecompressionStream`, Datumszellen → JJJJ-MM-TT; keine .xls, keine Formeln), `src/domain/portemonnaieImport.js`
+(Monatsdatei Fassung 1 – **Schreiber und Leser in einer Datei**; Barabhebung „vomKonto“/„zurKasse“ einmal als Umbuchung Kasse an Bank). Einstieg: Belege →
+„Bankauszug einlesen“ nimmt jetzt auch CSV, .xlsx und `portemonnaie-JJJJ-MM.json`; Entwürfe mit Kasse 1000 bzw. Bank 1200 als Geldkonto, festgeschrieben nur auf Tipp.
+Proben `run.mjs` (drei Abschnitte, erfundene Dateien im Aufbau mehrerer Banken, selbst gebaute .xlsx) · `tests/smoke_bankcsv.mjs` 11 · Gegenprobe (Geldkonto
+nicht durchgereicht) rot. `sw.js` v309. ⚠ Nicht an echten Bankdateien, nicht am Gerät.
+
 **Discovery in der Hilfe (Klaus 15.11.: „Da wo der Sortierkern drin ist, Discovery/Button nachziehen“ – mit einbauen, Knopf in der Anleitung und unter „Über“
 neben der Verbund-Karte; Zweig `claude/discovery-hilfe`, Entwurfs-PR, nicht veröffentlicht, App-Fassung bleibt 0.1.18):** Die Seite „so wurde der Sortier-Kern
 trainiert“ des Datei-Organizers liegt **byte-gleich** unter `assets/discovery/` (Seite, three.js r128, Film, Bild, 13 Tonspuren; Pin `HERKUNFT.json` @ `b3517cc` (16.11.: Stand Datei-Organizer 0.4.12 – Leiste des Intro-Videos antippbar, Übersicht behält das Baum-Bild, Knopf „Intro“, Start immer mit der Übersicht; Vorrat `blpr-discovery-b3517cc`, `sw.js` v308; davor `213c81b` = Stand nach Datei-Organizer 0.4.10 – 43 Dateien, rund 59 MB, mit Film bei „Führung starten“, neuer Kiosk-Szene, Untertiteln, Zugabe-Murmel; Vorrat `blpr-discovery-213c81b`; **App-Paket dadurch rund 53 MB größer als mit dem alten Stand**); vorher `5497e25` – Endstand 15.11. mit Film im Stadt-Rahmen, Untertitel-Knopf, Leistungsprüfung der 3D-Kugeln, Kurzfilmen wie ein Video;
