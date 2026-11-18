@@ -109,6 +109,16 @@ try {
   await page.waitForFunction((r) => /1000/.test(document.querySelector(r).textContent.replace(/\d{4}-\d{2}-\d{2}/g, '')), reihe).catch(() => {});
   ok('Buchungsvorschlag zum Einkauf nimmt Kasse 1000 als Geldkonto', /1000/.test((await page.textContent(reihe)).replace(/\d{4}-\d{2}-\d{2}/g, '')), (await page.textContent(reihe)).slice(0, 300));
 
+  console.log('— B2. Nur gewählte Fächer —');
+  ok('je Fach ein Kästchen', (await page.$$('[data-pm-faecher] [data-pm-fach]')).length === 2);
+  const einkaufDa = async () => (await page.$$eval('[data-werkzeug-fenster="bank"] [data-pm-liste] .bank-row .mono', (z) => z.map((x) => x.textContent))).some((x) => /Bargeld · −29,50/.test(x));
+  await page.uncheck('[data-pm-fach="Bargeld"]');
+  ok('ohne Bargeld: kein Einkauf, Umbuchung von der Bank-Seite einmal', !(await einkaufDa()) && (await page.$$('[data-pm-umbuchung]')).length === 1);
+  await page.uncheck('[data-pm-fach="Girokonto"]');
+  ok('nichts gewählt: keine Zeile', (await page.$$('[data-pm-liste] .bank-row')).length === 0);
+  await page.check('[data-pm-fach="Bargeld"]');
+  ok('nur Bargeld: Einkauf wieder da', await einkaufDa());
+
   console.log('— C. Alte .xls benannt abgelehnt —');
   await datei('alt.xls', 'application/vnd.ms-excel', Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0, 0, 0, 0]));
   const xls = await page.waitForFunction(() => /\.xls/.test(document.querySelector('[data-werkzeug-fenster="bank"] .form-error')?.textContent || '')).then(() => true).catch(() => false);

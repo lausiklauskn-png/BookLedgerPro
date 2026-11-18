@@ -673,20 +673,38 @@ function portemonnaieKarte(out, text) {
   if (g.warnungen.length) {
     out.appendChild(el('div', { class: 'hinweis warn small' }, [el('span', { text: g.warnungen.map((w) => t('docs.pmWarn.' + w.code).replace('{fach}', w.fach || '').replace('{betrag}', w.differenzCent != null ? formatEuro(Math.abs(w.differenzCent)) : '')).join(' · ') })]));
   }
-  const { entwuerfe, uebersprungen } = monatsEntwuerfe(g);
-  if (uebersprungen.length) out.appendChild(el('p', { class: 'muted small', text: t('docs.pmUmbuchungDoppelt').replace('{anzahl}', String(uebersprungen.length)) }));
-  for (const e of entwuerfe) {
-    if (e.art === 'umsatz') { out.appendChild(umsatzRow(e.umsatz, [], { gegenkonto: e.geldkonto, fach: e.fach })); continue; }
-    const slot = el('div', {});
-    out.appendChild(el('div', { class: 'bank-row', 'data-pm-umbuchung': '' }, [el('div', { class: 'btn-row' }, [
-      el('span', { class: 'mono small', text: `${e.datum} · ${e.fach} · ${formatEuro(e.posten.cent)} · ${e.beschreibung} (${e.zeilen[0].konto} ${t('docs.pmAn')} ${e.zeilen[1].konto})` }),
-      el('button', { class: 'btn btn-sm', type: 'button', text: t('docs.bankDraft'), onClick: async () => {
-        slot.replaceChildren();
-        try { await saveEntwurf({ datum: e.datum, beschreibung: e.beschreibung, zeilen: e.zeilen }); slot.appendChild(el('p', { class: 'muted small', text: t('docs.pmUmbuchungDone') })); }
-        catch (x) { slot.appendChild(el('p', { class: 'form-error', text: String(x.message || x) })); }
-      } }),
-    ]), slot]));
+  // Klaus 2026-11-18: nur die gewählten Fächer übernehmen (z. B. nur Bargeld, wenn die Bank schon über den Auszug kommt).
+  const mitPosten = g.faecher.filter((f) => f.posten.length);
+  const gewaehlt = new Set(mitPosten.map((f) => f.name));
+  const liste = el('div', { 'data-pm-liste': '' });
+  const zeichnen = () => {
+    liste.replaceChildren();
+    const { entwuerfe, uebersprungen } = monatsEntwuerfe(g, { faecher: [...gewaehlt] });
+    if (uebersprungen.length) liste.appendChild(el('p', { class: 'muted small', text: t('docs.pmUmbuchungDoppelt').replace('{anzahl}', String(uebersprungen.length)) }));
+    for (const e of entwuerfe) {
+      if (e.art === 'umsatz') { liste.appendChild(umsatzRow(e.umsatz, [], { gegenkonto: e.geldkonto, fach: e.fach })); continue; }
+      const slot = el('div', {});
+      liste.appendChild(el('div', { class: 'bank-row', 'data-pm-umbuchung': '' }, [el('div', { class: 'btn-row' }, [
+        el('span', { class: 'mono small', text: `${e.datum} · ${e.fach} · ${formatEuro(e.posten.cent)} · ${e.beschreibung} (${e.zeilen[0].konto} ${t('docs.pmAn')} ${e.zeilen[1].konto})` }),
+        el('button', { class: 'btn btn-sm', type: 'button', text: t('docs.bankDraft'), onClick: async () => {
+          slot.replaceChildren();
+          try { await saveEntwurf({ datum: e.datum, beschreibung: e.beschreibung, zeilen: e.zeilen }); slot.appendChild(el('p', { class: 'muted small', text: t('docs.pmUmbuchungDone') })); }
+          catch (x) { slot.appendChild(el('p', { class: 'form-error', text: String(x.message || x) })); }
+        } }),
+      ]), slot]));
+    }
+  };
+  if (mitPosten.length > 1) {
+    out.appendChild(el('div', { class: 'btn-row', 'data-pm-faecher': '' }, mitPosten.map((f) => {
+      const box = el('input', { type: 'checkbox', checked: true, 'data-pm-fach': f.name, onChange: () => {
+        if (box.checked) gewaehlt.add(f.name); else gewaehlt.delete(f.name);
+        zeichnen();
+      } });
+      return el('label', { class: 'small' }, [box, el('span', { text: ` ${f.name} (${f.posten.length})` })]);
+    })));
   }
+  out.appendChild(liste);
+  zeichnen();
 }
 
 function bankImportKarte() {
