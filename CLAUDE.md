@@ -2,6 +2,18 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**Kontoauszug als CSV/Excel, Monatsdatei des Portemonnaies (Klaus 18.11.2026, Plan in Private-Akte `docs/PLAN_2026-11-18_PORTEMONNAIE-BANK-BOOKLEDGER.md`; Zweig
+`claude/portemonnaie-bank-integration-qvmebl`, App-Fassung bleibt 0.1.18):** drei reine Bausteine, auch für die Private Akte (dort als Klon mit Pin):
+`src/domain/bankCsv.js` (Trennzeichen/Dezimal/Datumsform erraten, Kopfzeile unter Kontoangaben finden, **Spalten-Zuordnung** als JSON – Datum, Betrag oder
+Soll/Haben oder Betrag + S/H, Text, Gegenseite, Saldo, Konto –, `zuordnungAnwenden` findet sie an den Spaltennamen wieder; Windows-1252; `umsatzSchluessel`
+gegen Doppeltes; Ergebnis = Umsatz-Modell wie `parseBankauszug`), `src/domain/xlsxZeilen.js` (.xlsx = ZIP, entpackt mit `DecompressionStream`, geteilte Texte,
+Datumsstile, 1904; altes .xls → „als CSV speichern“), `src/domain/portemonnaieImport.js` (Monatsdatei `portemonnaie-monat` Fassung 1: `baueMonatsdatei`,
+`leseMonatsdatei`, `monatsdateiEntwuerfe` → Kasse 1000/Bank 1200 gegen 1800/1890 oder `kontoFuer`; Barabhebung `vomKonto` = Kasse an Bank, im Bankfach
+`zumBargeld` ausgelassen; „nur Bargeld“). Belege → „Bankauszug einlesen“ nimmt jetzt auch .csv/.xlsx/.json: Zuordnung aufklappbar und änderbar, „Zuordnung merken“
+(`settings.bankZuordnungen`, höchstens 20); Monatsdatei → „Als Entwürfe anlegen“ (festschreiben unter Buchungen; `settings.portemonnaieEingelesen` warnt beim
+zweiten Mal). `sw.js` v309. Proben `run.mjs` 5 Abschnitte (2965/0) · `tests/smoke_bankcsv.mjs` 13 · `smoke_design` 92. ⚠ Nur erfundene Dateien im Aufbau
+mehrerer Banken; kein echter Export, kein Tablet; die Zuordnung hängt an der Kopfzeile, nicht am Konto (BLP kennt kein Konto-Objekt).
+
 **Discovery in der Hilfe (Klaus 15.11.: „Da wo der Sortierkern drin ist, Discovery/Button nachziehen“ – mit einbauen, Knopf in der Anleitung und unter „Über“
 neben der Verbund-Karte; Zweig `claude/discovery-hilfe`, Entwurfs-PR, nicht veröffentlicht, App-Fassung bleibt 0.1.18):** Die Seite „so wurde der Sortier-Kern
 trainiert“ des Datei-Organizers liegt **byte-gleich** unter `assets/discovery/` (Seite, three.js r128, Film, Bild, 13 Tonspuren; Pin `HERKUNFT.json` @ `b3517cc` (16.11.: Stand Datei-Organizer 0.4.12 – Leiste des Intro-Videos antippbar, Übersicht behält das Baum-Bild, Knopf „Intro“, Start immer mit der Übersicht; Vorrat `blpr-discovery-b3517cc`, `sw.js` v308; davor `213c81b` = Stand nach Datei-Organizer 0.4.10 – 43 Dateien, rund 59 MB, mit Film bei „Führung starten“, neuer Kiosk-Szene, Untertiteln, Zugabe-Murmel; Vorrat `blpr-discovery-213c81b`; **App-Paket dadurch rund 53 MB größer als mit dem alten Stand**); vorher `5497e25` – Endstand 15.11. mit Film im Stadt-Rahmen, Untertitel-Knopf, Leistungsprüfung der 3D-Kugeln, Kurzfilmen wie ein Video;

@@ -117,6 +117,10 @@ import { aufbewahrungBis, istAufbewahrungspflichtig, darfBelegLoeschen, AUFBEWAH
 import { hashedFields } from '../src/domain/audit.js';
 import { extrahiereZugferdXml, kostPflichtfelder } from '../src/domain/zugferd.js';
 import { deflateSync } from 'node:zlib';
+import { deflateRawSync as _deflateRaw } from 'node:zlib';
+import * as BCSV from '../src/domain/bankCsv.js';
+import * as XLSX from '../src/domain/xlsxZeilen.js';
+import * as PMI from '../src/domain/portemonnaieImport.js';
 import { buildAustauschPaket, parseAustauschPaket, AUSTAUSCH_FORMAT } from '../src/domain/connect.js';
 import { buildKennzahlenText } from '../src/ai/taxAssist.js';
 import { generateKeyPair, buildSpore, verifySpore, nodeId, REQUIRED_FIELDS } from '../src/sbkim/spore.js';
@@ -7967,6 +7971,175 @@ await section('Update-Fähnchen (0.1.18): still prüfen, Fähnchen nur bei neuer
   ok('stilles Prüfen lädt und installiert nie (kein installieren() in updateFahne.js)', !/\.installieren\(/.test(uf));
   const i18 = readFileSync(u('src/ui/i18n.js'), 'utf8');
   ok('i18n DE/EN: fünf Fähnchen-Sätze je zweimal', ['upd.fahne', 'upd.fahnePwa', 'upd.fahneLaedt', 'upd.fahneTitel', 'upd.fahneTitelPwa'].every((k) => (i18.match(new RegExp("'" + k.replace('.', '\\.') + "':", 'g')) || []).length === 2));
+});
+
+// ---- Bank-CSV, Excel, Portemonnaie-Monat (Klaus 18.11.2026: jedes Konto frei, Verfahren wählbar; Übergabe einmal im Monat) ----
+// Alle Dateien erfunden – im Aufbau mehrerer Banken, keine echten Kontodaten.
+const BANK_CSV = {
+  sparkasse: '"Auftragskonto";"Buchungstag";"Valutadatum";"Buchungstext";"Verwendungszweck";"Glaeubiger ID";"Mandatsreferenz";"Kundenreferenz (End-to-End)";"Sammlerreferenz";"Lastschrift Ursprungsbetrag";"Auslagenersatz Ruecklastschrift";"Beguenstigter/Zahlungspflichtiger";"Kontonummer/IBAN";"BIC (SWIFT-Code)";"Betrag";"Waehrung";"Info"\r\n'
+    + '"DE00123456780000000001";"03.11.26";"03.11.26";"LASTSCHRIFT";"Strom November";"DE98ZZZ09999999999";"M-1";"";"";"";"";"Stadtwerke Beispiel";"DE00999999990000000002";"BEISDEXX";"-58,40";"EUR";"Umsatz gebucht"\r\n'
+    + '"DE00123456780000000001";"01.11.26";"01.11.26";"GUTSCHRIFT";"Gehalt Oktober";"";"";"";"";"";"";"Muster GmbH";"DE00999999990000000003";"BEISDEXX";"2.345,67";"EUR";"Umsatz gebucht"\r\n',
+  dkb: '﻿"Kontonummer:";"DE00 1203 0000 0000 0000 01 / Girokonto";\n"Von:";"01.11.2026";\n"Bis:";"30.11.2026";\n"Kontostand vom 30.11.2026:";"1.234,56 EUR";\n\n'
+    + '"Buchungstag";"Wertstellung";"Buchungstext";"Auftraggeber / Begünstigter";"Verwendungszweck";"Kontonummer";"BLZ";"Betrag (EUR)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz";\n'
+    + '"05.11.2026";"05.11.2026";"Kartenzahlung";"Bäckerei Beispiel";"Brötchen; zwei";"";"";"-4,20";"";"";"";\n'
+    + '"04.11.2026";"04.11.2026";"Bargeldauszahlung";"Automat Beispiel";"Abhebung";"";"";"-200,00";"";"";"";\n',
+  volksbank: 'Buchungstag;Valuta;Auftraggeber/Zahlungsempfänger;Empfänger/Zahlungspflichtiger;Konto-Nr.;IBAN;BLZ;BIC;Vorgang/Verwendungszweck;Kundenreferenz;Währung;Umsatz;\n'
+    + '02.11.2026;02.11.2026;Max Beispiel;Versicherung Beispiel AG;;DE00111;;;Beitrag Hausrat;;EUR;12,30;S\n'
+    + '06.11.2026;06.11.2026;Max Beispiel;Erika Beispiel;;DE00222;;;Rückzahlung;;EUR;50,00;H\n',
+  ing: 'Umsatzanzeige;Datei erstellt am: 30.11.2026\nIBAN;DE00 5001 0517 0000 0000 01\nKontoname;Girokonto\nZeitraum;01.11.2026 - 30.11.2026\n\n'
+    + 'Buchung;Valuta;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung\n'
+    + '10.11.2026;10.11.2026;Supermarkt Beispiel;Lastschrift;Einkauf;950,00;EUR;-50,00;EUR\n'
+    + '08.11.2026;08.11.2026;Muster GmbH;Gutschrift;Gehalt;1.000,00;EUR;1.000,00;EUR\n',
+  englisch: 'Date,Description,Debit,Credit,Balance\n11/03/2026,Coffee,3.50,,996.50\n11/01/2026,Salary,,"1,000.00","1,000.00"\n',
+  ohneKopf: '2026-11-01\tMiete November\t-750.00\n2026-11-15\tErstattung\t12.00\n',
+};
+
+await section('Bank-CSV: Werte lesen', () => {
+  ok('Trenner ; , Tab erraten', BCSV.errateTrenner(BANK_CSV.sparkasse) === ';' && BCSV.errateTrenner(BANK_CSV.englisch) === ',' && BCSV.errateTrenner(BANK_CSV.ohneKopf) === '\t');
+  const z = BCSV.csvZeilen('a;"b;c";"d ""x"""\r\n\r\n1;"zwei\nZeilen";3', ';');
+  ok('CSV: Anführungszeichen, "" im Feld, Umbruch im Feld, Leerzeilen weg', z.length === 2 && z[0][1] === 'b;c' && z[0][2] === 'd "x"' && z[1][1] === 'zwei\nZeilen');
+  ok('Betrag: 1.234,56 · -12,50 · 12,50- · (3,00) · +7 · 1,234.56 (Punkt)', BCSV.betragLesen('1.234,56') === 123456 && BCSV.betragLesen('-12,50') === -1250
+    && BCSV.betragLesen('12,50-') === -1250 && BCSV.betragLesen('(3,00)') === -300 && BCSV.betragLesen('+7') === 700 && BCSV.betragLesen('1,234.56', '.') === 123456
+    && BCSV.betragLesen('−4,20 €') === -420 && BCSV.betragLesen('abc') === null && BCSV.betragLesen('') === null);
+  ok('Dezimalzeichen erraten', BCSV.errateDezimal(['-4,20', '1.000,00']) === ',' && BCSV.errateDezimal(['3.50', '1,000.00']) === '.');
+  ok('Datum: TT.MM.JJJJ, TT.MM.JJ, ISO, JJJJMMTT, Uhrzeit dahinter', BCSV.datumLesen('05.11.2026', 'TT.MM.JJJJ') === '2026-11-05' && BCSV.datumLesen('3.11.26', 'TT.MM.JJ') === '2026-11-03'
+    && BCSV.datumLesen('2026-11-01T10:00', 'JJJJ-MM-TT') === '2026-11-01' && BCSV.datumLesen('20261130', 'JJJJMMTT') === '2026-11-30');
+  ok('Datum: 31.02. gibt es nicht', BCSV.datumLesen('31.02.2026', 'TT.MM.JJJJ') === '');
+  ok('Datumsform erraten; 11/03 und 11/01: die kürzere Spanne gewinnt (MM/TT)', BCSV.errateDatumsform(['05.11.2026', '04.11.2026']) === 'TT.MM.JJJJ'
+    && BCSV.errateDatumsform(['11/03/2026', '11/01/2026']) === 'MM/TT/JJJJ' && BCSV.errateDatumsform(['25/03/2026', '01/04/2026']) === 'TT/MM/JJJJ'
+    && BCSV.errateDatumsform(['hallo', 'welt']) === null);
+  ok('Bytes → Text: UTF-8 (mit BOM) und Windows-1252 (Umlaute)', BCSV.textAusBytes(new Uint8Array([0xEF, 0xBB, 0xBF, 0x42, 0xC3, 0xA4])) === 'Bä'
+    && BCSV.textAusBytes(new Uint8Array([0x42, 0xE4, 0x63, 0x6B, 0x65, 0x72])) === 'Bäcker');
+  ok('wie CSV? Tabelle ja, MT940 nein', BCSV.istCsvText(BANK_CSV.volksbank) && !BCSV.istCsvText(':20:X\n:25:DE00\n:61:2611011101C12,00NTRF'));
+  ok('Excel-Seriennummer → Datum', BCSV.excelDatum(46327) === '2026-11-01' && BCSV.datumLesen('46327', 'excel') === '2026-11-01');
+});
+
+await section('Bank-CSV: sechs Aufbauten ohne Fragen erkannt', () => {
+  const r = {}; for (const [n, t] of Object.entries(BANK_CSV)) r[n] = BCSV.parseBankCsv(t);
+  for (const [n, x] of Object.entries(r)) ok(`${n}: Zuordnung vollständig, zwei Umsätze, keine Fehler`, x.fehlt.length === 0 && x.umsaetze.length === 2 && x.fehler.length === 0 && x.neu === true && x.format === 'CSV');
+  const sp = r.sparkasse.umsaetze;
+  ok('Sparkasse: Datum TT.MM.JJ, Betrag mit Vorzeichen, Text Zweck · Buchungstext, Gegenseite, Konto aus „Auftragskonto“',
+    sp[0].valuta === '2026-11-03' && sp[0].betragCent === 5840 && sp[0].richtung === 'ausgabe' && sp[0].zweck === 'Strom November · LASTSCHRIFT'
+    && sp[0].gegen === 'Stadtwerke Beispiel' && sp[1].betragCent === 234567 && sp[1].richtung === 'einnahme' && r.sparkasse.konto === 'DE00123456780000000001');
+  ok('Sparkasse: „Lastschrift Ursprungsbetrag“ und „Kontonummer/IBAN“ sind weder Betrag noch Gegenseite', r.sparkasse.zuordnung.betrag === 14 && r.sparkasse.zuordnung.gegen === 11);
+  ok('DKB: Kopfzeile unter den Kontoangaben gefunden, IBAN von dort, Semikolon im Zweck', r.dkb.zuordnung.kopfZeile === 4 && r.dkb.konto === 'DE00120300000000000001'
+    && r.dkb.umsaetze[0].zweck.startsWith('Brötchen; zwei') && r.dkb.umsaetze[1].betragCent === 20000);
+  ok('Volksbank: Betrag ohne Vorzeichen + Kennzeichen S/H', r.volksbank.zuordnung.kennzeichen === 12 && r.volksbank.umsaetze[0].richtung === 'ausgabe' && r.volksbank.umsaetze[1].richtung === 'einnahme');
+  ok('ING: Saldo-Spalte (neueste oben) → Anfang 0,00 und Schluss 950,00, Gegenrechnung stimmt',
+    r.ing.saldoStartCent === 0 && r.ing.saldoEndeCent === 95000 && r.ing.konto === 'DE00500105170000000001' && pruefeBankauszug({ format: 'CSV', ...r.ing }).ok);
+  ok('Englisch: Debit/Credit getrennt, Punkt als Dezimal, MM/TT', r.englisch.zuordnung.soll === 2 && r.englisch.zuordnung.haben === 3
+    && r.englisch.umsaetze[0].valuta === '2026-11-03' && r.englisch.umsaetze[0].richtung === 'ausgabe' && r.englisch.umsaetze[1].betragCent === 100000 && r.englisch.saldoEndeCent === 99650);
+  ok('Ohne Kopfzeile (Tab, ISO): Spalten aus den Werten', r.ohneKopf.zuordnung.kopfZeile === -1 && r.ohneKopf.umsaetze[0].betragCent === 75000 && r.ohneKopf.umsaetze[0].zweck === 'Miete November');
+});
+
+await section('Bank-CSV: Zuordnung am Konto merken', () => {
+  const erst = BCSV.parseBankCsv(BANK_CSV.dkb);
+  // Von Hand geändert: nur Verwendungszweck als Text (Buchungstext weg) – so am Konto gemerkt.
+  const gemerkt = JSON.parse(JSON.stringify({ ...erst.zuordnung, text: [4] }));
+  const naechster = BANK_CSV.dkb.replace('"Bis:";"30.11.2026";\n', '"Bis:";"30.11.2026";\n"Extra:";"Zeile";\n').replace(/05\.11\.2026/g, '06.12.2026');
+  const zwei = BCSV.parseBankCsv(naechster, gemerkt);
+  ok('nächste Datei: gemerkte Zuordnung greift, auch wenn die Kopfzeile tiefer steht (neu=false)', zwei.neu === false && zwei.zuordnung.kopfZeile === 5 && zwei.umsaetze[0].zweck === 'Brötchen; zwei' && zwei.umsaetze[0].valuta === '2026-12-06');
+  ok('andere Bank: gemerkte Zuordnung passt nicht → neu erraten', BCSV.parseBankCsv(BANK_CSV.sparkasse, gemerkt).neu === true);
+  ok('Zuordnung ist reines JSON (am Konto speicherbar)', JSON.stringify(JSON.parse(JSON.stringify(gemerkt))) === JSON.stringify(gemerkt));
+  const kaputt = BCSV.parseBankCsv('Name;Notiz\nAnna;Hallo\nBernd;Welt\n');
+  ok('ohne Datum/Betrag: sagt, was fehlt, liest nichts', kaputt.fehlt.includes('datum') && kaputt.fehlt.includes('betrag') && kaputt.umsaetze.length === 0);
+  const fz = BCSV.parseBankCsv('Buchungstag;Verwendungszweck;Betrag\n01.11.2026;A;-1,00\n02.11.2026;B;xx\n;;\nKontostand;;\n99.99.2026;C;2,00\n');
+  ok('fehlerhafte Zeilen benannt (Zeile, Grund), Fußzeile still übersprungen', fz.umsaetze.length === 1 && fz.fehler.length === 2
+    && fz.fehler.some((f) => f.grund === 'betrag' && f.zeile === 3) && fz.fehler.some((f) => f.grund === 'datum' && f.zeile === 5) && fz.uebersprungen === 1);
+  const a = BCSV.umsatzSchluessel({ valuta: '2026-11-05', betragCent: 420, richtung: 'ausgabe', zweck: 'Brötchen', gegen: 'Bäckerei' }, 'DE00 1203 0000 0000 0000 01');
+  ok('Doppelten-Schlüssel: gleich bei gleichem Umsatz, anders bei Richtung/Betrag/Tag',
+    a === BCSV.umsatzSchluessel({ valuta: '2026-11-05', betragCent: 420, richtung: 'ausgabe', zweck: 'BRÖTCHEN', gegen: 'Bäckerei' }, '…0001')
+    && a !== BCSV.umsatzSchluessel({ valuta: '2026-11-05', betragCent: 420, richtung: 'einnahme', zweck: 'Brötchen', gegen: 'Bäckerei' }, '…0001')
+    && a !== BCSV.umsatzSchluessel({ valuta: '2026-11-06', betragCent: 420, richtung: 'ausgabe', zweck: 'Brötchen', gegen: 'Bäckerei' }, '…0001'));
+});
+
+// Kleines .xlsx bauen (ZIP von Hand, Verfahren 8 und 0) – erfundene Umsätze.
+function testZip(dateien) {
+  const lokal = [], zentral = []; let off = 0;
+  const crc32 = (buf) => { let c = ~0; for (const b of buf) { c ^= b; for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xEDB88320 & -(c & 1)); } return ~c >>> 0; };
+  for (const [name, text, roh] of dateien) {
+    const daten = Buffer.from(text, 'utf8'), komp = roh ? daten : _deflateRaw(daten), n = Buffer.from(name);
+    const h = Buffer.alloc(30); h.writeUInt32LE(0x04034b50, 0); h.writeUInt16LE(20, 4); h.writeUInt16LE(roh ? 0 : 8, 8); h.writeUInt32LE(crc32(daten), 14); h.writeUInt32LE(komp.length, 18); h.writeUInt32LE(daten.length, 22); h.writeUInt16LE(n.length, 26);
+    const c = Buffer.alloc(46); c.writeUInt32LE(0x02014b50, 0); c.writeUInt16LE(20, 4); c.writeUInt16LE(20, 6); c.writeUInt16LE(roh ? 0 : 8, 10); c.writeUInt32LE(crc32(daten), 16); c.writeUInt32LE(komp.length, 20); c.writeUInt32LE(daten.length, 24); c.writeUInt16LE(n.length, 28); c.writeUInt32LE(off, 42);
+    lokal.push(h, n, komp); zentral.push(c, n); off += 30 + n.length + komp.length;
+  }
+  const zb = Buffer.concat(zentral), e = Buffer.alloc(22); e.writeUInt32LE(0x06054b50, 0); e.writeUInt16LE(dateien.length, 8); e.writeUInt16LE(dateien.length, 10); e.writeUInt32LE(zb.length, 12); e.writeUInt32LE(off, 16);
+  return new Uint8Array(Buffer.concat([...lokal, zb, e]));
+}
+const TEST_XLSX = () => testZip([
+  ['xl/workbook.xml', '<?xml version="1.0"?><workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><workbookPr/><sheets><sheet name="Info" sheetId="1" r:id="rId1"/><sheet name="Umsätze &amp; mehr" sheetId="2" r:id="rId2"/></sheets></workbook>'],
+  ['xl/_rels/workbook.xml.rels', '<?xml version="1.0"?><Relationships><Relationship Id="rId1" Type="ws" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="ws" Target="worksheets/sheet2.xml"/></Relationships>', true],
+  ['xl/sharedStrings.xml', '<sst><si><t>Buchungsdatum</t></si><si><t>Empfänger</t></si><si><t>Verwendungszweck</t></si><si><t>Betrag</t></si><si><r><t>Bäckerei </t></r><r><rPr/><t>Beispiel</t></r></si><si><t>Brot &amp; Butter</t></si><si><t>Muster GmbH</t></si><si><t>Gehalt</t></si></sst>'],
+  ['xl/styles.xml', '<styleSheet><numFmts count="1"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/></numFmts><cellXfs count="3"><xf numFmtId="0"/><xf numFmtId="14" applyNumberFormat="1"/><xf numFmtId="164"/></cellXfs></styleSheet>'],
+  ['xl/worksheets/sheet1.xml', '<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>nur Info</t></is></c></row></sheetData></worksheet>'],
+  ['xl/worksheets/sheet2.xml', '<worksheet><sheetData>'
+    + '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c><c r="D1" t="s"><v>3</v></c></row>'
+    + '<row r="2"><c r="A2" s="1"><v>46331</v></c><c r="B2" t="s"><v>4</v></c><c r="C2" t="s"><v>5</v></c><c r="D2"><v>-4.2</v></c></row>'
+    + '<row r="3"/>'
+    + '<row r="4"><c r="A4" s="2"><v>46327</v></c><c r="B4" t="s"><v>6</v></c><c r="D4"><f>SUM(1)</f><v>2345.67</v></c></row>'
+    + '</sheetData></worksheet>'],
+]);
+
+await section('Excel (.xlsx) → Zeilen → derselbe Leser', async () => {
+  const b = TEST_XLSX();
+  ok('ZIP erkannt, altes .xls erkannt', XLSX.istXlsx(b) && !XLSX.istXlsx(new Uint8Array([1, 2, 3, 4, 5])) && XLSX.istAltesXls(new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0, 0, 0, 0, 0])));
+  const vz = XLSX.zipVerzeichnis(b);
+  ok('ZIP-Verzeichnis: sechs Dateien, gespeichert und gepackt', vz.length === 6 && vz.some((e) => e.methode === 0) && vz.some((e) => e.methode === 8));
+  const erstes = await XLSX.xlsxZeilen(b);
+  ok('Blattnamen (mit &amp;), ab Werk das erste', erstes.blaetter.join('|') === 'Info|Umsätze & mehr' && erstes.zeilen[0][0] === 'nur Info');
+  const x = await XLSX.xlsxZeilen(b, { blatt: 'Umsätze & mehr' });
+  ok('Zeilen: geteilte Texte, Rich-Text, Datum (Format 14 und eigenes dd/mm/yyyy), Zahl, Formel-Ergebnis, Lücke gefüllt, Leerzeile weg',
+    x.zeilen.length === 3 && x.zeilen[1][0] === '2026-11-05' && x.zeilen[1][1] === 'Bäckerei Beispiel' && x.zeilen[1][2] === 'Brot & Butter' && x.zeilen[1][3] === '-4.2'
+    && x.zeilen[2][0] === '2026-11-01' && x.zeilen[2][2] === '' && x.zeilen[2][3] === '2345.67');
+  const r = BCSV.leseMitZuordnung(x.zeilen);
+  ok('Zeilen aus Excel gehen durch dieselbe Zuordnung: Datum, Betrag (Punkt), Gegenseite',
+    r.fehlt.length === 0 && r.umsaetze.length === 2 && r.umsaetze[0].betragCent === 420 && r.umsaetze[0].richtung === 'ausgabe' && r.umsaetze[0].gegen === 'Bäckerei Beispiel'
+    && r.umsaetze[1].betragCent === 234567 && r.zuordnung.dezimal === '.' && r.zuordnung.datumsform === 'JJJJ-MM-TT');
+  let alt = ''; try { await XLSX.xlsxZeilen(new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0, 0, 0, 0, 0, 0])); } catch (e) { alt = e.message; }
+  ok('altes .xls: klare Meldung „als CSV speichern“', /als CSV speichern/.test(alt));
+  ok('1904-Datumssystem', XLSX.serienDatum(44865, true) === '2026-11-01');
+  ok('Datumsstile: Uhrzeit allein ist kein Datum', !XLSX.datumsStile('<numFmts><numFmt numFmtId="165" formatCode="hh:mm"/></numFmts><cellXfs><xf numFmtId="165"/></cellXfs>').has(0));
+});
+
+await section('Portemonnaie-Monat: Datei schreiben und lesen', () => {
+  const d = PMI.baueMonatsdatei({ monat: '2026-11', erstellt: '2026-12-01T08:00:00.000Z', faecher: [
+    { id: 'bargeld', art: 'bargeld', name: 'Bargeld', anfangCent: 3000, posten: [
+      { id: 'p1', datum: '2026-11-03', cent: 1299, richtung: 'raus', text: 'Einkauf', wofuer: 'Essen', beleg: 'doc-1' },
+      { id: 'p2', datum: '2026-11-04', cent: 20000, richtung: 'rein', text: 'Abhebung', vomKonto: true },
+      { id: 'p0', datum: '2026-10-30', cent: 500, richtung: 'raus', text: 'Oktober' } ] },
+    { id: 'konto-a', art: 'bank', name: 'Beispielbank · Girokonto', konto: 'DE00 1203 0000 0000 0000 01', anfangCent: 100000, posten: [
+      { id: 'b1', datum: '2026-11-04', cent: 20000, richtung: 'raus', text: 'Bargeldauszahlung', zumBargeld: true },
+      { id: 'b2', datum: '2026-11-01', cent: 234567, richtung: 'rein', text: 'Gehalt' },
+      { id: 'b3', datum: '2026-11-03', cent: 5840, richtung: 'raus', text: 'Strom' } ] } ] });
+  ok('Format und Fassung, Posten des Vormonats nicht dabei, sortiert', d.format === 'portemonnaie-monat' && d.fassung === 1 && d.faecher[0].posten.length === 2 && d.faecher[1].posten[0].id === 'b2');
+  ok('Summen und Endbestand gerechnet', d.faecher[0].summeRausCent === 1299 && d.faecher[0].summeReinCent === 20000 && d.faecher[0].endeCent === 3000 - 1299 + 20000
+    && d.faecher[1].endeCent === 100000 + 234567 - 25840);
+  ok('IBAN nur mit den letzten vier Stellen', d.faecher[1].konto === '…0001' && !JSON.stringify(d).includes('1203'));
+  ok('Dateiname', PMI.monatsdateiName(d) === 'portemonnaie-2026-11.json');
+  const txt = JSON.stringify(d);
+  const l = PMI.leseMonatsdatei(txt);
+  ok('gelesen: ok, keine Warnung', PMI.istMonatsdatei(txt) && l.ok && l.warnungen.length === 0 && l.datei.monat === '2026-11');
+  ok('falsches Format / Fassung / kein JSON abgewiesen', PMI.leseMonatsdatei('{"format":"x"}').fehler[0] === 'format' && PMI.leseMonatsdatei({ ...d, fassung: 2 }).fehler[0] === 'fassung' && PMI.leseMonatsdatei('nicht json').fehler[0] === 'kein-json');
+  const krumm = JSON.parse(txt); krumm.faecher[0].endeCent += 1; krumm.faecher[1].posten[0].datum = '2026-12-01';
+  const lk = PMI.leseMonatsdatei(krumm);
+  ok('Bestand passt nicht / Posten außerhalb: Warnung, kein Abbruch', lk.ok && lk.warnungen.some((w) => w.code === 'bestand-differenz' && w.differenzCent === 1) && lk.warnungen.some((w) => w.code === 'posten-ausserhalb'));
+  const kaputt = JSON.parse(txt); kaputt.faecher[0].posten[0].cent = -5;
+  ok('negativer Betrag ist ein Fehler', !PMI.leseMonatsdatei(kaputt).ok);
+
+  const { entwuerfe, uebersprungen } = PMI.monatsdateiEntwuerfe(l.datei);
+  ok('Entwürfe: 4 (Abhebung nur einmal), alle ausgeglichen', entwuerfe.length === 4 && entwuerfe.every((e) => summeSeiten(e.zeilen).soll === summeSeiten(e.zeilen).haben)
+    && uebersprungen.length === 1 && uebersprungen[0].grund === 'im-bargeld');
+  const ab = entwuerfe.find((e) => e.herkunft.posten === 'p2');
+  ok('Barabhebung: Kasse 1000 an Bank 1200', !!zeile(ab.zeilen, '1000', 'S') && !!zeile(ab.zeilen, '1200', 'H') && /nicht noch einmal/.test(ab.begruendung));
+  const ein = entwuerfe.find((e) => e.herkunft.posten === 'p1');
+  ok('Bargeld-Ausgabe: 1800 an Kasse, Text mit „wofür“, Beleg genannt', zeile(ein.zeilen, '1800', 'S').betrag === 1299 && !!zeile(ein.zeilen, '1000', 'H') && ein.beschreibung === 'Einkauf · wofür: Essen' && /mit Beleg/.test(ein.begruendung));
+  const geh = entwuerfe.find((e) => e.herkunft.posten === 'b2');
+  ok('Bank-Einnahme: Bank 1200 an 1890', !!zeile(geh.zeilen, '1200', 'S') && !!zeile(geh.zeilen, '1890', 'H'));
+  const nb = PMI.monatsdateiEntwuerfe(l.datei, { nurBargeld: true, kontoFuer: (p) => (p.text === 'Einkauf' ? '4650' : null), bankKontoFuer: () => '1210' });
+  ok('nur Bargeld: Bankfach bleibt weg; eigenes Konto per kontoFuer; Abhebung gegen 1210', nb.entwuerfe.length === 2 && nb.uebersprungen.filter((u) => u.grund === 'nur-bargeld').length === 3
+    && !!zeile(nb.entwuerfe.find((e) => e.herkunft.posten === 'p1').zeilen, '4650', 'S') && !!zeile(nb.entwuerfe.find((e) => e.herkunft.posten === 'p2').zeilen, '1210', 'H'));
+  const nurBank = PMI.monatsdateiEntwuerfe({ monat: '2026-11', faecher: [d.faecher[1]] });
+  ok('ohne Bargeldfach wird die Abhebung bei der Bank gebucht (sonst fehlte sie)', nurBank.entwuerfe.length === 3);
 });
 
 console.log(`\n— ${passed} bestanden, ${failed} fehlgeschlagen —`);
