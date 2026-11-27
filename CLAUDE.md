@@ -2,6 +2,8 @@
 
 # CLAUDE.md — Leitfaden für Mehr-Sitzungs-Arbeit
 
+**0.1.19 (Klaus 27.11.2026, Bilder am DeX-Monitor; PR #483):** Kopf und Seitenleiste halten oben den Abstand `env(safe-area-inset-top)` (lagen in der App unter der Fensterleiste); Android Code 20, Windows gleich, `sw.js` v311. Nicht am Gerät.
+
 **Bank-CSV, Excel, Portemonnaie-Monat (Klaus 18.11., Plan in Private-Akte `docs/PLAN_2026-11-18_PORTEMONNAIE-BANK-BOOKLEDGER.md` Abschnitt 6 B; Zweig `ccr-22eefaa0-k8wt64`):**
 drei reine Leser, build-frei, auch für Basic und die Private Akte (dort als Klon mit Pin): `src/domain/bankCsv.js` (Trennzeichen, Kopfzeile hinter Vorspann,
 Dezimalzeichen, Datumsform, Spalten Datum/Betrag oder Soll+Haben oder S/H-Kennung/Text/Gegenseite/Saldo/eigenes Konto **geraten**, berichtigt und als
