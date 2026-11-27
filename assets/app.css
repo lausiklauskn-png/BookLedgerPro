@@ -1064,3 +1064,13 @@ input[type="password"], input[type="text"], input[type="number"], input[type="da
 }
 .verbund-titel { font-size: .95rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .verbund-rahmen { flex: 1 1 auto; width: 100%; border: 0; background: #fff; }
+
+/* Klaus 27.11.2026 (Bilder am DeX-Monitor, alle Pro-Apps geprüft): der Kopf lag in der App unter der Fensterleiste des Systems.
+   Kopf und Seitenleiste halten oben den Abstand, den Android meldet (safe-area-inset-top); im Browser ist er 0. */
+.app-header { padding-top: calc(.45rem + env(safe-area-inset-top, 0px)); }
+@media (min-width: 641px) {
+  .app-nav { top: calc(48px + env(safe-area-inset-top, 0px)); max-height: calc(100dvh - 48px - env(safe-area-inset-top, 0px)); }
+}
+@media (max-width: 640px) {
+  .app-nav, .app.nav-zu .app-nav { padding-top: calc(.6rem + env(safe-area-inset-top, 0px)); }
+}
