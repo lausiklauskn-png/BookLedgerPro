@@ -1,5 +1,14 @@
 # PULS.md — Lückenloser Nachfolge-Brief (Stand-Schnappschuss)
 
+## Stand: 0.1.19 veröffentlicht, 27. November 2026 (Klaus 27.11.: Pro-Apps mit DeX-Reparatur ausgeben)
+
+**BookLedgerPro 0.1.19** (Android Code 20, Windows gleich; main `15e79df`, #483/#484): Kopf und Seitenleiste halten oben den Abstand
+`env(safe-area-inset-top)` (lagen am DeX-Monitor unter der Fensterleiste), `sw.js` v311. Android: Lauf 46064849095, Release `v0.1.19`,
+`BookLedgerPro-0.1.19.apk`, 90 251 118 B, SHA-256 `8baf3c165a10378a592aec72216c4ed70f8784e855a41b6459aa8f91af0babd3`, anonym geladen und gleich
+der `.sha256`. Windows: Lauf 46066750004 auf den eigenen Server, `BookLedgerPro-Windows-0.1.19-x64-setup.exe`, 103 389 998 B, SHA-256
+`8015b8fa7f6d931b66c28a48071fff43c8e996d306cbc52fcea8851a689ec86a`, vom Lauf von außen nachgeladen und gleich (family-projekt.de ist aus der
+Sitzung nicht erreichbar). Nicht erneut auslösen; nächste freie Fassung **0.1.20**. ⚠ Nicht am Gerät.
+
 ## Stand: Discovery in der Hilfe, 15. November 2026 (Entwurfs-PR `claude/discovery-hilfe`, nicht veröffentlicht)
 
 Klaus 15.11.: „Da wo der Sortierkern drin ist, Discovery/Button nachziehen“ – mit einbauen, Knopf in der Anleitung und unter „Über“ neben der
